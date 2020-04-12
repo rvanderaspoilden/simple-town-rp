@@ -7,6 +7,10 @@ using UnityEngine;
 
 namespace Sim {
     public class RoomManager : MonoBehaviourPun {
+
+        [Header("Only for debug")]
+        [SerializeField] private Player localPlayer;
+        
         public static RoomManager Instance;
 
         private void Awake() {
@@ -18,7 +22,12 @@ namespace Sim {
         }
 
         public void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
-            PhotonNetwork.Instantiate("Prefabs/" + prefab.name, Vector3.zero, Quaternion.identity);
+            GameObject playerObj = PhotonNetwork.Instantiate("Prefabs/" + prefab.name, Vector3.zero, Quaternion.identity);
+            this.localPlayer = playerObj.GetComponent<Player>();
+        }
+
+        public void MovePlayerTo(Vector3 target) {
+            this.localPlayer.SetTarget(target);
         }
     }    
 }

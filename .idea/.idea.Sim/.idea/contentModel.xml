@@ -537,6 +537,7 @@
           </e>
         </e>
         <e p="Scripts" t="Include">
+          <e p="CameraManager.cs" t="Include" />
           <e p="Constants" t="Include">
             <e p="Places.cs" t="Include" />
           </e>
@@ -545,6 +546,7 @@
           </e>
           <e p="Launcher.cs" t="Include" />
           <e p="NetworkManager.cs" t="Include" />
+          <e p="Player.cs" t="Include" />
           <e p="RoomManager.cs" t="Include" />
           <e p="SimpleCameraController.cs" t="Include" />
         </e>
