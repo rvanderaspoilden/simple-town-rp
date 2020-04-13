@@ -9,7 +9,7 @@ namespace Sim {
     public class RoomManager : MonoBehaviourPun {
 
         [Header("Only for debug")]
-        [SerializeField] private Player localPlayer;
+        public static Player LocalPlayer;
         
         public static RoomManager Instance;
 
@@ -23,12 +23,12 @@ namespace Sim {
 
         public void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
             GameObject playerObj = PhotonNetwork.Instantiate("Prefabs/" + prefab.name, Vector3.zero, Quaternion.identity);
-            this.localPlayer = playerObj.GetComponent<Player>();
-            CameraManager.Instance.SetCameraTarget(this.localPlayer.transform);
+            LocalPlayer = playerObj.GetComponent<Player>();
+            CameraManager.Instance.SetCameraTarget(LocalPlayer.transform);
         }
 
         public void MovePlayerTo(Vector3 target) {
-            this.localPlayer.SetTarget(target);
+            LocalPlayer.SetTarget(target);
         }
     }    
 }

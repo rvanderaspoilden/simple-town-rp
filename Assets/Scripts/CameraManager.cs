@@ -1,5 +1,7 @@
 ﻿using System;
 using Cinemachine;
+using Photon.Pun.Demo.PunBasics;
+using Sim.Interactables;
 using UnityEngine;
 
 namespace Sim {
@@ -29,9 +31,7 @@ namespace Sim {
         }
 
         void Update() {
-            if (Input.GetMouseButtonDown(0) && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit)) {
-                RoomManager.Instance.MovePlayerTo(hit.point);
-            }
+            this.ManageInteraction();
 
             if (Input.GetMouseButtonDown(1)) {
                 this.freelookCamera.m_XAxis.m_MaxSpeed = 300f;
@@ -39,6 +39,30 @@ namespace Sim {
             
             if (Input.GetMouseButtonUp(1)) {
                 this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;
+            }
+        }
+
+        private void ManageInteraction() {
+            if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit)) {
+                Interactable objectToInteract = null;
+                
+                if (hit.collider.CompareTag("Interactable")) {
+                    Interactable interactable = hit.collider.GetComponentInParent<Interactable>();
+                    
+                    // todo display cursor for interaction
+
+                    if (interactable.CanInteractWithPlayer(RoomManager.LocalPlayer)) {
+                        objectToInteract = interactable;
+                    }
+                }
+                
+                if (Input.GetMouseButtonDown(0)) {
+                    if (objectToInteract) {
+                        objectToInteract.Interact();
+                    } else {
+                        RoomManager.Instance.MovePlayerTo(hit.point);
+                    }
+                }
             }
         }
 

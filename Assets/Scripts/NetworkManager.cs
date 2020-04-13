@@ -1,17 +1,23 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using Photon.Pun;
 using Photon.Realtime;
 using Sim.Constants;
 using Sim.Entities;
+using Sim.Enums;
+using Sim.Utils;
 using UnityEngine;
 
 namespace Sim {
     public class NetworkManager : MonoBehaviourPunCallbacks {
         [Header("Settings")]
         [SerializeField] private GameObject playerPrefab;
-        
+
         [Header("Only for debug")]
         [SerializeField] private Personnage personnage;
+
+
+        private string destinationScene;
 
         public static NetworkManager Instance;
 
@@ -28,15 +34,43 @@ namespace Sim {
             this.ConnectToMasterServer();
         }
 
+        private void OnDestroy() {
+            StopAllCoroutines();
+        }
+
         public void Play(Personnage personnage) {
             this.personnage = personnage;
 
             if (PhotonNetwork.IsConnectedAndReady) {
                 Debug.Log("Connecting to server with personnage : " + personnage.GetFirstname());
-
-                PhotonNetwork.JoinOrCreateRoom(Places.TOWN_SQUARE, new RoomOptions() {IsOpen = true, IsVisible = true, EmptyRoomTtl = 10000}, TypedLobby.Default);
+                this.GoToRoom(PlacesEnum.TOWN_SQUARE);
             } else {
                 Debug.Log("Player is not connected to lobby");
+            }
+        }
+
+        public void GoToRoom(PlacesEnum place) {
+            // If player is alreay in a room so leave it and join another
+            if (PhotonNetwork.InRoom) {
+                StartCoroutine(this.LeaveAndJoinRoom(place));
+                return;
+            }
+
+            PhotonNetwork.JoinOrCreateRoom(PlaceUtils.GetPlaceEnumName(place), new RoomOptions() {IsOpen = true, IsVisible = true, EmptyRoomTtl = 10000}, TypedLobby.Default);
+            this.destinationScene = PlaceUtils.ConvertPlaceEnumToSceneName(place);
+        }
+
+        private IEnumerator LeaveAndJoinRoom(PlacesEnum place) {
+            PhotonNetwork.LeaveRoom();
+
+            // Wait reconnect to master server before join a room
+            while (!PhotonNetwork.InLobby) {
+                Debug.Log("I'm not ready");
+                yield return null;
+            }
+
+            if (PhotonNetwork.IsConnectedAndReady) {
+                this.GoToRoom(place);
             }
         }
 
@@ -44,14 +78,14 @@ namespace Sim {
             PhotonNetwork.ConnectUsingSettings();
         }
 
-        private IEnumerator LoadRoom(string roomName) {
-            PhotonNetwork.LoadLevel(roomName);
+        private IEnumerator LoadScene(string sceneName) {
+            PhotonNetwork.LoadLevel(sceneName);
 
             while (PhotonNetwork.LevelLoadingProgress < 1f) {
                 Debug.Log("Room loading...");
                 yield return new WaitForEndOfFrame();
             }
-            
+
             Debug.Log("Room is loaded");
             RoomManager.Instance.InstantiateLocalPlayer(this.playerPrefab, this.personnage);
         }
@@ -68,7 +102,7 @@ namespace Sim {
 
         public override void OnJoinedRoom() {
             Debug.Log("I joined room : " + PhotonNetwork.CurrentRoom.Name);
-            StartCoroutine(this.LoadRoom(PhotonNetwork.CurrentRoom.Name));
+            StartCoroutine(this.LoadScene(this.destinationScene));
         }
 
         #endregion
