@@ -82,7 +82,7 @@ namespace ExitGames.Demos.DemoPunVoice
         private void LateUpdate()
         {
             if (canvas == null || canvas.worldCamera == null) { return; } // should not happen, throw error
-            transform.rotation = Quaternion.Euler(0f, canvas.worldCamera.transform.eulerAngles.y, 0f); //canvas.worldCamera.transform.rotation;
+            transform.rotation = canvas.worldCamera.transform.rotation;
         }
     }
 }
