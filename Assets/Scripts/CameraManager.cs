@@ -24,6 +24,7 @@ namespace Sim {
         [SerializeField] private float cameraZoomSpeed = 3f;
 
         [SerializeField] private float propsRotationSpeed = 1.5f;
+        [SerializeField] private float propsStepSize = 0.1f;
         [SerializeField] private GameObject propsToInstantiate;
 
         [SerializeField] private Material errorMaterial;
@@ -32,6 +33,8 @@ namespace Sim {
         [SerializeField] private GameObject currentPropSelected;
 
         [SerializeField] private BuildPreview currentPreview;
+
+        [SerializeField] private bool isEditMode;
 
         private RaycastHit hit;
 
@@ -105,33 +108,52 @@ namespace Sim {
 
             // todo move that later
             if (Input.GetKeyDown(KeyCode.A) && !this.currentPropSelected) {
-                this.currentPropSelected = Instantiate(this.propsToInstantiate);
-                this.currentPropSelected.layer = LayerMask.NameToLayer("Preview");
-                this.currentPreview = this.currentPropSelected.AddComponent<BuildPreview>();
-                this.currentPreview.SetErrorMaterial(this.errorMaterial);
+                this.SetCurrentSelectedProps(Instantiate(this.propsToInstantiate));
             }
 
             // Manage detection on ground and props
-            int layerMask = this.currentPropSelected ? (1 << 9) : (1 << 9 | 1 << 10);
-            
+            int layerMask = this.currentPropSelected ? (1 << 9) : (1 << 10);
+
             if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
                 if (this.currentPropSelected) {
-                    if (Input.GetKey(KeyCode.LeftArrow)) {
-                        this.currentPropSelected.transform.Rotate(Vector3.forward * -this.propsRotationSpeed);
-                    } else if (Input.GetKey(KeyCode.RightArrow)) {
-                        this.currentPropSelected.transform.Rotate(Vector3.forward * this.propsRotationSpeed);
-                    }
+                    if (Input.GetKey(KeyCode.LeftShift)) {
+                        if (Input.GetKeyDown(KeyCode.LeftArrow)) {
+                            Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
+                            float newAngle = (Mathf.CeilToInt(currentLocalAngle.y / 90f) * 90f) - 90f;
+                            this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
+                        } else if (Input.GetKeyDown(KeyCode.RightArrow)) {
+                            Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
+                            float newAngle = (Mathf.FloorToInt(currentLocalAngle.y / 90f) * 90f) + 90f;
+                            this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
+                        }
+                    } else {
+                        if (Input.GetKey(KeyCode.LeftArrow)) {
+                            this.currentPropSelected.transform.Rotate(Vector3.forward * -this.propsRotationSpeed);
+                        } else if (Input.GetKey(KeyCode.RightArrow)) {
+                            this.currentPropSelected.transform.Rotate(Vector3.forward * this.propsRotationSpeed);
+                        }
+                    } 
 
                     if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
-                        this.currentPropSelected.transform.position = hit.point;
+                        float x = Mathf.FloorToInt(hit.point.x / this.propsStepSize) * this.propsStepSize;
+                        float z = Mathf.FloorToInt(hit.point.z / this.propsStepSize) * this.propsStepSize;
+                        this.currentPropSelected.transform.position = new Vector3(x, hit.point.y, z);
                     }
 
                     if (Input.GetMouseButtonDown(0) && this.currentPreview.IsPlaceable()) {
-                        PhotonNetwork.Instantiate("Prefabs/" + this.propsToInstantiate.name, this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
-                        Destroy(this.currentPropSelected);
+                        if (this.isEditMode) {
+                            this.currentPropSelected.GetComponent<Props>().UpdateTransform();
+                            this.currentPreview.Destroy();
+                            this.currentPropSelected = null;
+                        } else {
+                            PhotonNetwork.InstantiateSceneObject("Prefabs/" + this.propsToInstantiate.name, this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
+                            Destroy(this.currentPropSelected);
+                        }
                     }
-                } else {
-                    Debug.Log(hit.collider.name);
+                } else if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Props")) {
+                    if (Input.GetMouseButtonDown(0)) {
+                        this.SetCurrentSelectedProps(hit.collider.gameObject, true);
+                    }
                 }
             }
         }
@@ -158,6 +180,13 @@ namespace Sim {
                     }
                 }
             }
+        }
+
+        private void SetCurrentSelectedProps(GameObject props, bool isEditMode = false) {
+            this.currentPropSelected = props;
+            this.currentPreview = this.currentPropSelected.AddComponent<BuildPreview>();
+            this.currentPreview.SetErrorMaterial(this.errorMaterial);
+            this.isEditMode = isEditMode;
         }
 
         public void SetCameraTarget(Transform transform) {

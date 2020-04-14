@@ -610,6 +610,7 @@ GameObject:
   - component: {fileID: 2762703397381888524}
   - component: {fileID: 8296594589946918330}
   - component: {fileID: 1461695926327059452}
+  - component: {fileID: -709156178848715271}
   m_Layer: 10
   m_Name: Sofa
   m_TagString: Untagged
@@ -709,6 +710,18 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -0.002248717, y: 1.03323e-15, z: 0.3347029}
   m_TimeToStationary: 0.5
+--- !u!114 &-709156178848715271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7298514275073357496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7298514275073357498
 GameObject:
   m_ObjectHideFlags: 0

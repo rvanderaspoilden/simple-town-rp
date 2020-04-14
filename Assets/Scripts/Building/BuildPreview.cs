@@ -26,6 +26,8 @@ namespace Sim.Building {
             if (navMeshObstacle) { // disable this to avoid collision with player agent
                 navMeshObstacle.enabled = false;
             }
+            
+            this.gameObject.layer = LayerMask.NameToLayer("Preview");
         }
 
         private void OnTriggerStay(Collider other) {
@@ -53,6 +55,16 @@ namespace Sim.Building {
                     renderer.material = this.errorMaterial;
                 }
             }
+        }
+
+        public void Destroy() {
+            if (navMeshObstacle) {
+                navMeshObstacle.enabled = true;
+            }
+            
+            this.gameObject.layer = LayerMask.NameToLayer("Props");
+
+            Destroy(this);
         }
 
         public void SetErrorMaterial(Material mat) {
