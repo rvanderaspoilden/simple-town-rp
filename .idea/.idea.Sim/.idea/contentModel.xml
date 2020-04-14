@@ -537,6 +537,9 @@
           </e>
         </e>
         <e p="Scripts" t="Include">
+          <e p="Building" t="Include">
+            <e p="BuildPreview.cs" t="Include" />
+          </e>
           <e p="CameraManager.cs" t="Include" />
           <e p="Constants" t="Include">
             <e p="PlaceName.cs" t="Include" />
@@ -546,6 +549,7 @@
             <e p="Personnage.cs" t="Include" />
           </e>
           <e p="Enums" t="Include">
+            <e p="CameraModeEnum.cs" t="Include" />
             <e p="PlacesEnum.cs" t="Include" />
           </e>
           <e p="Interactables" t="Include">
