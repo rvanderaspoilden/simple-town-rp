@@ -37,6 +37,8 @@ MonoBehaviour:
   - DestroySpaceship
   - Fire
   - RespawnSpaceship
+  - RPC_SetTarget
+  - RPC_UpdateStatus
   - RPC_UpdateTransform
   DisableAutoOpenWizard: 1
   ShowSettings: 1

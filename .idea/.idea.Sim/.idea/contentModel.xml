@@ -554,7 +554,7 @@
             <e p="PlacesEnum.cs" t="Include" />
           </e>
           <e p="Interactables" t="Include">
-            <e p="Door.cs" t="Include" />
+            <e p="DoorTeleporter.cs" t="Include" />
             <e p="Interactable.cs" t="Include" />
           </e>
           <e p="Launcher.cs" t="Include" />
@@ -562,6 +562,7 @@
           <e p="Player.cs" t="Include" />
           <e p="RoomManager.cs" t="Include" />
           <e p="SimpleCameraController.cs" t="Include" />
+          <e p="ThirdPersonCharacter.cs" t="Include" />
           <e p="Utils" t="Include">
             <e p="PlaceUtils.cs" t="Include" />
           </e>

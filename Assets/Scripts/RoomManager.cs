@@ -24,7 +24,7 @@ namespace Sim {
         public void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
             GameObject playerObj = PhotonNetwork.Instantiate("Prefabs/" + prefab.name, Vector3.zero, Quaternion.identity);
             LocalPlayer = playerObj.GetComponent<Player>();
-            CameraManager.Instance.SetCameraTarget(LocalPlayer.transform);
+            CameraManager.Instance.SetCameraTarget(LocalPlayer.GetHeadTargetForCamera());
         }
 
         public void MovePlayerTo(Vector3 target) {
