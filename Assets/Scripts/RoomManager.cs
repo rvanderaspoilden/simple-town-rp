@@ -8,6 +8,9 @@ using UnityEngine;
 namespace Sim {
     public class RoomManager : MonoBehaviourPun {
 
+        [Header("Settings")]
+        [SerializeField] private Transform playerSpawnPoint;
+
         [Header("Only for debug")]
         public static Player LocalPlayer;
         
@@ -22,7 +25,7 @@ namespace Sim {
         }
 
         public void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
-            GameObject playerObj = PhotonNetwork.Instantiate("Prefabs/" + prefab.name, Vector3.zero, Quaternion.identity);
+            GameObject playerObj = PhotonNetwork.Instantiate("Prefabs/Personnage/" + prefab.name, this.playerSpawnPoint.transform.position, Quaternion.identity);
             LocalPlayer = playerObj.GetComponent<Player>();
             CameraManager.Instance.SetCameraTarget(LocalPlayer.GetHeadTargetForCamera());
         }

@@ -11,6 +11,7 @@ namespace Sim {
     public class CameraManager : MonoBehaviour {
         [Header("Settings")]
         [SerializeField] private CinemachineFreeLook freelookCamera;
+        [SerializeField] private VirtualCameraFollow virtualCameraFollow;
 
         [Header("Only for debug")]
         [SerializeField] private new Camera camera;
@@ -146,7 +147,7 @@ namespace Sim {
                             this.currentPreview.Destroy();
                             this.currentPropSelected = null;
                         } else {
-                            PhotonNetwork.InstantiateSceneObject("Prefabs/" + this.propsToInstantiate.name, this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
+                            PhotonNetwork.InstantiateSceneObject("Prefabs/Props/" + this.propsToInstantiate.name, this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
                             Destroy(this.currentPropSelected);
                         }
                     }
@@ -165,9 +166,7 @@ namespace Sim {
                 if (hit.collider.CompareTag("Interactable")) {
                     Interactable interactable = hit.collider.GetComponentInParent<Interactable>();
 
-                    // todo display cursor for interaction
-
-                    if (interactable.CanInteractWithPlayer(RoomManager.LocalPlayer)) {
+                    if (interactable.CanInteract(RoomManager.LocalPlayer.transform.position)) {
                         objectToInteract = interactable;
                     }
                 }
@@ -190,8 +189,7 @@ namespace Sim {
         }
 
         public void SetCameraTarget(Transform transform) {
-            this.freelookCamera.Follow = transform;
-            this.freelookCamera.LookAt = transform;
+            this.virtualCameraFollow.SetTarget(transform);
         }
     }
 }
