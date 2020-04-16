@@ -13,6 +13,10 @@ namespace Sim.Utils {
                 case PlacesEnum.HALL:
                     return Scenes.HALL;
                     break;
+                
+                case PlacesEnum.APPARTMENT:
+                    return Scenes.APPARTMENT;
+                    break;
             }
 
             throw new Exception("No scene name found for place enum : " + (string)Enum.Parse(typeof(PlacesEnum), place.ToString()));
@@ -26,6 +30,10 @@ namespace Sim.Utils {
 
                 case PlacesEnum.HALL:
                     return PlaceName.HALL;
+                    break;
+                
+                case PlacesEnum.APPARTMENT:
+                    return Scenes.APPARTMENT;
                     break;
             }
 
