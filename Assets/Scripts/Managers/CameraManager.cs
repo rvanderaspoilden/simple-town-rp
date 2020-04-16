@@ -57,6 +57,7 @@ namespace Sim {
 
         void Update() {
             if (PhotonNetwork.LocalPlayer == null) {
+                Debug.Log("NULL");
                 return;
             }
             
@@ -170,7 +171,7 @@ namespace Sim {
                 if (hit.collider.CompareTag("Interactable")) {
                     Interactable interactable = hit.collider.GetComponentInParent<Interactable>();
 
-                    if (interactable.CanInteract(RoomManager.LocalPlayer.transform.position)) {
+                    if (RoomManager.LocalPlayer && interactable.CanInteract(RoomManager.LocalPlayer.transform.position)) {
                         objectToInteract = interactable;
                     }
                 }

@@ -4,9 +4,10 @@ using System.Collections.Generic;
 using Photon.Pun;
 using Sim.Entities;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Sim {
-    public class RoomManager : MonoBehaviourPun {
+    public class RoomManager : MonoBehaviourPunCallbacks {
 
         [Header("Settings")]
         [SerializeField] private Transform playerSpawnPoint;
