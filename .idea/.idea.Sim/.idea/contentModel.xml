@@ -541,7 +541,6 @@
             <e p="BuildPreview.cs" t="Include" />
             <e p="Props.cs" t="Include" />
           </e>
-          <e p="CameraManager.cs" t="Include" />
           <e p="Constants" t="Include">
             <e p="PlaceName.cs" t="Include" />
             <e p="Scenes.cs" t="Include" />
@@ -557,10 +556,14 @@
             <e p="DoorTeleporter.cs" t="Include" />
             <e p="Interactable.cs" t="Include" />
           </e>
-          <e p="Launcher.cs" t="Include" />
-          <e p="NetworkManager.cs" t="Include" />
+          <e p="Managers" t="Include">
+            <e p="CameraManager.cs" t="Include" />
+            <e p="Launcher.cs" t="Include" />
+            <e p="LoadingManager.cs" t="Include" />
+            <e p="NetworkManager.cs" t="Include" />
+            <e p="RoomManager.cs" t="Include" />
+          </e>
           <e p="Player.cs" t="Include" />
-          <e p="RoomManager.cs" t="Include" />
           <e p="SimpleCameraController.cs" t="Include" />
           <e p="ThirdPersonCharacter.cs" t="Include" />
           <e p="Utils" t="Include">
