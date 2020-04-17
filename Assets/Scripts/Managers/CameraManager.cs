@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Cinemachine;
 using Photon.Pun;
 using Photon.Pun.Demo.PunBasics;
@@ -11,12 +12,16 @@ namespace Sim {
     public class CameraManager : MonoBehaviour {
         [Header("Settings")]
         [SerializeField] private CinemachineFreeLook freelookCamera;
+
         [SerializeField] private VirtualCameraFollow virtualCameraFollow;
+        [SerializeField] private LayerMask layerMaskInFreeMode;
+        [SerializeField] private LayerMask layerMaskTransparent;
 
         [Header("Only for debug")]
         [SerializeField] private new Camera camera;
 
         [SerializeField] private CameraModeEnum currentMode;
+        [SerializeField] private GameObject currentNearWall;
 
         [Header("Build settings")]
         [SerializeField] private float cameraRotationSpeed = 3f;
@@ -56,11 +61,8 @@ namespace Sim {
         }
 
         void Update() {
-            if (PhotonNetwork.LocalPlayer == null) {
-                Debug.Log("NULL");
-                return;
-            }
-            
+            this.ManageWorldTransparency();
+
             if (this.currentMode == CameraModeEnum.FREE) {
                 this.ManageInteraction();
             } else if (this.currentMode == CameraModeEnum.BUILD) {
@@ -81,6 +83,43 @@ namespace Sim {
                 this.SwitchToBuildMode();
             } else if (Input.GetKeyDown(KeyCode.F)) {
                 this.SwitchToFreeMode();
+            }
+        }
+
+        public void ManageWorldTransparency() {
+            if (!RoomManager.LocalPlayer) {
+                return;
+            }
+            
+            Vector3 dir = -(this.camera.transform.position - RoomManager.LocalPlayer.transform.position);
+            if (Physics.Raycast(this.camera.transform.position, dir, out hit, 100, (1 << 12))) {
+                if (hit.collider.gameObject != this.currentNearWall) {
+                    if (this.currentNearWall) {
+                        this.SetRendererVisible(this.currentNearWall, true);
+                    }
+
+                    this.currentNearWall = hit.collider.gameObject;
+                    this.SetRendererVisible(this.currentNearWall, false);
+                }
+            } else {
+                if (this.currentNearWall) {
+                    this.SetRendererVisible(this.currentNearWall, true);
+                    this.currentNearWall = null;
+                }
+            }
+        }
+
+        private void SetRendererVisible(GameObject target, bool state) {
+            Collider[] neighbourWalls = Physics.OverlapSphere(target.transform.position, 2f, layerMaskTransparent);
+            
+            foreach (Renderer renderer in target.GetComponentsInChildren<Renderer>()) {
+                renderer.enabled = state;
+            }
+
+            foreach (Collider neighbourWall in neighbourWalls) {
+                foreach (Renderer renderer in neighbourWall.GetComponentsInChildren<Renderer>()) {
+                    renderer.enabled = state;
+                }
             }
         }
 
@@ -138,7 +177,7 @@ namespace Sim {
                         } else if (Input.GetKey(KeyCode.RightArrow)) {
                             this.currentPropSelected.transform.Rotate(Vector3.forward * this.propsRotationSpeed);
                         }
-                    } 
+                    }
 
                     if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
                         float x = Mathf.FloorToInt(hit.point.x / this.propsStepSize) * this.propsStepSize;
@@ -165,7 +204,7 @@ namespace Sim {
         }
 
         private void ManageInteraction() {
-            if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit)) {
+            if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Interactable objectToInteract = null;
 
                 if (hit.collider.CompareTag("Interactable")) {
