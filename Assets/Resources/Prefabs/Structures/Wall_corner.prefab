@@ -279,6 +279,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   foundationObj: {fileID: 1474421962247471429}
-  renderersToHide:
+  materialToApply: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
+  renderersToModify:
   - {fileID: 9173049875508542943}
   showFoundation: 0
+  defaultMaterial: {fileID: 0}

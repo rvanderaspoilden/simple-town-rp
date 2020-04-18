@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6602971679317873774}
   - component: {fileID: 621213801827477655}
   - component: {fileID: 7170792406590309696}
+  - component: {fileID: 4910287927518518884}
   m_Layer: 0
   m_Name: Elevator
   m_TagString: Untagged
@@ -93,3 +94,20 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1.9999999, y: 2.2103543, z: 0.495}
   m_Center: {x: -1.5, y: 1.1051772, z: -0.050000012}
+--- !u!114 &4910287927518518884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1198565143842987083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  foundationObj: {fileID: 0}
+  materialToApply: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
+  renderersToModify:
+  - {fileID: 621213801827477655}
+  showFoundation: 0

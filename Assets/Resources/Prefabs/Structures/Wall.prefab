@@ -112,9 +112,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   foundationObj: {fileID: 9126067997172010301}
-  renderersToHide:
+  materialToApply: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
+  renderersToModify:
   - {fileID: 7038153395620363608}
   showFoundation: 0
+  defaultMaterial: {fileID: 0}
 --- !u!1 &9126067997172010301
 GameObject:
   m_ObjectHideFlags: 0

@@ -76,8 +76,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1761419677578446557}
-  m_LocalRotation: {x: 0.0842538, y: 0.76153904, z: -0.10110455, w: 0.634616}
-  m_LocalPosition: {x: -172687.08, y: 53743.188, z: 31639.203}
+  m_LocalRotation: {x: 0.0842538, y: 0.761539, z: -0.10110455, w: 0.634616}
+  m_LocalPosition: {x: -173223.33, y: 53910.156, z: 31737.516}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 8650994197303681102}
@@ -218,7 +218,7 @@ MonoBehaviour:
     m_Bits: 1847
   layerMaskTransparent:
     serializedVersion: 2
-    m_Bits: 4096
+    m_Bits: 5120
   camera: {fileID: 0}
   currentMode: 1
   currentNearWall: {fileID: 0}
@@ -532,7 +532,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8232347158701923112}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -172687.08, y: 53743.188, z: 31639.203}
+  m_LocalPosition: {x: -173223.33, y: 53910.156, z: 31737.516}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 8232347159422918414}
@@ -793,7 +793,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8232347159422918412}
-  m_LocalRotation: {x: 0.09477825, y: 0.7597556, z: -0.113734014, w: 0.63312966}
+  m_LocalRotation: {x: 0.09477825, y: 0.75975555, z: -0.113734, w: 0.6331297}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
