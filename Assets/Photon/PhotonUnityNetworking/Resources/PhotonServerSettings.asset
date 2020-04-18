@@ -40,6 +40,8 @@ MonoBehaviour:
   - RPC_SetTarget
   - RPC_UpdateStatus
   - RPC_UpdateTransform
+  - RPC_OpenAnimation
+  - RPC_Animation
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
