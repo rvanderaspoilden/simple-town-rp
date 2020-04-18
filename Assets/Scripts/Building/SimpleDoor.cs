@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Sim.Enums;
 using UnityEngine;
 
 namespace Sim.Building {
     public class SimpleDoor : MonoBehaviour {
+        [Header("Settings")]
+        [SerializeField] private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
+        
         [Header("Only for debug")]
         [SerializeField] private Animator animator;
         [SerializeField] private List<Collider> colliderTriggered;
@@ -12,6 +16,7 @@ namespace Sim.Building {
         private void Awake() {
             this.colliderTriggered = new List<Collider>();
             this.animator = GetComponent<Animator>();
+            this.animator.SetFloat("direction", (float)doorDirection);
         }
 
         private void OnTriggerStay(Collider other) {

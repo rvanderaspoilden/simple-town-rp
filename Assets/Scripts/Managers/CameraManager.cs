@@ -111,7 +111,7 @@ namespace Sim {
         }
 
         private void ShowWallFoundation(GameObject target, bool state) {
-            List<FoundationRenderer> objectsToHide = Physics.OverlapSphere(target.transform.position, 2f, layerMaskTransparent).ToList().Select(x => x.GetComponentInParent<FoundationRenderer>()).ToList();
+            List<FoundationRenderer> objectsToHide = Physics.OverlapSphere(target.transform.position, 2.5f, layerMaskTransparent).ToList().Select(x => x.GetComponentInParent<FoundationRenderer>()).ToList();
             objectsToHide.Add(target.GetComponentInParent<FoundationRenderer>());
             objectsToHide.ForEach(x => {
                 if (x) { // prevent NPE due to get componentInParent

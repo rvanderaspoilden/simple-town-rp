@@ -13,9 +13,10 @@ GameObject:
   - component: {fileID: 621213801827477655}
   - component: {fileID: 7170792406590309696}
   - component: {fileID: 4910287927518518884}
-  m_Layer: 0
+  - component: {fileID: 369961875868750355}
+  m_Layer: 10
   m_Name: Elevator
-  m_TagString: Untagged
+  m_TagString: Interactable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
@@ -27,7 +28,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1198565143842987083}
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -1.455203, y: -0.96186996, z: -0.5229702}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -111,3 +112,17 @@ MonoBehaviour:
   renderersToModify:
   - {fileID: 621213801827477655}
   showFoundation: 0
+--- !u!114 &369961875868750355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1198565143842987083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d5aa8bcc00caab4c8c550ed30da293d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rangeToInteract: 2
+  destination: 0
