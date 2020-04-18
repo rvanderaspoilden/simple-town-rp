@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Cinemachine;
 using Photon.Pun;
@@ -95,32 +96,24 @@ namespace Sim {
             if (Physics.Raycast(this.camera.transform.position, dir, out hit, 100, (1 << 12))) {
                 if (hit.collider.gameObject != this.currentNearWall) {
                     if (this.currentNearWall) {
-                        this.SetRendererVisible(this.currentNearWall, true);
+                        this.ShowWallFoundation(this.currentNearWall, false);
                     }
 
                     this.currentNearWall = hit.collider.gameObject;
-                    this.SetRendererVisible(this.currentNearWall, false);
+                    this.ShowWallFoundation(this.currentNearWall, true);
                 }
             } else {
                 if (this.currentNearWall) {
-                    this.SetRendererVisible(this.currentNearWall, true);
+                    this.ShowWallFoundation(this.currentNearWall, false);
                     this.currentNearWall = null;
                 }
             }
         }
 
-        private void SetRendererVisible(GameObject target, bool state) {
-            Collider[] neighbourWalls = Physics.OverlapSphere(target.transform.position, 2f, layerMaskTransparent);
-            
-            foreach (Renderer renderer in target.GetComponentsInChildren<Renderer>()) {
-                renderer.enabled = state;
-            }
-
-            foreach (Collider neighbourWall in neighbourWalls) {
-                foreach (Renderer renderer in neighbourWall.GetComponentsInChildren<Renderer>()) {
-                    renderer.enabled = state;
-                }
-            }
+        private void ShowWallFoundation(GameObject target, bool state) {
+            List<Wall> objectsToHide = Physics.OverlapSphere(target.transform.position, 2f, layerMaskTransparent).ToList().Select(x => x.GetComponentInParent<Wall>()).ToList();
+            objectsToHide.Add(target.GetComponentInParent<Wall>());
+            objectsToHide.ForEach(x => x.ShowFoundation(state));
         }
 
         public void SwitchToBuildMode() {
