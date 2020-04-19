@@ -111,6 +111,12 @@ namespace Sim {
             StartCoroutine(this.LoadScene(this.destinationScene));
         }
 
+        public override void OnJoinRoomFailed(short returnCode, string message) {
+            base.OnJoinRoomFailed(returnCode, message);
+            
+            LoadingManager.Instance.Hide();
+        }
+
         #endregion
     }
 }
