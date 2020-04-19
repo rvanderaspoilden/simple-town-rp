@@ -1,11 +1,18 @@
 ﻿using Photon.Pun;
+using Sim.Scriptables;
 using UnityEngine;
 
 namespace Sim.Building {
-    public class Props : MonoBehaviourPun
-    {
+    public class Props : MonoBehaviourPun {
+        [Header("Settings")]
+        [SerializeField] private PropsConfig configuration;
+        
         public void UpdateTransform() {
             photonView.RPC("RPC_UpdateTransform", RpcTarget.OthersBuffered, this.transform.position, this.transform.rotation);    
+        }
+
+        public PropsConfig GetConfiguration() {
+            return this.configuration;
         }
         
         [PunRPC]

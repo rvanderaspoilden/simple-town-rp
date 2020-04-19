@@ -551,6 +551,8 @@
             <e p="Personnage.cs" t="Include" />
           </e>
           <e p="Enums" t="Include">
+            <e p="AxisEnum.cs" t="Include" />
+            <e p="BuildSurfaceEnum.cs" t="Include" />
             <e p="CameraModeEnum.cs" t="Include" />
             <e p="DoorDirectionEnum.cs" t="Include" />
             <e p="PlacesEnum.cs" t="Include" />
@@ -569,6 +571,9 @@
             <e p="RoomManager.cs" t="Include" />
           </e>
           <e p="Player.cs" t="Include" />
+          <e p="Scriptables" t="Include">
+            <e p="PropsConfig.cs" t="Include" />
+          </e>
           <e p="SimpleCameraController.cs" t="Include" />
           <e p="ThirdPersonCharacter.cs" t="Include" />
           <e p="Utils" t="Include">
