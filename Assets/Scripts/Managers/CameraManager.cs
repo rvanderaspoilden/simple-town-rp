@@ -8,6 +8,7 @@ using Sim.Building;
 using Sim.Enums;
 using Sim.Interactables;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Sim {
     public class CameraManager : MonoBehaviour {
@@ -59,16 +60,12 @@ namespace Sim {
             this.camera = GetComponent<Camera>();
         }
 
-        private void Start() {
-            this.SwitchToFreeMode();
-        }
-
         void Update() {
             this.ManageWorldTransparency();
 
-            if (this.currentMode == CameraModeEnum.FREE) {
+            if (this.currentMode == CameraModeEnum.FREE && !EventSystem.current.IsPointerOverGameObject()) {
                 this.ManageInteraction();
-            } else if (this.currentMode == CameraModeEnum.BUILD) {
+            } else if (this.currentMode == CameraModeEnum.BUILD && !EventSystem.current.IsPointerOverGameObject()) {
                 this.ManageBuildMode();
             }
 
@@ -79,21 +76,17 @@ namespace Sim {
             if (Input.GetMouseButtonUp(1)) {
                 this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;
             }
+        }
 
-
-            // todo to remove
-            if (Input.GetKeyDown(KeyCode.B) && PhotonNetwork.IsMasterClient) {
-                this.SwitchToBuildMode();
-            } else if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.Escape)) {
-                this.SwitchToFreeMode();
-            }
+        public CameraModeEnum GetCurrentMode() {
+            return this.currentMode;
         }
 
         public void ManageWorldTransparency() {
             if (!RoomManager.LocalPlayer) {
                 return;
             }
-            
+
             Vector3 dir = -(this.camera.transform.position - RoomManager.LocalPlayer.transform.position);
             if (Physics.Raycast(this.camera.transform.position, dir, out hit, 100, (1 << 12))) {
                 if (hit.collider.gameObject != this.currentNearWall) {
@@ -122,19 +115,27 @@ namespace Sim {
             });
         }
 
-        public void SwitchToBuildMode() {
+        public void ToggleMode() {
+            if (this.currentMode == CameraModeEnum.FREE) {
+                this.SwitchToBuildMode();
+            } else {
+                this.ClearBuilds();
+
+                this.SwitchToFreeMode();
+            }
+        }
+
+        private void SwitchToBuildMode() {
             this.currentMode = CameraModeEnum.BUILD;
             this.freelookCamera.enabled = false;
         }
 
-        public void SwitchToFreeMode() {
-            this.ClearBuilds();
-            
+        private void SwitchToFreeMode() {
             this.currentMode = CameraModeEnum.FREE;
             this.freelookCamera.enabled = true;
             this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;
         }
-        
+
         private void ManageInteraction() {
             if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Interactable objectToInteract = null;
@@ -162,12 +163,12 @@ namespace Sim {
         }
 
         #region Build Management
-        
+
         private void SetCurrentSelectedProps(GameObject props, bool isEditMode = false) {
             this.isEditMode = isEditMode;
             this.initialPosition = props.transform.position;
             this.initialRotation = props.transform.rotation;
-            
+
             this.currentPropSelected = props;
             this.currentPreview = this.currentPropSelected.AddComponent<BuildPreview>();
             this.currentPreview.SetErrorMaterial(this.errorMaterial);
@@ -181,7 +182,7 @@ namespace Sim {
             if (!this.currentPropSelected) {
                 return;
             }
-            
+
             if (this.isEditMode) {
                 this.currentPropSelected.transform.position = this.initialPosition;
                 this.currentPropSelected.transform.rotation = this.initialRotation;
@@ -196,7 +197,7 @@ namespace Sim {
             if (!this.currentPropSelected) {
                 return;
             }
-            
+
             if (this.isEditMode) {
                 this.currentPropSelected.GetComponent<Props>().UpdateTransform();
                 this.currentPreview.Destroy();
@@ -206,7 +207,7 @@ namespace Sim {
                 Destroy(this.currentPropSelected);
             }
         }
-        
+
         private void ManageBuildMode() {
             // Manage camera movement
             if (Input.GetMouseButton(1)) { // Rotation
