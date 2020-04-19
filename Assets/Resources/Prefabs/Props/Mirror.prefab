@@ -46,7 +46,7 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3515550670153388016}
   m_Material: {fileID: 0}
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 0.6945367, y: 0.04587885, z: 0.483724}
@@ -291,7 +291,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2245997241380234370}
   - component: {fileID: 1494575359425634058}
-  m_Layer: 10
+  m_Layer: 0
   m_Name: areaNeeded
   m_TagString: Untagged
   m_Icon: {fileID: 0}

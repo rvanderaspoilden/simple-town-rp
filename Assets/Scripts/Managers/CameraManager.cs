@@ -33,12 +33,12 @@ namespace Sim {
 
         [SerializeField] private float propsRotationSpeed = 1.5f;
         [SerializeField] private float propsStepSize = 0.1f;
-        [SerializeField] private GameObject propsToInstantiate;
+        [SerializeField] private Props propsToInstantiate;
 
         [SerializeField] private Material errorMaterial;
 
         [Header("Build debug")]
-        [SerializeField] private GameObject currentPropSelected;
+        [SerializeField] private Props currentPropSelected;
 
         [SerializeField] private BuildPreview currentPreview;
 
@@ -164,13 +164,13 @@ namespace Sim {
 
         #region Build Management
 
-        private void SetCurrentSelectedProps(GameObject props, bool isEditMode = false) {
+        private void SetCurrentSelectedProps(Props props, bool isEditMode = false) {
             this.isEditMode = isEditMode;
             this.initialPosition = props.transform.position;
             this.initialRotation = props.transform.rotation;
 
             this.currentPropSelected = props;
-            this.currentPreview = this.currentPropSelected.AddComponent<BuildPreview>();
+            this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
             this.currentPreview.SetErrorMaterial(this.errorMaterial);
         }
 
@@ -189,7 +189,7 @@ namespace Sim {
                 this.currentPreview.Destroy();
                 this.currentPropSelected = null;
             } else {
-                Destroy(this.currentPropSelected);
+                Destroy(this.currentPropSelected.gameObject);
             }
         }
 
@@ -199,12 +199,12 @@ namespace Sim {
             }
 
             if (this.isEditMode) {
-                this.currentPropSelected.GetComponent<Props>().UpdateTransform();
+                this.currentPropSelected.UpdateTransform();
                 this.currentPreview.Destroy();
                 this.currentPropSelected = null;
             } else {
                 PhotonNetwork.InstantiateSceneObject("Prefabs/Props/" + this.propsToInstantiate.name, this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
-                Destroy(this.currentPropSelected);
+                Destroy(this.currentPropSelected.gameObject);
             }
         }
 
@@ -263,7 +263,7 @@ namespace Sim {
                     }
                 } else if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Props")) {
                     if (Input.GetMouseButtonDown(0)) {
-                        this.SetCurrentSelectedProps(hit.collider.gameObject, true);
+                        this.SetCurrentSelectedProps(hit.collider.GetComponentInParent<Props>(), true);
                     }
                 }
             }
