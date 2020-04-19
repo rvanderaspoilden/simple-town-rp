@@ -315,7 +315,6 @@ MonoBehaviour:
   renderersToModify:
   - {fileID: 6553970792577501349}
   showFoundation: 0
-  defaultMaterial: {fileID: 0}
 --- !u!1 &6160065090503993035
 GameObject:
   m_ObjectHideFlags: 0
@@ -414,6 +413,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a135ca4bb1b07f49881fa0b5a6a6df1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  doorDirection: 1
   animator: {fileID: 0}
   colliderTriggered: []
 --- !u!65 &6774405134443050391
@@ -487,7 +487,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -7098565394360792512, guid: 15f9c96e56f70c7458064ced79a541b6, type: 3}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -566,7 +566,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 9170112105695526733, guid: 15f9c96e56f70c7458064ced79a541b6, type: 3}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -647,8 +647,8 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -5893160060819351940, guid: 15f9c96e56f70c7458064ced79a541b6, type: 3}
-  - {fileID: -7098565394360792512, guid: 15f9c96e56f70c7458064ced79a541b6, type: 3}
+  - {fileID: 2100000, guid: 64d662edab5cb7443953f58827022d27, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
