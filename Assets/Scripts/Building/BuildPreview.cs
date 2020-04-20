@@ -12,6 +12,7 @@ namespace Sim.Building {
 
         [Header("Only for debug")]
         [SerializeField] private Renderer[] renderers;
+
         [SerializeField] private Material[] defaultRendererMaterials;
         [SerializeField] private NavMeshObstacle navMeshObstacle;
         [SerializeField] private bool haveFreeArea;
@@ -31,7 +32,7 @@ namespace Sim.Building {
             if (navMeshObstacle) { // disable this to avoid collision with player agent
                 navMeshObstacle.enabled = false;
             }
-            
+
             this.gameObject.layer = LayerMask.NameToLayer("Preview");
         }
 
@@ -47,8 +48,12 @@ namespace Sim.Building {
             } else {
                 this.validRotation = true;
             }
-            
+
             this.CheckValidity();
+        }
+
+        private void OnCollisionStay(Collision other) {
+            Debug.Log("Collision with : " + other.collider.name);
         }
 
         private void OnTriggerStay(Collider other) {
@@ -57,7 +62,7 @@ namespace Sim.Building {
             } else if (this.currentProps.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND && other.gameObject.layer != LayerMask.NameToLayer("Ground") && !this.colliderTriggered.Find(x => x == other)) {
                 this.colliderTriggered.Add(other);
             }
-            
+
             this.CheckValidity();
         }
 
@@ -84,12 +89,12 @@ namespace Sim.Building {
             if (navMeshObstacle) {
                 navMeshObstacle.enabled = true;
             }
-            
+
             // reset materials
             for (int i = 0; i < this.defaultRendererMaterials.Length; i++) {
                 this.renderers[i].material = this.defaultRendererMaterials[i];
             }
-            
+
             this.gameObject.layer = LayerMask.NameToLayer("Props");
 
             Destroy(this);
@@ -102,5 +107,5 @@ namespace Sim.Building {
         public bool IsPlaceable() {
             return this.haveFreeArea && this.detectGround && this.validRotation;
         }
-    }   
+    }
 }

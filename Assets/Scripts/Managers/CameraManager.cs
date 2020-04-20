@@ -40,6 +40,7 @@ namespace Sim {
 
         [Header("Build debug")]
         [SerializeField] private PropsConfig propsToInstantiate;
+
         [SerializeField] private Props currentPropSelected;
 
         [SerializeField] private BuildPreview currentPreview;
@@ -190,7 +191,7 @@ namespace Sim {
             }
 
             this.propsToInstantiate = config;
-            
+
             this.SetCurrentSelectedProps(Instantiate(this.propsToInstantiate.GetPrefab()));
         }
 
@@ -256,7 +257,7 @@ namespace Sim {
                     layerMask = (1 << 12);
                 }
             }
-            
+
 
             if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
                 if (this.currentPropSelected) {
@@ -281,10 +282,22 @@ namespace Sim {
                         float z = Mathf.FloorToInt(hit.point.z / this.propsStepSize) * this.propsStepSize;
                         this.currentPropSelected.transform.position = new Vector3(x, hit.point.y + (hit.normal.y * 0.01f), z);
                     }
-                    
+
                     if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
                         this.currentPropSelected.transform.position = hit.point + (hit.normal * 0.01f);
-                        this.currentPropSelected.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+                        Vector3 rotation = this.currentPropSelected.transform.localEulerAngles;
+                        
+                        if (hit.normal == Vector3.forward) {
+                            rotation.y = 180;
+                        } else if (hit.normal == -Vector3.forward) {
+                            rotation.y = 0f;
+                        } else if (hit.normal == -Vector3.left) {
+                            rotation.y = 270;
+                        } else if (hit.normal == Vector3.left) {
+                            rotation.y = 90f;
+                        }
+                        
+                        this.currentPropSelected.transform.localEulerAngles = rotation;
                     }
 
                     // manage validation of props posing
