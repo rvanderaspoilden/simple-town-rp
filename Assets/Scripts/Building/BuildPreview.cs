@@ -52,10 +52,6 @@ namespace Sim.Building {
             this.CheckValidity();
         }
 
-        private void OnCollisionStay(Collision other) {
-            Debug.Log("Collision with : " + other.collider.name);
-        }
-
         private void OnTriggerStay(Collider other) {
             if (this.currentProps.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL && !this.colliderTriggered.Find(x => x == other)) {
                 this.colliderTriggered.Add(other);
