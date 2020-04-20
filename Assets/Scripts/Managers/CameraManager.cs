@@ -7,6 +7,8 @@ using Photon.Pun.Demo.PunBasics;
 using Sim.Building;
 using Sim.Enums;
 using Sim.Interactables;
+using Sim.Scriptables;
+using Sim.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -33,11 +35,11 @@ namespace Sim {
 
         [SerializeField] private float propsRotationSpeed = 1.5f;
         [SerializeField] private float propsStepSize = 0.1f;
-        [SerializeField] private Props propsToInstantiate;
 
         [SerializeField] private Material errorMaterial;
 
         [Header("Build debug")]
+        [SerializeField] private PropsConfig propsToInstantiate;
         [SerializeField] private Props currentPropSelected;
 
         [SerializeField] private BuildPreview currentPreview;
@@ -58,6 +60,14 @@ namespace Sim {
             Instance = this;
 
             this.camera = GetComponent<Camera>();
+        }
+
+        private void Start() {
+            CatalogUI.OnPropsClicked += InstantiateProps;
+        }
+
+        private void OnDestroy() {
+            CatalogUI.OnPropsClicked -= InstantiateProps;
         }
 
         void Update() {
@@ -174,6 +184,16 @@ namespace Sim {
             this.currentPreview.SetErrorMaterial(this.errorMaterial);
         }
 
+        private void InstantiateProps(PropsConfig config) {
+            if (this.currentPropSelected) { // reset current selected props
+                this.ClearBuilds();
+            }
+
+            this.propsToInstantiate = config;
+            
+            this.SetCurrentSelectedProps(Instantiate(this.propsToInstantiate.GetPrefab()));
+        }
+
 
         /**
          * Used to clear build mode if there was a current prop selected
@@ -203,7 +223,7 @@ namespace Sim {
                 this.currentPreview.Destroy();
                 this.currentPropSelected = null;
             } else {
-                PhotonNetwork.InstantiateSceneObject("Prefabs/Props/" + this.propsToInstantiate.name, this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
+                PhotonNetwork.InstantiateSceneObject("Prefabs/Props/" + this.propsToInstantiate.GetPrefab().name, this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
                 Destroy(this.currentPropSelected.gameObject);
             }
         }
@@ -223,11 +243,6 @@ namespace Sim {
 
             if (mouseScrollValue != 0f) { // Zoom
                 this.transform.Translate(Vector3.forward * mouseScrollValue * this.cameraZoomSpeed);
-            }
-
-            // todo move that later
-            if (Input.GetKeyDown(KeyCode.A) && !this.currentPropSelected) {
-                this.SetCurrentSelectedProps(Instantiate(this.propsToInstantiate));
             }
 
             // Manage detection on ground and props
