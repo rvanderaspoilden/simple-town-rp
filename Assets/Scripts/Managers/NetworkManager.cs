@@ -44,7 +44,7 @@ namespace Sim {
             if (PhotonNetwork.IsConnectedAndReady) {
                 LoadingManager.Instance.Show();
                 Debug.Log("Connecting to server with personnage : " + personnage.GetFirstname());
-                this.GoToRoom(PlacesEnum.TOWN_SQUARE);
+                this.GoToRoom(PlacesEnum.HALL);
             } else {
                 Debug.Log("Player is not connected to lobby");
             }
