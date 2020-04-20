@@ -42,8 +42,8 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 2.95, y: 1.1813451, z: 0.9683019}
-  m_Center: {x: -0.0022487168, y: 0.09067251, z: 0.47789705}
+  m_Size: {x: 2.75, y: 1.5500355, z: 0.6967227}
+  m_Center: {x: -0.002248672, y: 0.2750191, z: 0.34210747}
 --- !u!1 &7298514275073357474
 GameObject:
   m_ObjectHideFlags: 0
@@ -611,7 +611,6 @@ GameObject:
   - component: {fileID: 8296594589946918330}
   - component: {fileID: 1461695926327059452}
   - component: {fileID: -709156178848715271}
-  - component: {fileID: 5517956965678242530}
   m_Layer: 10
   m_Name: Sofa
   m_TagString: Untagged
@@ -628,7 +627,7 @@ Transform:
   m_GameObject: {fileID: 7298514275073357496}
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 2, y: -1.01, z: -2.5}
-  m_LocalScale: {x: 1.3697549, y: 1.1300477, z: 1.3697549}
+  m_LocalScale: {x: 1.181263, y: 1.0584705, z: 1.3697549}
   m_Children:
   - {fileID: 7298514275073190554}
   - {fileID: 7298514275073190558}
@@ -724,32 +723,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: c1261f87ae7bb3848a24529340be7e41, type: 2}
---- !u!114 &5517956965678242530
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7298514275073357496}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  foundationObj: {fileID: 0}
-  materialToApply: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
-  renderersToModify:
-  - {fileID: 7298514275075614842}
-  - {fileID: 7298514275075614846}
-  - {fileID: 7298514275075614840}
-  - {fileID: 7298514275075614820}
-  - {fileID: 7298514275075614836}
-  - {fileID: 7298514275075614838}
-  - {fileID: 7298514275075614832}
-  - {fileID: 7298514275075614844}
-  - {fileID: 7298514275075614834}
-  - {fileID: 7298514275075614822}
-  showFoundation: 0
 --- !u!1 &7298514275073357498
 GameObject:
   m_ObjectHideFlags: 0

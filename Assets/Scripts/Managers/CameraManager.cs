@@ -225,6 +225,7 @@ namespace Sim {
             } else {
                 PhotonNetwork.InstantiateSceneObject("Prefabs/Props/" + this.propsToInstantiate.GetPrefab().name, this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
                 Destroy(this.currentPropSelected.gameObject);
+                this.propsToInstantiate = null;
             }
         }
 
@@ -245,8 +246,17 @@ namespace Sim {
                 this.transform.Translate(Vector3.forward * mouseScrollValue * this.cameraZoomSpeed);
             }
 
-            // Manage detection on ground and props
-            int layerMask = this.currentPropSelected ? (1 << 9) : (1 << 10);
+            // Manage surface detection
+            int layerMask = (1 << 10); // Props if there isn't current prop selected
+
+            if (this.currentPropSelected) {
+                if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
+                    layerMask = (1 << 9);
+                } else if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL) {
+                    layerMask = (1 << 12);
+                }
+            }
+            
 
             if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
                 if (this.currentPropSelected) {
@@ -266,10 +276,15 @@ namespace Sim {
                     }
 
                     // manage position to move current props
-                    if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
+                    if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND && hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
                         float x = Mathf.FloorToInt(hit.point.x / this.propsStepSize) * this.propsStepSize;
                         float z = Mathf.FloorToInt(hit.point.z / this.propsStepSize) * this.propsStepSize;
-                        this.currentPropSelected.transform.position = new Vector3(x, hit.point.y, z);
+                        this.currentPropSelected.transform.position = new Vector3(x, hit.point.y + (hit.normal.y * 0.01f), z);
+                    }
+                    
+                    if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
+                        this.currentPropSelected.transform.position = hit.point + (hit.normal * 0.01f);
+                        this.currentPropSelected.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
                     }
 
                     // manage validation of props posing
