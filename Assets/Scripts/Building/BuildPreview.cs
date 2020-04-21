@@ -19,8 +19,13 @@ namespace Sim.Building {
         [SerializeField] private bool detectGround;
         [SerializeField] private bool validRotation;
         [SerializeField] private Props currentProps;
+        [SerializeField] private bool placeable;
 
         [SerializeField] private List<Collider> colliderTriggered;
+        
+        public delegate void OnPlaceableState(bool isPlaceable);
+
+        public static event OnPlaceableState OnPlaceableStateChanged;
 
         private void Awake() {
             this.colliderTriggered = new List<Collider>();
@@ -69,8 +74,9 @@ namespace Sim.Building {
 
         private void CheckValidity() {
             this.haveFreeArea = this.colliderTriggered.Count == 0;
+            this.placeable = this.haveFreeArea && this.detectGround && this.validRotation;
 
-            if (this.haveFreeArea && this.detectGround && this.validRotation) {
+            if (this.placeable) {
                 for (int i = 0; i < this.defaultRendererMaterials.Length; i++) {
                     this.renderers[i].material = this.defaultRendererMaterials[i];
                 }
@@ -79,6 +85,8 @@ namespace Sim.Building {
                     renderer.material = this.errorMaterial;
                 }
             }
+            
+            OnPlaceableStateChanged?.Invoke(this.placeable);
         }
 
         public void Destroy() {
@@ -101,7 +109,7 @@ namespace Sim.Building {
         }
 
         public bool IsPlaceable() {
-            return this.haveFreeArea && this.detectGround && this.validRotation;
+            return this.placeable;
         }
     }
 }

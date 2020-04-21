@@ -611,6 +611,7 @@ GameObject:
   - component: {fileID: 8296594589946918330}
   - component: {fileID: 1461695926327059452}
   - component: {fileID: -709156178848715271}
+  - component: {fileID: 6928895771691459116}
   m_Layer: 10
   m_Name: Sofa
   m_TagString: Untagged
@@ -723,6 +724,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: c1261f87ae7bb3848a24529340be7e41, type: 2}
+--- !u!114 &6928895771691459116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7298514275073357496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  foundationObj: {fileID: 0}
+  materialToApply: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
+  renderersToModify:
+  - {fileID: 7298514275075614842}
+  - {fileID: 7298514275075614846}
+  - {fileID: 7298514275075614840}
+  - {fileID: 7298514275075614820}
+  - {fileID: 7298514275075614836}
+  - {fileID: 7298514275075614838}
+  - {fileID: 7298514275075614832}
+  - {fileID: 7298514275075614844}
+  - {fileID: 7298514275075614822}
+  - {fileID: 7298514275075614834}
+  interactWithCameraDistance: 0
+  showFoundation: 0
 --- !u!1 &7298514275073357498
 GameObject:
   m_ObjectHideFlags: 0

@@ -594,6 +594,7 @@
             <e p="AxisEnum.cs" t="Include" />
             <e p="BuildSurfaceEnum.cs" t="Include" />
             <e p="CameraModeEnum.cs" t="Include" />
+            <e p="CatalogCategoryEnum.cs" t="Include" />
             <e p="DoorDirectionEnum.cs" t="Include" />
             <e p="PlacesEnum.cs" t="Include" />
           </e>
@@ -612,14 +613,17 @@
           </e>
           <e p="Player.cs" t="Include" />
           <e p="Scriptables" t="Include">
+            <e p="PaintConfig.cs" t="Include" />
             <e p="PropsConfig.cs" t="Include" />
           </e>
           <e p="SimpleCameraController.cs" t="Include" />
           <e p="ThirdPersonCharacter.cs" t="Include" />
           <e p="UI" t="Include">
-            <e p="CatalogUI.cs" t="Include" />
+            <e p="AdminPanelUI.cs" t="Include" />
+            <e p="BuildPreviewPanelUI.cs" t="Include" />
           </e>
           <e p="Utils" t="Include">
+            <e p="CommonUtils.cs" t="Include" />
             <e p="PlaceUtils.cs" t="Include" />
           </e>
           <e p="VirtualCameraFollow.cs" t="Include" />

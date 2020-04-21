@@ -3,7 +3,7 @@ using Sim.Enums;
 using UnityEngine;
 
 namespace Sim.Scriptables {
-    [CreateAssetMenu(fileName = "Props", menuName = "Configurations")]
+    [CreateAssetMenu(fileName = "Props", menuName = "Configurations/Props")]
     public class PropsConfig : ScriptableObject {
         [SerializeField] private int id;
         [SerializeField] private string displayName;

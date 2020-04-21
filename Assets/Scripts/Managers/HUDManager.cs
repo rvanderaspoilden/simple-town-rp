@@ -8,8 +8,8 @@ using UnityEngine.UI;
 namespace Sim {
     public class HUDManager : MonoBehaviourPun {
         [Header("Settings")]
-        [SerializeField] private Button modeButton;
-        [SerializeField] private CatalogUI catalogUI;
+        [SerializeField] private AdminPanelUI adminPanelUI;
+        [SerializeField] private BuildPreviewPanelUI buildPreviewPanelUI;
 
         public static HUDManager Instance;
 
@@ -24,18 +24,16 @@ namespace Sim {
         // Start is called before the first frame update
         void Start()
         {
-            this.RefreshModeButton();
+            this.DisplayAdminPanel(false);
+            this.DisplayBuildPreviewPanel(false);
         }
 
-        public void ToggleMode() {
-            CameraManager.Instance.ToggleMode();
-            this.RefreshModeButton();
+        public void DisplayAdminPanel(bool state) {
+            this.adminPanelUI.gameObject.SetActive(state);
         }
 
-        private void RefreshModeButton() {
-            this.modeButton.interactable = PhotonNetwork.IsMasterClient;
-            this.modeButton.GetComponentInChildren<TextMeshProUGUI>().text = CameraManager.Instance.GetCurrentMode() == CameraModeEnum.FREE ? "mode construction" : "terminer";
-            this.catalogUI.gameObject.SetActive(CameraManager.Instance.GetCurrentMode() == CameraModeEnum.BUILD);
+        public void DisplayBuildPreviewPanel(bool state) {
+            this.buildPreviewPanelUI.gameObject.SetActive(state);
         }
     }   
 }

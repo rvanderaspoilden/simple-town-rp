@@ -12,6 +12,8 @@ namespace Sim.Building {
 
         [SerializeField] private Renderer[] renderersToModify;
 
+        [SerializeField] private bool interactWithCameraDistance;
+
         [Header("Only for debug")]
         [SerializeField] private bool showFoundation;
 
@@ -25,9 +27,13 @@ namespace Sim.Building {
             if (this.showFoundation == state) { // Prevent useless treatments
                 return;
             }
-
+    
             this.showFoundation = state;
             this.UpdateGraphics();
+        }
+
+        public bool CanInteractWithCameraDistance() {
+            return this.interactWithCameraDistance;
         }
 
         private void UpdateGraphics() {
