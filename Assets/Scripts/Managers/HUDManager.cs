@@ -1,5 +1,6 @@
 ﻿using Photon.Pun;
 using Sim.Enums;
+using Sim.Interactables;
 using Sim.UI;
 using TMPro;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace Sim {
         [Header("Settings")]
         [SerializeField] private AdminPanelUI adminPanelUI;
         [SerializeField] private BuildPreviewPanelUI buildPreviewPanelUI;
+        [SerializeField] private ContextMenuUI contextMenuUI;
 
         public static HUDManager Instance;
 
@@ -26,6 +28,7 @@ namespace Sim {
         {
             this.DisplayAdminPanel(false);
             this.DisplayBuildPreviewPanel(false);
+            this.DisplayContextMenu(false, Vector3.zero);
         }
 
         public void DisplayAdminPanel(bool state) {
@@ -34,6 +37,15 @@ namespace Sim {
 
         public void DisplayBuildPreviewPanel(bool state) {
             this.buildPreviewPanelUI.gameObject.SetActive(state);
+        }
+
+        public void DisplayContextMenu(bool state, Vector3 position, Interactable interactedProp = null) {
+            this.contextMenuUI.transform.position = position;
+
+            if (interactedProp) {
+                this.contextMenuUI.Setup(interactedProp);
+            }
+            this.contextMenuUI.gameObject.SetActive(state);
         }
     }   
 }

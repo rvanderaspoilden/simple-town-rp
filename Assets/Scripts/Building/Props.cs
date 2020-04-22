@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Sim.Building {
     public class Props : MonoBehaviourPun {
         [Header("Settings")]
-        [SerializeField] private PropsConfig configuration;
+        [SerializeField] protected PropsConfig configuration;
         
         public void UpdateTransform() {
             photonView.RPC("RPC_UpdateTransform", RpcTarget.OthersBuffered, this.transform.position, this.transform.rotation);    

@@ -5,7 +5,7 @@ using Sim.Enums;
 using UnityEngine;
 
 namespace Sim.Building {
-    public class SimpleDoor : MonoBehaviour {
+    public class SimpleDoor : Props {
         [Header("Settings")]
         [SerializeField] private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
         

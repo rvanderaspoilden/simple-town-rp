@@ -19,7 +19,6 @@ namespace Sim {
 
         [SerializeField] private VirtualCameraFollow virtualCameraFollow;
         [SerializeField] private LayerMask layerMaskInFreeMode;
-        [SerializeField] private LayerMask layerMaskTransparent;
 
         [Header("Only for debug")]
         [SerializeField] private new Camera camera;
@@ -132,14 +131,15 @@ namespace Sim {
         }
 
         public void TogglePropsVisible(bool hide) {
-            FindObjectsOfType<Props>().ToList()
-            .Select(x => x.GetComponent<FoundationRenderer>())
-            .ToList()
-            .ForEach(foundationRenderer => foundationRenderer.ShowFoundation(hide));
+            FindObjectsOfType<Props>().ToList().Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
+                if (foundationRenderer) {
+                    foundationRenderer.ShowFoundation(hide);
+                }
+            });
         }
 
         private void ShowWallFoundation(GameObject target, bool state) {
-            List<FoundationRenderer> objectsToHide = Physics.OverlapSphere(target.transform.position, 2.5f, layerMaskTransparent).ToList().Select(x => x.GetComponentInParent<FoundationRenderer>()).ToList();
+            List<FoundationRenderer> objectsToHide = Physics.OverlapSphere(target.transform.position, 2.5f).ToList().Select(x => x.GetComponentInParent<FoundationRenderer>()).ToList();
             objectsToHide.Add(target.GetComponentInParent<FoundationRenderer>());
             objectsToHide.ForEach(foundationRenderer => {
                 if (foundationRenderer && foundationRenderer.CanInteractWithCameraDistance()) { // prevent NPE due to get componentInParent
@@ -174,9 +174,10 @@ namespace Sim {
 
                 if (Input.GetMouseButtonDown(0)) {
                     if (objectToInteract) {
-                        objectToInteract.Interact();
+                        HUDManager.Instance.DisplayContextMenu(true, Input.mousePosition, objectToInteract);
                     } else {
                         RoomManager.Instance.MovePlayerTo(hit.point);
+                        HUDManager.Instance.DisplayContextMenu(false, Vector3.zero);
                     }
                 }
             }
@@ -338,7 +339,7 @@ namespace Sim {
                 if (Input.GetMouseButtonDown(0)) {
                     if (followMouse && this.currentPreview.IsPlaceable()) {
                         this.followMouse = false;
-                        
+
                         this.virtualCameraFollow.SetTarget(this.currentPreview.transform);
                         this.freelookCamera.enabled = true;
                         this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;

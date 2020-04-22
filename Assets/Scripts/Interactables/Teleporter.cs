@@ -6,9 +6,13 @@ namespace Sim.Interactables {
         [Header("Door Settings")]
         [SerializeField] private PlacesEnum destination;
 
-        public override void Interact() {
-            base.Interact();
+        protected override void SetupActions() {
+            this.actions = new Action[1] {
+                new Action(ActionTypeEnum.USE, "Rentrer")
+            };
+        }
         
+        public override void Use() {
             NetworkManager.Instance.GoToRoom(destination);
         }
     }   

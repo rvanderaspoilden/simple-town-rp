@@ -591,6 +591,7 @@
             <e p="Personnage.cs" t="Include" />
           </e>
           <e p="Enums" t="Include">
+            <e p="ActionTypeEnum.cs" t="Include" />
             <e p="AxisEnum.cs" t="Include" />
             <e p="BuildSurfaceEnum.cs" t="Include" />
             <e p="CameraModeEnum.cs" t="Include" />
@@ -599,6 +600,7 @@
             <e p="PlacesEnum.cs" t="Include" />
           </e>
           <e p="Interactables" t="Include">
+            <e p="Action.cs" t="Include" />
             <e p="DoorTeleporter.cs" t="Include" />
             <e p="Interactable.cs" t="Include" />
             <e p="Teleporter.cs" t="Include" />
@@ -621,6 +623,7 @@
           <e p="UI" t="Include">
             <e p="AdminPanelUI.cs" t="Include" />
             <e p="BuildPreviewPanelUI.cs" t="Include" />
+            <e p="ContextMenuUI.cs" t="Include" />
           </e>
           <e p="Utils" t="Include">
             <e p="CommonUtils.cs" t="Include" />

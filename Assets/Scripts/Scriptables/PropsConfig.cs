@@ -1,5 +1,6 @@
 ﻿using Sim.Building;
 using Sim.Enums;
+using Sim.Interactables;
 using UnityEngine;
 
 namespace Sim.Scriptables {
@@ -9,8 +10,7 @@ namespace Sim.Scriptables {
         [SerializeField] private string displayName;
         [SerializeField] private Props prefab;
         [SerializeField] private BuildSurfaceEnum surfaceToPose;
-        [SerializeField] private AxisEnum rotationAxis;
-
+        
         public int GetId() {
             return this.id;
         }
@@ -26,9 +26,5 @@ namespace Sim.Scriptables {
         public BuildSurfaceEnum GetSurfaceToPose() {
             return this.surfaceToPose;
         }
-
-        public AxisEnum GetRotationAxis() {
-            return this.rotationAxis;
-        }
-    }   
+    }
 }
