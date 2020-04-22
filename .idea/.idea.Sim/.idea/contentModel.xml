@@ -580,8 +580,11 @@
           <e p="Building" t="Include">
             <e p="BuildPreview.cs" t="Include" />
             <e p="FoundationRenderer.cs" t="Include" />
+            <e p="Props" t="Include">
+              <e p="Seat.cs" t="Include" />
+              <e p="SimpleDoor.cs" t="Include" />
+            </e>
             <e p="Props.cs" t="Include" />
-            <e p="SimpleDoor.cs" t="Include" />
           </e>
           <e p="Constants" t="Include">
             <e p="PlaceName.cs" t="Include" />

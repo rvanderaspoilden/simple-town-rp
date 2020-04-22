@@ -20,16 +20,16 @@ namespace Sim.Interactables {
             throw new NotImplementedException();
         }
 
-        public virtual bool CanInteract(Vector3 target) {
-            return Mathf.Abs(Vector3.Distance(this.transform.position, target)) <= this.rangeToInteract;
-        }
-
         public virtual Action[] GetActions() {
             return this.actions;
         }
 
+        public float GetRange() {
+            return this.rangeToInteract;
+        }
+
         public void DoAction(Action action) {
-            Debug.Log("do action : " + action);
+            Debug.Log("do action : " + action.GetActionLabel());
 
             switch (action.GetActionType()) {
                 case ActionTypeEnum.USE:

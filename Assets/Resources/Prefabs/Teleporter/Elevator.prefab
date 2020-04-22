@@ -125,5 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d5aa8bcc00caab4c8c550ed30da293d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rangeToInteract: 2
+  configuration: {fileID: 0}
+  rangeToInteract: 0.5
+  actions: []
   destination: 0

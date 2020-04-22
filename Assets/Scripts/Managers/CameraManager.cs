@@ -165,10 +165,10 @@ namespace Sim {
                 Interactable objectToInteract = null;
 
                 if (hit.collider.CompareTag("Interactable")) {
-                    Interactable interactable = hit.collider.GetComponentInParent<Interactable>();
+                    Interactable propsToInteract = hit.collider.GetComponentInParent<Interactable>();
 
-                    if (RoomManager.LocalPlayer && interactable.CanInteract(RoomManager.LocalPlayer.transform.position)) {
-                        objectToInteract = interactable;
+                    if (RoomManager.LocalPlayer && RoomManager.LocalPlayer.CanInteractWith(propsToInteract)) {
+                        objectToInteract = propsToInteract;
                     }
                 }
 

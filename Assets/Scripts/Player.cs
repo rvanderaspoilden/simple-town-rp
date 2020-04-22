@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Linq;
 using Photon.Pun;
+using Sim.Building;
+using Sim.Interactables;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.TestTools;
@@ -18,7 +21,7 @@ namespace Sim {
             this.agent = GetComponent<NavMeshAgent>();
             this.thirdPersonCharacter = GetComponent<ThirdPersonCharacter>();
             this.agent.updateRotation = false;
-            
+
             PhotonNetwork.AddCallbackTarget(this);
         }
 
@@ -28,6 +31,10 @@ namespace Sim {
 
         private void Update() {
             thirdPersonCharacter.Move(this.agent.remainingDistance > this.agent.stoppingDistance ? this.agent.desiredVelocity : Vector3.zero, false, false);
+        }
+
+        public bool CanInteractWith(Interactable propsToInteract) {
+            return Physics.OverlapSphere(this.transform.position, propsToInteract.GetRange()).ToList().Where(collider => collider.gameObject == propsToInteract.gameObject).ToList().Count == 1;
         }
 
         public void SetTarget(Vector3 target) {
@@ -46,7 +53,7 @@ namespace Sim {
         public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer) {
             photonView.RPC("RPC_UpdateStatus", newPlayer, this.transform.position, this.transform.rotation, this.agent.destination);
         }
-        
+
         [PunRPC]
         public void RPC_UpdateStatus(Vector3 pos, Quaternion rotation, Vector3 target) {
             this.transform.position = pos;
