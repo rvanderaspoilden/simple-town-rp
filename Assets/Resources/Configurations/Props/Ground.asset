@@ -10,10 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Mirror
+  m_Name: Ground
   m_EditorClassIdentifier: 
-  id: 3
-  displayName: Cadre photo
-  prefab: {fileID: 6324471013521370387, guid: 338e5fbcf31ad5f4aa76453a8f1c3267, type: 3}
-  surfaceToPose: 1
-  rotationAxis: 2
+  id: 4
+  displayName: Sol
+  prefab: {fileID: 2337483918090844775, guid: 44fa9d217d7350f468263a07f03b07d3, type: 3}
+  surfaceToPose: 0

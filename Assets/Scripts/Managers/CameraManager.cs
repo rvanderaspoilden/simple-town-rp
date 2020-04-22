@@ -113,7 +113,7 @@ namespace Sim {
             }
 
             Vector3 dir = -(this.camera.transform.position - RoomManager.LocalPlayer.transform.position);
-            if (Physics.Raycast(this.camera.transform.position, dir, out hit, 100, (1 << 12))) {
+            if (Physics.Raycast(this.camera.transform.position, dir, out hit, 100, (1 << 10 | 1 << 12))) {
                 if (hit.collider.gameObject != this.currentNearWall) {
                     if (this.currentNearWall) {
                         this.ShowWallFoundation(this.currentNearWall, false);
