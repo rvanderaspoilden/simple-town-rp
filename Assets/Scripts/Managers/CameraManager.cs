@@ -9,8 +9,11 @@ using Sim.Enums;
 using Sim.Interactables;
 using Sim.Scriptables;
 using Sim.UI;
+using Sim.Utils;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.XR;
 
 namespace Sim {
     public class CameraManager : MonoBehaviour {
@@ -249,7 +252,7 @@ namespace Sim {
                 this.currentPreview.Destroy();
                 this.currentPropSelected = null;
             } else {
-                PhotonNetwork.InstantiateSceneObject("Prefabs/Props/" + this.propsToInstantiate.GetPrefab().name, this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
+                PhotonNetwork.InstantiateSceneObject(CommonUtils.GetRelativePathFromResources(this.propsToInstantiate.GetPrefab()), this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
                 Destroy(this.currentPropSelected.gameObject);
                 this.propsToInstantiate = null;
             }
