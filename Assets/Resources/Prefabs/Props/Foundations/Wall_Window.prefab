@@ -113,7 +113,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fe61841de71b7d4b87d02c6d7db5442, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  configuration: {fileID: 0}
+  configuration: {fileID: 11400000, guid: 450679e3764b2fc4d95cb809f578fa75, type: 2}
   renderer: {fileID: 0}
   collider: {fileID: 0}
 --- !u!114 &594080147197093049
@@ -134,6 +134,7 @@ MonoBehaviour:
   - {fileID: 3569329769650013225}
   interactWithCameraDistance: 1
   showFoundation: 0
+  hideForced: 0
 --- !u!1 &7434869777336418142
 GameObject:
   m_ObjectHideFlags: 0

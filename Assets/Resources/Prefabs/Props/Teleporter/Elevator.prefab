@@ -113,6 +113,7 @@ MonoBehaviour:
   - {fileID: 621213801827477655}
   interactWithCameraDistance: 1
   showFoundation: 0
+  hideForced: 0
 --- !u!114 &369961875868750355
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -125,7 +126,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d5aa8bcc00caab4c8c550ed30da293d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  configuration: {fileID: 0}
+  configuration: {fileID: 11400000, guid: ef9881e59425baa42b6d1ba3fa89becb, type: 2}
   rangeToInteract: 0.5
   actions: []
   destination: 0

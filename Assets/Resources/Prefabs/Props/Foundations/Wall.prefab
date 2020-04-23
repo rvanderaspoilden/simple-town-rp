@@ -105,6 +105,7 @@ MonoBehaviour:
   - {fileID: 7038153395620363608}
   interactWithCameraDistance: 1
   showFoundation: 0
+  hideForced: 0
 --- !u!114 &7550471974582660856
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -117,7 +118,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fe61841de71b7d4b87d02c6d7db5442, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  configuration: {fileID: 0}
+  configuration: {fileID: 11400000, guid: 33702077de619944fb12d698d1c1515c, type: 2}
   renderer: {fileID: 0}
   collider: {fileID: 0}
 --- !u!64 &5523521539805112094

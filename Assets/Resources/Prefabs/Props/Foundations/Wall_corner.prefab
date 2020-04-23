@@ -196,6 +196,7 @@ MonoBehaviour:
   - {fileID: 9173049875508542943}
   interactWithCameraDistance: 1
   showFoundation: 0
+  hideForced: 0
 --- !u!64 &7855799751544770467
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -222,6 +223,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fe61841de71b7d4b87d02c6d7db5442, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  configuration: {fileID: 0}
+  configuration: {fileID: 11400000, guid: 287955e095f68ba4dafbea94368de953, type: 2}
   renderer: {fileID: 0}
   collider: {fileID: 0}
