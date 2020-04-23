@@ -20,11 +20,12 @@ namespace Sim.UI {
 
         public void Setup(Interactable interactedProp) {
             // clear view
-            this.buttonChoices.ForEach(button => {
-                button.onClick.RemoveAllListeners();
-                Destroy(button.gameObject);
-            });
+            this.buttonChoices.ForEach(button => button.onClick.RemoveAllListeners());
             this.buttonChoices.Clear();
+
+            foreach (Transform child in this.transform) {
+                Destroy(child.gameObject);
+            }
 
             foreach (Action action in interactedProp.GetActions()) {
                 Button button = Instantiate(this.choiceButtonPrefab, this.transform);

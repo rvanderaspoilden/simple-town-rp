@@ -17,23 +17,33 @@ namespace Sim.Building {
         [Header("Only for debug")]
         [SerializeField] private bool showFoundation;
 
+        [SerializeField] private bool hideForced;
+
         [SerializeField] private Dictionary<Renderer, Material[]> defaultMaterialsByRenderer;
 
         private void Awake() {
             this.defaultMaterialsByRenderer = this.renderersToModify.ToList().ToDictionary(x => x, x => x.materials);
         }
 
-        public void ShowFoundation(bool state) {
-            if (this.showFoundation == state) { // Prevent useless treatments
+        public void ShowFoundation(bool state, bool forcedAction = false) {
+            if ((this.showFoundation == state && !forcedAction) || (this.hideForced && !forcedAction)) { // Prevent useless treatments except if forced action
                 return;
             }
-    
+
+            if (forcedAction) {
+                this.hideForced = state;
+            }
+
             this.showFoundation = state;
             this.UpdateGraphics();
         }
 
         public bool CanInteractWithCameraDistance() {
             return this.interactWithCameraDistance;
+        }
+
+        public bool IsForceHidden() {
+            return this.hideForced;
         }
 
         private void UpdateGraphics() {

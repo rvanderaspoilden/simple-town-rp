@@ -71,6 +71,7 @@ namespace Sim {
             BuildPreviewPanelUI.OnValidate += ApplyBuildModification;
             BuildPreviewPanelUI.OnCanceled += ClearBuilds;
             BuildPreviewPanelUI.OnToggleHideProps += TogglePropsVisible;
+            BuildPreviewPanelUI.OnToggleHideWalls += ToggleWallVisible;
         }
 
         private void OnDestroy() {
@@ -78,6 +79,7 @@ namespace Sim {
             BuildPreviewPanelUI.OnValidate -= ApplyBuildModification;
             BuildPreviewPanelUI.OnCanceled -= ClearBuilds;
             BuildPreviewPanelUI.OnToggleHideProps -= TogglePropsVisible;
+            BuildPreviewPanelUI.OnToggleHideWalls -= ToggleWallVisible;
         }
 
         void Update() {
@@ -134,12 +136,21 @@ namespace Sim {
         }
 
         public void TogglePropsVisible(bool hide) {
-            FindObjectsOfType<Props>().ToList().Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
+            FindObjectsOfType<Props>().ToList().Where(x => x.GetType() != typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
                 if (foundationRenderer) {
-                    foundationRenderer.ShowFoundation(hide);
+                    foundationRenderer.ShowFoundation(hide, true);
                 }
             });
         }
+
+        public void ToggleWallVisible(bool hide) {
+            FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
+                if (foundationRenderer) {
+                    foundationRenderer.ShowFoundation(hide, true);
+                }
+            });
+        }
+
 
         private void ShowWallFoundation(GameObject target, bool state) {
             List<FoundationRenderer> objectsToHide = Physics.OverlapSphere(target.transform.position, 2.5f).ToList().Select(x => x.GetComponentInParent<FoundationRenderer>()).ToList();
