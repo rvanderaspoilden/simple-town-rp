@@ -582,6 +582,13 @@
             <e p="FoundationRenderer.cs" t="Include" />
             <e p="Props" t="Include">
               <e p="Ground.cs" t="Include" />
+              <e p="Interactables" t="Include">
+                <e p="Action.cs" t="Include" />
+                <e p="DoorTeleporter.cs" t="Include" />
+                <e p="Interactable.cs" t="Include" />
+                <e p="Package.cs" t="Include" />
+                <e p="Teleporter.cs" t="Include" />
+              </e>
               <e p="Seat.cs" t="Include" />
               <e p="SimpleDoor.cs" t="Include" />
               <e p="Wall.cs" t="Include" />
@@ -604,14 +611,9 @@
             <e p="DoorDirectionEnum.cs" t="Include" />
             <e p="PlacesEnum.cs" t="Include" />
           </e>
-          <e p="Interactables" t="Include">
-            <e p="Action.cs" t="Include" />
-            <e p="DoorTeleporter.cs" t="Include" />
-            <e p="Interactable.cs" t="Include" />
-            <e p="Teleporter.cs" t="Include" />
-          </e>
           <e p="Managers" t="Include">
             <e p="CameraManager.cs" t="Include" />
+            <e p="DatabaseManager.cs" t="Include" />
             <e p="HUDManager.cs" t="Include" />
             <e p="Launcher.cs" t="Include" />
             <e p="LoadingManager.cs" t="Include" />
@@ -621,7 +623,9 @@
           <e p="Player.cs" t="Include" />
           <e p="Scriptables" t="Include">
             <e p="PaintConfig.cs" t="Include" />
+            <e p="PaintDatabaseConfig.cs" t="Include" />
             <e p="PropsConfig.cs" t="Include" />
+            <e p="PropsDatabaseConfig.cs" t="Include" />
           </e>
           <e p="SimpleCameraController.cs" t="Include" />
           <e p="ThirdPersonCharacter.cs" t="Include" />

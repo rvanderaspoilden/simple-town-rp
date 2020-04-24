@@ -4,11 +4,16 @@ using UnityEngine;
 namespace Sim.Scriptables {
     [CreateAssetMenu(fileName = "Paint", menuName = "Configurations/Paint")]
     public class PaintConfig : ScriptableObject {
+        [SerializeField] private int id;
         [SerializeField] private string displayName;
         [SerializeField] private Material material;
         [SerializeField] private BuildSurfaceEnum surface;
         [SerializeField] private bool customColor;
 
+        public int GetId() {
+            return this.id;
+        }
+        
         public string GetDisplayName() {
             return this.displayName;
         }

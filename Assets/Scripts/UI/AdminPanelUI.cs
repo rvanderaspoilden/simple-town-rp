@@ -49,14 +49,14 @@ namespace Sim.UI {
             this.buttonChoices.Clear();
             
             if (category == CatalogCategoryEnum.PROPS) {
-                Resources.LoadAll<PropsConfig>("Configurations/Props").ToList().ForEach(config => {
+                DatabaseManager.PropsDatabase.GetProps().ForEach(config => {
                     Button button = Instantiate(this.buttonPrefab, this.choiceContainer);
                     button.GetComponentInChildren<TextMeshProUGUI>().text = config.GetDisplayName();
                     button.onClick.AddListener(() => OnPropsClicked?.Invoke(config));
                     this.buttonChoices.Add(button);
                 });
             } else if (category == CatalogCategoryEnum.WALL_PAINT || category == CatalogCategoryEnum.GROUND_PAINT) {
-                Resources.LoadAll<PaintConfig>("Configurations/Paints").ToList()
+                DatabaseManager.PaintDatabase.GetPaints()
                     .Where(config => CommonUtils.ConvertBuildSurfaceToCategory(config.GetSurface()) == category)
                     .ToList()
                     .ForEach(config => {
