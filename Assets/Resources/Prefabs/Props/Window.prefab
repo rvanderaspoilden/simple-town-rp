@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5116778729995989991}
   - component: {fileID: 6173607125046716228}
   - component: {fileID: 1177029568605479116}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Window
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -99,6 +99,7 @@ MonoBehaviour:
   - {fileID: 5116778729995989991}
   interactWithCameraDistance: 1
   showFoundation: 0
+  hideForced: 0
 --- !u!65 &1177029568605479116
 BoxCollider:
   m_ObjectHideFlags: 0

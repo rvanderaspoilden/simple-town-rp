@@ -13,4 +13,8 @@ public class VirtualCameraFollow : MonoBehaviour {
     public void SetTarget(Transform target) {
         this.target = target;
     }
+
+    public Transform GetTarget() {
+        return this.target;
+    }
 }
