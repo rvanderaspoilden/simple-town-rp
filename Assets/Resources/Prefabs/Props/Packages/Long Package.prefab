@@ -14,9 +14,9 @@ GameObject:
   - component: {fileID: 5343373590338102529}
   - component: {fileID: 5343373590338102542}
   - component: {fileID: 5343373590338102528}
-  - component: {fileID: 8128555272920655115}
   - component: {fileID: 7891254424292601474}
   - component: {fileID: -4238926766788738727}
+  - component: {fileID: 7265642407361370331}
   m_Layer: 10
   m_Name: Long Package
   m_TagString: Interactable
@@ -32,7 +32,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5343373590338102543}
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.33119822, y: 0.017504923, z: 5.9569883}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -96,7 +96,7 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.9, y: 0.21942003, z: 1.8990002}
+  m_Size: {x: 0.89, y: 0.21942003, z: 1.88}
   m_Center: {x: 0, y: 0.109715275, z: 0}
 --- !u!114 &5343373590338102542
 MonoBehaviour:
@@ -133,19 +133,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.11000001, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &8128555272920655115
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5343373590338102543}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  configuration: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
 --- !u!54 &7891254424292601474
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -179,7 +166,28 @@ MonoBehaviour:
   prefixField: -1
   Synchronization: 0
   OwnershipTransfer: 0
-  ObservedComponents: []
+  ObservedComponents:
+  - {fileID: 0}
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
+--- !u!114 &7265642407361370331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5343373590338102543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 725278664e63bf949b882d41b7ac9968, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  configuration: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  rangeToInteract: 2
+  actions: []
+  useAction:
+    actionType: 1
+    actionLabel: Ouvrir
+    locked: 0
+  propsInside: {fileID: 0}

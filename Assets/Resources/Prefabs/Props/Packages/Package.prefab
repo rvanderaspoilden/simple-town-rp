@@ -12,11 +12,11 @@ GameObject:
   - component: {fileID: 3838295072105640213}
   - component: {fileID: 7383885112472423916}
   - component: {fileID: 9098399826493897009}
-  - component: {fileID: 1107544518431129273}
   - component: {fileID: 2686430353325794601}
   - component: {fileID: -4363456237023114618}
   - component: {fileID: 3046694514775587690}
   - component: {fileID: 5382744727247566195}
+  - component: {fileID: 8929184733979110359}
   m_Layer: 10
   m_Name: Package
   m_TagString: Interactable
@@ -98,19 +98,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 0.9, y: 0.9000001, z: 0.9}
   m_Center: {x: 0, y: 0.45011187, z: 0}
---- !u!114 &1107544518431129273
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9098399826493897008}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  configuration: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
 --- !u!208 &2686430353325794601
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -179,7 +166,28 @@ MonoBehaviour:
   prefixField: -1
   Synchronization: 0
   OwnershipTransfer: 0
-  ObservedComponents: []
+  ObservedComponents:
+  - {fileID: 0}
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
+--- !u!114 &8929184733979110359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9098399826493897008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 725278664e63bf949b882d41b7ac9968, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  configuration: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
+  rangeToInteract: 2
+  actions: []
+  useAction:
+    actionType: 1
+    actionLabel: Ouvrir
+    locked: 0
+  propsInside: {fileID: 0}

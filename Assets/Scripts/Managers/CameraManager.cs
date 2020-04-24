@@ -45,6 +45,9 @@ namespace Sim {
 
         [SerializeField] private Props currentPropSelected;
 
+        [SerializeField] private Package currentOpenedPackage;
+        [SerializeField] private PropsConfig propsToPackage;
+
         [SerializeField] private BuildPreview currentPreview;
         [SerializeField] private bool followMouse;
 
@@ -67,7 +70,8 @@ namespace Sim {
         }
 
         private void Start() {
-            AdminPanelUI.OnPropsClicked += InstantiateProps;
+            AdminPanelUI.OnPropsClicked += InstantiateFromAdminPanel;
+            Package.OnOpened += OpenPackage;
             BuildPreviewPanelUI.OnValidate += ApplyBuildModification;
             BuildPreviewPanelUI.OnCanceled += ClearBuilds;
             BuildPreviewPanelUI.OnToggleHideProps += TogglePropsVisible;
@@ -75,7 +79,8 @@ namespace Sim {
         }
 
         private void OnDestroy() {
-            AdminPanelUI.OnPropsClicked -= InstantiateProps;
+            AdminPanelUI.OnPropsClicked -= InstantiateFromAdminPanel;
+            Package.OnOpened -= OpenPackage;
             BuildPreviewPanelUI.OnValidate -= ApplyBuildModification;
             BuildPreviewPanelUI.OnCanceled -= ClearBuilds;
             BuildPreviewPanelUI.OnToggleHideProps -= TogglePropsVisible;
@@ -203,6 +208,16 @@ namespace Sim {
 
         #region Build Management
 
+        private void OpenPackage(Package package) {
+            this.currentOpenedPackage = package;
+            this.InstantiateProps(package.GetPropsInside());
+        }
+
+        private void InstantiateFromAdminPanel(PropsConfig propsConfig) {
+            this.propsToPackage = propsConfig;
+            InstantiateProps(this.propsToPackage.GetPackage().GetConfiguration());
+        }
+
         private void SetCurrentSelectedProps(Props props, bool isEditMode = false) {
             this.isEditMode = isEditMode;
             this.initialPosition = props.transform.position;
@@ -248,6 +263,10 @@ namespace Sim {
                 Destroy(this.currentPropSelected.gameObject);
             }
 
+            if (this.currentOpenedPackage) { // if a package was opened reset it
+                this.currentOpenedPackage = null;
+            }
+
             this.SwitchToFreeMode();
 
             HUDManager.Instance.DisplayBuildPreviewPanel(false);
@@ -263,7 +282,20 @@ namespace Sim {
                 this.currentPreview.Destroy();
                 this.currentPropSelected = null;
             } else {
-                PhotonNetwork.InstantiateSceneObject(CommonUtils.GetRelativePathFromResources(this.propsToInstantiate.GetPrefab()), this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
+                GameObject propsInstanciated = PhotonNetwork.InstantiateSceneObject(CommonUtils.GetRelativePathFromResources(this.propsToInstantiate.GetPrefab()), this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
+
+                // Manage packaging
+                if (this.propsToPackage) {
+                    propsInstanciated.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId());
+                    this.propsToPackage = null;
+                }
+                
+                // Manage unpackaging
+                if (this.currentOpenedPackage) { // if props come from a package so remove package
+                    // todo mettre le props en état : A MONTER
+                    PhotonNetwork.Destroy(this.currentOpenedPackage.gameObject);
+                }
+                
                 Destroy(this.currentPropSelected.gameObject);
                 this.propsToInstantiate = null;
             }

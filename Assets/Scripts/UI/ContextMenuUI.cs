@@ -31,7 +31,10 @@ namespace Sim.UI {
                 Button button = Instantiate(this.choiceButtonPrefab, this.transform);
                 button.interactable = !action.IsLocked();
                 button.GetComponentInChildren<TextMeshProUGUI>().text = action.GetActionLabel();
-                button.onClick.AddListener(() => interactedProp.DoAction(action));
+                button.onClick.AddListener(() => {
+                    interactedProp.DoAction(action);
+                    this.gameObject.SetActive(false); // close context menu after action triggered
+                });
                 this.buttonChoices.Add(button);
             }
         }
