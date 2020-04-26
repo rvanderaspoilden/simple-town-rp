@@ -6,7 +6,7 @@ using Sim.Scriptables;
 using UnityEngine;
 
 namespace Sim.Interactables {
-    public class Package : Interactable {
+    public class Package : Props {
         [Header("Package Settings")]
         [SerializeField] private Action useAction;
 
@@ -16,7 +16,9 @@ namespace Sim.Interactables {
         public delegate void OnOpen(Package packageOpened);
 
         public static event OnOpen OnOpened;
+
         protected override void SetupActions() {
+            useAction.SetIsLocked(!PhotonNetwork.IsMasterClient); // todo replace it by appartment owner
             this.actions = new Action[1] {useAction};
         }
 

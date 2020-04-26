@@ -10,7 +10,9 @@ namespace Sim.Building {
 
         private Dictionary<int, Material> materialPerFace;
 
-        private void Awake() {
+        protected override void Awake() {
+            base.Awake();
+            
             this.renderer = GetComponent<MeshRenderer>();
             this.collider = GetComponent<MeshCollider>();
         }

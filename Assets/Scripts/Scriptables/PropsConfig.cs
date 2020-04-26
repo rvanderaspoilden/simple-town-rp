@@ -12,9 +12,14 @@ namespace Sim.Scriptables {
         [SerializeField] private Package packagePrefab;
         [SerializeField] private BuildSurfaceEnum surfaceToPose;
         [SerializeField] private bool toBuild;
+        [SerializeField] private float rangeToInteract;
         
         public int GetId() {
             return this.id;
+        }
+
+        public float GetRangeToInteract() {
+            return this.rangeToInteract;
         }
 
         public Props GetPrefab() {

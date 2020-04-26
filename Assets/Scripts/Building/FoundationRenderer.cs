@@ -8,8 +8,6 @@ namespace Sim.Building {
         [Header("Settings")]
         [SerializeField] private GameObject foundationObj;
 
-        [SerializeField] private Material materialToApply;
-
         [SerializeField] private Renderer[] renderersToModify;
 
         [SerializeField] private bool interactWithCameraDistance;
@@ -17,16 +15,19 @@ namespace Sim.Building {
         [Header("Only for debug")]
         [SerializeField] private bool showFoundation;
 
+        [SerializeField] private Props props;
+
         [SerializeField] private bool hideForced;
 
         [SerializeField] private Dictionary<Renderer, Material[]> defaultMaterialsByRenderer;
-
+        
         private void Awake() {
-            this.defaultMaterialsByRenderer = this.renderersToModify.ToList().ToDictionary(x => x, x => x.materials);
+            this.props = GetComponent<Props>();
+            this.SetupDefaultMaterials();
         }
-
+        
         public void ShowFoundation(bool state, bool forcedAction = false) {
-            if ((this.showFoundation == state && !forcedAction) || (this.hideForced && !forcedAction)) { // Prevent useless treatments except if forced action
+            if ((this.showFoundation == state && !forcedAction) || (this.hideForced && !forcedAction) || (this.props && !this.props.IsBuilt())) { // Prevent useless treatments except if forced action
                 return;
             }
 
@@ -36,6 +37,10 @@ namespace Sim.Building {
 
             this.showFoundation = state;
             this.UpdateGraphics();
+        }
+
+        public void SetupDefaultMaterials() {
+            this.defaultMaterialsByRenderer = this.renderersToModify.ToList().ToDictionary(x => x, x => x.materials);
         }
 
         public bool CanInteractWithCameraDistance() {
@@ -51,7 +56,7 @@ namespace Sim.Building {
                 Material[] newMaterials = new Material[renderer.materials.Length];
                 
                 for (int i = 0; i < renderer.materials.Length; i++) {
-                    newMaterials[i] = this.showFoundation ? this.materialToApply : this.defaultMaterialsByRenderer[renderer][i];
+                    newMaterials[i] = this.showFoundation ? DatabaseManager.Instance.GetTransparentMaterial() : this.defaultMaterialsByRenderer[renderer][i];
                 }
 
                 renderer.materials = newMaterials;

@@ -38,8 +38,6 @@ namespace Sim {
         [SerializeField] private float propsRotationSpeed = 1.5f;
         [SerializeField] private float propsStepSize = 0.1f;
 
-        [SerializeField] private Material errorMaterial;
-
         [Header("Build debug")]
         [SerializeField] private PropsConfig propsToInstantiate;
 
@@ -181,18 +179,11 @@ namespace Sim {
 
         private void ManageInteraction() {
             if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
-                Interactable objectToInteract = null;
-
-                if (hit.collider.CompareTag("Interactable")) {
-                    Interactable propsToInteract = hit.collider.GetComponentInParent<Interactable>();
-
-                    if (RoomManager.LocalPlayer && RoomManager.LocalPlayer.CanInteractWith(propsToInteract)) {
-                        objectToInteract = propsToInteract;
-                    }
-                }
+                Props objectToInteract = hit.collider.GetComponentInParent<Props>();
+                bool canInteract = objectToInteract && RoomManager.LocalPlayer && RoomManager.LocalPlayer.CanInteractWith(objectToInteract);
 
                 if (Input.GetMouseButtonDown(0)) {
-                    if (objectToInteract) {
+                    if (canInteract) {
                         HUDManager.Instance.DisplayContextMenu(true, Input.mousePosition, objectToInteract);
                     } else {
                         RoomManager.Instance.MovePlayerTo(hit.point);
@@ -225,7 +216,7 @@ namespace Sim {
 
             this.currentPropSelected = props;
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
-            this.currentPreview.SetErrorMaterial(this.errorMaterial);
+            this.currentPreview.SetErrorMaterial(DatabaseManager.Instance.GetErrorMaterial());
 
             // todo sortir ça
             HUDManager.Instance.DisplayAdminPanel(false);
@@ -286,16 +277,18 @@ namespace Sim {
 
                 // Manage packaging
                 if (this.propsToPackage) {
+                    propsInstanciated.GetComponent<Props>().SetIsBuilt(true);
                     propsInstanciated.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId());
                     this.propsToPackage = null;
                 }
-                
+
                 // Manage unpackaging
                 if (this.currentOpenedPackage) { // if props come from a package so remove package
-                    // todo mettre le props en état : A MONTER
+                    Debug.Log("Set built to false");
+                    propsInstanciated.GetComponent<Props>().SetIsBuilt(false);
                     PhotonNetwork.Destroy(this.currentOpenedPackage.gameObject);
                 }
-                
+
                 Destroy(this.currentPropSelected.gameObject);
                 this.propsToInstantiate = null;
             }

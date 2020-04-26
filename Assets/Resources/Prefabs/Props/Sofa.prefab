@@ -614,7 +614,7 @@ GameObject:
   - component: {fileID: 8643825616957914801}
   m_Layer: 10
   m_Name: Sofa
-  m_TagString: Interactable
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -724,7 +724,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   foundationObj: {fileID: 0}
-  materialToApply: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
   renderersToModify:
   - {fileID: 7298514275075614842}
   - {fileID: 7298514275075614846}
@@ -738,6 +737,7 @@ MonoBehaviour:
   - {fileID: 7298514275075614834}
   interactWithCameraDistance: 0
   showFoundation: 0
+  props: {fileID: 0}
   hideForced: 0
 --- !u!114 &8643825616957914801
 MonoBehaviour:
@@ -752,8 +752,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: c1261f87ae7bb3848a24529340be7e41, type: 2}
-  rangeToInteract: 0.5
+  buildAction:
+    actionType: 2
+    actionLabel: Monter
+    locked: 0
   actions: []
+  unbuiltActions: []
+  built: 0
+  renderersToModify: []
   useAction:
     actionType: 1
     actionLabel: S'asseoir

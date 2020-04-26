@@ -111,7 +111,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   foundationObj: {fileID: 0}
-  materialToApply: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
   renderersToModify:
   - {fileID: 5916516001878135251}
   interactWithCameraDistance: 0
@@ -184,8 +183,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
-  rangeToInteract: 2
+  buildAction:
+    actionType: 0
+    actionLabel: 
+    locked: 0
   actions: []
+  unbuiltActions: []
+  built: 0
   useAction:
     actionType: 1
     actionLabel: Ouvrir

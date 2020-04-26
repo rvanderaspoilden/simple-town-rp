@@ -64,6 +64,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: a21fd06878382e04f8d11893703996a2, type: 2}
+  buildAction:
+    actionType: 2
+    actionLabel: Acrocher
+    locked: 0
+  actions: []
+  unbuiltActions: []
+  built: 0
+  renderersToModify: []
 --- !u!114 &3871553544899072633
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -115,12 +123,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   foundationObj: {fileID: 0}
-  materialToApply: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
   renderersToModify:
   - {fileID: 3515550670151455028}
   - {fileID: 3515550670151455030}
   interactWithCameraDistance: 1
   showFoundation: 0
+  props: {fileID: 0}
   hideForced: 0
 --- !u!1 &3515550670153388020
 GameObject:

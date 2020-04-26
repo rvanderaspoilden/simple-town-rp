@@ -174,7 +174,7 @@ GameObject:
   - component: {fileID: -9145504947869361753}
   m_Layer: 10
   m_Name: Door Teleporter
-  m_TagString: Interactable
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -240,7 +240,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 0d50fabf4756bf142bd803fd40997f04, type: 2}
-  rangeToInteract: 0.8
   actions: []
   destination: 1
   doorDirection: -1

@@ -1,4 +1,5 @@
 ﻿using Photon.Pun;
+using Sim.Building;
 using Sim.Enums;
 using Sim.Interactables;
 using Sim.UI;
@@ -39,7 +40,7 @@ namespace Sim {
             this.buildPreviewPanelUI.gameObject.SetActive(state);
         }
 
-        public void DisplayContextMenu(bool state, Vector3 position, Interactable interactedProp = null) {
+        public void DisplayContextMenu(bool state, Vector3 position, Props interactedProp = null) {
             this.contextMenuUI.transform.position = position;
 
             if (interactedProp) {

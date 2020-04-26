@@ -27,6 +27,10 @@ namespace Sim.Interactables {
         public bool IsLocked() {
             return this.locked;
         }
+
+        public void SetIsLocked(bool value) {
+            this.locked = value;
+        }
     }
 
 }

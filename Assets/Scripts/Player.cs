@@ -33,8 +33,8 @@ namespace Sim {
             thirdPersonCharacter.Move(this.agent.remainingDistance > this.agent.stoppingDistance ? this.agent.desiredVelocity : Vector3.zero, false, false);
         }
 
-        public bool CanInteractWith(Interactable propsToInteract) {
-            return Physics.OverlapSphere(this.transform.position, propsToInteract.GetRange()).ToList().Where(collider => collider.gameObject == propsToInteract.gameObject).ToList().Count == 1;
+        public bool CanInteractWith(Props propsToInteract) {
+            return propsToInteract.GetActions().Length > 0 && Physics.OverlapSphere(this.GetHeadTargetForCamera().position, propsToInteract.GetConfiguration().GetRangeToInteract()).ToList().Where(collider => collider.gameObject == propsToInteract.gameObject).ToList().Count == 1;
         }
 
         public void SetTarget(Vector3 target) {

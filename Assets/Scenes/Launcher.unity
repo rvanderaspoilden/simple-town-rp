@@ -1524,6 +1524,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68f15ee4c567ac342a98c3c1dead39a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  transparentMaterial: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
+  unbuiltMaterial: {fileID: 2100000, guid: 2354fe779ec3efd439c17e7f66aa01c3, type: 2}
+  errorMaterial: {fileID: 2100000, guid: e33e21e491dc7224bae0422ce0b279c9, type: 2}
 --- !u!4 &2057217333
 Transform:
   m_ObjectHideFlags: 0

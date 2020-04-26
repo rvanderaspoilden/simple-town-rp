@@ -1,8 +1,9 @@
-﻿using Sim.Enums;
+﻿using Sim.Building;
+using Sim.Enums;
 using UnityEngine;
 
 namespace Sim.Interactables {
-    public class Teleporter : Interactable {
+    public class Teleporter : Props {
         [Header("Door Settings")]
         [SerializeField] private PlacesEnum destination;
 

@@ -16,6 +16,8 @@ namespace Sim.Interactables {
         private Coroutine doorAnimationCoroutine;
 
         private void Awake() {
+            base.Awake();
+            
             this.animator = GetComponent<Animator>();
             this.animator.SetFloat("direction", (float)doorDirection);
         }

@@ -3,6 +3,11 @@ using UnityEngine;
 
 namespace Sim {
     public class DatabaseManager : MonoBehaviour {
+        [Header("Settings")]
+        [SerializeField] private Material transparentMaterial;
+        [SerializeField] private Material unbuiltMaterial;
+        [SerializeField] private Material errorMaterial;
+        
         public static PropsDatabaseConfig PropsDatabase;
         public static PaintDatabaseConfig PaintDatabase;
 
@@ -21,6 +26,18 @@ namespace Sim {
             PaintDatabase = Resources.Load<PaintDatabaseConfig>("Configurations/Databases/Paint Database");
             Debug.Log("Paint database loaded");
             DontDestroyOnLoad(this.gameObject);
+        }
+
+        public Material GetTransparentMaterial() {
+            return this.transparentMaterial;
+        }
+
+        public Material GetUnbuiltMaterial() {
+            return this.unbuiltMaterial;
+        }
+
+        public Material GetErrorMaterial() {
+            return this.errorMaterial;
         }
     }
    

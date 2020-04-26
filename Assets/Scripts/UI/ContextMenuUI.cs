@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Sim.Building;
 using Sim.Interactables;
 using TMPro;
 using UnityEngine;
@@ -18,7 +19,7 @@ namespace Sim.UI {
             this.buttonChoices = new List<Button>();
         }
 
-        public void Setup(Interactable interactedProp) {
+        public void Setup(Props interactedProp) {
             // clear view
             this.buttonChoices.ForEach(button => button.onClick.RemoveAllListeners());
             this.buttonChoices.Clear();
