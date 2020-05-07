@@ -1,5 +1,6 @@
 ﻿using System;
 using Sim.Building;
+using Sim.Enums;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,21 +15,23 @@ namespace Sim.UI {
         public delegate void OnValidateEvent();
 
         public static event OnValidateEvent OnValidate;
-        
+
         public delegate void OnCanceledEvent();
 
         public static event OnCanceledEvent OnCanceled;
-        
+
         public delegate void OnToggleHidePropsEvent(bool hide);
 
         public static event OnToggleHidePropsEvent OnToggleHideProps;
-        
+
         public delegate void OnToggleHideWallsEvent(bool hide);
 
         public static event OnToggleHideWallsEvent OnToggleHideWalls;
 
         private void OnEnable() {
             BuildPreview.OnPlaceableStateChanged += this.SetValidateButtonInteractable;
+
+            this.toggleHideWalls.gameObject.SetActive(!CameraManager.Instance || CameraManager.Instance.GetBuildMode() != BuildModeEnum.PAINT);
         }
 
         private void OnDisable() {

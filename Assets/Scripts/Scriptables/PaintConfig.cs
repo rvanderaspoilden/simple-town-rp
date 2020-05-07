@@ -1,4 +1,5 @@
-﻿using Sim.Enums;
+﻿using Sim.Building;
+using Sim.Enums;
 using UnityEngine;
 
 namespace Sim.Scriptables {
@@ -7,6 +8,7 @@ namespace Sim.Scriptables {
         [SerializeField] private int id;
         [SerializeField] private string displayName;
         [SerializeField] private Material material;
+        [SerializeField] private PaintBucket bucketPrefab;
         [SerializeField] private BuildSurfaceEnum surface;
         [SerializeField] private bool customColor;
 
@@ -28,6 +30,10 @@ namespace Sim.Scriptables {
 
         public bool AllowCustomColor() {
             return this.customColor;
+        }
+
+        public PaintBucket GetBucketPrefab() {
+            return this.bucketPrefab;
         }
     }   
 }

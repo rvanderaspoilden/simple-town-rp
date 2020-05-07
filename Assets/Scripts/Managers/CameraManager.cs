@@ -39,12 +39,17 @@ namespace Sim {
         [SerializeField] private float propsStepSize = 0.1f;
 
         [Header("Build debug")]
-        [SerializeField] private PropsConfig propsToInstantiate;
+        [SerializeField] private BuildModeEnum buildMode;
+        
+        private PropsConfig propsToInstantiate;
 
-        [SerializeField] private Props currentPropSelected;
+        private Props currentPropSelected;
 
         [SerializeField] private Package currentOpenedPackage;
         [SerializeField] private PropsConfig propsToPackage;
+
+        [SerializeField] private PaintBucket currentOpenedBucket;
+        [SerializeField] private PaintConfig paintToPackage;
 
         [SerializeField] private BuildPreview currentPreview;
         [SerializeField] private bool followMouse;
@@ -64,12 +69,15 @@ namespace Sim {
 
             Instance = this;
 
+            this.buildMode = BuildModeEnum.NONE;
             this.camera = GetComponent<Camera>();
         }
 
         private void Start() {
-            AdminPanelUI.OnPropsClicked += InstantiateFromAdminPanel;
+            AdminPanelUI.OnPropsClicked += InstantiatePropsFromAdminPanel;
+            AdminPanelUI.OnPaintClicked += InstantiatePaintFromAdminPanel;
             Package.OnOpened += OpenPackage;
+            PaintBucket.OnOpened += OpenBucket;
             BuildPreviewPanelUI.OnValidate += ApplyBuildModification;
             BuildPreviewPanelUI.OnCanceled += ClearBuilds;
             BuildPreviewPanelUI.OnToggleHideProps += TogglePropsVisible;
@@ -77,8 +85,10 @@ namespace Sim {
         }
 
         private void OnDestroy() {
-            AdminPanelUI.OnPropsClicked -= InstantiateFromAdminPanel;
+            AdminPanelUI.OnPropsClicked -= InstantiatePropsFromAdminPanel;
+            AdminPanelUI.OnPaintClicked -= InstantiatePaintFromAdminPanel;
             Package.OnOpened -= OpenPackage;
+            PaintBucket.OnOpened -= OpenBucket;
             BuildPreviewPanelUI.OnValidate -= ApplyBuildModification;
             BuildPreviewPanelUI.OnCanceled -= ClearBuilds;
             BuildPreviewPanelUI.OnToggleHideProps -= TogglePropsVisible;
@@ -116,7 +126,7 @@ namespace Sim {
         }
 
         public void ManageWorldTransparency() {
-            if (!RoomManager.LocalPlayer) {
+            if (!RoomManager.LocalPlayer || this.currentOpenedBucket) {
                 return;
             }
 
@@ -141,15 +151,15 @@ namespace Sim {
         public void TogglePropsVisible(bool hide) {
             FindObjectsOfType<Props>().ToList().Where(x => x.GetType() != typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
                 if (foundationRenderer) {
-                    foundationRenderer.ShowFoundation(hide, true);
+                    foundationRenderer.SetVisibilityMode(hide ? FoundationVisibilityEnum.FORCE_HIDE : FoundationVisibilityEnum.AUTO);
                 }
             });
         }
 
         public void ToggleWallVisible(bool hide) {
-            FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
+            FindObjectsOfType<Wall>().ToList().Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
                 if (foundationRenderer) {
-                    foundationRenderer.ShowFoundation(hide, true);
+                    foundationRenderer.SetVisibilityMode(hide ? FoundationVisibilityEnum.FORCE_HIDE : FoundationVisibilityEnum.AUTO);
                 }
             });
         }
@@ -199,14 +209,46 @@ namespace Sim {
 
         #region Build Management
 
+        public BuildModeEnum GetBuildMode() {
+            return this.buildMode;
+        }
+
         private void OpenPackage(Package package) {
             this.currentOpenedPackage = package;
             this.InstantiateProps(package.GetPropsInside());
+            this.buildMode = BuildModeEnum.UNPACKAGING;
         }
 
-        private void InstantiateFromAdminPanel(PropsConfig propsConfig) {
+        private void OpenBucket(PaintBucket bucket) {
+            this.ClearBuilds();
+
+            this.currentOpenedBucket = bucket;
+
+            this.buildMode = BuildModeEnum.PAINT;
+            
+            // todo sortir ça
+            HUDManager.Instance.DisplayAdminPanel(false);
+            HUDManager.Instance.DisplayBuildPreviewPanel(true);
+            
+            this.SwitchToBuildMode();
+            
+            FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
+                if (foundationRenderer) {
+                    foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.FORCE_SHOW);
+                }
+            });
+        }
+
+        private void InstantiatePropsFromAdminPanel(PropsConfig propsConfig) {
             this.propsToPackage = propsConfig;
             InstantiateProps(this.propsToPackage.GetPackage().GetConfiguration());
+            this.buildMode = BuildModeEnum.PACKAGING;
+        }
+
+        private void InstantiatePaintFromAdminPanel(PaintConfig paintConfig) {
+            this.paintToPackage = paintConfig;
+            InstantiateProps(this.paintToPackage.GetBucketPrefab().GetConfiguration());
+            this.buildMode = BuildModeEnum.PACKAGING;
         }
 
         private void SetCurrentSelectedProps(Props props, bool isEditMode = false) {
@@ -228,9 +270,7 @@ namespace Sim {
         }
 
         private void InstantiateProps(PropsConfig config) {
-            if (this.currentPropSelected) { // reset current selected props
-                this.ClearBuilds();
-            }
+            this.ClearBuilds();
 
             this.propsToInstantiate = config;
 
@@ -241,7 +281,7 @@ namespace Sim {
          * Used to clear build mode if there was a current prop selected
          */
         public void ClearBuilds() {
-            if (!this.currentPropSelected) {
+            if (!this.currentPropSelected && !this.currentOpenedBucket) {
                 return;
             }
 
@@ -250,7 +290,7 @@ namespace Sim {
                 this.currentPropSelected.transform.rotation = this.initialRotation;
                 this.currentPreview.Destroy();
                 this.currentPropSelected = null;
-            } else {
+            } else if (this.currentPropSelected) {
                 Destroy(this.currentPropSelected.gameObject);
             }
 
@@ -258,48 +298,78 @@ namespace Sim {
                 this.currentOpenedPackage = null;
             }
 
+            if (this.currentOpenedBucket) { // if a bucket was opened reset it and all walls in preview
+                FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
+                    if (foundationRenderer) {
+                        foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.AUTO);
+                    }
+                });
+                FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.Reset());
+                this.currentOpenedBucket = null;
+            }
+
             this.SwitchToFreeMode();
+            
+            this.buildMode = BuildModeEnum.NONE;
 
             HUDManager.Instance.DisplayBuildPreviewPanel(false);
         }
 
         public void ApplyBuildModification() {
-            if (!this.currentPropSelected || !this.currentPreview.IsPlaceable()) { // prevent to pose if something goes wrong with UI
+            if ((!this.currentPropSelected || !this.currentPreview.IsPlaceable()) && !this.currentOpenedBucket) { // prevent to pose if something goes wrong with UI
                 return;
             }
 
-            if (this.isEditMode) {
-                this.currentPropSelected.UpdateTransform();
-                this.currentPreview.Destroy();
-                this.currentPropSelected = null;
-            } else {
-                GameObject propsInstanciated = PhotonNetwork.InstantiateSceneObject(CommonUtils.GetRelativePathFromResources(this.propsToInstantiate.GetPrefab()), this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
+            if (this.currentPropSelected) {
+                if (this.isEditMode) {
+                    this.currentPropSelected.UpdateTransform();
+                    this.currentPreview.Destroy();
+                    this.currentPropSelected = null;
+                } else {
+                    GameObject propsInstanciated = PhotonNetwork.InstantiateSceneObject(CommonUtils.GetRelativePathFromResources(this.propsToInstantiate.GetPrefab()), this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
 
-                // Manage packaging
-                if (this.propsToPackage) {
-                    propsInstanciated.GetComponent<Props>().SetIsBuilt(true);
-                    propsInstanciated.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId());
-                    this.propsToPackage = null;
+                    // Manage packaging for props
+                    if (this.propsToPackage) {
+                        propsInstanciated.GetComponent<Props>().SetIsBuilt(true);
+                        propsInstanciated.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId());
+                        this.propsToPackage = null;
+                    }
+
+                    // Manage packaging for paint
+                    if (this.paintToPackage) {
+                        propsInstanciated.GetComponent<Props>().SetIsBuilt(true);
+                        propsInstanciated.GetComponent<PaintBucket>().SetPaintConfigId(this.paintToPackage.GetId());
+                        this.paintToPackage = null;
+                    }
+
+                    // Manage unpackaging
+                    if (this.currentOpenedPackage) { // if props come from a package so remove package
+                        propsInstanciated.GetComponent<Props>().SetIsBuilt(false);
+                        PhotonNetwork.Destroy(this.currentOpenedPackage.gameObject);
+                    }
+
+                    Destroy(this.currentPropSelected.gameObject);
+                    this.propsToInstantiate = null;
                 }
-
-                // Manage unpackaging
-                if (this.currentOpenedPackage) { // if props come from a package so remove package
-                    Debug.Log("Set built to false");
-                    propsInstanciated.GetComponent<Props>().SetIsBuilt(false);
-                    PhotonNetwork.Destroy(this.currentOpenedPackage.gameObject);
-                }
-
-                Destroy(this.currentPropSelected.gameObject);
-                this.propsToInstantiate = null;
+            } else if (this.currentOpenedBucket) {
+                FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
+                    if (foundationRenderer) {
+                        foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.AUTO);
+                    }
+                });
+                FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
+                this.currentOpenedBucket = null;
             }
 
             this.SwitchToFreeMode();
+            
+            this.buildMode = BuildModeEnum.NONE;
 
             HUDManager.Instance.DisplayBuildPreviewPanel(false);
         }
 
         private void ManageBuildMode() {
-            if (!this.currentPropSelected) {
+            if (!this.currentPropSelected && !this.currentOpenedBucket) {
                 return;
             }
 
@@ -319,75 +389,94 @@ namespace Sim {
                 this.transform.Translate(Vector3.forward * mouseScrollValue * this.cameraZoomSpeed);
             }
 
-            // manage rotation of current props
-            if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
-                if (Input.GetKeyDown(KeyCode.DownArrow)) {
-                    Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
-                    float newAngle = (Mathf.CeilToInt(currentLocalAngle.y / 90f) * 90f) - 90f;
-                    this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
-                } else if (Input.GetKeyDown(KeyCode.UpArrow)) {
-                    Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
-                    float newAngle = (Mathf.FloorToInt(currentLocalAngle.y / 90f) * 90f) + 90f;
-                    this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
-                } else if (Input.GetKey(KeyCode.LeftArrow)) {
-                    this.currentPropSelected.transform.Rotate(Vector3.forward * -this.propsRotationSpeed);
-                } else if (Input.GetKey(KeyCode.RightArrow)) {
-                    this.currentPropSelected.transform.Rotate(Vector3.forward * this.propsRotationSpeed);
-                }
-            }
-
-            // Manage surface detection
-            int layerMask = (1 << 11); // If current props is not following mouse so raycast only preview items
-
-            if (followMouse) {
+            if (this.currentPropSelected) {
+                // manage rotation of current props
                 if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
-                    layerMask = (1 << 9);
-                } else if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL) {
-                    layerMask = (1 << 12);
-                }
-            }
-
-            if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
-                // manage position to move current props
-                if (this.followMouse) {
-                    if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND && hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
-                        float x = Mathf.FloorToInt(hit.point.x / this.propsStepSize) * this.propsStepSize;
-                        float z = Mathf.FloorToInt(hit.point.z / this.propsStepSize) * this.propsStepSize;
-                        this.currentPropSelected.transform.position = new Vector3(x, hit.point.y + (hit.normal.y * 0.01f), z);
+                    if (Input.GetKeyDown(KeyCode.DownArrow)) {
+                        Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
+                        float newAngle = (Mathf.CeilToInt(currentLocalAngle.y / 90f) * 90f) - 90f;
+                        this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
+                    } else if (Input.GetKeyDown(KeyCode.UpArrow)) {
+                        Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
+                        float newAngle = (Mathf.FloorToInt(currentLocalAngle.y / 90f) * 90f) + 90f;
+                        this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
+                    } else if (Input.GetKey(KeyCode.LeftArrow)) {
+                        this.currentPropSelected.transform.Rotate(Vector3.forward * -this.propsRotationSpeed);
+                    } else if (Input.GetKey(KeyCode.RightArrow)) {
+                        this.currentPropSelected.transform.Rotate(Vector3.forward * this.propsRotationSpeed);
                     }
+                }
 
-                    if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
-                        this.currentPropSelected.transform.position = hit.point + (hit.normal * 0.01f);
-                        Vector3 rotation = this.currentPropSelected.transform.localEulerAngles;
+                // Manage surface detection
+                int layerMask = (1 << 11); // If current props is not following mouse so raycast only preview items
 
-                        if (hit.normal == Vector3.forward) {
-                            rotation.y = 180;
-                        } else if (hit.normal == -Vector3.forward) {
-                            rotation.y = 0f;
-                        } else if (hit.normal == -Vector3.left) {
-                            rotation.y = 270;
-                        } else if (hit.normal == Vector3.left) {
-                            rotation.y = 90f;
+                if (followMouse) {
+                    if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
+                        layerMask = (1 << 9);
+                    } else if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL) {
+                        layerMask = (1 << 12);
+                    }
+                }
+
+                if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
+                    // manage position to move current props
+                    if (this.followMouse) {
+                        if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND && hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
+                            float x = Mathf.FloorToInt(hit.point.x / this.propsStepSize) * this.propsStepSize;
+                            float z = Mathf.FloorToInt(hit.point.z / this.propsStepSize) * this.propsStepSize;
+                            this.currentPropSelected.transform.position = new Vector3(x, hit.point.y + (hit.normal.y * 0.01f), z);
                         }
 
-                        this.currentPropSelected.transform.localEulerAngles = rotation;
+                        if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
+                            this.currentPropSelected.transform.position = hit.point + (hit.normal * 0.01f);
+                            Vector3 rotation = this.currentPropSelected.transform.localEulerAngles;
+
+                            if (hit.normal == Vector3.forward) {
+                                rotation.y = 180;
+                            } else if (hit.normal == -Vector3.forward) {
+                                rotation.y = 0f;
+                            } else if (hit.normal == -Vector3.left) {
+                                rotation.y = 270;
+                            } else if (hit.normal == Vector3.left) {
+                                rotation.y = 90f;
+                            }
+
+                            this.currentPropSelected.transform.localEulerAngles = rotation;
+                        }
+                    }
+
+                    // manage props follow value
+                    if (Input.GetMouseButtonDown(0)) {
+                        if (followMouse && this.currentPreview.IsPlaceable()) {
+                            this.followMouse = false;
+
+                            this.virtualCameraFollow.SetTarget(this.currentPreview.transform);
+                            this.freelookCamera.enabled = true;
+                            this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;
+                        } else if (!followMouse) {
+                            this.followMouse = true;
+                            this.freelookCamera.enabled = false;
+                        }
                     }
                 }
+            } else if (this.currentOpenedBucket) {
+                // Manage surface detection
+                int layerMask = -1;
 
-                // manage props follow value
-                if (Input.GetMouseButtonDown(0)) {
-                    if (followMouse && this.currentPreview.IsPlaceable()) {
-                        this.followMouse = false;
+                if (this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.GROUND) {
+                    layerMask = (1 << 9);
+                } else if (this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.WALL) {
+                    layerMask = (1 << 12);
+                }
 
-                        this.virtualCameraFollow.SetTarget(this.currentPreview.transform);
-                        this.freelookCamera.enabled = true;
-                        this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;
-                    } else if (!followMouse) {
-                        this.followMouse = true;
-                        this.freelookCamera.enabled = false;
+                if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
+                    if (layerMask == (1 << 12) && Input.GetMouseButtonDown(0)) {
+                        Wall wall = hit.collider.GetComponent<Wall>();
+                        wall.PreviewMaterialOnFace(hit, this.currentOpenedBucket);
                     }
                 }
             }
+
         }
 
         #endregion

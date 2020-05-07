@@ -115,7 +115,8 @@ MonoBehaviour:
   - {fileID: 5916516001878135251}
   interactWithCameraDistance: 0
   showFoundation: 0
-  hideForced: 0
+  props: {fileID: 0}
+  visibility: 0
 --- !u!208 &5343373590338102528
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -190,6 +191,7 @@ MonoBehaviour:
   actions: []
   unbuiltActions: []
   built: 0
+  renderersToModify: []
   useAction:
     actionType: 1
     actionLabel: Ouvrir

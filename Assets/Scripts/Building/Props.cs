@@ -9,12 +9,12 @@ using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     public class Props : MonoBehaviourPun {
-        [Header("Settings")]
+        [Header("Props Settings")]
         [SerializeField] protected PropsConfig configuration;
 
         [SerializeField] private Action buildAction;
 
-        [Header("Basic settings debug")]
+        [Header("Props settings debug")]
         [SerializeField] protected Action[] actions;
 
         [SerializeField] protected Action[] unbuiltActions;
@@ -31,7 +31,7 @@ namespace Sim.Building {
             this.defaultMaterialsByRenderer = this.renderersToModify.ToList().ToDictionary(x => x, x => x.materials);
         }
 
-        private void Start() {
+        protected virtual void Start() {
             this.SetupActions();
             this.SetupUnbuiltActions();
         }

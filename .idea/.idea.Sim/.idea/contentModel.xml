@@ -588,9 +588,11 @@
                 <e p="Package.cs" t="Include" />
                 <e p="Teleporter.cs" t="Include" />
               </e>
+              <e p="PaintBucket.cs" t="Include" />
               <e p="Seat.cs" t="Include" />
               <e p="SimpleDoor.cs" t="Include" />
               <e p="Wall.cs" t="Include" />
+              <e p="WallFace.cs" t="Include" />
             </e>
             <e p="Props.cs" t="Include" />
           </e>
@@ -604,10 +606,12 @@
           <e p="Enums" t="Include">
             <e p="ActionTypeEnum.cs" t="Include" />
             <e p="AxisEnum.cs" t="Include" />
+            <e p="BuildModeEnum.cs" t="Include" />
             <e p="BuildSurfaceEnum.cs" t="Include" />
             <e p="CameraModeEnum.cs" t="Include" />
             <e p="CatalogCategoryEnum.cs" t="Include" />
             <e p="DoorDirectionEnum.cs" t="Include" />
+            <e p="FoundationVisibilityEnum.cs" t="Include" />
             <e p="PlacesEnum.cs" t="Include" />
           </e>
           <e p="Managers" t="Include">
@@ -635,6 +639,7 @@
           </e>
           <e p="Utils" t="Include">
             <e p="CommonUtils.cs" t="Include" />
+            <e p="JsonHelper.cs" t="Include" />
             <e p="PlaceUtils.cs" t="Include" />
           </e>
           <e p="VirtualCameraFollow.cs" t="Include" />

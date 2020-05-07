@@ -101,6 +101,7 @@ GameObject:
   - component: {fileID: 2410990672549681340}
   - component: {fileID: 7855799751544770467}
   - component: {fileID: 3309120875047286521}
+  - component: {fileID: 5507787891652889741}
   m_Layer: 12
   m_Name: Wall_corner
   m_TagString: Untagged
@@ -191,11 +192,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   foundationObj: {fileID: 1474421962247471429}
-  materialToApply: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
   renderersToModify:
   - {fileID: 9173049875508542943}
   interactWithCameraDistance: 1
   showFoundation: 0
+  props: {fileID: 0}
   hideForced: 0
 --- !u!64 &7855799751544770467
 MeshCollider:
@@ -224,5 +225,65 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 287955e095f68ba4dafbea94368de953, type: 2}
+  buildAction:
+    actionType: 0
+    actionLabel: 
+    locked: 0
+  actions: []
+  unbuiltActions: []
+  built: 0
+  renderersToModify: []
+  allowedSharedMaterialIds: 01000000020000000300000004000000060000000700000008000000
+  wallFaces:
+  - sharedMaterialIdx: 0
+    paintConfigId: 5
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  - sharedMaterialIdx: 1
+    paintConfigId: 3
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  - sharedMaterialIdx: 2
+    paintConfigId: 5
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  - sharedMaterialIdx: 3
+    paintConfigId: 3
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  - sharedMaterialIdx: 4
+    paintConfigId: 3
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  - sharedMaterialIdx: 5
+    paintConfigId: 5
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  - sharedMaterialIdx: 6
+    paintConfigId: 3
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  - sharedMaterialIdx: 7
+    paintConfigId: 5
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  - sharedMaterialIdx: 8
+    paintConfigId: 3
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
   renderer: {fileID: 0}
+  foundationRenderer: {fileID: 0}
   collider: {fileID: 0}
+--- !u!114 &5507787891652889741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7454000879150205187}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 0
+  OwnershipTransfer: 0
+  ObservedComponents:
+  - {fileID: 0}
+  viewIdField: 0
+  InstantiationId: 0
+  isRuntimeInstantiated: 0
