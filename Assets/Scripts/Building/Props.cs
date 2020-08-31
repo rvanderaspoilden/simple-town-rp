@@ -10,11 +10,11 @@ using Action = Sim.Interactables.Action;
 namespace Sim.Building {
     public class Props : MonoBehaviourPun {
         [Header("Props Settings")]
-        [SerializeField] protected PropsConfig configuration;
-
         [SerializeField] private Action buildAction;
 
         [Header("Props settings debug")]
+        [SerializeField] protected PropsConfig configuration;
+
         [SerializeField] protected Action[] actions;
 
         [SerializeField] protected Action[] unbuiltActions;
@@ -110,6 +110,10 @@ namespace Sim.Building {
 
         public PropsConfig GetConfiguration() {
             return this.configuration;
+        }
+
+        public void SetConfiguration(PropsConfig config) {
+            this.configuration = config;
         }
 
         [PunRPC]

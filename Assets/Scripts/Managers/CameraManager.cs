@@ -251,7 +251,10 @@ namespace Sim {
             this.buildMode = BuildModeEnum.PACKAGING;
         }
 
-        private void SetCurrentSelectedProps(Props props, bool isEditMode = false) {
+        private void SetCurrentSelectedProps(PropsConfig propsConfig, bool isEditMode = false) {
+            Props props = Instantiate(propsConfig.GetPrefab());
+            props.SetConfiguration(propsConfig);
+            
             this.isEditMode = isEditMode;
             this.initialPosition = props.transform.position;
             this.initialRotation = props.transform.rotation;
@@ -274,7 +277,7 @@ namespace Sim {
 
             this.propsToInstantiate = config;
 
-            this.SetCurrentSelectedProps(Instantiate(this.propsToInstantiate.GetPrefab()));
+            this.SetCurrentSelectedProps(config);
         }
 
         /**
@@ -327,24 +330,26 @@ namespace Sim {
                     this.currentPropSelected = null;
                 } else {
                     GameObject propsInstanciated = PhotonNetwork.InstantiateSceneObject(CommonUtils.GetRelativePathFromResources(this.propsToInstantiate.GetPrefab()), this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
-
+                    Props props = propsInstanciated.GetComponent<Props>();
+                    props.SetConfiguration(this.propsToInstantiate);
+                    
                     // Manage packaging for props
                     if (this.propsToPackage) {
-                        propsInstanciated.GetComponent<Props>().SetIsBuilt(true);
+                        props.SetIsBuilt(true);
                         propsInstanciated.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId());
                         this.propsToPackage = null;
                     }
 
                     // Manage packaging for paint
                     if (this.paintToPackage) {
-                        propsInstanciated.GetComponent<Props>().SetIsBuilt(true);
+                        props.SetIsBuilt(true);
                         propsInstanciated.GetComponent<PaintBucket>().SetPaintConfigId(this.paintToPackage.GetId());
                         this.paintToPackage = null;
                     }
 
                     // Manage unpackaging
                     if (this.currentOpenedPackage) { // if props come from a package so remove package
-                        propsInstanciated.GetComponent<Props>().SetIsBuilt(false);
+                        props.SetIsBuilt(false);
                         PhotonNetwork.Destroy(this.currentOpenedPackage.gameObject);
                     }
 
