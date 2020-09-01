@@ -9,21 +9,17 @@ using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     public class Props : MonoBehaviourPun {
-        [Header("Props Settings")]
-        [SerializeField] private Action buildAction;
+        protected PropsConfig configuration;
 
-        [Header("Props settings debug")]
-        [SerializeField] protected PropsConfig configuration;
+        protected Action[] actions;
 
-        [SerializeField] protected Action[] actions;
+        protected Action[] unbuiltActions;
 
-        [SerializeField] protected Action[] unbuiltActions;
+        protected bool built;
 
-        [SerializeField] protected bool built;
+        protected Renderer[] renderersToModify;
 
-        [SerializeField] protected Renderer[] renderersToModify;
-
-        [SerializeField] protected Dictionary<Renderer, Material[]> defaultMaterialsByRenderer;
+        protected Dictionary<Renderer, Material[]> defaultMaterialsByRenderer;
 
         protected virtual void Awake() {
             this.built = true;
@@ -37,11 +33,11 @@ namespace Sim.Building {
         }
 
         protected virtual void SetupActions() {
-            this.actions = new Action[0];
+            this.actions = this.configuration.GetActions();
         }
 
         protected virtual void SetupUnbuiltActions() {
-            this.unbuiltActions = new Action[1] {this.buildAction};
+            this.unbuiltActions = this.configuration.GetUnbuiltActions();
         }
 
         public virtual Action[] GetActions() {

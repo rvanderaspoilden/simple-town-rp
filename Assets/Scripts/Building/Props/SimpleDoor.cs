@@ -9,9 +9,8 @@ namespace Sim.Building {
         [Header("Settings")]
         [SerializeField] private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
         
-        [Header("Only for debug")]
-        [SerializeField] private Animator animator;
-        [SerializeField] private List<Collider> colliderTriggered;
+        private Animator animator;
+        private List<Collider> colliderTriggered;
 
         private void Awake() {
             this.colliderTriggered = new List<Collider>();

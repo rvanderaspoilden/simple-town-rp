@@ -9,10 +9,20 @@ namespace Sim.Scriptables {
         [SerializeField] private int id;
         [SerializeField] private string displayName;
         [SerializeField] private Props prefab;
-        [SerializeField] private Package packagePrefab;
+        [SerializeField] private PropsConfig packageConfig;
         [SerializeField] private BuildSurfaceEnum surfaceToPose;
         [SerializeField] private bool toBuild;
         [SerializeField] private float rangeToInteract;
+        [SerializeField] private Action[] actions;
+        [SerializeField] private Action[] unbuiltActions;
+
+        public Action[] GetUnbuiltActions() {
+            return this.unbuiltActions;
+        }
+        
+        public Action[] GetActions() {
+            return this.actions;
+        }
         
         public int GetId() {
             return this.id;
@@ -34,8 +44,8 @@ namespace Sim.Scriptables {
             return this.surfaceToPose;
         }
 
-        public Package GetPackage() {
-            return this.packagePrefab;
+        public PropsConfig GetPackageConfig() {
+            return this.packageConfig;
         }
 
         public bool MustBeBuilt() {

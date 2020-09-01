@@ -19,3 +19,8 @@ MonoBehaviour:
   surfaceToPose: 0
   toBuild: 0
   rangeToInteract: 2
+  actions:
+  - actionType: 1
+    actionLabel: Ouvrir le colis
+    locked: 0
+  unbuiltActions: []

@@ -584,9 +584,12 @@
               <e p="Ground.cs" t="Include" />
               <e p="Interactables" t="Include">
                 <e p="Action.cs" t="Include" />
-                <e p="DoorTeleporter.cs" t="Include" />
                 <e p="Package.cs" t="Include" />
-                <e p="Teleporter.cs" t="Include" />
+                <e p="Teleporter" t="Include">
+                  <e p="DoorTeleporter.cs" t="Include" />
+                  <e p="ElevatorTeleporter.cs" t="Include" />
+                  <e p="Teleporter.cs" t="Include" />
+                </e>
               </e>
               <e p="PaintBucket.cs" t="Include" />
               <e p="Seat.cs" t="Include" />
@@ -621,6 +624,7 @@
             <e p="Launcher.cs" t="Include" />
             <e p="LoadingManager.cs" t="Include" />
             <e p="NetworkManager.cs" t="Include" />
+            <e p="PropsManager.cs" t="Include" />
             <e p="RoomManager.cs" t="Include" />
           </e>
           <e p="Player.cs" t="Include" />

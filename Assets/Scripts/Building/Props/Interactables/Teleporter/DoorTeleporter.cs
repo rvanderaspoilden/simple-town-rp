@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using Photon.Pun;
 using Sim.Enums;
 using UnityEngine;
@@ -8,9 +7,6 @@ namespace Sim.Interactables {
     public class DoorTeleporter : Teleporter {
         [Header("Door Settings")]
         [SerializeField] private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
-
-        [SerializeField] private Action useAction;
-        [SerializeField] private Action lockAction;
 
         private Animator animator;
         private Coroutine doorAnimationCoroutine;
@@ -24,13 +20,6 @@ namespace Sim.Interactables {
 
         private void OnDestroy() {
             StopAllCoroutines();
-        }
-
-        protected override void SetupActions() {
-            this.actions = new Action[2] {
-                this.useAction,
-                this.lockAction
-            };
         }
 
         public override void Use() {

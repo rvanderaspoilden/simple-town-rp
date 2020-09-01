@@ -129,19 +129,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff54134ee99e5e048a3a5c43335a1798, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  configuration: {fileID: 11400000, guid: a993878725957364a872287ca92ae44d, type: 2}
-  buildAction:
-    actionType: 0
-    actionLabel: 
-    locked: 0
-  actions: []
-  unbuiltActions: []
-  built: 0
-  renderersToModify: []
-  useAction:
-    actionType: 1
-    actionLabel: Peindre
-    locked: 0
   color: {r: 0, g: 0.74053025, b: 1, a: 1}
   paintConfig: {fileID: 0}
 --- !u!114 &685306496293001916

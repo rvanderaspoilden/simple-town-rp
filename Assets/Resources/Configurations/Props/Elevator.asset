@@ -14,8 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 11
   displayName: Ascenseur
-  prefab: {fileID: 369961875868750355, guid: e8a1ce33b2702924baddaaf48be553b7, type: 3}
+  prefab: {fileID: 1753432056708833345, guid: e8a1ce33b2702924baddaaf48be553b7, type: 3}
   packagePrefab: {fileID: 0}
   surfaceToPose: 0
   toBuild: 0
   rangeToInteract: 2
+  actions:
+  - actionType: 1
+    actionLabel: Utiliser l'ascenseur
+    locked: 0
+  unbuiltActions: []

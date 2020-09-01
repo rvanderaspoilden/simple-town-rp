@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Photon.Pun;
 using Sim.Building;
 using Sim.Scriptables;
@@ -7,9 +8,6 @@ using UnityEngine;
 
 namespace Sim.Interactables {
     public class Package : Props {
-        [Header("Package Settings")]
-        [SerializeField] private Action useAction;
-
         [Header("Package debug")]
         [SerializeField] private PropsConfig propsInside;
 
@@ -18,8 +16,10 @@ namespace Sim.Interactables {
         public static event OnOpen OnOpened;
 
         protected override void SetupActions() {
-            useAction.SetIsLocked(!PhotonNetwork.IsMasterClient); // todo replace it by appartment owner
-            this.actions = new Action[1] {useAction};
+            base.SetupActions();
+            
+            // todo replace it by appartment owner
+            this.actions.ToList().ForEach(action => action.SetIsLocked(!PhotonNetwork.IsMasterClient));
         }
 
         public override void Use() {

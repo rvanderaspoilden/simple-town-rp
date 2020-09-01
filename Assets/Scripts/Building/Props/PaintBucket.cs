@@ -1,13 +1,11 @@
-﻿using Photon.Pun;
-using Sim.Enums;
-using Sim.Interactables;
+﻿using System.Linq;
+using Photon.Pun;
 using Sim.Scriptables;
 using UnityEngine;
 
 namespace Sim.Building {
     public class PaintBucket : Props {
         [Header("Bucket Settings")]
-        [SerializeField] private Action useAction;
         [SerializeField] private Color color = Color.white;
 
         [Header("Bucket settings debug")]
@@ -18,8 +16,10 @@ namespace Sim.Building {
         public static event OnOpen OnOpened;
 
         protected override void SetupActions() {
-            useAction.SetIsLocked(!PhotonNetwork.IsMasterClient); // todo replace it by appartment owner
-            this.actions = new Action[1] {this.useAction};
+            base.SetupActions();
+            
+            // todo replace it by appartment owner
+            this.actions.ToList().ForEach(action => action.SetIsLocked(!PhotonNetwork.IsMasterClient));
         }
 
         public override void Use() {

@@ -211,7 +211,7 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2553775409626890500}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 1.1994293, y: 0.6912063, z: 0.35667974}
@@ -228,15 +228,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  configuration: {fileID: 11400000, guid: 749bac55f7b4ee24b8367c409e42b09c, type: 2}
-  buildAction:
-    actionType: 2
-    actionLabel: Monter
-    locked: 0
-  actions: []
-  unbuiltActions: []
-  built: 0
-  renderersToModify: []
 --- !u!114 &-4995292782554810088
 MonoBehaviour:
   m_ObjectHideFlags: 0

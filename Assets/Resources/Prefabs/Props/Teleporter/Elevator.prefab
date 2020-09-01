@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 621213801827477655}
   - component: {fileID: 7170792406590309696}
   - component: {fileID: 4910287927518518884}
-  - component: {fileID: 369961875868750355}
+  - component: {fileID: 1753432056708833345}
   m_Layer: 10
   m_Name: Elevator
   m_TagString: Interactable
@@ -58,6 +58,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -82,6 +83,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &7170792406590309696
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -108,13 +110,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   foundationObj: {fileID: 0}
-  materialToApply: {fileID: 2100000, guid: 38b4275f707f1544aa55595799f3e2c7, type: 2}
   renderersToModify:
   - {fileID: 621213801827477655}
   interactWithCameraDistance: 1
   showFoundation: 0
-  hideForced: 0
---- !u!114 &369961875868750355
+  props: {fileID: 0}
+  visibility: 0
+--- !u!114 &1753432056708833345
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -123,10 +125,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1198565143842987083}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d5aa8bcc00caab4c8c550ed30da293d, type: 3}
+  m_Script: {fileID: 11500000, guid: b9a38553ae92b0f46bff5725c25fe378, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  configuration: {fileID: 11400000, guid: ef9881e59425baa42b6d1ba3fa89becb, type: 2}
-  rangeToInteract: 0.5
+  configuration: {fileID: 0}
   actions: []
+  unbuiltActions: []
+  built: 0
+  renderersToModify: []
   destination: 0

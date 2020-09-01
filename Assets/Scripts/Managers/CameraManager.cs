@@ -40,8 +40,8 @@ namespace Sim {
 
         [Header("Build debug")]
         [SerializeField] private BuildModeEnum buildMode;
-        
-        private PropsConfig propsToInstantiate;
+
+        private PropsConfig propsConfigToInstantiate;
 
         private Props currentPropSelected;
 
@@ -74,23 +74,23 @@ namespace Sim {
         }
 
         private void Start() {
-            AdminPanelUI.OnPropsClicked += InstantiatePropsFromAdminPanel;
-            AdminPanelUI.OnPaintClicked += InstantiatePaintFromAdminPanel;
+            AdminPanelUI.OnPropsClicked += OnSelectPropsFromAdminPanel;
+            AdminPanelUI.OnPaintClicked += OnSelectPaintFromAdminPanel;
             Package.OnOpened += OpenPackage;
             PaintBucket.OnOpened += OpenBucket;
             BuildPreviewPanelUI.OnValidate += ApplyBuildModification;
-            BuildPreviewPanelUI.OnCanceled += ClearBuilds;
+            BuildPreviewPanelUI.OnCanceled += OnCancelBuildPreview;
             BuildPreviewPanelUI.OnToggleHideProps += TogglePropsVisible;
             BuildPreviewPanelUI.OnToggleHideWalls += ToggleWallVisible;
         }
 
         private void OnDestroy() {
-            AdminPanelUI.OnPropsClicked -= InstantiatePropsFromAdminPanel;
-            AdminPanelUI.OnPaintClicked -= InstantiatePaintFromAdminPanel;
+            AdminPanelUI.OnPropsClicked -= OnSelectPropsFromAdminPanel;
+            AdminPanelUI.OnPaintClicked -= OnSelectPaintFromAdminPanel;
             Package.OnOpened -= OpenPackage;
             PaintBucket.OnOpened -= OpenBucket;
             BuildPreviewPanelUI.OnValidate -= ApplyBuildModification;
-            BuildPreviewPanelUI.OnCanceled -= ClearBuilds;
+            BuildPreviewPanelUI.OnCanceled -= OnCancelBuildPreview;
             BuildPreviewPanelUI.OnToggleHideProps -= TogglePropsVisible;
             BuildPreviewPanelUI.OnToggleHideWalls -= ToggleWallVisible;
         }
@@ -220,18 +220,18 @@ namespace Sim {
         }
 
         private void OpenBucket(PaintBucket bucket) {
-            this.ClearBuilds();
+            this.CleanBuildPreview();
 
             this.currentOpenedBucket = bucket;
 
             this.buildMode = BuildModeEnum.PAINT;
-            
+
             // todo sortir ça
             HUDManager.Instance.DisplayAdminPanel(false);
             HUDManager.Instance.DisplayBuildPreviewPanel(true);
-            
+
             this.SwitchToBuildMode();
-            
+
             FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
                 if (foundationRenderer) {
                     foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.FORCE_SHOW);
@@ -239,61 +239,95 @@ namespace Sim {
             });
         }
 
-        private void InstantiatePropsFromAdminPanel(PropsConfig propsConfig) {
+        /**
+         * Called when props was chosen from admin panel
+         */
+        private void OnSelectPropsFromAdminPanel(PropsConfig propsConfig) {
             this.propsToPackage = propsConfig;
-            InstantiateProps(this.propsToPackage.GetPackage().GetConfiguration());
+            Debug.Log(propsConfig);
+
+            InstantiateProps(this.propsToPackage.GetPackageConfig());
             this.buildMode = BuildModeEnum.PACKAGING;
         }
 
-        private void InstantiatePaintFromAdminPanel(PaintConfig paintConfig) {
+        /**
+         * Called when paint was chosen from admin panel
+         */
+        private void OnSelectPaintFromAdminPanel(PaintConfig paintConfig) {
             this.paintToPackage = paintConfig;
             InstantiateProps(this.paintToPackage.GetBucketPrefab().GetConfiguration());
             this.buildMode = BuildModeEnum.PACKAGING;
         }
 
-        private void SetCurrentSelectedProps(PropsConfig propsConfig, bool isEditMode = false) {
-            Props props = Instantiate(propsConfig.GetPrefab());
-            props.SetConfiguration(propsConfig);
-            
-            this.isEditMode = isEditMode;
+        private void SetCurrentSelectedProps(Props props) {
+            // Used for edit mode (useless actually)
             this.initialPosition = props.transform.position;
             this.initialRotation = props.transform.rotation;
 
             this.currentPropSelected = props;
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
             this.currentPreview.SetErrorMaterial(DatabaseManager.Instance.GetErrorMaterial());
+        }
 
+        private void OnCancelBuildPreview() {
+            // Clean all state
+            this.CleanBuildPreview();
+            
+            // Then come back to default view
+            this.SwitchToFreeMode();
+
+            // Reset build mode to be safe for next time
+            this.buildMode = BuildModeEnum.NONE;
+
+            // Hide build preview panel
+            HUDManager.Instance.DisplayBuildPreviewPanel(false);
+        }
+
+        private void InstantiateProps(PropsConfig config) {
+            Debug.Log(config);
+            
+            // Clean all previous states
+            this.CleanBuildPreview();
+
+            Debug.Log(config);
+
+            
+            this.propsConfigToInstantiate = config;
+            
+            Props props = PropsManager.instance.InstantiateProps(config,false);
+
+            this.SetCurrentSelectedProps(props);
+            
             // todo sortir ça
             HUDManager.Instance.DisplayAdminPanel(false);
             HUDManager.Instance.DisplayBuildPreviewPanel(true);
 
-            this.SwitchToBuildMode();
+            if (this.currentMode != CameraModeEnum.BUILD) {
+                this.SwitchToBuildMode();
+            }
 
             this.followMouse = true;
-        }
-
-        private void InstantiateProps(PropsConfig config) {
-            this.ClearBuilds();
-
-            this.propsToInstantiate = config;
-
-            this.SetCurrentSelectedProps(config);
         }
 
         /**
          * Used to clear build mode if there was a current prop selected
          */
-        public void ClearBuilds() {
+        public void CleanBuildPreview() {
             if (!this.currentPropSelected && !this.currentOpenedBucket) {
                 return;
             }
 
-            if (this.isEditMode) {
+            // Reactivate when edit mode
+            /**if (this.isEditMode) { // Reset current props selected to his initial state
                 this.currentPropSelected.transform.position = this.initialPosition;
                 this.currentPropSelected.transform.rotation = this.initialRotation;
                 this.currentPreview.Destroy();
                 this.currentPropSelected = null;
             } else if (this.currentPropSelected) {
+                Destroy(this.currentPropSelected.gameObject);
+            } **/
+
+            if (this.currentPropSelected) { // if props is selected => destroy it
                 Destroy(this.currentPropSelected.gameObject);
             }
 
@@ -310,12 +344,6 @@ namespace Sim {
                 FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.Reset());
                 this.currentOpenedBucket = null;
             }
-
-            this.SwitchToFreeMode();
-            
-            this.buildMode = BuildModeEnum.NONE;
-
-            HUDManager.Instance.DisplayBuildPreviewPanel(false);
         }
 
         public void ApplyBuildModification() {
@@ -329,32 +357,30 @@ namespace Sim {
                     this.currentPreview.Destroy();
                     this.currentPropSelected = null;
                 } else {
-                    GameObject propsInstanciated = PhotonNetwork.InstantiateSceneObject(CommonUtils.GetRelativePathFromResources(this.propsToInstantiate.GetPrefab()), this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
-                    Props props = propsInstanciated.GetComponent<Props>();
-                    props.SetConfiguration(this.propsToInstantiate);
-                    
+                    Props props = PropsManager.instance.InstantiateProps(this.propsConfigToInstantiate, this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation, true);
+
                     // Manage packaging for props
                     if (this.propsToPackage) {
                         props.SetIsBuilt(true);
-                        propsInstanciated.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId());
+                        props.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId());
                         this.propsToPackage = null;
                     }
 
                     // Manage packaging for paint
                     if (this.paintToPackage) {
                         props.SetIsBuilt(true);
-                        propsInstanciated.GetComponent<PaintBucket>().SetPaintConfigId(this.paintToPackage.GetId());
+                        props.GetComponent<PaintBucket>().SetPaintConfigId(this.paintToPackage.GetId());
                         this.paintToPackage = null;
                     }
 
                     // Manage unpackaging
                     if (this.currentOpenedPackage) { // if props come from a package so remove package
-                        props.SetIsBuilt(false);
+                        props.SetIsBuilt(!this.propsConfigToInstantiate.MustBeBuilt());
                         PhotonNetwork.Destroy(this.currentOpenedPackage.gameObject);
                     }
 
                     Destroy(this.currentPropSelected.gameObject);
-                    this.propsToInstantiate = null;
+                    this.propsConfigToInstantiate = null;
                 }
             } else if (this.currentOpenedBucket) {
                 FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
@@ -367,7 +393,7 @@ namespace Sim {
             }
 
             this.SwitchToFreeMode();
-            
+
             this.buildMode = BuildModeEnum.NONE;
 
             HUDManager.Instance.DisplayBuildPreviewPanel(false);
@@ -406,9 +432,11 @@ namespace Sim {
                         float newAngle = (Mathf.FloorToInt(currentLocalAngle.y / 90f) * 90f) + 90f;
                         this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
                     } else if (Input.GetKey(KeyCode.LeftArrow)) {
-                        this.currentPropSelected.transform.Rotate(Vector3.forward * -this.propsRotationSpeed);
+                        Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
+                        this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, currentLocalAngle.y - this.propsRotationSpeed, currentLocalAngle.z);
                     } else if (Input.GetKey(KeyCode.RightArrow)) {
-                        this.currentPropSelected.transform.Rotate(Vector3.forward * this.propsRotationSpeed);
+                        Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
+                        this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, currentLocalAngle.y + this.propsRotationSpeed, currentLocalAngle.z);
                     }
                 }
 
