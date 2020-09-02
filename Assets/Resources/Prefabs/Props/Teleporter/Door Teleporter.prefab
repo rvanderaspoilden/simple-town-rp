@@ -56,6 +56,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -80,6 +81,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &1623457433883263207
 GameObject:
   m_ObjectHideFlags: 0
@@ -135,6 +137,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -159,6 +162,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &3093486418350334969
 GameObject:
   m_ObjectHideFlags: 0
@@ -239,18 +243,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 320f5e67eaea6314dad19be10d680781, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  configuration: {fileID: 11400000, guid: 0d50fabf4756bf142bd803fd40997f04, type: 2}
-  actions: []
   destination: 1
   doorDirection: -1
-  useAction:
-    actionType: 1
-    actionLabel: Entrer
-    locked: 0
-  lockAction:
-    actionType: 3
-    actionLabel: Verrouiller
-    locked: 1
 --- !u!114 &-9145504947869361753
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -328,6 +322,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -352,3 +347,4 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}

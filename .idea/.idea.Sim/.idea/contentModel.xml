@@ -47,6 +47,9 @@
             <e p="HSVUtil.cs" t="Include" />
           </e>
         </e>
+        <e p="JsonDotNet" t="Include">
+          <e p="link.xml" t="Include" />
+        </e>
         <e p="Photon" t="Include">
           <e p="PhotonChat" t="Include">
             <e p="Code" t="Include">
@@ -628,6 +631,10 @@
             <e p="RoomManager.cs" t="Include" />
           </e>
           <e p="Player.cs" t="Include" />
+          <e p="Save" t="Include">
+            <e p="SaveUtils.cs" t="Include" />
+            <e p="SceneData.cs" t="Include" />
+          </e>
           <e p="Scriptables" t="Include">
             <e p="PaintConfig.cs" t="Include" />
             <e p="PaintDatabaseConfig.cs" t="Include" />

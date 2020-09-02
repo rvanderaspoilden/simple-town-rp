@@ -1,0 +1,159 @@
+{
+  "doorTeleporters": [
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": 2.51999974,
+          "y": -2.42,
+          "z": 4.16500044
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 270.0,
+          "z": 0.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        }
+      }
+    },
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": -2.48000026,
+          "y": -2.42,
+          "z": -4.83500051
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 90.0,
+          "z": 0.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        }
+      }
+    },
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": -2.48000026,
+          "y": -2.42,
+          "z": 3.16500044
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 90.0,
+          "z": 0.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        }
+      }
+    },
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": -2.48000026,
+          "y": -2.42,
+          "z": -0.834999561
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 90.0,
+          "z": 0.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        }
+      }
+    },
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": 2.51999974,
+          "y": -2.42,
+          "z": -3.83500051
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 270.0,
+          "z": 0.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        }
+      }
+    },
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": 2.51999974,
+          "y": -2.42,
+          "z": 0.165000439
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 270.0,
+          "z": 0.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        }
+      }
+    }
+  ],
+  "elevatorTeleporters": [
+    {
+      "destination": "TOWN_SQUARE",
+      "id": 11,
+      "transform": {
+        "position": {
+          "x": 1.51999974,
+          "y": -2.42,
+          "z": -7.83500051
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        }
+      }
+    }
+  ]
+}

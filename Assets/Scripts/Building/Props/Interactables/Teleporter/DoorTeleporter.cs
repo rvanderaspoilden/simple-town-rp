@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using Photon.Pun;
 using Sim.Enums;
 using UnityEngine;
@@ -15,7 +16,7 @@ namespace Sim.Interactables {
             base.Awake();
             
             this.animator = GetComponent<Animator>();
-            this.animator.SetFloat("direction", (float)doorDirection);
+            this.animator.SetFloat("direction", doorDirection == DoorDirectionEnum.BACKWARD ? -1 : 1);
         }
 
         private void OnDestroy() {
@@ -27,6 +28,20 @@ namespace Sim.Interactables {
             photonView.RPC("RPC_Animation", RpcTarget.All);
             
             base.Use();
+        }
+
+        public DoorDirectionEnum GetDoorDirection() {
+            return this.doorDirection;
+        }
+
+        public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum) {
+            photonView.RPC("RPC_SetDoorDirection", RpcTarget.AllBuffered, doorDirectionEnum);
+        }
+
+        [PunRPC]
+        public void RPC_SetDoorDirection(DoorDirectionEnum doorDirectionEnum) {
+            this.doorDirection = doorDirectionEnum;
+            this.animator.SetFloat("direction", doorDirection == DoorDirectionEnum.BACKWARD ? -1 : 1);
         }
 
         [PunRPC]

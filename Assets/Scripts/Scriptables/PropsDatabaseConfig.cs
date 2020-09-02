@@ -5,7 +5,7 @@ namespace Sim.Scriptables {
     [CreateAssetMenu(fileName = "Props Database", menuName = "Configurations/Database/Props")]
     public class PropsDatabaseConfig : ScriptableObject {
         [SerializeField] private List<PropsConfig> props;
-
+        
         public List<PropsConfig> GetProps() {
             return this.props;
         }

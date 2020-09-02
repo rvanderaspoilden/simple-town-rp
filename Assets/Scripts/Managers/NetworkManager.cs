@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using Newtonsoft.Json;
 using Photon.Pun;
 using Photon.Realtime;
 using Sim.Constants;
@@ -34,6 +35,12 @@ namespace Sim {
             this.ConnectToMasterServer();
         }
 
+        private void Update() {
+            if (Input.GetKeyDown(KeyCode.O)) {
+                RoomManager.Instance.SaveRoom();
+            }
+        }
+
         private void OnDestroy() {
             StopAllCoroutines();
         }
@@ -63,9 +70,9 @@ namespace Sim {
 
         private IEnumerator LeaveAndJoinRoom(PlacesEnum place) {
             LoadingManager.Instance.Show();
-            
+
             yield return new WaitForSeconds(1f);
-            
+
             PhotonNetwork.LeaveRoom();
 
             // Wait reconnect to master server before join a room
@@ -91,8 +98,17 @@ namespace Sim {
             }
 
             Debug.Log("Room is loaded");
+
+            if (PhotonNetwork.IsMasterClient) {
+                if (sceneName.Equals("Hall")) {
+                    TextAsset hallSceneData = Resources.Load<TextAsset>("PresetSceneDatas/Hall");
+                    SceneData sceneData = JsonConvert.DeserializeObject<SceneData>(hallSceneData.text);
+                    RoomManager.Instance.InstantiateLevel(sceneData);
+                }
+            }
+
             RoomManager.Instance.InstantiateLocalPlayer(this.playerPrefab, this.personnage);
-            
+
             LoadingManager.Instance.Hide();
         }
 
@@ -113,7 +129,7 @@ namespace Sim {
 
         public override void OnJoinRoomFailed(short returnCode, string message) {
             base.OnJoinRoomFailed(returnCode, message);
-            
+
             LoadingManager.Instance.Hide();
         }
 

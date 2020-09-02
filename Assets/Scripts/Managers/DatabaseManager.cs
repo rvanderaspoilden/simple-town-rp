@@ -1,4 +1,6 @@
-﻿using Sim.Scriptables;
+﻿using System.Collections.Generic;
+using Sim.Scriptables;
+using UnityEditor;
 using UnityEngine;
 
 namespace Sim {
@@ -25,6 +27,7 @@ namespace Sim {
             
             PaintDatabase = Resources.Load<PaintDatabaseConfig>("Configurations/Databases/Paint Database");
             Debug.Log("Paint database loaded");
+            
             DontDestroyOnLoad(this.gameObject);
         }
 

@@ -14,9 +14,11 @@ GameObject:
   - component: {fileID: 7170792406590309696}
   - component: {fileID: 4910287927518518884}
   - component: {fileID: 1753432056708833345}
+  - component: {fileID: 1988287588669254643}
+  - component: {fileID: 7597156552802683900}
   m_Layer: 10
   m_Name: Elevator
-  m_TagString: Interactable
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
@@ -128,9 +130,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9a38553ae92b0f46bff5725c25fe378, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  configuration: {fileID: 0}
-  actions: []
-  unbuiltActions: []
-  built: 0
-  renderersToModify: []
   destination: 0
+--- !u!114 &1988287588669254643
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1198565143842987083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 0
+  OwnershipTransfer: 0
+  ObservedComponents:
+  - {fileID: 0}
+  viewIdField: 0
+  InstantiationId: 0
+  isRuntimeInstantiated: 0
+--- !u!208 &7597156552802683900
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1198565143842987083}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 1, y: 1.105, z: 0.24700001}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: -1.5000001, y: 1.105, z: -0.05}
+  m_TimeToStationary: 0.5

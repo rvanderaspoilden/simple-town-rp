@@ -1,6 +1,9 @@
-﻿namespace Sim.Enums {
+﻿using System;
+
+namespace Sim.Enums {
+    [Serializable]
     public enum DoorDirectionEnum {
-        BACKWARD = -1,
-        FORWARD = 1
+        BACKWARD,
+        FORWARD
     }
 }    
