@@ -41,6 +41,11 @@ namespace Sim {
                 props.SetDestination((PlacesEnum) Enum.Parse(typeof(PlacesEnum), data.destination));
                 props.SetDoorDirection((DoorDirectionEnum) Enum.Parse(typeof(DoorDirectionEnum), data.doorDirection));
             });
+            
+            // Instantiate all simple doors
+            sceneData.simpleDoors?.ToList().ForEach(data => {
+                SimpleDoor props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as SimpleDoor;
+            });
 
             // Instantiate all elevators
             sceneData.elevatorTeleporters?.ToList().ForEach(data => {
@@ -60,6 +65,7 @@ namespace Sim {
             sceneData.doorTeleporters = FindObjectsOfType<DoorTeleporter>().ToList().Select(door => SaveUtils.CreateDoorTeleporterData(10, door)).ToArray();
             sceneData.elevatorTeleporters = FindObjectsOfType<ElevatorTeleporter>().ToList().Select(elevator => SaveUtils.CreateElevatorTeleporterData(11, elevator)).ToArray();
             sceneData.walls = FindObjectsOfType<Wall>().ToList().Select(wall => SaveUtils.CreateWallData(wall.GetConfiguration().GetId(), wall)).ToArray();
+            sceneData.simpleDoors = FindObjectsOfType<SimpleDoor>().ToList().Select(door => SaveUtils.CreateDoorData(door)).ToArray();
 
             String sceneDataJson = JsonConvert.SerializeObject(sceneData);
             System.IO.File.WriteAllText(Application.dataPath + "/Resources/PresetSceneDatas/" + SceneManager.GetActiveScene().name + ".json", sceneDataJson);

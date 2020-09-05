@@ -10,6 +10,7 @@ namespace Sim {
         public DoorTeleporterData[] doorTeleporters;
         public ElevatorTeleporterData[] elevatorTeleporters;
         public WallData[] walls;
+        public DoorData[] simpleDoors;
     }
 
     [Serializable]
@@ -23,6 +24,9 @@ namespace Sim {
         public String destination;
         public String doorDirection;
     }
+
+    [Serializable]
+    public class DoorData : DefaultData {}
 
     [Serializable]
     public class ElevatorTeleporterData : DefaultData {

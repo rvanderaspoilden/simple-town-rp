@@ -40,6 +40,13 @@ namespace Sim.Utils {
             data.wallFaces = wall.GetWallFaces().Select(face => new WallFaceData(face)).ToArray();
             return data;
         }
+        
+        public static DoorData CreateDoorData(SimpleDoor door) {
+            DoorData data = new DoorData();
+            data.id = door.GetConfiguration().GetId();
+            data.transform = CreateTransformData(door.transform);
+            return data;
+        }
 
         public static Props InstantiatePropsFromSave(DefaultData data, Transform container) {
             PropsConfig doorConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
