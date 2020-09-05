@@ -55,6 +55,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -83,6 +84,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &2369602910244784126
 GameObject:
   m_ObjectHideFlags: 0
@@ -143,6 +145,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -171,6 +174,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &2369602910244784115
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -198,14 +202,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: f1448cb703fab4248b9167d8541833cb, type: 2}
-  buildAction:
-    actionType: 0
-    actionLabel: 
-    locked: 0
-  actions: []
-  unbuiltActions: []
-  built: 0
-  renderersToModify: []
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
@@ -223,9 +219,6 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
-  renderer: {fileID: 0}
-  foundationRenderer: {fileID: 0}
-  collider: {fileID: 0}
 --- !u!114 &2369602910244784113
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -244,7 +237,7 @@ MonoBehaviour:
   interactWithCameraDistance: 1
   showFoundation: 0
   props: {fileID: 0}
-  hideForced: 0
+  visibility: 0
 --- !u!114 &8357230099997878342
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -322,6 +315,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -350,6 +344,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &8667482802888311154
 GameObject:
   m_ObjectHideFlags: 0

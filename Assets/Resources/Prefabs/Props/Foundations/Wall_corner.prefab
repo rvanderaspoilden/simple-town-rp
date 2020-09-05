@@ -55,6 +55,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -87,6 +88,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &7454000879150205187
 GameObject:
   m_ObjectHideFlags: 0
@@ -147,6 +149,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -179,6 +182,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &2410990672549681340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -197,7 +201,7 @@ MonoBehaviour:
   interactWithCameraDistance: 1
   showFoundation: 0
   props: {fileID: 0}
-  hideForced: 0
+  visibility: 0
 --- !u!64 &7855799751544770467
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -225,14 +229,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 287955e095f68ba4dafbea94368de953, type: 2}
-  buildAction:
-    actionType: 0
-    actionLabel: 
-    locked: 0
-  actions: []
-  unbuiltActions: []
-  built: 0
-  renderersToModify: []
   allowedSharedMaterialIds: 01000000020000000300000004000000060000000700000008000000
   wallFaces:
   - sharedMaterialIdx: 0
@@ -262,9 +258,6 @@ MonoBehaviour:
   - sharedMaterialIdx: 8
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
-  renderer: {fileID: 0}
-  foundationRenderer: {fileID: 0}
-  collider: {fileID: 0}
 --- !u!114 &5507787891652889741
 MonoBehaviour:
   m_ObjectHideFlags: 0

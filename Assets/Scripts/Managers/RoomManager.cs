@@ -36,16 +36,22 @@ namespace Sim {
 
         public void InstantiateLevel(SceneData sceneData) {
             // Instantiate all doors teleporter
-            sceneData.doorTeleporters.ToList().ForEach(data => {
+            sceneData.doorTeleporters?.ToList().ForEach(data => {
                 DoorTeleporter props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as DoorTeleporter;
                 props.SetDestination((PlacesEnum) Enum.Parse(typeof(PlacesEnum), data.destination));
                 props.SetDoorDirection((DoorDirectionEnum) Enum.Parse(typeof(DoorDirectionEnum), data.doorDirection));
             });
 
             // Instantiate all elevators
-            sceneData.elevatorTeleporters.ToList().ForEach(data => {
+            sceneData.elevatorTeleporters?.ToList().ForEach(data => {
                 ElevatorTeleporter props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as ElevatorTeleporter;
                 props.SetDestination((PlacesEnum) Enum.Parse(typeof(PlacesEnum), data.destination));
+            });
+
+            // Instantiate all walls
+            sceneData.walls?.ToList().ForEach(data => {
+                Wall props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as Wall;
+                props.SetWallFaces(data.wallFaces.Select(faceData => faceData.ToWallFace()).ToList());
             });
         }
 
@@ -53,6 +59,7 @@ namespace Sim {
             SceneData sceneData = new SceneData();
             sceneData.doorTeleporters = FindObjectsOfType<DoorTeleporter>().ToList().Select(door => SaveUtils.CreateDoorTeleporterData(10, door)).ToArray();
             sceneData.elevatorTeleporters = FindObjectsOfType<ElevatorTeleporter>().ToList().Select(elevator => SaveUtils.CreateElevatorTeleporterData(11, elevator)).ToArray();
+            sceneData.walls = FindObjectsOfType<Wall>().ToList().Select(wall => SaveUtils.CreateWallData(wall.GetConfiguration().GetId(), wall)).ToArray();
 
             String sceneDataJson = JsonConvert.SerializeObject(sceneData);
             System.IO.File.WriteAllText(Application.dataPath + "/Resources/PresetSceneDatas/" + SceneManager.GetActiveScene().name + ".json", sceneDataJson);

@@ -44,6 +44,15 @@ namespace Sim.Building {
             this.foundationRenderer.SetupDefaultMaterials();
         }
 
+        public List<WallFace> GetWallFaces() {
+            return this.wallFaces;
+        }
+
+        public void SetWallFaces(List<WallFace> wallFaces) {
+            this.wallFaces = wallFaces;
+            photonView.RPC("RPC_UpdateWallFaces", RpcTarget.OthersBuffered, JsonHelper.ToJson(this.wallFaces.ToArray()));
+        }
+
         public void ApplyModification() {
             this.wallFacesPreviewed.Clear();
 

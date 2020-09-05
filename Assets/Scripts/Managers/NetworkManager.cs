@@ -101,8 +101,14 @@ namespace Sim {
 
             if (PhotonNetwork.IsMasterClient) {
                 if (sceneName.Equals("Hall")) {
-                    TextAsset hallSceneData = Resources.Load<TextAsset>("PresetSceneDatas/Hall");
-                    SceneData sceneData = JsonConvert.DeserializeObject<SceneData>(hallSceneData.text);
+                    TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Hall");
+                    SceneData sceneData = JsonConvert.DeserializeObject<SceneData>(textAsset.text);
+                    RoomManager.Instance.InstantiateLevel(sceneData);
+                }
+                
+                if (sceneName.Equals("Appartment")) {
+                    TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Appartment");
+                    SceneData sceneData = JsonConvert.DeserializeObject<SceneData>(textAsset.text);
                     RoomManager.Instance.InstantiateLevel(sceneData);
                 }
             }

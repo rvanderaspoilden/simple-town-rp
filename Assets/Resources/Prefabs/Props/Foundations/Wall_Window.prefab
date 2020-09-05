@@ -60,6 +60,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -88,6 +89,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &4063632219324874920
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -115,14 +117,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 450679e3764b2fc4d95cb809f578fa75, type: 2}
-  buildAction:
-    actionType: 0
-    actionLabel: 
-    locked: 0
-  actions: []
-  unbuiltActions: []
-  built: 0
-  renderersToModify: []
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
@@ -140,9 +134,6 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
-  renderer: {fileID: 0}
-  foundationRenderer: {fileID: 0}
-  collider: {fileID: 0}
 --- !u!114 &594080147197093049
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -161,7 +152,7 @@ MonoBehaviour:
   interactWithCameraDistance: 1
   showFoundation: 0
   props: {fileID: 0}
-  hideForced: 0
+  visibility: 0
 --- !u!114 &2092699004195242931
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -239,6 +230,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -267,3 +259,4 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}

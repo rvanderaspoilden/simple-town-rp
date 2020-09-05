@@ -1,5 +1,6 @@
 ﻿using System;
 using Newtonsoft.Json;
+using Sim.Building;
 using Sim.Enums;
 using UnityEngine;
 
@@ -8,6 +9,7 @@ namespace Sim {
     public class SceneData {
         public DoorTeleporterData[] doorTeleporters;
         public ElevatorTeleporterData[] elevatorTeleporters;
+        public WallData[] walls;
     }
 
     [Serializable]
@@ -25,6 +27,31 @@ namespace Sim {
     [Serializable]
     public class ElevatorTeleporterData : DefaultData {
         public String destination;
+    }
+
+    [Serializable]
+    public class WallData : DefaultData {
+        public WallFaceData[] wallFaces;
+    }
+
+    [Serializable]
+    public class WallFaceData {
+        public int sharedMaterialIdx;
+        public int paintConfigId;
+        public float[] additionalColor;
+
+        public WallFaceData() { }
+
+        public WallFaceData(WallFace wallFace) {
+            this.sharedMaterialIdx = wallFace.GetSharedMaterialIdx();
+            this.paintConfigId = wallFace.GetPaintConfigId();
+            this.additionalColor = new float[4] {wallFace.GetAdditionalColor().r, wallFace.GetAdditionalColor().g, wallFace.GetAdditionalColor().b, wallFace.GetAdditionalColor().a};
+        }
+
+        public WallFace ToWallFace() {
+            Color color = this.additionalColor != null ? new Color(this.additionalColor[0], this.additionalColor[1], this.additionalColor[2], this.additionalColor[3]) : Color.white;
+            return new WallFace(this.sharedMaterialIdx, this.paintConfigId, color);
+        }
     }
 
     [Serializable]

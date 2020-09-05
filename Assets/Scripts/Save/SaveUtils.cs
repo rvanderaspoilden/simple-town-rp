@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Sim.Building;
 using Sim.Interactables;
 using Sim.Scriptables;
@@ -29,6 +30,14 @@ namespace Sim.Utils {
             data.id = id;
             data.transform = CreateTransformData(elevatorTeleporter.transform);
             data.destination = elevatorTeleporter.GetDestination().ToString();
+            return data;
+        }
+        
+        public static WallData CreateWallData(int id, Wall wall) {
+            WallData data = new WallData();
+            data.id = id;
+            data.transform = CreateTransformData(wall.transform);
+            data.wallFaces = wall.GetWallFaces().Select(face => new WallFaceData(face)).ToArray();
             return data;
         }
 
