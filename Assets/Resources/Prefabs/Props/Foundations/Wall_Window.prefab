@@ -15,12 +15,13 @@ GameObject:
   - component: {fileID: 2323285634099980043}
   - component: {fileID: 594080147197093049}
   - component: {fileID: 2092699004195242931}
+  - component: {fileID: 6285444296118599828}
   m_Layer: 12
   m_Name: Wall_Window
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4294967295
   m_IsActive: 1
 --- !u!4 &293610590995355944
 Transform:
@@ -175,6 +176,22 @@ MonoBehaviour:
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
+--- !u!208 &6285444296118599828
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5974107978055742609}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.0050000004, y: 0.00001, z: 0.013}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: -0.0050000004, y: 0, z: 0.013}
+  m_TimeToStationary: 0.5
 --- !u!1 &7434869777336418142
 GameObject:
   m_ObjectHideFlags: 0

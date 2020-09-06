@@ -35,6 +35,17 @@ namespace Sim {
         }
 
         public void InstantiateLevel(SceneData sceneData) {
+            // Instantiate all grounds
+            sceneData.grounds?.ToList().ForEach(data => {
+                Ground props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as Ground;
+            });
+            
+            // Instantiate all walls
+            sceneData.walls?.ToList().ForEach(data => {
+                Wall props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as Wall;
+                props.SetWallFaces(data.wallFaces.Select(faceData => faceData.ToWallFace()).ToList());
+            });
+            
             // Instantiate all doors teleporter
             sceneData.doorTeleporters?.ToList().ForEach(data => {
                 DoorTeleporter props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as DoorTeleporter;
@@ -52,20 +63,15 @@ namespace Sim {
                 ElevatorTeleporter props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as ElevatorTeleporter;
                 props.SetDestination((PlacesEnum) Enum.Parse(typeof(PlacesEnum), data.destination));
             });
-
-            // Instantiate all walls
-            sceneData.walls?.ToList().ForEach(data => {
-                Wall props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as Wall;
-                props.SetWallFaces(data.wallFaces.Select(faceData => faceData.ToWallFace()).ToList());
-            });
         }
 
         public void SaveRoom() {
             SceneData sceneData = new SceneData();
-            sceneData.doorTeleporters = FindObjectsOfType<DoorTeleporter>().ToList().Select(door => SaveUtils.CreateDoorTeleporterData(10, door)).ToArray();
-            sceneData.elevatorTeleporters = FindObjectsOfType<ElevatorTeleporter>().ToList().Select(elevator => SaveUtils.CreateElevatorTeleporterData(11, elevator)).ToArray();
-            sceneData.walls = FindObjectsOfType<Wall>().ToList().Select(wall => SaveUtils.CreateWallData(wall.GetConfiguration().GetId(), wall)).ToArray();
+            sceneData.doorTeleporters = FindObjectsOfType<DoorTeleporter>().ToList().Select(door => SaveUtils.CreateDoorTeleporterData(door)).ToArray();
+            sceneData.elevatorTeleporters = FindObjectsOfType<ElevatorTeleporter>().ToList().Select(elevator => SaveUtils.CreateElevatorTeleporterData(elevator)).ToArray();
+            sceneData.walls = FindObjectsOfType<Wall>().ToList().Select(wall => SaveUtils.CreateWallData(wall)).ToArray();
             sceneData.simpleDoors = FindObjectsOfType<SimpleDoor>().ToList().Select(door => SaveUtils.CreateDoorData(door)).ToArray();
+            sceneData.grounds = FindObjectsOfType<Ground>().ToList().Select(ground => SaveUtils.CreateGroundData(ground)).ToArray();
 
             String sceneDataJson = JsonConvert.SerializeObject(sceneData);
             System.IO.File.WriteAllText(Application.dataPath + "/Resources/PresetSceneDatas/" + SceneManager.GetActiveScene().name + ".json", sceneDataJson);

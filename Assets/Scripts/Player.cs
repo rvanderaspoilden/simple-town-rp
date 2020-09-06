@@ -34,7 +34,7 @@ namespace Sim {
         }
 
         public bool CanInteractWith(Props propsToInteract) {
-            return propsToInteract.GetActions().Length > 0 && Physics.OverlapSphere(this.GetHeadTargetForCamera().position, propsToInteract.GetConfiguration().GetRangeToInteract()).ToList().Where(collider => collider.gameObject == propsToInteract.gameObject).ToList().Count == 1;
+            return propsToInteract.GetActions()?.Length > 0 && Physics.OverlapSphere(this.GetHeadTargetForCamera().position, propsToInteract.GetConfiguration().GetRangeToInteract()).ToList().Where(collider => collider.gameObject == propsToInteract.gameObject).ToList().Count == 1;
         }
 
         public void SetTarget(Vector3 target) {

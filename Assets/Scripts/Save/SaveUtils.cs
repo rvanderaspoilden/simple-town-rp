@@ -16,26 +16,26 @@ namespace Sim.Utils {
             return transformData;
         }
 
-        public static DoorTeleporterData CreateDoorTeleporterData(int id, DoorTeleporter doorTeleporter) {
+        public static DoorTeleporterData CreateDoorTeleporterData(DoorTeleporter doorTeleporter) {
             DoorTeleporterData doorTeleporterData = new DoorTeleporterData();
-            doorTeleporterData.id = id;
+            doorTeleporterData.id = doorTeleporter.GetConfiguration().GetId();
             doorTeleporterData.transform = CreateTransformData(doorTeleporter.transform);
             doorTeleporterData.destination = doorTeleporter.GetDestination().ToString();
             doorTeleporterData.doorDirection = doorTeleporter.GetDoorDirection().ToString();
             return doorTeleporterData;
         }
 
-        public static ElevatorTeleporterData CreateElevatorTeleporterData(int id, ElevatorTeleporter elevatorTeleporter) {
+        public static ElevatorTeleporterData CreateElevatorTeleporterData(ElevatorTeleporter elevatorTeleporter) {
             ElevatorTeleporterData data = new ElevatorTeleporterData();
-            data.id = id;
+            data.id = elevatorTeleporter.GetConfiguration().GetId();
             data.transform = CreateTransformData(elevatorTeleporter.transform);
             data.destination = elevatorTeleporter.GetDestination().ToString();
             return data;
         }
         
-        public static WallData CreateWallData(int id, Wall wall) {
+        public static WallData CreateWallData(Wall wall) {
             WallData data = new WallData();
-            data.id = id;
+            data.id = wall.GetConfiguration().GetId();
             data.transform = CreateTransformData(wall.transform);
             data.wallFaces = wall.GetWallFaces().Select(face => new WallFaceData(face)).ToArray();
             return data;
@@ -45,6 +45,13 @@ namespace Sim.Utils {
             DoorData data = new DoorData();
             data.id = door.GetConfiguration().GetId();
             data.transform = CreateTransformData(door.transform);
+            return data;
+        }
+        
+        public static GroundData CreateGroundData(Ground ground) {
+            GroundData data = new GroundData();
+            data.id = ground.GetConfiguration().GetId();
+            data.transform = CreateTransformData(ground.transform);
             return data;
         }
 

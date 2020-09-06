@@ -11,6 +11,7 @@ namespace Sim {
         public ElevatorTeleporterData[] elevatorTeleporters;
         public WallData[] walls;
         public DoorData[] simpleDoors;
+        public GroundData[] grounds;
     }
 
     [Serializable]
@@ -27,6 +28,10 @@ namespace Sim {
 
     [Serializable]
     public class DoorData : DefaultData {}
+
+    [Serializable]
+    public class GroundData : DefaultData {
+    }
 
     [Serializable]
     public class ElevatorTeleporterData : DefaultData {
