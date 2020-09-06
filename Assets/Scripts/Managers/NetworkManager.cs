@@ -64,7 +64,7 @@ namespace Sim {
                 return;
             }
 
-            PhotonNetwork.JoinOrCreateRoom(PlaceUtils.GetPlaceEnumName(place), new RoomOptions() {IsOpen = true, IsVisible = true, EmptyRoomTtl = 10000}, TypedLobby.Default);
+            PhotonNetwork.JoinOrCreateRoom(PlaceUtils.GetPlaceEnumName(place), new RoomOptions() {IsOpen = true, IsVisible = true, EmptyRoomTtl = 0}, TypedLobby.Default);
             this.destinationScene = PlaceUtils.ConvertPlaceEnumToSceneName(place);
         }
 

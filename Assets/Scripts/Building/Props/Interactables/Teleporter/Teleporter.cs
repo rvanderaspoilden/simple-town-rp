@@ -22,7 +22,7 @@ namespace Sim.Interactables {
 
         [PunRPC]
         public void RPC_SetDestination(PlacesEnum placesEnum) {
-            this.destination = destination;
+            this.destination = placesEnum;
         }
     }   
 }

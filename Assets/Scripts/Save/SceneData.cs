@@ -12,6 +12,7 @@ namespace Sim {
         public WallData[] walls;
         public DoorData[] simpleDoors;
         public GroundData[] grounds;
+        public DefaultData[] props;
     }
 
     [Serializable]

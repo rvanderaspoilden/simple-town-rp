@@ -19,8 +19,6 @@ namespace Sim {
         [Header("Settings")]
         [SerializeField] private Transform playerSpawnPoint;
 
-        [SerializeField] private Transform propsContainer;
-
         [Header("Only for debug")]
         public static Player LocalPlayer;
 
@@ -37,32 +35,35 @@ namespace Sim {
         public void InstantiateLevel(SceneData sceneData) {
             // Instantiate all grounds
             sceneData.grounds?.ToList().ForEach(data => {
-                Ground props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as Ground;
+                Ground props = SaveUtils.InstantiatePropsFromSave(data) as Ground;
             });
-            
+
             // Instantiate all walls
             sceneData.walls?.ToList().ForEach(data => {
-                Wall props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as Wall;
+                Wall props = SaveUtils.InstantiatePropsFromSave(data) as Wall;
                 props.SetWallFaces(data.wallFaces.Select(faceData => faceData.ToWallFace()).ToList());
             });
-            
+
             // Instantiate all doors teleporter
             sceneData.doorTeleporters?.ToList().ForEach(data => {
-                DoorTeleporter props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as DoorTeleporter;
+                DoorTeleporter props = SaveUtils.InstantiatePropsFromSave(data) as DoorTeleporter;
                 props.SetDestination((PlacesEnum) Enum.Parse(typeof(PlacesEnum), data.destination));
                 props.SetDoorDirection((DoorDirectionEnum) Enum.Parse(typeof(DoorDirectionEnum), data.doorDirection));
             });
-            
+
             // Instantiate all simple doors
             sceneData.simpleDoors?.ToList().ForEach(data => {
-                SimpleDoor props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as SimpleDoor;
+                SimpleDoor props = SaveUtils.InstantiatePropsFromSave(data) as SimpleDoor;
             });
 
             // Instantiate all elevators
             sceneData.elevatorTeleporters?.ToList().ForEach(data => {
-                ElevatorTeleporter props = SaveUtils.InstantiatePropsFromSave(data, this.propsContainer) as ElevatorTeleporter;
+                ElevatorTeleporter props = SaveUtils.InstantiatePropsFromSave(data) as ElevatorTeleporter;
                 props.SetDestination((PlacesEnum) Enum.Parse(typeof(PlacesEnum), data.destination));
             });
+
+            // Instantiate all other props
+            sceneData.props?.ToList().ForEach(data => SaveUtils.InstantiatePropsFromSave(data));
         }
 
         public void SaveRoom() {
@@ -72,6 +73,7 @@ namespace Sim {
             sceneData.walls = FindObjectsOfType<Wall>().ToList().Select(wall => SaveUtils.CreateWallData(wall)).ToArray();
             sceneData.simpleDoors = FindObjectsOfType<SimpleDoor>().ToList().Select(door => SaveUtils.CreateDoorData(door)).ToArray();
             sceneData.grounds = FindObjectsOfType<Ground>().ToList().Select(ground => SaveUtils.CreateGroundData(ground)).ToArray();
+            sceneData.props = FindObjectsOfType<Props>().ToList().Where(props => props.GetType() == typeof(Props)).Select(props => SaveUtils.CreateDefaultData(props)).ToArray();
 
             String sceneDataJson = JsonConvert.SerializeObject(sceneData);
             System.IO.File.WriteAllText(Application.dataPath + "/Resources/PresetSceneDatas/" + SceneManager.GetActiveScene().name + ".json", sceneDataJson);

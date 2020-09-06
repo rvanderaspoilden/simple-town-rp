@@ -54,11 +54,17 @@ namespace Sim.Utils {
             data.transform = CreateTransformData(ground.transform);
             return data;
         }
+        
+        public static DefaultData CreateDefaultData(Props props) {
+            DefaultData data = new DefaultData();
+            data.id = props.GetConfiguration().GetId();
+            data.transform = CreateTransformData(props.transform);
+            return data;
+        }
 
-        public static Props InstantiatePropsFromSave(DefaultData data, Transform container) {
+        public static Props InstantiatePropsFromSave(DefaultData data) {
             PropsConfig doorConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
             Props props = PropsManager.instance.InstantiateProps(doorConfig, true);
-            props.transform.parent = container;
             props.transform.localPosition = data.transform.position.ToVector3();
             props.transform.localEulerAngles = data.transform.rotation.ToVector3();
             return props;
