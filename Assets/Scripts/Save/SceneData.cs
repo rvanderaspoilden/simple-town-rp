@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Sim.Building;
 using Sim.Enums;
+using Sim.Utils;
 using UnityEngine;
 
 namespace Sim {
@@ -21,41 +22,88 @@ namespace Sim {
     public class DefaultData {
         public int id;
         public TransformData transform;
+        public bool isBuilt;
+
+        public void Init(Props props) {
+            this.id = props.GetConfiguration().GetId();
+            this.transform = SaveUtils.CreateTransformData(props.transform);
+            this.isBuilt = props.IsBuilt();
+        }
     }
 
     [Serializable]
     public class BucketData : DefaultData {
         public float[] color;
         public int paintConfigId;
+        
+        public BucketData() { }
 
+        public BucketData(Props props) {
+            base.Init(props);
+        }
     }
 
     [Serializable]
     public class PackageData : DefaultData {
         public int propsConfigIdInside;
+        
+        public PackageData() { }
+
+        public PackageData(Props props) {
+            base.Init(props);
+        }
     }
 
     [Serializable]
     public class DoorTeleporterData : DefaultData {
         public String destination;
         public String doorDirection;
+        
+        public DoorTeleporterData() { }
+
+        public DoorTeleporterData(Props props) {
+            base.Init(props);
+        }
     }
 
     [Serializable]
-    public class DoorData : DefaultData {}
+    public class DoorData : DefaultData {
+        public DoorData() { }
+
+        public DoorData(Props props) {
+            base.Init(props);
+        }
+    }
 
     [Serializable]
     public class GroundData : DefaultData {
+        public GroundData() { }
+
+        public GroundData(Props props) {
+            base.Init(props);
+        }
     }
 
     [Serializable]
     public class ElevatorTeleporterData : DefaultData {
         public String destination;
+        
+        public ElevatorTeleporterData() { }
+
+        public ElevatorTeleporterData(Props props) {
+            base.Init(props);
+        }
     }
 
     [Serializable]
     public class WallData : DefaultData {
         public WallFaceData[] wallFaces;
+        
+        public WallData() { }
+
+        public WallData(Props props) {
+            base.Init(props);
+        }
     }
 
     [Serializable]

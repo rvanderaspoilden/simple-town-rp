@@ -18,8 +18,7 @@ namespace Sim.Utils {
 
         public static DoorTeleporterData CreateDoorTeleporterData(DoorTeleporter doorTeleporter) {
             DoorTeleporterData doorTeleporterData = new DoorTeleporterData();
-            doorTeleporterData.id = doorTeleporter.GetConfiguration().GetId();
-            doorTeleporterData.transform = CreateTransformData(doorTeleporter.transform);
+            doorTeleporterData.Init(doorTeleporter);
             doorTeleporterData.destination = doorTeleporter.GetDestination().ToString();
             doorTeleporterData.doorDirection = doorTeleporter.GetDoorDirection().ToString();
             return doorTeleporterData;
@@ -27,67 +26,65 @@ namespace Sim.Utils {
 
         public static ElevatorTeleporterData CreateElevatorTeleporterData(ElevatorTeleporter elevatorTeleporter) {
             ElevatorTeleporterData data = new ElevatorTeleporterData();
-            data.id = elevatorTeleporter.GetConfiguration().GetId();
-            data.transform = CreateTransformData(elevatorTeleporter.transform);
+            data.Init(elevatorTeleporter);
             data.destination = elevatorTeleporter.GetDestination().ToString();
             return data;
         }
-        
+
         public static WallData CreateWallData(Wall wall) {
             WallData data = new WallData();
-            data.id = wall.GetConfiguration().GetId();
-            data.transform = CreateTransformData(wall.transform);
+            data.Init(wall);
             data.wallFaces = wall.GetWallFaces().Select(face => new WallFaceData(face)).ToArray();
             return data;
         }
-        
+
         public static DoorData CreateDoorData(SimpleDoor door) {
             DoorData data = new DoorData();
-            data.id = door.GetConfiguration().GetId();
-            data.transform = CreateTransformData(door.transform);
+            data.Init(door);
             return data;
         }
-        
+
         public static GroundData CreateGroundData(Ground ground) {
             GroundData data = new GroundData();
-            data.id = ground.GetConfiguration().GetId();
-            data.transform = CreateTransformData(ground.transform);
+            data.Init(ground);
             return data;
         }
-        
+
         public static DefaultData CreateDefaultData(Props props) {
             DefaultData data = new DefaultData();
-            data.id = props.GetConfiguration().GetId();
-            data.transform = CreateTransformData(props.transform);
+            data.Init(props);
             return data;
         }
 
         public static PackageData CreatePackageData(Package package) {
             PackageData data = new PackageData();
-            data.id = package.GetConfiguration().GetId();
-            data.transform = CreateTransformData(package.transform);
+            data.Init(package);
             data.propsConfigIdInside = package.GetPropsInside().GetId();
             return data;
         }
-        
+
         public static BucketData CreateBucketData(PaintBucket paintBucket) {
             BucketData data = new BucketData();
-            data.id = paintBucket.GetConfiguration().GetId();
-            data.transform = CreateTransformData(paintBucket.transform);
+            data.Init(paintBucket);
             data.paintConfigId = paintBucket.GetPaintConfig().GetId();
-            
+
             if (paintBucket.GetPaintConfig().AllowCustomColor()) {
                 data.color = new float[4] {paintBucket.GetColor().r, paintBucket.GetColor().g, paintBucket.GetColor().b, paintBucket.GetColor().a};
             }
-            
+
             return data;
         }
 
         public static Props InstantiatePropsFromSave(DefaultData data) {
-            PropsConfig doorConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
-            Props props = PropsManager.instance.InstantiateProps(doorConfig, true);
+            PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
+            Props props = PropsManager.instance.InstantiateProps(propsConfig, true);
             props.transform.localPosition = data.transform.position.ToVector3();
             props.transform.localEulerAngles = data.transform.rotation.ToVector3();
+
+            if (propsConfig.MustBeBuilt()) {
+                props.SetIsBuilt(data.isBuilt);
+            }
+
             return props;
         }
     }
