@@ -48,9 +48,8 @@ namespace Sim.Building {
             return this.wallFaces;
         }
 
-        public void SetWallFaces(List<WallFace> wallFaces) {
-            this.wallFaces = wallFaces;
-            photonView.RPC("RPC_UpdateWallFaces", RpcTarget.OthersBuffered, JsonHelper.ToJson(this.wallFaces.ToArray()));
+        public void SetWallFaces(List<WallFace> faces) {
+            photonView.RPC("RPC_UpdateWallFaces", RpcTarget.AllBuffered, JsonHelper.ToJson(faces.ToArray()));
         }
 
         public void ApplyModification() {

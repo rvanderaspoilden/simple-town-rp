@@ -254,7 +254,7 @@ namespace Sim {
          */
         private void OnSelectPaintFromAdminPanel(PaintConfig paintConfig) {
             this.paintToPackage = paintConfig;
-            InstantiateProps(this.paintToPackage.GetBucketPrefab().GetConfiguration());
+            InstantiateProps(this.paintToPackage.GetBucketPropsConfig());
             this.buildMode = BuildModeEnum.PACKAGING;
         }
 

@@ -68,6 +68,16 @@ namespace Sim {
                 props.SetPropsInside(data.propsConfigIdInside);
             });
 
+            // Instantiate all buckets
+            sceneData.buckets?.ToList().ForEach(data => {
+                PaintBucket props = SaveUtils.InstantiatePropsFromSave(data) as PaintBucket;
+                props.SetPaintConfigId(data.paintConfigId);
+
+                if (data.color != null) {
+                    props.SetColor(data.color);
+                }
+            });
+
             // Instantiate all other props
             sceneData.props?.ToList().ForEach(data => SaveUtils.InstantiatePropsFromSave(data));
         }
@@ -81,6 +91,7 @@ namespace Sim {
             sceneData.grounds = FindObjectsOfType<Ground>().ToList().Select(ground => SaveUtils.CreateGroundData(ground)).ToArray();
             sceneData.props = FindObjectsOfType<Props>().ToList().Where(props => props.GetType() == typeof(Props)).Select(props => SaveUtils.CreateDefaultData(props)).ToArray();
             sceneData.packages = FindObjectsOfType<Package>().ToList().Select(package => SaveUtils.CreatePackageData(package)).ToArray();
+            sceneData.buckets = FindObjectsOfType<PaintBucket>().ToList().Select(bucket => SaveUtils.CreateBucketData(bucket)).ToArray();
 
             String sceneDataJson = JsonConvert.SerializeObject(sceneData);
             System.IO.File.WriteAllText(Application.dataPath + "/Resources/PresetSceneDatas/" + SceneManager.GetActiveScene().name + ".json", sceneDataJson);

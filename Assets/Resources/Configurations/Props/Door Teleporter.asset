@@ -15,12 +15,12 @@ MonoBehaviour:
   id: 10
   displayName: "Porte d'entr\xE9e"
   prefab: {fileID: 3093486418350334970, guid: 6213d8c6e81e74349a2490150ba458b8, type: 3}
-  packagePrefab: {fileID: 0}
+  packageConfig: {fileID: 0}
   surfaceToPose: 0
   toBuild: 0
   rangeToInteract: 2
   actions:
   - actionType: 1
-    actionLabel: Entrer dans l'appartement
+    actionLabel: Ouvrir la porte
     locked: 0
   unbuiltActions: []

@@ -8,7 +8,7 @@ namespace Sim.Scriptables {
         [SerializeField] private int id;
         [SerializeField] private string displayName;
         [SerializeField] private Material material;
-        [SerializeField] private PaintBucket bucketPrefab;
+        [SerializeField] private PropsConfig bucketPropsConfig;
         [SerializeField] private BuildSurfaceEnum surface;
         [SerializeField] private bool customColor;
 
@@ -32,8 +32,8 @@ namespace Sim.Scriptables {
             return this.customColor;
         }
 
-        public PaintBucket GetBucketPrefab() {
-            return this.bucketPrefab;
+        public PropsConfig GetBucketPropsConfig() {
+            return this.bucketPropsConfig;
         }
     }   
 }

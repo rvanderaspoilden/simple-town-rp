@@ -129,7 +129,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff54134ee99e5e048a3a5c43335a1798, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  color: {r: 0, g: 0.74053025, b: 1, a: 1}
+  configuration: {fileID: 0}
+  color: {r: 1, g: 1, b: 1, a: 1}
   paintConfig: {fileID: 0}
 --- !u!114 &685306496293001916
 MonoBehaviour:

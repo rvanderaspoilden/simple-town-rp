@@ -69,6 +69,19 @@ namespace Sim.Utils {
             data.propsConfigIdInside = package.GetPropsInside().GetId();
             return data;
         }
+        
+        public static BucketData CreateBucketData(PaintBucket paintBucket) {
+            BucketData data = new BucketData();
+            data.id = paintBucket.GetConfiguration().GetId();
+            data.transform = CreateTransformData(paintBucket.transform);
+            data.paintConfigId = paintBucket.GetPaintConfig().GetId();
+            
+            if (paintBucket.GetPaintConfig().AllowCustomColor()) {
+                data.color = new float[4] {paintBucket.GetColor().r, paintBucket.GetColor().g, paintBucket.GetColor().b, paintBucket.GetColor().a};
+            }
+            
+            return data;
+        }
 
         public static Props InstantiatePropsFromSave(DefaultData data) {
             PropsConfig doorConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);

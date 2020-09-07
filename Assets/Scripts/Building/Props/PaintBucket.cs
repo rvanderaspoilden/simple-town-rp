@@ -10,14 +10,14 @@ namespace Sim.Building {
 
         [Header("Bucket settings debug")]
         [SerializeField] private PaintConfig paintConfig;
-        
+
         public delegate void OnOpen(PaintBucket bucketOpened);
 
         public static event OnOpen OnOpened;
 
         protected override void SetupActions() {
             base.SetupActions();
-            
+
             // todo replace it by appartment owner
             this.actions.ToList().ForEach(action => action.SetIsLocked(!PhotonNetwork.IsMasterClient));
         }
@@ -31,7 +31,16 @@ namespace Sim.Building {
         }
 
         public void SetColor(Color color) {
-            this.color = color;
+            photonView.RPC("RPC_SetColor", RpcTarget.AllBuffered, new float[4] {color.r, color.g, color.b, color.a});
+        }
+
+        public void SetColor(float[] color) {
+            photonView.RPC("RPC_SetColor", RpcTarget.AllBuffered, color);
+        }
+
+        [PunRPC]
+        public void RPC_SetColor(float[] color) {
+            this.color = new Color(color[0], color[1], color[2], color[3]);
         }
 
         public Color GetColor() {

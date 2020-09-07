@@ -13,6 +13,7 @@ namespace Sim {
         public DoorData[] simpleDoors;
         public GroundData[] grounds;
         public PackageData[] packages;
+        public BucketData[] buckets;
         public DefaultData[] props;
     }
 
@@ -20,6 +21,13 @@ namespace Sim {
     public class DefaultData {
         public int id;
         public TransformData transform;
+    }
+
+    [Serializable]
+    public class BucketData : DefaultData {
+        public float[] color;
+        public int paintConfigId;
+
     }
 
     [Serializable]
