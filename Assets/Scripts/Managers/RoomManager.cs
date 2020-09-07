@@ -89,7 +89,9 @@ namespace Sim {
             sceneData.walls = FindObjectsOfType<Wall>().ToList().Select(wall => SaveUtils.CreateWallData(wall)).ToArray();
             sceneData.simpleDoors = FindObjectsOfType<SimpleDoor>().ToList().Select(door => SaveUtils.CreateDoorData(door)).ToArray();
             sceneData.grounds = FindObjectsOfType<Ground>().ToList().Select(ground => SaveUtils.CreateGroundData(ground)).ToArray();
-            sceneData.props = FindObjectsOfType<Props>().ToList().Where(props => props.GetType() == typeof(Props)).Select(props => SaveUtils.CreateDefaultData(props)).ToArray();
+            sceneData.props = FindObjectsOfType<Props>().ToList().Where(props => {
+                return props.GetType() == typeof(Props) || props.GetType() == typeof(Seat);
+            }).Select(props => SaveUtils.CreateDefaultData(props)).ToArray();
             sceneData.packages = FindObjectsOfType<Package>().ToList().Select(package => SaveUtils.CreatePackageData(package)).ToArray();
             sceneData.buckets = FindObjectsOfType<PaintBucket>().ToList().Select(bucket => SaveUtils.CreateBucketData(bucket)).ToArray();
 
