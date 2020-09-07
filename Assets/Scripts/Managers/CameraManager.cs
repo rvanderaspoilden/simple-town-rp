@@ -244,7 +244,6 @@ namespace Sim {
          */
         private void OnSelectPropsFromAdminPanel(PropsConfig propsConfig) {
             this.propsToPackage = propsConfig;
-            Debug.Log(propsConfig);
 
             InstantiateProps(this.propsToPackage.GetPackageConfig());
             this.buildMode = BuildModeEnum.PACKAGING;
@@ -284,14 +283,9 @@ namespace Sim {
         }
 
         private void InstantiateProps(PropsConfig config) {
-            Debug.Log(config);
-            
             // Clean all previous states
             this.CleanBuildPreview();
 
-            Debug.Log(config);
-
-            
             this.propsConfigToInstantiate = config;
             
             Props props = PropsManager.instance.InstantiateProps(config,false);

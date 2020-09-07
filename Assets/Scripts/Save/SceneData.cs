@@ -12,6 +12,7 @@ namespace Sim {
         public WallData[] walls;
         public DoorData[] simpleDoors;
         public GroundData[] grounds;
+        public PackageData[] packages;
         public DefaultData[] props;
     }
 
@@ -19,6 +20,11 @@ namespace Sim {
     public class DefaultData {
         public int id;
         public TransformData transform;
+    }
+
+    [Serializable]
+    public class PackageData : DefaultData {
+        public int propsConfigIdInside;
     }
 
     [Serializable]

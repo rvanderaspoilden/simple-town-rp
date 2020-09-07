@@ -62,6 +62,14 @@ namespace Sim.Utils {
             return data;
         }
 
+        public static PackageData CreatePackageData(Package package) {
+            PackageData data = new PackageData();
+            data.id = package.GetConfiguration().GetId();
+            data.transform = CreateTransformData(package.transform);
+            data.propsConfigIdInside = package.GetPropsInside().GetId();
+            return data;
+        }
+
         public static Props InstantiatePropsFromSave(DefaultData data) {
             PropsConfig doorConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
             Props props = PropsManager.instance.InstantiateProps(doorConfig, true);

@@ -9,6 +9,7 @@ using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     public class Props : MonoBehaviourPun {
+        [Header("Props debug")]
         [SerializeField] protected PropsConfig configuration;
 
         protected Action[] actions;

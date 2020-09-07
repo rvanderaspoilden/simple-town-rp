@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 5116778729995989991}
   - component: {fileID: 6173607125046716228}
   - component: {fileID: 1177029568605479116}
+  - component: {fileID: 631437085764443481}
+  - component: {fileID: 7521129292653811777}
   m_Layer: 10
   m_Name: Window
   m_TagString: Untagged
@@ -115,3 +117,38 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 0.008910227, y: 0.0026003034, z: 0.013859194}
   m_Center: {x: -0.0049961456, y: 0.00050437223, z: 0.01676923}
+--- !u!114 &631437085764443481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763986742212127600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 0
+  OwnershipTransfer: 0
+  ObservedComponents:
+  - {fileID: 0}
+  viewIdField: 0
+  InstantiationId: 0
+  isRuntimeInstantiated: 0
+--- !u!114 &7521129292653811777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763986742212127600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  configuration: {fileID: 0}

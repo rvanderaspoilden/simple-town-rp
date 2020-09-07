@@ -62,6 +62,12 @@ namespace Sim {
                 props.SetDestination((PlacesEnum) Enum.Parse(typeof(PlacesEnum), data.destination));
             });
 
+            // Instantiate all packages
+            sceneData.packages?.ToList().ForEach(data => {
+                Package props = SaveUtils.InstantiatePropsFromSave(data) as Package;
+                props.SetPropsInside(data.propsConfigIdInside);
+            });
+
             // Instantiate all other props
             sceneData.props?.ToList().ForEach(data => SaveUtils.InstantiatePropsFromSave(data));
         }
@@ -74,6 +80,7 @@ namespace Sim {
             sceneData.simpleDoors = FindObjectsOfType<SimpleDoor>().ToList().Select(door => SaveUtils.CreateDoorData(door)).ToArray();
             sceneData.grounds = FindObjectsOfType<Ground>().ToList().Select(ground => SaveUtils.CreateGroundData(ground)).ToArray();
             sceneData.props = FindObjectsOfType<Props>().ToList().Where(props => props.GetType() == typeof(Props)).Select(props => SaveUtils.CreateDefaultData(props)).ToArray();
+            sceneData.packages = FindObjectsOfType<Package>().ToList().Select(package => SaveUtils.CreatePackageData(package)).ToArray();
 
             String sceneDataJson = JsonConvert.SerializeObject(sceneData);
             System.IO.File.WriteAllText(Application.dataPath + "/Resources/PresetSceneDatas/" + SceneManager.GetActiveScene().name + ".json", sceneDataJson);
