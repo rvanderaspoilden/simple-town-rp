@@ -130,7 +130,6 @@ namespace Sim {
     public class TransformData {
         public Vector3Data position;
         public Vector3Data rotation;
-        public Vector3Data scale;
     }
 
     [Serializable]

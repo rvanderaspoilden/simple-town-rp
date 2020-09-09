@@ -12,7 +12,6 @@ namespace Sim.Utils {
             TransformData transformData = new TransformData();
             transformData.position = new Vector3Data(transform.localPosition);
             transformData.rotation = new Vector3Data(transform.localEulerAngles);
-            transformData.scale = new Vector3Data(transform.localScale);
             return transformData;
         }
 
@@ -77,9 +76,7 @@ namespace Sim.Utils {
 
         public static Props InstantiatePropsFromSave(DefaultData data) {
             PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
-            Props props = PropsManager.instance.InstantiateProps(propsConfig, true);
-            props.transform.localPosition = data.transform.position.ToVector3();
-            props.transform.localEulerAngles = data.transform.rotation.ToVector3();
+            Props props = PropsManager.instance.InstantiateProps(propsConfig, data.transform.position.ToVector3(), Quaternion.Euler(data.transform.rotation.ToVector3()), true);
 
             if (propsConfig.MustBeBuilt()) {
                 props.SetIsBuilt(data.isBuilt);
