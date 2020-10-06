@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Photon.Pun;
 using UnityEngine;
@@ -48,14 +48,20 @@ namespace Sim.Building {
             return this.wallFaces;
         }
 
-        public void SetWallFaces(List<WallFace> faces) {
-            photonView.RPC("RPC_UpdateWallFaces", RpcTarget.AllBuffered, JsonHelper.ToJson(faces.ToArray()));
+        public void SetWallFaces(List<WallFace> faces, RpcTarget rpcTarget) {
+            photonView.RPC("RPC_UpdateWallFaces", rpcTarget, JsonHelper.ToJson(faces.ToArray()));
+        }
+
+        public void SetWallFaces(List<WallFace> faces, Photon.Realtime.Player targetPlayer = null) {
+            if (targetPlayer == null) {
+                photonView.RPC("RPC_UpdateWallFaces", targetPlayer, JsonHelper.ToJson(faces.ToArray()));
+            }
         }
 
         public void ApplyModification() {
             this.wallFacesPreviewed.Clear();
 
-            photonView.RPC("RPC_UpdateWallFaces", RpcTarget.OthersBuffered, JsonHelper.ToJson(this.wallFaces.ToArray()));
+            this.SetWallFaces(this.wallFaces, RpcTarget.Others);
         }
 
         public bool IsPreview() {
@@ -64,9 +70,22 @@ namespace Sim.Building {
 
         [PunRPC]
         public void RPC_UpdateWallFaces(string faces) {
+            if (this.foundationRenderer == null) {
+                this.foundationRenderer = GetComponent<FoundationRenderer>();
+                this.renderer = GetComponent<MeshRenderer>();
+                this.collider = GetComponent<MeshCollider>();
+
+                this.wallFacesPreviewed = new Dictionary<int, WallFace>();   
+            }
+
             this.wallFaces = new List<WallFace>(JsonHelper.FromJson<WallFace>(faces));
             this.UpdateWallFaces();
             this.foundationRenderer.SetupDefaultMaterials();
+        }
+
+        public override void Synchronize(Photon.Realtime.Player playerTarget) {
+            base.Synchronize(playerTarget);
+            this.SetWallFaces(this.wallFaces);
         }
 
         public void PreviewMaterialOnFace(RaycastHit hit, PaintBucket paintBucket) {

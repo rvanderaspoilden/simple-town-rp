@@ -26,12 +26,22 @@ namespace Sim.Interactables {
             OnOpened?.Invoke(this);
         }
 
+        public override void Synchronize(Photon.Realtime.Player playerTarget) {
+            base.Synchronize(playerTarget);
+            
+            this.SetPropsInside(this.propsInside.GetId(), playerTarget);
+        }
+
         public PropsConfig GetPropsInside() {
             return this.propsInside;
         }
 
-        public void SetPropsInside(int id) {
-            photonView.RPC("RPC_SetPropsInside", RpcTarget.AllBuffered, id);
+        public void SetPropsInside(int id, RpcTarget rpcTarget) {
+            photonView.RPC("RPC_SetPropsInside", rpcTarget, id);
+        }
+        
+        public void SetPropsInside(int id, Photon.Realtime.Player playerTarget) {
+            photonView.RPC("RPC_SetPropsInside", playerTarget, id);
         }
 
         [PunRPC]

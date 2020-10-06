@@ -26,16 +26,31 @@ namespace Sim.Building {
             OnOpened?.Invoke(this);
         }
 
+        public override void Synchronize(Photon.Realtime.Player playerTarget) {
+            base.Synchronize(playerTarget);
+            
+            this.SetPaintConfigId(this.paintConfig.GetId(), playerTarget);
+            this.SetColor(this.color, playerTarget);
+        }
+
         public PaintConfig GetPaintConfig() {
             return this.paintConfig;
         }
 
-        public void SetColor(Color color) {
-            photonView.RPC("RPC_SetColor", RpcTarget.AllBuffered, new float[4] {color.r, color.g, color.b, color.a});
+        public void SetColor(Color color, RpcTarget rpcTarget) {
+            photonView.RPC("RPC_SetColor", rpcTarget, new float[4] {color.r, color.g, color.b, color.a});
+        }
+        
+        public void SetColor(Color color, Photon.Realtime.Player player) {
+            photonView.RPC("RPC_SetColor", player, new float[4] {color.r, color.g, color.b, color.a});
         }
 
-        public void SetColor(float[] color) {
-            photonView.RPC("RPC_SetColor", RpcTarget.AllBuffered, color);
+        public void SetColor(float[] color, RpcTarget rpcTarget) {
+            photonView.RPC("RPC_SetColor", rpcTarget, color);
+        }
+        
+        public void SetColor(float[] color, Photon.Realtime.Player player) {
+            photonView.RPC("RPC_SetColor", player, color);
         }
 
         [PunRPC]
@@ -51,8 +66,12 @@ namespace Sim.Building {
             this.paintConfig = config;
         }
 
-        public void SetPaintConfigId(int id) {
-            photonView.RPC("RPC_SetPaintInside", RpcTarget.AllBuffered, id);
+        public void SetPaintConfigId(int id, RpcTarget rpcTarget) {
+            photonView.RPC("RPC_SetPaintInside", rpcTarget, id);
+        }
+        
+        public void SetPaintConfigId(int id, Photon.Realtime.Player player) {
+            photonView.RPC("RPC_SetPaintInside", player, id);
         }
 
         [PunRPC]

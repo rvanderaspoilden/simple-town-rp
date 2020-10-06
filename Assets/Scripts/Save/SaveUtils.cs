@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Photon.Pun;
 using Sim.Building;
 using Sim.Interactables;
 using Sim.Scriptables;
@@ -78,9 +79,7 @@ namespace Sim.Utils {
             PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
             Props props = PropsManager.instance.InstantiateProps(propsConfig, data.transform.position.ToVector3(), Quaternion.Euler(data.transform.rotation.ToVector3()), true);
 
-            if (propsConfig.MustBeBuilt()) {
-                props.SetIsBuilt(data.isBuilt);
-            }
+            props.SetIsBuilt(!propsConfig.MustBeBuilt() || data.isBuilt, PhotonNetwork.LocalPlayer);
 
             return props;
         }

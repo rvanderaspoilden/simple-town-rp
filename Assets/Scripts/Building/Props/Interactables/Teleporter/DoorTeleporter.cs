@@ -30,12 +30,22 @@ namespace Sim.Interactables {
             base.Use();
         }
 
+        public override void Synchronize(Photon.Realtime.Player playerTarget) {
+            base.Synchronize(playerTarget);
+            
+            this.SetDoorDirection(this.doorDirection, playerTarget);
+        }
+
         public DoorDirectionEnum GetDoorDirection() {
             return this.doorDirection;
         }
 
-        public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum) {
-            photonView.RPC("RPC_SetDoorDirection", RpcTarget.AllBuffered, doorDirectionEnum);
+        public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum, RpcTarget rpcTarget) {
+            photonView.RPC("RPC_SetDoorDirection", rpcTarget, doorDirectionEnum);
+        }
+        
+        public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum, Photon.Realtime.Player playerTarget) {
+            photonView.RPC("RPC_SetDoorDirection", playerTarget, doorDirectionEnum);
         }
 
         [PunRPC]

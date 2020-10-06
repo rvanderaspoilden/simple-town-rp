@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Photon.Pun;
@@ -9,7 +10,7 @@ using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     public class Props : MonoBehaviourPun {
-        [Header("Props debug")]
+        [Header("Props settings")]
         [SerializeField] protected PropsConfig configuration;
 
         protected Action[] actions;
@@ -17,7 +18,7 @@ namespace Sim.Building {
         protected Action[] unbuiltActions;
 
         protected bool built;
-
+        
         protected Renderer[] renderersToModify;
 
         protected Dictionary<Renderer, Material[]> defaultMaterialsByRenderer;
@@ -53,14 +54,23 @@ namespace Sim.Building {
             return this.built;
         }
 
-        public void SetIsBuilt(bool value) {
-            photonView.RPC("RPC_SetIsBuilt", RpcTarget.AllBuffered, value);
+        public void SetIsBuilt(bool value, Photon.Realtime.Player playerTarget = null) {
+            if (playerTarget != null) {
+                photonView.RPC("RPC_SetIsBuilt", playerTarget, value);
+            } else {
+                photonView.RPC("RPC_SetIsBuilt", RpcTarget.All, value);
+            }
         }
 
         [PunRPC]
         public void RPC_SetIsBuilt(bool value) {
+            if (this.renderersToModify == null) {
+                this.renderersToModify = GetComponentsInChildren<Renderer>();
+                this.defaultMaterialsByRenderer = this.renderersToModify.ToList().ToDictionary(x => x, x => x.materials);
+            }
+
             this.built = value;
-            
+
             foreach (Renderer renderer in this.renderersToModify) {
                 Material[] newMaterials = new Material[renderer.materials.Length];
 
@@ -101,8 +111,12 @@ namespace Sim.Building {
             throw new NotImplementedException();
         }
 
-        public void UpdateTransform() {
-            photonView.RPC("RPC_UpdateTransform", RpcTarget.OthersBuffered, this.transform.position, this.transform.rotation);
+        public void UpdateTransform(Photon.Realtime.Player playerTarget = null) {
+            if (playerTarget == null) {
+                photonView.RPC("RPC_UpdateTransform", RpcTarget.Others, this.transform.position, this.transform.rotation);
+            } else {
+                photonView.RPC("RPC_UpdateTransform", playerTarget, this.transform.position, this.transform.rotation);
+            }
         }
 
         public PropsConfig GetConfiguration() {
@@ -117,6 +131,12 @@ namespace Sim.Building {
         public void RPC_UpdateTransform(Vector3 pos, Quaternion rot) {
             this.transform.position = pos;
             this.transform.rotation = rot;
+        }
+
+        public virtual void Synchronize(Photon.Realtime.Player playerTarget) {
+            Debug.Log(this.name + " sync");
+            this.SetIsBuilt(this.built, playerTarget);
+            this.UpdateTransform(playerTarget);
         }
     }
 }

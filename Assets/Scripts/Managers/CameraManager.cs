@@ -356,14 +356,14 @@ namespace Sim {
                     // Manage packaging for props
                     if (this.propsToPackage) {
                         props.SetIsBuilt(true);
-                        props.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId());
+                        props.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId(), RpcTarget.All);
                         this.propsToPackage = null;
                     }
 
                     // Manage packaging for paint
                     if (this.paintToPackage) {
                         props.SetIsBuilt(true);
-                        props.GetComponent<PaintBucket>().SetPaintConfigId(this.paintToPackage.GetId());
+                        props.GetComponent<PaintBucket>().SetPaintConfigId(this.paintToPackage.GetId(), RpcTarget.All);
                         this.paintToPackage = null;
                     }
 
