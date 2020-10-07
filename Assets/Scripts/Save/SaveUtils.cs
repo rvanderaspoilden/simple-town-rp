@@ -47,6 +47,7 @@ namespace Sim.Utils {
         public static GroundData CreateGroundData(Ground ground) {
             GroundData data = new GroundData();
             data.Init(ground);
+            data.paintConfigId = ground.GetPaintConfigId();
             return data;
         }
 

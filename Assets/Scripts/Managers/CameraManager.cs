@@ -232,11 +232,13 @@ namespace Sim {
 
             this.SwitchToBuildMode();
 
-            FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
-                if (foundationRenderer) {
-                    foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.FORCE_SHOW);
-                }
-            });
+            if (this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.WALL) {
+                FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
+                    if (foundationRenderer) {
+                        foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.FORCE_SHOW);
+                    }
+                });
+            }
         }
 
         /**
@@ -330,12 +332,17 @@ namespace Sim {
             }
 
             if (this.currentOpenedBucket) { // if a bucket was opened reset it and all walls in preview
-                FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
-                    if (foundationRenderer) {
-                        foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.AUTO);
-                    }
-                });
-                FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.Reset());
+                if (this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.WALL) {
+                    FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
+                        if (foundationRenderer) {
+                            foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.AUTO);
+                        }
+                    });
+                    FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.Reset());
+                } else if (this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.GROUND) {
+                    FindObjectsOfType<Ground>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ResetPreview());
+                }
+                
                 this.currentOpenedBucket = null;
             }
         }
@@ -377,12 +384,17 @@ namespace Sim {
                     this.propsConfigToInstantiate = null;
                 }
             } else if (this.currentOpenedBucket) {
-                FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
-                    if (foundationRenderer) {
-                        foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.AUTO);
-                    }
-                });
-                FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
+                if (this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.WALL) {
+                    FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
+                        if (foundationRenderer) {
+                            foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.AUTO);
+                        }
+                    });
+                    FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
+                } else if (this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.GROUND) {
+                    FindObjectsOfType<Ground>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
+                }
+                
                 this.currentOpenedBucket = null;
             }
 
@@ -496,10 +508,13 @@ namespace Sim {
                     layerMask = (1 << 12);
                 }
 
-                if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
-                    if (layerMask == (1 << 12) && Input.GetMouseButtonDown(0)) {
+                if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask) && Input.GetMouseButtonDown(0)) {
+                    if (layerMask == (1 << 12)) {
                         Wall wall = hit.collider.GetComponent<Wall>();
                         wall.PreviewMaterialOnFace(hit, this.currentOpenedBucket);
+                    } else if(layerMask == (1 << 9)) {
+                        Ground ground = hit.collider.GetComponent<Ground>();
+                        ground.Preview(this.currentOpenedBucket.GetPaintConfig());
                     }
                 }
             }

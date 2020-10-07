@@ -134,7 +134,6 @@ namespace Sim.Building {
         }
 
         public virtual void Synchronize(Photon.Realtime.Player playerTarget) {
-            Debug.Log(this.name + " sync");
             this.SetIsBuilt(this.built, playerTarget);
             this.UpdateTransform(playerTarget);
         }

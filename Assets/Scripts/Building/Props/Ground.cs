@@ -1,27 +1,87 @@
-﻿using UnityEngine;
+﻿using System;
+using Photon.Pun;
+using Sim.Scriptables;
+using UnityEngine;
 
 namespace Sim.Building {
     public class Ground : Props {
-        [Header("Settings")]
-        [SerializeField] private Material materialToApply;
-
+        
+        [Header("Ground settings")]
+        [SerializeField] private int paintConfigId;
+        
         private new Renderer renderer;
+
+        private int oldPaintConfigId;
+
+        private bool preview;
 
         private void Awake() {
             this.renderer = GetComponent<Renderer>();
         }
 
         private void Start() {
-            this.ApplyMaterial();
+            this.ApplyPaint();
         }
 
-        public void SetMaterialToApply(Material material) {
-            this.materialToApply = material;
-            this.ApplyMaterial();
+        public override void Synchronize(Photon.Realtime.Player playerTarget) {
+            base.Synchronize(playerTarget);
+            
+            this.SetPaintConfigId(this.paintConfigId, playerTarget);
         }
 
-        private void ApplyMaterial() {
-            this.renderer.material = this.materialToApply;
+        public void Preview(PaintConfig paintConfig) {
+            if (this.preview) {
+                this.ResetPreview();
+            } else {
+                this.oldPaintConfigId = this.paintConfigId;
+                this.paintConfigId = paintConfig.GetId();
+                this.ApplyPaint();
+                this.preview = true;   
+            }
+        }
+
+        public void ApplyModification() {
+            this.oldPaintConfigId = this.paintConfigId;
+            this.preview = false;
+            this.SetPaintConfigId(this.paintConfigId, RpcTarget.Others);
+        }
+
+        public void ResetPreview() {
+            this.paintConfigId = this.oldPaintConfigId;
+            this.ApplyPaint();
+            this.preview = false;
+        }
+
+        public bool IsPreview() {
+            return this.preview;
+        }
+
+        public PaintConfig GetPaintConfig() {
+            return DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId);
+        }
+
+        public int GetPaintConfigId() {
+            return this.paintConfigId;
+        }
+
+        public void SetPaintConfigId(int paintConfigId, RpcTarget rpcTarget) {
+            this.photonView.RPC("RPC_SetPaintConfigId", rpcTarget, paintConfigId);
+        }
+
+        public void SetPaintConfigId(int paintConfigId, Photon.Realtime.Player playerTarget) {
+            this.photonView.RPC("RPC_SetPaintConfigId", playerTarget, paintConfigId);
+        }
+
+        [PunRPC]
+        public void RPC_SetPaintConfigId(int id) {
+            this.paintConfigId = id;
+            this.ApplyPaint();
+        }
+
+        private void ApplyPaint() {
+            if (this.GetPaintConfig()) {
+                this.renderer.material = this.GetPaintConfig().GetMaterial();
+            }
         }
     }
 }

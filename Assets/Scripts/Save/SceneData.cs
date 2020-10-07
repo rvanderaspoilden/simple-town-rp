@@ -77,6 +77,7 @@ namespace Sim {
 
     [Serializable]
     public class GroundData : DefaultData {
+        public int paintConfigId;
         public GroundData() { }
 
         public GroundData(Props props) {

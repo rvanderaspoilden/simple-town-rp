@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbaf885a5d14d6a47b9fa12e227f8f40, type: 3}
+  m_Name: Concrete
+  m_EditorClassIdentifier: 
+  id: 6
+  displayName: "Dalle de b\xE9ton"
+  material: {fileID: 2100000, guid: d92ef32394b5f474385d74b565a7bdd7, type: 2}
+  bucketPropsConfig: {fileID: 11400000, guid: a993878725957364a872287ca92ae44d, type: 2}
+  surface: 0
+  customColor: 0

@@ -36,6 +36,7 @@ namespace Sim {
             // Instantiate all grounds
             sceneData.grounds?.ToList().ForEach(data => {
                 Ground props = SaveUtils.InstantiatePropsFromSave(data) as Ground;
+                props.SetPaintConfigId(data.paintConfigId, RpcTarget.All);
             });
 
             // Instantiate all walls
