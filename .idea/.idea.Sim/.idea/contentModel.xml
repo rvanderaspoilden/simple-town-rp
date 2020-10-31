@@ -607,6 +607,7 @@
             <e p="Scenes.cs" t="Include" />
           </e>
           <e p="Entities" t="Include">
+            <e p="AuthenticationResponse.cs" t="Include" />
             <e p="Personnage.cs" t="Include" />
           </e>
           <e p="Enums" t="Include">
@@ -621,6 +622,7 @@
             <e p="PlacesEnum.cs" t="Include" />
           </e>
           <e p="Managers" t="Include">
+            <e p="ApiManager.cs" t="Include" />
             <e p="CameraManager.cs" t="Include" />
             <e p="DatabaseManager.cs" t="Include" />
             <e p="HUDManager.cs" t="Include" />

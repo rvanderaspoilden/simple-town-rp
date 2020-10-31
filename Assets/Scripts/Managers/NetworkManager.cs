@@ -16,9 +16,10 @@ namespace Sim {
 
         [Header("Only for debug")]
         [SerializeField] private Personnage personnage;
-
-
+        
         private string destinationScene;
+
+        private bool isConnectedToServer;
 
         public static NetworkManager Instance;
 
@@ -48,7 +49,7 @@ namespace Sim {
         public void Play(Personnage personnage) {
             this.personnage = personnage;
 
-            if (PhotonNetwork.IsConnectedAndReady) {
+            if (PhotonNetwork.IsConnectedAndReady && this.isConnectedToServer) {
                 LoadingManager.Instance.Show();
                 Debug.Log("Connecting to server with personnage : " + personnage.GetFirstname());
                 this.GoToRoom(PlacesEnum.HALL);
@@ -126,6 +127,7 @@ namespace Sim {
 
         public override void OnJoinedLobby() {
             Debug.Log("Lobby joined");
+            this.isConnectedToServer = true;
         }
 
         public override void OnJoinedRoom() {

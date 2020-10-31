@@ -1,25 +1,62 @@
 ﻿using System;
+using System.Collections;
 using Photon.Pun;
 using Sim.Entities;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
+using UnityEngine.UI;
 
 namespace Sim {
     public class Launcher : MonoBehaviour {
-        [Header("Only for debug")]
-        [SerializeField] private string username;
+        [Header("Settings")]
+        [SerializeField] private TextMeshProUGUI errorText;
 
-        public void SetUsername(string username) {
-            this.username = username;
+        [SerializeField] private Image statusImg;
+
+        private string username;
+        private string password;
+
+        private void Awake() {
+            ApiManager.OnAuthenticationSucceeded += this.OnAuthenticationSucceeded;
+            ApiManager.OnAuthenticationFailed += this.OnAuthenticationFailed;
+            ApiManager.OnServerStatusChanged += this.OnServerStatusChanged;
         }
+
+        private void Start() {
+            ApiManager.instance.CheckServerStatus();
+        }
+
+        private void OnDestroy() {
+            ApiManager.OnAuthenticationSucceeded -= this.OnAuthenticationSucceeded;
+            ApiManager.OnAuthenticationFailed -= this.OnAuthenticationFailed;
+            ApiManager.OnServerStatusChanged -= this.OnServerStatusChanged;
+        }
+
+        public void SetUsername(string username) => this.username = username;
+
+        public void SetPassword(string password) => this.password = password;
 
         public void Play() {
-            if (username != String.Empty) {
+            if (username != String.Empty && password != String.Empty) {
                 PhotonNetwork.NickName = username;
 
-                Personnage personnage = new Personnage("Stanislas", "Duquebec");
+                this.ResetErrorText();
 
-                NetworkManager.Instance.Play(personnage);
+                ApiManager.instance.Authenticate(username, password);
             }
         }
+
+        private void ResetErrorText() => this.errorText.text = String.Empty;
+
+        #region Callbacks
+
+        private void OnAuthenticationSucceeded(UnityWebRequest webRequest) => NetworkManager.Instance.Play(new Personnage("Stanislas", "Duquebec"));
+
+        private void OnAuthenticationFailed(UnityWebRequest webRequest) => this.errorText.text = "Username or password invalid :(";
+
+        private void OnServerStatusChanged(bool isActive) => this.statusImg.color = isActive ? Color.green : Color.red;
+
+        #endregion
     }
 }
