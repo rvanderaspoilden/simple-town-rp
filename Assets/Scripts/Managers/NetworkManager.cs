@@ -16,7 +16,7 @@ namespace Sim {
 
         [Header("Only for debug")]
         [SerializeField] private Personnage personnage;
-        
+
         private string destinationScene;
 
         private bool isConnectedToServer;
@@ -46,6 +46,8 @@ namespace Sim {
             StopAllCoroutines();
         }
 
+        public Personnage Personnage => personnage;
+
         public void Play(Personnage personnage) {
             this.personnage = personnage;
 
@@ -65,7 +67,13 @@ namespace Sim {
                 return;
             }
 
-            PhotonNetwork.JoinOrCreateRoom(PlaceUtils.GetPlaceEnumName(place), new RoomOptions() {IsOpen = true, IsVisible = true, EmptyRoomTtl = 0}, TypedLobby.Default);
+            string roomName = PlaceUtils.GetPlaceEnumName(place);
+
+            if (place == PlacesEnum.HALL) {
+                roomName = PlaceUtils.GetPlaceEnumName(place) + "_" + CommonUtils.GetAppartmentFloorFromAppartmentId(personnage.AppartmentId, CommonConstants.appartmentLimitPerFloor);
+            }
+
+            PhotonNetwork.JoinOrCreateRoom(roomName, new RoomOptions() {IsOpen = true, IsVisible = true, EmptyRoomTtl = 0}, TypedLobby.Default);
             this.destinationScene = PlaceUtils.ConvertPlaceEnumToSceneName(place);
         }
 
@@ -106,7 +114,7 @@ namespace Sim {
                     SceneData sceneData = JsonConvert.DeserializeObject<SceneData>(textAsset.text);
                     RoomManager.Instance.InstantiateLevel(sceneData);
                 }
-                
+
                 if (sceneName.Equals("Appartment")) {
                     TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Appartment");
                     SceneData sceneData = JsonConvert.DeserializeObject<SceneData>(textAsset.text);

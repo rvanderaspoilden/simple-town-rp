@@ -58,6 +58,7 @@ namespace Sim {
     public class DoorTeleporterData : DefaultData {
         public String destination;
         public String doorDirection;
+        public int number;
         
         public DoorTeleporterData() { }
 

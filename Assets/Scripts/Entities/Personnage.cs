@@ -8,7 +8,7 @@ namespace Sim.Entities {
         [SerializeField] private string firstname;
         [SerializeField] private string lastname;
         [SerializeField] private string origin_country;
-        [SerializeField] private string appartment_id;
+        [SerializeField] private int appartment_id;
 
         public string Id {
             get => id;
@@ -35,7 +35,7 @@ namespace Sim.Entities {
             set => origin_country = value;
         }
 
-        public string AppartmentId {
+        public int AppartmentId {
             get => appartment_id;
             set => appartment_id = value;
         }

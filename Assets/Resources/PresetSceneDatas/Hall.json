@@ -3,116 +3,7 @@
     {
       "destination": "APPARTMENT",
       "doorDirection": "BACKWARD",
-      "id": 10,
-      "transform": {
-        "position": {
-          "x": -1.0,
-          "y": 0.0,
-          "z": 11.0
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 90.0,
-          "z": 0.0
-        },
-        "scale": {
-          "x": 1.0,
-          "y": 1.0,
-          "z": 1.0
-        }
-      }
-    },
-    {
-      "destination": "APPARTMENT",
-      "doorDirection": "BACKWARD",
-      "id": 10,
-      "transform": {
-        "position": {
-          "x": 4.0,
-          "y": 0.0,
-          "z": 8.0
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 270.0,
-          "z": 0.0
-        },
-        "scale": {
-          "x": 1.0,
-          "y": 1.0,
-          "z": 1.0
-        }
-      }
-    },
-    {
-      "destination": "APPARTMENT",
-      "doorDirection": "BACKWARD",
-      "id": 10,
-      "transform": {
-        "position": {
-          "x": 4.0,
-          "y": 0.0,
-          "z": 12.0
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 270.0,
-          "z": 0.0
-        },
-        "scale": {
-          "x": 1.0,
-          "y": 1.0,
-          "z": 1.0
-        }
-      }
-    },
-    {
-      "destination": "APPARTMENT",
-      "doorDirection": "BACKWARD",
-      "id": 10,
-      "transform": {
-        "position": {
-          "x": -1.0,
-          "y": 0.0,
-          "z": 3.0
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 90.0,
-          "z": 0.0
-        },
-        "scale": {
-          "x": 1.0,
-          "y": 1.0,
-          "z": 1.0
-        }
-      }
-    },
-    {
-      "destination": "APPARTMENT",
-      "doorDirection": "BACKWARD",
-      "id": 10,
-      "transform": {
-        "position": {
-          "x": 4.0,
-          "y": 0.0,
-          "z": 4.0
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 270.0,
-          "z": 0.0
-        },
-        "scale": {
-          "x": 1.0,
-          "y": 1.0,
-          "z": 1.0
-        }
-      }
-    },
-    {
-      "destination": "APPARTMENT",
-      "doorDirection": "BACKWARD",
+      "number": 3,
       "id": 10,
       "transform": {
         "position": {
@@ -124,13 +15,104 @@
           "x": 0.0,
           "y": 90.0,
           "z": 0.0
-        },
-        "scale": {
-          "x": 1.0,
-          "y": 1.0,
-          "z": 1.0
         }
-      }
+      },
+      "isBuilt": true
+    },
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "number": 2,
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": 4.0,
+          "y": 0.0,
+          "z": 4.0
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 270.0,
+          "z": 0.0
+        }
+      },
+      "isBuilt": true
+    },
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "number": 1,
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": -1.0,
+          "y": 0.0,
+          "z": 3.0
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 90.0,
+          "z": 0.0
+        }
+      },
+      "isBuilt": true
+    },
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "number": 6,
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": 4.0,
+          "y": 0.0,
+          "z": 12.0
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 270.0,
+          "z": 0.0
+        }
+      },
+      "isBuilt": true
+    },
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "number": 4,
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": 4.0,
+          "y": 0.0,
+          "z": 8.0
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 270.0,
+          "z": 0.0
+        }
+      },
+      "isBuilt": true
+    },
+    {
+      "destination": "APPARTMENT",
+      "doorDirection": "BACKWARD",
+      "number": 5,
+      "id": 10,
+      "transform": {
+        "position": {
+          "x": -1.0,
+          "y": 0.0,
+          "z": 11.0
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 90.0,
+          "z": 0.0
+        }
+      },
+      "isBuilt": true
     }
   ],
   "elevatorTeleporters": [
@@ -147,17 +129,15 @@
           "x": 0.0,
           "y": 0.0,
           "z": 0.0
-        },
-        "scale": {
-          "x": 1.0,
-          "y": 1.0,
-          "z": 1.0
         }
-      }
+      },
+      "isBuilt": true
     }
   ],
   "walls": [],
   "simpleDoors": [],
   "grounds": [],
+  "packages": [],
+  "buckets": [],
   "props": []
 }

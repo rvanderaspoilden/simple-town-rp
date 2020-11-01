@@ -2,6 +2,7 @@
 using System.Collections;
 using Photon.Pun;
 using Sim.Enums;
+using TMPro;
 using UnityEngine;
 
 namespace Sim.Interactables {
@@ -9,12 +10,16 @@ namespace Sim.Interactables {
         [Header("Door Settings")]
         [SerializeField] private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
 
+        [SerializeField] private int number;
+
         private Animator animator;
         private Coroutine doorAnimationCoroutine;
+        private TextMeshPro numberText;
 
         private void Awake() {
             base.Awake();
-            
+
+            this.numberText = GetComponentInChildren<TextMeshPro>();
             this.animator = GetComponent<Animator>();
             this.animator.SetFloat("direction", doorDirection == DoorDirectionEnum.BACKWARD ? -1 : 1);
         }
@@ -26,14 +31,33 @@ namespace Sim.Interactables {
         public override void Use() {
             // Play open animation for all
             photonView.RPC("RPC_Animation", RpcTarget.All);
-            
+
             base.Use();
         }
 
         public override void Synchronize(Photon.Realtime.Player playerTarget) {
             base.Synchronize(playerTarget);
-            
+
             this.SetDoorDirection(this.doorDirection, playerTarget);
+            this.SetDoorNumber(this.number, playerTarget);
+        }
+
+        public void SetDoorNumber(int number, RpcTarget rpcTarget) {
+            photonView.RPC("RPC_SetDoorNumber", rpcTarget, number);
+        }
+
+        public void SetDoorNumber(int number, Photon.Realtime.Player playerTarget) {
+            photonView.RPC("RPC_SetDoorNumber", playerTarget, number);
+        }
+
+        [PunRPC]
+        public void RPC_SetDoorNumber(int number) {
+            this.number = number;
+            this.numberText.text = number.ToString();
+        }
+
+        public int GetDoorNumber() {
+            return this.number;
         }
 
         public DoorDirectionEnum GetDoorDirection() {
@@ -43,7 +67,7 @@ namespace Sim.Interactables {
         public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum, RpcTarget rpcTarget) {
             photonView.RPC("RPC_SetDoorDirection", rpcTarget, doorDirectionEnum);
         }
-        
+
         public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum, Photon.Realtime.Player playerTarget) {
             photonView.RPC("RPC_SetDoorDirection", playerTarget, doorDirectionEnum);
         }
@@ -59,7 +83,7 @@ namespace Sim.Interactables {
             if (this.doorAnimationCoroutine != null) {
                 StopCoroutine(this.doorAnimationCoroutine);
             }
-            
+
             this.doorAnimationCoroutine = StartCoroutine(this.DoorAnimation());
         }
 

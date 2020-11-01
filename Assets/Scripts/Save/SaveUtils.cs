@@ -21,6 +21,7 @@ namespace Sim.Utils {
             doorTeleporterData.Init(doorTeleporter);
             doorTeleporterData.destination = doorTeleporter.GetDestination().ToString();
             doorTeleporterData.doorDirection = doorTeleporter.GetDoorDirection().ToString();
+            doorTeleporterData.number = doorTeleporter.GetDoorNumber();
             return doorTeleporterData;
         }
 

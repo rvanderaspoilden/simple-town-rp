@@ -50,6 +50,7 @@ namespace Sim {
                 DoorTeleporter props = SaveUtils.InstantiatePropsFromSave(data) as DoorTeleporter;
                 props.SetDestination((PlacesEnum) Enum.Parse(typeof(PlacesEnum), data.destination), RpcTarget.All);
                 props.SetDoorDirection((DoorDirectionEnum) Enum.Parse(typeof(DoorDirectionEnum), data.doorDirection), RpcTarget.All);
+                props.SetDoorNumber(CommonUtils.GetDoorNumberFromFloorNumber(data.number), RpcTarget.All);
             });
 
             // Instantiate all simple doors

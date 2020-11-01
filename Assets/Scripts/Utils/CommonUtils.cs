@@ -34,5 +34,13 @@ namespace Sim.Utils {
 
             return path;
         }
+
+        public static int GetAppartmentFloorFromAppartmentId(int appartmentId, int limit) {
+            return Mathf.CeilToInt(appartmentId / (float) limit);
+        }
+
+        public static int GetDoorNumberFromFloorNumber(int initialNumber) {
+            return initialNumber + (CommonConstants.appartmentLimitPerFloor * (CommonUtils.GetAppartmentFloorFromAppartmentId(NetworkManager.Instance.Personnage.AppartmentId, CommonConstants.appartmentLimitPerFloor) - 1));
+        }
     }
 }
