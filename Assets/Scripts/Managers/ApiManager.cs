@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections;
-using System.Configuration;
+using Sim.Entities;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -12,13 +12,17 @@ namespace Sim {
         [Header("Only for debug")]
         [SerializeField] private String accessToken;
 
+        [SerializeField] private User user;
+
         private Coroutine authenticationCoroutine;
 
-        public delegate void AuthenticationRequest(UnityWebRequest webRequest);
+        public delegate void AuthenticationSucceededResponse(Personnage personnage);
 
-        public static event AuthenticationRequest OnAuthenticationSucceeded;
+        public delegate void AuthenticationFailedResponse(String msg);
 
-        public static event AuthenticationRequest OnAuthenticationFailed;
+        public static event AuthenticationSucceededResponse OnAuthenticationSucceeded;
+
+        public static event AuthenticationFailedResponse OnAuthenticationFailed;
 
         public delegate void ServerStatus(bool isActive);
 
@@ -48,7 +52,7 @@ namespace Sim {
             UnityWebRequest www = UnityWebRequest.Get(this.uri + "/hc");
 
             yield return www.SendWebRequest();
-            
+
             OnServerStatusChanged?.Invoke(www.responseCode == 200);
         }
 
@@ -57,16 +61,43 @@ namespace Sim {
             form.AddField("username", username);
             form.AddField("password", password);
 
-            UnityWebRequest www = UnityWebRequest.Post(this.uri + "/auth/login", form);
+            UnityWebRequest authRequest = UnityWebRequest.Post(this.uri + "/auth/login", form);
 
-            yield return www.SendWebRequest();
+            yield return authRequest.SendWebRequest();
 
-            if (www.responseCode == 201) {
-                AuthenticationResponse response = JsonUtility.FromJson<AuthenticationResponse>(www.downloadHandler.text);
+            if (authRequest.responseCode == 201) { // If credentials are valid
+                AuthenticationResponse response = JsonUtility.FromJson<AuthenticationResponse>(authRequest.downloadHandler.text);
                 this.accessToken = response.GetAccessToken();
-                OnAuthenticationSucceeded?.Invoke(www);
-            } else if (www.responseCode == 401 || www.isNetworkError) {
-                OnAuthenticationFailed?.Invoke(www);
+
+                // retrieve profile
+                UnityWebRequest profileRequest = UnityWebRequest.Get(this.uri + "/auth/profile");
+                profileRequest.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+
+                yield return profileRequest.SendWebRequest();
+
+                if (profileRequest.responseCode == 200) {
+                    ProfileResponse profileResponse = JsonUtility.FromJson<ProfileResponse>(profileRequest.downloadHandler.text);
+                    this.user = profileResponse.User;
+
+                    // retrive user's personnages
+                    UnityWebRequest personnageRequest = UnityWebRequest.Get(this.uri + "/personnage/" + this.user.Id);
+
+                    yield return personnageRequest.SendWebRequest();
+
+                    if (personnageRequest.responseCode == 200) {
+                        PersonnageResponse personnageResponse = JsonUtility.FromJson<PersonnageResponse>(personnageRequest.downloadHandler.text);
+
+                        if (personnageResponse.Personnages != null && personnageResponse.Personnages.Length > 0) {
+                            OnAuthenticationSucceeded?.Invoke(personnageResponse.Personnages[0]);
+                        } else {
+                            OnAuthenticationFailed?.Invoke("No personnage found for this account");
+                        }
+                    }
+                } else {
+                    OnAuthenticationFailed?.Invoke("An error occured");
+                }
+            } else if (authRequest.responseCode == 401 || authRequest.isNetworkError) {
+                OnAuthenticationFailed?.Invoke("Username or password invalid");
             }
 
             this.authenticationCoroutine = null;

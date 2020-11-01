@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections;
 using Photon.Pun;
 using Sim.Entities;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.UI;
 
 namespace Sim {
@@ -51,9 +49,11 @@ namespace Sim {
 
         #region Callbacks
 
-        private void OnAuthenticationSucceeded(UnityWebRequest webRequest) => NetworkManager.Instance.Play(new Personnage("Stanislas", "Duquebec"));
+        private void OnAuthenticationSucceeded(Personnage personnage) {
+            NetworkManager.Instance.Play(personnage);
+        }
 
-        private void OnAuthenticationFailed(UnityWebRequest webRequest) => this.errorText.text = "Username or password invalid :(";
+        private void OnAuthenticationFailed(String msg) => this.errorText.text = msg;
 
         private void OnServerStatusChanged(bool isActive) => this.statusImg.color = isActive ? Color.green : Color.red;
 
