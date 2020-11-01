@@ -19,6 +19,8 @@ namespace Sim {
 
         private string destinationScene;
 
+        private int currentAppartmentNumber;
+
         private bool isConnectedToServer;
 
         public static NetworkManager Instance;
@@ -71,10 +73,17 @@ namespace Sim {
 
             if (place == PlacesEnum.HALL) {
                 roomName = PlaceUtils.GetPlaceEnumName(place) + "_" + CommonUtils.GetAppartmentFloorFromAppartmentId(personnage.AppartmentId, CommonConstants.appartmentLimitPerFloor);
+            } else if (place == PlacesEnum.APPARTMENT) {
+                roomName = PlaceUtils.GetPlaceEnumName(place) + "_" + this.currentAppartmentNumber;
             }
 
             PhotonNetwork.JoinOrCreateRoom(roomName, new RoomOptions() {IsOpen = true, IsVisible = true, EmptyRoomTtl = 0}, TypedLobby.Default);
             this.destinationScene = PlaceUtils.ConvertPlaceEnumToSceneName(place);
+        }
+
+        public void GoToAppartment(int id) {
+            this.currentAppartmentNumber = id;
+            this.GoToRoom(PlacesEnum.APPARTMENT);
         }
 
         private IEnumerator LeaveAndJoinRoom(PlacesEnum place) {
@@ -100,6 +109,11 @@ namespace Sim {
 
         private IEnumerator LoadScene(string sceneName) {
             PhotonNetwork.LoadLevel(sceneName);
+
+            if (sceneName.Equals(PlaceUtils.ConvertPlaceEnumToSceneName(PlacesEnum.APPARTMENT))) {
+                // TODO: call api
+                Debug.Log("appartment : " + this.currentAppartmentNumber);
+            }
 
             while (PhotonNetwork.LevelLoadingProgress < 1f) {
                 Debug.Log("Room loading...");

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
 using Photon.Pun;
+using Sim.Constants;
 using Sim.Enums;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Sim.Interactables {
     public class DoorTeleporter : Teleporter {
@@ -22,6 +24,11 @@ namespace Sim.Interactables {
             this.numberText = GetComponentInChildren<TextMeshPro>();
             this.animator = GetComponent<Animator>();
             this.animator.SetFloat("direction", doorDirection == DoorDirectionEnum.BACKWARD ? -1 : 1);
+
+            // Hide door number in appartment
+            if (SceneManager.GetActiveScene().name.Equals(PlaceName.APPARTMENT)) {
+                this.numberText.enabled = false;
+            }
         }
 
         private void OnDestroy() {
@@ -32,7 +39,11 @@ namespace Sim.Interactables {
             // Play open animation for all
             photonView.RPC("RPC_Animation", RpcTarget.All);
 
-            base.Use();
+            if (this.destination == PlacesEnum.APPARTMENT) {
+                NetworkManager.Instance.GoToAppartment(this.number);
+            } else {
+                base.Use();
+            }
         }
 
         public override void Synchronize(Photon.Realtime.Player playerTarget) {
