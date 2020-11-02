@@ -8,6 +8,7 @@ using Sim.Entities;
 using Sim.Enums;
 using Sim.Utils;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Sim {
     public class NetworkManager : MonoBehaviourPunCallbacks {
@@ -110,12 +111,13 @@ namespace Sim {
         private IEnumerator LoadScene(string sceneName) {
             PhotonNetwork.LoadLevel(sceneName);
 
-            if (sceneName.Equals(PlaceUtils.ConvertPlaceEnumToSceneName(PlacesEnum.APPARTMENT))) {
-                // TODO: call api
-                Debug.Log("appartment : " + this.currentAppartmentNumber);
+            UnityWebRequest webRequest = null;
+            
+            if (PhotonNetwork.IsMasterClient && sceneName.Equals(PlaceUtils.ConvertPlaceEnumToSceneName(PlacesEnum.APPARTMENT))) {
+                webRequest = ApiManager.instance.RetrieveAppartment(this.currentAppartmentNumber);
             }
-
-            while (PhotonNetwork.LevelLoadingProgress < 1f) {
+            
+            while (PhotonNetwork.LevelLoadingProgress < 1f || (webRequest != null && !webRequest.isDone)) {
                 Debug.Log("Room loading...");
                 yield return new WaitForEndOfFrame();
             }

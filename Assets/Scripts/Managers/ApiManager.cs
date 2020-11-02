@@ -44,6 +44,12 @@ namespace Sim {
             }
         }
 
+        public UnityWebRequest RetrieveAppartment(int appartmentId) {
+            UnityWebRequest appartmentRequest = UnityWebRequest.Get(this.uri + "/appartment/" + appartmentId);
+            appartmentRequest.SendWebRequest();
+            return appartmentRequest;
+        }
+
         public void CheckServerStatus() {
             StartCoroutine(this.CheckServerStatusCoroutine());
         }

@@ -75,7 +75,7 @@ namespace Sim.Building {
                 this.renderer = GetComponent<MeshRenderer>();
                 this.collider = GetComponent<MeshCollider>();
 
-                this.wallFacesPreviewed = new Dictionary<int, WallFace>();   
+                this.wallFacesPreviewed = new Dictionary<int, WallFace>();
             }
 
             this.wallFaces = new List<WallFace>(JsonHelper.FromJson<WallFace>(faces));
@@ -134,7 +134,12 @@ namespace Sim.Building {
                     materialToApply.color = face.GetAdditionalColor();
                 }
 
-                sharedMaterials[face.GetSharedMaterialIdx()] = materialToApply;
+
+                if (face.GetSharedMaterialIdx() >= sharedMaterials.Length) {
+                    Debug.LogError($"An error occured during material apply on wall {this.name}");
+                } else {
+                    sharedMaterials[face.GetSharedMaterialIdx()] = materialToApply;
+                }
             }
 
             this.renderer.sharedMaterials = sharedMaterials;
