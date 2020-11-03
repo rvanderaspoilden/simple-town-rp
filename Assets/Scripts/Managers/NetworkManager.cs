@@ -132,8 +132,16 @@ namespace Sim {
                 }
 
                 if (sceneName.Equals("Appartment")) {
-                    TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Appartment");
-                    SceneData sceneData = JsonConvert.DeserializeObject<SceneData>(textAsset.text);
+                    AppartmentResponse appartmentResponse = JsonConvert.DeserializeObject<AppartmentResponse>(webRequest.downloadHandler.text);
+                    SceneData sceneData = null;
+                    
+                    if (appartmentResponse != null) { // If no data found from API use default appartment to prevent crash
+                        sceneData = appartmentResponse.Data;
+                    } else {
+                        TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Default_Appartment_Talyah");
+                        sceneData = JsonConvert.DeserializeObject<SceneData>(textAsset.text);
+                    }
+                    
                     RoomManager.Instance.InstantiateLevel(sceneData);
                 }
             }
