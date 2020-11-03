@@ -3,7 +3,7 @@
     {
       "destination": "HALL",
       "doorDirection": "BACKWARD",
-      "number": 30,
+      "number": 7,
       "id": 10,
       "transform": {
         "position": {
@@ -26,22 +26,22 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
           "additionalColor": [
             0.0,
             0.0,
             0.0,
             0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
           ]
         },
         {
@@ -94,12 +94,12 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
             0.0,
             0.0,
             0.0,
-            0.0
+            1.0
           ]
         },
         {
@@ -162,22 +162,22 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
           "additionalColor": [
             0.0,
             0.0,
             0.0,
             0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
           ]
         },
         {
@@ -202,12 +202,12 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             0.0,
-            0.9244574,
-            0.9716981,
-            1.0
+            0.0,
+            0.0,
+            0.0
           ]
         }
       ],
@@ -230,22 +230,22 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
           "additionalColor": [
             0.0,
             0.0,
             0.0,
             0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
           ]
         },
         {
@@ -298,22 +298,22 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
           "additionalColor": [
             0.0,
             0.0,
             0.0,
             0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
           ]
         },
         {
@@ -338,25 +338,25 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
+            0.0,
+            0.0,
+            0.0,
+            0.0
           ]
         }
       ],
       "id": 7,
       "transform": {
         "position": {
-          "x": -1.0,
+          "x": -3.0,
           "y": 0.0,
-          "z": 2.0
+          "z": 6.0
         },
         "rotation": {
           "x": 270.0,
-          "y": 4.829674E-06,
+          "y": 90.0,
           "z": 0.0
         }
       },
@@ -366,12 +366,12 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
             0.0,
             0.0,
             0.0,
-            0.0
+            1.0
           ]
         },
         {
@@ -434,89 +434,21 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
-          "additionalColor": [
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 2,
-          "paintConfigId": 5,
-          "additionalColor": [
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 3,
-          "paintConfigId": 5,
-          "additionalColor": [
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 4,
-          "paintConfigId": 3,
-          "additionalColor": [
-            0.0,
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
-      ],
-      "id": 7,
-      "transform": {
-        "position": {
-          "x": -3.0,
-          "y": 0.0,
-          "z": 6.0
-        },
-        "rotation": {
-          "x": 270.0,
-          "y": 90.0,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "wallFaces": [
-        {
-          "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
           "paintConfigId": 2,
           "additionalColor": [
             0.0,
-            0.9244574,
-            0.9716981,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
+          "additionalColor": [
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
@@ -570,21 +502,21 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
@@ -638,21 +570,21 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
@@ -706,17 +638,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -746,7 +678,7 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -774,21 +706,21 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
@@ -842,17 +774,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -910,17 +842,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -950,7 +882,7 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -978,17 +910,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1018,7 +950,7 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1046,21 +978,21 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
@@ -1114,17 +1046,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1182,17 +1114,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1250,21 +1182,21 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
@@ -1318,17 +1250,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1358,7 +1290,7 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1386,17 +1318,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1454,17 +1386,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1522,17 +1454,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1590,17 +1522,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1658,17 +1590,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1726,11 +1658,11 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
@@ -1794,11 +1726,11 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
@@ -1862,11 +1794,11 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
@@ -1930,17 +1862,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -1998,17 +1930,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -2066,17 +1998,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -2134,17 +2066,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -2202,85 +2134,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 2,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 3,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 4,
           "paintConfigId": 2,
           "additionalColor": [
             0.0,
-            0.9244574,
-            0.9716981,
-            1.0
-          ]
-        }
-      ],
-      "id": 5,
-      "transform": {
-        "position": {
-          "x": -3.0,
-          "y": 0.0,
-          "z": 2.0
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 90.0,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "wallFaces": [
-        {
-          "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -2338,21 +2202,21 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
@@ -2406,11 +2270,11 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
@@ -2474,17 +2338,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -2542,17 +2406,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -2610,21 +2474,21 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
@@ -2678,11 +2542,11 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
@@ -2746,17 +2610,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -2786,7 +2650,7 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -2814,17 +2678,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -2854,11 +2718,11 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         }
@@ -2882,17 +2746,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -2950,85 +2814,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 2,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 3,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 4,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        }
-      ],
-      "id": 5,
-      "transform": {
-        "position": {
-          "x": 1.0,
-          "y": 0.0,
-          "z": 4.0
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 270.0,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "wallFaces": [
-        {
-          "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3070,13 +2866,13 @@
       "id": 5,
       "transform": {
         "position": {
-          "x": -3.0,
+          "x": 1.0,
           "y": 0.0,
-          "z": 3.0
+          "z": 4.0
         },
         "rotation": {
           "x": 0.0,
-          "y": 90.0,
+          "y": 270.0,
           "z": 0.0
         }
       },
@@ -3086,17 +2882,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3126,7 +2922,7 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3154,17 +2950,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3222,17 +3018,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3242,7 +3038,7 @@
         },
         {
           "sharedMaterialIdx": 2,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3262,7 +3058,7 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3290,17 +3086,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3358,17 +3154,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3426,17 +3222,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3494,46 +3290,16 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
-          "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 2,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 3,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 4,
           "paintConfigId": 3,
           "additionalColor": [
             1.0,
@@ -3541,44 +3307,6 @@
             1.0,
             1.0
           ]
-        }
-      ],
-      "id": 5,
-      "transform": {
-        "position": {
-          "x": -4.0,
-          "y": 0.0,
-          "z": 3.0
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 180.0,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "wallFaces": [
-        {
-          "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
-          ]
         },
         {
           "sharedMaterialIdx": 2,
@@ -3592,7 +3320,7 @@
         },
         {
           "sharedMaterialIdx": 3,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3602,17 +3330,17 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 5,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3622,7 +3350,7 @@
         },
         {
           "sharedMaterialIdx": 6,
-          "paintConfigId": 4,
+          "paintConfigId": 5,
           "additionalColor": [
             1.0,
             1.0,
@@ -3632,7 +3360,7 @@
         },
         {
           "sharedMaterialIdx": 7,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3660,17 +3388,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3700,17 +3428,17 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 5,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3720,7 +3448,7 @@
         },
         {
           "sharedMaterialIdx": 6,
-          "paintConfigId": 4,
+          "paintConfigId": 5,
           "additionalColor": [
             1.0,
             1.0,
@@ -3758,17 +3486,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3798,17 +3526,17 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 5,
-          "paintConfigId": 5,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3818,7 +3546,7 @@
         },
         {
           "sharedMaterialIdx": 6,
-          "paintConfigId": 2,
+          "paintConfigId": 5,
           "additionalColor": [
             1.0,
             1.0,
@@ -3828,7 +3556,7 @@
         },
         {
           "sharedMaterialIdx": 7,
-          "paintConfigId": 5,
+          "paintConfigId": 7,
           "additionalColor": [
             1.0,
             1.0,
@@ -3856,17 +3584,17 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3886,7 +3614,7 @@
         },
         {
           "sharedMaterialIdx": 3,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3896,17 +3624,17 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 5,
-          "paintConfigId": 5,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3916,7 +3644,7 @@
         },
         {
           "sharedMaterialIdx": 6,
-          "paintConfigId": 2,
+          "paintConfigId": 5,
           "additionalColor": [
             1.0,
             1.0,
@@ -3926,7 +3654,7 @@
         },
         {
           "sharedMaterialIdx": 7,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
             1.0,
             1.0,
@@ -3954,21 +3682,21 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
@@ -3984,7 +3712,7 @@
         },
         {
           "sharedMaterialIdx": 3,
-          "paintConfigId": 3,
+          "paintConfigId": 7,
           "additionalColor": [
             1.0,
             1.0,
@@ -3994,37 +3722,37 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 5,
-          "paintConfigId": 2,
+          "paintConfigId": 3,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 6,
-          "paintConfigId": 2,
+          "paintConfigId": 5,
           "additionalColor": [
-            0.0,
-            0.9244574,
-            0.9716981,
+            1.0,
+            1.0,
+            1.0,
             1.0
           ]
         },
         {
           "sharedMaterialIdx": 7,
-          "paintConfigId": 5,
+          "paintConfigId": 7,
           "additionalColor": [
             1.0,
             1.0,
@@ -4052,11 +3780,11 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
@@ -4082,7 +3810,7 @@
         },
         {
           "sharedMaterialIdx": 3,
-          "paintConfigId": 3,
+          "paintConfigId": 7,
           "additionalColor": [
             1.0,
             1.0,
@@ -4092,11 +3820,11 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
+            0.0,
+            0.0,
+            0.0,
             1.0
           ]
         },
@@ -4112,7 +3840,7 @@
         },
         {
           "sharedMaterialIdx": 6,
-          "paintConfigId": 3,
+          "paintConfigId": 5,
           "additionalColor": [
             1.0,
             1.0,
@@ -4150,22 +3878,22 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
           "additionalColor": [
             0.0,
             0.0,
             0.0,
             0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
           ]
         },
         {
@@ -4218,22 +3946,22 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
           "additionalColor": [
             0.0,
             0.0,
             0.0,
             0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
           ]
         },
         {
@@ -4286,22 +4014,22 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
           "additionalColor": [
             0.0,
             0.0,
             0.0,
             0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 2,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
           ]
         },
         {
@@ -4326,12 +4054,12 @@
         },
         {
           "sharedMaterialIdx": 4,
-          "paintConfigId": 4,
+          "paintConfigId": 3,
           "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
+            0.0,
+            0.0,
+            0.0,
+            0.0
           ]
         }
       ],
@@ -4354,22 +4082,22 @@
       "wallFaces": [
         {
           "sharedMaterialIdx": 0,
-          "paintConfigId": 5,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
           "additionalColor": [
             0.0,
             0.0,
             0.0,
             0.0
-          ]
-        },
-        {
-          "sharedMaterialIdx": 1,
-          "paintConfigId": 4,
-          "additionalColor": [
-            1.0,
-            1.0,
-            1.0,
-            1.0
           ]
         },
         {
@@ -4412,6 +4140,202 @@
         },
         "rotation": {
           "x": 270.0,
+          "y": 180.0,
+          "z": 0.0
+        }
+      },
+      "isBuilt": true
+    },
+    {
+      "wallFaces": [
+        {
+          "sharedMaterialIdx": 0,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 2,
+          "paintConfigId": 5,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 3,
+          "paintConfigId": 5,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 4,
+          "paintConfigId": 3,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "id": 7,
+      "transform": {
+        "position": {
+          "x": -1.0,
+          "y": 0.0,
+          "z": 2.0
+        },
+        "rotation": {
+          "x": 270.0,
+          "y": 4.829674E-06,
+          "z": 0.0
+        }
+      },
+      "isBuilt": true
+    },
+    {
+      "wallFaces": [
+        {
+          "sharedMaterialIdx": 0,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 1,
+          "paintConfigId": 3,
+          "additionalColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 2,
+          "paintConfigId": 5,
+          "additionalColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 3,
+          "paintConfigId": 2,
+          "additionalColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 4,
+          "paintConfigId": 3,
+          "additionalColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 5,
+          "paintConfigId": 3,
+          "additionalColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 6,
+          "paintConfigId": 5,
+          "additionalColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 7,
+          "paintConfigId": 3,
+          "additionalColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 8,
+          "paintConfigId": 3,
+          "additionalColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 9,
+          "paintConfigId": 5,
+          "additionalColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "sharedMaterialIdx": 10,
+          "paintConfigId": 3,
+          "additionalColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "id": 17,
+      "transform": {
+        "position": {
+          "x": -4.0,
+          "y": 0.0100011826,
+          "z": 3.0
+        },
+        "rotation": {
+          "x": 0.0,
           "y": 180.0,
           "z": 0.0
         }
@@ -4742,7 +4666,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -4810,7 +4734,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -4844,7 +4768,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -4912,7 +4836,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -4980,7 +4904,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -5014,7 +4938,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -5473,7 +5397,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -5507,7 +5431,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -5558,7 +5482,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -5711,7 +5635,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -5864,7 +5788,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -6238,7 +6162,7 @@
       "isBuilt": true
     },
     {
-      "paintConfigId": 1,
+      "paintConfigId": 6,
       "id": 4,
       "transform": {
         "position": {
@@ -6255,174 +6179,9 @@
       "isBuilt": true
     }
   ],
-  "packages": [
-    {
-      "propsConfigIdInside": 1,
-      "id": 13,
-      "transform": {
-        "position": {
-          "x": -1.7,
-          "y": 0.0275049228,
-          "z": 7.05
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "propsConfigIdInside": 15,
-      "id": 12,
-      "transform": {
-        "position": {
-          "x": -0.8,
-          "y": 0.0275049228,
-          "z": 7.5
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    }
-  ],
-  "buckets": [
-    {
-      "color": null,
-      "paintConfigId": 3,
-      "id": 14,
-      "transform": {
-        "position": {
-          "x": 0.3,
-          "y": 0.0275049228,
-          "z": 5.4
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 44.5829773,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "color": null,
-      "paintConfigId": 5,
-      "id": 14,
-      "transform": {
-        "position": {
-          "x": 2.95,
-          "y": 0.0275049228,
-          "z": 5.1
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 44.5829773,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "color": null,
-      "paintConfigId": 1,
-      "id": 14,
-      "transform": {
-        "position": {
-          "x": 1.35,
-          "y": 0.0275049228,
-          "z": 1.5
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 44.5829773,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "color": [
-        0.0,
-        0.9244574,
-        0.9716981,
-        1.0
-      ],
-      "paintConfigId": 2,
-      "id": 14,
-      "transform": {
-        "position": {
-          "x": 3.10000014,
-          "y": 0.0275049228,
-          "z": 4.35
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 44.5829773,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "color": null,
-      "paintConfigId": 4,
-      "id": 14,
-      "transform": {
-        "position": {
-          "x": 2.8,
-          "y": 0.0275049228,
-          "z": 5.85
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 44.5829773,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "color": null,
-      "paintConfigId": 7,
-      "id": 14,
-      "transform": {
-        "position": {
-          "x": 0.75,
-          "y": 0.0275049228,
-          "z": 4.55
-        },
-        "rotation": {
-          "x": 0.0,
-          "y": 44.5829773,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    }
-  ],
+  "packages": [],
+  "buckets": [],
   "props": [
-    {
-      "id": 16,
-      "transform": {
-        "position": {
-          "x": 2.0,
-          "y": 0.0,
-          "z": 8.0
-        },
-        "rotation": {
-          "x": 270.0,
-          "y": 180.0,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
     {
       "id": 16,
       "transform": {
@@ -6443,23 +6202,7 @@
       "id": 16,
       "transform": {
         "position": {
-          "x": -5.0,
-          "y": 0.0,
-          "z": 8.0
-        },
-        "rotation": {
-          "x": 270.0,
-          "y": 180.0,
-          "z": 0.0
-        }
-      },
-      "isBuilt": true
-    },
-    {
-      "id": 16,
-      "transform": {
-        "position": {
-          "x": -2.0,
+          "x": 2.0,
           "y": 0.0,
           "z": 8.0
         },
@@ -6491,7 +6234,7 @@
       "id": 16,
       "transform": {
         "position": {
-          "x": -6.0,
+          "x": -2.0,
           "y": 0.0,
           "z": 8.0
         },
@@ -6504,32 +6247,32 @@
       "isBuilt": true
     },
     {
-      "id": 1,
+      "id": 16,
       "transform": {
         "position": {
-          "x": 4.35,
-          "y": 0.0275049228,
-          "z": 7.5
+          "x": -5.0,
+          "y": 0.0,
+          "z": 8.0
         },
         "rotation": {
           "x": 270.0,
-          "y": 0.0,
+          "y": 180.0,
           "z": 0.0
         }
       },
       "isBuilt": true
     },
     {
-      "id": 2,
+      "id": 16,
       "transform": {
         "position": {
-          "x": 4.5,
-          "y": 0.0275049228,
-          "z": 5.8
+          "x": -6.0,
+          "y": 0.0,
+          "z": 8.0
         },
         "rotation": {
           "x": 270.0,
-          "y": 0.0,
+          "y": 180.0,
           "z": 0.0
         }
       },

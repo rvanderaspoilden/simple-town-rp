@@ -16,7 +16,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 4294967295
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &6661965233343702316
 Transform:
@@ -105,7 +105,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 4294967295
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &8510065525665802823
 Transform:
@@ -149,7 +149,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -205,20 +205,20 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 2
     paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 3
     paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 4
     paintConfigId: 3
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &2369602910244784113
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -276,7 +276,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 4294967295
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &7373084889792203906
 Transform:
@@ -359,7 +359,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 4294967295
+  m_StaticEditorFlags: 0
   m_IsActive: 0
 --- !u!4 &8334913573562571660
 Transform:

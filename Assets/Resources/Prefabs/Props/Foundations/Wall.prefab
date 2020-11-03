@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 8890831708851893080}
   - component: {fileID: 3920633909175589846}
   - component: {fileID: 8461407076073809569}
-  - component: {fileID: 5502418037430758395}
   m_Layer: 0
   m_Name: ShadowFace
   m_TagString: Untagged
@@ -82,20 +81,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &5502418037430758395
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4538894658659338534}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &8759603759752612228
 GameObject:
   m_ObjectHideFlags: 0
@@ -109,15 +94,15 @@ GameObject:
   - component: {fileID: 7038153395620363608}
   - component: {fileID: 3225758978802327306}
   - component: {fileID: 7550471974582660856}
-  - component: {fileID: 5523521539805112094}
   - component: {fileID: 3990267910321374197}
   - component: {fileID: -4724552284547257077}
+  - component: {fileID: 7695749249947432817}
   m_Layer: 12
   m_Name: Wall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 4294967295
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &5749694766945008535
 Transform:
@@ -162,7 +147,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -223,13 +208,13 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 2
-    paintConfigId: 5
+    paintConfigId: 2
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 3
     paintConfigId: 5
@@ -237,20 +222,6 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
---- !u!64 &5523521539805112094
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8759603759752612228}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 8733429697405204941, guid: d50851c89984817498957c2b45678b45, type: 3}
 --- !u!114 &3990267910321374197
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -289,6 +260,20 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -0.5, y: 1.3000001, z: -0.05}
   m_TimeToStationary: 0.5
+--- !u!64 &7695749249947432817
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8759603759752612228}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 4
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 8733429697405204941, guid: 97a8761524634504c8b8d087edc0d125, type: 3}
 --- !u!1 &9126067997172010301
 GameObject:
   m_ObjectHideFlags: 0
@@ -305,7 +290,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 4294967295
+  m_StaticEditorFlags: 0
   m_IsActive: 0
 --- !u!4 &6796447909048086359
 Transform:
@@ -328,7 +313,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9126067997172010301}
-  m_Mesh: {fileID: 8733429697405204941, guid: d50851c89984817498957c2b45678b45, type: 3}
+  m_Mesh: {fileID: 8733429697405204941, guid: 97a8761524634504c8b8d087edc0d125, type: 3}
 --- !u!23 &1609518962991384114
 MeshRenderer:
   m_ObjectHideFlags: 0
