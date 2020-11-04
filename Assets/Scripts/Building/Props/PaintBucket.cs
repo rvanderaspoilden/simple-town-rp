@@ -55,7 +55,10 @@ namespace Sim.Building {
 
         [PunRPC]
         public void RPC_SetColor(float[] color) {
-            this.color = new Color(color[0], color[1], color[2], color[3]);
+            if (color != null && color.Length == 4)
+            {
+                this.color = new Color(color[0], color[1], color[2], color[3]);
+            }
         }
 
         public Color GetColor() {

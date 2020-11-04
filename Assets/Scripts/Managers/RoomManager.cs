@@ -83,11 +83,18 @@ namespace Sim {
             // Instantiate all other props
             sceneData.props?.ToList().ForEach(data => SaveUtils.InstantiatePropsFromSave(data));
         }
+        
 
         /**
          * Used to save a room 
          */
-        public void SaveRoom() {
+        public void SaveRoom()
+        {
+            this.Save(this.GenerateSceneData());
+        }
+
+        protected virtual SceneData GenerateSceneData()
+        {
             SceneData sceneData = new SceneData();
             sceneData.doorTeleporters = FindObjectsOfType<DoorTeleporter>().ToList().Select(door => SaveUtils.CreateDoorTeleporterData(door)).ToArray();
             sceneData.elevatorTeleporters = FindObjectsOfType<ElevatorTeleporter>().ToList().Select(elevator => SaveUtils.CreateElevatorTeleporterData(elevator)).ToArray();
@@ -100,9 +107,14 @@ namespace Sim {
             sceneData.packages = FindObjectsOfType<Package>().ToList().Select(package => SaveUtils.CreatePackageData(package)).ToArray();
             sceneData.buckets = FindObjectsOfType<PaintBucket>().ToList().Select(bucket => SaveUtils.CreateBucketData(bucket)).ToArray();
 
+            return sceneData;
+        }
+
+        protected virtual void Save(SceneData sceneData)
+        {
             String sceneDataJson = JsonConvert.SerializeObject(sceneData);
             System.IO.File.WriteAllText(Application.dataPath + "/Resources/PresetSceneDatas/" + SceneManager.GetActiveScene().name + ".json", sceneDataJson);
-            Debug.Log("SAVED");
+            Debug.Log("Saved locally");
         }
 
         public void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {

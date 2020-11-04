@@ -3,23 +3,47 @@
 namespace Sim {
     [System.Serializable]
     public class AppartmentResponse {
-        [SerializeField] private int uid;
+        [SerializeField] private string uid;
         [SerializeField] private string owner;
         [SerializeField] private SceneData data;
+        
+        public AppartmentResponse() {}
 
-        public int Uid {
-            get => uid;
-            set => uid = value;
+        public AppartmentResponse(string uid, string owner, SceneData data)
+        {
+            this.uid = uid;
+            this.owner = owner;
+            this.data = data;
         }
 
-        public string Owner {
-            get => owner;
-            set => owner = value;
+        public void SetUid(string value)
+        {
+            this.uid = value;
         }
 
-        public SceneData Data {
-            get => data;
-            set => data = value;
+        public string GetUid()
+        {
+            return this.uid;
+        }
+
+        public void SetOwner(string owner)
+        {
+            this.owner = owner;
+        }
+
+        public string GetOwner()
+        {
+            return this.owner;
+        }
+
+        public void SetData(SceneData sceneData)
+        {
+            this.data = sceneData;
+        }
+
+        public SceneData GetData()
+        {
+            return this.data;
         }
     }
 
