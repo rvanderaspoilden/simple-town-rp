@@ -25,7 +25,7 @@ namespace Sim {
         private bool isConnectedToServer;
 
         public static NetworkManager Instance;
-
+        
         private void Awake() {
             if (Instance != null) {
                 Destroy(this.gameObject);
@@ -137,6 +137,7 @@ namespace Sim {
                     
                     if (appartmentResponse != null) { // If no data found from API use default appartment to prevent crash
                         sceneData = appartmentResponse.Data;
+                        AppartmentManager.instance.SetAppartmentData(appartmentResponse.Owner, appartmentResponse.Uid);
                     } else {
                         TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Default_Appartment_Talyah");
                         sceneData = JsonConvert.DeserializeObject<SceneData>(textAsset.text);

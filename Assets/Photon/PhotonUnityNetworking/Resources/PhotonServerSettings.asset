@@ -41,16 +41,16 @@ MonoBehaviour:
   - RPC_SetColor
   - RPC_SetDestination
   - RPC_SetDoorDirection
+  - RPC_SetDoorNumber
   - RPC_SetIsBuilt
+  - RPC_SetPaintConfigId
   - RPC_SetPaintInside
   - RPC_SetPropsInside
   - RPC_SetTarget
+  - RPC_UpdateRoom
   - RPC_UpdateStatus
   - RPC_UpdateTransform
   - RPC_UpdateWallFaces
-  - RPC_UpdateRoom
-  - RPC_SetPaintConfigId
-  - RPC_SetDoorNumber
   DisableAutoOpenWizard: 1
-  ShowSettings: 1
+  ShowSettings: 0
   DevRegionSetOnce: 1

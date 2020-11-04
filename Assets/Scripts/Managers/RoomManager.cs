@@ -17,14 +17,14 @@ using UnityEngine.SceneManagement;
 namespace Sim {
     public class RoomManager : MonoBehaviourPunCallbacks {
         [Header("Settings")]
-        [SerializeField] private Transform playerSpawnPoint;
+        [SerializeField] protected Transform playerSpawnPoint;
 
         [Header("Only for debug")]
         public static Player LocalPlayer;
 
         public static RoomManager Instance;
 
-        private void Awake() {
+        protected virtual void Awake() {
             if (Instance != null) {
                 Destroy(this.gameObject);
             }
@@ -84,6 +84,9 @@ namespace Sim {
             sceneData.props?.ToList().ForEach(data => SaveUtils.InstantiatePropsFromSave(data));
         }
 
+        /**
+         * Used to save a room 
+         */
         public void SaveRoom() {
             SceneData sceneData = new SceneData();
             sceneData.doorTeleporters = FindObjectsOfType<DoorTeleporter>().ToList().Select(door => SaveUtils.CreateDoorTeleporterData(door)).ToArray();
