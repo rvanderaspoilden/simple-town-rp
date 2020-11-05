@@ -105,6 +105,8 @@ namespace Sim.Building {
 
         public virtual void Build() {
             this.SetIsBuilt(true);
+            
+            RoomManager.Instance.SaveRoom();
         }
 
         public virtual void Move() {

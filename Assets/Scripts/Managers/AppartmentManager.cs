@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 namespace Sim
 {
@@ -22,7 +23,7 @@ namespace Sim
         {
             ApiManager.instance.SaveAppartment(id, owner, sceneData);
         }
-
+        
         public void SetAppartmentData(string owner, string id)
         {
             this.id = id;

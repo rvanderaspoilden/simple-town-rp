@@ -39,12 +39,6 @@ namespace Sim {
             this.ConnectToMasterServer();
         }
 
-        private void Update() {
-            if (Input.GetKeyDown(KeyCode.O)) {
-                RoomManager.Instance.SaveRoom();
-            }
-        }
-
         private void OnDestroy() {
             StopAllCoroutines();
         }

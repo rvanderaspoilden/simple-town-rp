@@ -397,6 +397,8 @@ namespace Sim {
                 
                 this.currentOpenedBucket = null;
             }
+            
+            RoomManager.Instance.SaveRoom();
 
             this.SwitchToFreeMode();
 
