@@ -104,6 +104,12 @@ namespace Sim
          */
         public void SaveRoom()
         {
+            this.photonView.RPC("RPC_SaveRoom", RpcTarget.MasterClient);
+        }
+
+        [PunRPC]
+        public void RPC_SaveRoom()
+        {
             if (saveCoroutine != null)
             {
                 StopCoroutine(this.saveCoroutine);
