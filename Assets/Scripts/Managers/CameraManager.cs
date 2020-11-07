@@ -27,7 +27,7 @@ namespace Sim {
         [SerializeField] private new Camera camera;
 
         [SerializeField] private CameraModeEnum currentMode;
-        [SerializeField] private GameObject currentNearWall;
+        [SerializeField] private Wall currentNearWall;
 
         [Header("Build settings")]
         [SerializeField] private float cameraRotationSpeed = 3f;
@@ -131,13 +131,16 @@ namespace Sim {
             }
 
             Vector3 dir = -(this.camera.transform.position - (this.currentPropSelected ? this.currentPropSelected.transform.position : RoomManager.LocalPlayer.transform.position));
-            if (Physics.Raycast(this.camera.transform.position, dir, out hit, 20, (1 << 10 | 1 << 12))) {
-                if (hit.collider.gameObject != this.currentNearWall) {
+            if (Physics.Raycast(this.camera.transform.position, dir, out hit, 20, (1 << 12)))
+            {
+                Wall hitWall = hit.collider.gameObject.GetComponent<Wall>();
+                
+                if (hitWall != this.currentNearWall) {
                     if (this.currentNearWall) {
                         this.ShowWallFoundation(this.currentNearWall, false);
                     }
 
-                    this.currentNearWall = hit.collider.gameObject;
+                    this.currentNearWall = hitWall;
                     this.ShowWallFoundation(this.currentNearWall, true);
                 }
             } else {
@@ -165,9 +168,9 @@ namespace Sim {
         }
 
 
-        private void ShowWallFoundation(GameObject target, bool state) {
-            List<FoundationRenderer> objectsToHide = Physics.OverlapSphere(target.transform.position, 2.5f).ToList().Select(x => x.GetComponentInParent<FoundationRenderer>()).ToList();
-            objectsToHide.Add(target.GetComponentInParent<FoundationRenderer>());
+        private void ShowWallFoundation(Wall wall, bool state) {
+            List<FoundationRenderer> objectsToHide = Physics.OverlapSphere(wall.transform.position, 2.5f).ToList().Select(x => x.GetComponentInParent<FoundationRenderer>()).ToList();
+            objectsToHide.Add(wall.GetComponentInParent<FoundationRenderer>());
             objectsToHide.ForEach(foundationRenderer => {
                 if (foundationRenderer && foundationRenderer.CanInteractWithCameraDistance()) { // prevent NPE due to get componentInParent
                     foundationRenderer.ShowFoundation(state);
