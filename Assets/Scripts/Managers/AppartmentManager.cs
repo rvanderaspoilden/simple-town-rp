@@ -1,4 +1,6 @@
 ﻿using System.Collections;
+using System.Runtime.CompilerServices;
+using Sim.Entities;
 using UnityEngine;
 
 namespace Sim
@@ -40,6 +42,11 @@ namespace Sim
         {
             get => owner;
             set => owner = value;
+        }
+
+        public bool IsOwner(Personnage personnage)
+        {
+            return personnage._Id == this.owner;
         }
     }
 }

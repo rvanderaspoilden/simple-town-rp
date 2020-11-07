@@ -8,73 +8,93 @@ using Sim.Scriptables;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
 
-namespace Sim.Building {
-    public class Props : MonoBehaviourPun {
-        [Header("Props settings")]
-        [SerializeField] protected PropsConfig configuration;
+namespace Sim.Building
+{
+    public class Props : MonoBehaviourPun
+    {
+        [Header("Props settings")] [SerializeField]
+        protected PropsConfig configuration;
 
         protected Action[] actions;
 
         protected Action[] unbuiltActions;
 
         protected bool built;
-        
+
         protected Renderer[] renderersToModify;
 
         protected Dictionary<Renderer, Material[]> defaultMaterialsByRenderer;
 
-        protected virtual void Awake() {
+        protected virtual void Awake()
+        {
             this.built = true;
             this.renderersToModify = GetComponentsInChildren<Renderer>();
             this.defaultMaterialsByRenderer = this.renderersToModify.ToList().ToDictionary(x => x, x => x.materials);
         }
 
-        protected virtual void Start() {
+        protected virtual void Start()
+        {
             this.SetupActions();
             this.SetupUnbuiltActions();
         }
 
-        protected virtual void SetupActions() {
+        protected virtual void SetupActions()
+        {
             this.actions = this.configuration.GetActions();
         }
 
-        protected virtual void SetupUnbuiltActions() {
+        protected virtual void SetupUnbuiltActions()
+        {
             this.unbuiltActions = this.configuration.GetUnbuiltActions();
+
+            bool isOwner = AppartmentManager.instance && AppartmentManager.instance.IsOwner(NetworkManager.Instance.Personnage);
+            this.unbuiltActions.ToList().ForEach(action => action.SetIsLocked(!isOwner));
         }
 
-        public virtual Action[] GetActions() {
-            if (this.IsBuilt()) {
+        public virtual Action[] GetActions()
+        {
+            if (this.IsBuilt())
+            {
                 return this.actions;
             }
 
             return this.unbuiltActions;
         }
 
-        public bool IsBuilt() {
+        public bool IsBuilt()
+        {
             return this.built;
         }
 
-        public void SetIsBuilt(bool value, Photon.Realtime.Player playerTarget = null) {
-            if (playerTarget != null) {
+        public void SetIsBuilt(bool value, Photon.Realtime.Player playerTarget = null)
+        {
+            if (playerTarget != null)
+            {
                 photonView.RPC("RPC_SetIsBuilt", playerTarget, value);
-            } else {
+            }
+            else
+            {
                 photonView.RPC("RPC_SetIsBuilt", RpcTarget.All, value);
             }
         }
 
         [PunRPC]
-        public void RPC_SetIsBuilt(bool value) {
-            if (this.renderersToModify == null) {
+        public void RPC_SetIsBuilt(bool value)
+        {
+            if (this.renderersToModify == null)
+            {
                 this.renderersToModify = GetComponentsInChildren<Renderer>();
                 this.defaultMaterialsByRenderer = this.renderersToModify.ToList().ToDictionary(x => x, x => x.materials);
             }
 
             this.built = value;
 
-            foreach (Renderer renderer in this.renderersToModify) {
+            foreach (Renderer renderer in this.renderersToModify)
+            {
                 Material[] newMaterials = new Material[renderer.materials.Length];
 
-                for (int i = 0; i < renderer.materials.Length; i++) {
+                for (int i = 0; i < renderer.materials.Length; i++)
+                {
                     newMaterials[i] = this.built ? this.defaultMaterialsByRenderer[renderer][i] : DatabaseManager.Instance.GetUnbuiltMaterial();
                 }
 
@@ -82,10 +102,12 @@ namespace Sim.Building {
             }
         }
 
-        public void DoAction(Action action) {
+        public void DoAction(Action action)
+        {
             Debug.Log("do action : " + action.GetActionLabel());
 
-            switch (action.GetActionType()) {
+            switch (action.GetActionType())
+            {
                 case ActionTypeEnum.USE:
                     this.Use();
                     break;
@@ -99,45 +121,61 @@ namespace Sim.Building {
             }
         }
 
-        public virtual void Use() {
+        public virtual void Use()
+        {
             throw new NotImplementedException();
         }
 
-        public virtual void Build() {
+        public virtual void Build()
+        {
             this.SetIsBuilt(true);
-            
+
             RoomManager.Instance.SaveRoom();
         }
 
-        public virtual void Move() {
+        public virtual void Move()
+        {
             throw new NotImplementedException();
         }
 
-        public void UpdateTransform(Photon.Realtime.Player playerTarget = null) {
-            if (playerTarget == null) {
+        public void UpdateTransform(Photon.Realtime.Player playerTarget = null)
+        {
+            if (playerTarget == null)
+            {
                 photonView.RPC("RPC_UpdateTransform", RpcTarget.Others, this.transform.position, this.transform.rotation);
-            } else {
+            }
+            else
+            {
                 photonView.RPC("RPC_UpdateTransform", playerTarget, this.transform.position, this.transform.rotation);
             }
         }
 
-        public PropsConfig GetConfiguration() {
+        public PropsConfig GetConfiguration()
+        {
             return this.configuration;
         }
 
-        public void SetConfiguration(PropsConfig config) {
+        public void SetConfiguration(PropsConfig config)
+        {
             this.configuration = config;
         }
 
         [PunRPC]
-        public void RPC_UpdateTransform(Vector3 pos, Quaternion rot) {
+        public void RPC_UpdateTransform(Vector3 pos, Quaternion rot)
+        {
             this.transform.position = pos;
             this.transform.rotation = rot;
         }
 
-        public virtual void Synchronize(Photon.Realtime.Player playerTarget) {
+        public virtual void Synchronize(Photon.Realtime.Player playerTarget)
+        {
             this.SetIsBuilt(this.built, playerTarget);
             this.UpdateTransform(playerTarget);
+        }
+
+        public bool IsWallProps()
+        {
+            return this.configuration.GetSurfaceToPose() == BuildSurfaceEnum.WALL;
         }
     }
 }

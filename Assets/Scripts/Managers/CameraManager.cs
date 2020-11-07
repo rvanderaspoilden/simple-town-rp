@@ -98,7 +98,7 @@ namespace Sim {
         void Update() {
             this.ManageWorldTransparency();
 
-            if (Input.GetKeyDown(KeyCode.F)) {
+            if (Input.GetKeyDown(KeyCode.F) && PhotonNetwork.IsMasterClient && AppartmentManager.instance && AppartmentManager.instance.IsOwner(NetworkManager.Instance.Personnage)) {
                 if (this.currentMode == CameraModeEnum.FREE) {
                     HUDManager.Instance.DisplayAdminPanel(true);
                 } else if (this.currentMode == CameraModeEnum.BUILD) {
@@ -126,7 +126,7 @@ namespace Sim {
         }
 
         public void ManageWorldTransparency() {
-            if (!RoomManager.LocalPlayer || this.currentOpenedBucket) {
+            if (!RoomManager.LocalPlayer || this.currentOpenedBucket || (this.currentPropSelected && this.currentPropSelected.IsWallProps())) {
                 return;
             }
 

@@ -1,11 +1,8 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Photon.Pun;
 using Sim.Building;
-using Sim.Interactables;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.TestTools;
 
 namespace Sim {
     public class Player : MonoBehaviourPunCallbacks {

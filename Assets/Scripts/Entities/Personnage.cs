@@ -3,16 +3,16 @@
 namespace Sim.Entities {
     [System.Serializable]
     public class Personnage {
-        [SerializeField] private string id;
+        [SerializeField] private string _id;
         [SerializeField] private string user_id;
         [SerializeField] private string firstname;
         [SerializeField] private string lastname;
         [SerializeField] private string origin_country;
         [SerializeField] private int appartment_id;
 
-        public string Id {
-            get => id;
-            set => id = value;
+        public string _Id {
+            get => _id;
+            set => _id = value;
         }
 
         public string UserId {

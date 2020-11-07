@@ -18,8 +18,8 @@ namespace Sim.Interactables {
         protected override void SetupActions() {
             base.SetupActions();
             
-            // todo replace it by appartment owner
-            this.actions.ToList().ForEach(action => action.SetIsLocked(!PhotonNetwork.IsMasterClient));
+            bool isOwner = AppartmentManager.instance && AppartmentManager.instance.IsOwner(NetworkManager.Instance.Personnage);
+            this.actions.ToList().ForEach(action => action.SetIsLocked(!isOwner));
         }
 
         public override void Use() {
