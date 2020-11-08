@@ -10,11 +10,9 @@ namespace Sim.Utils {
             switch (surfaceEnum) {
                 case BuildSurfaceEnum.WALL:
                     return CatalogCategoryEnum.WALL_PAINT;
-                    break;
 
                 case BuildSurfaceEnum.GROUND:
                     return CatalogCategoryEnum.GROUND_PAINT;
-                    break;
             }
 
             throw new Exception("Not converter found");
