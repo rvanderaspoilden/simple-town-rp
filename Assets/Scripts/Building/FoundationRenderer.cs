@@ -6,31 +6,30 @@ using UnityEngine;
 
 namespace Sim.Building {
     public class FoundationRenderer : MonoBehaviour {
-        [Header("Settings")]
-        [SerializeField] private GameObject foundationObj;
+        [Header("Settings")] [SerializeField] private GameObject foundationObj;
 
         [SerializeField] private Renderer[] renderersToModify;
 
         [SerializeField] private bool interactWithCameraDistance;
 
-        [Header("Only for debug")]
-        [SerializeField] private bool showFoundation;
+        [Header("Only for debug")] [SerializeField]
+        private bool showFoundation;
 
         [SerializeField] private Props props;
 
         [SerializeField] private FoundationVisibilityEnum visibility = FoundationVisibilityEnum.AUTO;
 
         [SerializeField] private Dictionary<Renderer, Material[]> defaultMaterialsByRenderer;
-        
+
         private void Awake() {
             this.props = GetComponent<Props>();
             this.SetupDefaultMaterials();
             this.SetVisibilityMode(FoundationVisibilityEnum.AUTO);
         }
-        
+
         public void ShowFoundation(bool state) {
             this.showFoundation = state;
-            
+
             this.UpdateGraphics();
         }
 
@@ -44,36 +43,43 @@ namespace Sim.Building {
 
         public void SetVisibilityMode(FoundationVisibilityEnum visibility) {
             this.visibility = visibility;
-            
+
             this.UpdateGraphics();
         }
 
         private void UpdateGraphics() {
             bool hide = false;
-            
+
             if (this.visibility == FoundationVisibilityEnum.AUTO) {
                 hide = this.showFoundation;
-            } else if (visibility == FoundationVisibilityEnum.FORCE_HIDE) {
+            }
+            else if (visibility == FoundationVisibilityEnum.FORCE_HIDE) {
                 hide = true;
-            } else if (visibility == FoundationVisibilityEnum.FORCE_SHOW) {
+            }
+            else if (visibility == FoundationVisibilityEnum.FORCE_SHOW) {
                 hide = false;
             }
 
-            if (this.props && !this.props.IsBuilt()) {
-                hide = false;
-            }
-            
             foreach (Renderer renderer in this.renderersToModify) {
                 Material[] newMaterials = new Material[renderer.materials.Length];
-                
+
                 for (int i = 0; i < renderer.materials.Length; i++) {
-                    newMaterials[i] = hide ? DatabaseManager.Instance.GetTransparentMaterial() : this.defaultMaterialsByRenderer[renderer][i];
+                    if (hide) {
+                        newMaterials[i] = DatabaseManager.Instance.GetTransparentMaterial();
+                    }
+                    else if (this.props && !this.props.IsBuilt()) {
+                        newMaterials[i] = DatabaseManager.Instance.GetUnbuiltMaterial();
+                    }
+                    else {
+                        newMaterials[i] = this.defaultMaterialsByRenderer[renderer][i];
+                    }
                 }
 
                 renderer.materials = newMaterials;
             }
 
-            if (foundationObj) { // Optionnal
+            if (foundationObj) {
+                // Optional
                 this.foundationObj.SetActive(hide);
             }
         }
