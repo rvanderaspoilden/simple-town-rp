@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: Side Table
+  m_EditorClassIdentifier: 
+  id: 18
+  displayName: Table d'appoint (4p)
+  prefab: {fileID: 8648092342117799195, guid: d1373b95f96e3cd4a85d7cc732c5d277, type: 3}
+  packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
+  surfaceToPose: 0
+  toBuild: 1
+  rangeToInteract: 1.2
+  actions: []
+  unbuiltActions:
+  - actionType: 2
+    actionLabel: Monter la table
+    locked: 0
