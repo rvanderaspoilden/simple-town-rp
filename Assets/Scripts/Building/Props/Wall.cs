@@ -12,13 +12,13 @@ namespace Sim.Building {
         [SerializeField] private List<WallFace> wallFaces;
 
         private new MeshRenderer renderer;
-        private MeshCollider collider;
+        private MeshCollider meshCollider;
         private Dictionary<int, WallFace> wallFacesPreviewed;
 
         protected override void Awake() {
             base.Awake();
             this.renderer = GetComponent<MeshRenderer>();
-            this.collider = GetComponent<MeshCollider>();
+            this.meshCollider = GetComponent<MeshCollider>();
 
             this.wallFacesPreviewed = new Dictionary<int, WallFace>();
         }
@@ -69,7 +69,7 @@ namespace Sim.Building {
         public void RPC_UpdateWallFaces(string faces) {
             if (this.propsRenderer == null) {
                 this.renderer = GetComponent<MeshRenderer>();
-                this.collider = GetComponent<MeshCollider>();
+                this.meshCollider = GetComponent<MeshCollider>();
 
                 this.wallFacesPreviewed = new Dictionary<int, WallFace>();
             }
@@ -85,7 +85,7 @@ namespace Sim.Building {
         }
 
         public void PreviewMaterialOnFace(RaycastHit hit, PaintBucket paintBucket) {
-            Mesh mesh = collider.sharedMesh;
+            Mesh mesh = meshCollider.sharedMesh;
 
             int limit = hit.triangleIndex * 3;
             int submesh;

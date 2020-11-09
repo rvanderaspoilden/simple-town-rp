@@ -23,18 +23,11 @@ namespace Sim.Building {
         [SerializeField]
         private GameObject foundationObj;
 
-        [Header("Only for debug")]
-        [SerializeField]
         private VisibilityStateEnum state = VisibilityStateEnum.SHOW;
-
-        [SerializeField]
-        private Props props;
-
-        [SerializeField]
         private VisibilityModeEnum mode = VisibilityModeEnum.AUTO;
-
-        [SerializeField]
+        private PreviewStateEnum previewState = PreviewStateEnum.NONE;
         private Dictionary<Renderer, Material[]> defaultMaterialsByRenderer;
+        private Props props;
 
         private void Awake() {
             this.props = GetComponent<Props>();
@@ -69,28 +62,39 @@ namespace Sim.Building {
             this.UpdateGraphics();
         }
 
+        public void SetPreviewState(PreviewStateEnum previewState) {
+            this.previewState = previewState;
+            this.UpdateGraphics();
+        }
+
         public void UpdateGraphics() {
             VisibilityStateEnum visibility = this.state;
 
             if (this.mode == VisibilityModeEnum.FORCE_HIDE && this.hideable) {
                 visibility = VisibilityStateEnum.HIDE;
-            }
-            else if (this.mode == VisibilityModeEnum.FORCE_SHOW) {
+            } else if (this.mode == VisibilityModeEnum.FORCE_SHOW) {
                 visibility = VisibilityStateEnum.SHOW;
             }
+
 
             foreach (Renderer renderer in this.renderersToModify) {
                 Material[] newMaterials = new Material[renderer.materials.Length];
 
                 for (int i = 0; i < renderer.materials.Length; i++) {
-                    if (visibility == VisibilityStateEnum.HIDE) {
-                        newMaterials[i] = DatabaseManager.Instance.GetTransparentMaterial();
-                    }
-                    else if (visibility == VisibilityStateEnum.SHOW) {
-                        if (this.props && !this.props.IsBuilt()) {
-                            newMaterials[i] = DatabaseManager.Instance.GetUnbuiltMaterial();
+                    if (this.previewState == PreviewStateEnum.NONE) {
+                        if (visibility == VisibilityStateEnum.HIDE) {
+                            newMaterials[i] = DatabaseManager.Instance.GetTransparentMaterial();
+                        } else if (visibility == VisibilityStateEnum.SHOW) {
+                            if (this.props && !this.props.IsBuilt()) {
+                                newMaterials[i] = DatabaseManager.Instance.GetUnbuiltMaterial();
+                            } else {
+                                newMaterials[i] = this.defaultMaterialsByRenderer[renderer][i];
+                            }
                         }
-                        else {
+                    } else {
+                        if (this.previewState == PreviewStateEnum.ERROR) {
+                            newMaterials[i] = DatabaseManager.Instance.GetErrorMaterial();
+                        } else {
                             newMaterials[i] = this.defaultMaterialsByRenderer[renderer][i];
                         }
                     }

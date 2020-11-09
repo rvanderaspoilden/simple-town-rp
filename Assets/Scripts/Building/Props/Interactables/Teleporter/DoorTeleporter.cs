@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using Photon.Pun;
 using Sim.Constants;
 using Sim.Enums;
@@ -10,15 +9,17 @@ using UnityEngine.SceneManagement;
 namespace Sim.Interactables {
     public class DoorTeleporter : Teleporter {
         [Header("Door Settings")]
-        [SerializeField] private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
+        [SerializeField]
+        private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
 
-        [SerializeField] private int number;
+        [SerializeField]
+        private int number;
 
         private Animator animator;
         private Coroutine doorAnimationCoroutine;
         private TextMeshPro numberText;
 
-        private void Awake() {
+        protected override void Awake() {
             base.Awake();
 
             this.numberText = GetComponentInChildren<TextMeshPro>();
