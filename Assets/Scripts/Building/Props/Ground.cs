@@ -14,12 +14,16 @@ namespace Sim.Building {
         private int oldPaintConfigId;
 
         private bool preview;
-
-        private void Awake() {
+        
+        protected override void Awake() {
+            base.Awake();
+            
             this.renderer = GetComponent<Renderer>();
         }
 
-        private void Start() {
+        protected override void Start() {
+            base.Start();
+            
             this.ApplyPaint();
         }
 

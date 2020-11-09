@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Sim.Enums;
 using UnityEngine;
 
@@ -12,7 +10,9 @@ namespace Sim.Building {
         private Animator animator;
         private List<Collider> colliderTriggered;
 
-        private void Awake() {
+        protected override void Awake() {
+            base.Awake();
+            
             this.colliderTriggered = new List<Collider>();
             this.animator = GetComponent<Animator>();
             this.animator.SetFloat("direction", (float)doorDirection);

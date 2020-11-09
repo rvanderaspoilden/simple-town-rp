@@ -7,13 +7,7 @@ using UnityEngine.AI;
 
 namespace Sim.Building {
     public class BuildPreview : MonoBehaviour {
-        [Header("Settings")]
-        [SerializeField] private Material errorMaterial;
-
         [Header("Only for debug")]
-        [SerializeField] private Renderer[] renderers;
-
-        [SerializeField] private Material[] defaultRendererMaterials;
         [SerializeField] private NavMeshObstacle navMeshObstacle;
         [SerializeField] private bool haveFreeArea;
         [SerializeField] private bool detectGround;
@@ -22,17 +16,18 @@ namespace Sim.Building {
         [SerializeField] private bool placeable;
 
         [SerializeField] private List<Collider> colliderTriggered;
-        
-        public delegate void OnPlaceableState(bool isPlaceable);
 
-        public static event OnPlaceableState OnPlaceableStateChanged;
+        private PropsRenderer propsRenderer;
+        
+        public delegate void PlaceableState(bool isPlaceable);
+
+        public static event PlaceableState OnPlaceableStateChanged;
 
         private void Awake() {
             this.colliderTriggered = new List<Collider>();
-            this.renderers = GetComponentsInChildren<Renderer>();
-            this.defaultRendererMaterials = this.renderers.ToList().Select(x => x.material).ToArray();
             this.navMeshObstacle = GetComponentInChildren<NavMeshObstacle>();
             this.currentProps = GetComponent<Props>();
+            this.propsRenderer = GetComponent<PropsRenderer>();
 
             if (navMeshObstacle) { // disable this to avoid collision with player agent
                 navMeshObstacle.enabled = false;
@@ -48,7 +43,7 @@ namespace Sim.Building {
                 this.detectGround = false;
             }
 
-            if (this.currentProps.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL) {
+            if (this.currentProps.IsWallProps()) {
                 this.validRotation = this.transform.rotation.eulerAngles != Vector3.zero;
             } else {
                 this.validRotation = true;
@@ -58,9 +53,9 @@ namespace Sim.Building {
         }
 
         private void OnTriggerStay(Collider other) {
-            if (this.currentProps.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL && !this.colliderTriggered.Find(x => x == other)) {
+            if (this.currentProps.IsWallProps() && !this.colliderTriggered.Find(x => x == other)) {
                 this.colliderTriggered.Add(other);
-            } else if (this.currentProps.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND && other.gameObject.layer != LayerMask.NameToLayer("Ground") && !this.colliderTriggered.Find(x => x == other)) {
+            } else if (this.currentProps.IsGroundProps() && other.gameObject.layer != LayerMask.NameToLayer("Ground") && !this.colliderTriggered.Find(x => x == other)) {
                 this.colliderTriggered.Add(other);
             }
 
@@ -76,16 +71,8 @@ namespace Sim.Building {
             this.haveFreeArea = this.colliderTriggered.Count == 0;
             this.placeable = this.haveFreeArea && this.detectGround && this.validRotation;
 
-            if (this.placeable) {
-                for (int i = 0; i < this.defaultRendererMaterials.Length; i++) {
-                    this.renderers[i].material = this.defaultRendererMaterials[i];
-                }
-            } else {
-                foreach (Renderer renderer in this.renderers) {
-                    renderer.material = this.errorMaterial;
-                }
-            }
-            
+            this.propsRenderer.SetPreviewState(this.placeable ? PreviewStateEnum.VALID : PreviewStateEnum.ERROR);
+
             OnPlaceableStateChanged?.Invoke(this.placeable);
         }
 
@@ -94,18 +81,11 @@ namespace Sim.Building {
                 navMeshObstacle.enabled = true;
             }
 
-            // reset materials
-            for (int i = 0; i < this.defaultRendererMaterials.Length; i++) {
-                this.renderers[i].material = this.defaultRendererMaterials[i];
-            }
+            this.propsRenderer.SetPreviewState(PreviewStateEnum.NONE);
 
             this.gameObject.layer = LayerMask.NameToLayer("Props");
 
             Destroy(this);
-        }
-
-        public void SetErrorMaterial(Material mat) {
-            this.errorMaterial = mat;
         }
 
         public bool IsPlaceable() {

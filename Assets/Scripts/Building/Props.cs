@@ -71,11 +71,6 @@ namespace Sim.Building {
         [PunRPC]
         public void RPC_SetIsBuilt(bool value) {
             this.built = value;
-
-            if (!this.propsRenderer) {
-                this.propsRenderer = GetComponent<PropsRenderer>();
-            }
-
             this.propsRenderer.UpdateGraphics();
         }
 
@@ -140,6 +135,10 @@ namespace Sim.Building {
 
         public bool IsWallProps() {
             return this.configuration.GetSurfaceToPose() == BuildSurfaceEnum.WALL;
+        }
+        
+        public bool IsGroundProps() {
+            return this.configuration.GetSurfaceToPose() == BuildSurfaceEnum.GROUND;
         }
     }
 }

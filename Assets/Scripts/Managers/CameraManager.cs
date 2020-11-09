@@ -299,7 +299,6 @@ namespace Sim {
 
             this.currentPropSelected = props;
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
-            this.currentPreview.SetErrorMaterial(DatabaseManager.Instance.GetErrorMaterial());
         }
 
         private void OnCancelBuildPreview() {
@@ -477,7 +476,7 @@ namespace Sim {
 
             if (this.currentPropSelected) {
                 // manage rotation of current props
-                if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
+                if (this.currentPropSelected.IsGroundProps()) {
                     if (Input.GetKeyDown(KeyCode.DownArrow)) {
                         Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
                         float newAngle = (Mathf.CeilToInt(currentLocalAngle.y / 90f) * 90f) - 90f;
@@ -504,7 +503,7 @@ namespace Sim {
                 int layerMask = (1 << 11); // If current props is not following mouse so raycast only preview items
 
                 if (followMouse) {
-                    if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
+                    if (this.currentPropSelected.IsGroundProps()) {
                         layerMask = (1 << 9);
                     }
                     else if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.WALL) {
@@ -515,7 +514,7 @@ namespace Sim {
                 if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
                     // manage position to move current props
                     if (this.followMouse) {
-                        if (this.currentPropSelected.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND &&
+                        if (this.currentPropSelected.IsGroundProps() &&
                             hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
                             float x = Mathf.FloorToInt(hit.point.x / this.propsStepSize) * this.propsStepSize;
                             float z = Mathf.FloorToInt(hit.point.z / this.propsStepSize) * this.propsStepSize;
