@@ -491,10 +491,10 @@ RectTransform:
   m_Father: {fileID: 705918242}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.372, y: 0.33877778}
-  m_AnchorMax: {x: 0.6284376, y: 0.393}
-  m_AnchoredPosition: {x: 0, y: -0.2000122}
-  m_SizeDelta: {x: -0.16998291, y: -0.468956}
+  m_AnchorMin: {x: 0.372, y: 0.2427778}
+  m_AnchorMax: {x: 0.6284376, y: 0.29416665}
+  m_AnchoredPosition: {x: 0.08496094, y: 0.6000061}
+  m_SizeDelta: {x: -0.16998291, y: 1.531044}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &380270966
 MonoBehaviour:
@@ -1734,7 +1734,7 @@ MonoBehaviour:
   playerPrefab: {fileID: 6953365128800779919, guid: cdf47849e5cf2424992596d02f7960f0,
     type: 3}
   personnage:
-    id: 
+    _id: 
     user_id: 
     firstname: 
     lastname: 
