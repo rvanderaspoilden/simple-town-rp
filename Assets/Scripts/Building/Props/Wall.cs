@@ -12,14 +12,11 @@ namespace Sim.Building {
         [SerializeField] private List<WallFace> wallFaces;
 
         private new MeshRenderer renderer;
-        private FoundationRenderer foundationRenderer;
         private MeshCollider collider;
         private Dictionary<int, WallFace> wallFacesPreviewed;
 
         protected override void Awake() {
             base.Awake();
-
-            this.foundationRenderer = GetComponent<FoundationRenderer>();
             this.renderer = GetComponent<MeshRenderer>();
             this.collider = GetComponent<MeshCollider>();
 
@@ -71,7 +68,6 @@ namespace Sim.Building {
         [PunRPC]
         public void RPC_UpdateWallFaces(string faces) {
             if (this.foundationRenderer == null) {
-                this.foundationRenderer = GetComponent<FoundationRenderer>();
                 this.renderer = GetComponent<MeshRenderer>();
                 this.collider = GetComponent<MeshCollider>();
 

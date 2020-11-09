@@ -9,6 +9,7 @@ using UnityEngine;
 using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
+    [RequireComponent(typeof(FoundationRenderer))]
     public class Props : MonoBehaviourPun {
         [Header("Props settings")] [SerializeField]
         protected PropsConfig configuration;
@@ -19,14 +20,11 @@ namespace Sim.Building {
 
         protected bool built;
 
-        protected Renderer[] renderersToModify;
-
-        protected Dictionary<Renderer, Material[]> defaultMaterialsByRenderer;
+        protected FoundationRenderer foundationRenderer;
 
         protected virtual void Awake() {
             this.built = true;
-            this.renderersToModify = GetComponentsInChildren<Renderer>();
-            this.defaultMaterialsByRenderer = this.renderersToModify.ToList().ToDictionary(x => x, x => x.materials);
+            this.foundationRenderer = GetComponent<FoundationRenderer>();
         }
 
         protected virtual void Start() {
@@ -68,22 +66,13 @@ namespace Sim.Building {
 
         [PunRPC]
         public void RPC_SetIsBuilt(bool value) {
-            if (this.renderersToModify == null) {
-                this.renderersToModify = GetComponentsInChildren<Renderer>();
-                this.defaultMaterialsByRenderer = this.renderersToModify.ToList().ToDictionary(x => x, x => x.materials);
-            }
-
             this.built = value;
 
-            foreach (Renderer renderer in this.renderersToModify) {
-                Material[] newMaterials = new Material[renderer.materials.Length];
-
-                for (int i = 0; i < renderer.materials.Length; i++) {
-                    newMaterials[i] = this.built ? this.defaultMaterialsByRenderer[renderer][i] : DatabaseManager.Instance.GetUnbuiltMaterial();
-                }
-
-                renderer.materials = newMaterials;
+            if (!this.foundationRenderer) {
+                this.foundationRenderer = GetComponent<FoundationRenderer>();
             }
+
+            this.foundationRenderer.UpdateGraphics();
         }
 
         public void DoAction(Action action) {

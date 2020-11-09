@@ -6,14 +6,14 @@ using UnityEngine;
 
 namespace Sim.Building {
     public class FoundationRenderer : MonoBehaviour {
-        [Header("Settings")] [SerializeField] private GameObject foundationObj;
+        [Header("Settings")] 
+        [SerializeField] private GameObject foundationObj;
 
         [SerializeField] private Renderer[] renderersToModify;
 
         [SerializeField] private bool interactWithCameraDistance;
 
-        [Header("Only for debug")] [SerializeField]
-        private bool showFoundation;
+        [Header("Only for debug")] [SerializeField] private bool showFoundation;
 
         [SerializeField] private Props props;
 
@@ -47,7 +47,7 @@ namespace Sim.Building {
             this.UpdateGraphics();
         }
 
-        private void UpdateGraphics() {
+        public void UpdateGraphics() {
             bool hide = false;
 
             if (this.visibility == FoundationVisibilityEnum.AUTO) {
