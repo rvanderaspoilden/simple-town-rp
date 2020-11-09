@@ -38,7 +38,7 @@ namespace Sim.Building {
             this.wallFacesPreviewed.Clear();
 
             this.UpdateWallFaces();
-            this.foundationRenderer.SetupDefaultMaterials();
+            this.propsRenderer.SetupDefaultMaterials();
         }
 
         public List<WallFace> GetWallFaces() {
@@ -67,7 +67,7 @@ namespace Sim.Building {
 
         [PunRPC]
         public void RPC_UpdateWallFaces(string faces) {
-            if (this.foundationRenderer == null) {
+            if (this.propsRenderer == null) {
                 this.renderer = GetComponent<MeshRenderer>();
                 this.collider = GetComponent<MeshCollider>();
 
@@ -76,7 +76,7 @@ namespace Sim.Building {
 
             this.wallFaces = new List<WallFace>(JsonHelper.FromJson<WallFace>(faces));
             this.UpdateWallFaces();
-            this.foundationRenderer.SetupDefaultMaterials();
+            this.propsRenderer.SetupDefaultMaterials();
         }
 
         public override void Synchronize(Photon.Realtime.Player playerTarget) {
@@ -116,7 +116,7 @@ namespace Sim.Building {
 
             this.UpdateWallFaces();
 
-            this.foundationRenderer.SetupDefaultMaterials();
+            this.propsRenderer.SetupDefaultMaterials();
         }
 
         private void UpdateWallFaces() {

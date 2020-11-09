@@ -582,7 +582,6 @@
         <e p="Scripts" t="Include">
           <e p="Building" t="Include">
             <e p="BuildPreview.cs" t="Include" />
-            <e p="FoundationRenderer.cs" t="Include" />
             <e p="Props" t="Include">
               <e p="Ground.cs" t="Include" />
               <e p="Interactables" t="Include">
@@ -601,6 +600,7 @@
               <e p="WallFace.cs" t="Include" />
             </e>
             <e p="Props.cs" t="Include" />
+            <e p="PropsRenderer.cs" t="Include" />
           </e>
           <e p="Constants" t="Include">
             <e p="CommonConstants.cs" t="Include" />
@@ -625,8 +625,9 @@
             <e p="CameraModeEnum.cs" t="Include" />
             <e p="CatalogCategoryEnum.cs" t="Include" />
             <e p="DoorDirectionEnum.cs" t="Include" />
-            <e p="FoundationVisibilityEnum.cs" t="Include" />
             <e p="PlacesEnum.cs" t="Include" />
+            <e p="VisibilityModeEnum.cs" t="Include" />
+            <e p="VisibilityStateEnum.cs" t="Include" />
           </e>
           <e p="Managers" t="Include">
             <e p="ApiManager.cs" t="Include" />

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using Photon.Pun;
 using Sim.Enums;
@@ -9,10 +7,10 @@ using UnityEngine;
 using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
-    [RequireComponent(typeof(FoundationRenderer))]
+    [RequireComponent(typeof(PropsRenderer))]
     public class Props : MonoBehaviourPun {
-        [Header("Props settings")] [SerializeField]
-        protected PropsConfig configuration;
+        [Header("Props settings")] 
+        [SerializeField] protected PropsConfig configuration;
 
         protected Action[] actions;
 
@@ -20,11 +18,11 @@ namespace Sim.Building {
 
         protected bool built;
 
-        protected FoundationRenderer foundationRenderer;
+        protected PropsRenderer propsRenderer;
 
         protected virtual void Awake() {
             this.built = true;
-            this.foundationRenderer = GetComponent<FoundationRenderer>();
+            this.propsRenderer = GetComponent<PropsRenderer>();
         }
 
         protected virtual void Start() {
@@ -32,10 +30,16 @@ namespace Sim.Building {
             this.SetupUnbuiltActions();
         }
 
+        /**
+         * Setup all action when a props is built
+         */
         protected virtual void SetupActions() {
             this.actions = this.configuration.GetActions();
         }
 
+        /**
+         * Setup all actions when a props is not built
+         */
         protected virtual void SetupUnbuiltActions() {
             this.unbuiltActions = this.configuration.GetUnbuiltActions();
 
@@ -68,11 +72,11 @@ namespace Sim.Building {
         public void RPC_SetIsBuilt(bool value) {
             this.built = value;
 
-            if (!this.foundationRenderer) {
-                this.foundationRenderer = GetComponent<FoundationRenderer>();
+            if (!this.propsRenderer) {
+                this.propsRenderer = GetComponent<PropsRenderer>();
             }
 
-            this.foundationRenderer.UpdateGraphics();
+            this.propsRenderer.UpdateGraphics();
         }
 
         public void DoAction(Action action) {

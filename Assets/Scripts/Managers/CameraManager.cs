@@ -27,7 +27,7 @@ namespace Sim {
         private new Camera camera;
 
         [SerializeField] private CameraModeEnum currentMode;
-        [SerializeField] private List<FoundationRenderer> displayedFoundationRenderers;
+        [SerializeField] private List<PropsRenderer> displayedPropsRenderers;
 
         [Header("Build settings")] [SerializeField]
         private float cameraRotationSpeed = 3f;
@@ -73,7 +73,7 @@ namespace Sim {
 
             this.buildMode = BuildModeEnum.NONE;
             this.camera = GetComponent<Camera>();
-            this.displayedFoundationRenderers = new List<FoundationRenderer>();
+            this.displayedPropsRenderers = new List<PropsRenderer>();
         }
 
         private void Start() {
@@ -145,63 +145,63 @@ namespace Sim {
 
                 RaycastHit[] hits = Physics.RaycastAll(this.camera.transform.position, dir, 20, (1 << 10 | 1 << 12));
                 if (hits.Length > 0) {
-                    List<FoundationRenderer> hiddenObject = new List<FoundationRenderer>();
+                    List<PropsRenderer> hiddenObject = new List<PropsRenderer>();
 
                     foreach (RaycastHit wallHit in hits) {
                         hiddenObject.AddRange(this.HidePropsNear(wallHit.point));
                     }
 
-                    this.HideFoundationForPropsNotIn(hiddenObject);
+                    this.ResetRendererForPropsNotIn(hiddenObject);
                 }
-                else if (this.displayedFoundationRenderers.Count > 0) // If camera doesn't hit wall so reset all hidden props
+                else if (this.displayedPropsRenderers.Count > 0) // If camera doesn't hit wall so reset all hidden props
                 {
-                    this.displayedFoundationRenderers.ForEach(foundationRenderer => foundationRenderer.ShowFoundation(false));
-                    this.displayedFoundationRenderers.Clear();
+                    this.displayedPropsRenderers.ForEach(propsRenderer => propsRenderer.SetState(VisibilityStateEnum.SHOW));
+                    this.displayedPropsRenderers.Clear();
                 }
             }
         }
 
         public void TogglePropsVisible(bool hide) {
-            FindObjectsOfType<Props>().ToList().Where(x => x.GetType() != typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(
-                foundationRenderer => {
-                    if (foundationRenderer) {
-                        foundationRenderer.SetVisibilityMode(hide ? FoundationVisibilityEnum.FORCE_HIDE : FoundationVisibilityEnum.AUTO);
+            FindObjectsOfType<Props>().ToList().Where(x => x.GetType() != typeof(Wall)).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
+                propsRenderer => {
+                    if (propsRenderer && propsRenderer.IsHideable()) {
+                        propsRenderer.SetVisibilityMode(hide ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
                     }
                 });
         }
 
         public void ToggleWallVisible(bool hide) {
-            FindObjectsOfType<Wall>().ToList().Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(foundationRenderer => {
-                if (foundationRenderer) {
-                    foundationRenderer.SetVisibilityMode(hide ? FoundationVisibilityEnum.FORCE_HIDE : FoundationVisibilityEnum.AUTO);
+            FindObjectsOfType<Wall>().ToList().Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(propsRenderer => {
+                if (propsRenderer) {
+                    propsRenderer.SetVisibilityMode(hide ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
                 }
             });
         }
 
-        private List<FoundationRenderer> HidePropsNear(Vector3 pos) {
-            List<FoundationRenderer> objectsToHide = Physics.OverlapSphere(pos, 1.2f)
+        private List<PropsRenderer> HidePropsNear(Vector3 pos) {
+            List<PropsRenderer> objectsToHide = Physics.OverlapSphere(pos, 1.2f)
                 .ToList()
-                .Select(x => x.GetComponentInParent<FoundationRenderer>())
+                .Select(x => x.GetComponentInParent<PropsRenderer>())
                 .ToList();
 
-            objectsToHide.ForEach(foundationRenderer => {
-                if (foundationRenderer && foundationRenderer.CanInteractWithCameraDistance()) {
+            objectsToHide.ForEach(propsRenderer => {
+                if (propsRenderer && propsRenderer.CanInteractWithCameraDistance()) {
                     // prevent NPE due to get componentInParent
-                    foundationRenderer.ShowFoundation(true);
+                    propsRenderer.SetState(VisibilityStateEnum.HIDE);
 
-                    this.displayedFoundationRenderers.Add(foundationRenderer);
+                    this.displayedPropsRenderers.Add(propsRenderer);
                 }
             });
 
             return objectsToHide;
         }
 
-        private void HideFoundationForPropsNotIn(List<FoundationRenderer> objectHidden) {
+        private void ResetRendererForPropsNotIn(List<PropsRenderer> objectHidden) {
             // Reset objects which aren't in view area
-            IEnumerable<FoundationRenderer> difference = this.displayedFoundationRenderers.Except(objectHidden);
+            IEnumerable<PropsRenderer> difference = this.displayedPropsRenderers.Except(objectHidden);
 
-            foreach (FoundationRenderer foundationRenderer in difference) {
-                foundationRenderer.ShowFoundation(false);
+            foreach (PropsRenderer propsRenderer in difference) {
+                propsRenderer.SetState(VisibilityStateEnum.SHOW);
             }
         }
 
@@ -264,10 +264,10 @@ namespace Sim {
             this.SwitchToBuildMode();
 
             if (this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.WALL) {
-                FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(
-                    foundationRenderer => {
-                        if (foundationRenderer) {
-                            foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.FORCE_SHOW);
+                FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
+                    propsRenderer => {
+                        if (propsRenderer) {
+                            propsRenderer.SetVisibilityMode(VisibilityModeEnum.FORCE_SHOW);
                         }
                     });
             }
@@ -368,10 +368,10 @@ namespace Sim {
             if (this.currentOpenedBucket) {
                 // if a bucket was opened reset it and all walls in preview
                 if (this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.WALL) {
-                    FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(
-                        foundationRenderer => {
-                            if (foundationRenderer) {
-                                foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.AUTO);
+                    FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
+                        propsRenderer => {
+                            if (propsRenderer) {
+                                propsRenderer.SetVisibilityMode(VisibilityModeEnum.AUTO);
                             }
                         });
                     FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.Reset());
@@ -427,10 +427,10 @@ namespace Sim {
             }
             else if (this.currentOpenedBucket) {
                 if (this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.WALL) {
-                    FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<FoundationRenderer>()).ToList().ForEach(
-                        foundationRenderer => {
-                            if (foundationRenderer) {
-                                foundationRenderer.SetVisibilityMode(FoundationVisibilityEnum.AUTO);
+                    FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
+                        propsRenderer => {
+                            if (propsRenderer) {
+                                propsRenderer.SetVisibilityMode(VisibilityModeEnum.AUTO);
                             }
                         });
                     FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());

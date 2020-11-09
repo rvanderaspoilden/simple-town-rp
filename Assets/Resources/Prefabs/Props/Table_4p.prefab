@@ -179,10 +179,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 0}
   renderersToModify:
   - {fileID: 1376141266108577992}
+  hideable: 1
   interactWithCameraDistance: 0
-  showFoundation: 0
+  foundationObj: {fileID: 0}
+  state: 1
   props: {fileID: 0}
-  visibility: 0
+  mode: 0
