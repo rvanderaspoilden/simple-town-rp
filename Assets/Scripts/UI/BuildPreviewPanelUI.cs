@@ -32,6 +32,8 @@ namespace Sim.UI {
             BuildPreview.OnPlaceableStateChanged += this.SetValidateButtonInteractable;
 
             this.toggleHideWalls.gameObject.SetActive(!CameraManager.Instance || CameraManager.Instance.GetBuildMode() != BuildModeEnum.PAINT);
+            
+            this.SetValidateButtonInteractable(true);
         }
 
         private void OnDisable() {
