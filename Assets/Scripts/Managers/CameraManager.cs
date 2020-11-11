@@ -1,20 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Cinemachine;
 using Photon.Pun;
-using Photon.Pun.Demo.PunBasics;
 using Sim.Building;
 using Sim.Enums;
 using Sim.Interactables;
 using Sim.Scriptables;
 using Sim.UI;
-using Sim.Utils;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Rendering.UI;
-using UnityEngine.XR;
 
 namespace Sim {
     public class CameraManager : MonoBehaviour {
@@ -93,6 +87,8 @@ namespace Sim {
 
         private RaycastHit hit;
 
+        private bool forceWallHidden;
+
         public static CameraManager Instance;
 
         private void Awake() {
@@ -131,6 +127,10 @@ namespace Sim {
 
         void Update() {
             //this.ManageWorldTransparency();
+
+            if (Input.GetKeyDown(KeyCode.H) && this.currentMode == CameraModeEnum.FREE) {
+                this.ToggleWallVisible(!this.forceWallHidden);
+            }
 
             if (Input.GetKeyDown(KeyCode.F) && PhotonNetwork.IsMasterClient && AppartmentManager.instance &&
                 AppartmentManager.instance.IsOwner(NetworkManager.Instance.Personnage)) {
@@ -197,9 +197,11 @@ namespace Sim {
         }
 
         public void ToggleWallVisible(bool hide) {
+            this.forceWallHidden = hide;
+
             FindObjectsOfType<Wall>().ToList().Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(propsRenderer => {
                 if (propsRenderer) {
-                    propsRenderer.SetVisibilityMode(hide ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
+                    propsRenderer.SetVisibilityMode(this.forceWallHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
                 }
             });
         }
