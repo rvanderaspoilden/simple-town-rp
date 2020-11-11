@@ -49,7 +49,7 @@ namespace Sim.UI {
             this.buttonChoices.Clear();
             
             if (category == CatalogCategoryEnum.PROPS) {
-                DatabaseManager.PropsDatabase.GetProps().ForEach(config => {
+                DatabaseManager.PropsDatabase.GetProps().Where(config => !config.GetDisplayName().Contains("Mur")).ToList().ForEach(config => {
                     Button button = Instantiate(this.buttonPrefab, this.choiceContainer);
                     button.GetComponentInChildren<TextMeshProUGUI>().text = config.GetDisplayName();
                     button.onClick.AddListener(() => OnPropsClicked?.Invoke(config));
