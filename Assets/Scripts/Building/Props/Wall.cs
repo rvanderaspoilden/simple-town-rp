@@ -108,7 +108,7 @@ namespace Sim.Building {
                 face.SetPaintConfigId(this.wallFacesPreviewed[submesh].GetPaintConfigId());
                 face.SetAdditionalColor(this.wallFacesPreviewed[submesh].GetAdditionalColor());
                 this.wallFacesPreviewed.Remove(submesh);
-            } else if (face.GetPaintConfig() != paintBucket.GetPaintConfig()) { // if face is not still previewed and different from current so keep a backup then modify current one
+            } else {
                 this.wallFacesPreviewed.Add(submesh, new WallFace(face));
                 face.SetPaintConfigId(paintBucket.GetPaintConfig().GetId());
                 face.SetAdditionalColor(paintBucket.GetColor());
