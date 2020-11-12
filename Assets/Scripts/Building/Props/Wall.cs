@@ -85,6 +85,10 @@ namespace Sim.Building {
         }
 
         public void PreviewMaterialOnFace(RaycastHit hit, PaintBucket paintBucket) {
+            if (this.IsAnExteriorWall(hit)) {
+                return;
+            }
+            
             Mesh mesh = meshCollider.sharedMesh;
 
             int limit = hit.triangleIndex * 3;
@@ -117,6 +121,10 @@ namespace Sim.Building {
             this.UpdateWallFaces();
 
             this.propsRenderer.SetupDefaultMaterials();
+        }
+
+        private bool IsAnExteriorWall(RaycastHit hitFace) {
+            return !Physics.Raycast(hitFace.point, hitFace.normal + (Vector3.down * 5), 3, 1 << 9);
         }
 
         private void UpdateWallFaces() {
