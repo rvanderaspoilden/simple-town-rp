@@ -258,7 +258,7 @@ GameObject:
   - component: {fileID: 2323285634099980043}
   - component: {fileID: 594080147197093049}
   - component: {fileID: 2092699004195242931}
-  - component: {fileID: 6285444296118599828}
+  - component: {fileID: 9092793539400837535}
   m_Layer: 12
   m_Name: Wall_Window
   m_TagString: Untagged
@@ -421,7 +421,7 @@ MonoBehaviour:
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
---- !u!208 &6285444296118599828
+--- !u!208 &9092793539400837535
 NavMeshObstacle:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

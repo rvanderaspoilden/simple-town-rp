@@ -11,6 +11,7 @@ using Sim.Interactables;
 using Sim.Scriptables;
 using Sim.Utils;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
@@ -35,6 +36,12 @@ namespace Sim
             }
 
             Instance = this;
+        }
+
+        private void Update() {
+            if (Input.GetKeyDown(KeyCode.G)) {
+                this.GenerateNavMesh();
+            }
         }
 
         public void InstantiateLevel(SceneData sceneData)
@@ -96,6 +103,14 @@ namespace Sim
 
             // Instantiate all other props
             sceneData.props?.ToList().ForEach(data => SaveUtils.InstantiatePropsFromSave(data));
+            
+            this.GenerateNavMesh();
+        }
+
+        private void GenerateNavMesh() {
+            foreach (NavMeshSurface navMeshSurface in FindObjectsOfType<NavMeshSurface>()) {
+                navMeshSurface.BuildNavMesh();
+            }
         }
 
 
