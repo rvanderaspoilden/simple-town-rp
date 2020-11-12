@@ -104,8 +104,8 @@ namespace Sim {
         }
 
         private void Start() {
-            AdminPanelUI.OnPropsClicked += OnSelectPropsFromAdminPanel;
-            AdminPanelUI.OnPaintClicked += OnSelectPaintFromAdminPanel;
+            AliDiscountCatalogUI.OnPropsClicked += OnSelectPropsFromAdminPanel;
+            AliDiscountCatalogUI.OnPaintClicked += OnSelectPaintFromAdminPanel;
             Package.OnOpened += OpenPackage;
             PaintBucket.OnOpened += OpenBucket;
             BuildPreviewPanelUI.OnValidate += ApplyBuildModification;
@@ -115,8 +115,8 @@ namespace Sim {
         }
 
         private void OnDestroy() {
-            AdminPanelUI.OnPropsClicked -= OnSelectPropsFromAdminPanel;
-            AdminPanelUI.OnPaintClicked -= OnSelectPaintFromAdminPanel;
+            AliDiscountCatalogUI.OnPropsClicked -= OnSelectPropsFromAdminPanel;
+            AliDiscountCatalogUI.OnPaintClicked -= OnSelectPaintFromAdminPanel;
             Package.OnOpened -= OpenPackage;
             PaintBucket.OnOpened -= OpenBucket;
             BuildPreviewPanelUI.OnValidate -= ApplyBuildModification;

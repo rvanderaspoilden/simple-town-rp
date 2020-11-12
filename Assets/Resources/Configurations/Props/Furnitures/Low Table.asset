@@ -10,12 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Wall Door
+  m_Name: Low Table
   m_EditorClassIdentifier: 
-  id: 7
-  displayName: Mur pour porte
-  prefab: {fileID: 2369602910244784112, guid: 839fd5026ccb7224481e94c90d28e367, type: 3}
-  packagePrefab: {fileID: 0}
+  id: 2
+  displayName: Table basse
+  propsType: 0
+  buyable: 1
+  prefab: {fileID: 7581261632028082935, guid: 8bbe90fe22703c04bae23d76250f592f, type: 3}
+  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
-  toBuild: 0
+  toBuild: 1
   rangeToInteract: 2
+  actions: []
+  unbuiltActions:
+  - actionType: 2
+    actionLabel: Monter la table
+    locked: 0

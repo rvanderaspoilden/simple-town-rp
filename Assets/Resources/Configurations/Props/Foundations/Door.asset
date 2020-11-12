@@ -10,17 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Side Table
+  m_Name: Door
   m_EditorClassIdentifier: 
-  id: 18
-  displayName: Table d'appoint (4p)
-  prefab: {fileID: 8648092342117799195, guid: d1373b95f96e3cd4a85d7cc732c5d277, type: 3}
-  packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
+  id: 9
+  displayName: Porte
+  propsType: 1
+  buyable: 0
+  prefab: {fileID: 7933995681442427898, guid: 3cb1bad74eac2ad4098dc85c2e5a439b, type: 3}
+  packageConfig: {fileID: 0}
   surfaceToPose: 0
-  toBuild: 1
-  rangeToInteract: 1.2
+  toBuild: 0
+  rangeToInteract: 2
   actions: []
-  unbuiltActions:
-  - actionType: 2
-    actionLabel: Monter la table
-    locked: 0
+  unbuiltActions: []

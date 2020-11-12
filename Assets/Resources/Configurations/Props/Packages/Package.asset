@@ -10,12 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Wall Window
+  m_Name: Package
   m_EditorClassIdentifier: 
-  id: 8
-  displayName: "Mur de fen\xEAtre"
-  prefab: {fileID: 2323285634099980043, guid: 1d902a99a6d0db8499c4f1e96d8ad6a9, type: 3}
-  packagePrefab: {fileID: 0}
+  id: 12
+  displayName: Carton
+  propsType: 3
+  buyable: 0
+  prefab: {fileID: 8929184733979110359, guid: 1e227e11f539523469fbe2d25f6bec1e, type: 3}
+  packageConfig: {fileID: 0}
   surfaceToPose: 0
   toBuild: 0
   rangeToInteract: 2
+  actions:
+  - actionType: 1
+    actionLabel: Ouvrir le colis
+    locked: 0
+  unbuiltActions: []

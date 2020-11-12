@@ -10,17 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Table Basse
+  m_Name: Wall Corner
   m_EditorClassIdentifier: 
-  id: 2
-  displayName: Table basse
-  prefab: {fileID: 7581261632028082935, guid: 8bbe90fe22703c04bae23d76250f592f, type: 3}
-  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  id: 6
+  displayName: Mur en angle
+  propsType: 1
+  buyable: 0
+  prefab: {fileID: 3309120875047286521, guid: 41ba9354874bbce4786f8646359183bc, type: 3}
+  packageConfig: {fileID: 0}
   surfaceToPose: 0
-  toBuild: 1
+  toBuild: 0
   rangeToInteract: 2
   actions: []
-  unbuiltActions:
-  - actionType: 2
-    actionLabel: Monter la table
-    locked: 0
+  unbuiltActions: []

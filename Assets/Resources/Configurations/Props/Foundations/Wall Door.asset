@@ -10,12 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Wall Corner
+  m_Name: Wall Door
   m_EditorClassIdentifier: 
-  id: 6
-  displayName: Mur en angle
-  prefab: {fileID: 3309120875047286521, guid: 41ba9354874bbce4786f8646359183bc, type: 3}
-  packagePrefab: {fileID: 0}
+  id: 7
+  displayName: Mur pour porte
+  propsType: 1
+  buyable: 0
+  prefab: {fileID: 2369602910244784112, guid: 839fd5026ccb7224481e94c90d28e367, type: 3}
+  packageConfig: {fileID: 0}
   surfaceToPose: 0
   toBuild: 0
   rangeToInteract: 2
+  actions: []
+  unbuiltActions: []

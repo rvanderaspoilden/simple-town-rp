@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace Sim {
     public class HUDManager : MonoBehaviourPun {
         [Header("Settings")]
-        [SerializeField] private AdminPanelUI adminPanelUI;
+        [SerializeField] private AliDiscountCatalogUI aliDiscountCatalogUI;
         [SerializeField] private BuildPreviewPanelUI buildPreviewPanelUI;
         [SerializeField] private ContextMenuUI contextMenuUI;
 
@@ -33,7 +33,7 @@ namespace Sim {
         }
 
         public void DisplayAdminPanel(bool state) {
-            this.adminPanelUI.gameObject.SetActive(state);
+            this.aliDiscountCatalogUI.gameObject.SetActive(state);
         }
 
         public void DisplayBuildPreviewPanel(bool state) {

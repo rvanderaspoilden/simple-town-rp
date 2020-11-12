@@ -9,13 +9,13 @@ namespace Sim.Utils {
         public static CatalogCategoryEnum ConvertBuildSurfaceToCategory(BuildSurfaceEnum surfaceEnum) {
             switch (surfaceEnum) {
                 case BuildSurfaceEnum.WALL:
-                    return CatalogCategoryEnum.WALL_PAINT;
+                    return CatalogCategoryEnum.WALL_COVERING;
 
                 case BuildSurfaceEnum.GROUND:
-                    return CatalogCategoryEnum.GROUND_PAINT;
+                    return CatalogCategoryEnum.GROUND_COVERING;
             }
 
-            throw new Exception("Not converter found");
+            throw new Exception("No converter found");
         }
 
         public static string GetRelativePathFromResources(Object gameObject) {

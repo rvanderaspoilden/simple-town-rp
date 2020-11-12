@@ -10,14 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Window
+  m_Name: Door Teleporter
   m_EditorClassIdentifier: 
-  id: 16
-  displayName: "Fen\xEAtre"
-  prefab: {fileID: 7521129292653811777, guid: 5d79902b15be89d45a2e43ae85522d01, type: 3}
+  id: 10
+  displayName: "Porte d'entr\xE9e"
+  propsType: 1
+  buyable: 0
+  prefab: {fileID: 3093486418350334970, guid: 6213d8c6e81e74349a2490150ba458b8, type: 3}
   packageConfig: {fileID: 0}
   surfaceToPose: 0
   toBuild: 0
-  rangeToInteract: 1
-  actions: []
+  rangeToInteract: 2
+  actions:
+  - actionType: 1
+    actionLabel: Ouvrir la porte
+    locked: 0
   unbuiltActions: []

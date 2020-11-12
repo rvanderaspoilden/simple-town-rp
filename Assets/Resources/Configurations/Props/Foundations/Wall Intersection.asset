@@ -10,17 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Paint Bucket
+  m_Name: Wall Intersection
   m_EditorClassIdentifier: 
-  id: 14
-  displayName: Pot de peinture
-  prefab: {fileID: 896670492582473785, guid: 5c366f4bbd4b78e4e9e9818cc9076cc2, type: 3}
-  packagePrefab: {fileID: 0}
+  id: 17
+  displayName: Mur en intersection
+  propsType: 1
+  buyable: 0
+  prefab: {fileID: 3122935269353603125, guid: 33b501628ee43664eb641003b1111e77, type: 3}
+  packageConfig: {fileID: 0}
   surfaceToPose: 0
   toBuild: 0
   rangeToInteract: 2
-  actions:
-  - actionType: 1
-    actionLabel: Utiliser le pot de peinture
-    locked: 0
+  actions: []
   unbuiltActions: []

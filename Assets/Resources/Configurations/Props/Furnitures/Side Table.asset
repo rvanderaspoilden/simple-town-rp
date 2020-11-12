@@ -10,17 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Elevator
+  m_Name: Side Table
   m_EditorClassIdentifier: 
-  id: 11
-  displayName: Ascenseur
-  prefab: {fileID: 1753432056708833345, guid: e8a1ce33b2702924baddaaf48be553b7, type: 3}
-  packagePrefab: {fileID: 0}
+  id: 18
+  displayName: Table d'appoint (4p)
+  propsType: 0
+  buyable: 1
+  prefab: {fileID: 8648092342117799195, guid: d1373b95f96e3cd4a85d7cc732c5d277, type: 3}
+  packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
-  toBuild: 0
-  rangeToInteract: 2
-  actions:
-  - actionType: 1
-    actionLabel: Utiliser l'ascenseur
+  toBuild: 1
+  rangeToInteract: 1.2
+  actions: []
+  unbuiltActions:
+  - actionType: 2
+    actionLabel: Monter la table
     locked: 0
-  unbuiltActions: []

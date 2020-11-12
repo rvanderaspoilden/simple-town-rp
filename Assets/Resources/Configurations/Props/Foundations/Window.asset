@@ -10,17 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Kitchen Bottom Cabinet
+  m_Name: Window
   m_EditorClassIdentifier: 
-  id: 20
-  displayName: Meuble bas cuisine
-  prefab: {fileID: 3541074618040244337, guid: fa5d1ca95160529408a5b496f60170d8, type: 3}
-  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  id: 16
+  displayName: "Fen\xEAtre"
+  propsType: 1
+  buyable: 0
+  prefab: {fileID: 7521129292653811777, guid: 5d79902b15be89d45a2e43ae85522d01, type: 3}
+  packageConfig: {fileID: 0}
   surfaceToPose: 0
-  toBuild: 1
+  toBuild: 0
   rangeToInteract: 1
   actions: []
-  unbuiltActions:
-  - actionType: 2
-    actionLabel: Monter le meuble
-    locked: 0
+  unbuiltActions: []

@@ -10,14 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Wall Intersection
+  m_Name: Elevator
   m_EditorClassIdentifier: 
-  id: 17
-  displayName: Mur en intersection
-  prefab: {fileID: 3122935269353603125, guid: 33b501628ee43664eb641003b1111e77, type: 3}
+  id: 11
+  displayName: Ascenseur
+  propsType: 1
+  buyable: 0
+  prefab: {fileID: 1753432056708833345, guid: e8a1ce33b2702924baddaaf48be553b7, type: 3}
   packageConfig: {fileID: 0}
   surfaceToPose: 0
   toBuild: 0
   rangeToInteract: 2
-  actions: []
+  actions:
+  - actionType: 1
+    actionLabel: Utiliser l'ascenseur
+    locked: 0
   unbuiltActions: []

@@ -10,13 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Photo Frame
+  m_Name: Ground
   m_EditorClassIdentifier: 
-  id: 3
-  displayName: Cadre photo
-  prefab: {fileID: 6324471013521370387, guid: 338e5fbcf31ad5f4aa76453a8f1c3267, type: 3}
-  packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
-  surfaceToPose: 1
+  id: 4
+  displayName: Sol
+  propsType: 1
+  buyable: 0
+  prefab: {fileID: 2337483918090844775, guid: 44fa9d217d7350f468263a07f03b07d3, type: 3}
+  packageConfig: {fileID: 0}
+  surfaceToPose: 0
   toBuild: 0
   rangeToInteract: 2
   actions: []

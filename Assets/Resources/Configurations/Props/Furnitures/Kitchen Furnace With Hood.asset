@@ -10,17 +10,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Fridge
+  m_Name: Kitchen Furnace With Hood
   m_EditorClassIdentifier: 
-  id: 15
-  displayName: Frigo
-  prefab: {fileID: 2760128852887837125, guid: 022113b34de0c5d4ba01af918067ec44, type: 3}
+  id: 21
+  displayName: Four + Hotte
+  propsType: 0
+  buyable: 1
+  prefab: {fileID: 5192700433597861137, guid: f9331978ca4a90f48acc44bce8a4bc96, type: 3}
   packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
-  toBuild: 0
-  rangeToInteract: 2
+  toBuild: 1
+  rangeToInteract: 1
   actions:
   - actionType: 1
-    actionLabel: Ouvrir le frigo
+    actionLabel: Utiliser le four
+    locked: 1
+  - actionType: 1
+    actionLabel: Utiliser la plaque de cuisson
+    locked: 1
+  unbuiltActions:
+  - actionType: 2
+    actionLabel: Monter
     locked: 0
-  unbuiltActions: []

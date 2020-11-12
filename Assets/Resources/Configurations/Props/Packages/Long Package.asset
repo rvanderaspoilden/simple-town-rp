@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 13
   displayName: Carton long
+  propsType: 3
+  buyable: 0
   prefab: {fileID: 7265642407361370331, guid: ff1cc4511c0dfc647a977764370360cb, type: 3}
-  packagePrefab: {fileID: 0}
+  packageConfig: {fileID: 0}
   surfaceToPose: 0
   toBuild: 0
   rangeToInteract: 2

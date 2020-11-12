@@ -10,12 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Ground
+  m_Name: Paint Bucket
   m_EditorClassIdentifier: 
-  id: 4
-  displayName: Sol
-  prefab: {fileID: 2337483918090844775, guid: 44fa9d217d7350f468263a07f03b07d3, type: 3}
-  packagePrefab: {fileID: 0}
+  id: 14
+  displayName: Pot de peinture
+  propsType: 2
+  buyable: 0
+  prefab: {fileID: 896670492582473785, guid: 5c366f4bbd4b78e4e9e9818cc9076cc2, type: 3}
+  packageConfig: {fileID: 0}
   surfaceToPose: 0
   toBuild: 0
   rangeToInteract: 2
+  actions:
+  - actionType: 1
+    actionLabel: Utiliser le pot de peinture
+    locked: 0
+  unbuiltActions: []
