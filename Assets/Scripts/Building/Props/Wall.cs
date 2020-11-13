@@ -11,6 +11,9 @@ namespace Sim.Building {
 
         [SerializeField] private List<WallFace> wallFaces;
 
+        [SerializeField]
+        private bool exteriorWall;
+
         private new MeshRenderer renderer;
         private MeshCollider meshCollider;
         private Dictionary<int, WallFace> wallFacesPreviewed;
@@ -85,7 +88,7 @@ namespace Sim.Building {
         }
 
         public void PreviewMaterialOnFace(RaycastHit hit, PaintBucket paintBucket) {
-            if (this.IsAnExteriorWall(hit)) {
+            if (this.IsAnExteriorFace(hit)) {
                 return;
             }
             
@@ -123,8 +126,23 @@ namespace Sim.Building {
             this.propsRenderer.SetupDefaultMaterials();
         }
 
-        private bool IsAnExteriorWall(RaycastHit hitFace) {
+        private bool IsAnExteriorFace(RaycastHit hitFace) {
             return !Physics.Raycast(hitFace.point, hitFace.normal + (Vector3.down * 5), 3, 1 << 9);
+        }
+
+        public void CheckExteriorWall() {
+            Vector3 position = this.transform.position + Vector3.up;
+            bool forwardRaycast = Physics.Raycast(position, this.transform.forward + (Vector3.down * 5), 3, 1 << 9);
+            bool backwardRaycast = Physics.Raycast(position, -this.transform.forward + (Vector3.down * 5), 3, 1 << 9);
+            
+            Debug.DrawRay(position, this.transform.forward + (Vector3.down * 5), Color.red, 2);
+            Debug.DrawRay(position, -this.transform.forward + (Vector3.down * 5), Color.green, 2);
+
+            this.exteriorWall = !(forwardRaycast && backwardRaycast);
+        }
+
+        public bool IsExteriorWall() {
+            return this.exteriorWall;
         }
 
         private void UpdateWallFaces() {
