@@ -199,7 +199,7 @@ namespace Sim {
         public void ToggleWallVisible(bool hide) {
             this.forceWallHidden = hide;
 
-            FindObjectsOfType<Wall>().ToList().Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(propsRenderer => {
+            FindObjectsOfType<Wall>().ToList().Where(x => !x.IsExteriorWall()).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(propsRenderer => {
                 if (propsRenderer) {
                     propsRenderer.SetVisibilityMode(this.forceWallHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
                 }

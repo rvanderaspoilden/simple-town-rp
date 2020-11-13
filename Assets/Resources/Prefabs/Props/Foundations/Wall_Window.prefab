@@ -254,11 +254,11 @@ GameObject:
   - component: {fileID: 293610590995355944}
   - component: {fileID: 7795327947527385010}
   - component: {fileID: 3569329769650013225}
-  - component: {fileID: 4063632219324874920}
   - component: {fileID: 2323285634099980043}
   - component: {fileID: 594080147197093049}
   - component: {fileID: 2092699004195242931}
-  - component: {fileID: 9092793539400837535}
+  - component: {fileID: 3171282752423902157}
+  - component: {fileID: 5332880038610311817}
   m_Layer: 12
   m_Name: Wall_Window
   m_TagString: Untagged
@@ -273,9 +273,9 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5974107978055742609}
-  m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071067}
-  m_LocalPosition: {x: -1, y: -12, z: 8}
-  m_LocalScale: {x: 100, y: 100, z: 100}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 918623505001733843}
   - {fileID: 844158780889765227}
@@ -292,7 +292,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5974107978055742609}
-  m_Mesh: {fileID: 8733429697405204941, guid: 8f0a9fce983759e4781bd509ba69f9af, type: 3}
+  m_Mesh: {fileID: 8733429697405204941, guid: e1029dd1237d55745957166a910bf147, type: 3}
 --- !u!23 &3569329769650013225
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -338,20 +338,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &4063632219324874920
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5974107978055742609}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 8733429697405204941, guid: 8f0a9fce983759e4781bd509ba69f9af, type: 3}
 --- !u!114 &2323285634099980043
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -382,6 +368,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!114 &594080147197093049
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -421,7 +408,21 @@ MonoBehaviour:
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
---- !u!208 &9092793539400837535
+--- !u!64 &3171282752423902157
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5974107978055742609}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 4
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 8733429697405204941, guid: e1029dd1237d55745957166a910bf147, type: 3}
+--- !u!208 &5332880038610311817
 NavMeshObstacle:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -431,11 +432,11 @@ NavMeshObstacle:
   m_Enabled: 1
   serializedVersion: 3
   m_Shape: 1
-  m_Extents: {x: 0.0050000004, y: 0.00001, z: 0.013}
+  m_Extents: {x: 0.5, y: 0.33, z: 0.05}
   m_MoveThreshold: 0.1
   m_Carve: 1
   m_CarveOnlyStationary: 1
-  m_Center: {x: -0.0050000004, y: 0, z: 0.013}
+  m_Center: {x: -0.5, y: 2.3, z: -0.05}
   m_TimeToStationary: 0.5
 --- !u!1 &7434869777336418142
 GameObject:

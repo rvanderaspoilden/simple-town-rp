@@ -38,12 +38,6 @@ namespace Sim
             Instance = this;
         }
 
-        private void Update() {
-            if (Input.GetKeyDown(KeyCode.G)) {
-                this.GenerateNavMesh();
-            }
-        }
-
         public void InstantiateLevel(SceneData sceneData)
         {
             // Instantiate all grounds
@@ -105,11 +99,19 @@ namespace Sim
             sceneData.props?.ToList().ForEach(data => SaveUtils.InstantiatePropsFromSave(data));
             
             this.GenerateNavMesh();
+            
+            this.IdentityExteriorWalls();
         }
 
         private void GenerateNavMesh() {
             foreach (NavMeshSurface navMeshSurface in FindObjectsOfType<NavMeshSurface>()) {
                 navMeshSurface.BuildNavMesh();
+            }
+        }
+
+        private void IdentityExteriorWalls() {
+            foreach (Wall wall in FindObjectsOfType<Wall>()) {
+                wall.CheckExteriorWall();
             }
         }
 
