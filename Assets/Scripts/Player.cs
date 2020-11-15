@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Photon.Pun;
 using Sim.Building;
+using Sim.Entities;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -13,7 +14,7 @@ namespace Sim {
         [SerializeField] private NavMeshAgent agent;
 
         [SerializeField] private ThirdPersonCharacter thirdPersonCharacter;
-
+        
         private void Awake() {
             this.agent = GetComponent<NavMeshAgent>();
             this.thirdPersonCharacter = GetComponent<ThirdPersonCharacter>();

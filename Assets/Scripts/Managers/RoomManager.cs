@@ -21,7 +21,7 @@ namespace Sim
     {
         [Header("Settings")] [SerializeField] protected Transform playerSpawnPoint;
 
-        [Header("Only for debug")] public static Player LocalPlayer;
+        public static Player LocalPlayer;
 
         public static RoomManager Instance;
 
@@ -178,8 +178,7 @@ namespace Sim
 
         public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer)
         {
-            Debug.Log("New player joined the room");
-            this.photonView.RPC("RPC_UpdateRoom", newPlayer);
+            Debug.Log(newPlayer.NickName + " joined the room");
 
             foreach (Props props in FindObjectsOfType<Props>())
             {
@@ -187,12 +186,6 @@ namespace Sim
             }
             
             this.photonView.RPC("RPC_GenerateNavMesh", newPlayer);
-        }
-
-        [PunRPC]
-        public void RPC_UpdateRoom()
-        {
-            Debug.Log("I have to update my room");
         }
 
         [PunRPC]

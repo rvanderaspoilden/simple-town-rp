@@ -99,7 +99,7 @@ namespace Sim {
             Instance = this;
 
             this.buildMode = BuildModeEnum.NONE;
-            this.camera = GetComponent<Camera>();
+            this.camera = GetComponentInChildren<Camera>();
             this.displayedPropsRenderers = new List<PropsRenderer>();
         }
 
