@@ -104,9 +104,7 @@ namespace Sim
         }
 
         private void GenerateNavMesh() {
-            foreach (NavMeshSurface navMeshSurface in FindObjectsOfType<NavMeshSurface>()) {
-                navMeshSurface.BuildNavMesh();
-            }
+            this.photonView.RPC("RPC_GenerateNavMesh", PhotonNetwork.LocalPlayer);
         }
 
         private void IdentityExteriorWalls() {
@@ -187,12 +185,21 @@ namespace Sim
             {
                 props.Synchronize(newPlayer);
             }
+            
+            this.photonView.RPC("RPC_GenerateNavMesh", newPlayer);
         }
 
         [PunRPC]
         public void RPC_UpdateRoom()
         {
             Debug.Log("I have to update my room");
+        }
+
+        [PunRPC]
+        public void RPC_GenerateNavMesh() {
+            foreach (NavMeshSurface navMeshSurface in FindObjectsOfType<NavMeshSurface>()) {
+                navMeshSurface.BuildNavMesh();
+            }
         }
     }
 }
