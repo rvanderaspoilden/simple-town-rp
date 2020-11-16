@@ -67,10 +67,10 @@ namespace Sim {
             string roomName = PlaceUtils.GetPlaceEnumName(place);
 
             if (place == PlacesEnum.HALL) {
-                roomName = PlaceUtils.GetPlaceEnumName(place) + "_" +
-                           CommonUtils.GetAppartmentFloorFromAppartmentId(personnage.AppartmentId, CommonConstants.appartmentLimitPerFloor);
+                roomName =
+                    $"{PlaceUtils.GetPlaceEnumName(place)} n°{CommonUtils.GetAppartmentFloorFromAppartmentId(personnage.AppartmentId, CommonConstants.appartmentLimitPerFloor)}";
             } else if (place == PlacesEnum.APPARTMENT) {
-                roomName = PlaceUtils.GetPlaceEnumName(place) + "_" + this.currentAppartmentNumber;
+                roomName = $"{PlaceUtils.GetPlaceEnumName(place)} n°{this.currentAppartmentNumber}";
             }
 
             PhotonNetwork.JoinOrCreateRoom(roomName, new RoomOptions() {IsOpen = true, IsVisible = true, EmptyRoomTtl = 0}, TypedLobby.Default);

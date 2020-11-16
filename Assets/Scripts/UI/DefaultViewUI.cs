@@ -2,10 +2,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
+using Photon.Pun;
+using Sim.UI;
+using TMPro;
 using UnityEngine;
 
 namespace Sim {
     public class DefaultViewUI : MonoBehaviour {
+
+        [Header("Settings")]
+        [SerializeField]
+        private CharacterInfoPanelUI characterInfoPanelUI;
+
+        [SerializeField]
+        private TextMeshProUGUI locationText;
+        
         [SerializeField]
         private RectTransform phone;
 
@@ -26,6 +37,17 @@ namespace Sim {
         private void Awake() {
             this.defaultPhoneAnchorPosY = phone.anchoredPosition.y;
             this.moods.ForEach(mood => mood.sizeDelta = Vector2.zero);
+        }
+
+        private void Start() {
+            this.characterInfoPanelUI.Setup(NetworkManager.Instance.Personnage);
+            this.SetLocationText(PhotonNetwork.CurrentRoom.Name);
+        }
+
+        private void SetLocationText(string value) {
+            foreach (TextMeshProUGUI tmpPro in this.locationText.GetComponentsInChildren<TextMeshProUGUI>()) {
+                tmpPro.text = value;
+            }
         }
 
         private void Update() {

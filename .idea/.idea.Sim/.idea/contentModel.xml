@@ -651,6 +651,7 @@
               <e p="ProfileResponse.cs" t="Include" />
             </e>
             <e p="User.cs" t="Include" />
+            <e p="VitalInformation.cs" t="Include" />
           </e>
           <e p="Enums" t="Include">
             <e p="ActionTypeEnum.cs" t="Include" />
@@ -660,6 +661,7 @@
             <e p="CameraModeEnum.cs" t="Include" />
             <e p="CatalogCategoryEnum.cs" t="Include" />
             <e p="DoorDirectionEnum.cs" t="Include" />
+            <e p="MoodEnum.cs" t="Include" />
             <e p="PlacesEnum.cs" t="Include" />
             <e p="PreviewStateEnum.cs" t="Include" />
             <e p="PropsType.cs" t="Include" />
@@ -694,6 +696,7 @@
           <e p="UI" t="Include">
             <e p="AliDiscountCatalogUI.cs" t="Include" />
             <e p="BuildPreviewPanelUI.cs" t="Include" />
+            <e p="CharacterInfoPanelUI.cs" t="Include" />
             <e p="ContextMenuUI.cs" t="Include" />
             <e p="DefaultViewUI.cs" t="Include" />
           </e>
