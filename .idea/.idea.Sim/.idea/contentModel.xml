@@ -5,6 +5,7 @@
     <e p="C:\Users\rodol\AppData\local\JetBrains\Rider2020.2\resharper-host\local\Transient\Rider\v202\SolutionCaches\_sim.-1429792256.00" t="ExcludeRecursive" />
     <e p="C:\workspace\Sim" t="IncludeRecursive">
       <e p="Assembly-CSharp-Editor.csproj" t="IncludeRecursive" />
+      <e p="Assembly-CSharp-firstpass.csproj" t="IncludeRecursive" />
       <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
       <e p="Assets" t="Include">
         <e p="HSVPicker" t="Include">
@@ -597,6 +598,22 @@
             </e>
           </e>
         </e>
+        <e p="Plugins" t="Include">
+          <e p="Demigiant" t="Include">
+            <e p="DOTween" t="Include">
+              <e p="Modules" t="Include">
+                <e p="DOTweenModuleAudio.cs" t="Include" />
+                <e p="DOTweenModulePhysics.cs" t="Include" />
+                <e p="DOTweenModulePhysics2D.cs" t="Include" />
+                <e p="DOTweenModuleSprite.cs" t="Include" />
+                <e p="DOTweenModuleUI.cs" t="Include" />
+                <e p="DOTweenModuleUnityVersion.cs" t="Include" />
+                <e p="DOTweenModuleUtils.cs" t="Include" />
+              </e>
+              <e p="readme.txt" t="Include" />
+            </e>
+          </e>
+        </e>
         <e p="Scripts" t="Include">
           <e p="Building" t="Include">
             <e p="BuildPreview.cs" t="Include" />
@@ -678,6 +695,7 @@
             <e p="AliDiscountCatalogUI.cs" t="Include" />
             <e p="BuildPreviewPanelUI.cs" t="Include" />
             <e p="ContextMenuUI.cs" t="Include" />
+            <e p="DefaultViewUI.cs" t="Include" />
           </e>
           <e p="Utils" t="Include">
             <e p="CommonUtils.cs" t="Include" />
