@@ -1521,7 +1521,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.66200006, y: 0}
   m_AnchorMax: {x: 0.67178416, y: 0.2528775}
-  m_AnchoredPosition: {x: 0.09399414, y: 0.43615723}
+  m_AnchoredPosition: {x: 0.09399414, y: 0.43616486}
   m_SizeDelta: {x: -1.3355603, y: -0.8722229}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &810989782
@@ -4486,6 +4486,7 @@ MonoBehaviour:
   aliDiscountCatalogUI: {fileID: 7343626189810124145}
   buildPreviewPanelUI: {fileID: 8539786710201366136}
   contextMenuUI: {fileID: 3355792203424815090}
+  defaultViewUI: {fileID: 1433740828}
 --- !u!1 &4063437397200172085
 GameObject:
   m_ObjectHideFlags: 0

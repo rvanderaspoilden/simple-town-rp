@@ -282,9 +282,7 @@ namespace Sim {
 
             this.buildMode = BuildModeEnum.PAINT;
 
-            // todo sortir ça
-            HUDManager.Instance.DisplayAdminPanel(false);
-            HUDManager.Instance.DisplayBuildPreviewPanel(true);
+            HUDManager.Instance.DisplayPanel(PanelTypeEnum.BUILD);
 
             this.SwitchToBuildMode();
 
@@ -337,7 +335,7 @@ namespace Sim {
             this.buildMode = BuildModeEnum.NONE;
 
             // Hide build preview panel
-            HUDManager.Instance.DisplayBuildPreviewPanel(false);
+            HUDManager.Instance.DisplayPanel(PanelTypeEnum.DEFAULT);
         }
 
         private void InstantiateProps(PropsConfig config) {
@@ -350,9 +348,7 @@ namespace Sim {
 
             this.SetCurrentSelectedProps(props);
 
-            // todo sortir ça
-            HUDManager.Instance.DisplayAdminPanel(false);
-            HUDManager.Instance.DisplayBuildPreviewPanel(true);
+            HUDManager.Instance.DisplayPanel(PanelTypeEnum.BUILD);
 
             if (this.currentMode != CameraModeEnum.BUILD) {
                 this.SwitchToBuildMode();
@@ -468,7 +464,7 @@ namespace Sim {
 
             this.buildMode = BuildModeEnum.NONE;
 
-            HUDManager.Instance.DisplayBuildPreviewPanel(false);
+            HUDManager.Instance.DisplayPanel(PanelTypeEnum.DEFAULT);
         }
 
         private void ManageBuildMode() {
