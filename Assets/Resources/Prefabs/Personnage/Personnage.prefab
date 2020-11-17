@@ -3389,6 +3389,7 @@ GameObject:
   - component: {fileID: 6953365128800779913}
   - component: {fileID: 7382115888249060655}
   - component: {fileID: 734558965602936367}
+  - component: {fileID: 7147682903337299061}
   - component: {fileID: 734558965602936366}
   - component: {fileID: 675933250466517631}
   - component: {fileID: 5244262172006347673}
@@ -3469,6 +3470,19 @@ MonoBehaviour:
   headTargetForCamera: {fileID: 1544476717}
   agent: {fileID: 0}
   thirdPersonCharacter: {fileID: 0}
+  state: 0
+--- !u!114 &7147682903337299061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6953365128800779919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4656ce14be425234c8f9ee9554973653, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!195 &734558965602936366
 NavMeshAgent:
   m_ObjectHideFlags: 0

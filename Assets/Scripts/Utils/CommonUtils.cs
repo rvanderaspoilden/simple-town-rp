@@ -1,5 +1,7 @@
 ﻿using System;
+using Sim.Building;
 using Sim.Enums;
+using Sim.Scriptables;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -37,8 +39,38 @@ namespace Sim.Utils {
             return Mathf.CeilToInt(appartmentId / (float) limit);
         }
 
+        /**
+         * This method is used to give layers on which ones the props can be posed
+         * Throw exception if different of wall or ground props
+         */
+        public static int GetLayerMaskSurfacesToPose(Props props) {
+            if (props.IsGroundProps()) {
+                return (1 << 9); // Ground Layer
+            } else if (props.IsWallProps()) {
+                return (1 << 12); // Wall layer
+            }
+            
+            throw new Exception($"No surface type is defined for props ID => {props.GetConfiguration().GetId()}");
+        }
+        
+        /**
+         * This method is used to give layers on which ones the paint can be used
+         * Throw exception if different of wall or ground
+         */
+        public static int GetLayerMaskSurfacesToPaint(PaintConfig paintConfig) {
+            if (paintConfig.IsGroundCover()) {
+                return (1 << 9); // Ground Layer
+            } else if (paintConfig.IsWallCover()) {
+                return (1 << 12); // Wall layer
+            }
+            
+            throw new Exception($"No surface type is defined for paint config ID => {paintConfig.GetId()}");
+        }
+
         public static int GetDoorNumberFromFloorNumber(int initialNumber) {
-            return initialNumber + (CommonConstants.appartmentLimitPerFloor * (CommonUtils.GetAppartmentFloorFromAppartmentId(NetworkManager.Instance.Personnage.AppartmentId, CommonConstants.appartmentLimitPerFloor) - 1));
+            return initialNumber + (CommonConstants.appartmentLimitPerFloor *
+                                    (CommonUtils.GetAppartmentFloorFromAppartmentId(NetworkManager.Instance.Personnage.AppartmentId,
+                                        CommonConstants.appartmentLimitPerFloor) - 1));
         }
     }
 }

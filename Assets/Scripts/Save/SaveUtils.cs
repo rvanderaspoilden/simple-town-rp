@@ -61,7 +61,7 @@ namespace Sim.Utils {
         public static PackageData CreatePackageData(Package package) {
             PackageData data = new PackageData();
             data.Init(package);
-            data.propsConfigIdInside = package.GetPropsInside().GetId();
+            data.propsConfigIdInside = package.GetPropsConfigInside().GetId();
             return data;
         }
 
@@ -79,7 +79,7 @@ namespace Sim.Utils {
 
         public static Props InstantiatePropsFromSave(DefaultData data) {
             PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
-            Props props = PropsManager.instance.InstantiateProps(propsConfig, data.transform.position.ToVector3(), Quaternion.Euler(data.transform.rotation.ToVector3()), true);
+            Props props = PropsManager.Instance.InstantiateProps(propsConfig, data.transform.position.ToVector3(), Quaternion.Euler(data.transform.rotation.ToVector3()), true);
 
             props.SetIsBuilt(!propsConfig.MustBeBuilt() || data.isBuilt, PhotonNetwork.LocalPlayer);
 

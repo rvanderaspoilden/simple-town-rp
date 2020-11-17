@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using Photon.Pun;
@@ -8,11 +8,9 @@ using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
 using Sim.Interactables;
-using Sim.Scriptables;
 using Sim.Utils;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace Sim {
@@ -35,6 +33,8 @@ namespace Sim {
 
             Instance = this;
         }
+
+        #region Level generation
 
         public void InstantiateLevel(SceneData sceneData) {
             // Instantiate all grounds
@@ -102,6 +102,16 @@ namespace Sim {
             }
         }
 
+        [PunRPC]
+        public void RPC_GenerateNavMesh() {
+            foreach (NavMeshSurface navMeshSurface in FindObjectsOfType<NavMeshSurface>()) {
+                navMeshSurface.BuildNavMesh();
+            }
+        }
+
+        #endregion
+
+        #region Save
 
         /**
          * Used to save a room 
@@ -143,9 +153,13 @@ namespace Sim {
 
         protected virtual void Save(SceneData sceneData) {
             String sceneDataJson = JsonConvert.SerializeObject(sceneData);
-            System.IO.File.WriteAllText(Application.dataPath + "/Resources/PresetSceneDatas/" + SceneManager.GetActiveScene().name + ".json", sceneDataJson);
+            File.WriteAllText(Application.dataPath + "/Resources/PresetSceneDatas/" + SceneManager.GetActiveScene().name + ".json", sceneDataJson);
             Debug.Log("Saved locally");
         }
+
+        #endregion
+
+        #region Player
 
         public void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
             GameObject playerObj = PhotonNetwork.Instantiate("Prefabs/Personnage/" + prefab.name, this.playerSpawnPoint.transform.position, Quaternion.identity);
@@ -167,11 +181,6 @@ namespace Sim {
             this.photonView.RPC("RPC_GenerateNavMesh", newPlayer);
         }
 
-        [PunRPC]
-        public void RPC_GenerateNavMesh() {
-            foreach (NavMeshSurface navMeshSurface in FindObjectsOfType<NavMeshSurface>()) {
-                navMeshSurface.BuildNavMesh();
-            }
-        }
+        #endregion
     }
 }

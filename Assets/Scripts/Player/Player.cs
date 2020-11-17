@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Photon.Pun;
 using Sim.Building;
 using Sim.Entities;
+using Sim.Enums;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -14,6 +16,13 @@ namespace Sim {
         [SerializeField] private NavMeshAgent agent;
 
         [SerializeField] private ThirdPersonCharacter thirdPersonCharacter;
+        
+        [SerializeField]
+        private StateType state;
+
+        public delegate void StateChanged(StateType state);
+
+        public static event StateChanged OnStateChanged;
         
         private void Awake() {
             this.agent = GetComponent<NavMeshAgent>();
@@ -32,7 +41,18 @@ namespace Sim {
         }
 
         public bool CanInteractWith(Props propsToInteract) {
+            // TODO: refactor this because range is shit
             return propsToInteract.GetActions()?.Length > 0 && Physics.OverlapSphere(this.GetHeadTargetForCamera().position, propsToInteract.GetConfiguration().GetRangeToInteract()).ToList().Where(collider => collider.gameObject == propsToInteract.gameObject).ToList().Count == 1;
+        }
+        
+        public void SetState(StateType stateType) {
+            Debug.Log($"Player state changed from {this.state} to {stateType}");
+            this.state = stateType;
+            OnStateChanged?.Invoke(stateType);
+        }
+
+        public StateType GetState() {
+            return this.state;
         }
 
         public void SetTarget(Vector3 target) {

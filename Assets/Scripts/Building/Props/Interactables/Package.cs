@@ -32,7 +32,7 @@ namespace Sim.Interactables {
             this.SetPropsInside(this.propsInside.GetId(), playerTarget);
         }
 
-        public PropsConfig GetPropsInside() {
+        public PropsConfig GetPropsConfigInside() {
             return this.propsInside;
         }
 

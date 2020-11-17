@@ -666,12 +666,14 @@
             <e p="PlacesEnum.cs" t="Include" />
             <e p="PreviewStateEnum.cs" t="Include" />
             <e p="PropsType.cs" t="Include" />
+            <e p="StateType.cs" t="Include" />
             <e p="VisibilityModeEnum.cs" t="Include" />
             <e p="VisibilityStateEnum.cs" t="Include" />
           </e>
           <e p="Managers" t="Include">
             <e p="ApiManager.cs" t="Include" />
             <e p="AppartmentManager.cs" t="Include" />
+            <e p="BuildManager.cs" t="Include" />
             <e p="CameraManager.cs" t="Include" />
             <e p="DatabaseManager.cs" t="Include" />
             <e p="HUDManager.cs" t="Include" />
@@ -681,7 +683,10 @@
             <e p="PropsManager.cs" t="Include" />
             <e p="RoomManager.cs" t="Include" />
           </e>
-          <e p="Player.cs" t="Include" />
+          <e p="Player" t="Include">
+            <e p="Player.cs" t="Include" />
+            <e p="PlayerInteraction.cs" t="Include" />
+          </e>
           <e p="Save" t="Include">
             <e p="SaveUtils.cs" t="Include" />
             <e p="SceneData.cs" t="Include" />

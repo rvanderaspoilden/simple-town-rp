@@ -35,5 +35,13 @@ namespace Sim.Scriptables {
         public PropsConfig GetBucketPropsConfig() {
             return this.bucketPropsConfig;
         }
+
+        public bool IsWallCover() {
+            return this.surface == BuildSurfaceEnum.WALL;
+        }
+
+        public bool IsGroundCover() {
+            return this.surface == BuildSurfaceEnum.GROUND;
+        }
     }   
 }

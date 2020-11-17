@@ -11,14 +11,26 @@ namespace Sim {
     public class PropsManager : MonoBehaviour {
         private Dictionary<int, PropsConfig> propsConfigs;
 
-        public static PropsManager instance;
+        public static PropsManager Instance;
 
         private void Awake() {
-            instance = this;
+            if (Instance != null) {
+                Destroy(this);
+            }
+
+            Instance = this;
         }
 
         private void Start() {
             this.propsConfigs = DatabaseManager.PropsDatabase.GetProps().ToDictionary(config => config.GetId(), config => config);
+        }
+
+        public void DestroyProps(Props props, bool network) {
+            if (network) {
+                PhotonNetwork.Destroy(props.photonView);
+            } else {
+                Destroy(props.gameObject);
+            }
         }
 
         public Props InstantiateProps(PropsConfig config, Vector3 position, Quaternion rotation, bool network) {
@@ -55,7 +67,7 @@ namespace Sim {
                 Debug.LogError("Props config ID : " + propsConfigId + " not found in database");
                 return null;
             }
-            
+
             return this.InstantiateProps(this.propsConfigs[propsConfigId], Vector3.zero, this.propsConfigs[propsConfigId].GetPrefab().transform.rotation, network);
         }
     }
