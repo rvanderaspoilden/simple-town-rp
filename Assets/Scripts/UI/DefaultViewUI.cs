@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using DG.Tweening;
+﻿using DG.Tweening;
 using Photon.Pun;
 using Sim.UI;
 using TMPro;
@@ -20,14 +17,7 @@ namespace Sim {
         [SerializeField]
         private RectTransform phone;
 
-        [SerializeField]
-        private RectTransform moodSelector;
-
-        [SerializeField]
-        private List<RectTransform> moods;
-
         private bool phoneOpened;
-        private bool moodSelectorOpened;
         
         private Vector2 firstPressPos;
         private Vector2 secondPressPos;
@@ -36,7 +26,6 @@ namespace Sim {
 
         private void Awake() {
             this.defaultPhoneAnchorPosY = phone.anchoredPosition.y;
-            this.moods.ForEach(mood => mood.sizeDelta = Vector2.zero);
         }
 
         private void Start() {
@@ -52,33 +41,6 @@ namespace Sim {
 
         private void Update() {
             this.Swipe();
-        }
-
-        public void ToggleMoodSelector() {
-            Sequence sequence = DOTween.Sequence();
-
-            if (this.moodSelectorOpened) {
-                this.moods.ForEach(mood => {
-                    sequence.Join(mood.DOSizeDelta(new Vector2(0, 0), 0.1f).SetEase(Ease.Linear));
-                });
-                
-                sequence.Join(this.moodSelector.DOAnchorPosX(17.90002f, 0.2f).SetEase(Ease.Linear));
-                sequence.Join(this.moodSelector.DOSizeDelta(new Vector2(32.59509f, this.moodSelector.sizeDelta.y), 0.2f).SetEase(Ease.Linear));
-
-                sequence.OnComplete(() => this.moodSelectorOpened = false);
-            } else {
-                sequence.Join(this.moodSelector.DOAnchorPosX(165.56f, 0.3f).SetEase(Ease.OutBounce));
-
-                sequence.Join(this.moodSelector.DOSizeDelta(new Vector2(328.2852f, this.moodSelector.sizeDelta.y), 0.3f).SetEase(Ease.OutBounce));
-                
-                this.moods.ForEach(mood => {
-                    sequence.Join(mood.DOSizeDelta(new Vector2(50, 50), 1f).SetEase(Ease.InOutElastic).From(Vector2.zero).SetDelay(0.05f));
-                });
-
-                sequence.OnComplete(() => this.moodSelectorOpened = true);
-            }
-            
-            sequence.Play();
         }
 
         public void OpenPhone() {
