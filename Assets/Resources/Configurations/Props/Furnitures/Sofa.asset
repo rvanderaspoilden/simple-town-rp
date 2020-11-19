@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: Sofa
   m_EditorClassIdentifier: 
   id: 1
-  displayName: "Canap\xE9 3 places"
+  displayName: "Canap\xE9 2 places"
   propsType: 0
   buyable: 1
-  prefab: {fileID: 8643825616957914801, guid: 829ce2b6ecd9705448bb49cb6f6c0155, type: 3}
+  prefab: {fileID: 213926998, guid: 99681d55c42d2734e97eec098bf50f6b, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
   toBuild: 1
-  rangeToInteract: 2
+  rangeToInteract: 1
   actions:
   - actionType: 1
     actionLabel: S'asseoir
@@ -28,4 +28,4 @@ MonoBehaviour:
   unbuiltActions:
   - actionType: 2
     actionLabel: "Monter le canap\xE9"
-    locked: 0
+    locked: 1
