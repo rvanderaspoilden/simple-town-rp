@@ -1,11 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Cinemachine;
-using Photon.Pun;
 using Sim.Building;
 using Sim.Enums;
-using Sim.Interactables;
-using Sim.Scriptables;
 using Sim.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -31,6 +28,9 @@ namespace Sim {
 
         [SerializeField]
         private List<PropsRenderer> displayedPropsRenderers;
+        
+        [SerializeField]
+        private RTSCamera rtsCamera;
 
         private float lastCameraPosition;
 
@@ -48,7 +48,10 @@ namespace Sim {
             Instance = this;
 
             this.camera = GetComponentInChildren<Camera>();
+            this.rtsCamera = GetComponent<RTSCamera>();
             this.displayedPropsRenderers = new List<PropsRenderer>();
+
+            this.rtsCamera.enabled = false;
         }
 
         private void Start() {
@@ -138,8 +141,13 @@ namespace Sim {
         private void OnStateChanged(StateType state) {
             if (state == StateType.FREE) {
                 this.currentMode = CameraModeEnum.FREE;
+                this.rtsCamera.enabled = false;
+                this.freelookCamera.enabled = true;
             } else {
                 this.currentMode = CameraModeEnum.BUILD;
+                this.rtsCamera.enabled = true;
+                this.rtsCamera.SetTargetPosition(RoomManager.LocalPlayer.transform.position, false);
+                this.freelookCamera.enabled = false;
             }
         }
 

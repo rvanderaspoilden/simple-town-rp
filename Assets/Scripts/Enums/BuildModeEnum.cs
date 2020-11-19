@@ -7,8 +7,6 @@ namespace Sim.Enums {
     {
         NONE,
         PAINT,
-        UNPACKAGING,
-        PACKAGING,
         POSING,
         VALIDATING
     }
