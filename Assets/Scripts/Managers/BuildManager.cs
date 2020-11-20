@@ -11,28 +11,23 @@ namespace Sim {
     public class BuildManager : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
-        private new Camera camera;
-
-        [SerializeField]
         private float propsRotationSpeed;
 
         [SerializeField]
         private float propsStepSize;
 
         [Header("Debug")]
-        [SerializeField]
         private Props currentPropSelected;
 
-        [SerializeField]
         private PaintBucket currentOpenedBucket;
 
-        [SerializeField]
         private BuildModeEnum mode;
 
-        [SerializeField]
         private BuildPreview currentPreview;
 
         private RaycastHit hit;
+
+        private new Camera camera;
 
         public delegate void ValidatePropModification(PropsConfig propsConfig, Vector3 position, Quaternion rotation);
 
@@ -46,6 +41,10 @@ namespace Sim {
         
         public static event CancelModification OnCancel;
 
+        public delegate void ModeChanged(BuildModeEnum mode);
+
+        public static event ModeChanged OnModeChanged;
+
         public static BuildManager Instance;
 
         private void Awake() {
@@ -54,6 +53,7 @@ namespace Sim {
             }
 
             Instance = this;
+            this.camera = Camera.main;
         }
 
         private void Start() {
@@ -96,6 +96,10 @@ namespace Sim {
 
         public BuildModeEnum GetMode() {
             return this.mode;
+        }
+
+        public Props GetCurrentPreviewedProps() {
+            return this.currentPropSelected;
         }
 
         private void Cancel() {
@@ -204,7 +208,9 @@ namespace Sim {
         private void SetMode(BuildModeEnum mode) {
             Debug.Log($"Build Mode changed from {this.mode} to {mode}");
             this.mode = mode;
+            OnModeChanged?.Invoke(this.mode);
 
+            // TODO: put this out of this class
             if (this.mode == BuildModeEnum.NONE) {
                 HUDManager.Instance.DisplayPanel(PanelTypeEnum.DEFAULT);
             } else {
@@ -229,16 +235,8 @@ namespace Sim {
                 if (Input.GetMouseButtonDown(0)) {
                     if (this.mode == BuildModeEnum.POSING && this.currentPreview.IsPlaceable()) {
                         this.SetMode(BuildModeEnum.VALIDATING);
-
-                        // TODO: Set posed props as camera target to rotate around
-                        /*this.virtualCameraFollow.SetTarget(this.currentPreview.transform);
-                        this.freelookCamera.enabled = true;
-                        this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;*/
                     } else if (this.mode == BuildModeEnum.VALIDATING) {
                         this.SetMode(BuildModeEnum.POSING);
-
-                        // TODO: Remove current target to allow to move with camera
-                        /*this.freelookCamera.enabled = false;*/
                     }
                 }
             }

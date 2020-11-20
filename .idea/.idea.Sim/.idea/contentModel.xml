@@ -637,6 +637,10 @@
             <e p="Props.cs" t="Include" />
             <e p="PropsRenderer.cs" t="Include" />
           </e>
+          <e p="Camera" t="Include">
+            <e p="BuildCamera.cs" t="Include" />
+            <e p="ThirdPersonCamera.cs" t="Include" />
+          </e>
           <e p="Constants" t="Include">
             <e p="CommonConstants.cs" t="Include" />
             <e p="PlaceName.cs" t="Include" />
@@ -686,6 +690,7 @@
           <e p="Player" t="Include">
             <e p="Player.cs" t="Include" />
             <e p="PlayerInteraction.cs" t="Include" />
+            <e p="ThirdPersonCharacter.cs" t="Include" />
           </e>
           <e p="Save" t="Include">
             <e p="SaveUtils.cs" t="Include" />
@@ -697,8 +702,6 @@
             <e p="PropsConfig.cs" t="Include" />
             <e p="PropsDatabaseConfig.cs" t="Include" />
           </e>
-          <e p="SimpleCameraController.cs" t="Include" />
-          <e p="ThirdPersonCharacter.cs" t="Include" />
           <e p="UI" t="Include">
             <e p="AliDiscountCatalogUI.cs" t="Include" />
             <e p="BuildPreviewPanelUI.cs" t="Include" />
@@ -713,7 +716,6 @@
             <e p="JsonHelper.cs" t="Include" />
             <e p="PlaceUtils.cs" t="Include" />
           </e>
-          <e p="VirtualCameraFollow.cs" t="Include" />
         </e>
         <e p="TextMesh Pro" t="Include">
           <e p="Fonts" t="Include">
