@@ -24,7 +24,6 @@ namespace Sim {
 
         private void Awake() {
             this.player = GetComponent<Player>();
-            this.player.SetState(StateType.FREE);
         }
 
         private void Start() {
@@ -37,6 +36,8 @@ namespace Sim {
             BuildManager.OnValidatePaintModification += OnValidatePaintModification;
             Package.OnOpened += OpenPackage;
             PaintBucket.OnOpened += OpenBucket;
+            
+            this.player.SetState(StateType.FREE);
         }
 
         private void Update() {

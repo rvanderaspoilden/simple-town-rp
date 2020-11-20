@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Cinemachine;
 using Sim.Building;
 using Sim.Enums;
 using Sim.UI;
@@ -11,32 +10,23 @@ namespace Sim {
     public class CameraManager : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
-        private CinemachineFreeLook freelookCamera;
-
-        [SerializeField]
-        private VirtualCameraFollow virtualCameraFollow;
-
-        [SerializeField]
         private LayerMask layerMaskInFreeMode;
 
-        [Header("Only for debug")]
-        [SerializeField]
         private new Camera camera;
 
-        [SerializeField]
-        private CameraModeEnum currentMode;
-
-        [SerializeField]
         private List<PropsRenderer> displayedPropsRenderers;
-        
-        [SerializeField]
-        private RTSCamera rtsCamera;
+
+        private BuildCamera buildCamera;
+
+        private ThirdPersonCamera tpsCamera;
 
         private float lastCameraPosition;
 
         private RaycastHit hit;
 
         private bool forceWallHidden;
+        
+        private CameraModeEnum currentMode;
 
         public static CameraManager Instance;
 
@@ -48,10 +38,12 @@ namespace Sim {
             Instance = this;
 
             this.camera = GetComponentInChildren<Camera>();
-            this.rtsCamera = GetComponent<RTSCamera>();
+            this.buildCamera = GetComponent<BuildCamera>();
+            this.tpsCamera = GetComponent<ThirdPersonCamera>();
             this.displayedPropsRenderers = new List<PropsRenderer>();
 
-            this.rtsCamera.enabled = false;
+            this.buildCamera.enabled = false;
+            this.tpsCamera.enabled = false;
         }
 
         private void Start() {
@@ -78,18 +70,6 @@ namespace Sim {
             if (this.currentMode == CameraModeEnum.FREE && !EventSystem.current.IsPointerOverGameObject()) {
                 this.ManageInteraction();
             }
-
-            if (Input.GetMouseButtonDown(1)) {
-                this.freelookCamera.m_XAxis.m_MaxSpeed = 300f;
-            }
-
-            if (Input.GetMouseButtonUp(1)) {
-                this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;
-            }
-        }
-
-        public CameraModeEnum GetCurrentMode() {
-            return this.currentMode;
         }
 
         /*public void ManageWorldTransparency() {
@@ -140,14 +120,9 @@ namespace Sim {
 
         private void OnStateChanged(StateType state) {
             if (state == StateType.FREE) {
-                this.currentMode = CameraModeEnum.FREE;
-                this.rtsCamera.enabled = false;
-                this.freelookCamera.enabled = true;
+                this.SetCurrentMode(CameraModeEnum.FREE);
             } else {
-                this.currentMode = CameraModeEnum.BUILD;
-                this.rtsCamera.enabled = true;
-                this.rtsCamera.SetTargetPosition(RoomManager.LocalPlayer.transform.position, false);
-                this.freelookCamera.enabled = false;
+                this.SetCurrentMode(CameraModeEnum.BUILD);
             }
         }
 
@@ -178,11 +153,14 @@ namespace Sim {
             }
         }
 
-        private void SwitchToFreeMode() {
-            this.currentMode = CameraModeEnum.FREE;
-            this.virtualCameraFollow.SetTarget(RoomManager.LocalPlayer.GetHeadTargetForCamera());
-            this.freelookCamera.enabled = true;
-            this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;
+        private void SetCurrentMode(CameraModeEnum mode) {
+            this.currentMode = mode;
+            this.buildCamera.enabled = mode == CameraModeEnum.BUILD;
+            this.tpsCamera.enabled = mode == CameraModeEnum.FREE;
+
+            if (this.currentMode == CameraModeEnum.BUILD) {
+                this.buildCamera.Setup(this.tpsCamera.GetVirtualCamera());
+            }
         }
 
         private void ManageInteraction() {
@@ -197,30 +175,6 @@ namespace Sim {
                     HUDManager.Instance.DisplayContextMenu(false, Vector3.zero);
                 }
             }
-        }
-
-        private void ManageCameraMovement() {
-            /*if (Input.GetMouseButton(1)) {
-                // Rotation
-                this.transform.Rotate(new Vector3(-Input.GetAxis("Mouse Y"), Input.GetAxis("Mouse X"), 0) * this.cameraRotationSpeed);
-                this.transform.eulerAngles = new Vector3(this.transform.rotation.eulerAngles.x, this.transform.rotation.eulerAngles.y, 0);
-            }
-
-            if (Input.GetMouseButton(2)) {
-                // Movement
-                this.transform.Translate(new Vector3(-Input.GetAxis("Mouse X"), -Input.GetAxis("Mouse Y"), 0) * this.cameraMoveSpeed);
-            }
-
-            float mouseScrollValue = Input.GetAxis("Mouse ScrollWheel");
-
-            if (mouseScrollValue != 0f) {
-                // Zoom
-                this.transform.Translate(Vector3.forward * mouseScrollValue * this.cameraZoomSpeed);
-            }*/
-        }
-
-        public void SetCameraTarget(Transform transform) {
-            this.virtualCameraFollow.SetTarget(transform);
         }
     }
 }

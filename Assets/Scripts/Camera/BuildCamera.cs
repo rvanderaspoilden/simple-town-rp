@@ -5,12 +5,10 @@ using Sim.Enums;
 using UnityEngine;
 
 namespace Sim {
-    public class RTSCamera : MonoBehaviour {
+    public class BuildCamera : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
-        private new Camera camera;
-        
-        [SerializeField] private Transform target;
+        private Transform target;
 
         [SerializeField]
         private float moveSpeedWithKeyboard;
@@ -19,12 +17,21 @@ namespace Sim {
         private float dragSpeed;
 
         [SerializeField]
+        private float maxRotationSpeed;
+
+        [SerializeField]
         private CinemachineFreeLook freelookCamera;
+
+        private new Camera camera;
 
         private float horizontal;
         private float vertical;
 
         private Vector3 dragOrigin;
+
+        private void Awake() {
+            this.camera = Camera.main;
+        }
 
         private void OnEnable() {
             BuildManager.OnModeChanged += this.BuildModeChanged;
@@ -54,15 +61,25 @@ namespace Sim {
             }
         }
 
+        public void Setup(CinemachineFreeLook originCamera) {
+            this.SetVirtualCameraRotation(originCamera.m_XAxis.Value, originCamera.m_YAxis.Value);
+            this.SetTargetPosition(RoomManager.LocalPlayer.transform.position, false);
+        }
+
         /**
          * Use to set camera target at specific position
          */
-        public void SetTargetPosition(Vector3 pos, bool smooth) {
+        private void SetTargetPosition(Vector3 pos, bool smooth) {
             if (smooth) {
                 this.target.DOMove(pos, 0.5f);
             } else {
                 this.target.transform.position = pos;
             }
+        }
+
+        private void SetVirtualCameraRotation(float xValue, float yValue) {
+            this.freelookCamera.m_XAxis.Value = xValue;
+            this.freelookCamera.m_YAxis.Value = yValue;
         }
 
         private void BuildModeChanged(BuildModeEnum mode) {
@@ -73,7 +90,7 @@ namespace Sim {
 
         private void ManageRotation() {
             if (Input.GetMouseButtonDown(1)) {
-                this.freelookCamera.m_XAxis.m_MaxSpeed = 200f;
+                this.freelookCamera.m_XAxis.m_MaxSpeed = this.maxRotationSpeed;
             }
 
             if (Input.GetMouseButtonUp(1)) {
@@ -93,8 +110,8 @@ namespace Sim {
         private void ManageDragCamera() {
             Vector3 pos = Camera.main.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
             Vector3 move = this.camera.transform.TransformDirection(new Vector3(pos.x, 0, pos.y));
- 
-            this.target.Translate(new Vector3(move.x, 0, move.z) * dragSpeed * Time.deltaTime, Space.World); 
+
+            this.target.Translate(new Vector3(move.x, 0, move.z) * dragSpeed * Time.deltaTime, Space.World);
         }
     }
 }

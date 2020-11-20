@@ -11,28 +11,23 @@ namespace Sim {
     public class BuildManager : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
-        private new Camera camera;
-
-        [SerializeField]
         private float propsRotationSpeed;
 
         [SerializeField]
         private float propsStepSize;
 
         [Header("Debug")]
-        [SerializeField]
         private Props currentPropSelected;
 
-        [SerializeField]
         private PaintBucket currentOpenedBucket;
 
-        [SerializeField]
         private BuildModeEnum mode;
 
-        [SerializeField]
         private BuildPreview currentPreview;
 
         private RaycastHit hit;
+
+        private new Camera camera;
 
         public delegate void ValidatePropModification(PropsConfig propsConfig, Vector3 position, Quaternion rotation);
 
@@ -58,6 +53,7 @@ namespace Sim {
             }
 
             Instance = this;
+            this.camera = Camera.main;
         }
 
         private void Start() {
