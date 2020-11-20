@@ -10,19 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Kitchen Bottom Cabinet
+  m_Name: TV_upright
   m_EditorClassIdentifier: 
-  id: 20
-  displayName: Meuble bas cuisine
+  id: 24
+  displayName: "TV pos\xE9e"
   propsType: 0
   buyable: 1
-  prefab: {fileID: 3541074618040244337, guid: fa5d1ca95160529408a5b496f60170d8, type: 3}
-  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  prefab: {fileID: 4642683835516508193, guid: b9f871f0a52b5b4449f5205310a5fa68, type: 3}
+  packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
-  toBuild: 1
-  rangeToInteract: 1.5
-  actions: []
-  unbuiltActions:
-  - actionType: 2
-    actionLabel: Monter le meuble
+  toBuild: 0
+  rangeToInteract: 1
+  actions:
+  - actionType: 1
+    actionLabel: Allumer
     locked: 0
+  - actionType: 0
+    actionLabel: "D\xE9placer"
+    locked: 0
+  unbuiltActions: []

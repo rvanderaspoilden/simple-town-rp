@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Kitchen Bottom Cabinet
+  m_Name: Coffee Table
   m_EditorClassIdentifier: 
-  id: 20
-  displayName: Meuble bas cuisine
+  id: 2
+  displayName: Table basse rectangle
   propsType: 0
   buyable: 1
-  prefab: {fileID: 3541074618040244337, guid: fa5d1ca95160529408a5b496f60170d8, type: 3}
+  prefab: {fileID: 8624260427845620483, guid: 50b3e72334ce19244a46c2b683deb42f, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
   toBuild: 1
@@ -24,5 +24,5 @@ MonoBehaviour:
   actions: []
   unbuiltActions:
   - actionType: 2
-    actionLabel: Monter le meuble
+    actionLabel: Monter
     locked: 0

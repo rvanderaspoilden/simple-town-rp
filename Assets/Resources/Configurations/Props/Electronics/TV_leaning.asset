@@ -10,19 +10,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Low Table
+  m_Name: TV_leaning
   m_EditorClassIdentifier: 
-  id: 2
-  displayName: Table basse
+  id: 25
+  displayName: TV murale
   propsType: 0
   buyable: 1
-  prefab: {fileID: 7581261632028082935, guid: 8bbe90fe22703c04bae23d76250f592f, type: 3}
-  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
-  surfaceToPose: 0
+  prefab: {fileID: 7919738335849482789, guid: 1f44d949aed682a4aa2819394f81174f, type: 3}
+  packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
+  surfaceToPose: 1
   toBuild: 1
-  rangeToInteract: 2
-  actions: []
+  rangeToInteract: 1
+  actions:
+  - actionType: 1
+    actionLabel: Allumer
+    locked: 0
+  - actionType: 0
+    actionLabel: "D\xE9placer"
+    locked: 0
   unbuiltActions:
   - actionType: 2
-    actionLabel: Monter la table
+    actionLabel: Accrocher
     locked: 0
