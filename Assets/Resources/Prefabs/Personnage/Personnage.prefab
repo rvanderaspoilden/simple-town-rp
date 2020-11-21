@@ -3395,6 +3395,8 @@ GameObject:
   - component: {fileID: 5244262172006347673}
   - component: {fileID: 5244262172006347672}
   - component: {fileID: 5244262172006347671}
+  - component: {fileID: -380444339943428856}
+  - component: {fileID: -4232825608017059455}
   m_Layer: 8
   m_Name: Personnage
   m_TagString: Untagged
@@ -3448,10 +3450,11 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
-  Synchronization: 0
+  Synchronization: 3
   OwnershipTransfer: 0
   ObservedComponents:
-  - {fileID: 0}
+  - {fileID: -380444339943428856}
+  - {fileID: -4232825608017059455}
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
@@ -3534,11 +3537,11 @@ Rigidbody:
   m_Mass: 1
   m_Drag: 0
   m_AngularDrag: 0.05
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!95 &5244262172006347672
 Animator:
   serializedVersion: 3
@@ -3578,6 +3581,63 @@ MonoBehaviour:
   m_MoveSpeedMultiplier: 1
   m_AnimSpeedMultiplier: 1
   m_GroundCheckDistance: 0.5
+--- !u!114 &-380444339943428856
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6953365128800779919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b8c4a61274f60b4ea5fb4299cfdbf14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowLayerWeightsInspector: 1
+  ShowParameterInspector: 1
+  m_SynchronizeParameters:
+  - Type: 1
+    SynchronizeType: 2
+    Name: Forward
+  - Type: 1
+    SynchronizeType: 2
+    Name: Turn
+  - Type: 4
+    SynchronizeType: 2
+    Name: Crouch
+  - Type: 4
+    SynchronizeType: 2
+    Name: OnGround
+  - Type: 1
+    SynchronizeType: 2
+    Name: Jump
+  - Type: 1
+    SynchronizeType: 2
+    Name: JumpLeg
+  - Type: 4
+    SynchronizeType: 2
+    Name: Win
+  - Type: 4
+    SynchronizeType: 2
+    Name: DeathTrigger
+  m_SynchronizeLayers:
+  - SynchronizeType: 2
+    LayerIndex: 0
+--- !u!114 &-4232825608017059455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6953365128800779919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 627855c7f81362d41938ffe0b1475957, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SynchronizePosition: 1
+  m_SynchronizeRotation: 1
+  m_SynchronizeScale: 0
 --- !u!1 &6962321920518970411
 GameObject:
   m_ObjectHideFlags: 0
@@ -4599,17 +4659,17 @@ PrefabInstance:
     - target: {fileID: 9210885496653353628, guid: 28dcfb0a902297449be1a42005bdb355,
         type: 3}
       propertyPath: m_Layer
-      value: 8
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9210885496653359684, guid: 28dcfb0a902297449be1a42005bdb355,
         type: 3}
       propertyPath: m_Layer
-      value: 8
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9210885496653395446, guid: 28dcfb0a902297449be1a42005bdb355,
         type: 3}
       propertyPath: m_Layer
-      value: 8
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9210885496653415906, guid: 28dcfb0a902297449be1a42005bdb355,
         type: 3}
@@ -4619,7 +4679,7 @@ PrefabInstance:
     - target: {fileID: 9210885496653415906, guid: 28dcfb0a902297449be1a42005bdb355,
         type: 3}
       propertyPath: m_Layer
-      value: 8
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9210885496665162608, guid: 28dcfb0a902297449be1a42005bdb355,
         type: 3}

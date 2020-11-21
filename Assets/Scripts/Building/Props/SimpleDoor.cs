@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Sim.Enums;
 using UnityEngine;
 
@@ -8,7 +9,9 @@ namespace Sim.Building {
         [SerializeField] private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
         
         private Animator animator;
-        private List<Collider> colliderTriggered;
+        [SerializeField] private List<Collider> colliderTriggered;
+
+        private bool isOpened;
 
         protected override void Awake() {
             base.Awake();
@@ -18,7 +21,7 @@ namespace Sim.Building {
             this.animator.SetFloat("direction", (float)doorDirection);
         }
 
-        private void OnTriggerStay(Collider other) {
+        private void OnTriggerEnter(Collider other) {
             if (other.gameObject.layer == LayerMask.NameToLayer("Player") && !this.colliderTriggered.Find(x => x == other)) {
                 this.colliderTriggered.Add(other);
             }
@@ -29,10 +32,15 @@ namespace Sim.Building {
         private void OnTriggerExit(Collider other) {
             this.colliderTriggered.Remove(other);
             this.UpdateAnimator();
+
         }
 
         private void UpdateAnimator() {
-            this.animator.SetBool("isOpened", this.colliderTriggered.Count > 0);
+            this.isOpened = this.colliderTriggered.Count > 0;
+
+            if (this.animator.GetBool("isOpened") != this.isOpened) {
+                this.animator.SetBool("isOpened", this.isOpened);
+            }
         }
     }
 }

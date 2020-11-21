@@ -342,6 +342,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 375410120f7019f4c949b3bc160a7c34, type: 2}
   doorDirection: 1
+  colliderTriggered: []
 --- !u!95 &7850704535388570682
 Animator:
   serializedVersion: 3

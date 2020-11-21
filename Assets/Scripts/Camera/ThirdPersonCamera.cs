@@ -1,4 +1,5 @@
-﻿using Cinemachine;
+﻿using System.Collections;
+using Cinemachine;
 using UnityEngine;
 
 namespace Sim {
@@ -12,8 +13,8 @@ namespace Sim {
         private float maxRotationSpeed;
         
         private void OnEnable() {
-            if (this.freelookCamera.LookAt == null && RoomManager.LocalPlayer) {
-                this.SetTarget(RoomManager.LocalPlayer.GetHeadTargetForCamera());
+            if (!this.freelookCamera.m_LookAt) {
+                StartCoroutine(this.SetCameraTarget());
             }
             
             this.freelookCamera.gameObject.SetActive(true);
@@ -21,6 +22,19 @@ namespace Sim {
 
         private void OnDisable() {
             this.freelookCamera.gameObject.SetActive(false);
+        }
+
+        private IEnumerator SetCameraTarget() {
+            Debug.Log("Set target camera");
+            do {
+                if (RoomManager.LocalPlayer) {
+                    this.SetTarget(RoomManager.LocalPlayer.GetHeadTargetForCamera());
+                } else {
+                    Debug.Log("No local player found");
+                }
+                
+                yield return new WaitForSeconds(0.1f);
+            } while (!this.freelookCamera.m_LookAt);
         }
 
         void Update()

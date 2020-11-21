@@ -2,7 +2,6 @@
 using System.Linq;
 using Photon.Pun;
 using Sim.Building;
-using Sim.Entities;
 using Sim.Enums;
 using UnityEngine;
 using UnityEngine.AI;
@@ -20,6 +19,8 @@ namespace Sim {
         [SerializeField]
         private StateType state;
 
+        private new Rigidbody rigidbody;
+
         public delegate void StateChanged(StateType state);
 
         public static event StateChanged OnStateChanged;
@@ -28,8 +29,17 @@ namespace Sim {
             this.agent = GetComponent<NavMeshAgent>();
             this.thirdPersonCharacter = GetComponent<ThirdPersonCharacter>();
             this.agent.updateRotation = false;
+            this.rigidbody = GetComponent<Rigidbody>();
 
             PhotonNetwork.AddCallbackTarget(this);
+        }
+
+        private void Start() {
+            if (!this.photonView.IsMine) {
+                this.agent.enabled = false;
+                this.thirdPersonCharacter.enabled = false;
+                this.rigidbody.useGravity = false;
+            }
         }
 
         private void OnDestroy() {
@@ -37,6 +47,8 @@ namespace Sim {
         }
 
         private void Update() {
+            if (!this.photonView.IsMine) return;
+            
             thirdPersonCharacter.Move(this.agent.remainingDistance > this.agent.stoppingDistance ? this.agent.desiredVelocity : Vector3.zero, false, false);
         }
 
@@ -56,27 +68,11 @@ namespace Sim {
         }
 
         public void SetTarget(Vector3 target) {
-            photonView.RPC("RPC_SetTarget", RpcTarget.All, target);
-        }
-
-        [PunRPC]
-        public void RPC_SetTarget(Vector3 target) {
             this.agent.SetDestination(target);
         }
 
         public Transform GetHeadTargetForCamera() {
             return this.headTargetForCamera;
-        }
-
-        public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer) {
-            photonView.RPC("RPC_UpdateStatus", newPlayer, this.transform.position, this.transform.rotation, this.agent.destination);
-        }
-
-        [PunRPC]
-        public void RPC_UpdateStatus(Vector3 pos, Quaternion rotation, Vector3 target) {
-            this.transform.position = pos;
-            this.transform.rotation = rotation;
-            this.agent.SetDestination(target);
         }
     }
 }
