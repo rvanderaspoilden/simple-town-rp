@@ -25,7 +25,11 @@ MonoBehaviour:
     AuthMode: 0
     EnableLobbyStatistics: 0
     NetworkLogging: 1
+<<<<<<< refs/remotes/origin/master
   DevRegion: ru
+=======
+  DevRegion: eu
+>>>>>>> :bug: wait generated room before instantiate player
   PunLogging: 0
   EnableSupportLogger: 0
   RunInBackground: 1

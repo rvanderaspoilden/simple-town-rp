@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Runtime.CompilerServices;
+using Photon.Pun;
 using Sim.Entities;
 using UnityEngine;
+using UnityEngine.Rendering.UI;
 
 namespace Sim
 {
@@ -25,7 +27,15 @@ namespace Sim
         {
             ApiManager.instance.SaveAppartment(id, owner, sceneData);
         }
-        
+
+        public override void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
+            base.InstantiateLocalPlayer(prefab, personnage);
+
+            if (!PhotonNetwork.IsMasterClient && this.IsOwner(personnage)) {
+                PhotonNetwork.CurrentRoom.SetMasterClient(PhotonNetwork.LocalPlayer);
+            }
+        }
+
         public void SetAppartmentData(string owner, string id)
         {
             this.id = id;

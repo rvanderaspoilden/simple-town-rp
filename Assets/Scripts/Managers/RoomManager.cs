@@ -2,6 +2,7 @@
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Photon.Pun;
 using Sim.Building;
@@ -21,6 +22,8 @@ namespace Sim {
 
         private readonly WaitForSeconds saveDelay = new WaitForSeconds(1);
         private Coroutine saveCoroutine;
+
+        private bool generated;
 
         public static Player LocalPlayer;
 
@@ -87,16 +90,29 @@ namespace Sim {
             // Instantiate all other props
             sceneData.props?.ToList().ForEach(data => SaveUtils.InstantiatePropsFromSave(data));
 
-            this.GenerateNavMesh();
+            this.GenerateNavMesh(true);
 
-            this.IdentityExteriorWalls();
+            this.IdentifyExteriorWalls();
+
+            // Tell to room that it's generated
+            ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
+            properties.Add("isGenerated", true);
+            PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
         }
 
-        private void GenerateNavMesh() {
-            this.photonView.RPC("RPC_GenerateNavMesh", PhotonNetwork.LocalPlayer);
+        public bool IsGenerated() {
+            return this.generated;
         }
 
-        private void IdentityExteriorWalls() {
+        private void GenerateNavMesh(bool locally) {
+            if (locally) {
+                this.RPC_GenerateNavMesh();
+            } else {
+                this.photonView.RPC("RPC_GenerateNavMesh", PhotonNetwork.LocalPlayer);
+            }
+        }
+
+        private void IdentifyExteriorWalls() {
             foreach (Wall wall in FindObjectsOfType<Wall>()) {
                 wall.CheckExteriorWall();
             }
@@ -107,6 +123,8 @@ namespace Sim {
             foreach (NavMeshSurface navMeshSurface in FindObjectsOfType<NavMeshSurface>()) {
                 navMeshSurface.BuildNavMesh();
             }
+
+            this.generated = true;
         }
 
         #endregion
@@ -161,7 +179,7 @@ namespace Sim {
 
         #region Player
 
-        public void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
+        public virtual void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
             GameObject playerObj = PhotonNetwork.Instantiate("Prefabs/Personnage/" + prefab.name, this.playerSpawnPoint.transform.position, Quaternion.identity);
             LocalPlayer = playerObj.GetComponent<Player>();
         }
@@ -173,11 +191,25 @@ namespace Sim {
         public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer) {
             Debug.Log(newPlayer.NickName + " joined the room");
 
+            if (PhotonNetwork.IsMasterClient) {
+                this.StartCoroutine(this.SynchronizeRoomForTarget(newPlayer));
+            }
+        }
+
+        private IEnumerator SynchronizeRoomForTarget(Photon.Realtime.Player newPlayer) {
+            while (!PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated")) {
+                yield return null;
+            }
+            
             foreach (Props props in FindObjectsOfType<Props>()) {
                 props.Synchronize(newPlayer);
             }
 
             this.photonView.RPC("RPC_GenerateNavMesh", newPlayer);
+        }
+
+        public override void OnMasterClientSwitched(Photon.Realtime.Player newMasterClient) {
+            Debug.Log("Masterclient is now : " + newMasterClient.NickName);
         }
 
         #endregion
