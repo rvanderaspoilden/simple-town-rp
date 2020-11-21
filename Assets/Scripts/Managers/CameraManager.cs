@@ -25,7 +25,7 @@ namespace Sim {
         private RaycastHit hit;
 
         private bool forceWallHidden;
-        
+
         private CameraModeEnum currentMode;
 
         public static CameraManager Instance;
@@ -118,11 +118,13 @@ namespace Sim {
             });
         }
 
-        private void OnStateChanged(StateType state) {
-            if (state == StateType.FREE) {
-                this.SetCurrentMode(CameraModeEnum.FREE);
-            } else {
-                this.SetCurrentMode(CameraModeEnum.BUILD);
+        private void OnStateChanged(Player player, StateType state) {
+            if (player == RoomManager.LocalPlayer) {
+                if (state == StateType.FREE) {
+                    this.SetCurrentMode(CameraModeEnum.FREE);
+                } else {
+                    this.SetCurrentMode(CameraModeEnum.BUILD);
+                }
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Sim.Enums;
 using UnityEngine;
 
@@ -28,11 +29,11 @@ namespace Sim.Building {
             
             this.UpdateAnimator();
         }
-
+        
         private void OnTriggerExit(Collider other) {
             this.colliderTriggered.Remove(other);
+            
             this.UpdateAnimator();
-
         }
 
         private void UpdateAnimator() {

@@ -21,7 +21,7 @@ namespace Sim {
 
         private new Rigidbody rigidbody;
 
-        public delegate void StateChanged(StateType state);
+        public delegate void StateChanged(Player player, StateType state);
 
         public static event StateChanged OnStateChanged;
         
@@ -60,7 +60,7 @@ namespace Sim {
         public void SetState(StateType stateType) {
             Debug.Log($"Player state changed from {this.state} to {stateType}");
             this.state = stateType;
-            OnStateChanged?.Invoke(stateType);
+            OnStateChanged?.Invoke(this, stateType);
         }
 
         public StateType GetState() {
