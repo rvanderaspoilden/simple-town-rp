@@ -184,13 +184,13 @@ namespace Sim {
                 Vector3 rotation = this.currentPropSelected.transform.localEulerAngles;
 
                 if (hit.normal == Vector3.forward) {
-                    rotation.y = 180;
+                    rotation.y = 360;
                 } else if (hit.normal == -Vector3.forward) {
-                    rotation.y = 0f;
+                    rotation.y = 180f;
                 } else if (hit.normal == -Vector3.left) {
-                    rotation.y = 270;
+                    rotation.y = 90;
                 } else if (hit.normal == Vector3.left) {
-                    rotation.y = 90f;
+                    rotation.y = 270f;
                 }
 
                 this.currentPropSelected.transform.localEulerAngles = rotation;
