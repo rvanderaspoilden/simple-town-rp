@@ -220,6 +220,7 @@ GameObject:
   - component: {fileID: 964269392}
   - component: {fileID: 964269391}
   - component: {fileID: 964269390}
+  - component: {fileID: 964269389}
   m_Layer: 0
   m_Name: Roof
   m_TagString: Untagged
@@ -227,6 +228,19 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!65 &964269389
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 964269388}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 9.999999, y: 0.23880768, z: 10}
+  m_Center: {x: -0, y: -0.11940384, z: 0}
 --- !u!23 &964269390
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -583,7 +597,7 @@ PrefabInstance:
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -261292.12
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
@@ -598,12 +612,12 @@ PrefabInstance:
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.000000029810472
+      value: -0.00000011728621
       objectReference: {fileID: 0}
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.00000001719227
+      value: -0.0000001861192
       objectReference: {fileID: 0}
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
@@ -613,7 +627,7 @@ PrefabInstance:
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.49958995
+      value: -0.49959
       objectReference: {fileID: 0}
     - target: {fileID: 2049593766679326412, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
