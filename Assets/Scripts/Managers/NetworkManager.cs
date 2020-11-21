@@ -149,9 +149,9 @@ namespace Sim {
                 }
             }
 
-            /*bool isRoomGenerated;
+            bool isRoomGenerated;
             do {
-                isRoomGenerated = PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated");
+                isRoomGenerated = PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated") && RoomManager.Instance.IsGenerated();
                 
                 if (isRoomGenerated) {
                     RoomManager.Instance.InstantiateLocalPlayer(this.playerPrefab, this.personnage);
@@ -160,7 +160,7 @@ namespace Sim {
                 yield return new WaitForSeconds(0.1f);
             } while (!isRoomGenerated);
 
-            LoadingManager.Instance.Hide();*/
+            LoadingManager.Instance.Hide();
         }
 
         #region Callbacks

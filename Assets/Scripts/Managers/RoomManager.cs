@@ -2,6 +2,7 @@
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Photon.Pun;
 using Sim.Building;
@@ -21,6 +22,8 @@ namespace Sim {
 
         private readonly WaitForSeconds saveDelay = new WaitForSeconds(1);
         private Coroutine saveCoroutine;
+
+        private bool generated;
 
         public static Player LocalPlayer;
 
@@ -97,6 +100,10 @@ namespace Sim {
             PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
         }
 
+        public bool IsGenerated() {
+            return this.generated;
+        }
+
         private void GenerateNavMesh(bool locally) {
             if (locally) {
                 this.RPC_GenerateNavMesh();
@@ -116,10 +123,8 @@ namespace Sim {
             foreach (NavMeshSurface navMeshSurface in FindObjectsOfType<NavMeshSurface>()) {
                 navMeshSurface.BuildNavMesh();
             }
-            
-            InstantiateLocalPlayer(NetworkManager.Instance.PlayerPrefab, NetworkManager.Instance.Personnage);
-            
-            LoadingManager.Instance.Hide();
+
+            this.generated = true;
         }
 
         #endregion
@@ -174,7 +179,7 @@ namespace Sim {
 
         #region Player
 
-        public void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
+        public virtual void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
             GameObject playerObj = PhotonNetwork.Instantiate("Prefabs/Personnage/" + prefab.name, this.playerSpawnPoint.transform.position, Quaternion.identity);
             LocalPlayer = playerObj.GetComponent<Player>();
         }
@@ -201,6 +206,10 @@ namespace Sim {
             }
 
             this.photonView.RPC("RPC_GenerateNavMesh", newPlayer);
+        }
+
+        public override void OnMasterClientSwitched(Photon.Realtime.Player newMasterClient) {
+            Debug.Log("Masterclient is now : " + newMasterClient.NickName);
         }
 
         #endregion
