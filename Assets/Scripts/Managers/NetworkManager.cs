@@ -57,6 +57,11 @@ namespace Sim {
             }
         }
 
+        public GameObject PlayerPrefab {
+            get => playerPrefab;
+            set => playerPrefab = value;
+        }
+
         public void GoToRoom(PlacesEnum place) {
             // If player is alreay in a room so leave it and join another
             if (PhotonNetwork.InRoom) {
@@ -144,9 +149,18 @@ namespace Sim {
                 }
             }
 
-            RoomManager.Instance.InstantiateLocalPlayer(this.playerPrefab, this.personnage);
+            /*bool isRoomGenerated;
+            do {
+                isRoomGenerated = PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated");
+                
+                if (isRoomGenerated) {
+                    RoomManager.Instance.InstantiateLocalPlayer(this.playerPrefab, this.personnage);
+                }
+                
+                yield return new WaitForSeconds(0.1f);
+            } while (!isRoomGenerated);
 
-            LoadingManager.Instance.Hide();
+            LoadingManager.Instance.Hide();*/
         }
 
         #region Callbacks

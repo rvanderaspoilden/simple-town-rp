@@ -87,16 +87,25 @@ namespace Sim {
             // Instantiate all other props
             sceneData.props?.ToList().ForEach(data => SaveUtils.InstantiatePropsFromSave(data));
 
-            this.GenerateNavMesh();
+            this.GenerateNavMesh(true);
 
-            this.IdentityExteriorWalls();
+            this.IdentifyExteriorWalls();
+
+            // Tell to room that it's generated
+            ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
+            properties.Add("isGenerated", true);
+            PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
         }
 
-        private void GenerateNavMesh() {
-            this.photonView.RPC("RPC_GenerateNavMesh", PhotonNetwork.LocalPlayer);
+        private void GenerateNavMesh(bool locally) {
+            if (locally) {
+                this.RPC_GenerateNavMesh();
+            } else {
+                this.photonView.RPC("RPC_GenerateNavMesh", PhotonNetwork.LocalPlayer);
+            }
         }
 
-        private void IdentityExteriorWalls() {
+        private void IdentifyExteriorWalls() {
             foreach (Wall wall in FindObjectsOfType<Wall>()) {
                 wall.CheckExteriorWall();
             }
@@ -107,6 +116,10 @@ namespace Sim {
             foreach (NavMeshSurface navMeshSurface in FindObjectsOfType<NavMeshSurface>()) {
                 navMeshSurface.BuildNavMesh();
             }
+            
+            InstantiateLocalPlayer(NetworkManager.Instance.PlayerPrefab, NetworkManager.Instance.Personnage);
+            
+            LoadingManager.Instance.Hide();
         }
 
         #endregion
@@ -173,6 +186,16 @@ namespace Sim {
         public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer) {
             Debug.Log(newPlayer.NickName + " joined the room");
 
+            if (PhotonNetwork.IsMasterClient) {
+                this.StartCoroutine(this.SynchronizeRoomForTarget(newPlayer));
+            }
+        }
+
+        private IEnumerator SynchronizeRoomForTarget(Photon.Realtime.Player newPlayer) {
+            while (!PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated")) {
+                yield return null;
+            }
+            
             foreach (Props props in FindObjectsOfType<Props>()) {
                 props.Synchronize(newPlayer);
             }
