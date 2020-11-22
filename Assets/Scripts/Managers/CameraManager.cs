@@ -168,7 +168,7 @@ namespace Sim {
         private void ManageInteraction() {
             if (Input.GetMouseButtonDown(0) && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props objectToInteract = hit.collider.GetComponentInParent<Props>();
-                bool canInteract = objectToInteract && RoomManager.LocalPlayer && RoomManager.LocalPlayer.CanInteractWith(objectToInteract);
+                bool canInteract = objectToInteract && RoomManager.LocalPlayer && RoomManager.LocalPlayer.CanInteractWith(objectToInteract, hit.point);
 
                 if (canInteract) {
                     HUDManager.Instance.DisplayContextMenu(true, Input.mousePosition, objectToInteract);
