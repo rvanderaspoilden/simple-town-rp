@@ -26,8 +26,7 @@ namespace Sim.Building {
         }
 
         protected virtual void Start() {
-            this.SetupActions();
-            this.SetupUnbuiltActions();
+            this.RefreshAllActions();
         }
 
         /**
@@ -45,6 +44,11 @@ namespace Sim.Building {
 
             bool isOwner = AppartmentManager.instance && AppartmentManager.instance.IsOwner(NetworkManager.Instance.Personnage);
             this.unbuiltActions.ToList().ForEach(action => action.SetIsLocked(!isOwner));
+        }
+
+        public void RefreshAllActions() {
+            this.SetupActions();
+            this.SetupUnbuiltActions();
         }
 
         public virtual Action[] GetActions() {

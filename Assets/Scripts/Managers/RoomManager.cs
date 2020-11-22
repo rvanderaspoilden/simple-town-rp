@@ -208,6 +208,9 @@ namespace Sim {
 
         public override void OnMasterClientSwitched(Photon.Realtime.Player newMasterClient) {
             Debug.Log("Masterclient is now : " + newMasterClient.NickName);
+            foreach (Props props in FindObjectsOfType<Props>()) {
+                props.RefreshAllActions();
+            }
         }
 
         #endregion
