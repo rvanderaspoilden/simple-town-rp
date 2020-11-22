@@ -2,8 +2,6 @@
 using System.Collections;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using Newtonsoft.Json;
 using Photon.Pun;
 using Sim.Building;
 using Sim.Entities;
@@ -170,7 +168,7 @@ namespace Sim {
         }
 
         protected virtual void Save(SceneData sceneData) {
-            String sceneDataJson = JsonConvert.SerializeObject(sceneData);
+            String sceneDataJson = JsonUtility.ToJson(sceneData);
             File.WriteAllText(Application.dataPath + "/Resources/PresetSceneDatas/" + SceneManager.GetActiveScene().name + ".json", sceneDataJson);
             Debug.Log("Saved locally");
         }

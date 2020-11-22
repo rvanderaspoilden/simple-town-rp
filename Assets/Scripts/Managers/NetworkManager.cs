@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using Newtonsoft.Json;
 using Photon.Pun;
 using Photon.Realtime;
 using Sim.Entities;
@@ -126,7 +125,7 @@ namespace Sim {
 
             if (PhotonNetwork.IsMasterClient && sceneName.Equals("Hall")) {
                 TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Hall");
-                SceneData sceneData = JsonConvert.DeserializeObject<SceneData>(textAsset.text);
+                SceneData sceneData = JsonUtility.FromJson<SceneData>(textAsset.text);
                 RoomManager.Instance.InstantiateLevel(sceneData);
             }
 

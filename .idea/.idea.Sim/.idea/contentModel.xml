@@ -8,49 +8,6 @@
       <e p="Assembly-CSharp-firstpass.csproj" t="IncludeRecursive" />
       <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
       <e p="Assets" t="Include">
-        <e p="HSVPicker" t="Include">
-          <e p="Editor" t="Include">
-            <e p="BoxSliderEditor.cs" t="Include" />
-          </e>
-          <e p="Enums" t="Include">
-            <e p="ColorValues.cs" t="Include" />
-          </e>
-          <e p="Events" t="Include">
-            <e p="ColorChangedEvent.cs" t="Include" />
-            <e p="HSVChangedEvent.cs" t="Include" />
-          </e>
-          <e p="Other" t="Include">
-            <e p="ColorPickerTester.cs" t="Include" />
-            <e p="TiltWindow.cs" t="Include" />
-          </e>
-          <e p="readme.txt" t="Include" />
-          <e p="Resources" t="Include">
-            <e p="Shaders" t="Include">
-              <e p="Compute" t="Include">
-                <e p="GenerateSVTexture.compute" t="Include" />
-              </e>
-            </e>
-          </e>
-          <e p="UI" t="Include">
-            <e p="ColorImage.cs" t="Include" />
-            <e p="ColorLabel.cs" t="Include" />
-            <e p="ColorPicker.cs" t="Include" />
-            <e p="ColorPickerSetup.cs" t="Include" />
-            <e p="ColorPresetManager.cs" t="Include" />
-            <e p="ColorPresets.cs" t="Include" />
-            <e p="ColorSlider.cs" t="Include" />
-            <e p="ColorSliderImage.cs" t="Include" />
-            <e p="HexColorField.cs" t="Include" />
-            <e p="SVBoxSlider.cs" t="Include" />
-          </e>
-          <e p="UtilityScripts" t="Include">
-            <e p="BoxSlider.cs" t="Include" />
-            <e p="HSVUtil.cs" t="Include" />
-          </e>
-        </e>
-        <e p="JsonDotNet" t="Include">
-          <e p="link.xml" t="Include" />
-        </e>
         <e p="NavMeshComponents" t="Include">
           <e p="Editor" t="Include">
             <e p="NavMeshAssetManager.cs" t="Include" />
@@ -108,6 +65,9 @@
           </e>
           <e p="PhotonLibs" t="Include">
             <e p="changes-library.txt" t="Include" />
+            <e p="netstandard2.0" t="Include">
+              <e p="Photon3Unity3D.xml" t="Include" />
+            </e>
             <e p="Photon3Unity3D.xml" t="Include" />
             <e p="WebSocket" t="Include">
               <e p="PhotonWebSocket.asmdef" t="Include" />
@@ -120,6 +80,7 @@
               <e p="AppSettings.cs" t="Include" />
               <e p="changes-realtime.txt" t="Include" />
               <e p="ConnectionHandler.cs" t="Include" />
+              <e p="CustomTypesUnity.cs" t="Include" />
               <e p="Extensions.cs" t="Include" />
               <e p="FriendInfo.cs" t="Include" />
               <e p="LoadBalancingClient.cs" t="Include" />
@@ -161,6 +122,7 @@
                 </e>
                 <e p="ServerSettingsInspector.cs" t="Include" />
                 <e p="Views" t="Include">
+                  <e p="MonoBehaviourPunEditor.cs" t="Include" />
                   <e p="PhotonAnimatorViewEditor.cs" t="Include" />
                   <e p="PhotonRigidbody2DViewEditor.cs" t="Include" />
                   <e p="PhotonRigidbodyViewEditor.cs" t="Include" />
@@ -169,6 +131,10 @@
                 </e>
               </e>
               <e p="Enums.cs" t="Include" />
+              <e p="Interfaces" t="Include">
+                <e p="IPhotonViewCallbacks.cs" t="Include" />
+                <e p="IPunCallbacks.cs" t="Include" />
+              </e>
               <e p="PhotonHandler.cs" t="Include" />
               <e p="PhotonNetwork.cs" t="Include" />
               <e p="PhotonNetworkPart.cs" t="Include" />
@@ -177,6 +143,9 @@
               <e p="PhotonView.cs" t="Include" />
               <e p="PunClasses.cs" t="Include" />
               <e p="ServerSettings.cs" t="Include" />
+              <e p="Utilities" t="Include">
+                <e p="NestedComponentUtilities.cs" t="Include" />
+              </e>
               <e p="Views" t="Include">
                 <e p="PhotonAnimatorView.cs" t="Include" />
                 <e p="PhotonRigidbody2DView.cs" t="Include" />
@@ -350,12 +319,15 @@
               <e p="Shared Assets" t="Include">
                 <e p="Scripts" t="Include">
                   <e p="DocLinks.cs" t="Include" />
+                  <e p="ThirdPersonCharacter.cs" t="Include" />
+                  <e p="ThirdPersonUserControl.cs" t="Include" />
                 </e>
                 <e p="Skin" t="Include">
                   <e p="3dText.shader" t="Include" />
                   <e p="eurof_tt.txt" t="Include" />
                 </e>
               </e>
+              <e p="WebRpcImplementationExample.cs" t="Include" />
             </e>
             <e p="link.xml" t="Include" />
             <e p="readme.txt" t="Include" />
@@ -743,14 +715,6 @@
           </e>
           <e p="Sprites" t="Include">
             <e p="EmojiOne Attribution.txt" t="Include" />
-          </e>
-        </e>
-        <e p="TutorialInfo" t="Include">
-          <e p="Scripts" t="Include">
-            <e p="Editor" t="Include">
-              <e p="ReadmeEditor.cs" t="Include" />
-            </e>
-            <e p="Readme.cs" t="Include" />
           </e>
         </e>
       </e>
