@@ -52,6 +52,12 @@ namespace Sim {
         private void Update() {
             if (!this.photonView.IsMine) return;
 
+            if (this.agent.remainingDistance > this.agent.stoppingDistance) {
+                MarkerController.Instance.ShowAt(this.agent.pathEndPosition);
+            } else if(MarkerController.Instance.IsActive()){
+                MarkerController.Instance.Hide();
+            }
+
             thirdPersonCharacter.Move(this.agent.remainingDistance > this.agent.stoppingDistance ? this.agent.desiredVelocity : Vector3.zero, false, false);
         }
 
@@ -66,7 +72,6 @@ namespace Sim {
 
             Vector3 dir = hitPoint - this.GetHeadTargetForCamera().position;
             RaycastHit hit;
-            Debug.DrawRay(this.GetHeadTargetForCamera().position, dir, Color.green, 2f);
             if (Physics.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
                 Props hitProps = hit.collider.GetComponentInParent<Props>();
 
