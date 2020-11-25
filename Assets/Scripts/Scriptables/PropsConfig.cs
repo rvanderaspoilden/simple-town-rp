@@ -39,6 +39,13 @@ namespace Sim.Scriptables {
         [SerializeField]
         private Action[] unbuiltActions;
 
+        [SerializeField]
+        private Texture2D cursor;
+
+        public Texture2D GetCursor() {
+            return this.cursor;
+        }
+
         public PropsType GetPropsType() {
             return this.propsType;
         }

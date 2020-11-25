@@ -166,16 +166,30 @@ namespace Sim {
         }
 
         private void ManageInteraction() {
-            if (Input.GetMouseButtonDown(0) && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
+            if (this.currentMode == CameraModeEnum.FREE && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props objectToInteract = hit.collider.GetComponentInParent<Props>();
-                bool canInteract = objectToInteract && RoomManager.LocalPlayer && RoomManager.LocalPlayer.CanInteractWith(objectToInteract, hit.point);
 
-                if (canInteract) {
-                    HUDManager.Instance.DisplayContextMenu(true, Input.mousePosition, objectToInteract);
-                } else {
-                    RoomManager.Instance.MovePlayerTo(hit.point);
-                    HUDManager.Instance.DisplayContextMenu(false, Vector3.zero);
+                if (objectToInteract) {
+                    if (objectToInteract.IsBuilt()) {
+                        CursorManager.Instance.SetCursor(objectToInteract.GetConfiguration().GetCursor());
+                    } else {
+                        CursorManager.Instance.SetBuildCursor();
+                    }
+
+
+                    if (Input.GetMouseButtonDown(0)) {
+                        bool canInteract = RoomManager.LocalPlayer && RoomManager.LocalPlayer.CanInteractWith(objectToInteract, hit.point);
+
+                        if (canInteract) {
+                            HUDManager.Instance.DisplayContextMenu(true, Input.mousePosition, objectToInteract);
+                        } else {
+                            RoomManager.Instance.MovePlayerTo(hit.point);
+                            HUDManager.Instance.DisplayContextMenu(false, Vector3.zero);
+                        }
+                    }
                 }
+            } else if (CursorManager.Instance.GetCursor()) {
+                CursorManager.Instance.SetCursor(null);
             }
         }
     }
