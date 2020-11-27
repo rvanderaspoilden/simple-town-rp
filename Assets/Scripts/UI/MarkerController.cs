@@ -37,6 +37,8 @@ namespace Sim {
             this.sequence.SetLoops(-1);
 
             this.Hide();
+            
+            DontDestroyOnLoad(this.gameObject);
         }
 
         public void ShowAt(Vector3 position) {
