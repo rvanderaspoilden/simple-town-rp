@@ -116,7 +116,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4679467548151724118
 Transform:
   m_ObjectHideFlags: 0
@@ -222,6 +222,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -4281,7 +4282,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4645945168924068441
 Transform:
   m_ObjectHideFlags: 0
@@ -4387,6 +4388,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -4668,13 +4670,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 0}
   renderersToModify:
   - {fileID: 5622590884830313802}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 0}
 --- !u!65 &1824135504415420001
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4703,6 +4703,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -4824,7 +4825,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4848406080800807649
 Transform:
   m_ObjectHideFlags: 0
@@ -4930,6 +4931,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -4957,7 +4959,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4854482565493949114
 Transform:
   m_ObjectHideFlags: 0
@@ -5063,6 +5065,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -5172,7 +5175,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4967853120242414885
 Transform:
   m_ObjectHideFlags: 0
@@ -5278,6 +5281,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -5382,13 +5386,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 0}
   renderersToModify:
   - {fileID: 5282299942664770350}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 0}
 --- !u!65 &2168952448757694469
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5417,6 +5419,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -5457,7 +5460,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4919496945118981318
 Transform:
   m_ObjectHideFlags: 0
@@ -5563,6 +5566,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -6102,7 +6106,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &5170039582563904292
 Transform:
   m_ObjectHideFlags: 0
@@ -6208,6 +6212,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -6235,7 +6240,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &5181276652705494183
 Transform:
   m_ObjectHideFlags: 0
@@ -6341,6 +6346,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -6368,7 +6374,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &5182245030602184069
 Transform:
   m_ObjectHideFlags: 0
@@ -6474,6 +6480,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -6729,7 +6736,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &5356683621987047836
 Transform:
   m_ObjectHideFlags: 0
@@ -6835,6 +6842,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -7297,7 +7305,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &5717918944323845700
 Transform:
   m_ObjectHideFlags: 0
@@ -7403,6 +7411,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -7544,7 +7553,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &5971311065028825988
 Transform:
   m_ObjectHideFlags: 0
@@ -7650,6 +7659,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -7677,7 +7687,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6065681897051721490
 Transform:
   m_ObjectHideFlags: 0
@@ -7783,6 +7793,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -7810,7 +7821,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6070210375732378349
 Transform:
   m_ObjectHideFlags: 0
@@ -7916,6 +7927,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -8423,7 +8435,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6264158726153774532
 Transform:
   m_ObjectHideFlags: 0
@@ -8529,6 +8541,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -8556,7 +8569,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6323527496758301526
 Transform:
   m_ObjectHideFlags: 0
@@ -8662,6 +8675,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -8766,13 +8780,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 0}
   renderersToModify:
   - {fileID: 6497958749521241122}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 0}
 --- !u!65 &971288794645526281
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8801,6 +8813,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -8890,7 +8903,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -8946,8 +8959,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -8960,6 +8973,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &5557481855564373861
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8972,13 +8986,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 3252406284884921119}
   renderersToModify:
   - {fileID: 8401027985190944757}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 3252406284884921119}
 --- !u!208 &1307414689117584200
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -9010,6 +9022,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -9206,7 +9219,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6502562691748561397
 Transform:
   m_ObjectHideFlags: 0
@@ -9312,6 +9325,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -9339,7 +9353,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6586801661815280755
 Transform:
   m_ObjectHideFlags: 0
@@ -9445,6 +9459,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -9568,7 +9583,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6677361316268062036
 Transform:
   m_ObjectHideFlags: 0
@@ -9674,6 +9689,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -9701,7 +9717,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6669431786493878748
 Transform:
   m_ObjectHideFlags: 0
@@ -9807,6 +9823,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -9834,7 +9851,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6636251293254083097
 Transform:
   m_ObjectHideFlags: 0
@@ -9940,6 +9957,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -10233,7 +10251,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6810698795510516868
 Transform:
   m_ObjectHideFlags: 0
@@ -10339,6 +10357,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -10366,7 +10385,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6806656481900660255
 Transform:
   m_ObjectHideFlags: 0
@@ -10472,6 +10491,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -10719,7 +10739,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -10775,8 +10795,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -10789,6 +10809,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &8796615405203064615
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10801,13 +10822,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 1878318940805665629}
   renderersToModify:
   - {fileID: 4874457367777355703}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 1878318940805665629}
 --- !u!208 &2672642204932465418
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -10839,6 +10858,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -10866,7 +10886,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6944588342048288964
 Transform:
   m_ObjectHideFlags: 0
@@ -10972,6 +10992,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -10999,7 +11020,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7038504210590436254
 Transform:
   m_ObjectHideFlags: 0
@@ -11105,6 +11126,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -11164,7 +11186,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7000518864839628041
 Transform:
   m_ObjectHideFlags: 0
@@ -11270,6 +11292,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -11341,7 +11364,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -11397,8 +11420,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -11411,6 +11434,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &2583108975725327475
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11423,13 +11447,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 8386563535151512941}
   renderersToModify:
   - {fileID: 4663915995094222020}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 8386563535151512941}
 --- !u!114 &8124870692248689604
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11445,6 +11467,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -11472,7 +11495,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7257542167536134639
 Transform:
   m_ObjectHideFlags: 0
@@ -11578,6 +11601,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -11605,7 +11629,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7221585086635261605
 Transform:
   m_ObjectHideFlags: 0
@@ -11711,6 +11735,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -11823,7 +11848,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7301218150676901849
 Transform:
   m_ObjectHideFlags: 0
@@ -11929,6 +11954,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -12005,7 +12031,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -12061,8 +12087,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -12075,6 +12101,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &8998985094638966819
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12087,13 +12114,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 2080710611481267289}
   renderersToModify:
   - {fileID: 4995766868120811699}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 2080710611481267289}
 --- !u!208 &2586803095590763534
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -12125,6 +12150,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -12151,7 +12177,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7468808229595155817
 Transform:
   m_ObjectHideFlags: 0
@@ -12257,6 +12283,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -12284,7 +12311,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7463353339032100990
 Transform:
   m_ObjectHideFlags: 0
@@ -12390,6 +12417,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -12944,7 +12972,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2151142155315858114
 Transform:
   m_ObjectHideFlags: 0
@@ -12988,6 +13016,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 375410120f7019f4c949b3bc160a7c34, type: 2}
   doorDirection: 1
+  colliderTriggered: []
 --- !u!95 &2840210734101085531
 Animator:
   serializedVersion: 3
@@ -13022,6 +13051,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -13044,7 +13074,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1546076223853218126
 Transform:
   m_ObjectHideFlags: 0
@@ -13183,7 +13213,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7805835600063720318
 Transform:
   m_ObjectHideFlags: 0
@@ -13289,6 +13319,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -13400,7 +13431,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &489234686375283714
 Transform:
   m_ObjectHideFlags: 0
@@ -13444,6 +13475,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 375410120f7019f4c949b3bc160a7c34, type: 2}
   doorDirection: 1
+  colliderTriggered: []
 --- !u!95 &4357809484267142043
 Animator:
   serializedVersion: 3
@@ -13478,6 +13510,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -13485,466 +13518,6 @@ MonoBehaviour:
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
---- !u!1 &3562749610840177480
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3562749610840177482}
-  - component: {fileID: 3562749610840177481}
-  m_Layer: 0
-  m_Name: Spot Light (5)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3562749610840177482
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749610840177480}
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -4.98, y: -9.559999, z: 1.49}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1489544361410894360}
-  m_RootOrder: 5
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!108 &3562749610840177481
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749610840177480}
-  m_Enabled: 1
-  serializedVersion: 10
-  m_Type: 2
-  m_Shape: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 2
-  m_Range: 9
-  m_SpotAngle: 179
-  m_InnerSpotAngle: 170.80206
-  m_CookieSize: 10
-  m_Shadows:
-    m_Type: 0
-    m_Resolution: -1
-    m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.02
-    m_NormalBias: 0.1
-    m_NearPlane: 0.1
-    m_CullingMatrixOverride:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    m_UseCullingMatrixOverride: 0
-  m_Cookie: {fileID: 0}
-  m_DrawHalo: 0
-  m_Flare: {fileID: 0}
-  m_RenderMode: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 4
-  m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
-  m_ColorTemperature: 6570
-  m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_UseBoundingSphereOverride: 0
-  m_ShadowRadius: 0
-  m_ShadowAngle: 0
---- !u!1 &3562749610912349968
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3562749610912349970}
-  - component: {fileID: 3562749610912349969}
-  m_Layer: 0
-  m_Name: Spot Light (1)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3562749610912349970
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749610912349968}
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 4.5, y: -9.61, z: 1.97}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1489544361410894360}
-  m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!108 &3562749610912349969
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749610912349968}
-  m_Enabled: 1
-  serializedVersion: 10
-  m_Type: 2
-  m_Shape: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 2
-  m_Range: 9
-  m_SpotAngle: 179
-  m_InnerSpotAngle: 170.80206
-  m_CookieSize: 10
-  m_Shadows:
-    m_Type: 0
-    m_Resolution: -1
-    m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.02
-    m_NormalBias: 0.1
-    m_NearPlane: 0.1
-    m_CullingMatrixOverride:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    m_UseCullingMatrixOverride: 0
-  m_Cookie: {fileID: 0}
-  m_DrawHalo: 0
-  m_Flare: {fileID: 0}
-  m_RenderMode: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 4
-  m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
-  m_ColorTemperature: 6570
-  m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_UseBoundingSphereOverride: 0
-  m_ShadowRadius: 0
-  m_ShadowAngle: 0
---- !u!1 &3562749611020682222
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3562749611020682192}
-  - component: {fileID: 3562749611020682223}
-  m_Layer: 0
-  m_Name: Spot Light (3)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3562749611020682192
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749611020682222}
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 3.98, y: -9.67, z: 5.97}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1489544361410894360}
-  m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!108 &3562749611020682223
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749611020682222}
-  m_Enabled: 1
-  serializedVersion: 10
-  m_Type: 2
-  m_Shape: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 2
-  m_Range: 9
-  m_SpotAngle: 179
-  m_InnerSpotAngle: 170.80206
-  m_CookieSize: 10
-  m_Shadows:
-    m_Type: 0
-    m_Resolution: -1
-    m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.02
-    m_NormalBias: 0.1
-    m_NearPlane: 0.1
-    m_CullingMatrixOverride:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    m_UseCullingMatrixOverride: 0
-  m_Cookie: {fileID: 0}
-  m_DrawHalo: 0
-  m_Flare: {fileID: 0}
-  m_RenderMode: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 4
-  m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
-  m_ColorTemperature: 6570
-  m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_UseBoundingSphereOverride: 0
-  m_ShadowRadius: 0
-  m_ShadowAngle: 0
---- !u!1 &3562749611420529433
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3562749611420529435}
-  - component: {fileID: 3562749611420529434}
-  m_Layer: 0
-  m_Name: Spot Light (2)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3562749611420529435
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749611420529433}
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -5.03, y: -9.67, z: 5.44}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1489544361410894360}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!108 &3562749611420529434
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749611420529433}
-  m_Enabled: 1
-  serializedVersion: 10
-  m_Type: 2
-  m_Shape: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 2
-  m_Range: 9
-  m_SpotAngle: 179
-  m_InnerSpotAngle: 170.80206
-  m_CookieSize: 10
-  m_Shadows:
-    m_Type: 0
-    m_Resolution: -1
-    m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.02
-    m_NormalBias: 0.1
-    m_NearPlane: 0.1
-    m_CullingMatrixOverride:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    m_UseCullingMatrixOverride: 0
-  m_Cookie: {fileID: 0}
-  m_DrawHalo: 0
-  m_Flare: {fileID: 0}
-  m_RenderMode: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 4
-  m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
-  m_ColorTemperature: 6570
-  m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_UseBoundingSphereOverride: 0
-  m_ShadowRadius: 0
-  m_ShadowAngle: 0
---- !u!1 &3562749611630753833
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3562749611630753835}
-  - component: {fileID: 3562749611630753834}
-  m_Layer: 0
-  m_Name: Spot Light
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3562749611630753835
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749611630753833}
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -0.84, y: -9.67, z: 5.46}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1489544361410894360}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!108 &3562749611630753834
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749611630753833}
-  m_Enabled: 1
-  serializedVersion: 10
-  m_Type: 2
-  m_Shape: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 2
-  m_Range: 9
-  m_SpotAngle: 179
-  m_InnerSpotAngle: 170.80206
-  m_CookieSize: 10
-  m_Shadows:
-    m_Type: 0
-    m_Resolution: -1
-    m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.02
-    m_NormalBias: 0.1
-    m_NearPlane: 0.1
-    m_CullingMatrixOverride:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    m_UseCullingMatrixOverride: 0
-  m_Cookie: {fileID: 0}
-  m_DrawHalo: 0
-  m_Flare: {fileID: 0}
-  m_RenderMode: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 4
-  m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
-  m_ColorTemperature: 6570
-  m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_UseBoundingSphereOverride: 0
-  m_ShadowRadius: 0
-  m_ShadowAngle: 0
 --- !u!1 &3562749611666985208
 GameObject:
   m_ObjectHideFlags: 0
@@ -13954,7 +13527,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3562749611666985209}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: SpawnPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14011,98 +13584,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &3562749612075378155
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3562749612075378157}
-  - component: {fileID: 3562749612075378156}
-  m_Layer: 0
-  m_Name: Spot Light (4)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3562749612075378157
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749612075378155}
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 1.04, y: -9.577, z: 1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1489544361410894360}
-  m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!108 &3562749612075378156
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3562749612075378155}
-  m_Enabled: 1
-  serializedVersion: 10
-  m_Type: 2
-  m_Shape: 0
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 2
-  m_Range: 9
-  m_SpotAngle: 179
-  m_InnerSpotAngle: 170.80206
-  m_CookieSize: 10
-  m_Shadows:
-    m_Type: 0
-    m_Resolution: -1
-    m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.02
-    m_NormalBias: 0.1
-    m_NearPlane: 0.1
-    m_CullingMatrixOverride:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    m_UseCullingMatrixOverride: 0
-  m_Cookie: {fileID: 0}
-  m_DrawHalo: 0
-  m_Flare: {fileID: 0}
-  m_RenderMode: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 4
-  m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
-  m_ColorTemperature: 6570
-  m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_UseBoundingSphereOverride: 0
-  m_ShadowRadius: 0
-  m_ShadowAngle: 0
 --- !u!1 &3627125243368454936
 GameObject:
   m_ObjectHideFlags: 0
@@ -14123,7 +13604,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8282131584511220256
 Transform:
   m_ObjectHideFlags: 0
@@ -14229,6 +13710,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -14352,7 +13834,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8405818743130807275
 Transform:
   m_ObjectHideFlags: 0
@@ -14458,6 +13940,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -14581,7 +14064,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8445955757852963428
 Transform:
   m_ObjectHideFlags: 0
@@ -14687,6 +14170,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -14714,7 +14198,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8432680162630878696
 Transform:
   m_ObjectHideFlags: 0
@@ -14820,6 +14304,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -14847,7 +14332,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8466134898339428421
 Transform:
   m_ObjectHideFlags: 0
@@ -14953,6 +14438,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -14980,7 +14466,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8453006329253967926
 Transform:
   m_ObjectHideFlags: 0
@@ -15086,6 +14572,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -15157,7 +14644,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -15213,8 +14700,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -15227,6 +14714,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &3962709591476150203
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15239,13 +14727,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 1212364949068672790}
   renderersToModify:
   - {fileID: 6169608708412780300}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 1212364949068672790}
 --- !u!114 &7342558808057851916
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15261,6 +14747,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -15383,7 +14870,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8639176770041624152
 Transform:
   m_ObjectHideFlags: 0
@@ -15489,6 +14976,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -15741,7 +15229,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -15797,8 +15285,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -15811,6 +15299,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &4174779066963480614
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15823,13 +15312,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 7008827612771391141}
   renderersToModify:
   - {fileID: 6525520693020975249}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 7008827612771391141}
 --- !u!114 &1085811788288642901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15845,6 +15332,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -15953,7 +15441,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8875947192479232630
 Transform:
   m_ObjectHideFlags: 0
@@ -16059,6 +15547,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -16081,7 +15570,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &657842582379007068
 Transform:
   m_ObjectHideFlags: 0
@@ -16122,7 +15611,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &9013790450907593236
 Transform:
   m_ObjectHideFlags: 0
@@ -16228,6 +15717,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -16255,7 +15745,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &9037561284140434657
 Transform:
   m_ObjectHideFlags: 0
@@ -16361,6 +15851,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -16516,7 +16007,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &9098975709995300063
 Transform:
   m_ObjectHideFlags: 0
@@ -16622,6 +16113,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -16649,7 +16141,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &9160467828363739850
 Transform:
   m_ObjectHideFlags: 0
@@ -16755,6 +16247,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -16859,13 +16352,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 0}
   renderersToModify:
   - {fileID: 8233400962501122205}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 0}
 --- !u!65 &2672111775625644982
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -16894,6 +16385,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -16934,7 +16426,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &9170570964950545285
 Transform:
   m_ObjectHideFlags: 0
@@ -17040,6 +16532,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -20633,7 +20126,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &31615892882965358
 Transform:
   m_ObjectHideFlags: 0
@@ -20739,6 +20232,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -20815,7 +20309,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -20871,8 +20365,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -20885,6 +20379,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &2007279687898281148
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20897,13 +20392,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 8924357893446115526}
   renderersToModify:
   - {fileID: 2480669760807015468}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 8924357893446115526}
 --- !u!208 &4962879703169126545
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -20935,6 +20428,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -20962,7 +20456,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &141850381691219353
 Transform:
   m_ObjectHideFlags: 0
@@ -21068,6 +20562,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -21095,7 +20590,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &94706393786988803
 Transform:
   m_ObjectHideFlags: 0
@@ -21201,6 +20696,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -21228,7 +20724,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &254043477950769431
 Transform:
   m_ObjectHideFlags: 0
@@ -21334,6 +20830,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -21360,7 +20857,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8497325894566205534
 Transform:
   m_ObjectHideFlags: 0
@@ -21440,6 +20937,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -21557,7 +21055,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &311372493080392352
 Transform:
   m_ObjectHideFlags: 0
@@ -21663,6 +21161,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -21690,7 +21189,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &360836215625848146
 Transform:
   m_ObjectHideFlags: 0
@@ -21796,6 +21295,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -21823,7 +21323,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &364728050345662339
 Transform:
   m_ObjectHideFlags: 0
@@ -21929,6 +21429,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -21956,7 +21457,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &380428365478038022
 Transform:
   m_ObjectHideFlags: 0
@@ -22062,6 +21563,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -22089,7 +21591,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &500063462226016712
 Transform:
   m_ObjectHideFlags: 0
@@ -22195,6 +21697,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -22307,7 +21810,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &563948152787534100
 Transform:
   m_ObjectHideFlags: 0
@@ -22413,6 +21916,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -22522,7 +22026,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &518556044044764783
 Transform:
   m_ObjectHideFlags: 0
@@ -22628,6 +22132,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -22952,7 +22457,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -22990,13 +22495,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864096999452}
   renderersToModify:
   - {fileID: 5827067326330697700}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864096999452}
 --- !u!114 &6465418250260472900
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23013,8 +22516,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -23027,6 +22530,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000122740130
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -23072,6 +22576,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -23144,7 +22649,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -23182,13 +22687,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864066143181}
   renderersToModify:
   - {fileID: 5827067326361422901}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864066143181}
 --- !u!114 &6465418250228162453
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23205,8 +22708,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -23219,6 +22722,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000157140595
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -23264,6 +22768,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -23336,7 +22841,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -23374,13 +22879,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863970024085}
   renderersToModify:
   - {fileID: 5827067326466061677}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863970024085}
 --- !u!114 &6465418250399835853
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23397,8 +22900,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -23411,6 +22914,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000253910827
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -23456,6 +22960,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -23529,7 +23034,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -23567,13 +23072,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863938261206}
   renderersToModify:
   - {fileID: 5827067326506082094}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863938261206}
 --- !u!114 &6465418250368683150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23590,8 +23093,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -23604,6 +23107,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000280851816
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -23649,6 +23153,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -23722,7 +23227,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -23760,13 +23265,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864056391022}
   renderersToModify:
   - {fileID: 5827067326420589206}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864056391022}
 --- !u!114 &6465418250455222582
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23783,8 +23286,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -23797,6 +23300,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000300216528
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -23842,6 +23346,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -23914,7 +23419,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -23952,13 +23457,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864010939379}
   renderersToModify:
   - {fileID: 5827067326441923595}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864010939379}
 --- !u!114 &6465418250442815403
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23975,8 +23478,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -23989,6 +23492,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000347254349
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -24034,6 +23538,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -24107,7 +23612,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -24145,13 +23650,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864009499666}
   renderersToModify:
   - {fileID: 5827067326442314730}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864009499666}
 --- !u!114 &6465418250439264330
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24168,8 +23671,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -24182,6 +23685,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000343437740
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -24227,6 +23731,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -24299,7 +23804,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -24337,13 +23842,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864338569630}
   renderersToModify:
   - {fileID: 5827067326096467558}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864338569630}
 --- !u!114 &6465418249963075014
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24360,8 +23863,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -24374,6 +23877,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999884323872
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -24419,6 +23923,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -24491,7 +23996,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -24529,13 +24034,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864235140336}
   renderersToModify:
   - {fileID: 5827067326200814344}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864235140336}
 --- !u!114 &6465418250130786472
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24552,8 +24055,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -24566,6 +24069,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999983972686
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -24611,6 +24115,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -24684,7 +24189,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -24722,13 +24227,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864312383166}
   renderersToModify:
   - {fileID: 5827067326139431238}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864312383166}
 --- !u!114 &6465418250207423206
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24745,8 +24248,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -24759,6 +24262,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000044716800
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -24804,6 +24308,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -24877,7 +24382,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -24915,13 +24420,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864291715343}
   renderersToModify:
   - {fileID: 5827067326186182391}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864291715343}
 --- !u!114 &6465418250153837911
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24938,8 +24441,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -24952,6 +24455,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000065780913
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -24997,6 +24501,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -25069,7 +24574,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -25107,13 +24612,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864531775363}
   renderersToModify:
   - {fileID: 5827067325954642043}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864531775363}
 --- !u!114 &6465418249854796763
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25130,8 +24633,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -25144,6 +24647,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000765377085
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -25189,6 +24693,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -25261,7 +24766,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -25299,13 +24804,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864508810639}
   renderersToModify:
   - {fileID: 5827067325935532663}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864508810639}
 --- !u!114 &6465418249865505239
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25322,8 +24825,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -25336,6 +24839,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000784044081
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -25381,6 +24885,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -25453,7 +24958,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -25491,13 +24996,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864481572851}
   renderersToModify:
   - {fileID: 5827067325971290123}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864481572851}
 --- !u!114 &6465418249838152619
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25514,8 +25017,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -25528,6 +25031,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000815575629
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -25573,6 +25077,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -25645,7 +25150,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -25683,13 +25188,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 2668205840652502495}
   renderersToModify:
   - {fileID: 5827067325866120051}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 2668205840652502495}
 --- !u!114 &6465418249934373075
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25706,8 +25209,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -25720,6 +25223,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000853571893
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -25765,6 +25269,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -25838,7 +25343,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -25876,13 +25381,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864555177782}
   renderersToModify:
   - {fileID: 5827067325914331342}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864555177782}
 --- !u!114 &6465418249877793646
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25899,8 +25402,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -25913,6 +25416,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000872419976
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -25958,6 +25462,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -26031,7 +25536,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -26069,13 +25574,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864933497442}
   renderersToModify:
   - {fileID: 5827067325552788890}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864933497442}
 --- !u!114 &6465418249453409850
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26092,8 +25595,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -26106,6 +25609,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000363565020
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -26151,6 +25655,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -26223,7 +25728,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -26261,13 +25766,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864979726389}
   renderersToModify:
   - {fileID: 5827067325464616909}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864979726389}
 --- !u!114 &6465418249532673133
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26284,8 +25787,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -26298,6 +25801,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000452064651
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -26343,6 +25847,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -26415,7 +25920,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -26453,13 +25958,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864981069643}
   renderersToModify:
   - {fileID: 5827067325470613683}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864981069643}
 --- !u!114 &6465418249534550803
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26476,8 +25979,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -26490,6 +25993,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000444967669
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -26535,6 +26039,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -26608,7 +26113,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -26646,13 +26151,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864954368153}
   renderersToModify:
   - {fileID: 5827067325506883425}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864954368153}
 --- !u!114 &6465418249474153665
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26669,8 +26172,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -26683,6 +26186,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000477037863
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -26728,6 +26232,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -26800,7 +26305,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -26838,13 +26343,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864736932395}
   renderersToModify:
   - {fileID: 5827067325689716179}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864736932395}
 --- !u!114 &6465418249556643443
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26861,8 +26364,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -26875,6 +26378,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000559167381
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -26920,6 +26424,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -26992,7 +26497,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -27030,13 +26535,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864854071130}
   renderersToModify:
   - {fileID: 5827067325607180450}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864854071130}
 --- !u!114 &6465418249641814786
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27053,8 +26556,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -27067,6 +26570,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000577819364
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -27112,6 +26616,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -27185,7 +26690,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -27223,13 +26728,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864829124318}
   renderersToModify:
   - {fileID: 5827067325647724838}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864829124318}
 --- !u!114 &6465418249615389318
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27246,8 +26749,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -27260,6 +26763,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000601107296
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -27305,6 +26809,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -27378,7 +26883,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -27416,13 +26921,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619864803857103}
   renderersToModify:
   - {fileID: 5827067325622660407}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619864803857103}
 --- !u!114 &6465418249623682711
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27439,8 +26942,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -27453,6 +26956,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067453000626370417
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -27498,6 +27002,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -27570,7 +27075,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -27608,13 +27113,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863040588362}
   renderersToModify:
   - {fileID: 5827067327419614642}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863040588362}
 --- !u!114 &6465418251315844626
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27631,8 +27134,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -27645,6 +27148,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999030661108
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -27690,6 +27194,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -27763,7 +27268,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -27801,13 +27306,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863089965086}
   renderersToModify:
   - {fileID: 5827067327337600998}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863089965086}
 --- !u!114 &6465418251401528390
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27824,8 +27327,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -27838,6 +27341,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999115885984
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -27883,6 +27387,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -27956,7 +27461,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -27994,13 +27499,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863078659557}
   renderersToModify:
   - {fileID: 5827067327390849565}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863078659557}
 --- !u!114 &6465418251354048957
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28017,8 +27520,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -28031,6 +27534,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999127711835
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -28076,6 +27580,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -28148,7 +27653,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -28186,13 +27691,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863071612564}
   renderersToModify:
   - {fileID: 5827067327380070764}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863071612564}
 --- !u!114 &6465418251381093068
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28209,8 +27712,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -28223,6 +27726,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999137393450
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -28268,6 +27772,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -28340,7 +27845,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -28378,13 +27883,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619862875782174}
   renderersToModify:
   - {fileID: 5827067327592678374}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619862875782174}
 --- !u!114 &6465418251421732934
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28401,8 +27904,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -28415,6 +27918,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999195302304
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -28460,6 +27964,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -28532,7 +28037,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -28570,13 +28075,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619862857173638}
   renderersToModify:
   - {fileID: 5827067327570392446}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619862857173638}
 --- !u!114 &6465418251437188830
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28593,8 +28096,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -28607,6 +28110,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999218655032
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -28652,6 +28156,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -28725,7 +28230,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -28763,13 +28268,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619862954104961}
   renderersToModify:
   - {fileID: 5827067327532312441}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619862954104961}
 --- !u!114 &6465418251499910361
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28786,8 +28289,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -28800,6 +28303,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999256603967
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -28845,6 +28349,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -28917,7 +28422,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -28955,13 +28460,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863280948973}
   renderersToModify:
   - {fileID: 5827067327188691221}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863280948973}
 --- !u!114 &6465418251022006965
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28978,8 +28481,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -28992,6 +28495,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452998794982227
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -29037,6 +28541,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -29109,7 +28614,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -29147,13 +28652,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863349489942}
   renderersToModify:
   - {fileID: 5827067327127359214}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863349489942}
 --- !u!114 &6465418251090632014
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29170,8 +28673,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -29184,6 +28687,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452998855316648
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -29229,6 +28733,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -29302,7 +28807,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -29340,13 +28845,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863186938292}
   renderersToModify:
   - {fileID: 5827067327298299468}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863186938292}
 --- !u!114 &6465418251194463724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29363,8 +28866,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -29377,6 +28880,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452998883621898
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -29422,6 +28926,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -29495,7 +29000,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -29533,13 +29038,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863153185941}
   renderersToModify:
   - {fileID: 5827067327333231469}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863153185941}
 --- !u!114 &6465418251162155213
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29556,8 +29059,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -29570,6 +29073,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452998919074091
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -29615,6 +29119,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -29687,7 +29192,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -29725,13 +29230,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863239243928}
   renderersToModify:
   - {fileID: 5827067327213487968}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863239243928}
 --- !u!114 &6465418251281880256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29748,8 +29251,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -29762,6 +29265,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452998971301158
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -29807,6 +29311,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -29879,7 +29384,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -29917,13 +29422,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863522056540}
   renderersToModify:
   - {fileID: 5827067326964229796}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863522056540}
 --- !u!114 &6465418250994808068
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29940,8 +29443,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -29954,6 +29457,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999757511906
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -29999,6 +29503,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -30071,7 +29576,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -30109,13 +29614,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863499359577}
   renderersToModify:
   - {fileID: 5827067326936726177}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863499359577}
 --- !u!114 &6465418251004979457
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30132,8 +29635,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -30146,6 +29649,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999785079015
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -30191,6 +29695,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -30263,7 +29768,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -30301,13 +29806,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863915345845}
   renderersToModify:
   - {fileID: 5827067326545905741}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863915345845}
 --- !u!114 &6465418250580548589
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30324,8 +29827,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -30338,6 +29841,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999368544779
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -30383,6 +29887,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -30456,7 +29961,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -30494,13 +29999,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863916576050}
   renderersToModify:
   - {fileID: 5827067326553064138}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863916576050}
 --- !u!114 &6465418250583314794
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30517,8 +30020,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -30531,6 +30034,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999363680396
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -30576,6 +30080,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -30613,7 +30118,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5251532314550927279}
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: 0, y: -12, z: 8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -30649,7 +30154,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -30687,13 +30192,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863876744331}
   renderersToModify:
   - {fileID: 5827067326575987571}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863876744331}
 --- !u!114 &6465418250577205459
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30710,8 +30213,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -30724,6 +30227,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999407538485
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -30769,6 +30273,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -30841,8 +30346,8 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
-  - {fileID: 2100000, guid: a3685af4e948fed4bac5c41af6eb2c38, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
+  - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
@@ -30879,13 +30384,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4667619863711595282}
   renderersToModify:
   - {fileID: 5827067326748476650}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4667619863711595282}
 --- !u!114 &6465418250644838218
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30902,8 +30405,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -30916,6 +30419,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!64 &9067452999433232044
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -30961,6 +30465,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -30995,12 +30500,12 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 3562749611630753835}
-  - {fileID: 3562749610912349970}
-  - {fileID: 3562749611420529435}
-  - {fileID: 3562749611020682192}
-  - {fileID: 3562749612075378157}
-  - {fileID: 3562749610840177482}
+  - {fileID: 4173218964703730806}
+  - {fileID: 3922762632602562309}
+  - {fileID: 3922762632574071544}
+  - {fileID: 3922762632003017432}
+  - {fileID: 3922762632997731216}
+  - {fileID: 3922762632642620152}
   m_Father: {fileID: 3562749611981287094}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -31105,7 +30610,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &725238273513451160
 Transform:
   m_ObjectHideFlags: 0
@@ -31211,6 +30716,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -31238,7 +30744,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &753609477129690534
 Transform:
   m_ObjectHideFlags: 0
@@ -31344,6 +30850,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -31448,13 +30955,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 0}
   renderersToModify:
   - {fileID: 496501054132456429}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 0}
 --- !u!65 &5887392293700180166
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -31483,6 +30988,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -31518,7 +31024,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6062020567499767449
 Transform:
   m_ObjectHideFlags: 0
@@ -31558,7 +31064,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &936177456380529924
 Transform:
   m_ObjectHideFlags: 0
@@ -31664,6 +31170,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -31691,7 +31198,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &886474685703428716
 Transform:
   m_ObjectHideFlags: 0
@@ -31797,6 +31304,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -31824,7 +31332,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &982131071716400899
 Transform:
   m_ObjectHideFlags: 0
@@ -31930,6 +31438,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -32042,7 +31551,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &958729833197881689
 Transform:
   m_ObjectHideFlags: 0
@@ -32148,6 +31657,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -32175,7 +31685,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1051370739429155632
 Transform:
   m_ObjectHideFlags: 0
@@ -32281,6 +31791,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -32390,7 +31901,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1088323280452742060
 Transform:
   m_ObjectHideFlags: 0
@@ -32496,6 +32007,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -32523,7 +32035,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1291593105964044751
 Transform:
   m_ObjectHideFlags: 0
@@ -32629,6 +32141,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -32733,13 +32246,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 0}
   renderersToModify:
   - {fileID: 2031851209650083373}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 0}
 --- !u!65 &5432819881522693382
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -32768,6 +32279,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -32808,7 +32320,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1260993564790786293
 Transform:
   m_ObjectHideFlags: 0
@@ -32914,6 +32426,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -33265,7 +32778,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1510209825734782848
 Transform:
   m_ObjectHideFlags: 0
@@ -33371,6 +32884,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -33398,7 +32912,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1497173243770028931
 Transform:
   m_ObjectHideFlags: 0
@@ -33504,6 +33018,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -33627,7 +33142,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1567204887122298753
 Transform:
   m_ObjectHideFlags: 0
@@ -33733,6 +33248,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -33760,7 +33276,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1517977164822666276
 Transform:
   m_ObjectHideFlags: 0
@@ -33866,6 +33382,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -33941,11 +33458,11 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
@@ -33996,13 +33513,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 3032834610700323836}
   renderersToModify:
   - {fileID: 5637475012408965371}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 3032834610700323836}
 --- !u!114 &2061863587502339037
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34019,8 +33534,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 0100000002000000030000000500000006000000070000000000000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34031,8 +33546,8 @@ MonoBehaviour:
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 4
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 5
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34042,6 +33557,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 7
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!114 &9015918393161501097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34057,6 +33573,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -34132,14 +33649,14 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: 0941400e98a48cd42bb8c26bc95c6339, type: 2}
-  - {fileID: 2100000, guid: 0941400e98a48cd42bb8c26bc95c6339, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
-  - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
+  - {fileID: 2100000, guid: 0941400e98a48cd42bb8c26bc95c6339, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -34187,13 +33704,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 3032834611304106842}
   renderersToModify:
   - {fileID: 5637475011938875485}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 3032834611304106842}
 --- !u!114 &2061863586898424699
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34210,8 +33725,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 0100000002000000030000000500000006000000070000000000000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34222,8 +33737,8 @@ MonoBehaviour:
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 4
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 5
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34233,6 +33748,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 7
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!114 &9015918393631066383
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34248,6 +33764,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -34323,11 +33840,11 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: 0941400e98a48cd42bb8c26bc95c6339, type: 2}
-  - {fileID: 2100000, guid: 0941400e98a48cd42bb8c26bc95c6339, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
@@ -34378,13 +33895,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 3032834611617716034}
   renderersToModify:
   - {fileID: 5637475011698664517}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 3032834611617716034}
 --- !u!114 &2061863586670964579
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34401,8 +33916,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 0100000002000000030000000500000006000000070000000000000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34413,8 +33928,8 @@ MonoBehaviour:
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 4
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 5
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34424,6 +33939,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 7
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!114 &9015918393407771927
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34439,6 +33955,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -34514,11 +34031,11 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: a3685af4e948fed4bac5c41af6eb2c38, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
@@ -34569,13 +34086,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 3032834611925699138}
   renderersToModify:
   - {fileID: 5637475013400213829}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 3032834611925699138}
 --- !u!114 &2061863588762055267
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34592,8 +34107,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 0100000002000000030000000500000006000000070000000000000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34604,8 +34119,8 @@ MonoBehaviour:
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 4
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 5
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34615,6 +34130,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 7
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!114 &9015918394152028183
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34630,6 +34146,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -34705,11 +34222,11 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
@@ -34760,13 +34277,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 3032834612444543788}
   renderersToModify:
   - {fileID: 5637475012812163115}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 3032834612444543788}
 --- !u!114 &2061863588173841165
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34783,8 +34298,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 0100000002000000030000000500000006000000070000000000000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34795,8 +34310,8 @@ MonoBehaviour:
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 4
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 5
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34806,6 +34321,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 7
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!114 &9015918394637351289
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34821,6 +34337,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -34896,14 +34413,14 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
-  - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
+  - {fileID: 2100000, guid: 0941400e98a48cd42bb8c26bc95c6339, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -34951,13 +34468,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 3032834612311102911}
   renderersToModify:
   - {fileID: 5637475012947175096}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 3032834612311102911}
 --- !u!114 &2061863588040945054
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34974,8 +34489,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 0100000002000000030000000500000006000000070000000000000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34986,8 +34501,8 @@ MonoBehaviour:
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   - sharedMaterialIdx: 4
-    paintConfigId: 5
-    additionalColor: {r: 1, g: 1, b: 1, a: 1}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 5
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -34997,6 +34512,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 7
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
+  exteriorWall: 0
 --- !u!114 &9015918394772346858
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35012,6 +34528,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -35039,7 +34556,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1653969155866532527
 Transform:
   m_ObjectHideFlags: 0
@@ -35145,6 +34662,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -35353,7 +34871,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1761838208984041735
 Transform:
   m_ObjectHideFlags: 0
@@ -35459,6 +34977,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -35486,7 +35005,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1845954035382840250
 Transform:
   m_ObjectHideFlags: 0
@@ -35592,6 +35111,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -35715,7 +35235,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1834455755782458694
 Transform:
   m_ObjectHideFlags: 0
@@ -35821,6 +35341,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -35933,7 +35454,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1923244595203173063
 Transform:
   m_ObjectHideFlags: 0
@@ -36039,6 +35560,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -36066,7 +35588,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1938085776443794768
 Transform:
   m_ObjectHideFlags: 0
@@ -36172,6 +35694,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -36199,7 +35722,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1931376204547106689
 Transform:
   m_ObjectHideFlags: 0
@@ -36305,6 +35828,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -36332,7 +35856,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1982605893345329809
 Transform:
   m_ObjectHideFlags: 0
@@ -36438,6 +35962,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -36465,7 +35990,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1954990832484027387
 Transform:
   m_ObjectHideFlags: 0
@@ -36571,6 +36096,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -36833,7 +36359,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2095613704382289554
 Transform:
   m_ObjectHideFlags: 0
@@ -36939,6 +36465,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -37015,7 +36542,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -37071,8 +36598,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -37085,6 +36612,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &4183276137099218689
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37097,13 +36625,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 6489407231567420283}
   renderersToModify:
   - {fileID: 268999124133015441}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 6489407231567420283}
 --- !u!208 &7280351979959102252
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -37135,6 +36661,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -37193,7 +36720,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2403870560604023502
 Transform:
   m_ObjectHideFlags: 0
@@ -37299,6 +36826,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -37710,7 +37238,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2782902262065136690
 Transform:
   m_ObjectHideFlags: 0
@@ -37816,6 +37344,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -37843,7 +37372,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2759185352399665896
 Transform:
   m_ObjectHideFlags: 0
@@ -37949,6 +37478,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -37976,7 +37506,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2868655394636060215
 Transform:
   m_ObjectHideFlags: 0
@@ -38082,6 +37612,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -38109,7 +37640,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2929292904166486182
 Transform:
   m_ObjectHideFlags: 0
@@ -38215,6 +37746,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -38242,7 +37774,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2927406226218979714
 Transform:
   m_ObjectHideFlags: 0
@@ -38348,6 +37880,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -38375,7 +37908,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2904762795423017765
 Transform:
   m_ObjectHideFlags: 0
@@ -38481,6 +38014,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -38552,7 +38086,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -38608,8 +38142,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -38622,6 +38156,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &7572322354367922326
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38634,13 +38169,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 4516072466406279560}
   renderersToModify:
   - {fileID: 754016495066427425}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 4516072466406279560}
 --- !u!114 &4183305542968913697
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38656,6 +38189,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -38682,7 +38216,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3030191814965598582
 Transform:
   m_ObjectHideFlags: 0
@@ -38788,6 +38322,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -38815,7 +38350,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3138565839271329577
 Transform:
   m_ObjectHideFlags: 0
@@ -38921,6 +38456,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -38948,7 +38484,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3296177278546676333
 Transform:
   m_ObjectHideFlags: 0
@@ -39054,6 +38590,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -39081,7 +38618,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3329391182070488394
 Transform:
   m_ObjectHideFlags: 0
@@ -39187,6 +38724,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -39310,7 +38848,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3495119665329728262
 Transform:
   m_ObjectHideFlags: 0
@@ -39416,6 +38954,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -39443,7 +38982,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3500486037074550468
 Transform:
   m_ObjectHideFlags: 0
@@ -39549,6 +39088,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -39576,7 +39116,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3502385608288350021
 Transform:
   m_ObjectHideFlags: 0
@@ -39682,6 +39222,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -40366,7 +39907,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3581603706989868926
 Transform:
   m_ObjectHideFlags: 0
@@ -40472,6 +40013,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -40499,7 +40041,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3650686140136513793
 Transform:
   m_ObjectHideFlags: 0
@@ -40605,6 +40147,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -40632,7 +40175,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3667585237392916079
 Transform:
   m_ObjectHideFlags: 0
@@ -40738,6 +40281,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -40764,7 +40308,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4991521592733283284
 Transform:
   m_ObjectHideFlags: 0
@@ -40808,6 +40352,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 375410120f7019f4c949b3bc160a7c34, type: 2}
   doorDirection: 1
+  colliderTriggered: []
 --- !u!95 &9220384152496358477
 Animator:
   serializedVersion: 3
@@ -40842,6 +40387,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -40901,7 +40447,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3763795449497237807
 Transform:
   m_ObjectHideFlags: 0
@@ -41007,6 +40553,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -41034,7 +40581,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3886326164168648082
 Transform:
   m_ObjectHideFlags: 0
@@ -41140,6 +40687,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -41211,7 +40759,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -41267,8 +40815,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -41281,6 +40829,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &8570210828059057077
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -41293,13 +40842,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 2401972914692985515}
   renderersToModify:
   - {fileID: 1553465177826601730}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 2401972914692985515}
 --- !u!114 &2735897615536665602
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -41315,6 +40862,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -41473,7 +41021,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
+  - {fileID: 2100000, guid: 37a335a17b89f934880675db8bb1f59b, type: 2}
   - {fileID: 2100000, guid: 7830080044b35da459b79ae45a7a161d, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
   - {fileID: 2100000, guid: fe54b71fe184ac04d8d4746051cd8725, type: 2}
@@ -41529,8 +41077,8 @@ MonoBehaviour:
   allowedSharedMaterialIds: 01000000020000000300000004000000
   wallFaces:
   - sharedMaterialIdx: 0
-    paintConfigId: 5
-    additionalColor: {r: 0, g: 0, b: 0, a: 0}
+    paintConfigId: 2
+    additionalColor: {r: 0, g: 0, b: 0, a: 1}
   - sharedMaterialIdx: 1
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
@@ -41543,6 +41091,7 @@ MonoBehaviour:
   - sharedMaterialIdx: 4
     paintConfigId: 3
     additionalColor: {r: 0, g: 0, b: 0, a: 0}
+  exteriorWall: 0
 --- !u!114 &3306352726993009903
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -41555,13 +41104,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  foundationObj: {fileID: 5611621804512143509}
   renderersToModify:
   - {fileID: 1465024980561681535}
+  hideable: 1
   interactWithCameraDistance: 1
-  showFoundation: 0
-  props: {fileID: 0}
-  visibility: 0
+  foundationObj: {fileID: 5611621804512143509}
 --- !u!208 &8279442126943754434
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -41593,6 +41140,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents: []
@@ -41619,7 +41167,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3979409430328267323
 Transform:
   m_ObjectHideFlags: 0
@@ -41725,6 +41273,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -41751,7 +41300,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &5508564056081682863
 Transform:
   m_ObjectHideFlags: 0
@@ -41795,6 +41344,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 375410120f7019f4c949b3bc160a7c34, type: 2}
   doorDirection: 1
+  colliderTriggered: []
 --- !u!95 &8557482690999952950
 Animator:
   serializedVersion: 3
@@ -41829,6 +41379,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -41856,7 +41407,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4236924125312237059
 Transform:
   m_ObjectHideFlags: 0
@@ -41962,6 +41513,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -42074,7 +41626,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4401910376133200835
 Transform:
   m_ObjectHideFlags: 0
@@ -42180,6 +41732,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -42207,7 +41760,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4502332667661378635
 Transform:
   m_ObjectHideFlags: 0
@@ -42313,6 +41866,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -42340,7 +41894,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4577885854180514121
 Transform:
   m_ObjectHideFlags: 0
@@ -42446,6 +42000,7 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
+  observableSearch: 0
   Synchronization: 0
   OwnershipTransfer: 0
   ObservedComponents:
@@ -42563,6 +42118,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2314064849017772685, guid: 33b501628ee43664eb641003b1111e77,
         type: 3}
+      propertyPath: m_RootOrder
+      value: 59
+      objectReference: {fileID: 0}
+    - target: {fileID: 2314064849017772685, guid: 33b501628ee43664eb641003b1111e77,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.99597394
+      objectReference: {fileID: 0}
+    - target: {fileID: 2314064849017772685, guid: 33b501628ee43664eb641003b1111e77,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.0000014
+      objectReference: {fileID: 0}
+    - target: {fileID: 2314064849017772685, guid: 33b501628ee43664eb641003b1111e77,
+        type: 3}
       propertyPath: m_LocalPosition.x
       value: -4
       objectReference: {fileID: 0}
@@ -42578,6 +42148,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2314064849017772685, guid: 33b501628ee43664eb641003b1111e77,
         type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2314064849017772685, guid: 33b501628ee43664eb641003b1111e77,
+        type: 3}
       propertyPath: m_LocalRotation.x
       value: -0
       objectReference: {fileID: 0}
@@ -42590,16 +42165,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalRotation.z
       value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2314064849017772685, guid: 33b501628ee43664eb641003b1111e77,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2314064849017772685, guid: 33b501628ee43664eb641003b1111e77,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 59
       objectReference: {fileID: 0}
     - target: {fileID: 2314064849017772685, guid: 33b501628ee43664eb641003b1111e77,
         type: 3}
@@ -42628,4 +42193,454 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2314064849017772685, guid: 33b501628ee43664eb641003b1111e77,
     type: 3}
   m_PrefabInstance: {fileID: 1871093026457542350}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3601413681390786175
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1489544361410894360}
+    m_Modifications:
+    - target: {fileID: 241886565341663411, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_Name
+      value: Bulb light
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 4.497
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -9.403
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.998
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1b172e02d61c41f46aa1040f676f1544, type: 3}
+--- !u!4 &4173218964703730806 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+    type: 3}
+  m_PrefabInstance: {fileID: 3601413681390786175}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4494867256652046577
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1489544361410894360}
+    m_Modifications:
+    - target: {fileID: 241886565341663411, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_Name
+      value: Bulb light (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.12
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -9.403
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1b172e02d61c41f46aa1040f676f1544, type: 3}
+--- !u!4 &3922762632642620152 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+    type: 3}
+  m_PrefabInstance: {fileID: 4494867256652046577}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4494867256854034673
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1489544361410894360}
+    m_Modifications:
+    - target: {fileID: 241886565341663411, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_Name
+      value: Bulb light (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.84
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -9.403
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 5.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1b172e02d61c41f46aa1040f676f1544, type: 3}
+--- !u!4 &3922762632574071544 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+    type: 3}
+  m_PrefabInstance: {fileID: 4494867256854034673}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4494867256897103116
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1489544361410894360}
+    m_Modifications:
+    - target: {fileID: 241886565341663411, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_Name
+      value: Bulb light (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -9.403
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 5.98
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1b172e02d61c41f46aa1040f676f1544, type: 3}
+--- !u!4 &3922762632602562309 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+    type: 3}
+  m_PrefabInstance: {fileID: 4494867256897103116}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4494867257025900953
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1489544361410894360}
+    m_Modifications:
+    - target: {fileID: 241886565341663411, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_Name
+      value: Bulb light (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -5.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -9.403
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.52
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1b172e02d61c41f46aa1040f676f1544, type: 3}
+--- !u!4 &3922762632997731216 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+    type: 3}
+  m_PrefabInstance: {fileID: 4494867257025900953}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4494867257354490065
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1489544361410894360}
+    m_Modifications:
+    - target: {fileID: 241886565341663411, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_Name
+      value: Bulb light (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -5.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -9.403
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 5.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1b172e02d61c41f46aa1040f676f1544, type: 3}
+--- !u!4 &3922762632003017432 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 581116222671768073, guid: 1b172e02d61c41f46aa1040f676f1544,
+    type: 3}
+  m_PrefabInstance: {fileID: 4494867257354490065}
   m_PrefabAsset: {fileID: 0}

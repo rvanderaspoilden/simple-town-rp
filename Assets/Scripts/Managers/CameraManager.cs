@@ -44,6 +44,8 @@ namespace Sim {
 
             this.buildCamera.enabled = false;
             this.tpsCamera.enabled = false;
+            
+            DontDestroyOnLoad(this.gameObject);
         }
 
         private void Start() {
@@ -70,6 +72,10 @@ namespace Sim {
             if (this.currentMode == CameraModeEnum.FREE && !EventSystem.current.IsPointerOverGameObject()) {
                 this.ManageInteraction();
             }
+        }
+
+        public CameraModeEnum GetMode() {
+            return this.currentMode;
         }
 
         /*public void ManageWorldTransparency() {
@@ -166,30 +172,19 @@ namespace Sim {
         }
 
         private void ManageInteraction() {
-            if (this.currentMode == CameraModeEnum.FREE && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
+            if (Input.GetMouseButtonDown(0) && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props objectToInteract = hit.collider.GetComponentInParent<Props>();
 
                 if (objectToInteract) {
-                    if (objectToInteract.IsBuilt()) {
-                        CursorManager.Instance.SetCursor(objectToInteract.GetConfiguration().GetCursor());
+                    bool canInteract = RoomManager.LocalPlayer && RoomManager.LocalPlayer.CanInteractWith(objectToInteract, hit.point);
+
+                    if (canInteract) {
+                        HUDManager.Instance.DisplayContextMenu(true, Input.mousePosition, objectToInteract);
                     } else {
-                        CursorManager.Instance.SetBuildCursor();
-                    }
-
-
-                    if (Input.GetMouseButtonDown(0)) {
-                        bool canInteract = RoomManager.LocalPlayer && RoomManager.LocalPlayer.CanInteractWith(objectToInteract, hit.point);
-
-                        if (canInteract) {
-                            HUDManager.Instance.DisplayContextMenu(true, Input.mousePosition, objectToInteract);
-                        } else {
-                            RoomManager.Instance.MovePlayerTo(hit.point);
-                            HUDManager.Instance.DisplayContextMenu(false, Vector3.zero);
-                        }
+                        RoomManager.Instance.MovePlayerTo(hit.point);
+                        HUDManager.Instance.DisplayContextMenu(false, Vector3.zero);
                     }
                 }
-            } else if (CursorManager.Instance.GetCursor()) {
-                CursorManager.Instance.SetCursor(null);
             }
         }
     }
