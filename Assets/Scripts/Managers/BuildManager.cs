@@ -6,6 +6,7 @@ using Sim.Scriptables;
 using Sim.UI;
 using Sim.Utils;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Sim {
     public class BuildManager : MonoBehaviour {
@@ -248,7 +249,7 @@ namespace Sim {
         }
 
         private void Painting() {
-            if (Input.GetMouseButtonDown(0)) {
+            if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject()) {
                 int layerMask = CommonUtils.GetLayerMaskSurfacesToPaint(this.currentOpenedBucket.GetPaintConfig());
 
                 if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
