@@ -10,7 +10,7 @@ namespace Sim.UI {
         [SerializeField] private Button validationBtn;
 
         [SerializeField] private Toggle toggleHideProps;
-        [SerializeField] private Toggle toggleHideWalls;
+        [SerializeField] private WallVisibilityUI wallVisibilityUI;
 
         public delegate void OnValidateEvent();
 
@@ -24,14 +24,10 @@ namespace Sim.UI {
 
         public static event OnToggleHidePropsEvent OnToggleHideProps;
 
-        public delegate void OnToggleHideWallsEvent(bool hide);
-
-        public static event OnToggleHideWallsEvent OnToggleHideWalls;
-
         private void OnEnable() {
             BuildPreview.OnPlaceableStateChanged += this.SetValidateButtonInteractable;
 
-            this.toggleHideWalls.gameObject.SetActive(!CameraManager.Instance || BuildManager.Instance.GetMode() != BuildModeEnum.PAINT);
+            this.wallVisibilityUI.gameObject.SetActive(!CameraManager.Instance || BuildManager.Instance.GetMode() != BuildModeEnum.PAINT);
             
             this.SetValidateButtonInteractable(true);
         }
@@ -42,24 +38,18 @@ namespace Sim.UI {
 
         public void Validate() {
             this.toggleHideProps.isOn = false;
-            this.toggleHideWalls.isOn = false;
 
             OnValidate?.Invoke();
         }
 
         public void Cancel() {
             this.toggleHideProps.isOn = false;
-            this.toggleHideWalls.isOn = false;
 
             OnCanceled?.Invoke();
         }
 
         public void ToggleHideProps(bool hide) {
             OnToggleHideProps?.Invoke(hide);
-        }
-
-        public void ToggleHideWalls(bool hide) {
-            OnToggleHideWalls?.Invoke(hide);
         }
 
         private void SetValidateButtonInteractable(bool state) {

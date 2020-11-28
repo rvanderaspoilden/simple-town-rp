@@ -23,9 +23,7 @@ namespace Sim {
         private float lastCameraPosition;
 
         private RaycastHit hit;
-
-        private bool forceWallHidden;
-
+        
         private CameraModeEnum currentMode;
 
         public static CameraManager Instance;
@@ -49,25 +47,15 @@ namespace Sim {
         }
 
         private void Start() {
-            BuildPreviewPanelUI.OnToggleHideProps += TogglePropsVisible;
-            BuildPreviewPanelUI.OnToggleHideWalls += ToggleWallVisible;
-
             Player.OnStateChanged += OnStateChanged;
         }
 
         private void OnDestroy() {
-            BuildPreviewPanelUI.OnToggleHideProps -= TogglePropsVisible;
-            BuildPreviewPanelUI.OnToggleHideWalls -= ToggleWallVisible;
-
             Player.OnStateChanged -= OnStateChanged;
         }
 
         void Update() {
             //this.ManageWorldTransparency();
-
-            if (Input.GetKeyDown(KeyCode.H) && this.currentMode == CameraModeEnum.FREE) {
-                this.ToggleWallVisible(!this.forceWallHidden);
-            }
 
             if (this.currentMode == CameraModeEnum.FREE && !EventSystem.current.IsPointerOverGameObject()) {
                 this.ManageInteraction();
@@ -104,25 +92,6 @@ namespace Sim {
                 this.displayedPropsRenderers.Clear();
             }
         }*/
-
-        private void TogglePropsVisible(bool hide) {
-            FindObjectsOfType<Props>().ToList().Where(x => x.GetType() != typeof(Wall)).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
-                propsRenderer => {
-                    if (propsRenderer && propsRenderer.IsHideable()) {
-                        propsRenderer.SetVisibilityMode(hide ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
-                    }
-                });
-        }
-
-        private void ToggleWallVisible(bool hide) {
-            this.forceWallHidden = hide;
-
-            FindObjectsOfType<Wall>().ToList().Where(x => !x.IsExteriorWall()).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(propsRenderer => {
-                if (propsRenderer) {
-                    propsRenderer.SetVisibilityMode(this.forceWallHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
-                }
-            });
-        }
 
         private void OnStateChanged(Player player, StateType state) {
             if (player == RoomManager.LocalPlayer) {
