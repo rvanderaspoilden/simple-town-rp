@@ -19,6 +19,7 @@ MonoBehaviour:
   prefab: {fileID: 4642683835516508193, guid: b9f871f0a52b5b4449f5205310a5fa68, type: 3}
   packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
+  posableOnProps: 1
   toBuild: 0
   rangeToInteract: 1
   actions:
@@ -29,3 +30,4 @@ MonoBehaviour:
     actionLabel: "D\xE9placer"
     locked: 0
   unbuiltActions: []
+  cursor: {fileID: 0}

@@ -28,6 +28,9 @@ namespace Sim.Scriptables {
         private BuildSurfaceEnum surfaceToPose;
 
         [SerializeField]
+        private bool posableOnProps;
+
+        [SerializeField]
         private bool toBuild;
 
         [SerializeField]
@@ -56,6 +59,10 @@ namespace Sim.Scriptables {
 
         public Action[] GetActions() {
             return this.actions;
+        }
+
+        public bool IsPosableOnProps() {
+            return this.posableOnProps;
         }
 
         public bool IsBuyable() {

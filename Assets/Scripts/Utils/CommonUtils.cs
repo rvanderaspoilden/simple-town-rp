@@ -45,7 +45,7 @@ namespace Sim.Utils {
          */
         public static int GetLayerMaskSurfacesToPose(Props props) {
             if (props.IsGroundProps()) {
-                return (1 << 9); // Ground Layer
+                return props.GetConfiguration().IsPosableOnProps() ? (1 << 9 | 1 << 16) : (1 << 9); // Ground + SuperPosable layers
             } else if (props.IsWallProps()) {
                 return (1 << 12); // Wall layer
             }

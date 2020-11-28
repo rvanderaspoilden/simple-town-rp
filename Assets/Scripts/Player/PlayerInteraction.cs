@@ -93,13 +93,7 @@ namespace Sim {
             this.player.SetState(StateType.PAINTING);
 
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                // TODO reduce this
-                FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
-                    propsRenderer => {
-                        if (propsRenderer) {
-                            propsRenderer.SetVisibilityMode(VisibilityModeEnum.FORCE_SHOW);
-                        }
-                    });
+                RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.FORCE_SHOW);
             }
 
             BuildManager.Instance.Init(this.currentOpenedBucket);
@@ -115,12 +109,8 @@ namespace Sim {
 
         private void OnValidatePaintModification() {
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                FindObjectsOfType<Props>().ToList().Where(x => x.GetType() == typeof(Wall)).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
-                    propsRenderer => {
-                        if (propsRenderer) {
-                            propsRenderer.SetVisibilityMode(VisibilityModeEnum.AUTO);
-                        }
-                    });
+                RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
+
                 FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
             } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
                 FindObjectsOfType<Ground>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());

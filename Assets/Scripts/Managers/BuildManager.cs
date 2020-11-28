@@ -6,6 +6,7 @@ using Sim.Scriptables;
 using Sim.UI;
 using Sim.Utils;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Sim {
     public class BuildManager : MonoBehaviour {
@@ -175,10 +176,15 @@ namespace Sim {
         }
 
         private void ManagePropMovement() {
-            if (this.currentPropSelected.IsGroundProps() && hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
-                float x = Mathf.FloorToInt(hit.point.x / this.propsStepSize) * this.propsStepSize;
-                float z = Mathf.FloorToInt(hit.point.z / this.propsStepSize) * this.propsStepSize;
-                this.currentPropSelected.transform.position = new Vector3(x, hit.point.y + (hit.normal.y * 0.01f), z);
+            if (this.currentPropSelected.IsGroundProps()) {
+                if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
+                    float x = Mathf.FloorToInt(hit.point.x / this.propsStepSize) * this.propsStepSize;
+                    float z = Mathf.FloorToInt(hit.point.z / this.propsStepSize) * this.propsStepSize;
+                    this.currentPropSelected.transform.position = new Vector3(x, hit.point.y + (hit.normal.y * 0.01f), z);
+                } else if(hit.collider.gameObject.layer == LayerMask.NameToLayer("Posable Surface")){
+                    this.currentPropSelected.transform.position = new Vector3(hit.point.x, hit.point.y + (hit.normal.y * 0.01f), hit.point.z);
+                }
+                
             } else if (this.currentPropSelected.IsWallProps() && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
                 this.currentPropSelected.transform.position = hit.point + (hit.normal * 0.01f);
                 Vector3 rotation = this.currentPropSelected.transform.localEulerAngles;
@@ -243,7 +249,7 @@ namespace Sim {
         }
 
         private void Painting() {
-            if (Input.GetMouseButtonDown(0)) {
+            if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject()) {
                 int layerMask = CommonUtils.GetLayerMaskSurfacesToPaint(this.currentOpenedBucket.GetPaintConfig());
 
                 if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
