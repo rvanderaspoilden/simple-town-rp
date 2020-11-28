@@ -1,12 +1,10 @@
-﻿using System;
+﻿using DG.Tweening;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Sim {
     public class LoadingManager : MonoBehaviour {
-        [Header("Only for debug")]
-        [SerializeField] private Animator animator;
-
-        [SerializeField] private bool show;
+        private Image image;
 
         public static LoadingManager Instance;
 
@@ -15,24 +13,19 @@ namespace Sim {
                 Destroy(this.gameObject);
             }
 
+            this.image = GetComponentInChildren<Image>();
+            this.image.color = new Color(1,1,1,0);
+
             Instance = this;
             DontDestroyOnLoad(this.gameObject);
-
-            this.animator = GetComponent<Animator>();
         }
 
         public void Show() {
-            this.show = true;
-            this.UpdateAnimation();
+            this.image.DOColor(new Color(1, 1, 1, 1), 0.2f);
         }
 
         public void Hide() {
-            this.show = false;
-            this.UpdateAnimation();
-        }
-
-        private void UpdateAnimation() {
-            this.animator.SetBool("show", this.show);
+            this.image.DOColor(new Color(1, 1, 1, 0), 0.5f);
         }
     }
 }
