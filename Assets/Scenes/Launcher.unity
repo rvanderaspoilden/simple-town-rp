@@ -489,22 +489,22 @@ PrefabInstance:
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.000000030779713
+      value: -0.000000030779713
       objectReference: {fileID: 0}
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.000000015389857
-      objectReference: {fileID: 0}
-    - target: {fileID: 7516993543609191877, guid: 9a091b9653bf819469b958c3c9724807,
-        type: 3}
-      propertyPath: m_LocalRotation.y
       value: 0.000000015389857
       objectReference: {fileID: 0}
     - target: {fileID: 7516993543609191877, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.000000015389857
+      objectReference: {fileID: 0}
+    - target: {fileID: 7516993543609191877, guid: 9a091b9653bf819469b958c3c9724807,
+        type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.00000000769493
+      value: 0.000000007694926
       objectReference: {fileID: 0}
     - target: {fileID: 7516993544438026867, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
@@ -886,6 +886,7 @@ MonoBehaviour:
   buildCursor: {fileID: 2800000, guid: 1d72a225bf3336d41bea4e1c96cbe828, type: 3}
   socialCursor: {fileID: 2800000, guid: f48076f632990e041ac1df8ce599713e, type: 3}
   rotationCursor: {fileID: 2800000, guid: 2e92f3bb8aa16fb42978a0b8c406d080, type: 3}
+  moveCursor: {fileID: 2800000, guid: b0d67b29dbaeb5f40947162567edd01c, type: 3}
   currentCursor: {fileID: 0}
 --- !u!4 &629040031
 Transform:
