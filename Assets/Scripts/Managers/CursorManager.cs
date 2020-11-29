@@ -17,6 +17,9 @@ namespace Sim {
         [SerializeField]
         private Texture2D rotationCursor;
 
+        [SerializeField]
+        private Texture2D moveCursor;
+
         [Header("Debug")]
         [SerializeField]
         private Texture2D currentCursor;
@@ -53,6 +56,8 @@ namespace Sim {
                 }
             } else if(CameraManager.Instance.GetMode() == CameraModeEnum.BUILD && Input.GetMouseButton(1)){
                 this.SetCursor(this.rotationCursor);
+            } else if(CameraManager.Instance.GetMode() == CameraModeEnum.BUILD && (Input.GetMouseButton(2) || Input.GetAxis("Horizontal") != 0f || Input.GetAxis("Vertical") != 0f)){
+                this.SetCursor(this.moveCursor);
             } else {
                 this.SetCursor(null);
             }
