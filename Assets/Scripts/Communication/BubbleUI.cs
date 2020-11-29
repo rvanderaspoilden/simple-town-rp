@@ -10,6 +10,18 @@ namespace Sim {
         [SerializeField]
         private GameObject writeBubble;
 
+        [SerializeField]
+        private float maxPosY;
+
+        [SerializeField]
+        private float minPosY;
+
+        [SerializeField]
+        private Vector2 maxSizeDelta;
+
+        [SerializeField]
+        private float maxCameraPosY;
+
         private PhotonVoiceView photonVoiceView;
 
         private Canvas canvas;
@@ -20,7 +32,7 @@ namespace Sim {
             if (canvas != null && canvas.worldCamera == null) {
                 canvas.worldCamera = Camera.main;
             }
-            
+
             this.writeBubble.SetActive(false);
             this.voiceBubble.SetActive(false);
         }
@@ -36,11 +48,16 @@ namespace Sim {
         private void LateUpdate() {
             if (canvas == null || canvas.worldCamera == null) {
                 return;
-            } // should not happen, throw error
+            }
 
-            transform.rotation = canvas.worldCamera.transform.rotation;
+            this.transform.rotation = canvas.worldCamera.transform.rotation;
             
-            Debug.Log(canvas.worldCamera.transform.position.y);
+            float posY = Mathf.Clamp(((this.maxPosY * canvas.worldCamera.transform.position.y) / this.maxCameraPosY), this.minPosY, this.maxPosY);
+
+            this.transform.localPosition = new Vector3(this.transform.localPosition.x, posY, this.transform.localPosition.z);
+
+            float scale = posY / this.maxPosY;
+            this.transform.localScale = new Vector3(scale, scale ,scale);
         }
     }
 }
