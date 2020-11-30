@@ -29,6 +29,9 @@ MonoBehaviour:
   - actionType: 0
     actionLabel: Move
     locked: 0
+  - actionType: 3
+    actionLabel: Delete
+    locked: 0
   unbuiltActions:
   - actionType: 2
     actionLabel: Accrocher

@@ -36,7 +36,7 @@ namespace Sim.Interactables {
             StopAllCoroutines();
         }
 
-        public override void Use() {
+        protected override void Use() {
             // Play open animation for all
             photonView.RPC("RPC_Animation", RpcTarget.All);
 

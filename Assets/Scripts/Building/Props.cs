@@ -20,10 +20,10 @@ namespace Sim.Building {
 
         protected PropsRenderer propsRenderer;
 
-        public delegate void MoveAction(Props props);
+        public delegate void PropsAction(Props props);
         
-        public static event MoveAction OnMoveRequest;
-
+        public static event PropsAction OnMoveRequest;
+        
         protected virtual void Awake() {
             this.built = true;
             this.propsRenderer = GetComponent<PropsRenderer>();
@@ -96,21 +96,35 @@ namespace Sim.Building {
                 case ActionTypeEnum.BUILD:
                     this.Build();
                     break;
+                
+                case ActionTypeEnum.DELETE:
+                    this.Delete();
+                    break;
             }
         }
 
-        public virtual void Use() {
+        protected virtual void Use() {
             throw new NotImplementedException();
         }
 
-        public virtual void Build() {
+        protected virtual void Build() {
             this.SetIsBuilt(true);
 
             RoomManager.Instance.SaveRoom();
         }
 
-        public virtual void Move() {
+        protected virtual void Move() {
             OnMoveRequest?.Invoke(this);
+        }
+
+        protected virtual void Delete() {
+            photonView.RPC("RPC_DestroyProps", PhotonNetwork.MasterClient);
+        }
+        
+        [PunRPC]
+        public void RPC_DestroyProps() {
+            PropsManager.Instance.DestroyProps(this, true);
+            RoomManager.Instance.SaveRoom();
         }
 
         public void UpdateTransform(Photon.Realtime.Player playerTarget = null) {

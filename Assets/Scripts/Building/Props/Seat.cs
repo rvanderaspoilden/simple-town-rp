@@ -11,7 +11,7 @@ namespace Sim.Building {
             this.actions = new Action[1] {this.useAction};
         }*/
 
-        public override void Use() {
+        protected override void Use() {
             // todo s'asseoir
         }
     }
