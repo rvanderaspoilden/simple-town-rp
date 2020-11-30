@@ -19,6 +19,7 @@ MonoBehaviour:
   prefab: {fileID: 4207890527465076845, guid: 20c71e5413dcb2040a93348530517737, type: 3}
   packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
+  posableOnProps: 0
   toBuild: 1
   rangeToInteract: 2
   actions:
@@ -29,3 +30,4 @@ MonoBehaviour:
   - actionType: 2
     actionLabel: Installer
     locked: 0
+  cursor: {fileID: 2800000, guid: abff926eddf4273498d407fc14709a34, type: 3}
