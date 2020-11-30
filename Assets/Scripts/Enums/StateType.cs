@@ -3,6 +3,7 @@
         FREE,
         PACKAGING,
         PAINTING,
-        UNPACKAGING
+        UNPACKAGING,
+        MOVING_PROPS
     }
 }

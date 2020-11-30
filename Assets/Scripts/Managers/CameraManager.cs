@@ -11,9 +11,7 @@ namespace Sim {
         [Header("Settings")]
         [SerializeField]
         private LayerMask layerMaskInFreeMode;
-
-        private new Camera camera;
-
+        
         private List<PropsRenderer> displayedPropsRenderers;
 
         private BuildCamera buildCamera;
@@ -26,6 +24,8 @@ namespace Sim {
         
         private CameraModeEnum currentMode;
 
+        public static new Camera camera;
+
         public static CameraManager Instance;
 
         private void Awake() {
@@ -35,7 +35,7 @@ namespace Sim {
 
             Instance = this;
 
-            this.camera = GetComponentInChildren<Camera>();
+            camera = GetComponentInChildren<Camera>();
             this.buildCamera = GetComponent<BuildCamera>();
             this.tpsCamera = GetComponent<ThirdPersonCamera>();
             this.displayedPropsRenderers = new List<PropsRenderer>();
@@ -141,7 +141,7 @@ namespace Sim {
         }
 
         private void ManageInteraction() {
-            if (Input.GetMouseButtonDown(0) && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
+            if (Input.GetMouseButtonDown(0) && Physics.Raycast(camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props objectToInteract = hit.collider.GetComponentInParent<Props>();
 
                 if (objectToInteract) {
@@ -150,7 +150,7 @@ namespace Sim {
                     if (canInteract) {
                         HUDManager.Instance.DisplayContextMenu(true, Input.mousePosition, objectToInteract);
                     } else {
-                        RoomManager.Instance.MovePlayerTo(hit.point);
+                        RoomManager.LocalPlayer.SetTarget(hit.point, objectToInteract);
                         HUDManager.Instance.DisplayContextMenu(false, Vector3.zero);
                     }
                 }

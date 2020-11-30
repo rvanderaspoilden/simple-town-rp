@@ -238,10 +238,6 @@ namespace Sim {
             LocalPlayer = playerObj.GetComponent<Player>();
         }
 
-        public void MovePlayerTo(Vector3 target) {
-            LocalPlayer.SetTarget(target);
-        }
-
         public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer) {
             Debug.Log(newPlayer.NickName + " joined the room");
 

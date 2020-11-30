@@ -24,10 +24,13 @@ MonoBehaviour:
   rangeToInteract: 1
   actions:
   - actionType: 1
-    actionLabel: S'asseoir
+    actionLabel: Sit
+    locked: 0
+  - actionType: 0
+    actionLabel: Move
     locked: 0
   unbuiltActions:
   - actionType: 2
     actionLabel: "Monter le canap\xE9"
-    locked: 1
+    locked: 0
   cursor: {fileID: 2800000, guid: 0e305d6abf1703c4eafb08ed62babf5f, type: 3}

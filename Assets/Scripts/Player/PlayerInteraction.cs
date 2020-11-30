@@ -32,11 +32,13 @@ namespace Sim {
             AliDiscountCatalogUI.OnPropsClicked += OnSelectPropsFromAdminPanel;
             AliDiscountCatalogUI.OnPaintClicked += OnSelectPaintFromAdminPanel;
             BuildManager.OnCancel += OnBuildModificationCanceled;
-            BuildManager.OnValidatePropModification += OnValidatePropModification;
+            BuildManager.OnValidatePropCreation += OnValidatePropCreation;
+            BuildManager.OnValidatePropEdit += OnValidatePropEdit;
             BuildManager.OnValidatePaintModification += OnValidatePaintModification;
+            Props.OnMoveRequest += OnMoveRequest;
             Package.OnOpened += OpenPackage;
             PaintBucket.OnOpened += OpenBucket;
-            
+
             this.player.SetState(StateType.FREE);
         }
 
@@ -51,10 +53,18 @@ namespace Sim {
             AliDiscountCatalogUI.OnPropsClicked -= OnSelectPropsFromAdminPanel;
             AliDiscountCatalogUI.OnPaintClicked -= OnSelectPaintFromAdminPanel;
             BuildManager.OnCancel -= OnBuildModificationCanceled;
-            BuildManager.OnValidatePropModification -= OnValidatePropModification;
+            BuildManager.OnValidatePropCreation -= OnValidatePropCreation;
+            BuildManager.OnValidatePropEdit -= OnValidatePropEdit;
             BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
+            Props.OnMoveRequest -= OnMoveRequest;
             Package.OnOpened -= OpenPackage;
             PaintBucket.OnOpened -= OpenBucket;
+        }
+
+        private void OnMoveRequest(Props props) {
+            this.player.SetState(StateType.MOVING_PROPS);
+
+            BuildManager.Instance.Edit(props);
         }
 
         /**
@@ -83,7 +93,7 @@ namespace Sim {
             this.currentOpenedPackage = package;
 
             this.player.SetState(StateType.UNPACKAGING);
-            
+
             BuildManager.Instance.Init(package.GetPropsConfigInside());
         }
 
@@ -123,7 +133,7 @@ namespace Sim {
             this.player.SetState(StateType.FREE);
         }
 
-        private void OnValidatePropModification(PropsConfig propsConfig, Vector3 position, Quaternion rotation) {
+        private void OnValidatePropCreation(PropsConfig propsConfig, Vector3 position, Quaternion rotation) {
             Props props = PropsManager.Instance.InstantiateProps(propsConfig, position, rotation, true);
 
             // Manage packaging for props
@@ -146,6 +156,15 @@ namespace Sim {
                 PropsManager.Instance.DestroyProps(this.currentOpenedPackage, true);
                 this.currentOpenedPackage = null;
             }
+
+            RoomManager.Instance.SaveRoom();
+
+            // this.SwitchToFreeMode(); // TODO Camera manager must subscribe to this event to come back to free camera
+            this.player.SetState(StateType.FREE);
+        }
+        
+        private void OnValidatePropEdit(Props props) {
+            props.UpdateTransform();
 
             RoomManager.Instance.SaveRoom();
 

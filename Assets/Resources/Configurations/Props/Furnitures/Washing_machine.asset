@@ -24,7 +24,10 @@ MonoBehaviour:
   rangeToInteract: 1
   actions:
   - actionType: 1
-    actionLabel: Laver le linge
+    actionLabel: Wash the laundry
+    locked: 0
+  - actionType: 0
+    actionLabel: Move
     locked: 0
   unbuiltActions:
   - actionType: 2

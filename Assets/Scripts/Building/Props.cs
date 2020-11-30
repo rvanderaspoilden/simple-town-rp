@@ -20,6 +20,10 @@ namespace Sim.Building {
 
         protected PropsRenderer propsRenderer;
 
+        public delegate void MoveAction(Props props);
+        
+        public static event MoveAction OnMoveRequest;
+
         protected virtual void Awake() {
             this.built = true;
             this.propsRenderer = GetComponent<PropsRenderer>();
@@ -106,7 +110,7 @@ namespace Sim.Building {
         }
 
         public virtual void Move() {
-            throw new NotImplementedException();
+            OnMoveRequest?.Invoke(this);
         }
 
         public void UpdateTransform(Photon.Realtime.Player playerTarget = null) {

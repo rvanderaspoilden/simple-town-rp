@@ -19,11 +19,12 @@ MonoBehaviour:
   prefab: {fileID: 3093486418350334970, guid: 6213d8c6e81e74349a2490150ba458b8, type: 3}
   packageConfig: {fileID: 0}
   surfaceToPose: 0
+  posableOnProps: 0
   toBuild: 0
   rangeToInteract: 1
   actions:
   - actionType: 1
-    actionLabel: Ouvrir la porte
+    actionLabel: Open
     locked: 0
   unbuiltActions: []
   cursor: {fileID: 2800000, guid: 4378877113f84e042864303ef44cf72c, type: 3}

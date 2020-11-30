@@ -19,7 +19,7 @@ namespace Sim {
 
         [Header("Debug")]
         private Props currentPropSelected;
-
+        
         private PaintBucket currentOpenedBucket;
 
         private BuildModeEnum mode;
@@ -29,10 +29,22 @@ namespace Sim {
         private RaycastHit hit;
 
         private new Camera camera;
+        
+        // Edit properties
 
-        public delegate void ValidatePropModification(PropsConfig propsConfig, Vector3 position, Quaternion rotation);
+        private bool isEditing;
+        
+        private Vector3 originPosition;
 
-        public static event ValidatePropModification OnValidatePropModification;
+        private Quaternion originRotation;
+
+        public delegate void ValidatePropCreation(PropsConfig propsConfig, Vector3 position, Quaternion rotation);
+
+        public static event ValidatePropCreation OnValidatePropCreation;
+        
+        public delegate void ValidatePropEdit(Props props);
+
+        public static event ValidatePropEdit OnValidatePropEdit;
 
         public delegate void ValidatePaintModification();
 
@@ -88,6 +100,20 @@ namespace Sim {
         }
         
         /**
+         * This method is used to start edit mode
+         */
+        public void Edit(Props props) {
+            this.currentPropSelected = props;
+            this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
+            this.originPosition = this.currentPropSelected.transform.position;
+            this.originRotation = this.currentPropSelected.transform.rotation;
+
+            this.isEditing = true;
+            
+            this.SetMode(BuildModeEnum.POSING);
+        }
+
+        /**
          * This method is the entrypoint to start build mode
          */
         public void Init(PaintBucket paintBucket) {
@@ -116,8 +142,14 @@ namespace Sim {
             }
 
             if (this.mode == BuildModeEnum.VALIDATING) {
-                OnValidatePropModification?.Invoke(this.currentPropSelected.GetConfiguration(), this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
-                PropsManager.Instance.DestroyProps(this.currentPropSelected, false);
+                if (this.isEditing) {
+                    OnValidatePropEdit?.Invoke(this.currentPropSelected);
+                    this.currentPreview.Destroy();
+                    this.isEditing = false;
+                } else {
+                    OnValidatePropCreation?.Invoke(this.currentPropSelected.GetConfiguration(), this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
+                    PropsManager.Instance.DestroyProps(this.currentPropSelected, false);
+                }
             } else if (this.mode == BuildModeEnum.PAINT) {
                 OnValidatePaintModification?.Invoke();
             }
@@ -130,9 +162,17 @@ namespace Sim {
          */
         private void Reset() {
             if (this.currentPropSelected) {
-                // if props is selected => destroy it
-                Destroy(this.currentPropSelected.gameObject);
-                this.currentPropSelected = null; // TODO check to remove this
+                if (this.isEditing) {
+                    this.currentPropSelected.transform.position = this.originPosition;
+                    this.currentPropSelected.transform.rotation = this.originRotation;
+                    this.currentPreview.Destroy();
+                    this.currentPropSelected = null;
+                    this.isEditing = false;
+                } else {
+                    // if props is selected => destroy it
+                    Destroy(this.currentPropSelected.gameObject);
+                    this.currentPropSelected = null; 
+                }
             }
 
             if (this.currentOpenedBucket) {
