@@ -25,10 +25,14 @@ namespace Sim {
         private bool generated;
         
         private bool forceWallHidden;
-        
-        public delegate void WallVisibilityModeChanged(VisibilityModeEnum mode);
 
-        public static event WallVisibilityModeChanged OnWallVisibilityModeChanged;
+        private bool forcePropsHidden;
+        
+        public delegate void VisibilityModeChanged(VisibilityModeEnum mode);
+
+        public static event VisibilityModeChanged OnWallVisibilityModeChanged;
+        
+        public static event VisibilityModeChanged OnPropsVisibilityModeChanged;
 
         public static Player LocalPlayer;
 
@@ -46,14 +50,6 @@ namespace Sim {
             if (Input.GetKeyDown(KeyCode.H) && CameraManager.Instance.GetMode() == CameraModeEnum.FREE) {
                 this.ToggleWallVisibility();
             }
-        }
-
-        private void Start() {
-            BuildPreviewPanelUI.OnToggleHideProps += TogglePropsVisible;
-        }
-
-        private void OnDestroy() {
-            BuildPreviewPanelUI.OnToggleHideProps -= TogglePropsVisible;
         }
 
         #region Wall Visibility Management
@@ -80,13 +76,21 @@ namespace Sim {
             OnWallVisibilityModeChanged?.Invoke(mode);
         }
         
-        private void TogglePropsVisible(bool hide) {
+        public void TogglePropsVisible() {
+            this.forcePropsHidden = !this.forcePropsHidden;
+            
+            this.UpdatePropsVisibility(this.forcePropsHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
+        }
+
+        private void UpdatePropsVisibility(VisibilityModeEnum mode) {
             FindObjectsOfType<Props>().ToList().Where(x => x.GetType() != typeof(Wall)).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
                 propsRenderer => {
                     if (propsRenderer && propsRenderer.IsHideable()) {
-                        propsRenderer.SetVisibilityMode(hide ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
+                        propsRenderer.SetVisibilityMode(mode);
                     }
                 });
+            
+            OnPropsVisibilityModeChanged?.Invoke(mode);
         }
 
         #endregion
