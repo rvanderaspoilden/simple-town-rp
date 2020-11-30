@@ -4,6 +4,7 @@
         MOVE,
         USE,
         BUILD,
+        DELETE,
         LOCK // use it for all lock actions such as door / chest
     }
 

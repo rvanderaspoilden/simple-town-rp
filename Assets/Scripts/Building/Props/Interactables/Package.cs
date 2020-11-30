@@ -22,7 +22,7 @@ namespace Sim.Interactables {
             this.actions.ToList().ForEach(action => action.SetIsLocked(!isOwner));
         }
 
-        public override void Use() {
+        protected override void Use() {
             OnOpened?.Invoke(this);
         }
 

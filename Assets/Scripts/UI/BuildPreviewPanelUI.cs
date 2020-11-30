@@ -9,7 +9,6 @@ namespace Sim.UI {
         [Header("Settings")]
         [SerializeField] private Button validationBtn;
 
-        [SerializeField] private Toggle toggleHideProps;
         [SerializeField] private WallVisibilityUI wallVisibilityUI;
 
         public delegate void OnValidateEvent();
@@ -19,10 +18,6 @@ namespace Sim.UI {
         public delegate void OnCanceledEvent();
 
         public static event OnCanceledEvent OnCanceled;
-
-        public delegate void OnToggleHidePropsEvent(bool hide);
-
-        public static event OnToggleHidePropsEvent OnToggleHideProps;
 
         private void OnEnable() {
             BuildPreview.OnPlaceableStateChanged += this.SetValidateButtonInteractable;
@@ -37,19 +32,11 @@ namespace Sim.UI {
         }
 
         public void Validate() {
-            this.toggleHideProps.isOn = false;
-
             OnValidate?.Invoke();
         }
 
         public void Cancel() {
-            this.toggleHideProps.isOn = false;
-
             OnCanceled?.Invoke();
-        }
-
-        public void ToggleHideProps(bool hide) {
-            OnToggleHideProps?.Invoke(hide);
         }
 
         private void SetValidateButtonInteractable(bool state) {

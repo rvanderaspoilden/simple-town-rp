@@ -8,7 +8,8 @@ namespace Sim.Enums {
         NONE,
         PAINT,
         POSING,
-        VALIDATING
+        VALIDATING,
+        EDITING
     }
 
 }

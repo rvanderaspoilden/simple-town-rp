@@ -24,10 +24,13 @@ MonoBehaviour:
   rangeToInteract: 1
   actions:
   - actionType: 1
-    actionLabel: Allumer
+    actionLabel: Watch TV
     locked: 0
   - actionType: 0
-    actionLabel: "D\xE9placer"
+    actionLabel: Move
+    locked: 0
+  - actionType: 3
+    actionLabel: Delete
     locked: 0
   unbuiltActions:
   - actionType: 2

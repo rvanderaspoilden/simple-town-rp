@@ -41,10 +41,12 @@ namespace Sim {
             this.SetCamera(Camera.main);
 
             SceneManager.sceneLoaded += SceneLoaded;
+            LoadingManager.OnStateChanged += LoadingStateChanged;
         }
 
         private void OnDestroy() {
             SceneManager.sceneLoaded -= SceneLoaded;
+            LoadingManager.OnStateChanged -= LoadingStateChanged;
         }
 
         private void Update() {
@@ -63,13 +65,18 @@ namespace Sim {
             }
         }
 
-        public void SetCursor(Texture2D cursorTexture) {
+        private void SetCursor(Texture2D cursorTexture) {
             this.currentCursor = cursorTexture;
             Cursor.SetCursor(cursorTexture, Vector2.zero, CursorMode.Auto);
         }
 
         public Texture2D GetCursor() {
             return this.currentCursor;
+        }
+
+        private void LoadingStateChanged(bool isActive) {
+            Cursor.lockState = isActive ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.visible = !isActive;
         }
 
         private bool IsProps() {

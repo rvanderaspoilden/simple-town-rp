@@ -24,7 +24,10 @@ MonoBehaviour:
   rangeToInteract: 2
   actions:
   - actionType: 1
-    actionLabel: Pisser
+    actionLabel: Pew pew
+    locked: 0
+  - actionType: 0
+    actionLabel: Move
     locked: 0
   unbuiltActions:
   - actionType: 2

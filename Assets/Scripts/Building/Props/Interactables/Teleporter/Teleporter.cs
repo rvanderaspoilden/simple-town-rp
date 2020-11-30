@@ -8,7 +8,7 @@ namespace Sim.Interactables {
         [Header("Teleporter Settings")]
         [SerializeField] protected PlacesEnum destination;
         
-        public override void Use() {
+        protected override void Use() {
             NetworkManager.Instance.GoToRoom(destination);
         }
 
@@ -26,7 +26,7 @@ namespace Sim.Interactables {
             this.photonView.RPC("RPC_SetDestination", rpcTarget, destination);
         }
         
-        public void SetDestination(PlacesEnum destination, Photon.Realtime.Player playerTarget) {
+        private void SetDestination(PlacesEnum destination, Photon.Realtime.Player playerTarget) {
             this.photonView.RPC("RPC_SetDestination", playerTarget, destination);
         }
 

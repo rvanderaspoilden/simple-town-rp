@@ -19,11 +19,12 @@ MonoBehaviour:
   prefab: {fileID: 1246636370418997331, guid: 635ca8b97b8d56949a34c71d1f1c5ecf, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
+  posableOnProps: 0
   toBuild: 1
   rangeToInteract: 1
   actions:
   - actionType: 1
-    actionLabel: Se laver
+    actionLabel: Wash yourself
     locked: 0
   unbuiltActions:
   - actionType: 2

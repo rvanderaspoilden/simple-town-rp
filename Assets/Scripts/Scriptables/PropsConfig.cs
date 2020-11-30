@@ -37,7 +37,10 @@ namespace Sim.Scriptables {
         private float rangeToInteract;
 
         [SerializeField]
-        private Action[] actions;
+        private Action[] actions = new[] {
+            new Action(ActionTypeEnum.DELETE, "Delete"),
+            new Action(ActionTypeEnum.MOVE, "Move")
+        };
 
         [SerializeField]
         private Action[] unbuiltActions;

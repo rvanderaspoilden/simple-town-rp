@@ -19,14 +19,18 @@ MonoBehaviour:
   prefab: {fileID: -7908976540816177706, guid: 1fe43e3032cf1434081e76955e5877f9, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
+  posableOnProps: 0
   toBuild: 1
   rangeToInteract: 1
   actions:
   - actionType: 1
-    actionLabel: Regarder dans les placards
+    actionLabel: Open
+    locked: 0
+  - actionType: 0
+    actionLabel: Move
     locked: 0
   unbuiltActions:
   - actionType: 2
     actionLabel: monter
-    locked: 0
+    locked: 1
   cursor: {fileID: 2800000, guid: 5ebd2cb74cea3b644a5834d4596e3665, type: 3}

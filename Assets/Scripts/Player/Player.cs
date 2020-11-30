@@ -22,6 +22,9 @@ namespace Sim {
         [SerializeField]
         private StateType state;
 
+        [SerializeField]
+        private Props propsTarget;
+
         private new Rigidbody rigidbody;
 
         public delegate void StateChanged(Player player, StateType state);
@@ -54,11 +57,40 @@ namespace Sim {
 
             if (this.agent.remainingDistance > this.agent.stoppingDistance) {
                 MarkerController.Instance.ShowAt(this.agent.pathEndPosition);
+
+                if (this.propsTarget && this.CanInteractWith(this.propsTarget)) {
+                    HUDManager.Instance.DisplayContextMenu(true, CameraManager.camera.WorldToScreenPoint(this.propsTarget.transform.position), this.propsTarget);
+                    this.propsTarget = null;
+                }
             } else if(MarkerController.Instance.IsActive()){
                 MarkerController.Instance.Hide();
             }
 
             thirdPersonCharacter.Move(this.agent.remainingDistance > this.agent.stoppingDistance ? this.agent.desiredVelocity : Vector3.zero, false, false);
+        }
+        
+        public bool CanInteractWith(Props propsToInteract) {
+            float maxRange = propsToInteract.GetConfiguration().GetRangeToInteract();
+            Vector3 origin = Vector3.Scale(propsToInteract.transform.position, new Vector3(1, 0, 1));
+            Vector3 target = Vector3.Scale(this.transform.position, new Vector3(1, 0, 1));
+            
+            if (propsToInteract.GetActions()?.Length <= 0 || Mathf.Abs(Vector3.Distance(origin, target)) > maxRange) {
+                return false;
+            }
+
+            Vector3 dir = propsToInteract.transform.position - this.GetHeadTargetForCamera().position;
+            RaycastHit hit;
+            if (Physics.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
+                Props hitProps = hit.collider.GetComponentInParent<Props>();
+
+                if ((hitProps && hitProps.GetType() == typeof(Wall)) || !hitProps) {
+                    return false;
+                }
+
+                return hitProps.Equals(propsToInteract);
+            }
+
+            return false;
         }
 
         public bool CanInteractWith(Props propsToInteract, Vector3 hitPoint) {
@@ -95,8 +127,9 @@ namespace Sim {
             return this.state;
         }
 
-        public void SetTarget(Vector3 target) {
-            this.agent.SetDestination(target);
+        public void SetTarget(Vector3 targetPoint, Props props) {
+            this.agent.SetDestination(targetPoint);
+            this.propsTarget = props;
         }
 
         public Transform GetHeadTargetForCamera() {
