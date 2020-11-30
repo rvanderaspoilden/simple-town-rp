@@ -6,6 +6,10 @@ namespace Sim {
     public class LoadingManager : MonoBehaviour {
         private Image image;
 
+        public delegate void StateChanged(bool isActive);
+
+        public static event StateChanged OnStateChanged;
+
         public static LoadingManager Instance;
 
         private void Awake() {
@@ -14,7 +18,7 @@ namespace Sim {
             }
 
             this.image = GetComponentInChildren<Image>();
-            this.image.color = new Color(1,1,1,0);
+            this.image.color = new Color(1, 1, 1, 0);
 
             Instance = this;
             DontDestroyOnLoad(this.gameObject);
@@ -22,10 +26,11 @@ namespace Sim {
 
         public void Show() {
             this.image.DOColor(new Color(1, 1, 1, 1), 0.2f);
+            OnStateChanged?.Invoke(true);
         }
 
         public void Hide() {
-            this.image.DOColor(new Color(1, 1, 1, 0), 0.5f);
+            this.image.DOColor(new Color(1, 1, 1, 0), 0.5f).OnComplete(() => OnStateChanged?.Invoke(false));
         }
     }
 }
