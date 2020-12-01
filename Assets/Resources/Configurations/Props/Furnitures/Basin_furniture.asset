@@ -21,13 +21,22 @@ MonoBehaviour:
   surfaceToPose: 0
   posableOnProps: 0
   toBuild: 1
-  rangeToInteract: 2
+  rangeToInteract: 1
   actions:
   - actionType: 1
     actionLabel: Wash my hands
     locked: 0
+  - actionType: 3
+    actionLabel: Delete
+    locked: 0
+  - actionType: 0
+    actionLabel: Move
+    locked: 0
   unbuiltActions:
   - actionType: 2
-    actionLabel: Assembler
+    actionLabel: Build
+    locked: 0
+  - actionType: 0
+    actionLabel: Move
     locked: 0
   cursor: {fileID: 2800000, guid: abff926eddf4273498d407fc14709a34, type: 3}

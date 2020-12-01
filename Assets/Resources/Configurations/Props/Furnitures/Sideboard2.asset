@@ -29,8 +29,14 @@ MonoBehaviour:
   - actionType: 0
     actionLabel: Move
     locked: 0
+  - actionType: 3
+    actionLabel: Delete
+    locked: 0
   unbuiltActions:
   - actionType: 2
-    actionLabel: Monter
+    actionLabel: Build
+    locked: 1
+  - actionType: 0
+    actionLabel: Move
     locked: 1
   cursor: {fileID: 2800000, guid: 5ebd2cb74cea3b644a5834d4596e3665, type: 3}

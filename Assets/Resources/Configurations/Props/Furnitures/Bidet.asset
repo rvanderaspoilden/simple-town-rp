@@ -26,11 +26,17 @@ MonoBehaviour:
   - actionType: 1
     actionLabel: Use
     locked: 0
-  - actionType: 1
+  - actionType: 0
     actionLabel: Move
+    locked: 0
+  - actionType: 3
+    actionLabel: Delete
     locked: 0
   unbuiltActions:
   - actionType: 2
-    actionLabel: Relier
+    actionLabel: Raccorder
+    locked: 1
+  - actionType: 0
+    actionLabel: Move
     locked: 1
   cursor: {fileID: 2800000, guid: abff926eddf4273498d407fc14709a34, type: 3}
