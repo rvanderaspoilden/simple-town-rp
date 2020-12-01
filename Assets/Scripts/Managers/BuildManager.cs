@@ -276,7 +276,7 @@ namespace Sim {
             // Manage surface detection
             int layerMask = this.GetLayerMask();
 
-            if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
+            if (!EventSystem.current.IsPointerOverGameObject() && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
                 // manage position to move current props
                 if (this.mode == BuildModeEnum.POSING) {
                     this.ManagePropMovement();
