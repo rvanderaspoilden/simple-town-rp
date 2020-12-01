@@ -64,7 +64,7 @@ namespace Sim.UI {
             this.ClearChoices();
 
             if (category == CatalogCategoryEnum.FURNITURE) {
-                DatabaseManager.PropsDatabase.GetProps().Where(config => config.GetPropsType() == PropsType.FURNITURE).ToList().ForEach(config => {
+                DatabaseManager.PropsDatabase.GetProps().Where(config => config.GetPropsType() != PropsType.FOUNDATION).ToList().ForEach(config => {
                     Button button = Instantiate(this.itemButtonPrefab, this.choiceContainer);
                     button.GetComponentInChildren<TextMeshProUGUI>().text = config.GetDisplayName();
                     button.onClick.AddListener(() => OnPropsClicked?.Invoke(config));
