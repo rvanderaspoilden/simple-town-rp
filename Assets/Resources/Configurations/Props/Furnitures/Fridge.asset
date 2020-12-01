@@ -29,5 +29,8 @@ MonoBehaviour:
   - actionType: 0
     actionLabel: Move
     locked: 0
+  - actionType: 3
+    actionLabel: Delete
+    locked: 0
   unbuiltActions: []
   cursor: {fileID: 0}

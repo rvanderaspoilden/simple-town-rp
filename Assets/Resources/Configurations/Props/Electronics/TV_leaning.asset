@@ -34,6 +34,9 @@ MonoBehaviour:
     locked: 0
   unbuiltActions:
   - actionType: 2
-    actionLabel: Accrocher
+    actionLabel: Hang
+    locked: 0
+  - actionType: 0
+    actionLabel: Move
     locked: 0
   cursor: {fileID: 2800000, guid: e4eb3547be035d8408366b41fd723efa, type: 3}
