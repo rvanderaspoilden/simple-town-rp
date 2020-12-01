@@ -15,7 +15,7 @@ namespace Sim {
         private Coroutine setCameraTargetCoroutine;
 
         private void OnEnable() {
-            if (!this.freelookCamera.m_LookAt && this.setCameraTargetCoroutine == null) {
+            if (!SceneManager.GetActiveScene().name.Equals("Launcher") && !this.freelookCamera.m_LookAt && this.setCameraTargetCoroutine == null) {
                 this.setCameraTargetCoroutine = StartCoroutine(this.SetCameraTarget());
             }
 
@@ -31,7 +31,7 @@ namespace Sim {
         }
 
         private void SceneLoaded(Scene scene, LoadSceneMode mode) {
-            if (!this.freelookCamera.m_LookAt && this.setCameraTargetCoroutine == null) {
+            if (!scene.name.Equals("Launcher") && !this.freelookCamera.m_LookAt && this.setCameraTargetCoroutine == null) {
                 this.setCameraTargetCoroutine = StartCoroutine(this.SetCameraTarget());
             }
         }

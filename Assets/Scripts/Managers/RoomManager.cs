@@ -76,6 +76,12 @@ namespace Sim {
             OnWallVisibilityModeChanged?.Invoke(mode);
         }
         
+        public void SetPropsVisibility(VisibilityModeEnum mode) {
+            this.forcePropsHidden = mode == VisibilityModeEnum.FORCE_HIDE;
+            
+            this.UpdatePropsVisibility(mode);
+        }
+        
         public void TogglePropsVisible() {
             this.forcePropsHidden = !this.forcePropsHidden;
             

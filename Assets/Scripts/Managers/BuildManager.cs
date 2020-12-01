@@ -132,6 +132,8 @@ namespace Sim {
         private void Cancel() {
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
+            RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
+            RoomManager.Instance.SetPropsVisibility(VisibilityModeEnum.AUTO);
             OnCancel?.Invoke();
         }
 
@@ -153,6 +155,9 @@ namespace Sim {
             } else if (this.mode == BuildModeEnum.PAINT) {
                 OnValidatePaintModification?.Invoke();
             }
+            
+            RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
+            RoomManager.Instance.SetPropsVisibility(VisibilityModeEnum.AUTO);
             
             this.SetMode(BuildModeEnum.NONE);
         }
@@ -271,7 +276,7 @@ namespace Sim {
             // Manage surface detection
             int layerMask = this.GetLayerMask();
 
-            if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
+            if (!EventSystem.current.IsPointerOverGameObject() && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
                 // manage position to move current props
                 if (this.mode == BuildModeEnum.POSING) {
                     this.ManagePropMovement();
