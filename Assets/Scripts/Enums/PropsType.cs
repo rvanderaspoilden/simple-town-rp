@@ -3,6 +3,9 @@
         FURNITURE,
         FOUNDATION,
         TOOL,
-        PACKAGE
+        PACKAGE,
+        MISCELLANEOUS,
+        LIGHT,
+        ELECTRONIC
     }
 }
