@@ -687,6 +687,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8619417789000670540, guid: 9a091b9653bf819469b958c3c9724807,
+        type: 3}
+      propertyPath: magnetic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8619417789000670540, guid: 9a091b9653bf819469b958c3c9724807,
+        type: 3}
+      propertyPath: magneticRange
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8619417789000670540, guid: 9a091b9653bf819469b958c3c9724807,
+        type: 3}
+      propertyPath: propsStepSize
+      value: 0.02
+      objectReference: {fileID: 0}
+    - target: {fileID: 8619417789000670540, guid: 9a091b9653bf819469b958c3c9724807,
+        type: 3}
+      propertyPath: magneticPropsMargin
+      value: 0.03
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9a091b9653bf819469b958c3c9724807, type: 3}
 --- !u!1 &380270964

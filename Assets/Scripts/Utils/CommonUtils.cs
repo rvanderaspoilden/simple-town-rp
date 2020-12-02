@@ -44,13 +44,12 @@ namespace Sim.Utils {
          * Throw exception if different of wall or ground props
          */
         public static int GetLayerMaskSurfacesToPose(Props props) {
+            int layerValue = (1 << 12);
             if (props.IsGroundProps()) {
-                return props.GetConfiguration().IsPosableOnProps() ? (1 << 9 | 1 << 16) : (1 << 9); // Ground + SuperPosable layers
-            } else if (props.IsWallProps()) {
-                return (1 << 12); // Wall layer
-            }
-            
-            throw new Exception($"No surface type is defined for props ID => {props.GetConfiguration().GetId()}");
+                layerValue = layerValue | (props.GetConfiguration().IsPosableOnProps() ? (1 << 9 | 1 << 16) : (1 << 9)); // Ground + SuperPosable layers
+            } 
+
+            return layerValue;
         }
         
         /**
