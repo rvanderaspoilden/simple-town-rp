@@ -54,6 +54,8 @@ namespace Sim {
 
         private Vector3 currentPropsBounds;
 
+        private Collider currentPropsCollider;
+
         public delegate void ValidatePropCreation(PropsConfig propsConfig, Vector3 position, Quaternion rotation);
 
         public static event ValidatePropCreation OnValidatePropCreation;
@@ -110,7 +112,7 @@ namespace Sim {
          */
         public void Init(PropsConfig config) {
             this.currentPropSelected = PropsManager.Instance.InstantiateProps(config, false);
-            this.currentPropsBounds = this.currentPropSelected.GetComponent<Collider>().bounds.extents;
+            this.currentPropsCollider = this.currentPropSelected.GetComponent<BoxCollider>();
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
 
             this.SetMode(BuildModeEnum.POSING);
@@ -121,7 +123,7 @@ namespace Sim {
          */
         public void Edit(Props props) {
             this.currentPropSelected = props;
-            this.currentPropsBounds = this.currentPropSelected.GetComponent<Collider>().bounds.extents;
+            this.currentPropsCollider = this.currentPropSelected.GetComponent<BoxCollider>();
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
             this.originPosition = this.currentPropSelected.transform.position;
             this.originRotation = this.currentPropSelected.transform.rotation;
@@ -241,69 +243,26 @@ namespace Sim {
 
         private void ManagePropMovement() {
             if (this.currentPropSelected.IsGroundProps()) {
+                Vector3 point = hit.point;
+                Transform currentPropsTransform = this.currentPropSelected.transform;
+                this.currentPropsBounds = currentPropsTransform.InverseTransformDirection(this.currentPropsCollider.bounds.extents);
+
                 if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
-                    Vector3 point = hit.point;
-                    Transform currentPropsTransform = this.currentPropSelected.transform;
-
-                    //Manage magnetic movement
                     Vector3 magneticDir = currentPropsTransform.TransformDirection(Vector3.back);
+                    float maxHitDistance = Mathf.Abs(this.currentPropsBounds.z) + this.magneticRange;
                     
-                    if (this.magnetic && Physics.Raycast(point, magneticDir, out magneticHit, this.magneticRange, (1 << 12))) {
+                    if (this.magnetic && Physics.Raycast(point, magneticDir, out magneticHit, maxHitDistance, (1 << 12))) {
                         point = magneticHit.point;
                     }
 
-                    float x = Mathf.FloorToInt(point.x / this.propsStepSize) * this.propsStepSize;
-                    float z = Mathf.FloorToInt(point.z / this.propsStepSize) * this.propsStepSize;
-
-                    if (lastPosition.x != x || lastPosition.z != z) {
-                        lastPosition = new Vector3(x, 0, z);
-                        
-                        if (magnetic && point == magneticHit.point) {
-                            Debug.Log("-----------------------");    
-                            /*Debug.Log(this.currentPropSelected.transform.position);
-                            Debug.Log(this.currentPropsBounds.x);
-                            Debug.Log(this.currentPropsBounds.x + this.magneticPropsMargin);*/
-
-                            Vector3 relativeBounds =
-                                this.currentPropSelected.transform.InverseTransformDirection(this.currentPropSelected.GetComponent<Collider>().bounds.extents);
-                            
-                            Debug.Log(relativeBounds);
-                            Debug.Log(this.currentPropsBounds);
-                            Debug.Log(this.currentPropSelected.GetComponent<Collider>().bounds.extents);
-                            
-                            this.currentPropSelected.transform.position = new Vector3(x, hit.point.y + (hit.normal.y * 0.01f), point.z);
-
-                            this.currentPropSelected.transform.position -=
-                                this.currentPropSelected.transform.TransformDirection(new Vector3(0, 0, -(Mathf.Abs(relativeBounds.z) + this.magneticPropsMargin)));
-                        } else {
-                            this.currentPropSelected.transform.position = new Vector3(x, hit.point.y + (hit.normal.y * 0.01f), z);
-                        }
-                    }
-                } else if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
-                    Vector3 point = hit.point;
-                    Transform currentPropsTransform = this.currentPropSelected.transform;
-
-                    Debug.DrawRay(point, Vector3.down * 10, Color.red);
-                    if (this.magnetic && Physics.Raycast(point, Vector3.down, out magneticHit, 10, (1 << 9))) {
+                    this.CalculatePlacement(point, currentPropsTransform);
+                } else if (this.magnetic && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall") && hit.normal.y == 0) {
+                    if (Physics.Raycast(point, Vector3.down, out magneticHit, 10, (1 << 9))) {
                         point = magneticHit.point;
-                        Debug.Log(point);
-                    }
-
-                    float x = Mathf.FloorToInt(point.x / this.propsStepSize) * this.propsStepSize;
-                    float z = Mathf.FloorToInt(point.z / this.propsStepSize) * this.propsStepSize;
-
-                    if (lastPosition.x != x || lastPosition.z != z) {
-                        lastPosition = new Vector3(x, 0, z);
-
-                        this.currentPropSelected.transform.position = new Vector3(x, point.y + (magneticHit.normal.y * 0.01f), z);
-
-                        if (magnetic && point == magneticHit.point) {
-                            this.currentPropSelected.transform.position -=
-                                this.currentPropSelected.transform.TransformDirection(new Vector3(0, 0, -(this.currentPropsBounds.x + this.magneticPropsMargin)));
-                        }
+                        this.CalculatePlacement(point, currentPropsTransform);
                     }
                 } else if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Posable Surface")) {
-                    this.currentPropSelected.transform.position = new Vector3(hit.point.x, hit.point.y + (hit.normal.y * 0.01f), hit.point.z);
+                    currentPropsTransform.position = new Vector3(hit.point.x, hit.point.y + (hit.normal.y * 0.01f), hit.point.z);
                 }
             } else if (this.currentPropSelected.IsWallProps() && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
                 this.currentPropSelected.transform.position = hit.point + (hit.normal * 0.01f);
@@ -320,6 +279,25 @@ namespace Sim {
                 }
 
                 this.currentPropSelected.transform.localEulerAngles = rotation;
+            }
+        }
+
+        private void CalculatePlacement(Vector3 point, Transform currentPropsTransform) {
+            float x = Mathf.FloorToInt(point.x / this.propsStepSize) * this.propsStepSize;
+            float z = Mathf.FloorToInt(point.z / this.propsStepSize) * this.propsStepSize;
+
+            // Update position only if a change needed
+            if (lastPosition.x != x || lastPosition.z != z) {
+                lastPosition = new Vector3(x, 0, z);
+                
+                if (magnetic && point == magneticHit.point) {
+                    currentPropsTransform.position = new Vector3(x, point.y + 0.01f, point.z);
+                    
+                    Vector3 offset = new Vector3(0, 0, -(Mathf.Abs(this.currentPropsBounds.z) + this.magneticPropsMargin));
+                    currentPropsTransform.position -= currentPropsTransform.TransformDirection(offset);
+                } else {
+                    currentPropsTransform.position = new Vector3(x, point.y + 0.01f, z);
+                }
             }
         }
 
