@@ -48,7 +48,7 @@ namespace Sim {
             this.personnage = personnage;
 
             if (PhotonNetwork.IsConnectedAndReady && this.isConnectedToServer) {
-                LoadingManager.Instance.Show();
+                LoadingManager.Instance.Show(true);
                 Debug.Log("Connecting to server with personnage : " + personnage.Firstname);
                 this.GoToRoom(PlacesEnum.HALL);
             } else {
@@ -159,6 +159,7 @@ namespace Sim {
                 yield return new WaitForSeconds(0.1f);
             } while (!isRoomGenerated);
 
+            yield return new WaitForSeconds(0.5f);
             LoadingManager.Instance.Hide();
         }
 
