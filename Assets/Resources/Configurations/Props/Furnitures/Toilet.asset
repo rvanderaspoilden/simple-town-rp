@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Toilette
   propsType: 0
   buyable: 1
-  prefab: {fileID: 4207890527465076845, guid: 20c71e5413dcb2040a93348530517737, type: 3}
+  prefab: {fileID: 4097972789242716490, guid: 20c71e5413dcb2040a93348530517737, type: 3}
   packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
@@ -35,8 +35,8 @@ MonoBehaviour:
   unbuiltActions:
   - actionType: 2
     actionLabel: Raccorder
-    locked: 0
+    locked: 1
   - actionType: 0
     actionLabel: Move
-    locked: 0
+    locked: 1
   cursor: {fileID: 2800000, guid: abff926eddf4273498d407fc14709a34, type: 3}
