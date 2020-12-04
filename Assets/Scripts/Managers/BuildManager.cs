@@ -139,6 +139,8 @@ namespace Sim {
         public void Init(PaintBucket paintBucket) {
             this.currentOpenedBucket = paintBucket;
             this.SetMode(BuildModeEnum.PAINT);
+            
+            FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.MESH_COLLIDER));
         }
 
         public BuildModeEnum GetMode() {
@@ -148,8 +150,12 @@ namespace Sim {
         public Props GetCurrentPreviewedProps() {
             return this.currentPropSelected;
         }
-
+        
         private void Cancel() {
+            if (this.mode == BuildModeEnum.PAINT) {
+                FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
+            }
+            
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
             RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
@@ -174,6 +180,7 @@ namespace Sim {
                     PropsManager.Instance.DestroyProps(this.currentPropSelected, false);
                 }
             } else if (this.mode == BuildModeEnum.PAINT) {
+                FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
                 OnValidatePaintModification?.Invoke();
             }
 
