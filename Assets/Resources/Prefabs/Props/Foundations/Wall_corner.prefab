@@ -387,6 +387,8 @@ GameObject:
   - component: {fileID: 2410990672549681340}
   - component: {fileID: 3309120875047286521}
   - component: {fileID: 5507787891652889741}
+  - component: {fileID: 6190432133983999480}
+  - component: {fileID: 2051373021025632073}
   m_Layer: 12
   m_Name: Wall_corner
   m_TagString: Untagged
@@ -478,7 +480,7 @@ MeshCollider:
   m_GameObject: {fileID: 7454000879150205187}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 4
   m_Convex: 0
   m_CookingOptions: 30
@@ -513,7 +515,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   configuration: {fileID: 11400000, guid: 287955e095f68ba4dafbea94368de953, type: 2}
-  allowedSharedMaterialIds: 0100000002000000030000000500000006000000070000000000000004000000
+  allowedSharedMaterialIds: 01000000020000000300000005000000060000000700000004000000
   wallFaces:
   - sharedMaterialIdx: 0
     paintConfigId: 2
@@ -563,3 +565,29 @@ MonoBehaviour:
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
+--- !u!65 &6190432133983999480
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7454000879150205187}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1.1, y: 2.6, z: 0.1}
+  m_Center: {x: -0.55, y: 1.3, z: -0.04999996}
+--- !u!65 &2051373021025632073
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7454000879150205187}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.1, y: 2.6, z: 1}
+  m_Center: {x: -1.05, y: 1.3, z: 0.5}

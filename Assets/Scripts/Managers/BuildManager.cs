@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using Sim.Building;
 using Sim.Enums;
 using Sim.Scriptables;
@@ -17,9 +18,18 @@ namespace Sim {
         [SerializeField]
         private float propsStepSize;
 
+        [SerializeField]
+        private float magneticRange;
+
+        [SerializeField]
+        private float magneticPropsMargin;
+
         [Header("Debug")]
+        [SerializeField]
+        private bool magnetic;
+
         private Props currentPropSelected;
-        
+
         private PaintBucket currentOpenedBucket;
 
         private BuildModeEnum mode;
@@ -28,20 +38,28 @@ namespace Sim {
 
         private RaycastHit hit;
 
+        private RaycastHit magneticHit;
+
+        private Vector3 lastPosition;
+
         private new Camera camera;
-        
+
         // Edit properties
 
         private bool isEditing;
-        
+
         private Vector3 originPosition;
 
         private Quaternion originRotation;
 
+        private Vector3 currentPropsBounds;
+
+        private Collider currentPropsCollider;
+
         public delegate void ValidatePropCreation(PropsConfig propsConfig, Vector3 position, Quaternion rotation);
 
         public static event ValidatePropCreation OnValidatePropCreation;
-        
+
         public delegate void ValidatePropEdit(Props props);
 
         public static event ValidatePropEdit OnValidatePropEdit;
@@ -51,7 +69,7 @@ namespace Sim {
         public static event ValidatePaintModification OnValidatePaintModification;
 
         public delegate void CancelModification();
-        
+
         public static event CancelModification OnCancel;
 
         public delegate void ModeChanged(BuildModeEnum mode);
@@ -88,28 +106,30 @@ namespace Sim {
                 this.PropsPosing();
             }
         }
-        
+
         /**
          * This method is the entrypoint to start build mode
          */
         public void Init(PropsConfig config) {
             this.currentPropSelected = PropsManager.Instance.InstantiateProps(config, false);
+            this.currentPropsCollider = this.currentPropSelected.GetComponent<BoxCollider>();
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
-            
+
             this.SetMode(BuildModeEnum.POSING);
         }
-        
+
         /**
          * This method is used to start edit mode
          */
         public void Edit(Props props) {
             this.currentPropSelected = props;
+            this.currentPropsCollider = this.currentPropSelected.GetComponent<BoxCollider>();
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
             this.originPosition = this.currentPropSelected.transform.position;
             this.originRotation = this.currentPropSelected.transform.rotation;
 
             this.isEditing = true;
-            
+
             this.SetMode(BuildModeEnum.POSING);
         }
 
@@ -119,6 +139,8 @@ namespace Sim {
         public void Init(PaintBucket paintBucket) {
             this.currentOpenedBucket = paintBucket;
             this.SetMode(BuildModeEnum.PAINT);
+            
+            FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.MESH_COLLIDER));
         }
 
         public BuildModeEnum GetMode() {
@@ -128,8 +150,12 @@ namespace Sim {
         public Props GetCurrentPreviewedProps() {
             return this.currentPropSelected;
         }
-
+        
         private void Cancel() {
+            if (this.mode == BuildModeEnum.PAINT) {
+                FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
+            }
+            
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
             RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
@@ -149,16 +175,18 @@ namespace Sim {
                     this.currentPreview.Destroy();
                     this.isEditing = false;
                 } else {
-                    OnValidatePropCreation?.Invoke(this.currentPropSelected.GetConfiguration(), this.currentPropSelected.transform.position, this.currentPropSelected.transform.rotation);
+                    OnValidatePropCreation?.Invoke(this.currentPropSelected.GetConfiguration(), this.currentPropSelected.transform.position,
+                        this.currentPropSelected.transform.rotation);
                     PropsManager.Instance.DestroyProps(this.currentPropSelected, false);
                 }
             } else if (this.mode == BuildModeEnum.PAINT) {
+                FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
                 OnValidatePaintModification?.Invoke();
             }
-            
+
             RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
             RoomManager.Instance.SetPropsVisibility(VisibilityModeEnum.AUTO);
-            
+
             this.SetMode(BuildModeEnum.NONE);
         }
 
@@ -176,7 +204,7 @@ namespace Sim {
                 } else {
                     // if props is selected => destroy it
                     Destroy(this.currentPropSelected.gameObject);
-                    this.currentPropSelected = null; 
+                    this.currentPropSelected = null;
                 }
             }
 
@@ -222,14 +250,27 @@ namespace Sim {
 
         private void ManagePropMovement() {
             if (this.currentPropSelected.IsGroundProps()) {
+                Vector3 point = hit.point;
+                Transform currentPropsTransform = this.currentPropSelected.transform;
+                this.currentPropsBounds = currentPropsTransform.InverseTransformDirection(this.currentPropsCollider.bounds.extents);
+
                 if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
-                    float x = Mathf.FloorToInt(hit.point.x / this.propsStepSize) * this.propsStepSize;
-                    float z = Mathf.FloorToInt(hit.point.z / this.propsStepSize) * this.propsStepSize;
-                    this.currentPropSelected.transform.position = new Vector3(x, hit.point.y + (hit.normal.y * 0.01f), z);
-                } else if(hit.collider.gameObject.layer == LayerMask.NameToLayer("Posable Surface")){
-                    this.currentPropSelected.transform.position = new Vector3(hit.point.x, hit.point.y + (hit.normal.y * 0.01f), hit.point.z);
+                    Vector3 magneticDir = currentPropsTransform.TransformDirection(Vector3.back);
+                    float maxHitDistance = Mathf.Abs(this.currentPropsBounds.z) + this.magneticRange;
+                    
+                    if (this.magnetic && Physics.Raycast(point, magneticDir, out magneticHit, maxHitDistance, (1 << 12))) {
+                        point = magneticHit.point;
+                    }
+
+                    this.CalculatePlacement(point, currentPropsTransform);
+                } else if (this.magnetic && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall") && hit.normal.y == 0) {
+                    if (Physics.Raycast(point, Vector3.down, out magneticHit, 10, (1 << 9))) {
+                        point = magneticHit.point;
+                        this.CalculatePlacement(point, currentPropsTransform);
+                    }
+                } else if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Posable Surface")) {
+                    currentPropsTransform.position = new Vector3(hit.point.x, hit.point.y + (hit.normal.y * 0.01f), hit.point.z);
                 }
-                
             } else if (this.currentPropSelected.IsWallProps() && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
                 this.currentPropSelected.transform.position = hit.point + (hit.normal * 0.01f);
                 Vector3 rotation = this.currentPropSelected.transform.localEulerAngles;
@@ -245,6 +286,25 @@ namespace Sim {
                 }
 
                 this.currentPropSelected.transform.localEulerAngles = rotation;
+            }
+        }
+
+        private void CalculatePlacement(Vector3 point, Transform currentPropsTransform) {
+            float x = Mathf.FloorToInt(point.x / this.propsStepSize) * this.propsStepSize;
+            float z = Mathf.FloorToInt(point.z / this.propsStepSize) * this.propsStepSize;
+
+            // Update position only if a change needed
+            if (lastPosition.x != x || lastPosition.z != z) {
+                lastPosition = new Vector3(x, 0, z);
+                
+                if (magnetic && point == magneticHit.point) {
+                    currentPropsTransform.position = new Vector3(x, point.y + 0.01f, point.z);
+                    
+                    Vector3 offset = new Vector3(0, 0, -(Mathf.Abs(this.currentPropsBounds.z) + this.magneticPropsMargin));
+                    currentPropsTransform.position -= currentPropsTransform.TransformDirection(offset);
+                } else {
+                    currentPropsTransform.position = new Vector3(x, point.y + 0.01f, z);
+                }
             }
         }
 

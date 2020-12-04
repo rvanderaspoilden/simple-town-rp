@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Photon.Pun;
+using Sim.Enums;
 using UnityEngine;
 
 namespace Sim.Building {
@@ -19,13 +20,17 @@ namespace Sim.Building {
         private new MeshRenderer renderer;
         private MeshCollider meshCollider;
         private Dictionary<int, WallFace> wallFacesPreviewed;
+        private BoxCollider[] boxColliders;
 
         protected override void Awake() {
             base.Awake();
             this.renderer = GetComponent<MeshRenderer>();
             this.meshCollider = GetComponent<MeshCollider>();
+            this.boxColliders = GetComponents<BoxCollider>();
 
             this.wallFacesPreviewed = new Dictionary<int, WallFace>();
+            
+            this.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER);
         }
 
         protected override void Start() {
@@ -44,6 +49,14 @@ namespace Sim.Building {
 
             this.UpdateWallFaces();
             this.propsRenderer.SetupDefaultMaterials();
+        }
+        
+        public void EnableCollidersOfType(ColliderTypeEnum type) {
+            foreach (BoxCollider boxCollider in this.boxColliders) {
+                boxCollider.enabled = type == ColliderTypeEnum.BOX_COLLIDER;
+            }
+
+            this.meshCollider.enabled = type == ColliderTypeEnum.MESH_COLLIDER;
         }
 
         public List<WallFace> GetWallFaces() {
