@@ -98,7 +98,8 @@ namespace Sim {
         }
 
         private void Update() {
-            if (this.mode == BuildModeEnum.NONE) return;
+            if (this.mode == BuildModeEnum.NONE)
+                return;
 
             if (this.mode == BuildModeEnum.PAINT) {
                 this.Painting();
@@ -139,7 +140,7 @@ namespace Sim {
         public void Init(PaintBucket paintBucket) {
             this.currentOpenedBucket = paintBucket;
             this.SetMode(BuildModeEnum.PAINT);
-            
+
             FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.MESH_COLLIDER));
         }
 
@@ -150,12 +151,12 @@ namespace Sim {
         public Props GetCurrentPreviewedProps() {
             return this.currentPropSelected;
         }
-        
+
         private void Cancel() {
             if (this.mode == BuildModeEnum.PAINT) {
                 FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
             }
-            
+
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
             RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
@@ -257,8 +258,10 @@ namespace Sim {
                 if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
                     Vector3 magneticDir = currentPropsTransform.TransformDirection(Vector3.back);
                     float maxHitDistance = Mathf.Abs(this.currentPropsBounds.z) + this.magneticRange;
-                    
-                    if (this.magnetic && Physics.Raycast(point, magneticDir, out magneticHit, maxHitDistance, (1 << 12))) {
+
+                    if (this.currentPropSelected.GetConfiguration().IsPosableOnProps() && Physics.Raycast(point, Vector3.up, out hit, 10, (1 << 16))) {
+                        point = hit.point;
+                    } else if (this.magnetic && Physics.Raycast(point, magneticDir, out magneticHit, maxHitDistance, (1 << 12))) {
                         point = magneticHit.point;
                     }
 
@@ -296,10 +299,10 @@ namespace Sim {
             // Update position only if a change needed
             if (lastPosition.x != x || lastPosition.z != z) {
                 lastPosition = new Vector3(x, 0, z);
-                
+
                 if (magnetic && point == magneticHit.point) {
                     currentPropsTransform.position = new Vector3(x, point.y + 0.01f, point.z);
-                    
+
                     Vector3 offset = new Vector3(0, 0, -(Mathf.Abs(this.currentPropsBounds.z) + this.magneticPropsMargin));
                     currentPropsTransform.position -= currentPropsTransform.TransformDirection(offset);
                 } else {
