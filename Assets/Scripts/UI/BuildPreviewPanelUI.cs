@@ -11,6 +11,12 @@ namespace Sim.UI {
 
         [SerializeField] private WallVisibilityUI wallVisibilityUI;
 
+        [SerializeField] private Image currentModeImg;
+
+        [SerializeField] private Sprite propsEditSprite;
+
+        [SerializeField] private Sprite paintEditSprite;
+
         public delegate void OnValidateEvent();
 
         public static event OnValidateEvent OnValidate;
@@ -23,7 +29,9 @@ namespace Sim.UI {
             BuildPreview.OnPlaceableStateChanged += this.SetValidateButtonInteractable;
 
             this.wallVisibilityUI.gameObject.SetActive(!CameraManager.Instance || BuildManager.Instance.GetMode() != BuildModeEnum.PAINT);
-            
+
+            this.currentModeImg.sprite = BuildManager.Instance.GetMode() == BuildModeEnum.PAINT ? this.paintEditSprite : propsEditSprite;
+
             this.SetValidateButtonInteractable(true);
         }
 
