@@ -42,6 +42,10 @@ namespace Sim {
 
         private Vector3 lastPosition;
 
+        private Vector3 lastMagneticPoint;
+
+        private DirectionEnum magneticDirection;
+
         private new Camera camera;
 
         // Edit properties
@@ -256,19 +260,49 @@ namespace Sim {
                 this.currentPropsBounds = currentPropsTransform.InverseTransformDirection(this.currentPropsCollider.bounds.extents);
 
                 if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
-                    Vector3 magneticDir = currentPropsTransform.TransformDirection(Vector3.back);
-                    float maxHitDistance = Mathf.Abs(this.currentPropsBounds.z) + this.magneticRange;
-
                     if (this.currentPropSelected.GetConfiguration().IsPosableOnProps() && Physics.Raycast(point, Vector3.up, out hit, 10, (1 << 16))) {
                         point = hit.point;
-                    } else if (this.magnetic && Physics.Raycast(point, magneticDir, out magneticHit, maxHitDistance, (1 << 12))) {
-                        point = magneticHit.point;
+                    } else if (this.magnetic) {
+                        float maxHitDistanceZ = Mathf.Abs(this.currentPropsBounds.z) + this.magneticRange;
+                        float maxHitDistanceX = Mathf.Abs(this.currentPropsBounds.x) + this.magneticRange;
+
+                        if (Physics.Raycast(hit.point, currentPropsTransform.TransformDirection(Vector3.back), out magneticHit, maxHitDistanceZ, (1 << 12))) {
+                            point = magneticHit.point;
+                            this.lastMagneticPoint = point;
+                            this.magneticDirection = DirectionEnum.BACK;
+
+                            RaycastHit subHit;
+                            if (Physics.Raycast(magneticHit.point + (magneticHit.normal * 0.001f), -currentPropsTransform.right, out subHit, maxHitDistanceX, (1 << 12))) {
+                                point = subHit.point;
+                                this.lastMagneticPoint = point;
+                                this.magneticDirection = DirectionEnum.LEFT;
+                            } else if (Physics.Raycast(magneticHit.point + (magneticHit.normal * 0.001f), currentPropsTransform.right, out subHit, maxHitDistanceX, (1 << 12))) {
+                                point = subHit.point;
+                                this.lastMagneticPoint = point;
+                                this.magneticDirection = DirectionEnum.RIGHT;
+                            }
+                        }
                     }
 
                     this.CalculatePlacement(point, currentPropsTransform);
                 } else if (this.magnetic && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall") && hit.normal.y == 0) {
                     if (Physics.Raycast(point, Vector3.down, out magneticHit, 10, (1 << 9))) {
                         point = magneticHit.point;
+                        this.lastMagneticPoint = point;
+                        this.magneticDirection = DirectionEnum.DOWN;
+
+                        float maxHitDistanceX = Mathf.Abs(this.currentPropsBounds.x) + this.magneticRange;
+                        RaycastHit subHit;
+                        if (Physics.Raycast(magneticHit.point + (hit.normal * 0.001f), -currentPropsTransform.right, out subHit, maxHitDistanceX, (1 << 12))) {
+                            point = subHit.point;
+                            this.lastMagneticPoint = point;
+                            this.magneticDirection = DirectionEnum.LEFT;
+                        } else if (Physics.Raycast(magneticHit.point + (hit.normal * 0.001f), currentPropsTransform.right, out subHit, maxHitDistanceX, (1 << 12))) {
+                            point = subHit.point;
+                            this.lastMagneticPoint = point;
+                            this.magneticDirection = DirectionEnum.RIGHT;
+                        }
+
                         this.CalculatePlacement(point, currentPropsTransform);
                     }
                 } else if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Posable Surface")) {
@@ -300,11 +334,22 @@ namespace Sim {
             if (lastPosition.x != x || lastPosition.z != z) {
                 lastPosition = new Vector3(x, 0, z);
 
-                if (magnetic && point == magneticHit.point) {
-                    currentPropsTransform.position = new Vector3(x, point.y + 0.01f, point.z);
+                if (magnetic && this.lastMagneticPoint == point) {
+                    Vector3 offset = Vector3.zero;
 
-                    Vector3 offset = new Vector3(0, 0, -(Mathf.Abs(this.currentPropsBounds.z) + this.magneticPropsMargin));
+                    if (this.magneticDirection == DirectionEnum.BACK || this.magneticDirection == DirectionEnum.DOWN) {
+                        currentPropsTransform.position = new Vector3(x, point.y + 0.01f, point.z);
+                        offset = new Vector3(0, 0, -(Mathf.Abs(this.currentPropsBounds.z) + this.magneticPropsMargin));
+                    } else if (this.magneticDirection == DirectionEnum.LEFT || this.magneticDirection == DirectionEnum.RIGHT) {
+                        currentPropsTransform.position = new Vector3(point.x, point.y + 0.01f, point.z);
+
+                        int direction = this.magneticDirection == DirectionEnum.RIGHT ? 1 : -1;
+                        offset = new Vector3(direction * (Mathf.Abs(this.currentPropsBounds.x) + this.magneticPropsMargin), 0, -(Mathf.Abs(this.currentPropsBounds.z) + this.magneticPropsMargin));
+                    }
+
                     currentPropsTransform.position -= currentPropsTransform.TransformDirection(offset);
+
+                    this.lastMagneticPoint = Vector3.negativeInfinity;
                 } else {
                     currentPropsTransform.position = new Vector3(x, point.y + 0.01f, z);
                 }
