@@ -7,9 +7,6 @@ namespace Sim {
     public class BuildCamera : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
-        private Transform target;
-
-        [SerializeField]
         private float moveSpeedWithKeyboard;
 
         [SerializeField]
@@ -20,6 +17,9 @@ namespace Sim {
 
         [SerializeField]
         private CinemachineFreeLook freelookCamera;
+
+        [SerializeField]
+        private CameraTarget cameraTarget;
 
         private new Camera camera;
 
@@ -33,12 +33,16 @@ namespace Sim {
         }
 
         private void OnEnable() {
+            cameraTarget.enabled = false;
+
             BuildManager.OnModeChanged += this.BuildModeChanged;
 
             this.freelookCamera.gameObject.SetActive(true);
         }
 
         private void OnDisable() {
+            cameraTarget.enabled = true;
+
             BuildManager.OnModeChanged -= this.BuildModeChanged;
 
             this.freelookCamera.gameObject.SetActive(false);
@@ -61,8 +65,12 @@ namespace Sim {
         }
 
         public void Setup(CinemachineFreeLook originCamera) {
+            this.SetTargetPosition(RoomManager.LocalPlayer.transform.position, true);
             this.SetVirtualCameraRotation(originCamera.m_XAxis.Value, originCamera.m_YAxis.Value);
-            this.SetTargetPosition(RoomManager.LocalPlayer.transform.position, false);
+        }
+
+        public CinemachineFreeLook GetVirtualCamera() {
+            return this.freelookCamera;
         }
 
         /**
@@ -70,9 +78,9 @@ namespace Sim {
          */
         private void SetTargetPosition(Vector3 pos, bool smooth) {
             if (smooth) {
-                this.target.DOMove(pos, 0.5f);
+                this.cameraTarget.transform.DOMove(pos, 0.5f);
             } else {
-                this.target.transform.position = pos;
+                this.cameraTarget.transform.position = pos;
             }
         }
 
@@ -103,14 +111,14 @@ namespace Sim {
 
             Vector3 movement = this.camera.transform.TransformDirection(new Vector3(this.horizontal, 0, this.vertical));
 
-            this.target.Translate(new Vector3(movement.x, 0, movement.z) * this.moveSpeedWithKeyboard * Time.deltaTime);
+            this.cameraTarget.transform.Translate(new Vector3(movement.x, 0, movement.z) * this.moveSpeedWithKeyboard * Time.deltaTime);
         }
 
         private void ManageDragCamera() {
             Vector3 pos = Camera.main.ScreenToViewportPoint(Input.mousePosition - dragOrigin);
             Vector3 move = this.camera.transform.TransformDirection(new Vector3(pos.x, 0, pos.y));
 
-            this.target.Translate(new Vector3(move.x, 0, move.z) * dragSpeed * Time.deltaTime, Space.World);
+            this.cameraTarget.transform.Translate(new Vector3(move.x, 0, move.z) * dragSpeed * Time.deltaTime, Space.World);
         }
     }
 }
