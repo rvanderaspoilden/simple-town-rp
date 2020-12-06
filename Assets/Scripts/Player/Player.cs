@@ -61,6 +61,7 @@ namespace Sim {
                 if (this.propsTarget && this.CanInteractWith(this.propsTarget)) {
                     HUDManager.Instance.DisplayContextMenu(true, CameraManager.camera.WorldToScreenPoint(this.propsTarget.transform.position), this.propsTarget);
                     this.propsTarget = null;
+                    this.agent.ResetPath();
                 }
             } else if(MarkerController.Instance.IsActive()){
                 MarkerController.Instance.Hide();

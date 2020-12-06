@@ -260,8 +260,10 @@ namespace Sim {
                 this.currentPropsBounds = currentPropsTransform.InverseTransformDirection(this.currentPropsCollider.bounds.extents);
 
                 if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
-                    if (this.currentPropSelected.GetConfiguration().IsPosableOnProps() && Physics.Raycast(point, Vector3.up, out hit, 10, (1 << 16))) {
-                        point = hit.point;
+                    if (this.currentPropSelected.GetConfiguration().IsPosableOnProps()) {
+                        if(Physics.Raycast(point, Vector3.up, out hit, 10, (1 << 16))) {
+                            point = hit.point;
+                        }
                     } else if (this.magnetic) {
                         float maxHitDistanceZ = Mathf.Abs(this.currentPropsBounds.z) + this.magneticRange;
                         float maxHitDistanceX = Mathf.Abs(this.currentPropsBounds.x) + this.magneticRange;

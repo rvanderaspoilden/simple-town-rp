@@ -137,6 +137,8 @@ namespace Sim {
 
             if (this.currentMode == CameraModeEnum.BUILD) {
                 this.buildCamera.Setup(this.tpsCamera.GetVirtualCamera());
+            } else {
+                this.tpsCamera.Setup(this.buildCamera.GetVirtualCamera());
             }
         }
 
