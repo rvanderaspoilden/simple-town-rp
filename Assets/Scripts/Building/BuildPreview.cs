@@ -64,7 +64,7 @@ namespace Sim.Building {
             }
 
             if (this.currentProps.IsWallProps()) {
-                this.validRotation = this.transform.rotation.eulerAngles != Vector3.zero;
+                this.validRotation = this.CheckWallPropsIntegrity();
             } else {
                 this.validRotation = true;
             }
@@ -83,6 +83,25 @@ namespace Sim.Building {
 
             this.colliderBounds = this.transform.InverseTransformDirection(this.collider.bounds.extents);
             return Physics.Raycast(this.transform.position, -this.transform.forward, Mathf.Abs(this.colliderBounds.z) + 0.1f, (1 << 12));
+        }
+
+        /**
+         * This method is used to check if the props surface is totally on a wall face 
+         */
+        private bool CheckWallPropsIntegrity() {
+            this.colliderBounds = this.transform.InverseTransformDirection(this.collider.bounds.extents);
+
+            Vector3 upperLeftPos = this.transform.position + this.transform.TransformDirection(new Vector3(-this.colliderBounds.x, this.colliderBounds.y, 0));
+            Vector3 upperRightPos = this.transform.position + this.transform.TransformDirection(new Vector3(this.colliderBounds.x, this.colliderBounds.y, 0));
+            Vector3 lowerLeftPos = this.transform.position + this.transform.TransformDirection(new Vector3(-this.colliderBounds.x, -this.colliderBounds.y, 0));
+            Vector3 lowerRightPos = this.transform.position + this.transform.TransformDirection(new Vector3(this.colliderBounds.x, -this.colliderBounds.y, 0));
+
+            bool isUpperLeftValid = Physics.Raycast(upperLeftPos, -this.transform.forward, Mathf.Abs(this.colliderBounds.z) + 0.1f, (1 << 12));
+            bool isUpperRightValid = Physics.Raycast(upperRightPos, -this.transform.forward, Mathf.Abs(this.colliderBounds.z) + 0.1f, (1 << 12));
+            bool isLowerLeftValid = Physics.Raycast(lowerLeftPos, -this.transform.forward, Mathf.Abs(this.colliderBounds.z) + 0.1f, (1 << 12));
+            bool isLowerRightValid = Physics.Raycast(lowerRightPos, -this.transform.forward, Mathf.Abs(this.colliderBounds.z) + 0.1f, (1 << 12));
+
+            return this.transform.rotation.eulerAngles != Vector3.zero && isUpperLeftValid && isUpperRightValid && isLowerRightValid && isLowerLeftValid;
         }
 
         private void OnTriggerStay(Collider other) {
