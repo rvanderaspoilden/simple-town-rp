@@ -12,11 +12,20 @@ namespace Sim.UI {
         [Header("Settings")]
         [SerializeField] private Button choiceButtonPrefab;
 
+        [SerializeField]
+        private float circleRadius;
+
         [Header("Only for debug")]
         [SerializeField] private List<Button> buttonChoices;
 
+        [SerializeField]
+        private RectTransform rectTransform;
+
+        private const float MAX_ANGLE = 360f;
+
         private void Awake() {
             this.buttonChoices = new List<Button>();
+            this.rectTransform = GetComponent<RectTransform>();
         }
 
         public void Setup(Props interactedProp) {
@@ -28,8 +37,11 @@ namespace Sim.UI {
                 Destroy(child.gameObject);
             }
 
-            foreach (Action action in interactedProp.GetActions()) {
+            for (int i = 0; i < interactedProp.GetActions().Length; i++) {
+                Action action = interactedProp.GetActions()[i];
                 Button button = Instantiate(this.choiceButtonPrefab, this.transform);
+                
+                button.transform.position = PointOnCircle(this.circleRadius, (MAX_ANGLE / interactedProp.GetActions().Length) * i, this.rectTransform.anchoredPosition);
                 button.interactable = !action.IsLocked();
                 button.GetComponentInChildren<TextMeshProUGUI>().text = action.GetActionLabel();
                 button.onClick.AddListener(() => {
@@ -38,6 +50,15 @@ namespace Sim.UI {
                 });
                 this.buttonChoices.Add(button);
             }
+        }
+        
+        public static Vector2 PointOnCircle(float radius, float angleInDegrees, Vector2 origin)
+        {
+            // Convert from degrees to radians via multiplication by PI/180        
+            float x = (float)(radius * Math.Cos(angleInDegrees * Math.PI / 180F)) + origin.x;
+            float y = (float)(radius * Math.Sin(angleInDegrees * Math.PI / 180F)) + origin.y;
+
+            return new Vector2(x, y);
         }
     }
 }
