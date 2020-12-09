@@ -611,6 +611,7 @@
           </e>
           <e p="Camera" t="Include">
             <e p="BuildCamera.cs" t="Include" />
+            <e p="CameraTarget.cs" t="Include" />
             <e p="ThirdPersonCamera.cs" t="Include" />
           </e>
           <e p="Communication" t="Include">
@@ -641,6 +642,7 @@
             <e p="CatalogCategoryEnum.cs" t="Include" />
             <e p="ColliderTypeEnum.cs" t="Include" />
             <e p="CursorTypeEnum.cs" t="Include" />
+            <e p="DirectionEnum.cs" t="Include" />
             <e p="DoorDirectionEnum.cs" t="Include" />
             <e p="MoodEnum.cs" t="Include" />
             <e p="PanelTypeEnum.cs" t="Include" />

@@ -8,17 +8,35 @@ using UnityEngine.AI;
 namespace Sim.Building {
     public class BuildPreview : MonoBehaviour {
         [Header("Only for debug")]
-        [SerializeField] private NavMeshObstacle navMeshObstacle;
-        [SerializeField] private bool haveFreeArea;
-        [SerializeField] private bool detectGround;
-        [SerializeField] private bool validRotation;
-        [SerializeField] private Props currentProps;
-        [SerializeField] private bool placeable;
+        [SerializeField]
+        private NavMeshObstacle navMeshObstacle;
 
-        [SerializeField] private List<Collider> colliderTriggered;
+        [SerializeField]
+        private bool haveFreeArea;
+
+        [SerializeField]
+        private bool detectGround;
+
+        [SerializeField]
+        private bool validRotation;
+
+        [SerializeField]
+        private Props currentProps;
+
+        [SerializeField]
+        private bool placeable;
+
+        [SerializeField]
+        private new Collider collider;
+
+        [SerializeField]
+        private Vector3 colliderBounds;
+
+        [SerializeField]
+        private List<Collider> colliderTriggered;
 
         private PropsRenderer propsRenderer;
-        
+
         public delegate void PlaceableState(bool isPlaceable);
 
         public static event PlaceableState OnPlaceableStateChanged;
@@ -28,8 +46,10 @@ namespace Sim.Building {
             this.navMeshObstacle = GetComponentInChildren<NavMeshObstacle>();
             this.currentProps = GetComponent<Props>();
             this.propsRenderer = GetComponent<PropsRenderer>();
+            this.collider = GetComponent<Collider>();
 
-            if (navMeshObstacle) { // disable this to avoid collision with player agent
+            if (navMeshObstacle) {
+                // disable this to avoid collision with player agent
                 navMeshObstacle.enabled = false;
             }
 
@@ -38,7 +58,7 @@ namespace Sim.Building {
 
         private void Update() {
             if (Physics.Raycast(this.transform.position, Vector3.down, 10, (1 << 9))) {
-                this.detectGround = true;
+                this.detectGround = this.CheckConnectedToWallConstraint();
             } else {
                 this.detectGround = false;
             }
@@ -50,6 +70,19 @@ namespace Sim.Building {
             }
 
             this.CheckValidity();
+        }
+
+        /**
+         * Methods which check if props is well connected to wall if property is checked in configuration
+         * Return true if it's valid
+         */
+        private bool CheckConnectedToWallConstraint() {
+            if (!this.currentProps.GetConfiguration().NeedToBeConnectedToWall()) {
+                return true;
+            }
+
+            this.colliderBounds = this.transform.InverseTransformDirection(this.collider.bounds.extents);
+            return Physics.Raycast(this.transform.position, -this.transform.forward, Mathf.Abs(this.colliderBounds.z) + 0.1f, (1 << 12));
         }
 
         private void OnTriggerStay(Collider other) {
