@@ -31,6 +31,9 @@ namespace Sim.Scriptables {
         private bool posableOnProps;
 
         [SerializeField]
+        private bool connectedToWall;
+
+        [SerializeField]
         private bool toBuild;
 
         [SerializeField]
@@ -43,7 +46,10 @@ namespace Sim.Scriptables {
         };
 
         [SerializeField]
-        private Action[] unbuiltActions;
+        private Action[] unbuiltActions = new[] {
+            new Action(ActionTypeEnum.DELETE, "Delete"),
+            new Action(ActionTypeEnum.MOVE, "Move")
+        };
 
         [SerializeField]
         private Texture2D cursor;
@@ -54,6 +60,10 @@ namespace Sim.Scriptables {
 
         public PropsType GetPropsType() {
             return this.propsType;
+        }
+
+        public bool NeedToBeConnectedToWall() {
+            return this.connectedToWall;
         }
 
         public Action[] GetUnbuiltActions() {
