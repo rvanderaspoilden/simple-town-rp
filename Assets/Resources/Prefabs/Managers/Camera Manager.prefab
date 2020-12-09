@@ -94,8 +94,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1683741971749886202}
-  m_LocalRotation: {x: 0.44721362, y: 0.000000030779713, z: -0.000000015389857, w: 0.8944272}
-  m_LocalPosition: {x: 0, y: 8, z: -6}
+  m_LocalRotation: {x: -0.0000000021020674, y: 0.8662876, z: -0.49954566, w: -0.0000000036453003}
+  m_LocalPosition: {x: 0.00000035762787, y: 8, z: 4.6299996}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 8584576505696706523}
@@ -652,7 +652,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7516993543609191879}
-  m_LocalRotation: {x: 0.4472136, y: 0.000000015389857, z: -0.00000000769493, w: 0.89442724}
+  m_LocalRotation: {x: 0.4472136, y: -0.000000015389857, z: 0.000000007694926, w: 0.89442724}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -718,7 +718,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &7516993544326666695
 Transform:
   m_ObjectHideFlags: 0
@@ -987,7 +987,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7516993544438026869}
-  m_LocalRotation: {x: 0.43087044, y: -0.000000015527275, z: 0.0000000074137203, w: 0.9024138}
+  m_LocalRotation: {x: 0.43087044, y: 0.000000015527274, z: -0.000000007413721, w: 0.9024138}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -1179,6 +1179,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   propsRotationSpeed: 0.3
   propsStepSize: 0.05
+  magneticRange: 0
+  magneticPropsMargin: 0
+  magnetic: 0
 --- !u!114 &2049593766679326412
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1191,11 +1194,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfe5aa74f0c64d0459072901081e1088, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  target: {fileID: 6580203275534215636}
   moveSpeedWithKeyboard: 5
   dragSpeed: 10
   maxRotationSpeed: 200
   freelookCamera: {fileID: 7516993544326666696}
+  cameraTarget: {fileID: 0}
 --- !u!114 &6354742311832656645
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1209,6 +1212,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   freelookCamera: {fileID: 9012590873216337164}
+  cameraTarget: {fileID: 0}
   maxRotationSpeed: 200
 --- !u!1 &9012590871550196938
 GameObject:
