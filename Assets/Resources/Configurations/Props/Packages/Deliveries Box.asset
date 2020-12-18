@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: Deliveries Box
+  m_EditorClassIdentifier: 
+  id: 42
+  displayName: Deliveries Box
+  propsType: 0
+  buyable: 0
+  prefab: {fileID: 1682345618382131481, guid: 3c5fddc122d575d419dbe304880aacff, type: 3}
+  packageConfig: {fileID: 0}
+  surfaceToPose: 0
+  posableOnProps: 0
+  connectedToWall: 0
+  toBuild: 0
+  rangeToInteract: 1
+  actions:
+  - actionType: 1
+    actionLabel: Look deliveries
+    locked: 0
+  unbuiltActions: []
+  cursor: {fileID: 2800000, guid: b642424dd84566a4faa0d7cfadc2ac5f, type: 3}
