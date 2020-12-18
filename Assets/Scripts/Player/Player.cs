@@ -17,13 +17,12 @@ namespace Sim {
         private NavMeshAgent agent;
 
         [SerializeField]
-        private ThirdPersonCharacter thirdPersonCharacter;
-
-        [SerializeField]
         private StateType state;
 
         [SerializeField]
         private Props propsTarget;
+
+        private PlayerAnimator playerAnimator;
 
         private new Rigidbody rigidbody;
 
@@ -33,9 +32,8 @@ namespace Sim {
 
         private void Awake() {
             this.agent = GetComponent<NavMeshAgent>();
-            this.thirdPersonCharacter = GetComponent<ThirdPersonCharacter>();
-            this.agent.updateRotation = false;
             this.rigidbody = GetComponent<Rigidbody>();
+            this.playerAnimator = GetComponent<PlayerAnimator>();
 
             PhotonNetwork.AddCallbackTarget(this);
         }
@@ -43,7 +41,6 @@ namespace Sim {
         private void Start() {
             if (!this.photonView.IsMine) {
                 this.agent.enabled = false;
-                this.thirdPersonCharacter.enabled = false;
                 this.rigidbody.useGravity = false;
             }
         }
@@ -66,8 +63,10 @@ namespace Sim {
             } else if(MarkerController.Instance.IsActive()){
                 MarkerController.Instance.Hide();
             }
-
-            thirdPersonCharacter.Move(this.agent.remainingDistance > this.agent.stoppingDistance ? this.agent.desiredVelocity : Vector3.zero, false, false);
+            
+            Debug.Log(this.agent.pathStatus);
+            
+            this.playerAnimator.SetVelocity(this.agent.velocity.magnitude);
         }
         
         public bool CanInteractWith(Props propsToInteract) {
