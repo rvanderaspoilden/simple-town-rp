@@ -60,20 +60,20 @@ namespace Sim {
                     this.propsTarget = null;
                     this.agent.ResetPath();
                 }
-            } else if(MarkerController.Instance.IsActive()){
+            } else if (!this.agent.hasPath && MarkerController.Instance.IsActive()) {
+                this.agent.ResetPath();
+
                 MarkerController.Instance.Hide();
             }
-            
-            Debug.Log(this.agent.pathStatus);
-            
+
             this.playerAnimator.SetVelocity(this.agent.velocity.magnitude);
         }
-        
+
         public bool CanInteractWith(Props propsToInteract) {
             float maxRange = propsToInteract.GetConfiguration().GetRangeToInteract();
             Vector3 origin = Vector3.Scale(propsToInteract.transform.position, new Vector3(1, 0, 1));
             Vector3 target = Vector3.Scale(this.transform.position, new Vector3(1, 0, 1));
-            
+
             if (propsToInteract.GetActions()?.Length <= 0 || Mathf.Abs(Vector3.Distance(origin, target)) > maxRange) {
                 return false;
             }
@@ -97,7 +97,7 @@ namespace Sim {
             float maxRange = propsToInteract.GetConfiguration().GetRangeToInteract();
             Vector3 origin = Vector3.Scale(hitPoint, new Vector3(1, 0, 1));
             Vector3 target = Vector3.Scale(this.transform.position, new Vector3(1, 0, 1));
-            
+
             if (propsToInteract.GetActions()?.Length <= 0 || Mathf.Abs(Vector3.Distance(origin, target)) > maxRange) {
                 return false;
             }
