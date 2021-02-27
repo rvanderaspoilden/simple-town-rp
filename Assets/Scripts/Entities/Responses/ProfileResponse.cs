@@ -6,14 +6,14 @@ namespace Sim {
     [Serializable]
     public class ProfileResponse {
         [SerializeField] private User user;
-        [SerializeField] private Personnage[] personnages;
+        [SerializeField] private CharacterData[] personnages;
 
         public User User {
             get => user;
             set => user = value;
         }
 
-        public Personnage[] Personnages {
+        public CharacterData[] Personnages {
             get => personnages;
             set => personnages = value;
         }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ContentModelStore">
-    <e p="C:\Users\rodol\AppData\local\JetBrains\Rider2020.2\extResources" t="IncludeRecursive" />
-    <e p="C:\Users\rodol\AppData\local\JetBrains\Rider2020.2\resharper-host\local\Transient\Rider\v202\SolutionCaches\_sim.-1429792256.00" t="ExcludeRecursive" />
+    <e p="C:\Users\rodol\AppData\local\JetBrains\Rider2020.3\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\rodol\AppData\local\JetBrains\Rider2020.3\resharper-host\local\Transient\Rider\v203\SolutionCaches\_sim.-1429792256.00" t="ExcludeRecursive" />
     <e p="C:\workspace\Sim" t="IncludeRecursive">
       <e p="Assembly-CSharp-firstpass.csproj" t="IncludeRecursive" />
       <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
@@ -361,7 +361,7 @@
             <e p="Scenes.cs" t="Include" />
           </e>
           <e p="Entities" t="Include">
-            <e p="Personnage.cs" t="Include" />
+            <e p="CharacterData.cs" t="Include" />
             <e p="Responses" t="Include">
               <e p="AppartmentResponse.cs" t="Include" />
               <e p="AuthenticationResponse.cs" t="Include" />
@@ -417,6 +417,7 @@
           </e>
           <e p="Scriptables" t="Include">
             <e p="CursorConfig.cs" t="Include" />
+            <e p="MoodConfig.cs" t="Include" />
             <e p="PaintConfig.cs" t="Include" />
             <e p="PaintDatabaseConfig.cs" t="Include" />
             <e p="PropsConfig.cs" t="Include" />
@@ -429,6 +430,7 @@
             <e p="ContextMenuUI.cs" t="Include" />
             <e p="DefaultViewUI.cs" t="Include" />
             <e p="MarkerController.cs" t="Include" />
+            <e p="MoodButton.cs" t="Include" />
             <e p="MoodSelectorUI.cs" t="Include" />
             <e p="PhoneControllerUI.cs" t="Include" />
             <e p="PropsVisibilityUI.cs" t="Include" />

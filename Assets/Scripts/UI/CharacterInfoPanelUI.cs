@@ -1,4 +1,6 @@
-﻿using Sim.Entities;
+﻿using System;
+using Sim.Entities;
+using Sim.Scriptables;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,18 +26,34 @@ namespace Sim.UI {
         [SerializeField]
         private Image sleepBar;
 
-        public void Setup(Personnage personnage) {
-            this.SetText(this.nameText, personnage.GetFullName());
-            this.SetText(this.jobText, personnage.Job);
-            this.SetText(this.moneyText, personnage.Money.ToString());
+        [SerializeField] private Image moodImage;
+
+        private void OnEnable() {
+            Player.OnCharacterDataChanged += Setup;
+        }
+
+        private void OnDisable() {
+            Player.OnCharacterDataChanged -= Setup;
+        }
+
+        public void Setup(CharacterData characterData) {
+            this.SetText(this.nameText, characterData.GetFullName());
+            this.SetText(this.jobText, characterData.Job);
+            this.SetText(this.moneyText, characterData.Money.ToString());
             
-            this.SetFillBarAmount(this.thirstBar, personnage.VitalInformation.GetThirst() / CommonConstants.MAX_BAR_AMOUNT);
-            this.SetFillBarAmount(this.hungryBar, personnage.VitalInformation.GetHungry() / CommonConstants.MAX_BAR_AMOUNT);
-            this.SetFillBarAmount(this.sleepBar, personnage.VitalInformation.GetSleep() / CommonConstants.MAX_BAR_AMOUNT);
+            this.SetFillBarAmount(this.thirstBar, characterData.VitalInformation.GetThirst() / CommonConstants.MAX_BAR_AMOUNT);
+            this.SetFillBarAmount(this.hungryBar, characterData.VitalInformation.GetHungry() / CommonConstants.MAX_BAR_AMOUNT);
+            this.SetFillBarAmount(this.sleepBar, characterData.VitalInformation.GetSleep() / CommonConstants.MAX_BAR_AMOUNT);
+            
+            this.SetMood(DatabaseManager.GetMoodConfigByEnum(characterData.Mood));
         }
 
         private void SetText(TextMeshProUGUI tmpPro, string value) {
             tmpPro.text = value;
+        }
+
+        private void SetMood(MoodConfig moodConfig) {
+            moodImage.sprite = moodConfig.Sprite;
         }
 
         private void SetFillBarAmount(Image imageBar, float fillAmount) {

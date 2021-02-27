@@ -1,9 +1,10 @@
 ﻿using Sim.Enums;
+using Sim.Scriptables;
 using UnityEngine;
 
 namespace Sim.Entities {
     [System.Serializable]
-    public class Personnage {
+    public class CharacterData {
         [SerializeField]
         private string _id;
 
@@ -32,7 +33,7 @@ namespace Sim.Entities {
         private VitalInformation vital_information;
 
         [SerializeField]
-        private MoodEnum mood;
+        private MoodEnum mood = MoodEnum.HAPPY;
 
         public MoodEnum Mood {
             get => mood;

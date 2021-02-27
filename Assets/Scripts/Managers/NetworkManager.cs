@@ -15,7 +15,7 @@ namespace Sim {
 
         [Header("Only for debug")]
         [SerializeField]
-        private Personnage personnage;
+        private CharacterData characterData;
 
         private string destinationScene;
 
@@ -42,14 +42,14 @@ namespace Sim {
             StopAllCoroutines();
         }
 
-        public Personnage Personnage => personnage;
+        public CharacterData CharacterData => characterData;
 
-        public void Play(Personnage personnage) {
-            this.personnage = personnage;
+        public void Play(CharacterData data) {
+            this.characterData = data;
 
             if (PhotonNetwork.IsConnectedAndReady && this.isConnectedToServer) {
                 LoadingManager.Instance.Show(true);
-                Debug.Log("Connecting to server with personnage : " + personnage.Firstname);
+                Debug.Log("Connecting to server with character : " + characterData.Firstname);
                 this.GoToRoom(PlacesEnum.HALL);
             } else {
                 Debug.Log("Player is not connected to lobby");
@@ -72,7 +72,7 @@ namespace Sim {
 
             if (place == PlacesEnum.HALL) {
                 roomName =
-                    $"{PlaceUtils.GetPlaceEnumName(place)} n°{CommonUtils.GetAppartmentFloorFromAppartmentId(personnage.AppartmentId, CommonConstants.appartmentLimitPerFloor)}";
+                    $"{PlaceUtils.GetPlaceEnumName(place)} n°{CommonUtils.GetAppartmentFloorFromAppartmentId(characterData.AppartmentId, CommonConstants.appartmentLimitPerFloor)}";
             } else if (place == PlacesEnum.APPARTMENT) {
                 roomName = $"{PlaceUtils.GetPlaceEnumName(place)} n°{this.currentAppartmentNumber}";
             }
@@ -153,7 +153,7 @@ namespace Sim {
                 isRoomGenerated = PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated") && RoomManager.Instance.IsGenerated();
                 
                 if (isRoomGenerated) {
-                    RoomManager.Instance.InstantiateLocalPlayer(this.playerPrefab, this.personnage);
+                    RoomManager.Instance.InstantiateLocalPlayer(this.playerPrefab, this.characterData);
                 }
                 
                 yield return new WaitForSeconds(0.1f);
