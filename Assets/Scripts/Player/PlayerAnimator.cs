@@ -12,7 +12,7 @@ namespace Sim {
         private void Awake() {
             this.animator = GetComponent<Animator>();
             this.velocityHash = Animator.StringToHash("Velocity");
-            this.moodHash = Animator.StringToHash("Mood");
+            this.moodHash = Animator.StringToHash("MoodType");
             this.actionHash = Animator.StringToHash("Action");
         }
 
@@ -20,7 +20,7 @@ namespace Sim {
             this.animator.SetFloat(velocityHash, value);
         }
 
-        public void SetMood(int value) {
+        public void SetMood(float value) {
             this.animator.SetFloat(moodHash, value);
         }
 

@@ -80,7 +80,7 @@ BlendTree:
     m_CycleOffset: 0
     m_DirectBlendParameter: Velocity
     m_Mirror: 0
-  m_BlendParameter: Mood
+  m_BlendParameter: MoodType
   m_BlendParameterY: Blend
   m_MinThreshold: 0
   m_MaxThreshold: 4
@@ -135,7 +135,7 @@ BlendTree:
     m_CycleOffset: 0
     m_DirectBlendParameter: Velocity
     m_Mirror: 0
-  m_BlendParameter: Mood
+  m_BlendParameter: MoodType
   m_BlendParameterY: Mood
   m_MinThreshold: 0
   m_MaxThreshold: 4
@@ -209,13 +209,13 @@ AnimatorController:
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 0}
-  - m_Name: Mood
+  - m_Name: Action
     m_Type: 1
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
     m_Controller: {fileID: 0}
-  - m_Name: Action
+  - m_Name: MoodType
     m_Type: 1
     m_DefaultFloat: 0
     m_DefaultInt: 0
