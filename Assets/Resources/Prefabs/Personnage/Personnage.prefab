@@ -23,12 +23,12 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1544476716}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.5969999, z: 0}
+  m_LocalRotation: {x: 0.0010982677, y: -0.01767375, z: 0.02436693, w: 0.9995463}
+  m_LocalPosition: {x: -0.005121481, y: 0.09378958, z: 0.03693365}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
-  m_Father: {fileID: 4085214494787993870}
-  m_RootOrder: 13
+  m_Father: {fileID: 7988552340717736845}
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7477411865377080
 GameObject:
@@ -1048,7 +1048,6 @@ Transform:
   - {fileID: 806551336711332921}
   - {fileID: 3309497064466412957}
   - {fileID: 7031904449999067196}
-  - {fileID: 1544476717}
   m_Father: {fileID: 6953365128800779912}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1807,6 +1806,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 5153319885627168611}
+  - {fileID: 1544476717}
   m_Father: {fileID: 7302397932415236855}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2074,6 +2074,9 @@ MonoBehaviour:
   - Type: 3
     SynchronizeType: 2
     Name: Mood
+  - Type: 1
+    SynchronizeType: 0
+    Name: Action
   m_SynchronizeLayers:
   - SynchronizeType: 2
     LayerIndex: 0

@@ -55,20 +55,22 @@ namespace Sim {
         private void Update() {
             if (!this.photonView.IsMine) return;
 
-            if (this.agent.remainingDistance > this.agent.stoppingDistance) {
-                MarkerController.Instance.ShowAt(this.agent.pathEndPosition);
+            if (this.agent.enabled) { // TODO: care for action
+                if (this.agent.remainingDistance > this.agent.stoppingDistance) {
+                    MarkerController.Instance.ShowAt(this.agent.pathEndPosition);
 
-                if (this.propsTarget && this.CanInteractWith(this.propsTarget)) {
-                    HUDManager.Instance.DisplayContextMenu(true,
-                        CameraManager.camera.WorldToScreenPoint(this.propsTarget.transform.position), this.propsTarget);
-                    this.propsTarget = null;
-                    this.agent.ResetPath();
+                    if (this.propsTarget && this.CanInteractWith(this.propsTarget)) {
+                        HUDManager.Instance.DisplayContextMenu(true,
+                            CameraManager.camera.WorldToScreenPoint(this.propsTarget.transform.position), this.propsTarget);
+                        this.propsTarget = null;
+                        this.agent.ResetPath();
+                    }
                 }
-            }
-            else if (!this.agent.hasPath && MarkerController.Instance.IsActive()) {
-                this.agent.ResetPath();
+                else if (!this.agent.hasPath && MarkerController.Instance.IsActive()) {
+                    this.agent.ResetPath();
 
-                MarkerController.Instance.Hide();
+                    MarkerController.Instance.Hide();
+                }
             }
 
             this.playerAnimator.SetVelocity(this.agent.velocity.magnitude);
@@ -81,6 +83,14 @@ namespace Sim {
                 this.playerAnimator.SetMood((int)characterData.Mood);
                 OnCharacterDataChanged?.Invoke(characterData);
             }
+        }
+
+        public void Sit(Transform seat) {
+            this.SetState(StateType.SIT);
+            this.agent.enabled = false;
+            this.transform.position = seat.position;
+            this.transform.rotation = seat.rotation;
+            this.playerAnimator.Sit();
         }
 
         public bool CanInteractWith(Props propsToInteract) {
