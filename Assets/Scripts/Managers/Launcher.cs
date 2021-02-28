@@ -1,14 +1,22 @@
 ﻿using System;
+using System.Collections;
 using Photon.Pun;
 using Sim.Entities;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Sim {
     public class Launcher : MonoBehaviour {
         [Header("Settings")]
         [SerializeField] private TextMeshProUGUI errorText;
+
+        [SerializeField] private TMP_InputField pseudoInputField;
+
+        [SerializeField] private TMP_InputField passwordInputField;
+
+        [SerializeField] private bool debug;
 
         [SerializeField] private Image statusImg;
 
@@ -23,6 +31,33 @@ namespace Sim {
 
         private void Start() {
             ApiManager.instance.CheckServerStatus();
+            
+            this.pseudoInputField.Select();
+            
+            if (debug) {
+                StartCoroutine(Debug());
+            }
+        }
+
+        private IEnumerator Debug() {
+            yield return new WaitForSeconds(2f);
+            this.username = "spectus";
+            this.password = "test";
+            this.Play();
+        }
+
+        private void Update() {
+            if (Input.GetKeyDown(KeyCode.Tab)) {
+                Selectable next = EventSystem.current.currentSelectedGameObject
+                    .GetComponent<Selectable>()
+                    .FindSelectableOnDown();
+ 
+                if (next) next.Select();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Return)) {
+                this.Play();
+            }
         }
 
         private void OnDestroy() {
