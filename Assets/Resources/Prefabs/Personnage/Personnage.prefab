@@ -1914,13 +1914,13 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
-  observableSearch: 0
-  Synchronization: 3
+  Synchronization: 1
   OwnershipTransfer: 0
+  observableSearch: 0
   ObservedComponents:
-  - {fileID: 0}
+  - {fileID: 3264097833707309577}
   - {fileID: -4232825608017059455}
-  viewIdField: 0
+  sceneViewId: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
 --- !u!114 &734558965602936367
@@ -2041,6 +2041,7 @@ MonoBehaviour:
   m_SynchronizePosition: 1
   m_SynchronizeRotation: 1
   m_SynchronizeScale: 0
+  m_UseLocal: 0
 --- !u!114 &4877693480474047665
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2071,12 +2072,12 @@ MonoBehaviour:
   - Type: 1
     SynchronizeType: 2
     Name: Velocity
-  - Type: 3
-    SynchronizeType: 2
-    Name: Mood
   - Type: 1
-    SynchronizeType: 0
+    SynchronizeType: 2
     Name: Action
+  - Type: 1
+    SynchronizeType: 2
+    Name: MoodType
   m_SynchronizeLayers:
   - SynchronizeType: 2
     LayerIndex: 0
