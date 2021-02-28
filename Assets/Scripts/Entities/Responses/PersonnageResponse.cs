@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace Sim {
     public class PersonnageResponse {
-        [SerializeField] private Personnage[] personnages;
+        [SerializeField] private CharacterData[] personnages;
 
-        public Personnage[] Personnages {
+        public CharacterData[] Personnages {
             get => personnages;
             set => personnages = value;
         }

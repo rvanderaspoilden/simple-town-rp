@@ -44,7 +44,7 @@ namespace Sim {
 
         private void Update() {
             if (Input.GetKeyDown(KeyCode.F) && this.player.GetState() == StateType.FREE && PhotonNetwork.IsMasterClient && AppartmentManager.instance &&
-                AppartmentManager.instance.IsOwner(NetworkManager.Instance.Personnage)) {
+                AppartmentManager.instance.IsOwner(NetworkManager.Instance.CharacterData)) {
                 HUDManager.Instance.DisplayAdminPanel(true);
             }
         }

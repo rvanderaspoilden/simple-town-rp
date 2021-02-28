@@ -49,8 +49,8 @@ namespace Sim {
 
         #region Callbacks
 
-        private void OnAuthenticationSucceeded(Personnage personnage) {
-            NetworkManager.Instance.Play(personnage);
+        private void OnAuthenticationSucceeded(CharacterData characterData) {
+            NetworkManager.Instance.Play(characterData);
         }
 
         private void OnAuthenticationFailed(String msg) => this.errorText.text = msg;

@@ -243,9 +243,10 @@ namespace Sim {
 
         #region Player
 
-        public virtual void InstantiateLocalPlayer(GameObject prefab, Personnage personnage) {
+        public virtual void InstantiateLocalPlayer(GameObject prefab, CharacterData characterData) {
             GameObject playerObj = PhotonNetwork.Instantiate("Prefabs/Personnage/" + prefab.name, this.playerSpawnPoint.transform.position, Quaternion.identity);
             LocalPlayer = playerObj.GetComponent<Player>();
+            LocalPlayer.CharacterData = characterData;
         }
 
         public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer) {

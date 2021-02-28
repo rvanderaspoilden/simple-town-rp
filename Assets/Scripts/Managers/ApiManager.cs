@@ -18,7 +18,7 @@ namespace Sim
 
         private Coroutine authenticationCoroutine;
 
-        public delegate void AuthenticationSucceededResponse(Personnage personnage);
+        public delegate void AuthenticationSucceededResponse(CharacterData personnage);
 
         public delegate void AuthenticationFailedResponse(String msg);
 
@@ -127,14 +127,14 @@ namespace Sim
                     ProfileResponse profileResponse = JsonUtility.FromJson<ProfileResponse>(profileRequest.downloadHandler.text);
                     this.user = profileResponse.User;
 
-                    // retrive user's personnages
-                    UnityWebRequest personnageRequest = UnityWebRequest.Get(this.uri + "/personnage/" + this.user.Id);
+                    // retrieve user's characters
+                    UnityWebRequest characterRequest = UnityWebRequest.Get(this.uri + "/personnage/" + this.user.Id);
 
-                    yield return personnageRequest.SendWebRequest();
+                    yield return characterRequest.SendWebRequest();
 
-                    if (personnageRequest.responseCode == 200)
+                    if (characterRequest.responseCode == 200)
                     {
-                        PersonnageResponse personnageResponse = JsonUtility.FromJson<PersonnageResponse>(personnageRequest.downloadHandler.text);
+                        PersonnageResponse personnageResponse = JsonUtility.FromJson<PersonnageResponse>(characterRequest.downloadHandler.text);
 
                         if (personnageResponse.Personnages != null && personnageResponse.Personnages.Length > 0)
                         {
@@ -151,7 +151,7 @@ namespace Sim
                     OnAuthenticationFailed?.Invoke("An error occured");
                 }
             }
-            else if (authRequest.responseCode == 401 || authRequest.isNetworkError)
+            else if (authRequest.responseCode == 401 || authRequest.result == UnityWebRequest.Result.ConnectionError)
             {
                 OnAuthenticationFailed?.Invoke("Username or password invalid");
             }

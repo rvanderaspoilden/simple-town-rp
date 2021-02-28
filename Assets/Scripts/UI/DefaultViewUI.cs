@@ -18,7 +18,6 @@ namespace Sim {
         private RectTransform phone;
 
         private void Start() {
-            this.characterInfoPanelUI.Setup(NetworkManager.Instance.Personnage);
             this.SetLocationText(PhotonNetwork.CurrentRoom.Name);
         }
 

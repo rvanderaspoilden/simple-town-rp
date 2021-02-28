@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Sim.Enums;
 using Sim.Scriptables;
 using UnityEditor;
 using UnityEngine;
@@ -12,6 +14,7 @@ namespace Sim {
         
         public static PropsDatabaseConfig PropsDatabase;
         public static PaintDatabaseConfig PaintDatabase;
+        public static List<MoodConfig> MoodConfigs;
 
         public static DatabaseManager Instance;
 
@@ -27,8 +30,15 @@ namespace Sim {
             
             PaintDatabase = Resources.Load<PaintDatabaseConfig>("Configurations/Databases/Paint Database");
             Debug.Log("Paint database loaded");
+
+            MoodConfigs = Resources.LoadAll<MoodConfig>("Configurations/Moods").ToList();
+            Debug.Log("Mood Configs loaded : " + MoodConfigs.Count);
             
             DontDestroyOnLoad(this.gameObject);
+        }
+
+        public static MoodConfig GetMoodConfigByEnum(MoodEnum moodEnum) {
+            return MoodConfigs.Find(config => config.MoodEnum == moodEnum);
         }
 
         public Material GetTransparentMaterial() {
