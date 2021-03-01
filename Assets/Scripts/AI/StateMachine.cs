@@ -21,9 +21,7 @@ namespace AI {
             //Debug.Log("Current state : " + this.GetCurrentState());
         }
 
-        public IState GetCurrentState() {
-            return this.currentState;
-        }
+        public IState CurrentState => currentState;
 
         public void SetState(IState state) {
             if (this.currentState == state) return;

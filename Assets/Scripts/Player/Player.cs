@@ -92,16 +92,13 @@ namespace Sim {
         #region ACTIONS
         
         public void SetTarget(Vector3 targetPoint, Props props) {
-            this.navMeshAgent.SetDestination(targetPoint);
             this.propsTarget = props;
             this.stateMachine.SetState(moveState);
+            this.navMeshAgent.SetDestination(targetPoint);
         }
 
-        public void Sit(Transform seat) {
-            this.navMeshAgent.enabled = false;
-            this.transform.position = seat.position;
-            this.transform.rotation = seat.rotation;
-            this.animator.Sit();
+        public void Sit(Seat props, Transform seatTransform) {
+            this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
         }
 
         #endregion
@@ -128,7 +125,8 @@ namespace Sim {
             return this.state;
         }
 
-
+        public StateMachine StateMachine => stateMachine;
+        
         public NavMeshAgent NavMeshAgent => navMeshAgent;
 
         public PlayerAnimator Animator => animator;

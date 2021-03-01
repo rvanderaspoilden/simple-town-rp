@@ -24,8 +24,8 @@ namespace Sim {
             this.animator.SetFloat(moodHash, value);
         }
 
-        public void Sit() {
-            this.animator.SetFloat(actionHash, 1f);
+        public void SetAction(CharacterAnimatorAction action) {
+            this.animator.SetFloat(actionHash, (float)action);
         }
     }
 }
