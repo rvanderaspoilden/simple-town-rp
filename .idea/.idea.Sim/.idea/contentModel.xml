@@ -331,6 +331,10 @@
           <e p="AI" t="Include">
             <e p="IState.cs" t="Include" />
             <e p="StateMachine.cs" t="Include" />
+            <e p="States" t="Include">
+              <e p="CharacterIdle.cs" t="Include" />
+              <e p="CharacterMove.cs" t="Include" />
+            </e>
             <e p="Transition.cs" t="Include" />
           </e>
           <e p="Building" t="Include">
