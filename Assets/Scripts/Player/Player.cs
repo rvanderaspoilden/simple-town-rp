@@ -86,7 +86,6 @@ namespace Sim {
         }
 
         public void Sit(Transform seat) {
-            this.SetState(StateType.SIT);
             this.agent.enabled = false;
             this.transform.position = seat.position;
             this.transform.rotation = seat.rotation;

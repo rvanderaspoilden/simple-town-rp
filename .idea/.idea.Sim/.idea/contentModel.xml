@@ -328,6 +328,11 @@
           </e>
         </e>
         <e p="Scripts" t="Include">
+          <e p="AI" t="Include">
+            <e p="IState.cs" t="Include" />
+            <e p="StateMachine.cs" t="Include" />
+            <e p="Transition.cs" t="Include" />
+          </e>
           <e p="Building" t="Include">
             <e p="BuildPreview.cs" t="Include" />
             <e p="Props" t="Include">
