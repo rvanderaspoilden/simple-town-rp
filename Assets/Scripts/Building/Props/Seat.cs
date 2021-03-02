@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Photon.Pun;
 using UnityEngine;
 
@@ -22,39 +24,58 @@ namespace Sim.Building {
             }
         }
 
+        public override void Synchronize(Photon.Realtime.Player playerTarget) {
+            base.Synchronize(playerTarget);
+
+            if (this.playersAssociatedToSeatIdx.Count > 0) {
+                photonView.RPC("RPC_Setup", playerTarget, this.playersAssociatedToSeatIdx);
+            }
+        }
+
         [PunRPC]
-        public bool RPC_AssignSeatForPlayer(int photonViewId, int seatIdx) {
+        public void RPC_Setup(Dictionary<int, int> data) {
+            this.playersAssociatedToSeatIdx = data;
+        }
+
+        [PunRPC]
+        public void RPC_AssignSeatForPlayer(int photonViewId, int seatIdx) {
             if (this.playersAssociatedToSeatIdx.Count == seatPositions.Length) {
                 Debug.LogWarning("No place available on this seat");
-                return false;
+                return;
             }
 
             this.playersAssociatedToSeatIdx.Add(photonViewId, seatIdx);
-            
+
             Debug.Log($"There is {this.playersAssociatedToSeatIdx.Count} seats used for {this.name}");
 
             // Sit if it's my player
             if (RoomManager.LocalPlayer.photonView.ViewID == photonViewId) {
                 RoomManager.LocalPlayer.Sit(this, this.seatPositions[seatIdx]);
             }
-            
-            return true;
         }
 
+        /**
+         * Retrieve the nearest seat idx from the player
+         */
         private int GetAvailableSeatIdx() {
-            for (int i = 0; i < seatPositions.Length; i++) {
-                if (!this.playersAssociatedToSeatIdx.ContainsValue(i)) return i;
-            }
+            var seatFound = seatPositions.Where((t, i) => !this.playersAssociatedToSeatIdx.ContainsValue(i))
+                .OrderBy(t => Vector3.Distance(t.position, RoomManager.LocalPlayer.transform.position))
+                .First();
 
-            return -1;
+            return seatFound ? Array.IndexOf(seatPositions, seatFound) : -1;
         }
 
-        public bool RevokeSeatForPlayer(Player player) {
-            if (!this.playersAssociatedToSeatIdx.ContainsKey(player.photonView.ViewID)) return false;
+        public void RevokeSeatForPlayer(Player player) {
+            photonView.RPC("RPC_RevokeSeatForPlayer", RpcTarget.All, player.photonView.ViewID);
+        }
 
-            this.playersAssociatedToSeatIdx.Remove(player.photonView.ViewID);
+        [PunRPC]
+        public void RPC_RevokeSeatForPlayer(int photonViewId) {
+            if (!this.playersAssociatedToSeatIdx.ContainsKey(photonViewId)) return;
 
-            return true;
+            Debug.Log($"There is one seat available for {this.name}");
+
+            this.playersAssociatedToSeatIdx.Remove(photonViewId);
         }
     }
 }

@@ -13,6 +13,10 @@ namespace Sim {
     public class Player : MonoBehaviourPunCallbacks {
         [Header("Settings")] [SerializeField] private Transform headTargetForCamera;
 
+        [SerializeField] private Vector3 idleHeadPosition;
+        [SerializeField] private Vector3 sitHeadPosition;
+        [SerializeField] private Vector3 sleepHeadPosition;
+
         [Header("Only for debug")] [SerializeField]
         private NavMeshAgent navMeshAgent;
 
@@ -44,6 +48,7 @@ namespace Sim {
             this.navMeshAgent = GetComponent<NavMeshAgent>();
             this.rigidbody = GetComponent<Rigidbody>();
             this.animator = GetComponent<PlayerAnimator>();
+            this.Collider = GetComponent<Collider>();
 
             PhotonNetwork.AddCallbackTarget(this);
         }
@@ -129,6 +134,12 @@ namespace Sim {
         
         public NavMeshAgent NavMeshAgent => navMeshAgent;
 
+        public Vector3 IdleHeadPosition => idleHeadPosition;
+
+        public Vector3 SitHeadPosition => sitHeadPosition;
+
+        public Vector3 SleepHeadPosition => sleepHeadPosition;
+        
         public PlayerAnimator Animator => animator;
 
         public CharacterData CharacterData {
@@ -144,6 +155,8 @@ namespace Sim {
             get => propsTarget;
             set => propsTarget = value;
         }
+
+        public Collider Collider { get; private set; }
 
         #endregion
 
@@ -195,6 +208,10 @@ namespace Sim {
             }
 
             return false;
+        }
+
+        public void SetHeadTargetPosition(Vector3 localPosition) {
+            this.headTargetForCamera.localPosition = localPosition;
         }
 
         #endregion
