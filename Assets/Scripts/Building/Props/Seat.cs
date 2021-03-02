@@ -35,7 +35,7 @@ namespace Sim.Building {
 
             // Sit if it's my player
             if (RoomManager.LocalPlayer.photonView.ViewID == photonViewId) {
-                RoomManager.LocalPlayer.Sit(this.seatPositions[seatIdx]);
+                RoomManager.LocalPlayer.Sit(this, this.seatPositions[seatIdx]);
             }
             
             return true;

@@ -4,7 +4,6 @@
         PACKAGING,
         PAINTING,
         UNPACKAGING,
-        MOVING_PROPS,
-        SIT
+        MOVING_PROPS
     }
 }

@@ -328,6 +328,16 @@
           </e>
         </e>
         <e p="Scripts" t="Include">
+          <e p="AI" t="Include">
+            <e p="IState.cs" t="Include" />
+            <e p="StateMachine.cs" t="Include" />
+            <e p="States" t="Include">
+              <e p="CharacterIdle.cs" t="Include" />
+              <e p="CharacterMove.cs" t="Include" />
+              <e p="CharacterSit.cs" t="Include" />
+            </e>
+            <e p="Transition.cs" t="Include" />
+          </e>
           <e p="Building" t="Include">
             <e p="BuildPreview.cs" t="Include" />
             <e p="Props" t="Include">
@@ -409,6 +419,7 @@
             <e p="RoomManager.cs" t="Include" />
           </e>
           <e p="Player" t="Include">
+            <e p="CharacterAnimatorAction.cs" t="Include" />
             <e p="Player.cs" t="Include" />
             <e p="PlayerAnimator.cs" t="Include" />
             <e p="PlayerInteraction.cs" t="Include" />

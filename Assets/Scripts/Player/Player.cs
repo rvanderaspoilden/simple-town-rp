@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Linq;
+using AI;
+using AI.States;
 using Photon.Pun;
 using Sim.Building;
 using Sim.Entities;
@@ -13,17 +14,23 @@ namespace Sim {
         [Header("Settings")] [SerializeField] private Transform headTargetForCamera;
 
         [Header("Only for debug")] [SerializeField]
-        private NavMeshAgent agent;
+        private NavMeshAgent navMeshAgent;
 
         [SerializeField] private StateType state;
 
         [SerializeField] private Props propsTarget;
 
-        private PlayerAnimator playerAnimator;
+        private PlayerAnimator animator;
 
         private new Rigidbody rigidbody;
 
-        private CharacterData characterData;
+        private CharacterData characterData; // represent all database info relative to the character
+
+        private StateMachine stateMachine;
+
+        private CharacterIdle idleState;
+
+        private CharacterMove moveState;
 
         public delegate void StateChanged(Player player, StateType state);
 
@@ -34,18 +41,20 @@ namespace Sim {
         public static event CharacterDataChanged OnCharacterDataChanged;
 
         private void Awake() {
-            this.agent = GetComponent<NavMeshAgent>();
+            this.navMeshAgent = GetComponent<NavMeshAgent>();
             this.rigidbody = GetComponent<Rigidbody>();
-            this.playerAnimator = GetComponent<PlayerAnimator>();
+            this.animator = GetComponent<PlayerAnimator>();
 
             PhotonNetwork.AddCallbackTarget(this);
         }
 
         private void Start() {
             if (!this.photonView.IsMine) {
-                this.agent.enabled = false;
+                this.navMeshAgent.enabled = false;
                 this.rigidbody.useGravity = false;
             }
+
+            this.InitStateMachine();
         }
 
         private void OnDestroy() {
@@ -55,43 +64,90 @@ namespace Sim {
         private void Update() {
             if (!this.photonView.IsMine) return;
 
-            if (this.agent.enabled) { // TODO: care for action
-                if (this.agent.remainingDistance > this.agent.stoppingDistance) {
-                    MarkerController.Instance.ShowAt(this.agent.pathEndPosition);
-
-                    if (this.propsTarget && this.CanInteractWith(this.propsTarget)) {
-                        HUDManager.Instance.DisplayContextMenu(true,
-                            CameraManager.camera.WorldToScreenPoint(this.propsTarget.transform.position), this.propsTarget);
-                        this.propsTarget = null;
-                        this.agent.ResetPath();
-                    }
-                }
-                else if (!this.agent.hasPath && MarkerController.Instance.IsActive()) {
-                    this.agent.ResetPath();
-
-                    MarkerController.Instance.Hide();
-                }
-            }
-
-            this.playerAnimator.SetVelocity(this.agent.velocity.magnitude);
+            this.stateMachine.Tick();
         }
+
+        #region State Machine Management
+
+        private void InitStateMachine() {
+            this.stateMachine = new StateMachine();
+
+            this.idleState = new CharacterIdle(this);
+            this.moveState = new CharacterMove(this);
+
+            this.stateMachine.AddTransition(moveState, idleState, HasReachedTargetPosition());
+
+            this.stateMachine.SetState(idleState);
+        }
+
+        private Func<bool> HasReachedTargetPosition() => () => {
+            return (this.propsTarget &&
+                    this.navMeshAgent.remainingDistance > this.navMeshAgent.stoppingDistance &&
+                    this.CanInteractWith(this.propsTarget)) ||
+                   (!this.navMeshAgent.hasPath && MarkerController.Instance.IsActive());
+        };
+
+        #endregion
+
+        #region ACTIONS
+        
+        public void SetTarget(Vector3 targetPoint, Props props) {
+            this.propsTarget = props;
+            this.stateMachine.SetState(moveState);
+            this.navMeshAgent.SetDestination(targetPoint);
+        }
+
+        public void Sit(Seat props, Transform seatTransform) {
+            this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
+        }
+
+        #endregion
+
+        #region GETTERS / SETTERS
+
+        public Transform GetHeadTargetForCamera() {
+            return this.headTargetForCamera;
+        }
+
+        public void SetState(StateType stateType) {
+            Debug.Log($"Player state changed from {this.state} to {stateType}");
+            this.state = stateType;
+            OnStateChanged?.Invoke(this, stateType);
+        }
+
+        public void SetMood(MoodConfig moodConfig) {
+            this.characterData.Mood = moodConfig.MoodEnum;
+            this.animator.SetMood((int) moodConfig.MoodEnum);
+            OnCharacterDataChanged?.Invoke(this.characterData);
+        }
+
+        public StateType GetState() {
+            return this.state;
+        }
+
+        public StateMachine StateMachine => stateMachine;
+        
+        public NavMeshAgent NavMeshAgent => navMeshAgent;
+
+        public PlayerAnimator Animator => animator;
 
         public CharacterData CharacterData {
             get => characterData;
             set {
                 characterData = value;
-                this.playerAnimator.SetMood((int)characterData.Mood);
+                this.animator.SetMood((int) characterData.Mood);
                 OnCharacterDataChanged?.Invoke(characterData);
             }
         }
 
-        public void Sit(Transform seat) {
-            this.SetState(StateType.SIT);
-            this.agent.enabled = false;
-            this.transform.position = seat.position;
-            this.transform.rotation = seat.rotation;
-            this.playerAnimator.Sit();
+        public Props PropsTarget {
+            get => propsTarget;
+            set => propsTarget = value;
         }
+
+        #endregion
+
+        #region Utility
 
         public bool CanInteractWith(Props propsToInteract) {
             float maxRange = propsToInteract.GetConfiguration().GetRangeToInteract();
@@ -141,29 +197,6 @@ namespace Sim {
             return false;
         }
 
-        public void SetState(StateType stateType) {
-            Debug.Log($"Player state changed from {this.state} to {stateType}");
-            this.state = stateType;
-            OnStateChanged?.Invoke(this, stateType);
-        }
-
-        public void SetMood(MoodConfig moodConfig) {
-            this.characterData.Mood = moodConfig.MoodEnum;
-            this.playerAnimator.SetMood((int) moodConfig.MoodEnum);
-            OnCharacterDataChanged?.Invoke(this.characterData);
-        }
-
-        public StateType GetState() {
-            return this.state;
-        }
-
-        public void SetTarget(Vector3 targetPoint, Props props) {
-            this.agent.SetDestination(targetPoint);
-            this.propsTarget = props;
-        }
-
-        public Transform GetHeadTargetForCamera() {
-            return this.headTargetForCamera;
-        }
+        #endregion
     }
 }
