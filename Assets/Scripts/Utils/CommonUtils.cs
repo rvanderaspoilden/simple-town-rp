@@ -68,7 +68,7 @@ namespace Sim.Utils {
 
         public static int GetDoorNumberFromFloorNumber(int initialNumber) {
             return initialNumber + (CommonConstants.appartmentLimitPerFloor *
-                                    (CommonUtils.GetAppartmentFloorFromAppartmentId(NetworkManager.Instance.CharacterData.AppartmentId,
+                                    (CommonUtils.GetAppartmentFloorFromAppartmentId(NetworkManager.Instance.TenantHome.Address.DoorNumber,
                                         CommonConstants.appartmentLimitPerFloor) - 1));
         }
     }

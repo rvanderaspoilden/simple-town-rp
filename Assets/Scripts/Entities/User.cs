@@ -4,13 +4,13 @@ using UnityEngine;
 namespace Sim {
     [Serializable]
     public class User {
-        [SerializeField] private string id;
+        [SerializeField] private string _id;
         [SerializeField] private string username;
         [SerializeField] private string email;
 
         public string Id {
-            get => id;
-            set => id = value;
+            get => _id;
+            set => _id = value;
         }
 
         public string Username {

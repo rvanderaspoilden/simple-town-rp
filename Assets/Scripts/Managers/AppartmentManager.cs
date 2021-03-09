@@ -56,7 +56,7 @@ namespace Sim
 
         public bool IsOwner(CharacterData personnage)
         {
-            return personnage._Id == this.owner;
+            return personnage.Id == this.owner;
         }
     }
 }

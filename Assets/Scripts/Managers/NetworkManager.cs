@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using Photon.Pun;
 using Photon.Realtime;
 using Sim.Entities;
@@ -16,6 +17,12 @@ namespace Sim {
         [Header("Only for debug")]
         [SerializeField]
         private CharacterData characterData;
+
+        [SerializeField]
+        private List<Home> characterHomes;
+
+        [SerializeField]
+        private Home tenantHome;
 
         private string destinationScene;
 
@@ -44,12 +51,14 @@ namespace Sim {
 
         public CharacterData CharacterData => characterData;
 
+        public Home TenantHome => tenantHome;
+
         public void Play(CharacterData data) {
             this.characterData = data;
 
             if (PhotonNetwork.IsConnectedAndReady && this.isConnectedToServer) {
                 LoadingManager.Instance.Show(true);
-                Debug.Log("Connecting to server with character : " + characterData.Firstname);
+                Debug.Log("Connecting to server with character : " + characterData.Identity.Firstname);
                 this.GoToRoom(PlacesEnum.HALL);
             } else {
                 Debug.Log("Player is not connected to lobby");
@@ -72,7 +81,7 @@ namespace Sim {
 
             if (place == PlacesEnum.HALL) {
                 roomName =
-                    $"{PlaceUtils.GetPlaceEnumName(place)} n°{CommonUtils.GetAppartmentFloorFromAppartmentId(characterData.AppartmentId, CommonConstants.appartmentLimitPerFloor)}";
+                    $"{PlaceUtils.GetPlaceEnumName(place)} n°{CommonUtils.GetAppartmentFloorFromAppartmentId(tenantHome.Address.DoorNumber, CommonConstants.appartmentLimitPerFloor)}";
             } else if (place == PlacesEnum.APPARTMENT) {
                 roomName = $"{PlaceUtils.GetPlaceEnumName(place)} n°{this.currentAppartmentNumber}";
             }
@@ -113,7 +122,8 @@ namespace Sim {
             UnityWebRequest webRequest = null;
 
             if (sceneName.Equals(PlaceUtils.ConvertPlaceEnumToSceneName(PlacesEnum.APPARTMENT))) {
-                webRequest = ApiManager.instance.RetrieveAppartment(this.currentAppartmentNumber);
+                // TODO: retrieve by address
+                webRequest = ApiManager.instance.RetrieveHomeById(this.currentAppartmentNumber);
             }
 
             while (PhotonNetwork.LevelLoadingProgress < 1f || (webRequest != null && !webRequest.isDone)) {
@@ -130,13 +140,14 @@ namespace Sim {
             }
 
             if (sceneName.Equals("Appartment")) {
-                AppartmentResponse appartmentResponse = JsonUtility.FromJson<AppartmentResponse>(webRequest.downloadHandler.text);
+                HomeResponse homeResponse = JsonUtility.FromJson<HomeResponse>(webRequest.downloadHandler.text);
                 SceneData sceneData = null;
 
-                if (appartmentResponse != null) {
+                if (homeResponse != null && homeResponse.Homes.Length > 0) {
+                    Home home = homeResponse.Homes[0];
                     // If no data found from API use default appartment to prevent crash
-                    sceneData = appartmentResponse.GetData();
-                    AppartmentManager.instance.SetAppartmentData(appartmentResponse.GetOwner(), appartmentResponse.GetUid());
+                    sceneData = home.SceneData;
+                    AppartmentManager.instance.SetAppartmentData(home.Owner, home.Id);
                 } else {
                     TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Default_Appartment_Talyah");
                     sceneData = JsonUtility.FromJson<SceneData>(textAsset.text);
@@ -151,11 +162,11 @@ namespace Sim {
             bool isRoomGenerated;
             do {
                 isRoomGenerated = PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated") && RoomManager.Instance.IsGenerated();
-                
+
                 if (isRoomGenerated) {
                     RoomManager.Instance.InstantiateLocalPlayer(this.playerPrefab, this.characterData);
                 }
-                
+
                 yield return new WaitForSeconds(0.1f);
             } while (!isRoomGenerated);
 

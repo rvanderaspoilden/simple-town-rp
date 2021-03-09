@@ -10,30 +10,35 @@ using UnityEngine.UI;
 namespace Sim {
     public class Launcher : MonoBehaviour {
         [Header("Settings")]
-        [SerializeField] private TextMeshProUGUI errorText;
+        [SerializeField]
+        private TextMeshProUGUI errorText;
 
-        [SerializeField] private TMP_InputField pseudoInputField;
+        [SerializeField]
+        private TMP_InputField pseudoInputField;
 
-        [SerializeField] private TMP_InputField passwordInputField;
+        [SerializeField]
+        private TMP_InputField passwordInputField;
 
-        [SerializeField] private bool debug;
+        [SerializeField]
+        private bool debug;
 
-        [SerializeField] private Image statusImg;
+        [SerializeField]
+        private Image statusImg;
 
         private string username;
         private string password;
 
         private void Awake() {
-            ApiManager.OnAuthenticationSucceeded += this.OnAuthenticationSucceeded;
+            ApiManager.OnAuthenticationSucceeded += OnAuthenticationSucceeded;
             ApiManager.OnAuthenticationFailed += this.OnAuthenticationFailed;
             ApiManager.OnServerStatusChanged += this.OnServerStatusChanged;
         }
 
         private void Start() {
             ApiManager.instance.CheckServerStatus();
-            
+
             this.pseudoInputField.Select();
-            
+
             if (debug) {
                 StartCoroutine(Debug());
             }
@@ -51,7 +56,7 @@ namespace Sim {
                 Selectable next = EventSystem.current.currentSelectedGameObject
                     .GetComponent<Selectable>()
                     .FindSelectableOnDown();
- 
+
                 if (next) next.Select();
             }
 
@@ -61,7 +66,7 @@ namespace Sim {
         }
 
         private void OnDestroy() {
-            ApiManager.OnAuthenticationSucceeded -= this.OnAuthenticationSucceeded;
+            ApiManager.OnAuthenticationSucceeded -= OnAuthenticationSucceeded;
             ApiManager.OnAuthenticationFailed -= this.OnAuthenticationFailed;
             ApiManager.OnServerStatusChanged -= this.OnServerStatusChanged;
         }
@@ -71,7 +76,7 @@ namespace Sim {
         public void SetPassword(string password) => this.password = password;
 
         public void Play() {
-            if (username != String.Empty && password != String.Empty) {
+            if (username != string.Empty && password != string.Empty) {
                 PhotonNetwork.NickName = username;
 
                 this.ResetErrorText();
@@ -84,8 +89,12 @@ namespace Sim {
 
         #region Callbacks
 
-        private void OnAuthenticationSucceeded(CharacterData characterData) {
-            NetworkManager.Instance.Play(characterData);
+        private static void OnAuthenticationSucceeded(CharacterData characterData) {
+            if (characterData != null) {
+                NetworkManager.Instance.Play(characterData);
+            } else {
+                UnityEngine.Debug.Log("No character found");
+            }
         }
 
         private void OnAuthenticationFailed(String msg) => this.errorText.text = msg;

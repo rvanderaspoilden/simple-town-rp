@@ -2,11 +2,12 @@
 using UnityEngine;
 
 namespace Sim {
-    [System.Serializable]
+    [Serializable]
     public class AuthenticationResponse {
-        [SerializeField] private String access_token;
+        [SerializeField]
+        private string access_token;
 
-        public String GetAccessToken() {
+        public string GetAccessToken() {
             return this.access_token;
         }
     }
