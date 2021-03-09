@@ -71,5 +71,11 @@ namespace Sim.Utils {
                                     (CommonUtils.GetAppartmentFloorFromAppartmentId(NetworkManager.Instance.TenantHome.Address.DoorNumber,
                                         CommonConstants.appartmentLimitPerFloor) - 1));
         }
+
+        public static string GetDate() {
+            DateTime date = DateTime.Now;
+
+            return date.ToString("dd/MM/yyyy");
+        }
     }
 }

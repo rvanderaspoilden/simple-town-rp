@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Text;
 using Sim.Entities;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -22,17 +23,21 @@ namespace Sim {
 
         private Coroutine authenticationCoroutine;
 
-        public delegate void AuthenticationSucceededResponse(CharacterData personnage);
+        public delegate void SucceededResponse(CharacterData personnage);
 
-        public delegate void AuthenticationFailedResponse(String msg);
+        public delegate void FailedResponse(String msg);
 
-        public static event AuthenticationSucceededResponse OnAuthenticationSucceeded;
+        public static event SucceededResponse OnAuthenticationSucceeded;
 
-        public static event AuthenticationFailedResponse OnAuthenticationFailed;
+        public static event FailedResponse OnAuthenticationFailed;
 
         public delegate void ServerStatus(bool isActive);
 
         public static event ServerStatus OnServerStatusChanged;
+
+        public static event SucceededResponse OnCharacterCreated;
+        public static event FailedResponse OnCharacterCreationFailed;
+
 
         public static ApiManager instance;
 
@@ -40,7 +45,7 @@ namespace Sim {
             if (instance == null) {
                 instance = this;
             } else {
-                Destroy(this);
+                Destroy(this.gameObject);
             }
 
             if (this.local) {
@@ -60,6 +65,32 @@ namespace Sim {
             UnityWebRequest homeRequest = UnityWebRequest.Get(this.uri + "/homes/" + homeId);
             homeRequest.SendWebRequest();
             return homeRequest;
+        }
+
+        public void CreateCharacter(CharacterCreationRequest data) {
+            StartCoroutine(this.CreateCharacterCoroutine(data));
+        }
+
+        private IEnumerator CreateCharacterCoroutine(CharacterCreationRequest data) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(data));
+
+            UnityWebRequest request = new UnityWebRequest(this.uri + "/characters", "POST") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+            request.SetRequestHeader("Content-type", "application/json");
+            request.SetRequestHeader("Accept", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 201) {
+                CharacterResponse characterResponse = JsonUtility.FromJson<CharacterResponse>(request.downloadHandler?.text);
+                OnCharacterCreated?.Invoke(characterResponse.Characters[0]);
+            } else {
+                OnCharacterCreationFailed?.Invoke(ExtractErrorMessage(request));
+            }
         }
 
         public void CheckServerStatus() {

@@ -380,6 +380,9 @@
             <e p="Home.cs" t="Include" />
             <e p="HttpException.cs" t="Include" />
             <e p="Identity.cs" t="Include" />
+            <e p="Requests" t="Include">
+              <e p="CharacterCreationRequest.cs" t="Include" />
+            </e>
             <e p="Responses" t="Include">
               <e p="AuthenticationResponse.cs" t="Include" />
               <e p="CharacterResponse.cs" t="Include" />
@@ -410,6 +413,9 @@
             <e p="StateType.cs" t="Include" />
             <e p="VisibilityModeEnum.cs" t="Include" />
             <e p="VisibilityStateEnum.cs" t="Include" />
+          </e>
+          <e p="Main Menu" t="Include">
+            <e p="MainMenuManager.cs" t="Include" />
           </e>
           <e p="Managers" t="Include">
             <e p="ApiManager.cs" t="Include" />

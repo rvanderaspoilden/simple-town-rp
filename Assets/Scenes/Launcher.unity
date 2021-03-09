@@ -155,7 +155,7 @@ MonoBehaviour:
   errorText: {fileID: 380270966}
   pseudoInputField: {fileID: 2005252172}
   passwordInputField: {fileID: 1482923709}
-  debug: 1
+  debug: 0
   statusImg: {fileID: 1564845287}
 --- !u!4 &1813137
 Transform:
@@ -583,12 +583,12 @@ PrefabInstance:
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.000000063268004
+      value: -0.0000000036453003
       objectReference: {fileID: 0}
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.000000036483563
+      value: -0.0000000021020674
       objectReference: {fileID: 0}
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
@@ -743,12 +743,12 @@ PrefabInstance:
     - target: {fileID: 9012590871756554537, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.00000004836226
+      value: -0.00000001855091
       objectReference: {fileID: 0}
     - target: {fileID: 9012590871756554537, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.00000002788807
+      value: -0.000000010697325
       objectReference: {fileID: 0}
     - target: {fileID: 9012590871756554537, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
@@ -803,12 +803,12 @@ PrefabInstance:
     - target: {fileID: 9012590873082448382, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1.2912808e-10
+      value: 0.000000068141645
       objectReference: {fileID: 0}
     - target: {fileID: 9012590873082448382, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 6.83336e-11
+      value: 0.000000036061206
       objectReference: {fileID: 0}
     - target: {fileID: 9012590873082448382, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
@@ -2220,7 +2220,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1344830941}
   - component: {fileID: 1344830940}
-  - component: {fileID: 1344830942}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -2245,17 +2244,40 @@ MonoBehaviour:
   characterData:
     _id: 
     user_id: 
-    firstname: 
-    lastname: 
-    origin_country: 
-    appartment_id: 0
-    job: 
+    identity:
+      firstname: 
+      lastname: 
+      originCountry: 
+      job: 0
     money: 0
-    vital_information:
+    health:
       thirst: 0
       hungry: 0
       sleep: 0
     mood: 0
+  characterHomes: []
+  tenantHome:
+    _id: 
+    address:
+      homeType: 0
+      doorNumber: 0
+      building: 0
+      street: 
+    owner: 
+    type: 0
+    tenant: 
+    purchasePrice: 0
+    rentPrice: 0
+    preset: 
+    sceneData:
+      doorTeleporters: []
+      elevatorTeleporters: []
+      walls: []
+      simpleDoors: []
+      grounds: []
+      packages: []
+      buckets: []
+      props: []
 --- !u!4 &1344830941
 Transform:
   m_ObjectHideFlags: 0
@@ -2270,25 +2292,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1344830942
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1344830939}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cea55f8a08de1954090b2855d9866e3e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  uri: http://51.158.116.183:8080
-  local: 1
-  accessToken: 
-  user:
-    id: 
-    username: 
-    email: 
 --- !u!1 &1446258033
 GameObject:
   m_ObjectHideFlags: 0
@@ -3271,7 +3274,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 22.95
+  m_fontSize: 22.9
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -3854,3 +3857,72 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ceb603c7a78569342beeee301b0a3d0c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1001 &7667094568087249230
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.2712567
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 6.8002367
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.8666153
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7667094568108501631, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: m_Name
+      value: Api Manager
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7e48349476bdbed43b90a36ec7845d22, type: 3}
