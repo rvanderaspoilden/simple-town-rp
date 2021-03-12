@@ -49,9 +49,15 @@ namespace Sim {
             StopAllCoroutines();
         }
 
-        public CharacterData CharacterData => characterData;
+        public CharacterData CharacterData {
+            get => characterData;
+            set => characterData = value;
+        }
 
-        public Home TenantHome => tenantHome;
+        public Home TenantHome {
+            get => tenantHome;
+            set => tenantHome = value;
+        }
 
         public void Play(CharacterData data) {
             this.characterData = data;
@@ -90,7 +96,7 @@ namespace Sim {
             this.destinationScene = PlaceUtils.ConvertPlaceEnumToSceneName(place);
         }
 
-        public void GoToAppartment(int id) {
+        public void GoToHome(int id) {
             this.currentAppartmentNumber = id;
             this.GoToRoom(PlacesEnum.APPARTMENT);
         }

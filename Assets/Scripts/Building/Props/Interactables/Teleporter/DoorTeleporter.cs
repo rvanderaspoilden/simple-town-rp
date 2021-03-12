@@ -41,7 +41,7 @@ namespace Sim.Interactables {
             photonView.RPC("RPC_Animation", RpcTarget.All);
 
             if (this.destination == PlacesEnum.APPARTMENT) {
-                NetworkManager.Instance.GoToAppartment(this.number);
+                NetworkManager.Instance.GoToHome(this.number);
             } else {
                 base.Use();
             }

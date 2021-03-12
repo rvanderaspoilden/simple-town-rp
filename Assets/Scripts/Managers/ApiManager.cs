@@ -24,6 +24,7 @@ namespace Sim {
         private Coroutine authenticationCoroutine;
 
         public delegate void SucceededResponse(CharacterData personnage);
+        public delegate void HomeCreationSuceededResponse(Home home);
 
         public delegate void FailedResponse(String msg);
 
@@ -37,6 +38,10 @@ namespace Sim {
 
         public static event SucceededResponse OnCharacterCreated;
         public static event FailedResponse OnCharacterCreationFailed;
+
+        public static event HomeCreationSuceededResponse OnApartmentAssigned;
+
+        public static event FailedResponse OnApartmentAssignmentFailed;
 
 
         public static ApiManager instance;
@@ -65,6 +70,32 @@ namespace Sim {
             UnityWebRequest homeRequest = UnityWebRequest.Get(this.uri + "/homes/" + homeId);
             homeRequest.SendWebRequest();
             return homeRequest;
+        }
+        
+        public void AssignApartment(AssignApartmentRequest request) {
+            StartCoroutine(this.AssignApartmentCoroutine(request));
+        }
+
+        private IEnumerator AssignApartmentCoroutine(AssignApartmentRequest data) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(data));
+
+            UnityWebRequest request = new UnityWebRequest(this.uri + "/homes/assign-apartment", "POST") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+            request.SetRequestHeader("Content-type", "application/json");
+            request.SetRequestHeader("Accept", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 201) {
+                Home home = JsonUtility.FromJson<Home>(request.downloadHandler?.text);
+                OnApartmentAssigned?.Invoke(home);
+            } else {
+                OnApartmentAssignmentFailed?.Invoke(ExtractErrorMessage(request));
+            }
         }
 
         public void CreateCharacter(CharacterCreationRequest data) {
