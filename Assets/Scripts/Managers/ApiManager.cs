@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Sim.Entities;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.TestTools;
 
 namespace Sim {
     public class ApiManager : MonoBehaviour {
@@ -23,8 +26,13 @@ namespace Sim {
 
         private Coroutine authenticationCoroutine;
 
-        public delegate void SucceededResponse(CharacterData personnage);
+        public delegate void SucceededResponse();
+
         public delegate void HomeCreationSuceededResponse(Home home);
+
+        public delegate void CharacterDataResponse(CharacterData characterData);
+        
+        public delegate void HomesResponse(List<Home> homes);
 
         public delegate void FailedResponse(String msg);
 
@@ -36,8 +44,12 @@ namespace Sim {
 
         public static event ServerStatus OnServerStatusChanged;
 
-        public static event SucceededResponse OnCharacterCreated;
+        public static event CharacterDataResponse OnCharacterCreated;
+
+        public static event CharacterDataResponse OnCharacterRetrieved;
         public static event FailedResponse OnCharacterCreationFailed;
+
+        public static event HomesResponse OnHomesRetrieved; 
 
         public static event HomeCreationSuceededResponse OnApartmentAssigned;
 
@@ -56,6 +68,8 @@ namespace Sim {
             if (this.local) {
                 this.uri = "http://localhost:3000";
             }
+            
+            DontDestroyOnLoad(this.gameObject);
         }
 
         public void Authenticate(String username, String password) {
@@ -71,7 +85,7 @@ namespace Sim {
             homeRequest.SendWebRequest();
             return homeRequest;
         }
-        
+
         public void AssignApartment(AssignApartmentRequest request) {
             StartCoroutine(this.AssignApartmentCoroutine(request));
         }
@@ -148,6 +162,42 @@ namespace Sim {
             return null;
         }
 
+        public void RetrieveCharacters() {
+            StartCoroutine(this.RetrieveCharactersCoroutine());
+        }
+
+        private IEnumerator RetrieveCharactersCoroutine() {
+            UnityWebRequest characterRequest = UnityWebRequest.Get(this.uri + "/characters/by-user-id/" + this.user.Id);
+
+            yield return characterRequest.SendWebRequest();
+
+            if (characterRequest.responseCode == 200) {
+                CharacterResponse characterResponse = JsonUtility.FromJson<CharacterResponse>(characterRequest.downloadHandler.text);
+
+                OnCharacterRetrieved?.Invoke(characterResponse.Characters[0]);
+            } else {
+                OnCharacterRetrieved?.Invoke(null);
+            }
+        }
+
+        public void RetrieveHomesByCharacter(CharacterData characterData) {
+            StartCoroutine(this.RetrieveHomesByCharacterCoroutine(characterData));
+        }
+
+        private IEnumerator RetrieveHomesByCharacterCoroutine(CharacterData characterData) {
+            UnityWebRequest request = UnityWebRequest.Get($"{this.uri}/characters/{characterData.Id}/homes");
+
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 200) {
+                HomeResponse homeResponse = JsonUtility.FromJson<HomeResponse>(request.downloadHandler.text);
+
+                OnHomesRetrieved?.Invoke(homeResponse.Homes.ToList());
+            } else {
+                OnHomesRetrieved?.Invoke(null);
+            }
+        }
+        
         private IEnumerator CheckServerStatusCoroutine() {
             UnityWebRequest www = UnityWebRequest.Get(this.uri + "/hc");
 
@@ -179,23 +229,7 @@ namespace Sim {
                 if (profileRequest.responseCode == 200) {
                     ProfileResponse profileResponse = JsonUtility.FromJson<ProfileResponse>(profileRequest.downloadHandler.text);
                     this.user = profileResponse.User;
-
-                    // retrieve user's characters
-                    UnityWebRequest characterRequest = UnityWebRequest.Get(this.uri + "/characters/by-user-id/" + this.user.Id);
-
-                    yield return characterRequest.SendWebRequest();
-
-                    if (characterRequest.responseCode == 200) {
-                        CharacterResponse characterResponse = JsonUtility.FromJson<CharacterResponse>(characterRequest.downloadHandler.text);
-
-                        if (characterResponse.Characters != null && characterResponse.Characters.Length > 0) {
-                            OnAuthenticationSucceeded?.Invoke(characterResponse.Characters[0]);
-                        } else {
-                            OnAuthenticationSucceeded?.Invoke(null);
-                        }
-                    } else {
-                        OnAuthenticationFailed?.Invoke(ExtractErrorMessage(characterRequest));
-                    }
+                    OnAuthenticationSucceeded?.Invoke();
                 } else {
                     OnAuthenticationFailed?.Invoke(ExtractErrorMessage(profileRequest));
                 }

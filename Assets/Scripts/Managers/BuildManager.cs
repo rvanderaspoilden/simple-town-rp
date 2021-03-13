@@ -88,7 +88,7 @@ namespace Sim {
             }
 
             Instance = this;
-            this.camera = Camera.main;
+            this.camera = GetComponentInChildren<Camera>();
         }
 
         private void Start() {

@@ -1,138 +1,85 @@
-using System;
-using DG.Tweening;
+using System.Collections.Generic;
 using Sim.Entities;
-using Sim.Utils;
-using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace Sim {
     public class MainMenuManager : MonoBehaviour {
-        [Header("Character creation settings")]
+        [Header("Settings")]
         [SerializeField]
-        private TMP_InputField firstNameInputField;
-
-        [SerializeField]
-        private TMP_InputField lastNameInputField;
+        private CharacterCreationManager characterCreationManager;
 
         [SerializeField]
-        private TMP_InputField originCountryInputField;
+        private ApartmentCreationManager apartmentCreationManager;
 
         [SerializeField]
-        private TMP_InputField entranceDateField;
-
-        [SerializeField]
-        private Button joinButton;
-
-        [SerializeField]
-        private Image bufferImg;
-
-        [SerializeField]
-        private AudioClip bufferSound;
-
-        [Header("Apartment creation settings")]
-        [SerializeField]
-        private RectTransform apartmentCreationPanel;
-
-        [SerializeField]
-        private Button createApartmentButton;
-
-        private AudioSource _audioSource;
-
-        private string selectedPreset;
+        private GameObject mainMenuPanel;
 
         private void Awake() {
-            this._audioSource = GetComponent<AudioSource>();
+            this.characterCreationManager.gameObject.SetActive(false);
         }
 
         private void Start() {
-            this.HideApartmentCreationPanel();
-            
-            this.entranceDateField.text = CommonUtils.GetDate();
-            this.entranceDateField.readOnly = true;
+            LoadingManager.Instance.Show(true);
+            Invoke(nameof(RetrieveCharacters), 2f);
+        }
 
-            this.bufferImg.gameObject.SetActive(false);
-
-            this.firstNameInputField.Select();
-
-            CheckValidity();
+        private void RetrieveCharacters() {
+            ApiManager.instance.RetrieveCharacters();
         }
 
         private void OnEnable() {
+            ApiManager.OnCharacterRetrieved += OnCharacterRetrieved;
+            ApiManager.OnHomesRetrieved += OnHomesRetrieved;
             ApiManager.OnCharacterCreated += OnCharacterCreated;
-            ApiManager.OnCharacterCreationFailed += OnCharacterCreationFailed;
             ApiManager.OnApartmentAssigned += OnApartmentAssigned;
-            ApiManager.OnApartmentAssignmentFailed += OnApartmentAssignmentFailed;
         }
 
         private void OnDisable() {
+            ApiManager.OnCharacterRetrieved -= OnCharacterRetrieved;
+            ApiManager.OnHomesRetrieved -= OnHomesRetrieved;
             ApiManager.OnCharacterCreated -= OnCharacterCreated;
-            ApiManager.OnCharacterCreationFailed -= OnCharacterCreationFailed;
             ApiManager.OnApartmentAssigned -= OnApartmentAssigned;
-            ApiManager.OnApartmentAssignmentFailed -= OnApartmentAssignmentFailed;
         }
 
-        private void Update() {
-            if (Input.GetKeyDown(KeyCode.Tab)) {
-                Selectable next = EventSystem.current.currentSelectedGameObject
-                    .GetComponent<Selectable>()
-                    .FindSelectableOnDown();
+        private void OnCharacterRetrieved(CharacterData characterData) {
+            if (characterData != null) {
+                Debug.Log("Character retrieved");
+                NetworkManager.Instance.CharacterData = characterData;
 
-                if (next) next.Select();
+                ApiManager.instance.RetrieveHomesByCharacter(characterData);
+            } else {
+                Debug.Log("No Character found");
+                this.characterCreationManager.gameObject.SetActive(true);
+                this.mainMenuPanel.SetActive(false);
+                LoadingManager.Instance.Hide();
             }
         }
 
-        public void SetPreset(string presetName) {
-            this.selectedPreset = presetName;
-            this.createApartmentButton.interactable = true;
-        }
+        private void OnHomesRetrieved(List<Home> homes) {
+            if (homes != null && homes.Count > 0) {
+                Debug.Log("Homes retrieved !");
+                NetworkManager.Instance.CharacterHomes = homes;
 
-        public void CreateApartment() {
-            this.createApartmentButton.gameObject.SetActive(false);
-            ApiManager.instance.AssignApartment(new AssignApartmentRequest(NetworkManager.Instance.CharacterData.Id, this.selectedPreset));
-        }
+                this.mainMenuPanel.SetActive(true);
+            } else {
+                Debug.Log("Homes not found");
+                this.apartmentCreationManager.ShowApartmentCreationPanel();
+            }
 
-        public void CreateCharacter() {
-            this.joinButton.gameObject.SetActive(false);
-            ApiManager.instance.CreateCharacter(new CharacterCreationRequest(firstNameInputField.text, lastNameInputField.text, originCountryInputField.text));
-        }
-
-        public void CheckValidity() {
-            this.joinButton.interactable = firstNameInputField.text != string.Empty &&
-                                           lastNameInputField.text != string.Empty &&
-                                           originCountryInputField.text != string.Empty;
+            LoadingManager.Instance.Hide();
         }
 
         private void OnCharacterCreated(CharacterData characterData) {
             NetworkManager.Instance.CharacterData = characterData;
-            this.bufferImg.gameObject.SetActive(true);
-            this._audioSource.PlayOneShot(this.bufferSound);
-            Invoke(nameof(ShowApartmentCreationPanel), 2f);
-        }
 
-        private void OnCharacterCreationFailed(string err) {
-            this.joinButton.gameObject.SetActive(true);
+            this.apartmentCreationManager.Invoke(nameof(ApartmentCreationManager.ShowApartmentCreationPanel), 2f);
         }
 
         private void OnApartmentAssigned(Home home) {
-            NetworkManager.Instance.TenantHome = home;
+            NetworkManager.Instance.CharacterHomes = new List<Home>() {home};
             Debug.Log("Apartment assigned !");
-        }
-
-        private void OnApartmentAssignmentFailed(string err) {
-            this.createApartmentButton.gameObject.SetActive(true);
-        }
-
-        private void ShowApartmentCreationPanel() {
-            this.apartmentCreationPanel.DOSizeDelta(Vector2.zero, .5f);
-            this.apartmentCreationPanel.DOAnchorPos(Vector2.zero, .5f);
-            this.createApartmentButton.interactable = false;
-        }
-
-        private void HideApartmentCreationPanel() {
-            this.apartmentCreationPanel.sizeDelta = new Vector2(-Screen.width, 0);
-            this.apartmentCreationPanel.anchoredPosition = this.apartmentCreationPanel.sizeDelta / 2;
+            this.mainMenuPanel.SetActive(true);
+            this.apartmentCreationManager.HideApartmentCreationPanel();
         }
     }
 }

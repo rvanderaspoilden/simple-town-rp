@@ -59,8 +59,16 @@ namespace Sim {
             set => tenantHome = value;
         }
 
-        public void Play(CharacterData data) {
-            this.characterData = data;
+        public List<Home> CharacterHomes {
+            get => characterHomes;
+            set {
+                characterHomes = value;
+                TenantHome = characterHomes.Find(x => x.Tenant == this.characterData.Id);
+            }
+        }
+
+        public void Play() {
+            PhotonNetwork.NickName = this.characterData.Identity.FullName;
 
             if (PhotonNetwork.IsConnectedAndReady && this.isConnectedToServer) {
                 LoadingManager.Instance.Show(true);

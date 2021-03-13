@@ -50,6 +50,8 @@ namespace Sim {
         }
 
         private void Update() {
+            if (!CameraManager.Instance) return;
+            
             if (CameraManager.Instance.GetMode() == CameraModeEnum.FREE &&
                 !EventSystem.current.IsPointerOverGameObject() &&
                 Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100)) {

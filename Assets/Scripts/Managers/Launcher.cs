@@ -3,8 +3,10 @@ using System.Collections;
 using Photon.Pun;
 using Sim.Entities;
 using TMPro;
+using UnityEditor.Timeline.Actions;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Sim {
@@ -48,7 +50,7 @@ namespace Sim {
             yield return new WaitForSeconds(2f);
             this.username = "spectus";
             this.password = "test";
-            this.Play();
+            this.Authenticate();
         }
 
         private void Update() {
@@ -61,12 +63,12 @@ namespace Sim {
             }
 
             if (Input.GetKeyDown(KeyCode.Return)) {
-                this.Play();
+                this.Authenticate();
             }
         }
 
         private void OnDestroy() {
-            ApiManager.OnAuthenticationSucceeded -= OnAuthenticationSucceeded;
+            ApiManager.OnAuthenticationSucceeded -= this.OnAuthenticationSucceeded;
             ApiManager.OnAuthenticationFailed -= this.OnAuthenticationFailed;
             ApiManager.OnServerStatusChanged -= this.OnServerStatusChanged;
         }
@@ -75,26 +77,20 @@ namespace Sim {
 
         public void SetPassword(string password) => this.password = password;
 
-        public void Play() {
-            if (username != string.Empty && password != string.Empty) {
-                PhotonNetwork.NickName = username;
+        public void Authenticate() {
+            if (username == string.Empty || password == string.Empty) return;
+            
+            this.ResetErrorText();
 
-                this.ResetErrorText();
-
-                ApiManager.instance.Authenticate(username, password);
-            }
+            ApiManager.instance.Authenticate(username, password);
         }
 
         private void ResetErrorText() => this.errorText.text = String.Empty;
 
         #region Callbacks
 
-        private static void OnAuthenticationSucceeded(CharacterData characterData) {
-            if (characterData != null) {
-                NetworkManager.Instance.Play(characterData);
-            } else {
-                UnityEngine.Debug.Log("No character found");
-            }
+        private void OnAuthenticationSucceeded() {
+            SceneManager.LoadScene("Main Menu");
         }
 
         private void OnAuthenticationFailed(String msg) => this.errorText.text = msg;
