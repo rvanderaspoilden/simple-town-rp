@@ -10,7 +10,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 namespace Sim {
-    public class Player : MonoBehaviourPunCallbacks {
+    public class Character : MonoBehaviourPunCallbacks {
         [Header("Settings")] [SerializeField] private Transform headTargetForCamera;
 
         [SerializeField] private Vector3 idleHeadPosition;
@@ -36,7 +36,7 @@ namespace Sim {
 
         private CharacterMove moveState;
 
-        public delegate void StateChanged(Player player, StateType state);
+        public delegate void StateChanged(Character character, StateType state);
 
         public static event StateChanged OnStateChanged;
 

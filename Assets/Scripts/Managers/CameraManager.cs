@@ -47,11 +47,11 @@ namespace Sim {
         }
 
         private void Start() {
-            Player.OnStateChanged += OnStateChanged;
+            Character.OnStateChanged += OnStateChanged;
         }
 
         private void OnDestroy() {
-            Player.OnStateChanged -= OnStateChanged;
+            Character.OnStateChanged -= OnStateChanged;
         }
 
         void Update() {
@@ -66,35 +66,8 @@ namespace Sim {
             return this.currentMode;
         }
 
-        /*public void ManageWorldTransparency() {
-            if (!RoomManager.LocalPlayer || this.currentOpenedBucket || (this.currentPropSelected && this.currentPropSelected.IsWallProps())) {
-                return;
-            }
-
-            this.lastCameraPosition = this.camera.transform.position.magnitude;
-
-            Vector3 dir = -(this.camera.transform.position -
-                            (this.currentPropSelected ? this.currentPropSelected.transform.position : RoomManager.LocalPlayer.transform.position));
-            Debug.DrawRay(this.camera.transform.position, dir, Color.blue);
-
-            RaycastHit[] hits = Physics.RaycastAll(this.camera.transform.position, dir, 20, (1 << 10 | 1 << 12));
-            if (hits.Length > 0) {
-                List<PropsRenderer> hiddenObject = new List<PropsRenderer>();
-
-                foreach (RaycastHit wallHit in hits) {
-                    hiddenObject.AddRange(this.HidePropsNear(wallHit.point));
-                }
-
-                this.ResetRendererForPropsNotIn(hiddenObject);
-            } else if (this.displayedPropsRenderers.Count > 0) // If camera doesn't hit wall so reset all hidden props
-            {
-                this.displayedPropsRenderers.ForEach(propsRenderer => propsRenderer.SetState(VisibilityStateEnum.SHOW));
-                this.displayedPropsRenderers.Clear();
-            }
-        }*/
-
-        private void OnStateChanged(Player player, StateType state) {
-            if (player == RoomManager.LocalPlayer) {
+        private void OnStateChanged(Character character, StateType state) {
+            if (character == RoomManager.LocalCharacter) {
                 if (state == StateType.FREE) {
                     this.SetCurrentMode(CameraModeEnum.FREE);
                 } else {
@@ -147,12 +120,12 @@ namespace Sim {
                 Props objectToInteract = hit.collider.GetComponentInParent<Props>();
 
                 if (objectToInteract) {
-                    bool canInteract = RoomManager.LocalPlayer && RoomManager.LocalPlayer.CanInteractWith(objectToInteract, hit.point);
+                    bool canInteract = RoomManager.LocalCharacter && RoomManager.LocalCharacter.CanInteractWith(objectToInteract, hit.point);
 
                     if (canInteract) {
                         HUDManager.Instance.DisplayContextMenu(true, Input.mousePosition, objectToInteract);
                     } else {
-                        RoomManager.LocalPlayer.SetTarget(hit.point, objectToInteract);
+                        RoomManager.LocalCharacter.SetTarget(hit.point, objectToInteract);
                         HUDManager.Instance.DisplayContextMenu(false, Vector3.zero);
                     }
                 }

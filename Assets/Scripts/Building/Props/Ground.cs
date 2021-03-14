@@ -1,35 +1,35 @@
-﻿using System;
-using Photon.Pun;
+﻿using Photon.Pun;
+using Photon.Realtime;
 using Sim.Scriptables;
 using UnityEngine;
 
 namespace Sim.Building {
     public class Ground : Props {
-        
         [Header("Ground settings")]
-        [SerializeField] private int paintConfigId;
-        
+        [SerializeField]
+        private int paintConfigId;
+
         private new Renderer renderer;
 
         private int oldPaintConfigId;
 
         private bool preview;
-        
+
         protected override void Awake() {
             base.Awake();
-            
+
             this.renderer = GetComponent<Renderer>();
         }
 
         protected override void Start() {
             base.Start();
-            
+
             this.ApplyPaint();
         }
 
-        public override void Synchronize(Photon.Realtime.Player playerTarget) {
+        public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
-            
+
             this.SetPaintConfigId(this.paintConfigId, playerTarget);
         }
 
@@ -40,7 +40,7 @@ namespace Sim.Building {
                 this.oldPaintConfigId = this.paintConfigId;
                 this.paintConfigId = paintConfig.GetId();
                 this.ApplyPaint();
-                this.preview = true;   
+                this.preview = true;
             }
         }
 
@@ -72,7 +72,7 @@ namespace Sim.Building {
             this.photonView.RPC("RPC_SetPaintConfigId", rpcTarget, paintConfigId);
         }
 
-        public void SetPaintConfigId(int paintConfigId, Photon.Realtime.Player playerTarget) {
+        public void SetPaintConfigId(int paintConfigId, Player playerTarget) {
             this.photonView.RPC("RPC_SetPaintConfigId", playerTarget, paintConfigId);
         }
 

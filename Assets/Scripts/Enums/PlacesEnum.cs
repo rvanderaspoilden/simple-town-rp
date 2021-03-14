@@ -4,7 +4,7 @@ namespace Sim.Enums {
     [Serializable]
     public enum PlacesEnum {
         TOWN_SQUARE,
-        APPARTMENT,
+        HOME,
         HALL,
         RESTAURANT
     }

@@ -9,7 +9,7 @@ using Sim.UI;
 using UnityEngine;
 
 namespace Sim {
-    [RequireComponent(typeof(Player))]
+    [RequireComponent(typeof(Character))]
     public class PlayerInteraction : MonoBehaviourPun {
         [Header("DEBUG")]
         private Package currentOpenedPackage;
@@ -20,10 +20,10 @@ namespace Sim {
 
         private PaintConfig paintToPackage;
 
-        private Player player;
+        private Character character;
 
         private void Awake() {
-            this.player = GetComponent<Player>();
+            this.character = GetComponent<Character>();
         }
 
         private void Start() {
@@ -39,11 +39,11 @@ namespace Sim {
             Package.OnOpened += OpenPackage;
             PaintBucket.OnOpened += OpenBucket;
 
-            this.player.SetState(StateType.FREE);
+            this.character.SetState(StateType.FREE);
         }
 
         private void Update() {
-            if (Input.GetKeyDown(KeyCode.F) && this.player.GetState() == StateType.FREE && PhotonNetwork.IsMasterClient && AppartmentManager.instance &&
+            if (Input.GetKeyDown(KeyCode.F) && this.character.GetState() == StateType.FREE && PhotonNetwork.IsMasterClient && AppartmentManager.instance &&
                 AppartmentManager.instance.IsOwner(NetworkManager.Instance.CharacterData)) {
                 HUDManager.Instance.DisplayAdminPanel(true);
             }
@@ -62,7 +62,7 @@ namespace Sim {
         }
 
         private void OnMoveRequest(Props props) {
-            this.player.SetState(StateType.MOVING_PROPS);
+            this.character.SetState(StateType.MOVING_PROPS);
 
             BuildManager.Instance.Edit(props);
         }
@@ -73,7 +73,7 @@ namespace Sim {
         private void OnSelectPropsFromAdminPanel(PropsConfig propsConfig) {
             this.propsToPackage = propsConfig;
 
-            this.player.SetState(StateType.PACKAGING);
+            this.character.SetState(StateType.PACKAGING);
 
             BuildManager.Instance.Init(this.propsToPackage.GetPackageConfig());
         }
@@ -84,7 +84,7 @@ namespace Sim {
         private void OnSelectPaintFromAdminPanel(PaintConfig paintConfig) {
             this.paintToPackage = paintConfig;
 
-            this.player.SetState(StateType.PACKAGING);
+            this.character.SetState(StateType.PACKAGING);
 
             BuildManager.Instance.Init(this.paintToPackage.GetBucketPropsConfig());
         }
@@ -92,7 +92,7 @@ namespace Sim {
         private void OpenPackage(Package package) {
             this.currentOpenedPackage = package;
 
-            this.player.SetState(StateType.UNPACKAGING);
+            this.character.SetState(StateType.UNPACKAGING);
 
             BuildManager.Instance.Init(package.GetPropsConfigInside());
         }
@@ -100,7 +100,7 @@ namespace Sim {
         private void OpenBucket(PaintBucket bucket) {
             this.currentOpenedBucket = bucket;
 
-            this.player.SetState(StateType.PAINTING);
+            this.character.SetState(StateType.PAINTING);
 
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
                 RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.FORCE_SHOW);
@@ -114,7 +114,7 @@ namespace Sim {
             this.currentOpenedBucket = null;
             this.propsToPackage = null;
             this.paintToPackage = null;
-            this.player.SetState(StateType.FREE);
+            this.character.SetState(StateType.FREE);
         }
 
         private void OnValidatePaintModification() {
@@ -130,28 +130,28 @@ namespace Sim {
 
             RoomManager.Instance.SaveRoom();
 
-            this.player.SetState(StateType.FREE);
+            this.character.SetState(StateType.FREE);
         }
 
         private void OnValidatePropCreation(PropsConfig propsConfig, Vector3 position, Quaternion rotation) {
             Props props = PropsManager.Instance.InstantiateProps(propsConfig, position, rotation, true);
 
             // Manage packaging for props
-            if (this.player.GetState() == StateType.PACKAGING && this.propsToPackage) {
+            if (this.character.GetState() == StateType.PACKAGING && this.propsToPackage) {
                 props.SetIsBuilt(true);
                 props.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId(), RpcTarget.All);
                 this.propsToPackage = null;
             }
 
             // Manage packaging for paint
-            if (this.player.GetState() == StateType.PACKAGING && this.paintToPackage) {
+            if (this.character.GetState() == StateType.PACKAGING && this.paintToPackage) {
                 props.SetIsBuilt(true);
                 props.GetComponent<PaintBucket>().SetPaintConfigId(this.paintToPackage.GetId(), RpcTarget.All);
                 this.paintToPackage = null;
             }
 
             // Manage unpackaging
-            if (this.player.GetState() == StateType.UNPACKAGING && this.currentOpenedPackage) {
+            if (this.character.GetState() == StateType.UNPACKAGING && this.currentOpenedPackage) {
                 props.SetIsBuilt(!propsConfig.MustBeBuilt());
                 PropsManager.Instance.DestroyProps(this.currentOpenedPackage, true);
                 this.currentOpenedPackage = null;
@@ -160,7 +160,7 @@ namespace Sim {
             RoomManager.Instance.SaveRoom();
 
             // this.SwitchToFreeMode(); // TODO Camera manager must subscribe to this event to come back to free camera
-            this.player.SetState(StateType.FREE);
+            this.character.SetState(StateType.FREE);
         }
         
         private void OnValidatePropEdit(Props props) {
@@ -169,7 +169,7 @@ namespace Sim {
             RoomManager.Instance.SaveRoom();
 
             // this.SwitchToFreeMode(); // TODO Camera manager must subscribe to this event to come back to free camera
-            this.player.SetState(StateType.FREE);
+            this.character.SetState(StateType.FREE);
         }
     }
 }

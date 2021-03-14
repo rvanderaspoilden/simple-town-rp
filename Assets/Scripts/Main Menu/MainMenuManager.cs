@@ -41,6 +41,10 @@ namespace Sim {
             ApiManager.OnApartmentAssigned -= OnApartmentAssigned;
         }
 
+        public void Play() {
+            NetworkManager.Instance.Play();
+        }
+
         private void OnCharacterRetrieved(CharacterData characterData) {
             if (characterData != null) {
                 Debug.Log("Character retrieved");

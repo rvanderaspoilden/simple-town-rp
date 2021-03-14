@@ -37,6 +37,6 @@ namespace Sim.Entities {
             set => job = value;
         }
 
-        public string FullName => $"${Firstname} ${Lastname}";
+        public string FullName => $"{Firstname} {Lastname}";
     }
 }

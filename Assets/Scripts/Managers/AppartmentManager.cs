@@ -28,10 +28,10 @@ namespace Sim
             ApiManager.instance.SaveAppartment(id, owner, sceneData);
         }
 
-        public override void InstantiateLocalPlayer(GameObject prefab, CharacterData personnage) {
-            base.InstantiateLocalPlayer(prefab, personnage);
+        public override void InstantiateLocalCharacter(Character prefab, CharacterData characterData) {
+            base.InstantiateLocalCharacter(prefab, characterData);
 
-            if (!PhotonNetwork.IsMasterClient && this.IsOwner(personnage)) {
+            if (!PhotonNetwork.IsMasterClient && this.IsOwner(characterData)) {
                 PhotonNetwork.CurrentRoom.SetMasterClient(PhotonNetwork.LocalPlayer);
             }
         }
@@ -54,7 +54,7 @@ namespace Sim
             set => owner = value;
         }
 
-        public bool IsOwner(CharacterData personnage)
+        public bool IsOwner(CharacterData personnage) // TODO: check this
         {
             return personnage.Id == this.owner;
         }

@@ -3,15 +3,16 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using Photon.Pun;
+using Photon.Realtime;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
 using Sim.Interactables;
-using Sim.UI;
 using Sim.Utils;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 namespace Sim {
     public class RoomManager : MonoBehaviourPunCallbacks {
@@ -23,18 +24,18 @@ namespace Sim {
         private Coroutine saveCoroutine;
 
         private bool generated;
-        
+
         private bool forceWallHidden;
 
         private bool forcePropsHidden;
-        
+
         public delegate void VisibilityModeChanged(VisibilityModeEnum mode);
 
         public static event VisibilityModeChanged OnWallVisibilityModeChanged;
-        
+
         public static event VisibilityModeChanged OnPropsVisibilityModeChanged;
 
-        public static Player LocalPlayer;
+        public static Character LocalCharacter;
 
         public static RoomManager Instance;
 
@@ -56,7 +57,7 @@ namespace Sim {
 
         public void SetWallVisibility(VisibilityModeEnum mode) {
             this.forceWallHidden = mode == VisibilityModeEnum.FORCE_HIDE;
-            
+
             this.UpdateWallVisibility(mode);
         }
 
@@ -72,19 +73,19 @@ namespace Sim {
                     propsRenderer.SetVisibilityMode(mode);
                 }
             });
-            
+
             OnWallVisibilityModeChanged?.Invoke(mode);
         }
-        
+
         public void SetPropsVisibility(VisibilityModeEnum mode) {
             this.forcePropsHidden = mode == VisibilityModeEnum.FORCE_HIDE;
-            
+
             this.UpdatePropsVisibility(mode);
         }
-        
+
         public void TogglePropsVisible() {
             this.forcePropsHidden = !this.forcePropsHidden;
-            
+
             this.UpdatePropsVisibility(this.forcePropsHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
         }
 
@@ -95,7 +96,7 @@ namespace Sim {
                         propsRenderer.SetVisibilityMode(mode);
                     }
                 });
-            
+
             OnPropsVisibilityModeChanged?.Invoke(mode);
         }
 
@@ -159,7 +160,7 @@ namespace Sim {
             this.IdentifyExteriorWalls();
 
             // Tell to room that it's generated
-            ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
+            Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
             properties.Add("isGenerated", true);
             PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
         }
@@ -243,13 +244,13 @@ namespace Sim {
 
         #region Player
 
-        public virtual void InstantiateLocalPlayer(GameObject prefab, CharacterData characterData) {
-            GameObject playerObj = PhotonNetwork.Instantiate("Prefabs/Personnage/" + prefab.name, this.playerSpawnPoint.transform.position, Quaternion.identity);
-            LocalPlayer = playerObj.GetComponent<Player>();
-            LocalPlayer.CharacterData = characterData;
+        public virtual void InstantiateLocalCharacter(Character prefab, CharacterData characterData) {
+            GameObject character = PhotonNetwork.Instantiate("Prefabs/Characters/" + prefab.name, this.playerSpawnPoint.transform.position, Quaternion.identity);
+            LocalCharacter = character.GetComponent<Character>();
+            LocalCharacter.CharacterData = characterData;
         }
 
-        public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer) {
+        public override void OnPlayerEnteredRoom(Player newPlayer) {
             Debug.Log(newPlayer.NickName + " joined the room");
 
             if (PhotonNetwork.IsMasterClient) {
@@ -257,11 +258,11 @@ namespace Sim {
             }
         }
 
-        private IEnumerator SynchronizeRoomForTarget(Photon.Realtime.Player newPlayer) {
+        private IEnumerator SynchronizeRoomForTarget(Player newPlayer) {
             while (!PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated")) {
                 yield return null;
             }
-            
+
             foreach (Props props in FindObjectsOfType<Props>()) {
                 props.Synchronize(newPlayer);
             }
@@ -269,7 +270,7 @@ namespace Sim {
             this.photonView.RPC("RPC_GenerateNavMesh", newPlayer);
         }
 
-        public override void OnMasterClientSwitched(Photon.Realtime.Player newMasterClient) {
+        public override void OnMasterClientSwitched(Player newMasterClient) {
             Debug.Log("Masterclient is now : " + newMasterClient.NickName);
             foreach (Props props in FindObjectsOfType<Props>()) {
                 props.RefreshAllActions();

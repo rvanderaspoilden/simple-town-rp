@@ -29,11 +29,11 @@ namespace Sim.UI {
         private Image moodImage;
 
         private void OnEnable() {
-            Player.OnCharacterDataChanged += Setup;
+            Character.OnCharacterDataChanged += Setup;
         }
 
         private void OnDisable() {
-            Player.OnCharacterDataChanged -= Setup;
+            Character.OnCharacterDataChanged -= Setup;
         }
 
         public void Setup(CharacterData characterData) {

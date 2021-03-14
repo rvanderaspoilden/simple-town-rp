@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Photon.Pun;
+using Photon.Realtime;
 using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
@@ -9,8 +10,9 @@ using Action = Sim.Interactables.Action;
 namespace Sim.Building {
     [RequireComponent(typeof(PropsRenderer))]
     public class Props : MonoBehaviourPun {
-        [Header("Props settings")] 
-        [SerializeField] protected PropsConfig configuration;
+        [Header("Props settings")]
+        [SerializeField]
+        protected PropsConfig configuration;
 
         protected Action[] actions;
 
@@ -21,9 +23,9 @@ namespace Sim.Building {
         protected PropsRenderer propsRenderer;
 
         public delegate void PropsAction(Props props);
-        
+
         public static event PropsAction OnMoveRequest;
-        
+
         protected virtual void Awake() {
             this.built = true;
             this.propsRenderer = GetComponent<PropsRenderer>();
@@ -67,11 +69,10 @@ namespace Sim.Building {
             return this.built;
         }
 
-        public void SetIsBuilt(bool value, Photon.Realtime.Player playerTarget = null) {
+        public void SetIsBuilt(bool value, Player playerTarget = null) {
             if (playerTarget != null) {
                 photonView.RPC("RPC_SetIsBuilt", playerTarget, value);
-            }
-            else {
+            } else {
                 photonView.RPC("RPC_SetIsBuilt", RpcTarget.All, value);
             }
         }
@@ -96,7 +97,7 @@ namespace Sim.Building {
                 case ActionTypeEnum.BUILD:
                     this.Build();
                     break;
-                
+
                 case ActionTypeEnum.DELETE:
                     this.Delete();
                     break;
@@ -120,18 +121,17 @@ namespace Sim.Building {
         protected virtual void Delete() {
             photonView.RPC("RPC_DestroyProps", PhotonNetwork.MasterClient);
         }
-        
+
         [PunRPC]
         public void RPC_DestroyProps() {
             PropsManager.Instance.DestroyProps(this, true);
             RoomManager.Instance.SaveRoom();
         }
 
-        public void UpdateTransform(Photon.Realtime.Player playerTarget = null) {
+        public void UpdateTransform(Player playerTarget = null) {
             if (playerTarget == null) {
                 photonView.RPC("RPC_UpdateTransform", RpcTarget.Others, this.transform.position, this.transform.rotation);
-            }
-            else {
+            } else {
                 photonView.RPC("RPC_UpdateTransform", playerTarget, this.transform.position, this.transform.rotation);
             }
         }
@@ -150,7 +150,7 @@ namespace Sim.Building {
             this.transform.rotation = rot;
         }
 
-        public virtual void Synchronize(Photon.Realtime.Player playerTarget) {
+        public virtual void Synchronize(Player playerTarget) {
             this.SetIsBuilt(this.built, playerTarget);
             this.UpdateTransform(playerTarget);
         }
@@ -158,7 +158,7 @@ namespace Sim.Building {
         public bool IsWallProps() {
             return this.configuration.GetSurfaceToPose() == BuildSurfaceEnum.WALL;
         }
-        
+
         public bool IsGroundProps() {
             return this.configuration.GetSurfaceToPose() == BuildSurfaceEnum.GROUND;
         }

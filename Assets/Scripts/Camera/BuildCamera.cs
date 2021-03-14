@@ -65,7 +65,7 @@ namespace Sim {
         }
 
         public void Setup(CinemachineFreeLook originCamera) {
-            this.SetTargetPosition(RoomManager.LocalPlayer.transform.position, true);
+            this.SetTargetPosition(RoomManager.LocalCharacter.transform.position, true);
             this.SetVirtualCameraRotation(originCamera.m_XAxis.Value, originCamera.m_YAxis.Value);
         }
 

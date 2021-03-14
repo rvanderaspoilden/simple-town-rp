@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Photon.Pun;
 using Photon.Realtime;
+using Sim.Constants;
 using Sim.Entities;
 using Sim.Enums;
 using Sim.Utils;
@@ -12,7 +13,7 @@ namespace Sim {
     public class NetworkManager : MonoBehaviourPunCallbacks {
         [Header("Settings")]
         [SerializeField]
-        private GameObject playerPrefab;
+        private Character characterPrefab;
 
         [Header("Only for debug")]
         [SerializeField]
@@ -28,8 +29,6 @@ namespace Sim {
 
         private int currentAppartmentNumber;
 
-        private bool isConnectedToServer;
-
         public static NetworkManager Instance;
 
         private void Awake() {
@@ -39,10 +38,6 @@ namespace Sim {
 
             Instance = this;
             DontDestroyOnLoad(this.gameObject);
-        }
-
-        private void Start() {
-            this.ConnectToMasterServer();
         }
 
         private void OnDestroy() {
@@ -68,20 +63,16 @@ namespace Sim {
         }
 
         public void Play() {
+            LoadingManager.Instance.Show(true);
+
             PhotonNetwork.NickName = this.characterData.Identity.FullName;
 
-            if (PhotonNetwork.IsConnectedAndReady && this.isConnectedToServer) {
-                LoadingManager.Instance.Show(true);
-                Debug.Log("Connecting to server with character : " + characterData.Identity.Firstname);
-                this.GoToRoom(PlacesEnum.HALL);
-            } else {
-                Debug.Log("Player is not connected to lobby");
-            }
+            this.ConnectToMasterServer();
         }
 
-        public GameObject PlayerPrefab {
-            get => playerPrefab;
-            set => playerPrefab = value;
+        public Character CharacterPrefab {
+            get => characterPrefab;
+            set => characterPrefab = value;
         }
 
         public void GoToRoom(PlacesEnum place) {
@@ -96,8 +87,8 @@ namespace Sim {
             if (place == PlacesEnum.HALL) {
                 roomName =
                     $"{PlaceUtils.GetPlaceEnumName(place)} n°{CommonUtils.GetAppartmentFloorFromAppartmentId(tenantHome.Address.DoorNumber, CommonConstants.appartmentLimitPerFloor)}";
-            } else if (place == PlacesEnum.APPARTMENT) {
-                roomName = $"{PlaceUtils.GetPlaceEnumName(place)} n°{this.currentAppartmentNumber}";
+            } else if (place == PlacesEnum.HOME) {
+                roomName = $"{PlaceUtils.GetPlaceEnumName(place)} n°{this.currentAppartmentNumber}"; // Todo use address
             }
 
             PhotonNetwork.JoinOrCreateRoom(roomName, new RoomOptions() {IsOpen = true, IsVisible = true, EmptyRoomTtl = 0}, TypedLobby.Default);
@@ -106,7 +97,7 @@ namespace Sim {
 
         public void GoToHome(int id) {
             this.currentAppartmentNumber = id;
-            this.GoToRoom(PlacesEnum.APPARTMENT);
+            this.GoToRoom(PlacesEnum.HOME);
         }
 
         private IEnumerator LeaveAndJoinRoom(PlacesEnum place) {
@@ -135,7 +126,7 @@ namespace Sim {
 
             UnityWebRequest webRequest = null;
 
-            if (sceneName.Equals(PlaceUtils.ConvertPlaceEnumToSceneName(PlacesEnum.APPARTMENT))) {
+            if (sceneName.Equals(PlaceUtils.ConvertPlaceEnumToSceneName(PlacesEnum.HOME))) {
                 // TODO: retrieve by address
                 webRequest = ApiManager.instance.RetrieveHomeById(this.currentAppartmentNumber);
             }
@@ -147,13 +138,13 @@ namespace Sim {
 
             Debug.Log("Room is loaded");
 
-            if (PhotonNetwork.IsMasterClient && sceneName.Equals("Hall")) {
+            if (PhotonNetwork.IsMasterClient && sceneName.Equals(Scenes.HALL)) { // TODO use preset database
                 TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Hall");
                 SceneData sceneData = JsonUtility.FromJson<SceneData>(textAsset.text);
                 RoomManager.Instance.InstantiateLevel(sceneData);
             }
 
-            if (sceneName.Equals("Appartment")) {
+            if (sceneName.Equals(Scenes.HOME)) {
                 HomeResponse homeResponse = JsonUtility.FromJson<HomeResponse>(webRequest.downloadHandler.text);
                 SceneData sceneData = null;
 
@@ -178,7 +169,7 @@ namespace Sim {
                 isRoomGenerated = PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated") && RoomManager.Instance.IsGenerated();
 
                 if (isRoomGenerated) {
-                    RoomManager.Instance.InstantiateLocalPlayer(this.playerPrefab, this.characterData);
+                    RoomManager.Instance.InstantiateLocalCharacter(this.characterPrefab, this.characterData);
                 }
 
                 yield return new WaitForSeconds(0.1f);
@@ -196,7 +187,8 @@ namespace Sim {
 
         public override void OnJoinedLobby() {
             Debug.Log("Lobby joined");
-            this.isConnectedToServer = true;
+            Debug.Log("Connecting to server with character : " + characterData.Identity.Firstname);
+            this.GoToRoom(PlacesEnum.HALL);
         }
 
         public override void OnJoinedRoom() {

@@ -1,13 +1,12 @@
-using System;
 using Sim;
 using UnityEngine;
 
 namespace AI.States {
     public class CharacterMove : IState {
-        private readonly Player player;
+        private readonly Character character;
 
-        public CharacterMove(Player player) {
-            this.player = player;
+        public CharacterMove(Character character) {
+            this.character = character;
         }
 
         public void OnEnter() {
@@ -15,23 +14,21 @@ namespace AI.States {
         }
 
         public void Tick() {
-            MarkerController.Instance.ShowAt(this.player.NavMeshAgent.pathEndPosition);
+            MarkerController.Instance.ShowAt(this.character.NavMeshAgent.pathEndPosition);
 
-            this.player.Animator.SetVelocity(this.player.NavMeshAgent.velocity.magnitude);
+            this.character.Animator.SetVelocity(this.character.NavMeshAgent.velocity.magnitude);
         }
 
         public void OnExit() {
-            if (this.player.PropsTarget && this.player.CanInteractWith(this.player.PropsTarget)) {
+            if (this.character.PropsTarget && this.character.CanInteractWith(this.character.PropsTarget)) {
                 HUDManager.Instance.DisplayContextMenu(true,
-                    CameraManager.camera.WorldToScreenPoint(this.player.PropsTarget.transform.position), this.player.PropsTarget);
-                this.player.PropsTarget = null;
+                    CameraManager.camera.WorldToScreenPoint(this.character.PropsTarget.transform.position), this.character.PropsTarget);
+                this.character.PropsTarget = null;
             }
-            
-            this.player.NavMeshAgent.ResetPath();
-            
+
+            this.character.NavMeshAgent.ResetPath();
+
             MarkerController.Instance.Hide();
-
-
         }
     }
 }

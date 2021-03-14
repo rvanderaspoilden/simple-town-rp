@@ -54,8 +54,8 @@ namespace Sim {
             Debug.Log("Set target camera");
 
             do {
-                if (RoomManager.LocalPlayer) {
-                    this.cameraTarget.SetTarget(RoomManager.LocalPlayer.GetHeadTargetForCamera());
+                if (RoomManager.LocalCharacter) {
+                    this.cameraTarget.SetTarget(RoomManager.LocalCharacter.GetHeadTargetForCamera());
                 } else {
                     Debug.Log("No local player found");
                 }
