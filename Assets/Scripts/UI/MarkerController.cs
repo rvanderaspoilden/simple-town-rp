@@ -18,16 +18,18 @@ namespace Sim {
         private Sequence sequence;
 
         private bool active;
-        
+
         public static MarkerController Instance;
 
         private void Awake() {
-            if (Instance != null) {
+            if (Instance != null && Instance != this) {
                 Destroy(this.gameObject);
+                Debug.Log("top");
+            } else {
+                Instance = this;
             }
 
-            Instance = this;
-            
+
             this.smallestMarkerRectTransform = this.smallestMarker.GetComponent<RectTransform>();
             this.largestMarkerRectTransform = this.largestMarker.GetComponent<RectTransform>();
 
@@ -37,7 +39,7 @@ namespace Sim {
             this.sequence.SetLoops(-1);
 
             this.Hide();
-            
+
             DontDestroyOnLoad(this.gameObject);
         }
 

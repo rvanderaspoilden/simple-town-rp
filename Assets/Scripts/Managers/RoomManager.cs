@@ -120,7 +120,7 @@ namespace Sim {
             // Instantiate all doors teleporter
             sceneData.doorTeleporters?.ToList().ForEach(data => {
                 DoorTeleporter props = SaveUtils.InstantiatePropsFromSave(data) as DoorTeleporter;
-                props.SetDestination((PlacesEnum) Enum.Parse(typeof(PlacesEnum), data.destination), RpcTarget.All);
+                props.SetDestination((RoomTypeEnum) Enum.Parse(typeof(RoomTypeEnum), data.destination), RpcTarget.All);
                 props.SetDoorDirection((DoorDirectionEnum) Enum.Parse(typeof(DoorDirectionEnum), data.doorDirection), RpcTarget.All);
                 props.SetDoorNumber(CommonUtils.GetDoorNumberFromFloorNumber(data.number), RpcTarget.All);
             });
@@ -133,7 +133,7 @@ namespace Sim {
             // Instantiate all elevators
             sceneData.elevatorTeleporters?.ToList().ForEach(data => {
                 ElevatorTeleporter props = SaveUtils.InstantiatePropsFromSave(data) as ElevatorTeleporter;
-                props.SetDestination((PlacesEnum) Enum.Parse(typeof(PlacesEnum), data.destination), RpcTarget.All);
+                props.SetDestination((RoomTypeEnum) Enum.Parse(typeof(RoomTypeEnum), data.destination), RpcTarget.All);
             });
 
             // Instantiate all packages
@@ -220,16 +220,16 @@ namespace Sim {
 
         protected virtual SceneData GenerateSceneData() {
             SceneData sceneData = new SceneData();
-            sceneData.doorTeleporters = FindObjectsOfType<DoorTeleporter>().ToList().Select(door => SaveUtils.CreateDoorTeleporterData(door)).ToArray();
-            sceneData.elevatorTeleporters =
-                FindObjectsOfType<ElevatorTeleporter>().ToList().Select(elevator => SaveUtils.CreateElevatorTeleporterData(elevator)).ToArray();
-            sceneData.walls = FindObjectsOfType<Wall>().ToList().Select(wall => SaveUtils.CreateWallData(wall)).ToArray();
-            sceneData.simpleDoors = FindObjectsOfType<SimpleDoor>().ToList().Select(door => SaveUtils.CreateDoorData(door)).ToArray();
-            sceneData.grounds = FindObjectsOfType<Ground>().ToList().Select(ground => SaveUtils.CreateGroundData(ground)).ToArray();
-            sceneData.props = FindObjectsOfType<Props>().ToList().Where(props => { return props.GetType() == typeof(Props) || props.GetType() == typeof(Seat); })
-                .Select(props => SaveUtils.CreateDefaultData(props)).ToArray();
-            sceneData.packages = FindObjectsOfType<Package>().ToList().Select(package => SaveUtils.CreatePackageData(package)).ToArray();
-            sceneData.buckets = FindObjectsOfType<PaintBucket>().ToList().Select(bucket => SaveUtils.CreateBucketData(bucket)).ToArray();
+            sceneData.doorTeleporters = FindObjectsOfType<DoorTeleporter>().ToList().Select(SaveUtils.CreateDoorTeleporterData).ToArray();
+            sceneData.elevatorTeleporters = FindObjectsOfType<ElevatorTeleporter>().ToList().Select(SaveUtils.CreateElevatorTeleporterData).ToArray();
+            sceneData.walls = FindObjectsOfType<Wall>().ToList().Select(SaveUtils.CreateWallData).ToArray();
+            sceneData.simpleDoors = FindObjectsOfType<SimpleDoor>().ToList().Select(SaveUtils.CreateDoorData).ToArray();
+            sceneData.grounds = FindObjectsOfType<Ground>().ToList().Select(SaveUtils.CreateGroundData).ToArray();
+            sceneData.packages = FindObjectsOfType<Package>().ToList().Select(SaveUtils.CreatePackageData).ToArray();
+            sceneData.buckets = FindObjectsOfType<PaintBucket>().ToList().Select(SaveUtils.CreateBucketData).ToArray();
+            sceneData.props = FindObjectsOfType<Props>().ToList()
+                .Where(props => props.GetType() == typeof(Props) || props.GetType() == typeof(Seat))
+                .Select(SaveUtils.CreateDefaultData).ToArray();
 
             return sceneData;
         }

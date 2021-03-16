@@ -8,10 +8,10 @@ namespace Sim.Interactables {
     public abstract class Teleporter : Props {
         [Header("Teleporter Settings")]
         [SerializeField]
-        protected PlacesEnum destination;
+        protected RoomTypeEnum destination;
 
         protected override void Use() {
-            NetworkManager.Instance.GoToRoom(destination);
+            NetworkManager.Instance.GoToRoom(RoomTypeEnum.BUILDING_HALL, null);
         }
 
         public override void Synchronize(Player playerTarget) {
@@ -20,20 +20,20 @@ namespace Sim.Interactables {
             this.SetDestination(this.destination, playerTarget);
         }
 
-        public PlacesEnum GetDestination() {
+        public RoomTypeEnum GetDestination() {
             return this.destination;
         }
 
-        public void SetDestination(PlacesEnum destination, RpcTarget rpcTarget) { // TODO: look this
+        public void SetDestination(RoomTypeEnum destination, RpcTarget rpcTarget) { // TODO: look this
             this.photonView.RPC("RPC_SetDestination", rpcTarget, destination);
         }
 
-        private void SetDestination(PlacesEnum destination, Player playerTarget) {
+        private void SetDestination(RoomTypeEnum destination, Player playerTarget) {
             this.photonView.RPC("RPC_SetDestination", playerTarget, destination);
         }
 
         [PunRPC]
-        public void RPC_SetDestination(PlacesEnum placesEnum) {
+        public void RPC_SetDestination(RoomTypeEnum placesEnum) {
             this.destination = placesEnum;
         }
     }

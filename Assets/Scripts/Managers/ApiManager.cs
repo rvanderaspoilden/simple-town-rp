@@ -31,7 +31,7 @@ namespace Sim {
         public delegate void HomeCreationSuceededResponse(Home home);
 
         public delegate void CharacterDataResponse(CharacterData characterData);
-        
+
         public delegate void HomesResponse(List<Home> homes);
 
         public delegate void FailedResponse(String msg);
@@ -49,7 +49,7 @@ namespace Sim {
         public static event CharacterDataResponse OnCharacterRetrieved;
         public static event FailedResponse OnCharacterCreationFailed;
 
-        public static event HomesResponse OnHomesRetrieved; 
+        public static event HomesResponse OnHomesRetrieved;
 
         public static event HomeCreationSuceededResponse OnApartmentAssigned;
 
@@ -68,7 +68,7 @@ namespace Sim {
             if (this.local) {
                 this.uri = "http://localhost:3000";
             }
-            
+
             DontDestroyOnLoad(this.gameObject);
         }
 
@@ -76,14 +76,25 @@ namespace Sim {
             this.authenticationCoroutine ??= StartCoroutine(this.AuthenticationCoroutine(username, password));
         }
 
-        public void SaveAppartment(String id, String owner, SceneData sceneData) {
-            StartCoroutine(this.SaveAppartmentCoroutine(id, owner, sceneData));
+        public void SaveHomeScene(Home home, SceneData sceneData) {
+            StartCoroutine(this.SaveHomeSceneCoroutine(home, sceneData));
         }
 
-        public UnityWebRequest RetrieveHomeById(int homeId) {
-            UnityWebRequest homeRequest = UnityWebRequest.Get(this.uri + "/homes/" + homeId);
-            homeRequest.SendWebRequest();
-            return homeRequest;
+        public UnityWebRequest RetrieveHomeByAddress(Address address) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(address));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/homes/by-address", "POST") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+            request.SetRequestHeader("Content-type", "application/json");
+            request.SetRequestHeader("Accept", "application/json");
+
+            request.SendWebRequest();
+
+            return request;
         }
 
         public void AssignApartment(AssignApartmentRequest request) {
@@ -142,7 +153,7 @@ namespace Sim {
             StartCoroutine(this.CheckServerStatusCoroutine());
         }
 
-        private IEnumerator SaveAppartmentCoroutine(String id, String owner, SceneData sceneData) {
+        private IEnumerator SaveHomeSceneCoroutine(Home home, SceneData sceneData) {
             // TODO save home
             /*Home home = new HomeResponse(id, owner, sceneData);
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(appartment));
@@ -197,7 +208,7 @@ namespace Sim {
                 OnHomesRetrieved?.Invoke(null);
             }
         }
-        
+
         private IEnumerator CheckServerStatusCoroutine() {
             UnityWebRequest www = UnityWebRequest.Get(this.uri + "/hc");
 

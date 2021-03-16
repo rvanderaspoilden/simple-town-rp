@@ -12,9 +12,6 @@ namespace Sim.Entities {
         private int doorNumber;
 
         [SerializeField]
-        private BuildingEnum building;
-
-        [SerializeField]
         private string street;
 
         public HomeTypeEnum HomeType {
@@ -27,14 +24,13 @@ namespace Sim.Entities {
             set => doorNumber = value;
         }
 
-        public BuildingEnum Building {
-            get => building;
-            set => building = value;
-        }
-
         public string Street {
             get => street;
             set => street = value;
+        }
+
+        public override string ToString() {
+            return $"{this.doorNumber}, {this.Street}";
         }
     }
 }

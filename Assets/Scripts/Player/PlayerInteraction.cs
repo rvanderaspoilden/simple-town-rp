@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Photon.Pun;
 using Sim.Building;
 using Sim.Enums;
@@ -43,8 +42,8 @@ namespace Sim {
         }
 
         private void Update() {
-            if (Input.GetKeyDown(KeyCode.F) && this.character.GetState() == StateType.FREE && PhotonNetwork.IsMasterClient && AppartmentManager.instance &&
-                AppartmentManager.instance.IsOwner(NetworkManager.Instance.CharacterData)) {
+            if (Input.GetKeyDown(KeyCode.F) && this.character.GetState() == StateType.FREE && PhotonNetwork.IsMasterClient && ApartmentManager.Instance &&
+                ApartmentManager.Instance.IsOwner(NetworkManager.Instance.CharacterData)) {
                 HUDManager.Instance.DisplayAdminPanel(true);
             }
         }
@@ -162,7 +161,7 @@ namespace Sim {
             // this.SwitchToFreeMode(); // TODO Camera manager must subscribe to this event to come back to free camera
             this.character.SetState(StateType.FREE);
         }
-        
+
         private void OnValidatePropEdit(Props props) {
             props.UpdateTransform();
 

@@ -2,6 +2,7 @@
 using Photon.Pun;
 using Photon.Realtime;
 using Sim.Constants;
+using Sim.Entities;
 using Sim.Enums;
 using TMPro;
 using UnityEngine;
@@ -28,7 +29,7 @@ namespace Sim.Interactables {
             this.animator.SetFloat("direction", doorDirection == DoorDirectionEnum.BACKWARD ? -1 : 1);
 
             // Hide door number in apartment
-            if (SceneManager.GetActiveScene().name.Equals(PlaceName.HOME)) {
+            if (SceneManager.GetActiveScene().name.Equals(SceneConstants.HOME)) {
                 this.numberText.enabled = false;
             }
         }
@@ -41,8 +42,11 @@ namespace Sim.Interactables {
             // Play open animation for all
             photonView.RPC("RPC_Animation", RpcTarget.All);
 
-            if (this.destination == PlacesEnum.HOME) {
-                NetworkManager.Instance.GoToHome(this.number);
+            if (this.destination.Equals(RoomTypeEnum.HOME)) {
+                //TODO: refacto this
+                Address address = new Address {Street = "SALMON_HOTEL", DoorNumber = this.number, HomeType = HomeTypeEnum.APARTMENT};
+
+                NetworkManager.Instance.GoToRoom(RoomTypeEnum.HOME, address);
             } else {
                 base.Use();
             }

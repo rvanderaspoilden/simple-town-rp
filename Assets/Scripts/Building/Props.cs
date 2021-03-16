@@ -48,7 +48,7 @@ namespace Sim.Building {
         protected virtual void SetupUnbuiltActions() {
             this.unbuiltActions = this.configuration.GetUnbuiltActions();
 
-            bool isOwner = AppartmentManager.instance && AppartmentManager.instance.IsOwner(NetworkManager.Instance.CharacterData);
+            bool isOwner = ApartmentManager.Instance && ApartmentManager.Instance.IsOwner(NetworkManager.Instance.CharacterData);
             this.unbuiltActions.ToList().ForEach(action => action.SetIsLocked(!isOwner));
         }
 

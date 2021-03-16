@@ -370,8 +370,7 @@
           </e>
           <e p="Constants" t="Include">
             <e p="CommonConstants.cs" t="Include" />
-            <e p="PlaceName.cs" t="Include" />
-            <e p="Scenes.cs" t="Include" />
+            <e p="SceneConstants.cs" t="Include" />
           </e>
           <e p="Entities" t="Include">
             <e p="Address.cs" t="Include" />
@@ -395,7 +394,6 @@
           <e p="Enums" t="Include">
             <e p="ActionTypeEnum.cs" t="Include" />
             <e p="AxisEnum.cs" t="Include" />
-            <e p="BuildingEnum.cs" t="Include" />
             <e p="BuildModeEnum.cs" t="Include" />
             <e p="BuildSurfaceEnum.cs" t="Include" />
             <e p="CameraModeEnum.cs" t="Include" />
@@ -408,9 +406,9 @@
             <e p="JobEnum.cs" t="Include" />
             <e p="MoodEnum.cs" t="Include" />
             <e p="PanelTypeEnum.cs" t="Include" />
-            <e p="PlacesEnum.cs" t="Include" />
             <e p="PreviewStateEnum.cs" t="Include" />
             <e p="PropsType.cs" t="Include" />
+            <e p="RoomTypeEnum.cs" t="Include" />
             <e p="StateType.cs" t="Include" />
             <e p="VisibilityModeEnum.cs" t="Include" />
             <e p="VisibilityStateEnum.cs" t="Include" />
@@ -420,8 +418,8 @@
           </e>
           <e p="Managers" t="Include">
             <e p="ApartmentCreationManager.cs" t="Include" />
+            <e p="ApartmentManager.cs" t="Include" />
             <e p="ApiManager.cs" t="Include" />
-            <e p="AppartmentManager.cs" t="Include" />
             <e p="BuildManager.cs" t="Include" />
             <e p="CameraManager.cs" t="Include" />
             <e p="CharacterCreationManager.cs" t="Include" />
@@ -469,7 +467,6 @@
           <e p="Utils" t="Include">
             <e p="CommonUtils.cs" t="Include" />
             <e p="JsonHelper.cs" t="Include" />
-            <e p="PlaceUtils.cs" t="Include" />
           </e>
         </e>
         <e p="TextMesh Pro" t="Include">

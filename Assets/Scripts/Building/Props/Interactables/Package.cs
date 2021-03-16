@@ -18,7 +18,7 @@ namespace Sim.Interactables {
         protected override void SetupActions() {
             base.SetupActions();
             
-            bool isOwner = AppartmentManager.instance && AppartmentManager.instance.IsOwner(NetworkManager.Instance.CharacterData);
+            bool isOwner = ApartmentManager.Instance && ApartmentManager.Instance.IsOwner(NetworkManager.Instance.CharacterData);
             this.actions.ToList().ForEach(action => action.SetIsLocked(!isOwner));
         }
 

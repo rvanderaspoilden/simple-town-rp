@@ -24,7 +24,7 @@ namespace Sim {
         
         private CameraModeEnum currentMode;
 
-        public static new Camera camera;
+        private new Camera camera;
 
         public static CameraManager Instance;
 
@@ -35,7 +35,7 @@ namespace Sim {
 
             Instance = this;
 
-            camera = GetComponentInChildren<Camera>();
+            this.camera = GetComponentInChildren<Camera>();
             this.buildCamera = GetComponent<BuildCamera>();
             this.tpsCamera = GetComponent<ThirdPersonCamera>();
             this.displayedPropsRenderers = new List<PropsRenderer>();
@@ -53,6 +53,8 @@ namespace Sim {
         private void OnDestroy() {
             Character.OnStateChanged -= OnStateChanged;
         }
+
+        public Camera Camera => camera;
 
         void Update() {
             //this.ManageWorldTransparency();
@@ -116,7 +118,7 @@ namespace Sim {
         }
 
         private void ManageInteraction() {
-            if (Input.GetMouseButtonDown(0) && Physics.Raycast(camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
+            if (Input.GetMouseButtonDown(0) && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props objectToInteract = hit.collider.GetComponentInParent<Props>();
 
                 if (objectToInteract) {

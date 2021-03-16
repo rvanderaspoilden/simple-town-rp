@@ -22,7 +22,7 @@ namespace AI.States {
         public void OnExit() {
             if (this.character.PropsTarget && this.character.CanInteractWith(this.character.PropsTarget)) {
                 HUDManager.Instance.DisplayContextMenu(true,
-                    CameraManager.camera.WorldToScreenPoint(this.character.PropsTarget.transform.position), this.character.PropsTarget);
+                    CameraManager.Instance.Camera.WorldToScreenPoint(this.character.PropsTarget.transform.position), this.character.PropsTarget);
                 this.character.PropsTarget = null;
             }
 
