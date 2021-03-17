@@ -24,11 +24,9 @@ namespace Sim {
         private void Awake() {
             if (Instance != null && Instance != this) {
                 Destroy(this.gameObject);
-                Debug.Log("top");
             } else {
                 Instance = this;
             }
-
 
             this.smallestMarkerRectTransform = this.smallestMarker.GetComponent<RectTransform>();
             this.largestMarkerRectTransform = this.largestMarker.GetComponent<RectTransform>();

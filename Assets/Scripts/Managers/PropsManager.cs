@@ -14,11 +14,11 @@ namespace Sim {
         public static PropsManager Instance;
 
         private void Awake() {
-            if (Instance != null) {
+            if (Instance != null && Instance != this) {
                 Destroy(this);
+            } else {
+                Instance = this;
             }
-
-            Instance = this;
         }
 
         private void Start() {

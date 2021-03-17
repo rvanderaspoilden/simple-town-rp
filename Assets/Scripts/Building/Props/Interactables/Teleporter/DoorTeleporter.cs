@@ -44,7 +44,7 @@ namespace Sim.Interactables {
 
             if (this.destination.Equals(RoomTypeEnum.HOME)) {
                 //TODO: refacto this
-                Address address = new Address {Street = "SALMON_HOTEL", DoorNumber = this.number, HomeType = HomeTypeEnum.APARTMENT};
+                Address address = new Address {Street = "SALMON HOTEL", DoorNumber = this.number, HomeType = HomeTypeEnum.APARTMENT};
 
                 NetworkManager.Instance.GoToRoom(RoomTypeEnum.HOME, address);
             } else {

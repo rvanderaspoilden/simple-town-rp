@@ -8,6 +8,7 @@ using Sim.Enums;
 using Sim.Utils;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 namespace Sim {
     public class NetworkManager : MonoBehaviourPunCallbacks {
@@ -25,18 +26,24 @@ namespace Sim {
         [SerializeField]
         private Home tenantHome;
 
-        private RoomTypeEnum destinationRoomType;
+        [SerializeField]
+        private RoomNavigationData oldRoomData;
 
-        private Address destinationAddress;
+        [SerializeField]
+        private RoomNavigationData currentRoomData;
+
+        [SerializeField]
+        private RoomNavigationData nextRoomData;
 
         public static NetworkManager Instance;
 
         private void Awake() {
-            if (Instance != null) {
+            if (Instance != null && Instance != this) {
                 Destroy(this.gameObject);
+            } else {
+                Instance = this;
             }
 
-            Instance = this;
             DontDestroyOnLoad(this.gameObject);
         }
 
@@ -76,8 +83,7 @@ namespace Sim {
 
             PhotonNetwork.NickName = this.characterData.Identity.FullName;
 
-            this.destinationAddress = this.tenantHome.Address;
-            this.destinationRoomType = RoomTypeEnum.HOME;
+            this.nextRoomData = new RoomNavigationData(RoomTypeEnum.HOME, tenantHome.Address);
 
             PhotonNetwork.ConnectUsingSettings();
         }
@@ -87,8 +93,7 @@ namespace Sim {
 
             // If player is already in a room so leave it to rejoin
             if (PhotonNetwork.InRoom) {
-                this.destinationRoomType = roomType;
-                this.destinationAddress = address;
+                this.nextRoomData = new RoomNavigationData(roomType, address);
 
                 PhotonNetwork.LeaveRoom();
                 return;
@@ -97,8 +102,12 @@ namespace Sim {
             string roomName = CommonUtils.GetSceneName(roomType);
 
             if (roomType.Equals(RoomTypeEnum.BUILDING_HALL)) {
+                int doorNumber = this.currentRoomData != null && this.currentRoomData.RoomType == RoomTypeEnum.HOME
+                    ? this.currentRoomData.Address.DoorNumber
+                    : this.tenantHome.Address.DoorNumber;
+
                 roomName =
-                    $"Floor {CommonUtils.GetAppartmentFloorFromAppartmentId(tenantHome.Address.DoorNumber, CommonConstants.appartmentLimitPerFloor)}, SALMON HOTEL";
+                    $"Floor {CommonUtils.GetAppartmentFloorFromAppartmentId(doorNumber, CommonConstants.appartmentLimitPerFloor)}, SALMON HOTEL";
             } else if (roomType.Equals(RoomTypeEnum.HOME)) {
                 roomName = address.ToString();
             }
@@ -112,7 +121,7 @@ namespace Sim {
             UnityWebRequest webRequest = null;
 
             if (sceneName.Equals(CommonUtils.GetSceneName(RoomTypeEnum.HOME))) {
-                webRequest = ApiManager.instance.RetrieveHomeByAddress(this.destinationAddress);
+                webRequest = ApiManager.instance.RetrieveHomeByAddress(this.nextRoomData.Address);
             }
 
             while (PhotonNetwork.LevelLoadingProgress < 1f || (webRequest != null && !webRequest.isDone)) {
@@ -161,6 +170,11 @@ namespace Sim {
                 yield return new WaitForSeconds(0.1f);
             } while (!isRoomGenerated);
 
+            // Set navigation state
+            this.oldRoomData = new RoomNavigationData(this.currentRoomData.RoomType, this.currentRoomData.Address);
+            this.currentRoomData = new RoomNavigationData(this.nextRoomData.RoomType, this.nextRoomData.Address);
+            this.nextRoomData = null;
+
             yield return new WaitForSeconds(0.5f);
             LoadingManager.Instance.Hide();
         }
@@ -170,20 +184,30 @@ namespace Sim {
         public override void OnConnectedToMaster() {
             Debug.Log("On connected to master");
 
-            this.GoToRoom(this.destinationRoomType, this.destinationAddress);
+            this.GoToRoom(this.nextRoomData.RoomType, this.nextRoomData.Address);
         }
 
         public override void OnJoinedRoom() {
             Debug.Log("I joined room : " + PhotonNetwork.CurrentRoom.Name);
-            StartCoroutine(this.LoadScene(CommonUtils.GetSceneName(this.destinationRoomType)));
+            StartCoroutine(this.LoadScene(CommonUtils.GetSceneName(this.nextRoomData.RoomType)));
         }
 
         public override void OnJoinRoomFailed(short returnCode, string message) {
             base.OnJoinRoomFailed(returnCode, message);
 
-            Debug.Log("On join room failed");
+            Debug.LogError("On join room failed => DISCONNECT PLAYER");
+
+            PhotonNetwork.Disconnect();
 
             LoadingManager.Instance.Hide();
+        }
+
+        public override void OnDisconnected(DisconnectCause cause) {
+            base.OnDisconnected(cause);
+
+            Debug.Log("I have been disconnected from master server so redirect to main menu");
+
+            SceneManager.LoadScene("Main Menu");
         }
 
         #endregion

@@ -154,23 +154,23 @@ namespace Sim {
         }
 
         private IEnumerator SaveHomeSceneCoroutine(Home home, SceneData sceneData) {
-            // TODO save home
-            /*Home home = new HomeResponse(id, owner, sceneData);
-            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(appartment));
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(sceneData));
 
-            UnityWebRequest request = new UnityWebRequest(this.uri + "/appartment/" + id, "POST");
-            request.uploadHandler = new UploadHandlerRaw(encodedPayload);
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/homes/{home.Id}", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
             request.SetRequestHeader("Content-type", "application/json");
 
             yield return request.SendWebRequest();
 
-            if (request.responseCode == 201) {
+            if (request.responseCode == 200) {
                 Debug.Log("Saved successfully");
             } else {
-                Debug.Log(request.error);
-            }*/
-            return null;
+                Debug.Log(ExtractErrorMessage(request));
+            }
         }
 
         public void RetrieveCharacters() {

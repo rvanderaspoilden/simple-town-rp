@@ -13,7 +13,11 @@ namespace Sim {
         protected override void Awake() {
             base.Awake();
 
-            Instance = this;
+            if (Instance != null && Instance != this) {
+                Destroy(this.gameObject);
+            } else {
+                Instance = this;
+            }
         }
 
         protected override void Save(SceneData sceneData) {

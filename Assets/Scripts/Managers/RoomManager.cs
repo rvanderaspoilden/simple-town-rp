@@ -40,11 +40,11 @@ namespace Sim {
         public static RoomManager Instance;
 
         protected virtual void Awake() {
-            if (Instance != null) {
+            if (Instance != null && Instance != this) {
                 Destroy(this.gameObject);
+            } else {
+                Instance = this;
             }
-
-            Instance = this;
         }
 
         private void Update() {

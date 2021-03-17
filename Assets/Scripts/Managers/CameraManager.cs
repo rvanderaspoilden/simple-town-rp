@@ -29,11 +29,12 @@ namespace Sim {
         public static CameraManager Instance;
 
         private void Awake() {
-            if (Instance != null) {
+            if (Instance != null && Instance != this) {
                 Destroy(this.gameObject);
+            } else {
+                Instance = this;
             }
 
-            Instance = this;
 
             this.camera = GetComponentInChildren<Camera>();
             this.buildCamera = GetComponent<BuildCamera>();
