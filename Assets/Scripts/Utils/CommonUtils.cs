@@ -4,6 +4,7 @@ using Sim.Enums;
 using Sim.Scriptables;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace Sim.Utils {
@@ -47,11 +48,11 @@ namespace Sim.Utils {
             int layerValue = (1 << 12);
             if (props.IsGroundProps()) {
                 layerValue = layerValue | (props.GetConfiguration().IsPosableOnProps() ? (1 << 9 | 1 << 16) : (1 << 9)); // Ground + SuperPosable layers
-            } 
+            }
 
             return layerValue;
         }
-        
+
         /**
          * This method is used to give layers on which ones the paint can be used
          * Throw exception if different of wall or ground
@@ -62,14 +63,30 @@ namespace Sim.Utils {
             } else if (paintConfig.IsWallCover()) {
                 return (1 << 12); // Wall layer
             }
-            
+
             throw new Exception($"No surface type is defined for paint config ID => {paintConfig.GetId()}");
         }
 
         public static int GetDoorNumberFromFloorNumber(int initialNumber) {
             return initialNumber + (CommonConstants.appartmentLimitPerFloor *
-                                    (CommonUtils.GetAppartmentFloorFromAppartmentId(NetworkManager.Instance.CharacterData.AppartmentId,
+                                    (CommonUtils.GetAppartmentFloorFromAppartmentId(NetworkManager.Instance.TenantHome.Address.DoorNumber,
                                         CommonConstants.appartmentLimitPerFloor) - 1));
+        }
+
+        public static string GetDate() {
+            DateTime date = DateTime.Now;
+
+            return date.ToString("dd/MM/yyyy");
+        }
+
+        public static string GetSceneName(RoomTypeEnum roomType) {
+            if (roomType.Equals(RoomTypeEnum.HOME)) {
+                return "Home";
+            } else if (roomType.Equals(RoomTypeEnum.BUILDING_HALL)) {
+                return "Hall";
+            }
+
+            throw new Exception($"No scene name associated to roomTypeEnum => {roomType}");
         }
     }
 }

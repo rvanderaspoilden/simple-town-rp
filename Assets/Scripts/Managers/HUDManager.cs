@@ -23,11 +23,11 @@ namespace Sim {
         private PanelTypeEnum currentPanelType;
 
         private void Awake() {
-            if (Instance != null) {
+            if (Instance != null && Instance != this) {
                 Destroy(this.gameObject);
+            } else {
+                Instance = this;
             }
-
-            Instance = this;
         }
 
         // Start is called before the first frame update

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Photon.Pun;
+using Photon.Realtime;
 using Sim.Enums;
 using UnityEngine;
 
@@ -29,7 +30,7 @@ namespace Sim.Building {
             this.boxColliders = GetComponents<BoxCollider>();
 
             this.wallFacesPreviewed = new Dictionary<int, WallFace>();
-            
+
             this.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER);
         }
 
@@ -50,7 +51,7 @@ namespace Sim.Building {
             this.UpdateWallFaces();
             this.propsRenderer.SetupDefaultMaterials();
         }
-        
+
         public void EnableCollidersOfType(ColliderTypeEnum type) {
             foreach (BoxCollider boxCollider in this.boxColliders) {
                 boxCollider.enabled = type == ColliderTypeEnum.BOX_COLLIDER;
@@ -67,7 +68,7 @@ namespace Sim.Building {
             photonView.RPC("RPC_UpdateWallFaces", rpcTarget, JsonHelper.ToJson(faces.ToArray()));
         }
 
-        public void SetWallFaces(List<WallFace> faces, Photon.Realtime.Player targetPlayer) {
+        public void SetWallFaces(List<WallFace> faces, Player targetPlayer) {
             photonView.RPC("RPC_UpdateWallFaces", targetPlayer, JsonHelper.ToJson(faces.ToArray()));
         }
 
@@ -75,7 +76,7 @@ namespace Sim.Building {
             photonView.RPC("RPC_SetExteriorWall", rpcTarget, value);
         }
 
-        public void SetExteriorWall(bool value, Photon.Realtime.Player targetPlayer) {
+        public void SetExteriorWall(bool value, Player targetPlayer) {
             photonView.RPC("RPC_SetExteriorWall", targetPlayer, value);
         }
 
@@ -108,7 +109,7 @@ namespace Sim.Building {
             this.propsRenderer.SetupDefaultMaterials();
         }
 
-        public override void Synchronize(Photon.Realtime.Player playerTarget) {
+        public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
             this.SetWallFaces(this.wallFaces, playerTarget);
             this.SetExteriorWall(this.exteriorWall, playerTarget);
@@ -132,7 +133,7 @@ namespace Sim.Building {
             }
 
             // Prevent to paint specific faces
-            if (!allowedSharedMaterialIds.Contains(submesh)) {
+            if (!Enumerable.Contains(allowedSharedMaterialIds, submesh)) {
                 return;
             }
 

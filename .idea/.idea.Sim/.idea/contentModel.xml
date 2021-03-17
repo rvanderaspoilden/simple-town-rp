@@ -370,19 +370,27 @@
           </e>
           <e p="Constants" t="Include">
             <e p="CommonConstants.cs" t="Include" />
-            <e p="PlaceName.cs" t="Include" />
-            <e p="Scenes.cs" t="Include" />
+            <e p="SceneConstants.cs" t="Include" />
           </e>
           <e p="Entities" t="Include">
+            <e p="Address.cs" t="Include" />
             <e p="CharacterData.cs" t="Include" />
+            <e p="Health.cs" t="Include" />
+            <e p="Home.cs" t="Include" />
+            <e p="HttpException.cs" t="Include" />
+            <e p="Identity.cs" t="Include" />
+            <e p="Requests" t="Include">
+              <e p="AssignApartmentRequest.cs" t="Include" />
+              <e p="CharacterCreationRequest.cs" t="Include" />
+            </e>
             <e p="Responses" t="Include">
-              <e p="AppartmentResponse.cs" t="Include" />
               <e p="AuthenticationResponse.cs" t="Include" />
-              <e p="PersonnageResponse.cs" t="Include" />
+              <e p="CharacterResponse.cs" t="Include" />
+              <e p="HomeResponse.cs" t="Include" />
               <e p="ProfileResponse.cs" t="Include" />
             </e>
+            <e p="RoomNavigationData.cs" t="Include" />
             <e p="User.cs" t="Include" />
-            <e p="VitalInformation.cs" t="Include" />
           </e>
           <e p="Enums" t="Include">
             <e p="ActionTypeEnum.cs" t="Include" />
@@ -395,20 +403,27 @@
             <e p="CursorTypeEnum.cs" t="Include" />
             <e p="DirectionEnum.cs" t="Include" />
             <e p="DoorDirectionEnum.cs" t="Include" />
+            <e p="HomeTypeEnum.cs" t="Include" />
+            <e p="JobEnum.cs" t="Include" />
             <e p="MoodEnum.cs" t="Include" />
             <e p="PanelTypeEnum.cs" t="Include" />
-            <e p="PlacesEnum.cs" t="Include" />
             <e p="PreviewStateEnum.cs" t="Include" />
             <e p="PropsType.cs" t="Include" />
+            <e p="RoomTypeEnum.cs" t="Include" />
             <e p="StateType.cs" t="Include" />
             <e p="VisibilityModeEnum.cs" t="Include" />
             <e p="VisibilityStateEnum.cs" t="Include" />
           </e>
+          <e p="Main Menu" t="Include">
+            <e p="MainMenuManager.cs" t="Include" />
+          </e>
           <e p="Managers" t="Include">
+            <e p="ApartmentCreationManager.cs" t="Include" />
+            <e p="ApartmentManager.cs" t="Include" />
             <e p="ApiManager.cs" t="Include" />
-            <e p="AppartmentManager.cs" t="Include" />
             <e p="BuildManager.cs" t="Include" />
             <e p="CameraManager.cs" t="Include" />
+            <e p="CharacterCreationManager.cs" t="Include" />
             <e p="CursorManager.cs" t="Include" />
             <e p="DatabaseManager.cs" t="Include" />
             <e p="HUDManager.cs" t="Include" />
@@ -419,8 +434,8 @@
             <e p="RoomManager.cs" t="Include" />
           </e>
           <e p="Player" t="Include">
+            <e p="Character.cs" t="Include" />
             <e p="CharacterAnimatorAction.cs" t="Include" />
-            <e p="Player.cs" t="Include" />
             <e p="PlayerAnimator.cs" t="Include" />
             <e p="PlayerInteraction.cs" t="Include" />
             <e p="ThirdPersonCharacter.cs" t="Include" />
@@ -453,7 +468,6 @@
           <e p="Utils" t="Include">
             <e p="CommonUtils.cs" t="Include" />
             <e p="JsonHelper.cs" t="Include" />
-            <e p="PlaceUtils.cs" t="Include" />
           </e>
         </e>
         <e p="TextMesh Pro" t="Include">

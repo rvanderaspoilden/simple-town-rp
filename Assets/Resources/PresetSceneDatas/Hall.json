@@ -1,7 +1,7 @@
 {
   "doorTeleporters": [
     {
-      "destination": "APPARTMENT",
+      "destination": "HOME",
       "doorDirection": "BACKWARD",
       "number": 3,
       "id": 10,
@@ -20,7 +20,7 @@
       "isBuilt": true
     },
     {
-      "destination": "APPARTMENT",
+      "destination": "HOME",
       "doorDirection": "BACKWARD",
       "number": 2,
       "id": 10,
@@ -39,7 +39,7 @@
       "isBuilt": true
     },
     {
-      "destination": "APPARTMENT",
+      "destination": "HOME",
       "doorDirection": "BACKWARD",
       "number": 1,
       "id": 10,
@@ -58,7 +58,7 @@
       "isBuilt": true
     },
     {
-      "destination": "APPARTMENT",
+      "destination": "HOME",
       "doorDirection": "BACKWARD",
       "number": 6,
       "id": 10,
@@ -77,7 +77,7 @@
       "isBuilt": true
     },
     {
-      "destination": "APPARTMENT",
+      "destination": "HOME",
       "doorDirection": "BACKWARD",
       "number": 4,
       "id": 10,
@@ -96,7 +96,7 @@
       "isBuilt": true
     },
     {
-      "destination": "APPARTMENT",
+      "destination": "HOME",
       "doorDirection": "BACKWARD",
       "number": 5,
       "id": 10,
@@ -117,7 +117,7 @@
   ],
   "elevatorTeleporters": [
     {
-      "destination": "TOWN_SQUARE",
+      "destination": "BUILDING_HALL",
       "id": 11,
       "transform": {
         "position": {

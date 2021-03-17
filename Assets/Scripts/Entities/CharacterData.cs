@@ -1,9 +1,9 @@
-﻿using Sim.Enums;
-using Sim.Scriptables;
+﻿using System;
+using Sim.Enums;
 using UnityEngine;
 
 namespace Sim.Entities {
-    [System.Serializable]
+    [Serializable]
     public class CharacterData {
         [SerializeField]
         private string _id;
@@ -12,25 +12,13 @@ namespace Sim.Entities {
         private string user_id;
 
         [SerializeField]
-        private string firstname;
-
-        [SerializeField]
-        private string lastname;
-
-        [SerializeField]
-        private string origin_country;
-
-        [SerializeField]
-        private int appartment_id;
-
-        [SerializeField]
-        private string job;
+        private Identity identity;
 
         [SerializeField]
         private int money;
 
         [SerializeField]
-        private VitalInformation vital_information;
+        private Health health;
 
         [SerializeField]
         private MoodEnum mood = MoodEnum.HAPPY;
@@ -40,7 +28,7 @@ namespace Sim.Entities {
             set => mood = value;
         }
 
-        public string _Id {
+        public string Id {
             get => _id;
             set => _id = value;
         }
@@ -50,9 +38,9 @@ namespace Sim.Entities {
             set => user_id = value;
         }
 
-        public string Job {
-            get => job;
-            set => job = value;
+        public Identity Identity {
+            get => identity;
+            set => identity = value;
         }
 
         public int Money {
@@ -60,33 +48,9 @@ namespace Sim.Entities {
             set => money = value;
         }
 
-        public VitalInformation VitalInformation {
-            get => vital_information;
-            set => vital_information = value;
-        }
-
-        public string Firstname {
-            get => this.firstname.Substring(0, 1).ToUpper() + this.firstname.Substring(1, this.firstname.Length - 1);
-            set => firstname = value;
-        }
-
-        public string Lastname {
-            get => lastname.ToUpper();
-            set => lastname = value;
-        }
-
-        public string OriginCountry {
-            get => origin_country;
-            set => origin_country = value;
-        }
-
-        public int AppartmentId {
-            get => appartment_id;
-            set => appartment_id = value;
-        }
-
-        public string GetFullName() {
-            return $"{this.Firstname} {this.Lastname}";
+        public Health Health {
+            get => health;
+            set => health = value;
         }
     }
 }

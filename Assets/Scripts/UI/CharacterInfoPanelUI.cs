@@ -1,5 +1,4 @@
-﻿using System;
-using Sim.Entities;
+﻿using Sim.Entities;
 using Sim.Scriptables;
 using TMPro;
 using UnityEngine;
@@ -19,32 +18,33 @@ namespace Sim.UI {
 
         [SerializeField]
         private Image thirstBar;
-        
+
         [SerializeField]
         private Image hungryBar;
-        
+
         [SerializeField]
         private Image sleepBar;
 
-        [SerializeField] private Image moodImage;
+        [SerializeField]
+        private Image moodImage;
 
         private void OnEnable() {
-            Player.OnCharacterDataChanged += Setup;
+            Character.OnCharacterDataChanged += Setup;
         }
 
         private void OnDisable() {
-            Player.OnCharacterDataChanged -= Setup;
+            Character.OnCharacterDataChanged -= Setup;
         }
 
         public void Setup(CharacterData characterData) {
-            this.SetText(this.nameText, characterData.GetFullName());
-            this.SetText(this.jobText, characterData.Job);
+            this.SetText(this.nameText, characterData.Identity.FullName);
+            this.SetText(this.jobText, "UNEMPLOYED");
             this.SetText(this.moneyText, characterData.Money.ToString());
-            
-            this.SetFillBarAmount(this.thirstBar, characterData.VitalInformation.GetThirst() / CommonConstants.MAX_BAR_AMOUNT);
-            this.SetFillBarAmount(this.hungryBar, characterData.VitalInformation.GetHungry() / CommonConstants.MAX_BAR_AMOUNT);
-            this.SetFillBarAmount(this.sleepBar, characterData.VitalInformation.GetSleep() / CommonConstants.MAX_BAR_AMOUNT);
-            
+
+            this.SetFillBarAmount(this.thirstBar, characterData.Health.Thirst / CommonConstants.MAX_BAR_AMOUNT);
+            this.SetFillBarAmount(this.hungryBar, characterData.Health.Hungry / CommonConstants.MAX_BAR_AMOUNT);
+            this.SetFillBarAmount(this.sleepBar, characterData.Health.Sleep / CommonConstants.MAX_BAR_AMOUNT);
+
             this.SetMood(DatabaseManager.GetMoodConfigByEnum(characterData.Mood));
         }
 

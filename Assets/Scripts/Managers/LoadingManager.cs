@@ -35,15 +35,16 @@ namespace Sim {
         public static LoadingManager Instance;
 
         private void Awake() {
-            if (Instance != null) {
+            if (Instance != null && Instance != this) {
                 Destroy(this.gameObject);
+            } else {
+                Instance = this;
             }
 
             this.frontImg.color = new Color(1, 1, 1, 0);
             this.backgroundImg.color = new Color(1, 1, 1, 0);
             this.loaderImg.color = new Color(1, 1, 1, 0);
 
-            Instance = this;
             DontDestroyOnLoad(this.gameObject);
         }
 

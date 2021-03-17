@@ -1,4 +1,5 @@
 ﻿using Photon.Pun;
+using Photon.Realtime;
 using Sim.Building;
 using Sim.Enums;
 using UnityEngine;
@@ -6,33 +7,34 @@ using UnityEngine;
 namespace Sim.Interactables {
     public abstract class Teleporter : Props {
         [Header("Teleporter Settings")]
-        [SerializeField] protected PlacesEnum destination;
-        
+        [SerializeField]
+        protected RoomTypeEnum destination;
+
         protected override void Use() {
-            NetworkManager.Instance.GoToRoom(destination);
+            NetworkManager.Instance.GoToRoom(RoomTypeEnum.BUILDING_HALL, null);
         }
 
-        public override void Synchronize(Photon.Realtime.Player playerTarget) {
+        public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
-            
+
             this.SetDestination(this.destination, playerTarget);
         }
 
-        public PlacesEnum GetDestination() {
+        public RoomTypeEnum GetDestination() {
             return this.destination;
         }
 
-        public void SetDestination(PlacesEnum destination, RpcTarget rpcTarget) {
+        public void SetDestination(RoomTypeEnum destination, RpcTarget rpcTarget) { // TODO: look this
             this.photonView.RPC("RPC_SetDestination", rpcTarget, destination);
         }
-        
-        private void SetDestination(PlacesEnum destination, Photon.Realtime.Player playerTarget) {
+
+        private void SetDestination(RoomTypeEnum destination, Player playerTarget) {
             this.photonView.RPC("RPC_SetDestination", playerTarget, destination);
         }
 
         [PunRPC]
-        public void RPC_SetDestination(PlacesEnum placesEnum) {
+        public void RPC_SetDestination(RoomTypeEnum placesEnum) {
             this.destination = placesEnum;
         }
-    }   
+    }
 }

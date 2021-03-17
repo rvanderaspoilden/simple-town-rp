@@ -3,37 +3,44 @@ using System.Collections;
 using Photon.Pun;
 using Sim.Entities;
 using TMPro;
+using UnityEditor.Timeline.Actions;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Sim {
     public class Launcher : MonoBehaviour {
         [Header("Settings")]
-        [SerializeField] private TextMeshProUGUI errorText;
+        [SerializeField]
+        private TextMeshProUGUI errorText;
 
-        [SerializeField] private TMP_InputField pseudoInputField;
+        [SerializeField]
+        private TMP_InputField pseudoInputField;
 
-        [SerializeField] private TMP_InputField passwordInputField;
+        [SerializeField]
+        private TMP_InputField passwordInputField;
 
-        [SerializeField] private bool debug;
+        [SerializeField]
+        private bool debug;
 
-        [SerializeField] private Image statusImg;
+        [SerializeField]
+        private Image statusImg;
 
         private string username;
         private string password;
 
         private void Awake() {
-            ApiManager.OnAuthenticationSucceeded += this.OnAuthenticationSucceeded;
+            ApiManager.OnAuthenticationSucceeded += OnAuthenticationSucceeded;
             ApiManager.OnAuthenticationFailed += this.OnAuthenticationFailed;
             ApiManager.OnServerStatusChanged += this.OnServerStatusChanged;
         }
 
         private void Start() {
             ApiManager.instance.CheckServerStatus();
-            
+
             this.pseudoInputField.Select();
-            
+
             if (debug) {
                 StartCoroutine(Debug());
             }
@@ -43,7 +50,7 @@ namespace Sim {
             yield return new WaitForSeconds(2f);
             this.username = "spectus";
             this.password = "test";
-            this.Play();
+            this.Authenticate();
         }
 
         private void Update() {
@@ -51,12 +58,12 @@ namespace Sim {
                 Selectable next = EventSystem.current.currentSelectedGameObject
                     .GetComponent<Selectable>()
                     .FindSelectableOnDown();
- 
+
                 if (next) next.Select();
             }
 
             if (Input.GetKeyDown(KeyCode.Return)) {
-                this.Play();
+                this.Authenticate();
             }
         }
 
@@ -70,22 +77,20 @@ namespace Sim {
 
         public void SetPassword(string password) => this.password = password;
 
-        public void Play() {
-            if (username != String.Empty && password != String.Empty) {
-                PhotonNetwork.NickName = username;
+        public void Authenticate() {
+            if (username == string.Empty || password == string.Empty) return;
+            
+            this.ResetErrorText();
 
-                this.ResetErrorText();
-
-                ApiManager.instance.Authenticate(username, password);
-            }
+            ApiManager.instance.Authenticate(username, password);
         }
 
         private void ResetErrorText() => this.errorText.text = String.Empty;
 
         #region Callbacks
 
-        private void OnAuthenticationSucceeded(CharacterData characterData) {
-            NetworkManager.Instance.Play(characterData);
+        private void OnAuthenticationSucceeded() {
+            SceneManager.LoadScene("Main Menu");
         }
 
         private void OnAuthenticationFailed(String msg) => this.errorText.text = msg;

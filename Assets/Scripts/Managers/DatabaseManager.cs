@@ -19,11 +19,12 @@ namespace Sim {
         public static DatabaseManager Instance;
 
         private void Awake() {
-            if (Instance != null) {
+            if (Instance != null && Instance != this) {
                 Destroy(this.gameObject);
+            } else {
+                Instance = this;
             }
 
-            Instance = this;
             
             PropsDatabase = Resources.Load<PropsDatabaseConfig>("Configurations/Databases/Props Database");
             Debug.Log("Props database loaded");

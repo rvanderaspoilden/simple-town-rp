@@ -31,11 +31,12 @@ namespace Sim {
         public static CursorManager Instance;
 
         private void Awake() {
-            if (Instance != null) {
+            if (Instance != null && Instance != this) {
                 Destroy(this.gameObject);
+            } else {
+                Instance = this;
             }
 
-            Instance = this;
             DontDestroyOnLoad(this.gameObject);
 
             this.SetCamera(Camera.main);
@@ -50,15 +51,18 @@ namespace Sim {
         }
 
         private void Update() {
+            if (!CameraManager.Instance) return;
+
             if (CameraManager.Instance.GetMode() == CameraModeEnum.FREE &&
                 !EventSystem.current.IsPointerOverGameObject() &&
                 Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100)) {
                 if (!this.IsProps() && !this.IsCharacter()) {
                     this.SetCursor(null);
                 }
-            } else if(CameraManager.Instance.GetMode() == CameraModeEnum.BUILD && Input.GetMouseButton(1)){
+            } else if (CameraManager.Instance.GetMode() == CameraModeEnum.BUILD && Input.GetMouseButton(1)) {
                 this.SetCursor(this.rotationCursor);
-            } else if(CameraManager.Instance.GetMode() == CameraModeEnum.BUILD && (Input.GetMouseButton(2) || Input.GetAxis("Horizontal") != 0f || Input.GetAxis("Vertical") != 0f)){
+            } else if (CameraManager.Instance.GetMode() == CameraModeEnum.BUILD &&
+                       (Input.GetMouseButton(2) || Input.GetAxis("Horizontal") != 0f || Input.GetAxis("Vertical") != 0f)) {
                 this.SetCursor(this.moveCursor);
             } else {
                 this.SetCursor(null);
@@ -91,9 +95,9 @@ namespace Sim {
         }
 
         private bool IsCharacter() {
-            Player player = hit.collider.GetComponent<Player>();
+            Character character = hit.collider.GetComponent<Character>();
 
-            if (player != null && player != RoomManager.LocalPlayer) {
+            if (character != null && character != RoomManager.LocalCharacter) {
                 this.SetCursor(this.socialCursor);
                 return true;
             }

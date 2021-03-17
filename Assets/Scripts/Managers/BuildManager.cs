@@ -83,12 +83,13 @@ namespace Sim {
         public static BuildManager Instance;
 
         private void Awake() {
-            if (Instance != null) {
+            if (Instance != null && Instance != this) {
                 Destroy(this);
+            } else {
+                Instance = this;
             }
 
-            Instance = this;
-            this.camera = Camera.main;
+            this.camera = GetComponentInChildren<Camera>();
         }
 
         private void Start() {
@@ -261,7 +262,7 @@ namespace Sim {
 
                 if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
                     if (this.currentPropSelected.GetConfiguration().IsPosableOnProps()) {
-                        if(Physics.Raycast(point, Vector3.up, out hit, 10, (1 << 16))) {
+                        if (Physics.Raycast(point, Vector3.up, out hit, 10, (1 << 16))) {
                             point = hit.point;
                         }
                     } else if (this.magnetic) {
@@ -274,11 +275,13 @@ namespace Sim {
                             this.magneticDirection = DirectionEnum.BACK;
 
                             RaycastHit subHit;
-                            if (Physics.Raycast(magneticHit.point + (magneticHit.normal * 0.001f), -currentPropsTransform.right, out subHit, maxHitDistanceX, (1 << 12))) {
+                            if (Physics.Raycast(magneticHit.point + (magneticHit.normal * 0.001f), -currentPropsTransform.right, out subHit, maxHitDistanceX,
+                                (1 << 12))) {
                                 point = subHit.point;
                                 this.lastMagneticPoint = point;
                                 this.magneticDirection = DirectionEnum.LEFT;
-                            } else if (Physics.Raycast(magneticHit.point + (magneticHit.normal * 0.001f), currentPropsTransform.right, out subHit, maxHitDistanceX, (1 << 12))) {
+                            } else if (Physics.Raycast(magneticHit.point + (magneticHit.normal * 0.001f), currentPropsTransform.right, out subHit, maxHitDistanceX,
+                                (1 << 12))) {
                                 point = subHit.point;
                                 this.lastMagneticPoint = point;
                                 this.magneticDirection = DirectionEnum.RIGHT;
@@ -346,7 +349,8 @@ namespace Sim {
                         currentPropsTransform.position = new Vector3(point.x, point.y + 0.01f, point.z);
 
                         int direction = this.magneticDirection == DirectionEnum.RIGHT ? 1 : -1;
-                        offset = new Vector3(direction * (Mathf.Abs(this.currentPropsBounds.x) + this.magneticPropsMargin), 0, -(Mathf.Abs(this.currentPropsBounds.z) + this.magneticPropsMargin));
+                        offset = new Vector3(direction * (Mathf.Abs(this.currentPropsBounds.x) + this.magneticPropsMargin), 0,
+                            -(Mathf.Abs(this.currentPropsBounds.z) + this.magneticPropsMargin));
                     }
 
                     currentPropsTransform.position -= currentPropsTransform.TransformDirection(offset);

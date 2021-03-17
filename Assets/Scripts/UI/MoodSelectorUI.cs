@@ -73,8 +73,8 @@ namespace Sim {
         }
 
         private void SelectMood(MoodButton moodButton) {
-            MoodEnum currentMood = RoomManager.LocalPlayer.CharacterData.Mood;
-            RoomManager.LocalPlayer.SetMood(moodButton.MoodConfig);
+            MoodEnum currentMood = RoomManager.LocalCharacter.CharacterData.Mood;
+            RoomManager.LocalCharacter.SetMood(moodButton.MoodConfig);
             moodButton.Setup(DatabaseManager.GetMoodConfigByEnum(currentMood));
         }
 

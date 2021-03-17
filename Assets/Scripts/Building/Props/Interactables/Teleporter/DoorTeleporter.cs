@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using Photon.Pun;
+using Photon.Realtime;
 using Sim.Constants;
+using Sim.Entities;
 using Sim.Enums;
 using TMPro;
 using UnityEngine;
@@ -26,8 +28,8 @@ namespace Sim.Interactables {
             this.animator = GetComponent<Animator>();
             this.animator.SetFloat("direction", doorDirection == DoorDirectionEnum.BACKWARD ? -1 : 1);
 
-            // Hide door number in appartment
-            if (SceneManager.GetActiveScene().name.Equals(PlaceName.APPARTMENT)) {
+            // Hide door number in apartment
+            if (SceneManager.GetActiveScene().name.Equals(SceneConstants.HOME)) {
                 this.numberText.enabled = false;
             }
         }
@@ -40,31 +42,34 @@ namespace Sim.Interactables {
             // Play open animation for all
             photonView.RPC("RPC_Animation", RpcTarget.All);
 
-            if (this.destination == PlacesEnum.APPARTMENT) {
-                NetworkManager.Instance.GoToAppartment(this.number);
+            if (this.destination.Equals(RoomTypeEnum.HOME)) {
+                //TODO: refacto this
+                Address address = new Address {Street = "SALMON HOTEL", DoorNumber = this.number, HomeType = HomeTypeEnum.APARTMENT};
+
+                NetworkManager.Instance.GoToRoom(RoomTypeEnum.HOME, address);
             } else {
                 base.Use();
             }
         }
 
-        public override void Synchronize(Photon.Realtime.Player playerTarget) {
+        public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
 
             this.SetDoorDirection(this.doorDirection, playerTarget);
             this.SetDoorNumber(this.number, playerTarget);
         }
 
-        public void SetDoorNumber(int number, RpcTarget rpcTarget) {
-            photonView.RPC("RPC_SetDoorNumber", rpcTarget, number);
+        public void SetDoorNumber(int value, RpcTarget rpcTarget) {
+            photonView.RPC("RPC_SetDoorNumber", rpcTarget, value);
         }
 
-        public void SetDoorNumber(int number, Photon.Realtime.Player playerTarget) {
-            photonView.RPC("RPC_SetDoorNumber", playerTarget, number);
+        public void SetDoorNumber(int value, Player playerTarget) {
+            photonView.RPC("RPC_SetDoorNumber", playerTarget, value);
         }
 
         [PunRPC]
-        public void RPC_SetDoorNumber(int number) {
-            this.number = number;
+        public void RPC_SetDoorNumber(int value) {
+            this.number = value;
             this.numberText.text = number.ToString();
         }
 
@@ -80,7 +85,7 @@ namespace Sim.Interactables {
             photonView.RPC("RPC_SetDoorDirection", rpcTarget, doorDirectionEnum);
         }
 
-        public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum, Photon.Realtime.Player playerTarget) {
+        public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum, Player playerTarget) {
             photonView.RPC("RPC_SetDoorDirection", playerTarget, doorDirectionEnum);
         }
 

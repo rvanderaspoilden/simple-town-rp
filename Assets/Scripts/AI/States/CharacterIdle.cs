@@ -3,24 +3,20 @@ using UnityEngine;
 
 namespace AI.States {
     public class CharacterIdle : IState {
-        private readonly Player player;
+        private readonly Character character;
 
-        public CharacterIdle(Player player) {
-            this.player = player;
+        public CharacterIdle(Character character) {
+            this.character = character;
         }
 
         public void OnEnter() {
-            //this.player.NavMeshAgent.enabled = false;
-            //this.player.Animator.SetVelocity(0);
             Debug.Log("Enter in Idle state");
         }
 
         public void Tick() {
-            this.player.Animator.SetVelocity(this.player.NavMeshAgent.velocity.magnitude);
+            this.character.Animator.SetVelocity(this.character.NavMeshAgent.velocity.magnitude);
         }
 
-        public void OnExit() {
-            //this.player.NavMeshAgent.enabled = true;
-        }
+        public void OnExit() { }
     }
 }
