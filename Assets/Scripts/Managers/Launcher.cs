@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections;
-using Photon.Pun;
-using Sim.Entities;
 using TMPro;
-using UnityEditor.Timeline.Actions;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;

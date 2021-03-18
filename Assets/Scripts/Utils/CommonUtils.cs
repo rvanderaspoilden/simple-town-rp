@@ -1,10 +1,10 @@
 ﻿using System;
+using Photon.Pun;
 using Sim.Building;
 using Sim.Enums;
 using Sim.Scriptables;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace Sim.Utils {
@@ -21,23 +21,8 @@ namespace Sim.Utils {
             throw new Exception("No converter found");
         }
 
-        public static string GetRelativePathFromResources(Object gameObject) {
-            string[] parts = AssetDatabase.GetAssetPath(gameObject).Split("/".ToCharArray());
-            string path = "";
-
-            for (int i = 2; i < parts.Length; i++) {
-                if (i == parts.Length - 1) {
-                    path += parts[i].Substring(0, parts[i].Length - 7);
-                } else {
-                    path += parts[i] + "/";
-                }
-            }
-
-            return path;
-        }
-
-        public static int GetAppartmentFloorFromAppartmentId(int appartmentId, int limit) {
-            return Mathf.CeilToInt(appartmentId / (float) limit);
+        public static int GetApartmentFloor(int doorNumber, int limit) {
+            return Mathf.CeilToInt(doorNumber / (float) limit);
         }
 
         /**
@@ -69,7 +54,7 @@ namespace Sim.Utils {
 
         public static int GetDoorNumberFromFloorNumber(int initialNumber) {
             return initialNumber + (CommonConstants.appartmentLimitPerFloor *
-                                    (CommonUtils.GetAppartmentFloorFromAppartmentId(NetworkManager.Instance.TenantHome.Address.DoorNumber,
+                                    (GetApartmentFloor(NetworkManager.Instance.TenantHome.Address.DoorNumber,
                                         CommonConstants.appartmentLimitPerFloor) - 1));
         }
 

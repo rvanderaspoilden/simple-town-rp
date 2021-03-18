@@ -106,8 +106,7 @@ namespace Sim {
                     ? this.currentRoomData.Address.DoorNumber
                     : this.tenantHome.Address.DoorNumber;
 
-                roomName =
-                    $"Floor {CommonUtils.GetAppartmentFloorFromAppartmentId(doorNumber, CommonConstants.appartmentLimitPerFloor)}, SALMON HOTEL";
+                roomName = $"Floor {CommonUtils.GetApartmentFloor(doorNumber, CommonConstants.appartmentLimitPerFloor)}, SALMON HOTEL";
             } else if (roomType.Equals(RoomTypeEnum.HOME)) {
                 roomName = address.ToString();
             }
