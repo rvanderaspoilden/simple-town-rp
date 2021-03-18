@@ -38,7 +38,7 @@ namespace Sim {
 
             if (network) {
                 // TODO: be carefull PhotonNetwork.InstantiateSceneObject needs to be masterclient to works
-                propsInstanciated = PhotonNetwork.InstantiateRoomObject(CommonUtils.GetRelativePathFromResources(config.GetPrefab()), position, rotation);
+                propsInstanciated = PhotonNetwork.InstantiateRoomObject(config.GetPrefab().name, position, rotation);
             } else {
                 propsInstanciated = Instantiate(config.GetPrefab().gameObject, position, rotation);
             }
