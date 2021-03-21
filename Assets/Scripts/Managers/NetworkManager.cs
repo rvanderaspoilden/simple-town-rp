@@ -89,8 +89,8 @@ namespace Sim {
         }
 
         public void GoToRoom(RoomTypeEnum roomType, Address address) {
-            LoadingManager.Instance.Show();
-
+            LoadingManager.Instance.Show(true);
+            
             // If player is already in a room so leave it to rejoin
             if (PhotonNetwork.InRoom) {
                 this.nextRoomData = new RoomNavigationData(roomType, address);
@@ -129,12 +129,17 @@ namespace Sim {
             }
 
             Debug.Log("Room is loaded");
+            
+            // Set navigation state
+            this.oldRoomData = new RoomNavigationData(this.currentRoomData.RoomType, this.currentRoomData.Address);
+            this.currentRoomData = new RoomNavigationData(this.nextRoomData.RoomType, this.nextRoomData.Address);
+            this.nextRoomData = null;
 
             if (PhotonNetwork.IsMasterClient && sceneName.Equals(SceneConstants.HALL)) {
                 // TODO use preset database
                 TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Hall");
                 SceneData sceneData = JsonUtility.FromJson<SceneData>(textAsset.text);
-                RoomManager.Instance.InstantiateLevel(sceneData);
+                RoomManager.Instance.InstantiateLevel(sceneData, currentRoomData, oldRoomData);
             }
 
             if (sceneName.Equals(SceneConstants.HOME)) {
@@ -154,7 +159,7 @@ namespace Sim {
                 }
 
                 if (PhotonNetwork.IsMasterClient) {
-                    RoomManager.Instance.InstantiateLevel(sceneData);
+                    RoomManager.Instance.InstantiateLevel(sceneData, currentRoomData, oldRoomData);
                 }
             }
 
@@ -163,16 +168,11 @@ namespace Sim {
                 isRoomGenerated = PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated") && RoomManager.Instance.IsGenerated();
 
                 if (isRoomGenerated) {
-                    RoomManager.Instance.InstantiateLocalCharacter(this.characterPrefab, this.characterData);
+                    RoomManager.Instance.InstantiateLocalCharacter(this.characterPrefab, this.characterData, this.currentRoomData, this.oldRoomData);
                 }
 
                 yield return new WaitForSeconds(0.1f);
             } while (!isRoomGenerated);
-
-            // Set navigation state
-            this.oldRoomData = new RoomNavigationData(this.currentRoomData.RoomType, this.currentRoomData.Address);
-            this.currentRoomData = new RoomNavigationData(this.nextRoomData.RoomType, this.nextRoomData.Address);
-            this.nextRoomData = null;
 
             yield return new WaitForSeconds(0.5f);
             LoadingManager.Instance.Hide();

@@ -104,7 +104,7 @@ namespace Sim {
 
         #region Level generation
 
-        public void InstantiateLevel(SceneData sceneData) {
+        public void InstantiateLevel(SceneData sceneData, RoomNavigationData currentRoom, RoomNavigationData oldRoom) {
             // Instantiate all grounds
             sceneData.grounds?.ToList().ForEach(data => {
                 Ground props = SaveUtils.InstantiatePropsFromSave(data) as Ground;
@@ -122,7 +122,12 @@ namespace Sim {
                 DoorTeleporter props = SaveUtils.InstantiatePropsFromSave(data) as DoorTeleporter;
                 props.SetDestination((RoomTypeEnum) Enum.Parse(typeof(RoomTypeEnum), data.destination), RpcTarget.All);
                 props.SetDoorDirection((DoorDirectionEnum) Enum.Parse(typeof(DoorDirectionEnum), data.doorDirection), RpcTarget.All);
-                props.SetDoorNumber(CommonUtils.GetDoorNumberFromFloorNumber(data.number), RpcTarget.All);
+
+                if (currentRoom.RoomType == RoomTypeEnum.BUILDING_HALL && oldRoom.RoomType == RoomTypeEnum.HOME) {
+                    props.SetDoorNumber(CommonUtils.GetDoorNumberFromFloorNumber(data.number, oldRoom.Address.DoorNumber), RpcTarget.All);
+                } else if (currentRoom.RoomType == RoomTypeEnum.HOME) {
+                    props.SetDoorNumber(currentRoom.Address.DoorNumber, RpcTarget.All);
+                }
             });
 
             // Instantiate all simple doors
@@ -244,8 +249,25 @@ namespace Sim {
 
         #region Player
 
-        public virtual void InstantiateLocalCharacter(Character prefab, CharacterData characterData) {
-            GameObject character = PhotonNetwork.Instantiate("Prefabs/Characters/" + prefab.name, this.playerSpawnPoint.transform.position, Quaternion.identity);
+        public virtual void InstantiateLocalCharacter(Character prefab, CharacterData characterData, RoomNavigationData currentRoom, RoomNavigationData oldRoom) {
+            Transform spawn = this.playerSpawnPoint;
+
+            if (currentRoom.RoomType == RoomTypeEnum.BUILDING_HALL && oldRoom.RoomType == RoomTypeEnum.HOME) {
+                Teleporter teleporter = FindObjectsOfType<DoorTeleporter>().First(doorTeleporter => doorTeleporter.GetDoorNumber() == oldRoom.Address.DoorNumber);
+
+                if (teleporter) {
+                    spawn = teleporter.Spawn;
+                }
+
+            } else if (currentRoom.RoomType == RoomTypeEnum.HOME) {
+                Teleporter teleporter = FindObjectOfType<DoorTeleporter>();
+
+                if (teleporter) {
+                    spawn = teleporter.Spawn;
+                }
+            }
+
+            GameObject character = PhotonNetwork.Instantiate("Prefabs/Characters/" + prefab.name, spawn.position, spawn.rotation);
             LocalCharacter = character.GetComponent<Character>();
             LocalCharacter.CharacterData = characterData;
         }

@@ -10,6 +10,10 @@ namespace Sim.Interactables {
         [SerializeField]
         protected RoomTypeEnum destination;
 
+        [SerializeField]
+        [Tooltip("Represent the position where the player will be spawned after use")]
+        private Transform spawnTransform;
+
         protected override void Use() {
             NetworkManager.Instance.GoToRoom(RoomTypeEnum.BUILDING_HALL, null);
         }
@@ -23,6 +27,8 @@ namespace Sim.Interactables {
         public RoomTypeEnum GetDestination() {
             return this.destination;
         }
+
+        public Transform Spawn => spawnTransform;
 
         public void SetDestination(RoomTypeEnum destination, RpcTarget rpcTarget) { // TODO: look this
             this.photonView.RPC("RPC_SetDestination", rpcTarget, destination);

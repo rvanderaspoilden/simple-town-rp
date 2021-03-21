@@ -24,8 +24,8 @@ namespace Sim {
             ApiManager.instance.SaveHomeScene(this.homeData, sceneData);
         }
 
-        public override void InstantiateLocalCharacter(Character prefab, CharacterData characterData) {
-            base.InstantiateLocalCharacter(prefab, characterData);
+        public override void InstantiateLocalCharacter(Character prefab, CharacterData characterData, RoomNavigationData currentRoom, RoomNavigationData oldRoom) {
+            base.InstantiateLocalCharacter(prefab, characterData, currentRoom, oldRoom);
 
             if (!PhotonNetwork.IsMasterClient && this.IsOwner(characterData)) {
                 PhotonNetwork.CurrentRoom.SetMasterClient(PhotonNetwork.LocalPlayer);
