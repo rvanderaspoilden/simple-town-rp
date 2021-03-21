@@ -52,9 +52,9 @@ namespace Sim.Utils {
             throw new Exception($"No surface type is defined for paint config ID => {paintConfig.GetId()}");
         }
 
-        public static int GetDoorNumberFromFloorNumber(int initialNumber) {
+        public static int GetDoorNumberFromFloorNumber(int initialNumber, int relativeDoorNumber) {
             return initialNumber + (CommonConstants.appartmentLimitPerFloor *
-                                    (GetApartmentFloor(NetworkManager.Instance.TenantHome.Address.DoorNumber,
+                                    (GetApartmentFloor(relativeDoorNumber,
                                         CommonConstants.appartmentLimitPerFloor) - 1));
         }
 
