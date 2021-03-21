@@ -50,6 +50,8 @@ namespace Sim {
             this.animator = GetComponent<PlayerAnimator>();
             this.Collider = GetComponent<Collider>();
 
+            this.navMeshAgent.updateRotation = false;
+
             PhotonNetwork.AddCallbackTarget(this);
         }
 

@@ -17,6 +17,8 @@ namespace AI.States {
             MarkerController.Instance.ShowAt(this.character.NavMeshAgent.pathEndPosition);
 
             this.character.Animator.SetVelocity(this.character.NavMeshAgent.velocity.magnitude);
+
+            this.character.transform.rotation = Quaternion.LookRotation(this.character.NavMeshAgent.velocity.normalized);
         }
 
         public void OnExit() {
