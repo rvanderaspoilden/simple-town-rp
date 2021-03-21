@@ -39,15 +39,10 @@ namespace Sim {
             this.pseudoInputField.Select();
 
             if (debug) {
-                StartCoroutine(Debug());
+                this.username = "spectus";
+                this.password = "test";
+                this.Authenticate();
             }
-        }
-
-        private IEnumerator Debug() {
-            yield return new WaitForSeconds(2f);
-            this.username = "spectus";
-            this.password = "test";
-            this.Authenticate();
         }
 
         private void Update() {
@@ -76,7 +71,7 @@ namespace Sim {
 
         public void Authenticate() {
             if (username == string.Empty || password == string.Empty) return;
-            
+
             this.ResetErrorText();
 
             ApiManager.instance.Authenticate(username, password);

@@ -89,8 +89,8 @@ namespace Sim {
         }
 
         public void GoToRoom(RoomTypeEnum roomType, Address address) {
-            LoadingManager.Instance.Show();
-
+            LoadingManager.Instance.Show(true);
+            
             // If player is already in a room so leave it to rejoin
             if (PhotonNetwork.InRoom) {
                 this.nextRoomData = new RoomNavigationData(roomType, address);
