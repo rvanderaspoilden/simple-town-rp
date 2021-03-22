@@ -59,6 +59,7 @@ namespace Sim {
             if (!this.photonView.IsMine) {
                 this.navMeshAgent.enabled = false;
                 this.rigidbody.useGravity = false;
+                Destroy(GetComponent<AudioListener>());
             }
 
             this.InitStateMachine();

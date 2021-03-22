@@ -155,7 +155,7 @@ MonoBehaviour:
   errorText: {fileID: 380270966}
   pseudoInputField: {fileID: 2005252172}
   passwordInputField: {fileID: 1482923709}
-  debug: 0
+  debug: 1
   statusImg: {fileID: 1564845287}
 --- !u!4 &1813137
 Transform:
@@ -2460,7 +2460,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 23.5
+  m_fontSize: 22.95
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
