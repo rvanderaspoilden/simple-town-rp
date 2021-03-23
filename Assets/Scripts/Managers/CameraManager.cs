@@ -11,7 +11,7 @@ namespace Sim {
         [Header("Settings")]
         [SerializeField]
         private LayerMask layerMaskInFreeMode;
-        
+
         private List<PropsRenderer> displayedPropsRenderers;
 
         private BuildCamera buildCamera;
@@ -21,7 +21,7 @@ namespace Sim {
         private float lastCameraPosition;
 
         private RaycastHit hit;
-        
+
         private CameraModeEnum currentMode;
 
         private new Camera camera;
@@ -43,7 +43,7 @@ namespace Sim {
 
             this.buildCamera.enabled = false;
             this.tpsCamera.enabled = false;
-            
+
             DontDestroyOnLoad(this.gameObject);
         }
 
@@ -126,10 +126,11 @@ namespace Sim {
                     bool canInteract = RoomManager.LocalCharacter && RoomManager.LocalCharacter.CanInteractWith(objectToInteract, hit.point);
 
                     if (canInteract) {
-                        HUDManager.Instance.DisplayContextMenu(true, Input.mousePosition, objectToInteract);
+                        RoomManager.LocalCharacter.Idle();
+                        HUDManager.Instance.DisplayContextMenu(true, objectToInteract);
                     } else {
                         RoomManager.LocalCharacter.SetTarget(hit.point, objectToInteract);
-                        HUDManager.Instance.DisplayContextMenu(false, Vector3.zero);
+                        HUDManager.Instance.DisplayContextMenu(false);
                     }
                 }
             }

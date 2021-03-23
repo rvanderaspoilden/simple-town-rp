@@ -59,6 +59,7 @@ namespace Sim {
             if (!this.photonView.IsMine) {
                 this.navMeshAgent.enabled = false;
                 this.rigidbody.useGravity = false;
+                Destroy(GetComponent<AudioListener>());
             }
 
             this.InitStateMachine();
@@ -102,6 +103,15 @@ namespace Sim {
             this.propsTarget = props;
             this.stateMachine.SetState(moveState);
             this.navMeshAgent.SetDestination(targetPoint);
+        }
+
+        public void LookAt(Transform target) {
+            Vector3 dir = target.position - this.transform.position;
+            this.transform.rotation = Quaternion.LookRotation(dir.normalized);
+        }
+
+        public void Idle() {
+            this.stateMachine.SetState(this.idleState);
         }
 
         public void Sit(Seat props, Transform seatTransform) {

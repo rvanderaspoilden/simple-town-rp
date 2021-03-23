@@ -6,6 +6,9 @@ namespace Sim.Interactables {
     public class Action {
         [SerializeField] private ActionTypeEnum actionType;
         [SerializeField] private string actionLabel;
+
+        [SerializeField]
+        private Sprite actionIcon;
         
         [Tooltip("If true => action is not possible")]
         [SerializeField] private bool locked;
@@ -30,6 +33,11 @@ namespace Sim.Interactables {
 
         public void SetIsLocked(bool value) {
             this.locked = value;
+        }
+
+        public Sprite ActionIcon {
+            get => actionIcon;
+            set => actionIcon = value;
         }
     }
 

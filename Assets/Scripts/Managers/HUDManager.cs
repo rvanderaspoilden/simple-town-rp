@@ -13,7 +13,7 @@ namespace Sim {
         private BuildPreviewPanelUI buildPreviewPanelUI;
 
         [SerializeField]
-        private ContextMenuUI contextMenuUI;
+        private RadialMenuUI contextMenuUI;
 
         [SerializeField]
         private DefaultViewUI defaultViewUI;
@@ -34,7 +34,7 @@ namespace Sim {
         void Start() {
             this.DisplayAdminPanel(false);
             this.DisplayPanel(PanelTypeEnum.DEFAULT);
-            this.DisplayContextMenu(false, Vector3.zero);
+            this.DisplayContextMenu(false);
         }
 
         public void DisplayPanel(PanelTypeEnum panelType) {
@@ -52,14 +52,16 @@ namespace Sim {
             this.aliDiscountCatalogUI.gameObject.SetActive(state);
         }
 
-        public void DisplayContextMenu(bool state, Vector3 position, Props interactedProp = null) {
-            this.contextMenuUI.transform.position = position;
+        public void DisplayContextMenu(bool state, Props interactedProp = null) {
+            this.contextMenuUI.Setup(interactedProp);
 
-            if (interactedProp) {
-                this.contextMenuUI.Setup(interactedProp);
+            if ((!state && this.contextMenuUI.gameObject.activeSelf) || (state && !this.contextMenuUI.gameObject.activeSelf)) {
+                this.contextMenuUI.gameObject.SetActive(state);
             }
+        }
 
-            this.contextMenuUI.gameObject.SetActive(state);
+        public void RecenterContextMenu() {
+            this.contextMenuUI.Center();
         }
     }
 }
