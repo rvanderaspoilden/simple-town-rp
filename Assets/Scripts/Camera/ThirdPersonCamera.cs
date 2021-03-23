@@ -77,6 +77,8 @@ namespace Sim {
         private void ManageRotation() {
             if (Input.GetMouseButtonDown(1)) {
                 this.freelookCamera.m_XAxis.m_MaxSpeed = this.maxRotationSpeed;
+
+                HUDManager.Instance.DisplayContextMenu(false);
             }
 
             if (Input.GetMouseButtonUp(1)) {

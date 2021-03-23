@@ -790,12 +790,6 @@ MonoBehaviour:
   showMoodAnimationDuration: 0.7
   hideMoodAnimationDuration: 0.1
   moodAnimationDelay: 0.1
-  moodConfigs:
-  - {fileID: 11400000, guid: 71499df9c7d5b274f9f2ce05131b553b, type: 2}
-  - {fileID: 11400000, guid: 59f6ffca9182db94a8a98caa5b2d1e91, type: 2}
-  - {fileID: 11400000, guid: 4c1534afe0ffc834eb2eef2b7723824f, type: 2}
-  - {fileID: 11400000, guid: 1bf50af01dba6574f9fc17cfbd403824, type: 2}
-  - {fileID: 11400000, guid: d4d23c36041748649843fc097c128e71, type: 2}
   moodButtonPrefab: {fileID: 7876486644230169951, guid: 6be0c200d31309747b45d88a38cdf0d4,
     type: 3}
   moodContainer: {fileID: 563758460}
@@ -3992,9 +3986,6 @@ GameObject:
   m_Component:
   - component: {fileID: 869905744746333821}
   - component: {fileID: 3761731131178519422}
-  - component: {fileID: 7438804829864239282}
-  - component: {fileID: 7105220936578887055}
-  - component: {fileID: 3896896807359300781}
   - component: {fileID: 3355792203424815090}
   m_Layer: 0
   m_Name: ContextMenu
@@ -4002,7 +3993,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &869905744746333821
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4019,9 +4010,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 751.7, y: -246.7355}
-  m_SizeDelta: {x: -1605.9249, y: -1070}
-  m_Pivot: {x: -0.07982762, y: 1.0000001}
+  m_AnchoredPosition: {x: -0.002319336, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3761731131178519422
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4030,76 +4021,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4764538586110252025}
   m_CullTransparentMesh: 0
---- !u!114 &7438804829864239282
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4764538586110252025}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 59f8146938fff824cb5fd77236b75775, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Padding:
-    m_Left: 5
-    m_Right: 5
-    m_Top: 5
-    m_Bottom: 5
-  m_ChildAlignment: 0
-  m_Spacing: 5
-  m_ChildForceExpandWidth: 1
-  m_ChildForceExpandHeight: 0
-  m_ChildControlWidth: 1
-  m_ChildControlHeight: 0
-  m_ChildScaleWidth: 0
-  m_ChildScaleHeight: 0
-  m_ReverseArrangement: 0
---- !u!114 &7105220936578887055
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4764538586110252025}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.05882353}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!114 &3896896807359300781
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4764538586110252025}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_HorizontalFit: 0
-  m_VerticalFit: 2
 --- !u!114 &3355792203424815090
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4112,8 +4033,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea8db7e4571a321488fe2b87edad83a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  choiceButtonPrefab: {fileID: 9189797777352869006, guid: 81df96b17f55619469ef59c724d7c9a4,
+  radialMenuButtonPrefab: {fileID: 5591533057344739039, guid: e5ba95b2b3f3c8441bc199449f800b5a,
     type: 3}
+  radius: 100
   buttonChoices: []
 --- !u!1 &5004372002576368896
 GameObject:

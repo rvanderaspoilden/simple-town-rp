@@ -105,6 +105,15 @@ namespace Sim {
             this.navMeshAgent.SetDestination(targetPoint);
         }
 
+        public void LookAt(Transform target) {
+            Vector3 dir = target.position - this.transform.position;
+            this.transform.rotation = Quaternion.LookRotation(dir.normalized);
+        }
+
+        public void Idle() {
+            this.stateMachine.SetState(this.idleState);
+        }
+
         public void Sit(Seat props, Transform seatTransform) {
             this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
         }
