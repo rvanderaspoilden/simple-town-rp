@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using Sim.Building;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Action = Sim.Interactables.Action;
@@ -10,19 +12,51 @@ namespace Sim.UI {
     public class RadialMenuUI : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
-        private Button radialMenuButtonPrefab;
+        private RadialMenuButton radialMenuButtonPrefab;
+
+        [SerializeField]
+        private Image radialImage;
+
+        [SerializeField]
+        private RectTransform radialRectTransform;
 
         [SerializeField]
         private float radius;
 
+        [SerializeField]
+        private float backgroundRadiusOffset;
+
+        [SerializeField]
+        private TextMeshProUGUI actionText;
+
         [Header("Only for debug")]
         [SerializeField]
-        private List<Button> buttonChoices;
+        private List<RadialMenuButton> radialMenuButtons;
 
         private Props currentProps;
 
+        private Collider currentPropsCollider;
+
         private void Awake() {
-            this.buttonChoices = new List<Button>();
+            this.radialMenuButtons = new List<RadialMenuButton>();
+            this.actionText.enabled = false;
+            this.radialImage.gameObject.SetActive(false);
+        }
+
+        private void Start() {
+            this.radialRectTransform = this.radialImage.GetComponent<RectTransform>();
+        }
+
+        private void OnEnable() {
+            RadialMenuButton.OnClicked += OnRadialButtonClicked;
+            RadialMenuButton.OnHover += OnRadialButtonHover;
+            RadialMenuButton.OnExit += OnRadialButtonExit;
+        }
+
+        private void OnDisable() {
+            RadialMenuButton.OnClicked -= OnRadialButtonClicked;
+            RadialMenuButton.OnHover -= OnRadialButtonHover;
+            RadialMenuButton.OnExit -= OnRadialButtonExit;
         }
 
         private void Update() {
@@ -32,30 +66,36 @@ namespace Sim.UI {
         }
 
         public void Center() {
-            float radiansOfSeparation = (Mathf.PI * 2) / this.buttonChoices.Count;
+            float radiansOfSeparation = (Mathf.PI * 2) / this.radialMenuButtons.Count;
 
-            for (int i = 0; i < this.buttonChoices.Count; i++) {
-                Button button = this.buttonChoices[i];
+            Vector3 origin = this.GetPosition();
 
-                button.transform.position = this.GetPosition(this.currentProps);
+            if (this.radialMenuButtons.Count > 1) {
+                this.radialImage.transform.position = origin;
+                this.radialRectTransform.sizeDelta = new Vector2((radius + backgroundRadiusOffset) * 2f, (radius + backgroundRadiusOffset) * 2f);
+            }
 
-                if (this.buttonChoices.Count > 1) {
-                    RectTransform rectTransform = button.GetComponent<RectTransform>();
+            for (int i = 0; i < this.radialMenuButtons.Count; i++) {
+                RadialMenuButton button = this.radialMenuButtons[i];
 
-                    float x = rectTransform.anchoredPosition.x + Mathf.Cos(radiansOfSeparation * i) * this.radius;
-                    float y = rectTransform.anchoredPosition.y + Mathf.Sin(radiansOfSeparation * i) * this.radius;
+                button.transform.position = origin;
 
-                    rectTransform.anchoredPosition = new Vector2(x, y);
+                RectTransform buttonRectTransform = button.RectTransform;
+
+                if (this.radialMenuButtons.Count > 1) {
+                    float x = buttonRectTransform.anchoredPosition.x + Mathf.Cos(radiansOfSeparation * i) * this.radius;
+                    float y = buttonRectTransform.anchoredPosition.y + Mathf.Sin(radiansOfSeparation * i) * this.radius;
+
+                    buttonRectTransform.anchoredPosition = new Vector2(x, y);
                 }
             }
         }
 
-        private Vector3 GetPosition(Props target) {
-            Collider propsCollider = target.GetComponent<Collider>();
+        private Vector3 GetPosition() {
             Vector3 position = Input.mousePosition;
 
-            if (propsCollider) {
-                position = propsCollider.bounds.center;
+            if (currentPropsCollider) {
+                position = currentPropsCollider.bounds.center;
             }
 
             return CameraManager.Instance.Camera.WorldToScreenPoint(position);
@@ -64,38 +104,65 @@ namespace Sim.UI {
         public void Setup(Props interactedProp) {
             this.currentProps = interactedProp;
 
-            if (!this.currentProps) return;
+            this.currentPropsCollider = interactedProp.GetComponent<Collider>();
 
-            // clear view
-            this.buttonChoices.ForEach(button => button.onClick.RemoveAllListeners());
-            this.buttonChoices.Clear();
+            this.ClearButtons();
 
-            foreach (Transform child in this.transform) {
-                Destroy(child.gameObject);
+            Action[] actions = interactedProp.GetActions().Where(x => !x.IsLocked()).ToArray();
+
+            if (actions.Length > 1) {
+                this.radialImage.gameObject.SetActive(true);
+
+                this.radialImage.color = new Color(0, 0, 0, 0);
+                this.radialImage.DOComplete();
+                this.radialImage.DOColor(Color.white, .3f).SetEase(Ease.OutQuad);
+            } else {
+                this.radialImage.gameObject.SetActive(false);
             }
-
-            Action[] actions = interactedProp.GetActions();
+            
 
             for (int i = 0; i < actions.Length; i++) {
                 Action action = actions[i];
-                Button button = Instantiate(this.radialMenuButtonPrefab, this.transform);
-                button.interactable = !action.IsLocked();
-                button.onClick.AddListener(() => {
-                    interactedProp.DoAction(action);
-                    this.gameObject.SetActive(false); // close context menu after action triggered
-                });
+                RadialMenuButton button = Instantiate(this.radialMenuButtonPrefab, this.transform);
 
+                button.Setup(action);
                 button.GetComponent<Image>().sprite = action.ActionIcon;
 
                 RectTransform rectTransform = button.GetComponent<RectTransform>();
 
+                rectTransform.DOComplete();
+                
                 rectTransform.localScale = Vector2.zero;
                 rectTransform.DOScale(Vector3.one, .3f).SetEase(Ease.OutQuad).SetDelay(0.05F * i);
-                
-                this.buttonChoices.Add(button);
+
+                this.radialMenuButtons.Add(button);
+            }
+        }
+
+        private void ClearButtons() {
+            foreach (Transform child in this.transform) {
+                if (child != this.radialImage.transform) {
+                    Destroy(child.gameObject);
+                }
             }
             
-            Center();
+            this.radialMenuButtons.Clear();
+        }
+
+        private void OnRadialButtonHover(Action action) {
+            this.actionText.enabled = true;
+            this.actionText.text = action.GetActionLabel();
+        }
+        
+        private void OnRadialButtonExit(Action action) {
+            this.actionText.text = string.Empty;
+            this.actionText.enabled = false;
+        }
+
+        private void OnRadialButtonClicked(Action action) {
+            this.currentProps.DoAction(action);
+            this.currentProps = null;
+            this.gameObject.SetActive(false);
         }
     }
 }

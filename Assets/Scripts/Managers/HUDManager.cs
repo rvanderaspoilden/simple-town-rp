@@ -13,7 +13,7 @@ namespace Sim {
         private BuildPreviewPanelUI buildPreviewPanelUI;
 
         [SerializeField]
-        private RadialMenuUI contextMenuUI;
+        private RadialMenuUI radialMenuUI;
 
         [SerializeField]
         private DefaultViewUI defaultViewUI;
@@ -28,6 +28,8 @@ namespace Sim {
             } else {
                 Instance = this;
             }
+            
+            DontDestroyOnLoad(this.gameObject);
         }
 
         // Start is called before the first frame update
@@ -53,15 +55,13 @@ namespace Sim {
         }
 
         public void DisplayContextMenu(bool state, Props interactedProp = null) {
-            this.contextMenuUI.Setup(interactedProp);
-
-            if ((!state && this.contextMenuUI.gameObject.activeSelf) || (state && !this.contextMenuUI.gameObject.activeSelf)) {
-                this.contextMenuUI.gameObject.SetActive(state);
+            if ((!state && this.radialMenuUI.gameObject.activeSelf) || (state && !this.radialMenuUI.gameObject.activeSelf)) {
+                this.radialMenuUI.gameObject.SetActive(state);
             }
-        }
 
-        public void RecenterContextMenu() {
-            this.contextMenuUI.Center();
+            if (interactedProp) {
+                this.radialMenuUI.Setup(interactedProp);
+            }
         }
     }
 }
