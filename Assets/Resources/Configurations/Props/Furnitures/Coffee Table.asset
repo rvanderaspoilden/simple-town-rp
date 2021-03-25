@@ -20,23 +20,14 @@ MonoBehaviour:
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
+  connectedToWall: 0
   toBuild: 1
   rangeToInteract: 1.5
   actions:
-  - actionType: 0
-    actionLabel: Move
-    locked: 0
-  - actionType: 3
-    actionLabel: Delete
-    locked: 0
-  - actionType: 0
-    actionLabel: Move
-    locked: 0
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
   unbuiltActions:
-  - actionType: 2
-    actionLabel: Build
-    locked: 1
-  - actionType: 0
-    actionLabel: Move
-    locked: 1
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
+  - {fileID: 11400000, guid: 3e1f7b140e8e1c5419783ee5a990b41d, type: 2}
   cursor: {fileID: 0}

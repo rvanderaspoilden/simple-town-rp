@@ -27,7 +27,7 @@ namespace Sim {
         public override void InstantiateLocalCharacter(Character prefab, CharacterData characterData, RoomNavigationData currentRoom, RoomNavigationData oldRoom) {
             base.InstantiateLocalCharacter(prefab, characterData, currentRoom, oldRoom);
 
-            if (!PhotonNetwork.IsMasterClient && this.IsOwner(characterData)) {
+            if (!PhotonNetwork.IsMasterClient && this.IsTenant(characterData)) {
                 PhotonNetwork.CurrentRoom.SetMasterClient(PhotonNetwork.LocalPlayer);
             }
         }
@@ -37,9 +37,9 @@ namespace Sim {
             set => homeData = value;
         }
 
-        public bool IsOwner(CharacterData character) // TODO: check this
+        public bool IsTenant(CharacterData character)
         {
-            return character.Id == this.homeData.Owner;
+            return character.Id == this.homeData.Tenant;
         }
     }
 }

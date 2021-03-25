@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Photon.Pun;
 using Sim.Building;
+using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
 
@@ -14,16 +15,11 @@ namespace Sim.Interactables {
         public delegate void OnOpen(Package packageOpened);
 
         public static event OnOpen OnOpened;
-
-        protected override void SetupActions() {
-            base.SetupActions();
-            
-            bool isOwner = ApartmentManager.Instance && ApartmentManager.Instance.IsOwner(NetworkManager.Instance.CharacterData);
-            this.actions.ToList().ForEach(action => action.SetIsLocked(!isOwner));
-        }
-
-        protected override void Use() {
-            OnOpened?.Invoke(this);
+        
+        protected override void Execute(Action action) {
+            if (action.Type.Equals(ActionTypeEnum.UNPACKAGE)) {
+                OnOpened?.Invoke(this);
+            }
         }
 
         public override void Synchronize(Photon.Realtime.Player playerTarget) {

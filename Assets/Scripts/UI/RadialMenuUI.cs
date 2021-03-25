@@ -107,8 +107,10 @@ namespace Sim.UI {
             this.currentPropsCollider = interactedProp.GetComponent<Collider>();
 
             this.ClearButtons();
+            
+            this.ClearText();
 
-            Action[] actions = interactedProp.GetActions().Where(x => !x.IsLocked()).ToArray();
+            Action[] actions = interactedProp.GetActions();
 
             if (actions.Length > 1) {
                 this.radialImage.gameObject.SetActive(true);
@@ -126,7 +128,7 @@ namespace Sim.UI {
                 RadialMenuButton button = Instantiate(this.radialMenuButtonPrefab, this.transform);
 
                 button.Setup(action);
-                button.GetComponent<Image>().sprite = action.ActionIcon;
+                button.GetComponent<Image>().sprite = action.Icon;
 
                 RectTransform rectTransform = button.GetComponent<RectTransform>();
 
@@ -149,14 +151,18 @@ namespace Sim.UI {
             this.radialMenuButtons.Clear();
         }
 
+        private void ClearText() {
+            this.actionText.text = string.Empty;
+            this.actionText.enabled = false;
+        }
+
         private void OnRadialButtonHover(Action action) {
             this.actionText.enabled = true;
-            this.actionText.text = action.GetActionLabel();
+            this.actionText.text = action.Label;
         }
         
         private void OnRadialButtonExit(Action action) {
-            this.actionText.text = string.Empty;
-            this.actionText.enabled = false;
+            this.ClearText();
         }
 
         private void OnRadialButtonClicked(Action action) {
