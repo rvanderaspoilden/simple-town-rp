@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Photon.Pun;
 using Photon.Realtime;
+using Sim.Enums;
 using UnityEngine;
+using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     public class Seat : Props {
@@ -19,12 +21,32 @@ namespace Sim.Building {
             this.charactersAssociatedToSeatIdx = new Dictionary<int, int>();
         }
 
-        protected override void Use() {
-            int seatIdx = GetAvailableSeatIdx();
+        protected override void Execute(Action action) {
+            if (action.Type.Equals(ActionTypeEnum.SIT)) {
+                int seatIdx = GetAvailableSeatIdx();
 
-            if (seatIdx != -1) {
-                photonView.RPC("RPC_AssignSeat", RpcTarget.All, RoomManager.LocalCharacter.photonView.ViewID, seatIdx);
+                if (seatIdx != -1) {
+                    photonView.RPC("RPC_AssignSeat", RpcTarget.All, RoomManager.LocalCharacter.photonView.ViewID, seatIdx);
+                }
+            } else if (action.Type.Equals(ActionTypeEnum.COUCH)) {
+                // TODO
             }
+        }
+
+        public override Action[] GetActions() {
+            Action[] actions = base.GetActions();
+
+            return actions.Where(x => {
+                if (x.Type.Equals(ActionTypeEnum.SIT)) {
+                    return GetAvailableSeatIdx() != -1;
+                }
+                
+                if (x.Type.Equals(ActionTypeEnum.SELL) || x.Type.Equals(ActionTypeEnum.MOVE) ) {
+                    return charactersAssociatedToSeatIdx.Count == 0;
+                }
+
+                return true;
+            }).ToArray();
         }
 
         public override void Synchronize(Player playerTarget) {
@@ -63,7 +85,7 @@ namespace Sim.Building {
         private int GetAvailableSeatIdx() {
             var seatFound = seatPositions.Where((t, i) => !this.charactersAssociatedToSeatIdx.ContainsValue(i))
                 .OrderBy(t => Vector3.Distance(t.position, RoomManager.LocalCharacter.transform.position))
-                .First();
+                .FirstOrDefault();
 
             return seatFound ? Array.IndexOf(seatPositions, seatFound) : -1;
         }

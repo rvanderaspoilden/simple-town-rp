@@ -38,17 +38,19 @@ namespace Sim.Interactables {
             StopAllCoroutines();
         }
 
-        protected override void Use() {
-            // Play open animation for all
-            photonView.RPC("RPC_Animation", RpcTarget.All);
+        protected override void Execute(Action action) {
+            if (action.Type.Equals(ActionTypeEnum.TELEPORT)) {
+                // Play open animation for all
+                photonView.RPC("RPC_Animation", RpcTarget.All);
 
-            if (this.destination.Equals(RoomTypeEnum.HOME)) {
-                //TODO: refacto this
-                Address address = new Address {Street = "SALMON HOTEL", DoorNumber = this.number, HomeType = HomeTypeEnum.APARTMENT};
+                if (this.destination.Equals(RoomTypeEnum.HOME)) {
+                    //TODO: refacto this
+                    Address address = new Address {Street = "SALMON HOTEL", DoorNumber = this.number, HomeType = HomeTypeEnum.APARTMENT};
 
-                NetworkManager.Instance.GoToRoom(RoomTypeEnum.HOME, address);
-            } else {
-                base.Use();
+                    NetworkManager.Instance.GoToRoom(RoomTypeEnum.HOME, address);
+                } else {
+                    base.Execute(action);
+                }
             }
         }
 

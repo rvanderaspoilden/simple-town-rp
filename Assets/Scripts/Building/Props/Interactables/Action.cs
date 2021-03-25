@@ -2,43 +2,26 @@
 using UnityEngine;
 
 namespace Sim.Interactables {
-    [System.Serializable]
-    public class Action {
-        [SerializeField] private ActionTypeEnum actionType;
-        [SerializeField] private string actionLabel;
+    [CreateAssetMenu(fileName = "New Action", menuName = "Configurations/Action")]
+    public class Action : ScriptableObject {
+        [SerializeField]
+        private ActionTypeEnum type;
 
         [SerializeField]
-        private Sprite actionIcon;
-        
-        [Tooltip("If true => action is not possible")]
-        [SerializeField] private bool locked;
+        private string label;
 
-        public Action(ActionTypeEnum type, string actionLabel, bool locked = false) {
-            this.actionType = type;
-            this.actionLabel = actionLabel;
-            this.locked = locked;
-        }
+        [SerializeField]
+        private Sprite icon;
 
-        public ActionTypeEnum GetActionType() {
-            return this.actionType;
-        }
+        [SerializeField]
+        private bool needPermission;
 
-        public string GetActionLabel() {
-            return this.actionLabel;
-        }
+        public ActionTypeEnum Type => type;
 
-        public bool IsLocked() {
-            return this.locked;
-        }
+        public string Label => label;
 
-        public void SetIsLocked(bool value) {
-            this.locked = value;
-        }
+        public Sprite Icon => icon;
 
-        public Sprite ActionIcon {
-            get => actionIcon;
-            set => actionIcon = value;
-        }
+        public bool NeedPermission => needPermission;
     }
-
 }

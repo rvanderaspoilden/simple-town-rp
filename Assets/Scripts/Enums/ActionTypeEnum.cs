@@ -2,10 +2,16 @@
     public enum ActionTypeEnum
     {
         MOVE,
-        USE,
+        SIT,
+        COUCH,
+        LOOK,
         BUILD,
-        DELETE,
-        LOCK // use it for all lock actions such as door / chest
+        SELL,
+        LOCK,
+        PAINT,
+        OPEN,
+        TELEPORT,
+        UNPACKAGE
     }
 
 }

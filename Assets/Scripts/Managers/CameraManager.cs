@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using AI.States;
 using Sim.Building;
 using Sim.Enums;
 using Sim.UI;
@@ -120,16 +121,26 @@ namespace Sim {
 
         private void ManageInteraction() {
             if (Input.GetMouseButtonDown(0) && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
-                Props objectToInteract = hit.collider.GetComponentInParent<Props>();
+                Props propsToInteract = hit.collider.GetComponentInParent<Props>();
 
-                if (objectToInteract) {
-                    bool canInteract = RoomManager.LocalCharacter && RoomManager.LocalCharacter.CanInteractWith(objectToInteract, hit.point);
+                if (propsToInteract) {
+                    if (propsToInteract.IsInteractable()) {
+                        bool canInteract = RoomManager.LocalCharacter.CanInteractWith(propsToInteract, hit.point);
 
-                    if (canInteract) {
-                        RoomManager.LocalCharacter.Idle();
-                        HUDManager.Instance.DisplayContextMenu(true, objectToInteract);
+                        if (canInteract) {
+                            if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove)) {
+                                RoomManager.LocalCharacter.Idle();
+                            } else if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {
+                                RoomManager.LocalCharacter.LookAt(propsToInteract.transform);
+                            }
+                            
+                            HUDManager.Instance.DisplayContextMenu(true, propsToInteract);
+                        } else {
+                            RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
+                            HUDManager.Instance.DisplayContextMenu(false);
+                        }
                     } else {
-                        RoomManager.LocalCharacter.SetTarget(hit.point, objectToInteract);
+                        RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
                         HUDManager.Instance.DisplayContextMenu(false);
                     }
                 }

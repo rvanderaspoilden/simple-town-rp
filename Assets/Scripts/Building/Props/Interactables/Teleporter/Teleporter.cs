@@ -14,10 +14,12 @@ namespace Sim.Interactables {
         [Tooltip("Represent the position where the player will be spawned after use")]
         private Transform spawnTransform;
 
-        protected override void Use() {
-            NetworkManager.Instance.GoToRoom(RoomTypeEnum.BUILDING_HALL, null);
+        protected override void Execute(Action action) {
+            if (action.Type.Equals(ActionTypeEnum.TELEPORT)) {
+                NetworkManager.Instance.GoToRoom(RoomTypeEnum.BUILDING_HALL, null);
+            }
         }
-
+        
         public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
 

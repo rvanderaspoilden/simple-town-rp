@@ -14,13 +14,15 @@ namespace Sim.Building {
         [SerializeField]
         protected PropsConfig configuration;
 
-        protected Action[] actions;
+        private Action[] actions;
 
-        protected Action[] unbuiltActions;
+        private Action[] unbuiltActions;
 
-        protected bool built;
+        private bool built;
 
         protected PropsRenderer propsRenderer;
+
+        private Action currentAction;
 
         public delegate void PropsAction(Props props);
 
@@ -38,18 +40,15 @@ namespace Sim.Building {
         /**
          * Setup all action when a props is built
          */
-        protected virtual void SetupActions() {
+        private void SetupActions() {
             this.actions = this.configuration.GetActions();
         }
 
         /**
          * Setup all actions when a props is not built
          */
-        protected virtual void SetupUnbuiltActions() {
+        private void SetupUnbuiltActions() {
             this.unbuiltActions = this.configuration.GetUnbuiltActions();
-
-            bool isOwner = ApartmentManager.Instance && ApartmentManager.Instance.IsOwner(NetworkManager.Instance.CharacterData);
-            this.unbuiltActions.ToList().ForEach(action => action.SetIsLocked(!isOwner));
         }
 
         public void RefreshAllActions() {
@@ -57,12 +56,16 @@ namespace Sim.Building {
             this.SetupUnbuiltActions();
         }
 
-        public virtual Action[] GetActions() {
-            if (this.IsBuilt()) {
-                return this.actions;
-            }
+        public bool IsInteractable() {
+            return this.IsBuilt() ? this.actions.Length > 0 : this.unbuiltActions.Length > 0;
+        }
 
-            return this.unbuiltActions;
+        public virtual Action[] GetActions() {
+            Action[] actionsToReturn = this.IsBuilt() ? this.actions : this.unbuiltActions;
+
+            bool hasPermission = ApartmentManager.Instance && ApartmentManager.Instance.IsTenant(RoomManager.LocalCharacter.CharacterData);
+            
+            return actionsToReturn.Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission).ToArray();
         }
 
         public bool IsBuilt() {
@@ -84,12 +87,9 @@ namespace Sim.Building {
         }
 
         public void DoAction(Action action) {
-            Debug.Log("do action : " + action.GetActionLabel());
+            Debug.Log("do action : " + action.Label);
 
-            switch (action.GetActionType()) {
-                case ActionTypeEnum.USE:
-                    this.Use();
-                    break;
+            switch (action.Type) {
                 case ActionTypeEnum.MOVE:
                     this.Move();
                     break;
@@ -98,32 +98,35 @@ namespace Sim.Building {
                     this.Build();
                     break;
 
-                case ActionTypeEnum.DELETE:
-                    this.Delete();
+                case ActionTypeEnum.SELL:
+                    this.Sell();
+                    break;
+                default:
+                    this.Execute(action);
                     break;
             }
         }
 
-        protected virtual void Use() {
+        protected virtual void Execute(Action action) {
             throw new NotImplementedException();
         }
 
-        protected virtual void Build() {
+        private void Build() {
             this.SetIsBuilt(true);
 
             RoomManager.Instance.SaveRoom();
         }
 
-        protected virtual void Move() {
+        private void Move() {
             OnMoveRequest?.Invoke(this);
         }
 
-        protected virtual void Delete() {
-            photonView.RPC("RPC_DestroyProps", PhotonNetwork.MasterClient);
+        private void Sell() {
+            photonView.RPC("RPC_SellProps", PhotonNetwork.MasterClient);
         }
 
         [PunRPC]
-        public void RPC_DestroyProps() {
+        public void RPC_SellProps() {
             PropsManager.Instance.DestroyProps(this, true);
             RoomManager.Instance.SaveRoom();
         }

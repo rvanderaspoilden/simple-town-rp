@@ -40,16 +40,10 @@ namespace Sim.Scriptables {
         private float rangeToInteract;
 
         [SerializeField]
-        private Action[] actions = new[] {
-            new Action(ActionTypeEnum.DELETE, "Delete"),
-            new Action(ActionTypeEnum.MOVE, "Move")
-        };
+        private Action[] actions;
 
         [SerializeField]
-        private Action[] unbuiltActions = new[] {
-            new Action(ActionTypeEnum.DELETE, "Delete"),
-            new Action(ActionTypeEnum.MOVE, "Move")
-        };
+        private Action[] unbuiltActions;
 
         [SerializeField]
         private Texture2D cursor;

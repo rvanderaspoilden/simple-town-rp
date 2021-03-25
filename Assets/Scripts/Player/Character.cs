@@ -1,6 +1,7 @@
 ﻿using System;
 using AI;
 using AI.States;
+using DG.Tweening;
 using Photon.Pun;
 using Sim.Building;
 using Sim.Entities;
@@ -11,18 +12,28 @@ using UnityEngine.AI;
 
 namespace Sim {
     public class Character : MonoBehaviourPunCallbacks {
-        [Header("Settings")] [SerializeField] private Transform headTargetForCamera;
+        [Header("Settings")]
+        [SerializeField]
+        private Transform headTargetForCamera;
 
-        [SerializeField] private Vector3 idleHeadPosition;
-        [SerializeField] private Vector3 sitHeadPosition;
-        [SerializeField] private Vector3 sleepHeadPosition;
+        [SerializeField]
+        private Vector3 idleHeadPosition;
 
-        [Header("Only for debug")] [SerializeField]
+        [SerializeField]
+        private Vector3 sitHeadPosition;
+
+        [SerializeField]
+        private Vector3 sleepHeadPosition;
+
+        [Header("Only for debug")]
+        [SerializeField]
         private NavMeshAgent navMeshAgent;
 
-        [SerializeField] private StateType state;
+        [SerializeField]
+        private StateType state;
 
-        [SerializeField] private Props propsTarget;
+        [SerializeField]
+        private Props propsTarget;
 
         private PlayerAnimator animator;
 
@@ -98,7 +109,7 @@ namespace Sim {
         #endregion
 
         #region ACTIONS
-        
+
         public void SetTarget(Vector3 targetPoint, Props props) {
             this.propsTarget = props;
             this.stateMachine.SetState(moveState);
@@ -107,7 +118,7 @@ namespace Sim {
 
         public void LookAt(Transform target) {
             Vector3 dir = target.position - this.transform.position;
-            this.transform.rotation = Quaternion.LookRotation(dir.normalized);
+            this.transform.DORotateQuaternion(Quaternion.Euler(0f, Quaternion.LookRotation(dir.normalized).eulerAngles.y, 0), .5f);
         }
 
         public void Idle() {
@@ -116,6 +127,10 @@ namespace Sim {
 
         public void Sit(Seat props, Transform seatTransform) {
             this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
+        }
+
+        public IState CurrentState() {
+            return this.stateMachine.CurrentState;
         }
 
         #endregion
@@ -143,7 +158,7 @@ namespace Sim {
         }
 
         public StateMachine StateMachine => stateMachine;
-        
+
         public NavMeshAgent NavMeshAgent => navMeshAgent;
 
         public Vector3 IdleHeadPosition => idleHeadPosition;
@@ -151,7 +166,7 @@ namespace Sim {
         public Vector3 SitHeadPosition => sitHeadPosition;
 
         public Vector3 SleepHeadPosition => sleepHeadPosition;
-        
+
         public PlayerAnimator Animator => animator;
 
         public CharacterData CharacterData {
@@ -203,7 +218,7 @@ namespace Sim {
             Vector3 origin = Vector3.Scale(hitPoint, new Vector3(1, 0, 1));
             Vector3 target = Vector3.Scale(this.transform.position, new Vector3(1, 0, 1));
 
-            if (propsToInteract.GetActions()?.Length <= 0 || Mathf.Abs(Vector3.Distance(origin, target)) > maxRange) {
+            if (Mathf.Abs(Vector3.Distance(origin, target)) > maxRange) {
                 return false;
             }
 
