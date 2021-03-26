@@ -101,16 +101,20 @@ namespace Sim.UI {
             return CameraManager.Instance.Camera.WorldToScreenPoint(position);
         }
 
-        public void Setup(Props interactedProp) {
+        public void Setup(Props interactedProp, bool withPriority = false) {
             this.currentProps = interactedProp;
 
             this.currentPropsCollider = interactedProp.GetComponent<Collider>();
 
             this.ClearButtons();
-            
+
             this.ClearText();
 
-            Action[] actions = interactedProp.GetActions();
+            Action[] actions = interactedProp.GetActions(withPriority);
+
+            if (withPriority && actions.Length > 1) {
+                actions = new[] {actions[0]};
+            }
 
             if (actions.Length > 1) {
                 this.radialImage.gameObject.SetActive(true);
@@ -121,7 +125,7 @@ namespace Sim.UI {
             } else {
                 this.radialImage.gameObject.SetActive(false);
             }
-            
+
 
             for (int i = 0; i < actions.Length; i++) {
                 Action action = actions[i];
@@ -133,7 +137,7 @@ namespace Sim.UI {
                 RectTransform rectTransform = button.GetComponent<RectTransform>();
 
                 rectTransform.DOComplete();
-                
+
                 rectTransform.localScale = Vector2.zero;
                 rectTransform.DOScale(Vector3.one, .3f).SetEase(Ease.OutQuad).SetDelay(0.05F * i);
 
@@ -147,7 +151,7 @@ namespace Sim.UI {
                     Destroy(child.gameObject);
                 }
             }
-            
+
             this.radialMenuButtons.Clear();
         }
 
@@ -160,7 +164,7 @@ namespace Sim.UI {
             this.actionText.enabled = true;
             this.actionText.text = action.Label;
         }
-        
+
         private void OnRadialButtonExit(Action action) {
             this.ClearText();
         }

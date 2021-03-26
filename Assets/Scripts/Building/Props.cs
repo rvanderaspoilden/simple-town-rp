@@ -60,12 +60,18 @@ namespace Sim.Building {
             return this.IsBuilt() ? this.actions.Length > 0 : this.unbuiltActions.Length > 0;
         }
 
-        public virtual Action[] GetActions() {
+        public virtual Action[] GetActions(bool withPriority = false) {
             Action[] actionsToReturn = this.IsBuilt() ? this.actions : this.unbuiltActions;
 
             bool hasPermission = ApartmentManager.Instance && ApartmentManager.Instance.IsTenant(RoomManager.LocalCharacter.CharacterData);
+
+            actionsToReturn = actionsToReturn.Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission).ToArray();
+
+            if (withPriority) {
+                actionsToReturn = actionsToReturn.SkipWhile(x => x.Type.Equals(ActionTypeEnum.SELL) || x.Type.Equals(ActionTypeEnum.MOVE)).ToArray();
+            }
             
-            return actionsToReturn.Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission).ToArray();
+            return actionsToReturn;
         }
 
         public bool IsBuilt() {

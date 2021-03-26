@@ -54,13 +54,13 @@ namespace Sim {
             this.aliDiscountCatalogUI.gameObject.SetActive(state);
         }
 
-        public void DisplayContextMenu(bool state, Props interactedProp = null) {
+        public void DisplayContextMenu(bool state, Props interactedProp = null, bool withPriority = false) {
             if ((!state && this.radialMenuUI.gameObject.activeSelf) || (state && !this.radialMenuUI.gameObject.activeSelf)) {
                 this.radialMenuUI.gameObject.SetActive(state);
             }
 
             if (interactedProp) {
-                this.radialMenuUI.Setup(interactedProp);
+                this.radialMenuUI.Setup(interactedProp, withPriority);
             }
         }
     }
