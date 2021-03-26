@@ -146,6 +146,8 @@ namespace Sim.UI {
         }
 
         private void ClearButtons() {
+            this.radialMenuButtons.ForEach(x => x.GetComponent<RectTransform>().DOComplete());
+            
             foreach (Transform child in this.transform) {
                 if (child != this.radialImage.transform) {
                     Destroy(child.gameObject);
