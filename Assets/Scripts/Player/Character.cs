@@ -116,6 +116,10 @@ namespace Sim {
         public void SetTarget(Vector3 targetPoint, Props props, bool showPriorityActions = false) {
             this.propsTarget = props;
             this.showRadialMenuWithPriority = showPriorityActions;
+            MoveTo(targetPoint);
+        }
+
+        public void MoveTo(Vector3 targetPoint) {
             this.stateMachine.SetState(moveState);
             this.navMeshAgent.SetDestination(targetPoint);
         }
