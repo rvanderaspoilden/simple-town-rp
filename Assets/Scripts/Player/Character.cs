@@ -132,6 +132,10 @@ namespace Sim {
         public void Sit(Seat props, Transform seatTransform) {
             this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
         }
+        
+        public void Sleep(Seat props, Transform couchTransform) {
+            this.stateMachine.SetState(new CharacterSleep(this, props, couchTransform));
+        }
 
         public IState CurrentState() {
             return this.stateMachine.CurrentState;

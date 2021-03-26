@@ -4,16 +4,16 @@ using Sim.Building;
 using UnityEngine;
 
 namespace AI.States {
-    public class CharacterSit : IState {
+    public class CharacterSleep : IState {
         private readonly Character character;
         private readonly Seat props;
-        private readonly Transform seatTransform;
+        private readonly Transform couchTransform;
         private readonly Vector3 lastPosition;
 
-        public CharacterSit(Character character, Seat props, Transform seatTransform) {
+        public CharacterSleep(Character character, Seat props, Transform couchTransform) {
             this.character = character;
             this.props = props;
-            this.seatTransform = seatTransform;
+            this.couchTransform = couchTransform;
             this.lastPosition = this.character.transform.position;
         }
 
@@ -22,13 +22,13 @@ namespace AI.States {
             this.character.Collider.enabled = false;
 
             Transform characterTransform = this.character.transform;
-
+            
             characterTransform.DOComplete(); // Do stop look at rotation
 
-            characterTransform.position = seatTransform.position;
-            characterTransform.rotation = seatTransform.rotation;
+            characterTransform.position = couchTransform.position;
+            characterTransform.rotation = couchTransform.rotation;
 
-            this.character.Animator.SetAction(CharacterAnimatorAction.SIT);
+            this.character.Animator.SetAction(CharacterAnimatorAction.SLEEP);
 
             this.character.SetHeadTargetPosition(this.character.SitHeadPosition);
         }
@@ -39,7 +39,7 @@ namespace AI.States {
             this.character.Animator.SetAction(CharacterAnimatorAction.NONE);
             this.character.SetHeadTargetPosition(this.character.IdleHeadPosition);
 
-            this.props.RevokeSeat(this.character);
+            this.props.RevokeCouch(this.character);
 
             this.character.transform.position = lastPosition;
             this.character.Collider.enabled = true;
