@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Lit
   propsType: 0
   buyable: 1
-  prefab: {fileID: 3312499672592573077, guid: 55a9801b5e85e284abe5470379263732, type: 3}
+  prefab: {fileID: 5492012384660244121, guid: 55a9801b5e85e284abe5470379263732, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
@@ -24,10 +24,10 @@ MonoBehaviour:
   toBuild: 1
   rangeToInteract: 1.5
   actions:
-  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
-  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
   - {fileID: 11400000, guid: 2eeda08df88764a43a359da313310b9f, type: 2}
   - {fileID: 11400000, guid: 7e0cdd3d63813974a95eeb645612607b, type: 2}
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
   unbuiltActions:
   - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
   - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}

@@ -120,7 +120,10 @@ namespace Sim {
         }
 
         private void ManageInteraction() {
-            if (Input.GetMouseButtonDown(0) && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
+            bool leftMouseClick = Input.GetMouseButtonDown(0);
+            bool rightMouseClick = Input.GetMouseButtonDown(1);
+
+            if ((leftMouseClick || rightMouseClick) && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props propsToInteract = hit.collider.GetComponentInParent<Props>();
 
                 if (propsToInteract) {
@@ -133,14 +136,17 @@ namespace Sim {
                             } else if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {
                                 RoomManager.LocalCharacter.LookAt(propsToInteract.transform);
                             }
-                            
-                            HUDManager.Instance.DisplayContextMenu(true, propsToInteract);
+
+                            HUDManager.Instance.DisplayContextMenu(true, propsToInteract, leftMouseClick);
                         } else {
-                            RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
+                            RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract, leftMouseClick);
                             HUDManager.Instance.DisplayContextMenu(false);
                         }
                     } else {
-                        RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
+                        if (leftMouseClick) {
+                            RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
+                        }
+
                         HUDManager.Instance.DisplayContextMenu(false);
                     }
                 }

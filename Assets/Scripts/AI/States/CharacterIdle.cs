@@ -10,10 +10,9 @@ namespace AI.States {
         }
 
         public void OnEnter() {
-            Debug.Log("Enter in Idle state");
             if (this.character.PropsTarget && this.character.CanInteractWith(this.character.PropsTarget)) {
                 this.character.LookAt(this.character.PropsTarget.transform);
-                HUDManager.Instance.DisplayContextMenu(true, this.character.PropsTarget);
+                HUDManager.Instance.DisplayContextMenu(true, this.character.PropsTarget, this.character.ShowRadialMenuWithPriority);
                 this.character.PropsTarget = null;
             }
         }

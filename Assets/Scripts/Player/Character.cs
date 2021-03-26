@@ -35,6 +35,9 @@ namespace Sim {
         [SerializeField]
         private Props propsTarget;
 
+        [SerializeField]
+        private bool showRadialMenuWithPriority;
+
         private PlayerAnimator animator;
 
         private new Rigidbody rigidbody;
@@ -110,8 +113,9 @@ namespace Sim {
 
         #region ACTIONS
 
-        public void SetTarget(Vector3 targetPoint, Props props) {
+        public void SetTarget(Vector3 targetPoint, Props props, bool showPriorityActions = false) {
             this.propsTarget = props;
+            this.showRadialMenuWithPriority = showPriorityActions;
             this.stateMachine.SetState(moveState);
             this.navMeshAgent.SetDestination(targetPoint);
         }
@@ -181,6 +185,11 @@ namespace Sim {
         public Props PropsTarget {
             get => propsTarget;
             set => propsTarget = value;
+        }
+
+        public bool ShowRadialMenuWithPriority {
+            get => showRadialMenuWithPriority;
+            set => showRadialMenuWithPriority = value;
         }
 
         public Collider Collider { get; private set; }

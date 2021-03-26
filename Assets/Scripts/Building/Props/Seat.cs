@@ -33,12 +33,12 @@ namespace Sim.Building {
             }
         }
 
-        public override Action[] GetActions() {
-            Action[] actions = base.GetActions();
+        public override Action[] GetActions(bool withPriority) {
+            Action[] actions = base.GetActions(withPriority);
 
             return actions.Where(x => {
                 if (x.Type.Equals(ActionTypeEnum.SIT)) {
-                    return GetAvailableSeatIdx() != -1;
+                    return !this.charactersAssociatedToSeatIdx.ContainsKey(RoomManager.LocalCharacter.photonView.ViewID) && GetAvailableSeatIdx() != -1;
                 }
                 
                 if (x.Type.Equals(ActionTypeEnum.SELL) || x.Type.Equals(ActionTypeEnum.MOVE) ) {
