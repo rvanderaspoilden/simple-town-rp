@@ -3,6 +3,7 @@ using System.Linq;
 using AI.States;
 using Sim.Building;
 using Sim.Enums;
+using Sim.Interactables;
 using Sim.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -130,7 +131,11 @@ namespace Sim {
                     if (propsToInteract.IsInteractable()) {
                         bool canInteract = RoomManager.LocalCharacter.CanInteractWith(propsToInteract, hit.point);
 
-                        if (canInteract) {
+                        Action[] actions = propsToInteract.GetActions(true);
+
+                        bool isLookAction = actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK);
+
+                        if (canInteract || (isLookAction && leftMouseClick)) {
                             if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove)) {
                                 RoomManager.LocalCharacter.Idle();
                             } else if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {

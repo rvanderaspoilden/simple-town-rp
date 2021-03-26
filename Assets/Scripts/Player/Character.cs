@@ -49,7 +49,7 @@ namespace Sim {
         private CharacterIdle idleState;
 
         private CharacterMove moveState;
-
+        
         public delegate void StateChanged(Character character, StateType state);
 
         public static event StateChanged OnStateChanged;
@@ -135,6 +135,10 @@ namespace Sim {
         
         public void Sleep(Seat props, Transform couchTransform) {
             this.stateMachine.SetState(new CharacterSleep(this, props, couchTransform));
+        }
+
+        public void Look(Props props) {
+            this.stateMachine.SetState(new CharacterLookAt(this, props));
         }
 
         public IState CurrentState() {
