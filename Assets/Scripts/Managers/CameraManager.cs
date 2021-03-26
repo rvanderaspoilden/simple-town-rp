@@ -3,6 +3,7 @@ using System.Linq;
 using AI.States;
 using Sim.Building;
 using Sim.Enums;
+using Sim.Interactables;
 using Sim.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -120,34 +121,46 @@ namespace Sim {
         }
 
         private void ManageInteraction() {
-            bool leftMouseClick = Input.GetMouseButtonDown(0);
-            bool rightMouseClick = Input.GetMouseButtonDown(1);
+            bool leftMouseClick = Input.GetMouseButtonUp(0);
+            bool rightMouseClick = Input.GetMouseButtonUp(1);
+            bool leftMousePressed = Input.GetMouseButton(0);
 
-            if ((leftMouseClick || rightMouseClick) && Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
+            if ((leftMouseClick || rightMouseClick || leftMousePressed) &&
+                Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props propsToInteract = hit.collider.GetComponentInParent<Props>();
 
-                if (propsToInteract) {
-                    if (propsToInteract.IsInteractable()) {
-                        bool canInteract = RoomManager.LocalCharacter.CanInteractWith(propsToInteract, hit.point);
+                if (leftMousePressed) {
+                    RoomManager.LocalCharacter.MoveTo(hit.point);
+                    HUDManager.Instance.DisplayContextMenu(false);
+                } else {
 
-                        if (canInteract) {
-                            if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove)) {
-                                RoomManager.LocalCharacter.Idle();
-                            } else if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {
-                                RoomManager.LocalCharacter.LookAt(propsToInteract.transform);
+                    if (propsToInteract) {
+                        if (propsToInteract.IsInteractable()) {
+                            bool canInteract = RoomManager.LocalCharacter.CanInteractWith(propsToInteract, hit.point);
+
+                            Action[] actions = propsToInteract.GetActions(true);
+
+                            bool isLookAction = actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK);
+
+                            if (canInteract || (isLookAction && leftMouseClick)) {
+                                if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove)) {
+                                    RoomManager.LocalCharacter.Idle();
+                                } else if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {
+                                    RoomManager.LocalCharacter.LookAt(propsToInteract.transform);
+                                }
+
+                                HUDManager.Instance.DisplayContextMenu(true, propsToInteract, leftMouseClick);
+                            } else {
+                                RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract, leftMouseClick);
+                                HUDManager.Instance.DisplayContextMenu(false);
+                            }
+                        } else {
+                            if (leftMouseClick) {
+                                RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
                             }
 
-                            HUDManager.Instance.DisplayContextMenu(true, propsToInteract, leftMouseClick);
-                        } else {
-                            RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract, leftMouseClick);
                             HUDManager.Instance.DisplayContextMenu(false);
                         }
-                    } else {
-                        if (leftMouseClick) {
-                            RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
-                        }
-
-                        HUDManager.Instance.DisplayContextMenu(false);
                     }
                 }
             }

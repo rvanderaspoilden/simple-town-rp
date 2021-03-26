@@ -107,6 +107,11 @@ namespace Sim.Building {
                 case ActionTypeEnum.SELL:
                     this.Sell();
                     break;
+                
+                case ActionTypeEnum.LOOK:
+                    this.Look();
+                    break;
+                
                 default:
                     this.Execute(action);
                     break;
@@ -121,6 +126,10 @@ namespace Sim.Building {
             this.SetIsBuilt(true);
 
             RoomManager.Instance.SaveRoom();
+        }
+
+        private void Look() {
+            RoomManager.LocalCharacter.Look(this);
         }
 
         private void Move() {
