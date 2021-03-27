@@ -26,6 +26,8 @@ namespace Sim {
 
         private CameraModeEnum currentMode;
 
+        private float mouseClickTimer;
+
         private new Camera camera;
 
         public static CameraManager Instance;
@@ -122,14 +124,14 @@ namespace Sim {
 
         private void ManageInteraction() {
             bool leftMouseClick = Input.GetMouseButtonUp(0);
-            bool rightMouseClick = Input.GetMouseButtonUp(1);
             bool leftMousePressed = Input.GetMouseButton(0);
+            bool rightMouseClick = Input.GetMouseButtonUp(1);
 
             if ((leftMouseClick || rightMouseClick || leftMousePressed) &&
                 Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props propsToInteract = hit.collider.GetComponentInParent<Props>();
                 Character character = hit.collider.GetComponent<Character>();
-                
+
                 if (propsToInteract) {
                     if (leftMousePressed && propsToInteract.GetType() == typeof(Ground)) {
                         RoomManager.LocalCharacter.MoveTo(hit.point);
@@ -137,9 +139,9 @@ namespace Sim {
                         if (propsToInteract.IsInteractable()) {
                             bool canInteract = RoomManager.LocalCharacter.CanInteractWith(propsToInteract, hit.point);
                             Action[] actions = propsToInteract.GetActions();
-                            ;
 
-                            if (leftMouseClick) {
+                            if (leftMouseClick && (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove) ||
+                                                   RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle))) {
                                 actions = propsToInteract.GetActions(true);
 
                                 canInteract = canInteract || (actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK));
@@ -161,7 +163,13 @@ namespace Sim {
                         }
                     }
                 } else if (rightMouseClick && character && character != RoomManager.LocalCharacter) {
-                    HUDManager.Instance.ShowContextMenu(character.Actions, character.transform);
+                    if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove)) {
+                        RoomManager.LocalCharacter.Idle();
+                    } else if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {
+                        RoomManager.LocalCharacter.LookAt(propsToInteract.transform);
+                    }
+
+                    HUDManager.Instance.ShowContextMenu(character.Actions, character.GetHeadTargetForCamera());
                 }
             }
         }
