@@ -165,11 +165,12 @@ namespace Sim {
                 } else if (rightMouseClick && character && character != RoomManager.LocalCharacter) {
                     if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove)) {
                         RoomManager.LocalCharacter.Idle();
-                    } else if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {
-                        RoomManager.LocalCharacter.LookAt(propsToInteract.transform);
                     }
 
-                    HUDManager.Instance.ShowContextMenu(character.Actions, character.GetHeadTargetForCamera());
+                    if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {
+                        RoomManager.LocalCharacter.LookAt(character.transform);
+                        HUDManager.Instance.ShowContextMenu(character.Actions, character.transform);
+                    }
                 }
             }
         }
