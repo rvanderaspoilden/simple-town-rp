@@ -1941,6 +1941,8 @@ MonoBehaviour:
   idleHeadPosition: {x: 0, y: 1.482, z: 0}
   sitHeadPosition: {x: 0, y: 1, z: 0}
   sleepHeadPosition: {x: 0, y: 0, z: 0}
+  actions:
+  - {fileID: 11400000, guid: eb2c51e8927332c40abe1682f0e39009, type: 2}
   navMeshAgent: {fileID: 0}
   state: 0
   propsTarget: {fileID: 0}

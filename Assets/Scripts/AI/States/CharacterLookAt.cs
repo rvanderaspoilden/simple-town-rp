@@ -1,22 +1,25 @@
 using Sim;
-using Sim.Building;
 using UnityEngine;
 
 namespace AI.States {
     public class CharacterLookAt : IState {
         private readonly Character character;
-        private readonly Transform targetTransform;
+        private Transform target;
 
-        public CharacterLookAt(Character character, Props target) {
+        public CharacterLookAt(Character character) {
             this.character = character;
-            this.targetTransform = target.transform;
+        }
+
+        public Transform Target {
+            get => target;
+            set => target = value;
         }
 
         public void OnEnter() {
         }
 
         public void Tick() {
-            this.character.LookAt(targetTransform);
+            this.character.LookAt(target);
         }
 
         public void OnExit() {
