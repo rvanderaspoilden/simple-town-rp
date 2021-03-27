@@ -1,5 +1,4 @@
 using Sim;
-using UnityEngine;
 
 namespace AI.States {
     public class CharacterIdle : IState {
@@ -12,7 +11,7 @@ namespace AI.States {
         public void OnEnter() {
             if (this.character.PropsTarget && this.character.CanInteractWith(this.character.PropsTarget)) {
                 this.character.LookAt(this.character.PropsTarget.transform);
-                HUDManager.Instance.DisplayContextMenu(true, this.character.PropsTarget, this.character.ShowRadialMenuWithPriority);
+                HUDManager.Instance.ShowContextMenu(this.character.PropsTarget.GetActions(this.character.ShowRadialMenuWithPriority), this.character.PropsTarget.transform, this.character.ShowRadialMenuWithPriority);
                 this.character.PropsTarget = null;
             }
         }
@@ -22,7 +21,7 @@ namespace AI.States {
         }
 
         public void OnExit() {
-            HUDManager.Instance.DisplayContextMenu(false);
+            HUDManager.Instance.CloseContextMenu();
         }
     }
 }

@@ -294,9 +294,6 @@ namespace Sim {
 
         public override void OnMasterClientSwitched(Player newMasterClient) {
             Debug.Log("Masterclient is now : " + newMasterClient.NickName);
-            foreach (Props props in FindObjectsOfType<Props>()) {
-                props.RefreshAllActions();
-            }
         }
 
         #endregion

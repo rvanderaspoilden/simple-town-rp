@@ -34,24 +34,43 @@ namespace Sim.Building {
         }
 
         protected virtual void Start() {
-            this.RefreshAllActions();
+            this.ConfigureActions();
+        }
+
+        private void OnDestroy() {
+            this.UnSubscribeActions(this.actions);
+            this.UnSubscribeActions(this.unbuiltActions);
         }
 
         /**
          * Setup all action when a props is built
          */
         private void SetupActions() {
-            this.actions = this.configuration.GetActions();
+            this.actions = this.configuration.GetActions().Where(x => x).Select(Instantiate).ToArray();
+            SubscribeActions(this.actions);
+        }
+
+        private void SubscribeActions(Action[] actionList) {
+            foreach (var action in actionList) {
+                action.OnExecute += DoAction;
+            }
+        }
+        
+        private void  UnSubscribeActions(Action[] actionList) {
+            foreach (var action in actionList) {
+                action.OnExecute -= DoAction;
+            }
         }
 
         /**
          * Setup all actions when a props is not built
          */
         private void SetupUnbuiltActions() {
-            this.unbuiltActions = this.configuration.GetUnbuiltActions();
+            this.unbuiltActions = this.configuration.GetUnbuiltActions().Where(x => x).Select(Instantiate).ToArray();
+            SubscribeActions(this.unbuiltActions);
         }
 
-        public void RefreshAllActions() {
+        public void ConfigureActions() {
             this.SetupActions();
             this.SetupUnbuiltActions();
         }
