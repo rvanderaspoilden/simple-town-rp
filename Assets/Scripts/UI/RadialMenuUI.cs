@@ -62,6 +62,8 @@ namespace Sim.UI {
         private void Update() {
             if (this.currentProps) {
                 this.Center();
+            } else if(this.gameObject.activeSelf){
+                this.gameObject.SetActive(false);
             }
         }
 

@@ -129,12 +129,11 @@ namespace Sim {
                 Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props propsToInteract = hit.collider.GetComponentInParent<Props>();
 
-                if (leftMousePressed) {
-                    RoomManager.LocalCharacter.MoveTo(hit.point);
-                    HUDManager.Instance.DisplayContextMenu(false);
-                } else {
-
-                    if (propsToInteract) {
+                if (propsToInteract) {
+                    if (leftMousePressed && propsToInteract.GetType() == typeof(Ground)) {
+                        RoomManager.LocalCharacter.MoveTo(hit.point);
+                        HUDManager.Instance.DisplayContextMenu(false);
+                    } else if (!leftMousePressed) {
                         if (propsToInteract.IsInteractable()) {
                             bool canInteract = RoomManager.LocalCharacter.CanInteractWith(propsToInteract, hit.point);
 
