@@ -16,6 +16,10 @@ namespace Sim.Interactables {
         [SerializeField]
         private bool needPermission;
 
+        public delegate void ActionEvent(Action action);
+
+        public event ActionEvent OnExecute;
+
         public ActionTypeEnum Type => type;
 
         public string Label => label;
@@ -23,5 +27,9 @@ namespace Sim.Interactables {
         public Sprite Icon => icon;
 
         public bool NeedPermission => needPermission;
+
+        public void Execute() {
+            OnExecute?.Invoke(this);
+        }
     }
 }

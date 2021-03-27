@@ -132,33 +132,31 @@ namespace Sim {
                 if (propsToInteract) {
                     if (leftMousePressed && propsToInteract.GetType() == typeof(Ground)) {
                         RoomManager.LocalCharacter.MoveTo(hit.point);
-                        HUDManager.Instance.DisplayContextMenu(false);
                     } else if (!leftMousePressed) {
                         if (propsToInteract.IsInteractable()) {
                             bool canInteract = RoomManager.LocalCharacter.CanInteractWith(propsToInteract, hit.point);
+                            Action[] actions = propsToInteract.GetActions();
+                            ;
 
-                            Action[] actions = propsToInteract.GetActions(true);
+                            if (leftMouseClick) {
+                                actions = propsToInteract.GetActions(true);
 
-                            bool isLookAction = actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK);
+                                canInteract = canInteract || (actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK));
+                            }
 
-                            if (canInteract || (isLookAction && leftMouseClick)) {
+                            if (canInteract) {
                                 if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove)) {
                                     RoomManager.LocalCharacter.Idle();
                                 } else if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {
                                     RoomManager.LocalCharacter.LookAt(propsToInteract.transform);
                                 }
 
-                                HUDManager.Instance.DisplayContextMenu(true, propsToInteract, leftMouseClick);
+                                HUDManager.Instance.ShowContextMenu(actions, propsToInteract.transform, leftMouseClick);
                             } else {
                                 RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract, leftMouseClick);
-                                HUDManager.Instance.DisplayContextMenu(false);
                             }
-                        } else {
-                            if (leftMouseClick) {
-                                RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
-                            }
-
-                            HUDManager.Instance.DisplayContextMenu(false);
+                        } else if (leftMouseClick) {
+                            RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
                         }
                     }
                 }

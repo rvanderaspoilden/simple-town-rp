@@ -1,5 +1,6 @@
 ﻿using Photon.Pun;
 using Sim.Building;
+using Sim.Interactables;
 using Sim.UI;
 using UnityEngine;
 
@@ -28,7 +29,7 @@ namespace Sim {
             } else {
                 Instance = this;
             }
-            
+
             DontDestroyOnLoad(this.gameObject);
         }
 
@@ -36,7 +37,7 @@ namespace Sim {
         void Start() {
             this.DisplayAdminPanel(false);
             this.DisplayPanel(PanelTypeEnum.DEFAULT);
-            this.DisplayContextMenu(false);
+            this.CloseContextMenu();
         }
 
         public void DisplayPanel(PanelTypeEnum panelType) {
@@ -54,14 +55,12 @@ namespace Sim {
             this.aliDiscountCatalogUI.gameObject.SetActive(state);
         }
 
-        public void DisplayContextMenu(bool state, Props interactedProp = null, bool withPriority = false) {
-            if ((!state && this.radialMenuUI.gameObject.activeSelf) || (state && !this.radialMenuUI.gameObject.activeSelf)) {
-                this.radialMenuUI.gameObject.SetActive(state);
-            }
+        public void ShowContextMenu(Action[] actions = null, Transform target = null, bool withPriority = false) {
+            this.radialMenuUI.Setup(target, actions, withPriority);
+        }
 
-            if (interactedProp) {
-                this.radialMenuUI.Setup(interactedProp, withPriority);
-            }
+        public void CloseContextMenu() {
+            this.radialMenuUI.Close();
         }
     }
 }

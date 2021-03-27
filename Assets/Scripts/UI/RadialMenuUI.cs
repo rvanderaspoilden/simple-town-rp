@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using DG.Tweening;
-using Sim.Building;
+using Sim.Interactables;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Action = Sim.Interactables.Action;
 
 namespace Sim.UI {
     public class RadialMenuUI : MonoBehaviour {
@@ -33,9 +30,9 @@ namespace Sim.UI {
         [SerializeField]
         private List<RadialMenuButton> radialMenuButtons;
 
-        private Props currentProps;
+        private Transform currentTarget;
 
-        private Collider currentPropsCollider;
+        private Collider currentTargetCollider;
 
         private void Awake() {
             this.radialMenuButtons = new List<RadialMenuButton>();
@@ -60,11 +57,13 @@ namespace Sim.UI {
         }
 
         private void Update() {
-            if (this.currentProps) {
+            if (this.currentTarget) {
                 this.Center();
             } else if(this.gameObject.activeSelf){
-                this.gameObject.SetActive(false);
+                this.Close();
             }
+
+            Debug.Log("RADIAL");
         }
 
         public void Center() {
@@ -96,24 +95,24 @@ namespace Sim.UI {
         private Vector3 GetPosition() {
             Vector3 position = Input.mousePosition;
 
-            if (currentPropsCollider) {
-                position = currentPropsCollider.bounds.center;
+            if (currentTargetCollider) {
+                position = currentTargetCollider.bounds.center;
             }
 
             return CameraManager.Instance.Camera.WorldToScreenPoint(position);
         }
 
-        public void Setup(Props interactedProp, bool withPriority = false) {
-            this.currentProps = interactedProp;
+        public void Setup(Transform target, Action[] actions, bool withPriority = false) {
+            this.gameObject.SetActive(true);
+            
+            this.currentTarget = target;
 
-            this.currentPropsCollider = interactedProp.GetComponent<Collider>();
+            this.currentTargetCollider = currentTarget.GetComponent<Collider>();
 
             this.ClearButtons();
 
             this.ClearText();
-
-            Action[] actions = interactedProp.GetActions(withPriority);
-
+            
             if (withPriority && actions.Length > 1) {
                 actions = new[] {actions[0]};
             }
@@ -174,8 +173,15 @@ namespace Sim.UI {
         }
 
         private void OnRadialButtonClicked(Action action) {
-            this.currentProps.DoAction(action);
-            this.currentProps = null;
+            action.Execute();
+            this.Close();
+        }
+
+        public void Close() {
+            this.currentTarget = null;
+            this.currentTargetCollider = null;
+            this.ClearButtons();
+            this.ClearText();
             this.gameObject.SetActive(false);
         }
     }
