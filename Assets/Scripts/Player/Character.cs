@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using AI;
 using AI.States;
 using DG.Tweening;
@@ -9,6 +10,7 @@ using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
 using UnityEngine.AI;
+using Action = Sim.Interactables.Action;
 
 namespace Sim {
     public class Character : MonoBehaviourPunCallbacks {
@@ -24,6 +26,9 @@ namespace Sim {
 
         [SerializeField]
         private Vector3 sleepHeadPosition;
+
+        [SerializeField]
+        private Action[] actions;
 
         [Header("Only for debug")]
         [SerializeField]
@@ -49,6 +54,8 @@ namespace Sim {
         private CharacterIdle idleState;
 
         private CharacterMove moveState;
+
+        private CharacterLookAt lookAtState;
         
         public delegate void StateChanged(Character character, StateType state);
 
@@ -74,6 +81,7 @@ namespace Sim {
                 this.navMeshAgent.enabled = false;
                 this.rigidbody.useGravity = false;
                 Destroy(GetComponent<AudioListener>());
+                this.SetupActions();
             }
 
             this.InitStateMachine();
@@ -81,6 +89,7 @@ namespace Sim {
 
         private void OnDestroy() {
             PhotonNetwork.RemoveCallbackTarget(this);
+            this.UnSubscribeActions(this.actions);
         }
 
         private void Update() {
@@ -96,8 +105,10 @@ namespace Sim {
 
             this.idleState = new CharacterIdle(this);
             this.moveState = new CharacterMove(this);
+            this.lookAtState = new CharacterLookAt(this);
 
             this.stateMachine.AddTransition(moveState, idleState, HasReachedTargetPosition());
+            this.stateMachine.AddTransition(lookAtState, idleState, HasLostTarget());
 
             this.stateMachine.SetState(idleState);
         }
@@ -109,9 +120,40 @@ namespace Sim {
                    (!this.navMeshAgent.hasPath && MarkerController.Instance.IsActive());
         };
 
+        private Func<bool> HasLostTarget() => () => this.lookAtState.Target == null;
+
         #endregion
 
         #region ACTIONS
+
+        public Action[] Actions => actions;
+
+        public void SetupActions() {
+            this.actions = this.actions.Where(x => x).Select(Instantiate).ToArray();
+            this.SubscribeActions(this.actions);
+        }
+        
+        private void SubscribeActions(Action[] actionList) {
+            foreach (var action in actionList) {
+                action.OnExecute += DoAction;
+            }
+        }
+        
+        private void  UnSubscribeActions(Action[] actionList) {
+            foreach (var action in actionList) {
+                action.OnExecute -= DoAction;
+            }
+        }
+        
+        public void DoAction(Action action) {
+            Debug.Log("do action : " + action.Label);
+
+            switch (action.Type) {
+                case ActionTypeEnum.LOOK:
+                    RoomManager.LocalCharacter.Look(this.transform);
+                    break;
+            }
+        }
 
         public void SetTarget(Vector3 targetPoint, Props props, bool showPriorityActions = false) {
             this.propsTarget = props;
@@ -141,8 +183,9 @@ namespace Sim {
             this.stateMachine.SetState(new CharacterSleep(this, props, couchTransform));
         }
 
-        public void Look(Props props) {
-            this.stateMachine.SetState(new CharacterLookAt(this, props));
+        public void Look(Transform target) {
+            lookAtState.Target = target;
+            this.stateMachine.SetState(lookAtState);
         }
 
         public IState CurrentState() {

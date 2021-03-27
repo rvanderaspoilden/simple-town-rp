@@ -128,7 +128,8 @@ namespace Sim {
             if ((leftMouseClick || rightMouseClick || leftMousePressed) &&
                 Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props propsToInteract = hit.collider.GetComponentInParent<Props>();
-
+                Character character = hit.collider.GetComponent<Character>();
+                
                 if (propsToInteract) {
                     if (leftMousePressed && propsToInteract.GetType() == typeof(Ground)) {
                         RoomManager.LocalCharacter.MoveTo(hit.point);
@@ -159,6 +160,8 @@ namespace Sim {
                             RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
                         }
                     }
+                } else if (rightMouseClick && character && character != RoomManager.LocalCharacter) {
+                    HUDManager.Instance.ShowContextMenu(character.Actions, character.transform);
                 }
             }
         }

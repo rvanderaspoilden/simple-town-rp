@@ -62,8 +62,6 @@ namespace Sim.UI {
             } else if(this.gameObject.activeSelf){
                 this.Close();
             }
-
-            Debug.Log("RADIAL");
         }
 
         public void Center() {

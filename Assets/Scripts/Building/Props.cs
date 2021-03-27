@@ -111,7 +111,7 @@ namespace Sim.Building {
             this.propsRenderer.UpdateGraphics();
         }
 
-        public void DoAction(Action action) {
+        private void DoAction(Action action) {
             Debug.Log("do action : " + action.Label);
 
             switch (action.Type) {
@@ -148,7 +148,7 @@ namespace Sim.Building {
         }
 
         private void Look() {
-            RoomManager.LocalCharacter.Look(this);
+            RoomManager.LocalCharacter.Look(this.transform);
         }
 
         private void Move() {
