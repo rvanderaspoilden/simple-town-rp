@@ -21,11 +21,13 @@ namespace Sim {
         public int id;
         public TransformData transform;
         public bool isBuilt;
+        public int presetId = -1;
 
         public void Init(Props props) {
             this.id = props.GetConfiguration().GetId();
             this.transform = SaveUtils.CreateTransformData(props.transform);
             this.isBuilt = props.IsBuilt();
+            this.presetId = props.PresetId;
         }
     }
 

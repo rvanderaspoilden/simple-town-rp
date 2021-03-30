@@ -49,18 +49,13 @@ namespace Sim.Scriptables {
         private Texture2D cursor;
 
         [SerializeField]
-        private Color[] presetColors;
+        private PropsPreset[] presets;
 
-        [SerializeField]
-        private bool customColor;
+        public PropsPreset[] Presets => presets;
 
         public Texture2D GetCursor() {
             return this.cursor;
         }
-
-        public Color[] PresetColors => presetColors;
-
-        public bool AllowCustomColor => customColor;
 
         public PropsType GetPropsType() {
             return this.propsType;

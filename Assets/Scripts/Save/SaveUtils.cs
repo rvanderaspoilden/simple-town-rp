@@ -83,6 +83,10 @@ namespace Sim.Utils {
 
             props.SetIsBuilt(!propsConfig.MustBeBuilt() || data.isBuilt, PhotonNetwork.LocalPlayer);
 
+            if (data.presetId != -1 && propsConfig.Presets.Length > 0 && propsConfig.Presets.First(x => x.ID == data.presetId) != null) {
+                props.SetPresetId(data.presetId, PhotonNetwork.LocalPlayer);
+            }
+
             return props;
         }
     }

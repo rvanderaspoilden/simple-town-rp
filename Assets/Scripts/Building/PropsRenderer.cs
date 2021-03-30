@@ -10,6 +10,18 @@ namespace Sim.Building {
         [Tooltip("Set all renderers which can be impacted by material changes")]
         [SerializeField]
         private Renderer[] renderersToModify;
+        
+        [Tooltip("Mesh renderers will be impacted by primary style of selected preset in configuration")]
+        [SerializeField]
+        private MeshRenderer[] primaryStyleMeshRenderers;
+        
+        [Tooltip("Mesh renderers will be impacted by secondary style of selected preset in configuration")]
+        [SerializeField]
+        private MeshRenderer[] secondaryStyleMeshRenderers;
+        
+        [Tooltip("Mesh renderers will be impacted by tertiary style of selected preset in configuration")]
+        [SerializeField]
+        private MeshRenderer[] tertiaryStyleMeshRenderers;
 
         [Tooltip("Is props hideable ??")]
         [SerializeField]
@@ -39,6 +51,32 @@ namespace Sim.Building {
             this.state = state == VisibilityStateEnum.HIDE && this.hideable ? VisibilityStateEnum.HIDE : VisibilityStateEnum.SHOW;
 
             this.UpdateGraphics();
+        }
+
+        public void SetPreset(PropsPreset preset) {
+            this.TryToApplyStyle(preset.Primary, this.primaryStyleMeshRenderers);
+            this.TryToApplyStyle(preset.Secondary, this.secondaryStyleMeshRenderers);
+            this.TryToApplyStyle(preset.Tertiary, this.tertiaryStyleMeshRenderers);
+            
+            this.UpdateGraphics();
+        }
+
+        private bool TryToApplyStyle(PropsStyle propsStyle, IEnumerable<MeshRenderer> meshRenderers) {
+            if (!propsStyle.Enabled) return false;
+            
+            foreach (var meshRenderer in meshRenderers) {
+                Material[] materialsToModify = this.defaultMaterialsByRenderer[meshRenderer];
+                
+                foreach (var material in materialsToModify) {
+                    if (propsStyle.Material) {
+                        material.CopyPropertiesFromMaterial(propsStyle.Material);
+                    }
+
+                    material.color = propsStyle.Color;
+                }
+            }
+
+            return true;
         }
 
         /**

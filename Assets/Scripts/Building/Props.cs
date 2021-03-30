@@ -24,6 +24,8 @@ namespace Sim.Building {
 
         private Action currentAction;
 
+        private int presetId = -1;
+
         public delegate void PropsAction(Props props);
 
         public static event PropsAction OnMoveRequest;
@@ -95,6 +97,32 @@ namespace Sim.Building {
 
         public bool IsBuilt() {
             return this.built;
+        }
+
+        public int PresetId {
+            get => presetId;
+            set => presetId = value;
+        }
+        
+        public void SetPresetId(int id, Player playerTarget = null) {
+            if (playerTarget != null) {
+                photonView.RPC("RPC_SetPresetId", playerTarget, id);
+            } else {
+                photonView.RPC("RPC_SetPresetId", RpcTarget.All, id);
+            }
+        }
+        
+        [PunRPC]
+        public void RPC_SetPresetId(int id) {
+            this.presetId = id;
+
+            PropsPreset preset = this.configuration.Presets.First(x => x.ID == id);
+
+            if (preset != null) {
+                this.propsRenderer.SetPreset(preset);
+            } else {
+                Debug.LogError($"Props configuration of {configuration.name} doesn't have preset with ID {id}");
+            }
         }
 
         public void SetIsBuilt(bool value, Player playerTarget = null) {
@@ -188,6 +216,7 @@ namespace Sim.Building {
         }
 
         public virtual void Synchronize(Player playerTarget) {
+            this.SetPresetId(this.presetId, playerTarget);
             this.SetIsBuilt(this.built, playerTarget);
             this.UpdateTransform(playerTarget);
         }

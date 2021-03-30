@@ -33,5 +33,18 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
   - {fileID: 11400000, guid: 3e1f7b140e8e1c5419783ee5a990b41d, type: 2}
   cursor: {fileID: 2800000, guid: 9cc015a6abbde62498f5bd35945939ef, type: 3}
-  presetColors: []
-  customColor: 0
+  presets:
+  - id: 0
+    label: Yellow
+    primary:
+      enabled: 1
+      color: {r: 1, g: 0.77560496, b: 0, a: 1}
+      material: {fileID: 2100000, guid: 01c44cbc9fb57ff4099c502af656a18f, type: 2}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}

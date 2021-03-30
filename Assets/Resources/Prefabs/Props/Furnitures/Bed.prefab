@@ -735,6 +735,13 @@ MonoBehaviour:
   - {fileID: 2430161359487053670}
   - {fileID: 203922792879164192}
   - {fileID: 5402000453673854536}
+  primaryStyleMeshRenderers:
+  - {fileID: 5821490615394911483}
+  secondaryStyleMeshRenderers:
+  - {fileID: 203922792879164192}
+  - {fileID: 5402000453673854536}
+  tertiaryStyleMeshRenderers:
+  - {fileID: 8982801649956436467}
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
