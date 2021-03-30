@@ -39,12 +39,12 @@ MonoBehaviour:
     primary:
       enabled: 1
       color: {r: 1, g: 0.77560496, b: 0, a: 1}
-      material: {fileID: 2100000, guid: 01c44cbc9fb57ff4099c502af656a18f, type: 2}
+      material: {fileID: 0}
     secondary:
-      enabled: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
+      enabled: 1
+      color: {r: 0.31461376, g: 0.63570404, b: 0.6603774, a: 1}
       material: {fileID: 0}
     tertiary:
-      enabled: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
+      enabled: 1
+      color: {r: 0.4433962, g: 0.24470451, b: 0.42654303, a: 1}
       material: {fileID: 0}
