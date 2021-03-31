@@ -34,7 +34,11 @@ namespace Sim {
 
         public delegate void HomesResponse(List<Home> homes);
 
+        public delegate void DeliveriesResponse(List<Delivery> deliveries);
+
         public delegate void FailedResponse(String msg);
+
+        public static event DeliveriesResponse OnDeliveriesRetrieved;
 
         public static event SucceededResponse OnAuthenticationSucceeded;
 
@@ -54,13 +58,13 @@ namespace Sim {
         public static event HomeCreationSuceededResponse OnApartmentAssigned;
 
         public static event FailedResponse OnApartmentAssignmentFailed;
+        
 
-
-        public static ApiManager instance;
+        public static ApiManager Instance;
 
         private void Awake() {
-            if (instance == null) {
-                instance = this;
+            if (Instance == null) {
+                Instance = this;
             } else {
                 Destroy(this.gameObject);
             }
@@ -189,6 +193,25 @@ namespace Sim {
                 OnCharacterRetrieved?.Invoke(characterResponse.Characters[0]);
             } else {
                 OnCharacterRetrieved?.Invoke(null);
+            }
+        }
+
+        public void RetrieveDeliveries(string characterId) {
+            StartCoroutine(this.RetrieveDeliveriesCoroutine(characterId));
+        }
+        
+        private IEnumerator RetrieveDeliveriesCoroutine(string characterId) {
+            UnityWebRequest request = UnityWebRequest.Get($"{this.uri}/characters/{characterId}/deliveries");
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 200) {
+                DeliveryResponse deliveryResponse = JsonUtility.FromJson<DeliveryResponse>(request.downloadHandler.text);
+
+                OnDeliveriesRetrieved?.Invoke(deliveryResponse.Deliveries);
+            } else {
+                OnDeliveriesRetrieved?.Invoke(new List<Delivery>());
             }
         }
 

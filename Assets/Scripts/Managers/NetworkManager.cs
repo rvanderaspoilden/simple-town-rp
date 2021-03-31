@@ -120,7 +120,7 @@ namespace Sim {
             UnityWebRequest webRequest = null;
 
             if (sceneName.Equals(CommonUtils.GetSceneName(RoomTypeEnum.HOME))) {
-                webRequest = ApiManager.instance.RetrieveHomeByAddress(this.nextRoomData.Address);
+                webRequest = ApiManager.Instance.RetrieveHomeByAddress(this.nextRoomData.Address);
             }
 
             while (PhotonNetwork.LevelLoadingProgress < 1f || (webRequest != null && !webRequest.isDone)) {

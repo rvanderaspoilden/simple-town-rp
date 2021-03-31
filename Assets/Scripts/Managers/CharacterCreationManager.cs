@@ -68,7 +68,7 @@ namespace Sim {
         
         public void CreateCharacter() {
             this.joinButton.gameObject.SetActive(false);
-            ApiManager.instance.CreateCharacter(new CharacterCreationRequest(firstNameInputField.text, lastNameInputField.text, originCountryInputField.text));
+            ApiManager.Instance.CreateCharacter(new CharacterCreationRequest(firstNameInputField.text, lastNameInputField.text, originCountryInputField.text));
         }
 
         public void CheckValidity() {

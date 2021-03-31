@@ -34,7 +34,7 @@ namespace Sim {
         }
 
         private void Start() {
-            ApiManager.instance.CheckServerStatus();
+            ApiManager.Instance.CheckServerStatus();
 
             this.pseudoInputField.Select();
 
@@ -74,7 +74,7 @@ namespace Sim {
 
             this.ResetErrorText();
 
-            ApiManager.instance.Authenticate(username, password);
+            ApiManager.Instance.Authenticate(username, password);
         }
 
         private void ResetErrorText() => this.errorText.text = String.Empty;

@@ -39,7 +39,7 @@ namespace Sim.Building {
             this.ConfigureActions();
         }
 
-        private void OnDestroy() {
+        protected virtual void OnDestroy() {
             this.UnSubscribeActions(this.actions);
             this.UnSubscribeActions(this.unbuiltActions);
         }

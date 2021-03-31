@@ -17,7 +17,7 @@ namespace Sim.Interactables {
         public static event OnOpen OnOpened;
         
         protected override void Execute(Action action) {
-            if (action.Type.Equals(ActionTypeEnum.UNPACKAGE)) {
+            if (action.Type.Equals(ActionTypeEnum.OPEN)) {
                 OnOpened?.Invoke(this);
             }
         }
