@@ -119,6 +119,7 @@ namespace Sim {
                 Home home = JsonUtility.FromJson<Home>(request.downloadHandler?.text);
                 OnApartmentAssigned?.Invoke(home);
             } else {
+                Debug.Log(ExtractErrorMessage(request));
                 OnApartmentAssignmentFailed?.Invoke(ExtractErrorMessage(request));
             }
         }

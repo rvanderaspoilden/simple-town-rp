@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using Sim.Entities;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Sim {
     public class MainMenuManager : MonoBehaviour {
@@ -14,8 +16,14 @@ namespace Sim {
         [SerializeField]
         private GameObject mainMenuPanel;
 
+        [SerializeField]
+        private CanvasGroup canvasGroup;
+
         private void Awake() {
+            this.ShowCanvas(true);
             this.characterCreationManager.gameObject.SetActive(false);
+            this.apartmentCreationManager.HideApartmentCreationPanel();
+            this.mainMenuPanel.SetActive(false);
         }
 
         private void Start() {
@@ -53,6 +61,8 @@ namespace Sim {
                 ApiManager.instance.RetrieveHomesByCharacter(characterData);
             } else {
                 Debug.Log("No Character found");
+                this.canvasGroup.alpha = 0;
+                this.canvasGroup.GetComponent<GraphicRaycaster>().enabled = false;
                 this.characterCreationManager.gameObject.SetActive(true);
                 this.mainMenuPanel.SetActive(false);
                 LoadingManager.Instance.Hide();
@@ -60,10 +70,12 @@ namespace Sim {
         }
 
         private void OnHomesRetrieved(List<Home> homes) {
+            this.ShowCanvas(true);
+
             if (homes != null && homes.Count > 0) {
                 Debug.Log("Homes retrieved !");
                 NetworkManager.Instance.CharacterHomes = homes;
-
+                
                 this.mainMenuPanel.SetActive(true);
             } else {
                 Debug.Log("Homes not found");
@@ -76,14 +88,29 @@ namespace Sim {
         private void OnCharacterCreated(CharacterData characterData) {
             NetworkManager.Instance.CharacterData = characterData;
 
-            this.apartmentCreationManager.Invoke(nameof(ApartmentCreationManager.ShowApartmentCreationPanel), 2f);
+            this.apartmentCreationManager.ShowApartmentCreationPanel();
+            Invoke(nameof(FadeIn), 2f);
         }
 
         private void OnApartmentAssigned(Home home) {
             NetworkManager.Instance.CharacterHomes = new List<Home>() {home};
             Debug.Log("Apartment assigned !");
-            this.mainMenuPanel.SetActive(true);
             this.apartmentCreationManager.HideApartmentCreationPanel();
+            this.mainMenuPanel.SetActive(true);
+        }
+
+        public void FadeIn() {
+            this.ShowCanvas();
+        }
+        
+        public void ShowCanvas(bool instant = false) {
+            this.canvasGroup.GetComponent<GraphicRaycaster>().enabled = true;
+
+            if (instant) {
+                this.canvasGroup.alpha = 1;
+            } else {
+                this.canvasGroup.DOFade(1, .3f);
+            }
         }
     }
 }

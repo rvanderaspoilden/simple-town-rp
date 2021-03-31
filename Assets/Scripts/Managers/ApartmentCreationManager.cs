@@ -52,14 +52,12 @@ namespace Sim {
         }
 
         public void ShowApartmentCreationPanel() {
-            this.apartmentCreationPanel.DOSizeDelta(Vector2.zero, .5f);
-            this.apartmentCreationPanel.DOAnchorPos(Vector2.zero, .5f);
+            this.apartmentCreationPanel.gameObject.SetActive(true);
             this.createApartmentButton.interactable = false;
         }
 
         public void HideApartmentCreationPanel() {
-            this.apartmentCreationPanel.sizeDelta = new Vector2(-Screen.width, 0);
-            this.apartmentCreationPanel.anchoredPosition = this.apartmentCreationPanel.sizeDelta / 2;
+            this.apartmentCreationPanel.gameObject.SetActive(false);
         }
     }
 }
