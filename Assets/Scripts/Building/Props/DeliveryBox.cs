@@ -3,6 +3,7 @@ using System.Linq;
 using Sim.Entities;
 using Sim.Enums;
 using Sim.Interactables;
+using Sim.UI;
 using UnityEngine;
 
 namespace Sim.Building {
@@ -10,16 +11,20 @@ namespace Sim.Building {
         [Header("Settings")]
         [SerializeField]
         private Transform clapTransform;
-        
+
         [SerializeField]
         private Quaternion openedClapRotation;
 
         [SerializeField]
         private GameObject package;
-        
+
         [Header("Debug")]
         [SerializeField]
         private Delivery[] deliveries;
+
+        public delegate void UnPackageEvent(Delivery delivery);
+
+        public static event UnPackageEvent UnPackage;
 
         protected override void Start() {
             base.Start();
@@ -27,6 +32,7 @@ namespace Sim.Building {
             if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
                 Debug.Log("Retrieve deliveries....");
                 ApiManager.OnDeliveriesRetrieved += OnDeliveriesRetrieved;
+                PropsContentUI.OnSelect += OnSelectDelivery;
 
                 ApiManager.Instance.RetrieveDeliveries(NetworkManager.Instance.CharacterData.Id);
             }
@@ -35,14 +41,25 @@ namespace Sim.Building {
         protected override void OnDestroy() {
             base.OnDestroy();
 
-            ApiManager.OnDeliveriesRetrieved -= OnDeliveriesRetrieved;
+            if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
+                ApiManager.OnDeliveriesRetrieved -= OnDeliveriesRetrieved;
+                PropsContentUI.OnSelect -= OnSelectDelivery;
+            }
         }
 
         protected override void Execute(Action action) {
             if (action.Type.Equals(ActionTypeEnum.OPEN)) {
-                Debug.Log("open");
+                RoomManager.LocalCharacter.Interact(this);
                 DefaultViewUI.Instance.SetupPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
             }
+        }
+
+        public override void StopInteraction() {
+            DefaultViewUI.Instance.HidePropsContentUI();
+        }
+
+        private void OnSelectDelivery(int idx) {
+            UnPackage?.Invoke(this.deliveries[idx]);
         }
 
         public Delivery[] Deliveries {

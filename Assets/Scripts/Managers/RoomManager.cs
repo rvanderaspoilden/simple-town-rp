@@ -29,6 +29,8 @@ namespace Sim {
 
         private bool forcePropsHidden;
 
+        private Type[] defaultPropsTypes = new[] {typeof(Props), typeof(Seat), typeof(DeliveryBox)};
+
         public delegate void VisibilityModeChanged(VisibilityModeEnum mode);
 
         public static event VisibilityModeChanged OnWallVisibilityModeChanged;
@@ -233,7 +235,7 @@ namespace Sim {
                 packages = FindObjectsOfType<Package>().ToList().Select(SaveUtils.CreatePackageData).ToArray(),
                 buckets = FindObjectsOfType<PaintBucket>().ToList().Select(SaveUtils.CreateBucketData).ToArray(),
                 props = FindObjectsOfType<Props>().ToList()
-                    .Where(props => props.GetType() == typeof(Props) || props.GetType() == typeof(Seat))
+                    .Where(props => defaultPropsTypes.Contains(props.GetType()))
                     .Select(SaveUtils.CreateDefaultData).ToArray()
             };
 
@@ -259,7 +261,6 @@ namespace Sim {
                 if (teleporter) {
                     spawn = teleporter.Spawn;
                 }
-
             } else if (currentRoom.RoomType == RoomTypeEnum.HOME) {
                 Teleporter teleporter = FindObjectOfType<DoorTeleporter>();
 

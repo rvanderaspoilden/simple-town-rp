@@ -33,7 +33,7 @@ namespace Sim {
             }
         }
 
-        public Props InstantiateProps(PropsConfig config, Vector3 position, Quaternion rotation, bool network) {
+        public Props InstantiateProps(PropsConfig config, int presetId, Vector3 position, Quaternion rotation, bool network) {
             GameObject propsInstanciated;
 
             if (network) {
@@ -46,29 +46,33 @@ namespace Sim {
             Props props = propsInstanciated.GetComponent<Props>();
             props.SetConfiguration(Instantiate(config));
 
+            if (presetId != -1) {
+                props.SetPresetId(presetId, network);
+            }
+
             return props;
         }
 
-        public Props InstantiateProps(PropsConfig config, bool network) {
-            return this.InstantiateProps(config, Vector3.zero, config.GetPrefab().transform.rotation, network);
+        public Props InstantiateProps(PropsConfig config, int presetId, bool network) {
+            return this.InstantiateProps(config, presetId, Vector3.zero, config.GetPrefab().transform.rotation, network);
         }
 
-        public Props InstantiateProps(int propsConfigId, Vector3 position, Quaternion rotation, bool network) {
+        public Props InstantiateProps(int propsConfigId, int presetId, Vector3 position, Quaternion rotation, bool network) {
             if (!this.propsConfigs.ContainsKey(propsConfigId)) {
                 Debug.LogError("Props config ID : " + propsConfigId + " not found in database");
                 return null;
             }
 
-            return this.InstantiateProps(this.propsConfigs[propsConfigId], position, rotation, network);
+            return this.InstantiateProps(this.propsConfigs[propsConfigId], presetId, position, rotation, network);
         }
 
-        public Props InstantiateProps(int propsConfigId, bool network) {
+        public Props InstantiateProps(int propsConfigId, int presetId, bool network) {
             if (!this.propsConfigs.ContainsKey(propsConfigId)) {
                 Debug.LogError("Props config ID : " + propsConfigId + " not found in database");
                 return null;
             }
 
-            return this.InstantiateProps(this.propsConfigs[propsConfigId], Vector3.zero, this.propsConfigs[propsConfigId].GetPrefab().transform.rotation, network);
+            return this.InstantiateProps(this.propsConfigs[propsConfigId], presetId, Vector3.zero, this.propsConfigs[propsConfigId].GetPrefab().transform.rotation, network);
         }
     }
 }

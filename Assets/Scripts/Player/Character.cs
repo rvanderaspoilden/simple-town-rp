@@ -56,6 +56,8 @@ namespace Sim {
         private CharacterMove moveState;
 
         private CharacterLookAt lookAtState;
+
+        private CharacterInteract characterInteractState;
         
         public delegate void StateChanged(Character character, StateType state);
 
@@ -106,6 +108,7 @@ namespace Sim {
             this.idleState = new CharacterIdle(this);
             this.moveState = new CharacterMove(this);
             this.lookAtState = new CharacterLookAt(this);
+            this.characterInteractState = new CharacterInteract(this);
 
             this.stateMachine.AddTransition(moveState, idleState, HasReachedTargetPosition());
             this.stateMachine.AddTransition(lookAtState, idleState, HasLostTarget());
@@ -173,6 +176,11 @@ namespace Sim {
 
         public void Idle() {
             this.stateMachine.SetState(this.idleState);
+        }
+
+        public void Interact(Props propsToInteract) {
+            this.characterInteractState.InteractedProps = propsToInteract;
+            this.stateMachine.SetState(this.characterInteractState);
         }
 
         public void Sit(Seat props, Transform seatTransform) {

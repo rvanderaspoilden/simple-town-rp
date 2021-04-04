@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+using Photon.Pun;
 using Sim.Building;
+using Sim.Entities;
 using Sim.Enums;
 using Sim.Scriptables;
 using Sim.UI;
@@ -60,7 +62,7 @@ namespace Sim {
 
         private Collider currentPropsCollider;
 
-        public delegate void ValidatePropCreation(PropsConfig propsConfig, Vector3 position, Quaternion rotation);
+        public delegate void ValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation);
 
         public static event ValidatePropCreation OnValidatePropCreation;
 
@@ -117,7 +119,17 @@ namespace Sim {
          * This method is the entrypoint to start build mode
          */
         public void Init(PropsConfig config) {
-            this.currentPropSelected = PropsManager.Instance.InstantiateProps(config, false);
+            this.currentPropSelected = PropsManager.Instance.InstantiateProps(config, 0, false);
+            this.currentPropsCollider = this.currentPropSelected.GetComponent<BoxCollider>();
+            this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
+
+            this.SetMode(BuildModeEnum.POSING);
+        }
+
+        public void Init(Delivery delivery) {
+            PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(delivery.PropsConfigId);
+
+            this.currentPropSelected = PropsManager.Instance.InstantiateProps(propsConfig, delivery.PropsPresetId, false);
             this.currentPropsCollider = this.currentPropSelected.GetComponent<BoxCollider>();
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
 
@@ -181,7 +193,9 @@ namespace Sim {
                     this.currentPreview.Destroy();
                     this.isEditing = false;
                 } else {
-                    OnValidatePropCreation?.Invoke(this.currentPropSelected.GetConfiguration(), this.currentPropSelected.transform.position,
+                    OnValidatePropCreation?.Invoke(this.currentPropSelected.GetConfiguration(),
+                        this.currentPropSelected.PresetId,
+                        this.currentPropSelected.transform.position,
                         this.currentPropSelected.transform.rotation);
                     PropsManager.Instance.DestroyProps(this.currentPropSelected, false);
                 }

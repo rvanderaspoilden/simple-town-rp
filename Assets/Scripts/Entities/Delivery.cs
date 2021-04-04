@@ -20,13 +20,21 @@ namespace Sim.Entities {
         private int propsConfigId;
 
         [SerializeField]
-        private short[] color;
+        private float[] color;
+
+        [SerializeField]
+        private int propsPresetId;
 
         public string ID => _id;
 
         public string RecipientId {
             get => recipientId;
             set => recipientId = value;
+        }
+
+        public int PropsPresetId {
+            get => propsPresetId;
+            set => propsPresetId = value;
         }
 
         public DeliveryType Type {
@@ -44,7 +52,7 @@ namespace Sim.Entities {
             set => propsConfigId = value;
         }
 
-        public short[] Color {
+        public float[] Color {
             get => color;
             set => color = value;
         }

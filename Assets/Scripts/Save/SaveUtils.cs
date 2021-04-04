@@ -79,13 +79,9 @@ namespace Sim.Utils {
 
         public static Props InstantiatePropsFromSave(DefaultData data) {
             PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
-            Props props = PropsManager.Instance.InstantiateProps(propsConfig, data.transform.position.ToVector3(), Quaternion.Euler(data.transform.rotation.ToVector3()), true);
+            Props props = PropsManager.Instance.InstantiateProps(propsConfig, data.presetId, data.transform.position.ToVector3(), Quaternion.Euler(data.transform.rotation.ToVector3()), true);
 
             props.SetIsBuilt(!propsConfig.MustBeBuilt() || data.isBuilt, PhotonNetwork.LocalPlayer);
-
-            if (data.presetId != -1 && propsConfig.Presets.Length > 0 && propsConfig.Presets.First(x => x.ID == data.presetId) != null) {
-                props.SetPresetId(data.presetId, PhotonNetwork.LocalPlayer);
-            }
 
             return props;
         }
