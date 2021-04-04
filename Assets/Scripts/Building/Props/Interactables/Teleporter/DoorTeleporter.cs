@@ -34,7 +34,9 @@ namespace Sim.Interactables {
             }
         }
 
-        private void OnDestroy() {
+        protected override void OnDestroy() {
+            base.OnDestroy();
+            
             StopAllCoroutines();
         }
 

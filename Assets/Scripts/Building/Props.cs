@@ -39,9 +39,13 @@ namespace Sim.Building {
             this.ConfigureActions();
         }
 
-        private void OnDestroy() {
+        protected virtual void OnDestroy() {
             this.UnSubscribeActions(this.actions);
             this.UnSubscribeActions(this.unbuiltActions);
+        }
+
+        public virtual void StopInteraction() {
+            throw new NotImplementedException();
         }
 
         /**
@@ -104,8 +108,15 @@ namespace Sim.Building {
             set => presetId = value;
         }
         
-        public void SetPresetId(int id, Player playerTarget = null) {
+        public void SetPresetId(int id, bool network, Player playerTarget = null) {
+            if (!network) {
+                this.presetId = id;
+                this.UpdatePresetRender();
+                return;
+            }
+            
             if (playerTarget != null) {
+                Debug.Log($"Set preset ID {id}");
                 photonView.RPC("RPC_SetPresetId", playerTarget, id);
             } else {
                 photonView.RPC("RPC_SetPresetId", RpcTarget.All, id);
@@ -116,12 +127,20 @@ namespace Sim.Building {
         public void RPC_SetPresetId(int id) {
             this.presetId = id;
 
-            PropsPreset preset = this.configuration.Presets.First(x => x.ID == id);
+            this.UpdatePresetRender();
+        }
+
+        private void UpdatePresetRender() {
+            if (this.configuration.Presets == null || this.configuration.Presets.Length == 0) {
+                return;
+            }
+            
+            PropsPreset preset = this.configuration.Presets.First(x => x.ID == this.PresetId);
 
             if (preset != null) {
                 this.propsRenderer.SetPreset(preset);
             } else {
-                Debug.LogError($"Props configuration of {configuration.name} doesn't have preset with ID {id}");
+                Debug.LogError($"Props configuration of {configuration.name} doesn't have preset with ID {this.PresetId}");
             }
         }
 
@@ -216,7 +235,7 @@ namespace Sim.Building {
         }
 
         public virtual void Synchronize(Player playerTarget) {
-            this.SetPresetId(this.presetId, playerTarget);
+            this.SetPresetId(this.presetId, true, playerTarget);
             this.SetIsBuilt(this.built, playerTarget);
             this.UpdateTransform(playerTarget);
         }

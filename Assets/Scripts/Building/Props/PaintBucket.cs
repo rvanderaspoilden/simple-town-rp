@@ -36,26 +36,26 @@ namespace Sim.Building {
             return this.paintConfig;
         }
 
-        public void SetColor(Color color, RpcTarget rpcTarget) {
-            photonView.RPC("RPC_SetColor", rpcTarget, new float[4] {color.r, color.g, color.b, color.a});
+        public void SetColor(Color value, RpcTarget rpcTarget) {
+            photonView.RPC("RPC_SetColor", rpcTarget, new float[3] {value.r, value.g, value.b});
         }
 
-        public void SetColor(Color color, Player player) {
-            photonView.RPC("RPC_SetColor", player, new float[4] {color.r, color.g, color.b, color.a});
+        public void SetColor(Color value, Player player) {
+            photonView.RPC("RPC_SetColor", player, new float[3] {value.r, value.g, value.b});
         }
 
-        public void SetColor(float[] color, RpcTarget rpcTarget) {
-            photonView.RPC("RPC_SetColor", rpcTarget, color);
+        public void SetColor(float[] value, RpcTarget rpcTarget) {
+            photonView.RPC("RPC_SetColor", rpcTarget, value);
         }
 
-        public void SetColor(float[] color, Player player) {
-            photonView.RPC("RPC_SetColor", player, color);
+        public void SetColor(float[] value, Player player) {
+            photonView.RPC("RPC_SetColor", player, value);
         }
 
         [PunRPC]
-        public void RPC_SetColor(float[] color) {
-            if (color != null && color.Length == 4) {
-                this.color = new Color(color[0], color[1], color[2], color[3]);
+        public void RPC_SetColor(float[] value) {
+            if (value != null && value.Length >= 3) {
+                this.color = new Color(value[0], value[1], value[2]);
             }
         }
 

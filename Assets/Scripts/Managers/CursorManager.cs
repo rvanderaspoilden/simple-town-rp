@@ -59,10 +59,10 @@ namespace Sim {
                 if (!this.IsProps() && !this.IsCharacter()) {
                     this.SetCursor(null);
                 }
-            } else if (CameraManager.Instance.GetMode() == CameraModeEnum.BUILD && Input.GetMouseButton(1)) {
+            } else if (CameraManager.Instance.GetMode() == CameraModeEnum.BUILD && Input.GetMouseButton(2)) {
                 this.SetCursor(this.rotationCursor);
             } else if (CameraManager.Instance.GetMode() == CameraModeEnum.BUILD &&
-                       (Input.GetMouseButton(2) || Input.GetAxis("Horizontal") != 0f || Input.GetAxis("Vertical") != 0f)) {
+                       (Input.GetMouseButton(1) || Input.GetAxis("Horizontal") != 0f || Input.GetAxis("Vertical") != 0f)) {
                 this.SetCursor(this.moveCursor);
             } else {
                 this.SetCursor(null);

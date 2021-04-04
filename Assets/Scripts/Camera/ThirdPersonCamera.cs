@@ -2,6 +2,7 @@
 using Cinemachine;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 
 namespace Sim {
@@ -15,6 +16,9 @@ namespace Sim {
 
         [SerializeField]
         private float maxRotationSpeed;
+
+        [SerializeField]
+        private float maxZoomSpeed;
 
         private Coroutine setCameraTargetCoroutine;
 
@@ -68,6 +72,7 @@ namespace Sim {
 
         void Update() {
             this.ManageRotation();
+            this.ManageZoom();
         }
 
         public CinemachineFreeLook GetVirtualCamera() {
@@ -75,13 +80,17 @@ namespace Sim {
         }
 
         private void ManageRotation() {
-            if (Input.GetMouseButtonDown(2)) {
+            if (Input.GetMouseButtonDown(2) && !EventSystem.current.IsPointerOverGameObject()) {
                 this.freelookCamera.m_XAxis.m_MaxSpeed = this.maxRotationSpeed;
             }
 
             if (Input.GetMouseButtonUp(2)) {
                 this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;
             }
+        }
+
+        private void ManageZoom() {
+            this.freelookCamera.m_YAxis.m_InputAxisName = !EventSystem.current.IsPointerOverGameObject() ? "Mouse ScrollWheel" : string.Empty;
         }
     }
 }

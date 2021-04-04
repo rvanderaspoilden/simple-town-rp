@@ -21,7 +21,7 @@ namespace Sim {
         }
 
         protected override void Save(SceneData sceneData) {
-            ApiManager.instance.SaveHomeScene(this.homeData, sceneData);
+            ApiManager.Instance.SaveHomeScene(this.homeData, sceneData);
         }
 
         public override void InstantiateLocalCharacter(Character prefab, CharacterData characterData, RoomNavigationData currentRoom, RoomNavigationData oldRoom) {

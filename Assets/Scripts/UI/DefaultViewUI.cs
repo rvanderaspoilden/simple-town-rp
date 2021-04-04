@@ -1,5 +1,4 @@
-﻿using DG.Tweening;
-using Photon.Pun;
+﻿using Photon.Pun;
 using Sim.UI;
 using TMPro;
 using UnityEngine;
@@ -17,7 +16,21 @@ namespace Sim {
         [SerializeField]
         private RectTransform phone;
 
+        [SerializeField]
+        private PropsContentUI propsContentUI;
+
+        public static DefaultViewUI Instance;
+
+        private void Awake() {
+            if (Instance != null && Instance != this) {
+                Destroy(this.gameObject);
+            } else {
+                Instance = this;
+            }
+        }
+
         private void Start() {
+            this.HidePropsContentUI();
             this.SetLocationText(PhotonNetwork.CurrentRoom.Name);
         }
 
@@ -25,6 +38,19 @@ namespace Sim {
             foreach (TextMeshProUGUI tmpPro in this.locationText.GetComponentsInChildren<TextMeshProUGUI>()) {
                 tmpPro.text = value;
             }
+        }
+
+        public void ShowPropsContentUI(string[] items) {
+            this.propsContentUI.Setup(items);
+            this.propsContentUI.gameObject.SetActive(true);
+        }
+        
+        public void RefreshPropsContentUI(string[] items) {
+            this.propsContentUI.Setup(items);
+        }
+
+        public void HidePropsContentUI() {
+            this.propsContentUI.gameObject.SetActive(false);
         }
     }
 }

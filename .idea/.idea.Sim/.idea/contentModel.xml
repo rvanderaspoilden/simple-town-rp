@@ -334,6 +334,7 @@
             <e p="StateMachine.cs" t="Include" />
             <e p="States" t="Include">
               <e p="CharacterIdle.cs" t="Include" />
+              <e p="CharacterInteract.cs" t="Include" />
               <e p="CharacterLookAt.cs" t="Include" />
               <e p="CharacterMove.cs" t="Include" />
               <e p="CharacterSit.cs" t="Include" />
@@ -344,6 +345,7 @@
           <e p="Building" t="Include">
             <e p="BuildPreview.cs" t="Include" />
             <e p="Props" t="Include">
+              <e p="DeliveryBox.cs" t="Include" />
               <e p="Ground.cs" t="Include" />
               <e p="Interactables" t="Include">
                 <e p="Action.cs" t="Include" />
@@ -378,6 +380,7 @@
           <e p="Entities" t="Include">
             <e p="Address.cs" t="Include" />
             <e p="CharacterData.cs" t="Include" />
+            <e p="Delivery.cs" t="Include" />
             <e p="Health.cs" t="Include" />
             <e p="Home.cs" t="Include" />
             <e p="HttpException.cs" t="Include" />
@@ -391,6 +394,7 @@
             <e p="Responses" t="Include">
               <e p="AuthenticationResponse.cs" t="Include" />
               <e p="CharacterResponse.cs" t="Include" />
+              <e p="DeliveryResponse.cs" t="Include" />
               <e p="HomeResponse.cs" t="Include" />
               <e p="ProfileResponse.cs" t="Include" />
             </e>
@@ -466,6 +470,7 @@
             <e p="MoodButton.cs" t="Include" />
             <e p="MoodSelectorUI.cs" t="Include" />
             <e p="PhoneControllerUI.cs" t="Include" />
+            <e p="PropsContentUI.cs" t="Include" />
             <e p="PropsVisibilityUI.cs" t="Include" />
             <e p="RadialMenuButton.cs" t="Include" />
             <e p="RadialMenuUI.cs" t="Include" />

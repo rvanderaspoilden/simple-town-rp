@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Photon.Pun;
 using Sim.Building;
+using Sim.Entities;
 using Sim.Enums;
 using Sim.Interactables;
 using Sim.Scriptables;
@@ -11,13 +12,9 @@ namespace Sim {
     [RequireComponent(typeof(Character))]
     public class PlayerInteraction : MonoBehaviourPun {
         [Header("DEBUG")]
-        private Package currentOpenedPackage;
-
-        private PropsConfig propsToPackage;
+        private Delivery currentDelivery;
 
         private PaintBucket currentOpenedBucket;
-
-        private PaintConfig paintToPackage;
 
         private Character character;
 
@@ -28,15 +25,14 @@ namespace Sim {
         private void Start() {
             if (!photonView.IsMine) Destroy(this);
 
-            AliDiscountCatalogUI.OnPropsClicked += OnSelectPropsFromAdminPanel;
-            AliDiscountCatalogUI.OnPaintClicked += OnSelectPaintFromAdminPanel;
             BuildManager.OnCancel += OnBuildModificationCanceled;
             BuildManager.OnValidatePropCreation += OnValidatePropCreation;
             BuildManager.OnValidatePropEdit += OnValidatePropEdit;
             BuildManager.OnValidatePaintModification += OnValidatePaintModification;
             Props.OnMoveRequest += OnMoveRequest;
-            Package.OnOpened += OpenPackage;
             PaintBucket.OnOpened += OpenBucket;
+            DeliveryBox.UnPackage += OpenPackageFromDeliveryBox;
+            ApiManager.OnDeliveryDeleted += OnDeliveryDeleted;
 
             this.character.SetState(StateType.FREE);
         }
@@ -49,15 +45,14 @@ namespace Sim {
         }
 
         private void OnDestroy() {
-            AliDiscountCatalogUI.OnPropsClicked -= OnSelectPropsFromAdminPanel;
-            AliDiscountCatalogUI.OnPaintClicked -= OnSelectPaintFromAdminPanel;
             BuildManager.OnCancel -= OnBuildModificationCanceled;
             BuildManager.OnValidatePropCreation -= OnValidatePropCreation;
             BuildManager.OnValidatePropEdit -= OnValidatePropEdit;
             BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
             Props.OnMoveRequest -= OnMoveRequest;
-            Package.OnOpened -= OpenPackage;
             PaintBucket.OnOpened -= OpenBucket;
+            DeliveryBox.UnPackage -= OpenPackageFromDeliveryBox;
+            ApiManager.OnDeliveryDeleted -= OnDeliveryDeleted;
         }
 
         private void OnMoveRequest(Props props) {
@@ -66,34 +61,13 @@ namespace Sim {
             BuildManager.Instance.Edit(props);
         }
 
-        /**
-         * Called when props was chosen from admin panel
-         */
-        private void OnSelectPropsFromAdminPanel(PropsConfig propsConfig) {
-            this.propsToPackage = propsConfig;
 
-            this.character.SetState(StateType.PACKAGING);
-
-            BuildManager.Instance.Init(this.propsToPackage.GetPackageConfig());
-        }
-
-        /**
-         * Called when paint was chosen from admin panel
-         */
-        private void OnSelectPaintFromAdminPanel(PaintConfig paintConfig) {
-            this.paintToPackage = paintConfig;
-
-            this.character.SetState(StateType.PACKAGING);
-
-            BuildManager.Instance.Init(this.paintToPackage.GetBucketPropsConfig());
-        }
-
-        private void OpenPackage(Package package) {
-            this.currentOpenedPackage = package;
+        private void OpenPackageFromDeliveryBox(Delivery delivery) {
+            this.currentDelivery = delivery;
 
             this.character.SetState(StateType.UNPACKAGING);
 
-            BuildManager.Instance.Init(package.GetPropsConfigInside());
+            BuildManager.Instance.Init(delivery);
         }
 
         private void OpenBucket(PaintBucket bucket) {
@@ -109,10 +83,8 @@ namespace Sim {
         }
 
         private void OnBuildModificationCanceled() {
-            this.currentOpenedPackage = null;
             this.currentOpenedBucket = null;
-            this.propsToPackage = null;
-            this.paintToPackage = null;
+            this.currentDelivery = null;
             this.character.SetState(StateType.FREE);
         }
 
@@ -132,34 +104,32 @@ namespace Sim {
             this.character.SetState(StateType.FREE);
         }
 
-        private void OnValidatePropCreation(PropsConfig propsConfig, Vector3 position, Quaternion rotation) {
-            Props props = PropsManager.Instance.InstantiateProps(propsConfig, position, rotation, true);
+        private void OnValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation) {
+            Props props = PropsManager.Instance.InstantiateProps(propsConfig, presetId, position, rotation, true);
 
-            // Manage packaging for props
-            if (this.character.GetState() == StateType.PACKAGING && this.propsToPackage) {
-                props.SetIsBuilt(true);
-                props.GetComponent<Package>().SetPropsInside(this.propsToPackage.GetId(), RpcTarget.All);
-                this.propsToPackage = null;
+            props.SetIsBuilt(!propsConfig.MustBeBuilt());
+
+            if (this.currentDelivery.Type.Equals(DeliveryType.COVER)) {
+                PaintBucket coverProps = props as PaintBucket;
+
+                if (coverProps) {
+                    Debug.Log("Set cover properties");
+                    coverProps.SetPaintConfigId(this.currentDelivery.PaintConfigId, RpcTarget.All);
+                    coverProps.SetColor(this.currentDelivery.Color, RpcTarget.All);
+                }
             }
 
-            // Manage packaging for paint
-            if (this.character.GetState() == StateType.PACKAGING && this.paintToPackage) {
-                props.SetIsBuilt(true);
-                props.GetComponent<PaintBucket>().SetPaintConfigId(this.paintToPackage.GetId(), RpcTarget.All);
-                this.paintToPackage = null;
+            ApiManager.Instance.DeleteDelivery(this.currentDelivery);
+        }
+
+        private void OnDeliveryDeleted(bool isDeleted) {
+            if (isDeleted) {
+                RoomManager.Instance.SaveRoom();
+
+                this.character.SetState(StateType.FREE);
+            } else {
+                // TODO DISCONNECT
             }
-
-            // Manage unpackaging
-            if (this.character.GetState() == StateType.UNPACKAGING && this.currentOpenedPackage) {
-                props.SetIsBuilt(!propsConfig.MustBeBuilt());
-                PropsManager.Instance.DestroyProps(this.currentOpenedPackage, true);
-                this.currentOpenedPackage = null;
-            }
-
-            RoomManager.Instance.SaveRoom();
-
-            // this.SwitchToFreeMode(); // TODO Camera manager must subscribe to this event to come back to free camera
-            this.character.SetState(StateType.FREE);
         }
 
         private void OnValidatePropEdit(Props props) {
@@ -167,7 +137,6 @@ namespace Sim {
 
             RoomManager.Instance.SaveRoom();
 
-            // this.SwitchToFreeMode(); // TODO Camera manager must subscribe to this event to come back to free camera
             this.character.SetState(StateType.FREE);
         }
     }

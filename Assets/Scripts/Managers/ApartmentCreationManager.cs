@@ -40,7 +40,7 @@ namespace Sim {
 
         public void CreateApartment() {
             this.createApartmentButton.gameObject.SetActive(false);
-            ApiManager.instance.AssignApartment(new AssignApartmentRequest(NetworkManager.Instance.CharacterData.Id, this.selectedPreset));
+            ApiManager.Instance.AssignApartment(new AssignApartmentRequest(NetworkManager.Instance.CharacterData.Id, this.selectedPreset));
         }
         
         private void OnApartmentAssigned(Home home) {

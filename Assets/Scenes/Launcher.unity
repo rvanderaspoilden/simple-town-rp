@@ -155,7 +155,7 @@ MonoBehaviour:
   errorText: {fileID: 380270966}
   pseudoInputField: {fileID: 2005252172}
   passwordInputField: {fileID: 1482923709}
-  debug: 1
+  debug: 0
   statusImg: {fileID: 1564845287}
 --- !u!4 &1813137
 Transform:
@@ -1239,7 +1239,7 @@ LightingSettings:
   m_Name: Settings.lighting
   serializedVersion: 3
   m_GIWorkflowMode: 1
-  m_EnableBakedLightmaps: 1
+  m_EnableBakedLightmaps: 0
   m_EnableRealtimeLightmaps: 0
   m_RealtimeEnvironmentLighting: 1
   m_BounceScale: 1

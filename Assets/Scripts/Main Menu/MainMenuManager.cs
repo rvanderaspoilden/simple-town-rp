@@ -32,7 +32,7 @@ namespace Sim {
         }
 
         private void RetrieveCharacters() {
-            ApiManager.instance.RetrieveCharacters();
+            ApiManager.Instance.RetrieveCharacters();
         }
 
         private void OnEnable() {
@@ -58,7 +58,7 @@ namespace Sim {
                 Debug.Log("Character retrieved");
                 NetworkManager.Instance.CharacterData = characterData;
 
-                ApiManager.instance.RetrieveHomesByCharacter(characterData);
+                ApiManager.Instance.RetrieveHomesByCharacter(characterData);
             } else {
                 Debug.Log("No Character found");
                 this.canvasGroup.alpha = 0;
