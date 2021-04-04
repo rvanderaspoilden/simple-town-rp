@@ -155,7 +155,7 @@ MonoBehaviour:
   errorText: {fileID: 380270966}
   pseudoInputField: {fileID: 2005252172}
   passwordInputField: {fileID: 1482923709}
-  debug: 1
+  debug: 0
   statusImg: {fileID: 1564845287}
 --- !u!4 &1813137
 Transform:
@@ -3110,7 +3110,7 @@ PrefabInstance:
     - target: {fileID: 7667094568108501628, guid: 7e48349476bdbed43b90a36ec7845d22,
         type: 3}
       propertyPath: local
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7667094568108501628, guid: 7e48349476bdbed43b90a36ec7845d22,
         type: 3}
