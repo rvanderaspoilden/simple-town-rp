@@ -32,6 +32,7 @@ namespace Sim {
             Props.OnMoveRequest += OnMoveRequest;
             PaintBucket.OnOpened += OpenBucket;
             DeliveryBox.UnPackage += OpenPackageFromDeliveryBox;
+            ApiManager.OnDeliveryDeleted += OnDeliveryDeleted;
 
             this.character.SetState(StateType.FREE);
         }
@@ -51,6 +52,7 @@ namespace Sim {
             Props.OnMoveRequest -= OnMoveRequest;
             PaintBucket.OnOpened -= OpenBucket;
             DeliveryBox.UnPackage -= OpenPackageFromDeliveryBox;
+            ApiManager.OnDeliveryDeleted -= OnDeliveryDeleted;
         }
 
         private void OnMoveRequest(Props props) {
@@ -105,26 +107,29 @@ namespace Sim {
         private void OnValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation) {
             Props props = PropsManager.Instance.InstantiateProps(propsConfig, presetId, position, rotation, true);
 
-            // Manage unpackaging from delivery box
-            if (this.character.GetState() == StateType.UNPACKAGING) {
-                props.SetIsBuilt(!propsConfig.MustBeBuilt());
+            props.SetIsBuilt(!propsConfig.MustBeBuilt());
 
-                if (this.currentDelivery.Type.Equals(DeliveryType.COVER)) {
-                    PaintBucket coverProps = props as PaintBucket;
+            if (this.currentDelivery.Type.Equals(DeliveryType.COVER)) {
+                PaintBucket coverProps = props as PaintBucket;
 
-                    if (coverProps) {
-                        Debug.Log("Set cover properties");
-                        coverProps.SetPaintConfigId(this.currentDelivery.PaintConfigId, RpcTarget.All);
-                        coverProps.SetColor(this.currentDelivery.Color, RpcTarget.All);
-                    }
+                if (coverProps) {
+                    Debug.Log("Set cover properties");
+                    coverProps.SetPaintConfigId(this.currentDelivery.PaintConfigId, RpcTarget.All);
+                    coverProps.SetColor(this.currentDelivery.Color, RpcTarget.All);
                 }
-
-                // TODO remove delivery
             }
 
-            RoomManager.Instance.SaveRoom();
+            ApiManager.Instance.DeleteDelivery(this.currentDelivery);
+        }
 
-            this.character.SetState(StateType.FREE);
+        private void OnDeliveryDeleted(bool isDeleted) {
+            if (isDeleted) {
+                RoomManager.Instance.SaveRoom();
+
+                this.character.SetState(StateType.FREE);
+            } else {
+                // TODO DISCONNECT
+            }
         }
 
         private void OnValidatePropEdit(Props props) {

@@ -40,9 +40,13 @@ namespace Sim {
             }
         }
 
-        public void SetupPropsContentUI(string[] items) {
+        public void ShowPropsContentUI(string[] items) {
             this.propsContentUI.Setup(items);
             this.propsContentUI.gameObject.SetActive(true);
+        }
+        
+        public void RefreshPropsContentUI(string[] items) {
+            this.propsContentUI.Setup(items);
         }
 
         public void HidePropsContentUI() {

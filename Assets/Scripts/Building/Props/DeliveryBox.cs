@@ -30,8 +30,8 @@ namespace Sim.Building {
             base.Start();
 
             if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
-                Debug.Log("Retrieve deliveries....");
                 ApiManager.OnDeliveriesRetrieved += OnDeliveriesRetrieved;
+                ApiManager.OnDeliveryDeleted += OnDeliveryDeleted;
                 PropsContentUI.OnSelect += OnSelectDelivery;
 
                 ApiManager.Instance.RetrieveDeliveries(NetworkManager.Instance.CharacterData.Id);
@@ -43,6 +43,7 @@ namespace Sim.Building {
 
             if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
                 ApiManager.OnDeliveriesRetrieved -= OnDeliveriesRetrieved;
+                ApiManager.OnDeliveryDeleted -= OnDeliveryDeleted;
                 PropsContentUI.OnSelect -= OnSelectDelivery;
             }
         }
@@ -50,7 +51,7 @@ namespace Sim.Building {
         protected override void Execute(Action action) {
             if (action.Type.Equals(ActionTypeEnum.OPEN)) {
                 RoomManager.LocalCharacter.Interact(this);
-                DefaultViewUI.Instance.SetupPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
+                DefaultViewUI.Instance.ShowPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
             }
         }
 
@@ -59,7 +60,11 @@ namespace Sim.Building {
         }
 
         private void OnSelectDelivery(int idx) {
-            UnPackage?.Invoke(this.deliveries[idx]);
+            if (this.deliveries == null || this.deliveries.Length == 0) {
+                RoomManager.LocalCharacter.Idle();
+            } else {
+                UnPackage?.Invoke(this.deliveries[idx]);
+            }
         }
 
         public Delivery[] Deliveries {
@@ -69,9 +74,16 @@ namespace Sim.Building {
 
         private void OnDeliveriesRetrieved(List<Delivery> value) {
             this.deliveries = value.ToArray();
-            Debug.Log($"I retrieved {this.deliveries.Length} deliveries");
 
             this.UpdateGraphics();
+            
+            DefaultViewUI.Instance.RefreshPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
+        }
+
+        private void OnDeliveryDeleted(bool isDeleted) {
+            if (!isDeleted) return;
+
+            ApiManager.Instance.RetrieveDeliveries(NetworkManager.Instance.CharacterData.Id);
         }
 
         private void UpdateGraphics() {

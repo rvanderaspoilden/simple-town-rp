@@ -27,6 +27,8 @@ namespace Sim {
         private Coroutine authenticationCoroutine;
 
         public delegate void SucceededResponse();
+        
+        public delegate void DeliveryDeleteResponse(bool isDeleted);
 
         public delegate void HomeCreationSuceededResponse(Home home);
 
@@ -39,6 +41,8 @@ namespace Sim {
         public delegate void FailedResponse(String msg);
 
         public static event DeliveriesResponse OnDeliveriesRetrieved;
+
+        public static event DeliveryDeleteResponse OnDeliveryDeleted;
 
         public static event SucceededResponse OnAuthenticationSucceeded;
 
@@ -196,7 +200,27 @@ namespace Sim {
             }
         }
 
+        public void DeleteDelivery(Delivery delivery) {
+            StartCoroutine(this.DeleteDeliveryCoroutine(delivery.ID));
+        }
+        
+        private IEnumerator DeleteDeliveryCoroutine(string deliveryId) {
+            UnityWebRequest request = UnityWebRequest.Delete($"{this.uri}/deliveries/{deliveryId}");
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 200) {
+                OnDeliveryDeleted?.Invoke(true);
+            } else {
+                OnDeliveryDeleted?.Invoke(false);
+                Debug.LogError($"Cannot delete delivery ID {deliveryId} from server");
+            }
+        }
+
         public void RetrieveDeliveries(string characterId) {
+            Debug.Log("Retrieve deliveries....");
+
             StartCoroutine(this.RetrieveDeliveriesCoroutine(characterId));
         }
         

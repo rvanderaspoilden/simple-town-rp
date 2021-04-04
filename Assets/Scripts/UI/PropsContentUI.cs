@@ -55,9 +55,7 @@ namespace Sim.UI {
         }
 
         public void Select() {
-            if (this.items != null && this.items.Length > 0) {
-                OnSelect?.Invoke(this.cursorIdx);
-            }
+            OnSelect?.Invoke(this.cursorIdx);
         }
 
         public void IncrementCursorIdx(int valueToIncrement) {
