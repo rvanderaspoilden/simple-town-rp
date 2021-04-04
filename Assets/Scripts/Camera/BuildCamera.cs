@@ -52,13 +52,13 @@ namespace Sim {
             this.ManageRotation();
 
             if (BuildManager.Instance.GetMode() != BuildModeEnum.VALIDATING) {
-                if (Input.GetMouseButtonDown(2)) {
+                if (Input.GetMouseButtonDown(1)) {
                     this.dragOrigin = Input.mousePosition;
                 } else {
                     this.ManageMovementWithKeyboard();
                 }
 
-                if (Input.GetMouseButton(2)) {
+                if (Input.GetMouseButton(1)) {
                     this.ManageDragCamera();
                 }
             }
@@ -96,11 +96,11 @@ namespace Sim {
         }
 
         private void ManageRotation() {
-            if (Input.GetMouseButtonDown(1)) {
+            if (Input.GetMouseButtonDown(2)) {
                 this.freelookCamera.m_XAxis.m_MaxSpeed = this.maxRotationSpeed;
             }
 
-            if (Input.GetMouseButtonUp(1)) {
+            if (Input.GetMouseButtonUp(2)) {
                 this.freelookCamera.m_XAxis.m_MaxSpeed = 0f;
             }
         }
