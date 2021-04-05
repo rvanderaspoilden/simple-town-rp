@@ -29,6 +29,9 @@ namespace Sim {
         private float mouseClickTimer;
 
         private new Camera camera;
+        
+        [SerializeField]
+        private bool startLeftClickValid;
 
         public static CameraManager Instance;
 
@@ -64,7 +67,7 @@ namespace Sim {
         void Update() {
             //this.ManageWorldTransparency();
 
-            if (this.currentMode == CameraModeEnum.FREE && !EventSystem.current.IsPointerOverGameObject()) {
+            if (this.currentMode == CameraModeEnum.FREE) {
                 this.ManageInteraction();
             }
         }
@@ -126,6 +129,14 @@ namespace Sim {
             bool leftMouseClick = Input.GetMouseButtonUp(0);
             bool leftMousePressed = Input.GetMouseButton(0);
             bool rightMouseClick = Input.GetMouseButtonUp(1);
+
+            if (Input.GetMouseButtonDown(0)) {
+                this.startLeftClickValid = !EventSystem.current.IsPointerOverGameObject();
+            }
+
+            if (((leftMouseClick || leftMousePressed) && !this.startLeftClickValid) || EventSystem.current.IsPointerOverGameObject()) {
+                return;
+            }
 
             if ((leftMouseClick || rightMouseClick || leftMousePressed) &&
                 Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
