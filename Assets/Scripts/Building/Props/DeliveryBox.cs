@@ -63,8 +63,10 @@ namespace Sim.Building {
 
         public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
-            
-            this.RefreshDeliveriesQuantity(playerTarget);
+
+            if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
+                this.RefreshDeliveriesQuantity(playerTarget);
+            }
         }
 
         private void RefreshDeliveriesQuantity(Player playerTarget = null) {
@@ -77,14 +79,8 @@ namespace Sim.Building {
 
         [PunRPC]
         public void RPC_RefreshDeliveriesQuantity(int quantity) {
-            if (!ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
-                if (quantity > this.deliveries.Length) {
-                    this._audioSource.PlayOneShot(this.alertSound);
-                }
-                
-                this.deliveries = new Delivery[quantity];
-                this.UpdateGraphics();
-            }
+            this.deliveries = new Delivery[quantity];
+            this.UpdateGraphics();
         }
 
         protected override void Execute(Action action) {
@@ -112,14 +108,10 @@ namespace Sim.Building {
         }
 
         private void OnDeliveriesRetrieved(List<Delivery> value) {
-            if (value.Count > this.deliveries.Length) {
-                this._audioSource.PlayOneShot(this.alertSound);
-            }
-            
             this.deliveries = value.ToArray();
 
             this.UpdateGraphics();
-            
+
             this.RefreshDeliveriesQuantity();
 
             DefaultViewUI.Instance.RefreshPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
