@@ -1,4 +1,5 @@
-﻿using Sim.Entities;
+﻿using System;
+using Sim.Entities;
 using Sim.Scriptables;
 using TMPro;
 using UnityEngine;
@@ -28,12 +29,22 @@ namespace Sim.UI {
         [SerializeField]
         private Image moodImage;
 
+        public static CharacterInfoPanelUI Instance;
+
+        private void Awake() {
+            if (Instance != null && Instance != this) {
+                Destroy(this.gameObject);
+            } else {
+                Instance = this;
+            }
+        }
+
         private void OnEnable() {
-            Character.OnCharacterDataChanged += Setup;
+            PlayerController.OnCharacterDataChanged += Setup;
         }
 
         private void OnDisable() {
-            Character.OnCharacterDataChanged -= Setup;
+            PlayerController.OnCharacterDataChanged -= Setup;
         }
 
         public void Setup(CharacterData characterData) {

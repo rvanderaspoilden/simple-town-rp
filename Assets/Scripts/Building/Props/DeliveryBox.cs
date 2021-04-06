@@ -42,31 +42,31 @@ namespace Sim.Building {
         protected override void Start() {
             base.Start();
 
-            if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
+            /*if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
                 ApiManager.OnDeliveriesRetrieved += OnDeliveriesRetrieved;
                 ApiManager.OnDeliveryDeleted += OnDeliveryDeleted;
                 PropsContentUI.OnSelect += OnSelectDelivery;
 
                 ApiManager.Instance.RetrieveDeliveries(NetworkManager.Instance.CharacterData.Id);
-            }
+            }*/
         }
 
         protected override void OnDestroy() {
             base.OnDestroy();
 
-            if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
+            /*if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
                 ApiManager.OnDeliveriesRetrieved -= OnDeliveriesRetrieved;
                 ApiManager.OnDeliveryDeleted -= OnDeliveryDeleted;
                 PropsContentUI.OnSelect -= OnSelectDelivery;
-            }
+            }*/
         }
 
         public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
 
-            if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
+            /*if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
                 this.RefreshDeliveriesQuantity(playerTarget);
-            }
+            }*/
         }
 
         private void RefreshDeliveriesQuantity(Player playerTarget = null) {
@@ -84,10 +84,10 @@ namespace Sim.Building {
         }
 
         protected override void Execute(Action action) {
-            if (action.Type.Equals(ActionTypeEnum.OPEN) && ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
+            /*if (action.Type.Equals(ActionTypeEnum.OPEN) && ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
                 RoomManager.LocalCharacter.Interact(this);
                 DefaultViewUI.Instance.ShowPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
-            }
+            }*/
         }
 
         public override void StopInteraction() {
@@ -96,7 +96,7 @@ namespace Sim.Building {
 
         private void OnSelectDelivery(int idx) {
             if (this.deliveries == null || this.deliveries.Length == 0) {
-                RoomManager.LocalCharacter.Idle();
+                RoomManager.LocalPlayer.Idle();
             } else {
                 UnPackage?.Invoke(this.deliveries[idx]);
             }
@@ -120,7 +120,7 @@ namespace Sim.Building {
         private void OnDeliveryDeleted(bool isDeleted) {
             if (!isDeleted) return;
 
-            ApiManager.Instance.RetrieveDeliveries(NetworkManager.Instance.CharacterData.Id);
+            //ApiManager.Instance.RetrieveDeliveries(NetworkManager.Instance.CharacterData.Id);
         }
 
         private void UpdateGraphics() {

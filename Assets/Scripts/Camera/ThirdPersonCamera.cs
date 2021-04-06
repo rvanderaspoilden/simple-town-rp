@@ -1,9 +1,6 @@
-﻿using System.Collections;
-using Cinemachine;
-using DG.Tweening;
+﻿using Cinemachine;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 
 namespace Sim {
     public class ThirdPersonCamera : MonoBehaviour {
@@ -20,28 +17,12 @@ namespace Sim {
         [SerializeField]
         private float maxZoomSpeed;
 
-        private Coroutine setCameraTargetCoroutine;
-
         private void OnEnable() {
-            if (!SceneManager.GetActiveScene().name.Equals("Launcher") && this.setCameraTargetCoroutine == null) {
-                this.setCameraTargetCoroutine = StartCoroutine(this.SetCameraTarget());
-            }
-
             this.freelookCamera.gameObject.SetActive(true);
-
-            SceneManager.sceneLoaded += this.SceneLoaded;
         }
 
         private void OnDisable() {
             this.freelookCamera.gameObject.SetActive(false);
-
-            SceneManager.sceneLoaded -= this.SceneLoaded;
-        }
-
-        private void SceneLoaded(Scene scene, LoadSceneMode mode) {
-            if (!SceneManager.GetActiveScene().name.Equals("Launcher") && this.setCameraTargetCoroutine == null) {
-                this.setCameraTargetCoroutine = StartCoroutine(this.SetCameraTarget());
-            }
         }
 
         public void Setup(CinemachineFreeLook originCamera) {
@@ -54,20 +35,9 @@ namespace Sim {
             this.freelookCamera.m_YAxis.Value = yValue;
         }
 
-        private IEnumerator SetCameraTarget() {
+        public void SetCameraTarget(Transform target) {
             Debug.Log("Set target camera");
-
-            do {
-                if (RoomManager.LocalCharacter) {
-                    this.cameraTarget.SetTarget(RoomManager.LocalCharacter.GetHeadTargetForCamera());
-                } else {
-                    Debug.Log("No local player found");
-                }
-
-                yield return new WaitForSeconds(0.1f);
-            } while (!this.cameraTarget.GetTarget());
-
-            this.setCameraTargetCoroutine = null;
+            this.cameraTarget.SetTarget(target);
         }
 
         void Update() {

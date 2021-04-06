@@ -37,7 +37,7 @@ namespace Sim {
 
         public static event VisibilityModeChanged OnPropsVisibilityModeChanged;
 
-        public static Character LocalCharacter;
+        public static PlayerController LocalPlayer;
 
         public static RoomManager Instance;
 
@@ -252,7 +252,7 @@ namespace Sim {
 
         #region Player
 
-        public virtual void InstantiateLocalCharacter(Character prefab, CharacterData characterData, RoomNavigationData currentRoom, RoomNavigationData oldRoom) {
+        /*public virtual void InstantiateLocalCharacter(Character prefab, CharacterData characterData, RoomNavigationData currentRoom, RoomNavigationData oldRoom) {
             Transform spawn = this.playerSpawnPoint;
 
             if (currentRoom.RoomType == RoomTypeEnum.BUILDING_HALL && oldRoom.RoomType == RoomTypeEnum.HOME) {
@@ -272,7 +272,7 @@ namespace Sim {
             GameObject character = PhotonNetwork.Instantiate("Prefabs/Characters/" + prefab.name, spawn.position, spawn.rotation);
             LocalCharacter = character.GetComponent<Character>();
             LocalCharacter.CharacterData = characterData;
-        }
+        }*/
 
         public override void OnPlayerEnteredRoom(Player newPlayer) {
             Debug.Log(newPlayer.NickName + " joined the room");

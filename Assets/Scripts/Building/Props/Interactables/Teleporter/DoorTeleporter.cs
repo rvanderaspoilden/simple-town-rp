@@ -49,7 +49,7 @@ namespace Sim.Interactables {
                     //TODO: refacto this
                     Address address = new Address {Street = "SALMON HOTEL", DoorNumber = this.number, HomeType = HomeTypeEnum.APARTMENT};
 
-                    NetworkManager.Instance.GoToRoom(RoomTypeEnum.HOME, address);
+                    //NetworkManager.Instance.GoToRoom(RoomTypeEnum.HOME, address);
                 } else {
                     base.Execute(action);
                 }

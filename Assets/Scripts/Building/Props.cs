@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Mirror;
 using Photon.Pun;
 using Photon.Realtime;
 using Sim.Enums;
@@ -9,7 +10,7 @@ using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     [RequireComponent(typeof(PropsRenderer))]
-    public class Props : MonoBehaviourPun {
+    public class Props : MonoBehaviourPun{
         [Header("Props settings")]
         [SerializeField]
         protected PropsConfig configuration;
@@ -88,7 +89,7 @@ namespace Sim.Building {
         public virtual Action[] GetActions(bool withPriority = false) {
             Action[] actionsToReturn = this.IsBuilt() ? this.actions : this.unbuiltActions;
 
-            bool hasPermission = ApartmentManager.Instance && ApartmentManager.Instance.IsTenant(RoomManager.LocalCharacter.CharacterData);
+            bool hasPermission = ApartmentManager.Instance && ApartmentManager.Instance.IsTenant(RoomManager.LocalPlayer.CharacterData);
 
             actionsToReturn = actionsToReturn.Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission).ToArray();
 
@@ -115,12 +116,12 @@ namespace Sim.Building {
                 return;
             }
             
-            if (playerTarget != null) {
+            /*if (playerTarget != null) {
                 Debug.Log($"Set preset ID {id}");
                 photonView.RPC("RPC_SetPresetId", playerTarget, id);
             } else {
                 photonView.RPC("RPC_SetPresetId", RpcTarget.All, id);
-            }
+            }*/
         }
         
         [PunRPC]
@@ -145,11 +146,11 @@ namespace Sim.Building {
         }
 
         public void SetIsBuilt(bool value, Player playerTarget = null) {
-            if (playerTarget != null) {
+            /*if (playerTarget != null) {
                 photonView.RPC("RPC_SetIsBuilt", playerTarget, value);
             } else {
                 photonView.RPC("RPC_SetIsBuilt", RpcTarget.All, value);
-            }
+            }*/
         }
 
         [PunRPC]
@@ -195,7 +196,7 @@ namespace Sim.Building {
         }
 
         private void Look() {
-            RoomManager.LocalCharacter.Look(this.transform);
+            RoomManager.LocalPlayer.Look(this.transform);
         }
 
         private void Move() {
@@ -203,7 +204,7 @@ namespace Sim.Building {
         }
 
         private void Sell() {
-            photonView.RPC("RPC_SellProps", PhotonNetwork.MasterClient);
+           // photonView.RPC("RPC_SellProps", PhotonNetwork.MasterClient);
         }
 
         [PunRPC]
@@ -214,9 +215,9 @@ namespace Sim.Building {
 
         public void UpdateTransform(Player playerTarget = null) {
             if (playerTarget == null) {
-                photonView.RPC("RPC_UpdateTransform", RpcTarget.Others, this.transform.position, this.transform.rotation);
+                //photonView.RPC("RPC_UpdateTransform", RpcTarget.Others, this.transform.position, this.transform.rotation);
             } else {
-                photonView.RPC("RPC_UpdateTransform", playerTarget, this.transform.position, this.transform.rotation);
+                //photonView.RPC("RPC_UpdateTransform", playerTarget, this.transform.position, this.transform.rotation);
             }
         }
 

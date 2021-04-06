@@ -1,29 +1,28 @@
 ﻿using System.Linq;
+using Mirror;
 using Photon.Pun;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
-using Sim.Interactables;
 using Sim.Scriptables;
-using Sim.UI;
 using UnityEngine;
 
 namespace Sim {
-    [RequireComponent(typeof(Character))]
-    public class PlayerInteraction : MonoBehaviourPun {
+    [RequireComponent(typeof(PlayerController))]
+    public class PlayerInteraction : NetworkBehaviour {
         [Header("DEBUG")]
         private Delivery currentDelivery;
 
         private PaintBucket currentOpenedBucket;
 
-        private Character character;
+        private PlayerController player;
 
         private void Awake() {
-            this.character = GetComponent<Character>();
+            this.player = GetComponent<PlayerController>();
         }
 
-        private void Start() {
-            if (!photonView.IsMine) Destroy(this);
+        public override void OnStartClient() {
+            if (!isLocalPlayer) Destroy(this);
 
             BuildManager.OnCancel += OnBuildModificationCanceled;
             BuildManager.OnValidatePropCreation += OnValidatePropCreation;
@@ -33,30 +32,34 @@ namespace Sim {
             PaintBucket.OnOpened += OpenBucket;
             DeliveryBox.UnPackage += OpenPackageFromDeliveryBox;
             ApiManager.OnDeliveryDeleted += OnDeliveryDeleted;
+        }
 
-            this.character.SetState(StateType.FREE);
+        public override void OnStartLocalPlayer() {
+            this.player.SetState(StateType.FREE);
         }
 
         private void Update() {
-            if (Input.GetKeyDown(KeyCode.F) && this.character.GetState() == StateType.FREE && PhotonNetwork.IsMasterClient && ApartmentManager.Instance &&
+            /*if (Input.GetKeyDown(KeyCode.F) && this.character.GetState() == StateType.FREE && PhotonNetwork.IsMasterClient && ApartmentManager.Instance &&
                 ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
                 HUDManager.Instance.DisplayAdminPanel(true);
-            }
+            }*/
         }
 
         private void OnDestroy() {
-            BuildManager.OnCancel -= OnBuildModificationCanceled;
-            BuildManager.OnValidatePropCreation -= OnValidatePropCreation;
-            BuildManager.OnValidatePropEdit -= OnValidatePropEdit;
-            BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
-            Props.OnMoveRequest -= OnMoveRequest;
-            PaintBucket.OnOpened -= OpenBucket;
-            DeliveryBox.UnPackage -= OpenPackageFromDeliveryBox;
-            ApiManager.OnDeliveryDeleted -= OnDeliveryDeleted;
+            if (isLocalPlayer) {
+                BuildManager.OnCancel -= OnBuildModificationCanceled;
+                BuildManager.OnValidatePropCreation -= OnValidatePropCreation;
+                BuildManager.OnValidatePropEdit -= OnValidatePropEdit;
+                BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
+                Props.OnMoveRequest -= OnMoveRequest;
+                PaintBucket.OnOpened -= OpenBucket;
+                DeliveryBox.UnPackage -= OpenPackageFromDeliveryBox;
+                ApiManager.OnDeliveryDeleted -= OnDeliveryDeleted;
+            }
         }
 
         private void OnMoveRequest(Props props) {
-            this.character.SetState(StateType.MOVING_PROPS);
+            this.player.SetState(StateType.MOVING_PROPS);
 
             BuildManager.Instance.Edit(props);
         }
@@ -65,7 +68,7 @@ namespace Sim {
         private void OpenPackageFromDeliveryBox(Delivery delivery) {
             this.currentDelivery = delivery;
 
-            this.character.SetState(StateType.UNPACKAGING);
+            this.player.SetState(StateType.UNPACKAGING);
 
             BuildManager.Instance.Init(delivery);
         }
@@ -73,7 +76,7 @@ namespace Sim {
         private void OpenBucket(PaintBucket bucket) {
             this.currentOpenedBucket = bucket;
 
-            this.character.SetState(StateType.PAINTING);
+            this.player.SetState(StateType.PAINTING);
 
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
                 RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.FORCE_SHOW);
@@ -85,7 +88,7 @@ namespace Sim {
         private void OnBuildModificationCanceled() {
             this.currentOpenedBucket = null;
             this.currentDelivery = null;
-            this.character.SetState(StateType.FREE);
+            this.player.SetState(StateType.FREE);
         }
 
         private void OnValidatePaintModification() {
@@ -101,7 +104,7 @@ namespace Sim {
 
             RoomManager.Instance.SaveRoom();
 
-            this.character.SetState(StateType.FREE);
+            this.player.SetState(StateType.FREE);
         }
 
         private void OnValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation) {
@@ -126,7 +129,7 @@ namespace Sim {
             if (isDeleted) {
                 RoomManager.Instance.SaveRoom();
 
-                this.character.SetState(StateType.FREE);
+                this.player.SetState(StateType.FREE);
             } else {
                 // TODO DISCONNECT
             }
@@ -137,7 +140,7 @@ namespace Sim {
 
             RoomManager.Instance.SaveRoom();
 
-            this.character.SetState(StateType.FREE);
+            this.player.SetState(StateType.FREE);
         }
     }
 }

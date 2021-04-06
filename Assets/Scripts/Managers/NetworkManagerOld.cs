@@ -9,12 +9,14 @@ using Sim.Utils;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 namespace Sim {
-    public class NetworkManager : MonoBehaviourPunCallbacks {
+    public class NetworkManagerOld : MonoBehaviourPunCallbacks {
+        [FormerlySerializedAs("characterPrefab")]
         [Header("Settings")]
         [SerializeField]
-        private Character characterPrefab;
+        private PlayerController playerPrefab;
 
         [SerializeField]
         private bool testEntrance;
@@ -38,7 +40,7 @@ namespace Sim {
         [SerializeField]
         private RoomNavigationData nextRoomData;
 
-        public static NetworkManager Instance;
+        public static NetworkManagerOld Instance;
 
         private void Awake() {
             if (Instance != null && Instance != this) {
@@ -74,9 +76,9 @@ namespace Sim {
             }
         }
 
-        public Character CharacterPrefab {
-            get => characterPrefab;
-            set => characterPrefab = value;
+        public PlayerController PlayerPrefab {
+            get => playerPrefab;
+            set => playerPrefab = value;
         }
 
         #endregion
@@ -139,7 +141,7 @@ namespace Sim {
             this.nextRoomData = null;
 
             if (this.testEntrance) {
-                RoomManager.Instance.InstantiateLocalCharacter(this.characterPrefab, this.characterData, this.currentRoomData, this.oldRoomData);
+                //RoomManager.Instance.InstantiateLocalCharacter(this.characterPrefab, this.characterData, this.currentRoomData, this.oldRoomData);
                 yield return new WaitForSeconds(0.5f);
                 LoadingManager.Instance.Hide();
             } else {
@@ -176,7 +178,7 @@ namespace Sim {
                     isRoomGenerated = PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated") && RoomManager.Instance.IsGenerated();
 
                     if (isRoomGenerated) {
-                        RoomManager.Instance.InstantiateLocalCharacter(this.characterPrefab, this.characterData, this.currentRoomData, this.oldRoomData);
+                        //RoomManager.Instance.InstantiateLocalCharacter(this.characterPrefab, this.characterData, this.currentRoomData, this.oldRoomData);
                     }
 
                     yield return new WaitForSeconds(0.1f);

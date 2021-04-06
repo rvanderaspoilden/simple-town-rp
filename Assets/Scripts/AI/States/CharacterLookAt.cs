@@ -3,11 +3,11 @@ using UnityEngine;
 
 namespace AI.States {
     public class CharacterLookAt : IState {
-        private readonly Character character;
+        private readonly PlayerController player;
         private Transform target;
 
-        public CharacterLookAt(Character character) {
-            this.character = character;
+        public CharacterLookAt(PlayerController player) {
+            this.player = player;
         }
 
         public Transform Target {
@@ -19,7 +19,7 @@ namespace AI.States {
         }
 
         public void Tick() {
-            this.character.LookAt(target);
+            this.player.LookAt(target);
         }
 
         public void OnExit() {

@@ -31,7 +31,7 @@ namespace Sim {
 
         private void Start() {
             this.HidePropsContentUI();
-            this.SetLocationText(PhotonNetwork.CurrentRoom.Name);
+            this.SetLocationText("Simple Town");
         }
 
         private void SetLocationText(string value) {

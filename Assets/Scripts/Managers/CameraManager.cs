@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using AI.States;
 using Sim.Building;
 using Sim.Enums;
 using Sim.Interactables;
-using Sim.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -13,8 +11,6 @@ namespace Sim {
         [Header("Settings")]
         [SerializeField]
         private LayerMask layerMaskInFreeMode;
-
-        private List<PropsRenderer> displayedPropsRenderers;
 
         private BuildCamera buildCamera;
 
@@ -46,7 +42,6 @@ namespace Sim {
             this.camera = GetComponentInChildren<Camera>();
             this.buildCamera = GetComponent<BuildCamera>();
             this.tpsCamera = GetComponent<ThirdPersonCamera>();
-            this.displayedPropsRenderers = new List<PropsRenderer>();
 
             this.buildCamera.enabled = false;
             this.tpsCamera.enabled = false;
@@ -55,17 +50,21 @@ namespace Sim {
         }
 
         private void Start() {
-            Character.OnStateChanged += OnStateChanged;
+            PlayerController.OnStateChanged += OnStateChanged;
         }
 
         private void OnDestroy() {
-            Character.OnStateChanged -= OnStateChanged;
+            PlayerController.OnStateChanged -= OnStateChanged;
         }
 
         public Camera Camera => camera;
 
+        public void SetCameraTarget(Transform target) {
+            this.tpsCamera.SetCameraTarget(target);
+        }
+
         void Update() {
-            //this.ManageWorldTransparency();
+            if (PlayerController.Local == null) return;
 
             if (this.currentMode == CameraModeEnum.FREE) {
                 this.ManageInteraction();
@@ -76,40 +75,13 @@ namespace Sim {
             return this.currentMode;
         }
 
-        private void OnStateChanged(Character character, StateType state) {
-            if (character == RoomManager.LocalCharacter) {
+        private void OnStateChanged(PlayerController player, StateType state) {
+            if (player.isLocalPlayer) {
                 if (state == StateType.FREE) {
                     this.SetCurrentMode(CameraModeEnum.FREE);
                 } else {
                     this.SetCurrentMode(CameraModeEnum.BUILD);
                 }
-            }
-        }
-
-        private List<PropsRenderer> HidePropsNear(Vector3 pos) {
-            List<PropsRenderer> objectsToHide = Physics.OverlapSphere(pos, 3f)
-                .ToList()
-                .Select(x => x.GetComponentInParent<PropsRenderer>())
-                .ToList();
-
-            objectsToHide.ForEach(propsRenderer => {
-                if (propsRenderer && propsRenderer.CanInteractWithCameraDistance()) {
-                    // prevent NPE due to get componentInParent
-                    propsRenderer.SetState(VisibilityStateEnum.HIDE);
-
-                    this.displayedPropsRenderers.Add(propsRenderer);
-                }
-            });
-
-            return objectsToHide;
-        }
-
-        private void ResetRendererForPropsNotIn(List<PropsRenderer> objectHidden) {
-            // Reset objects which aren't in view area
-            IEnumerable<PropsRenderer> difference = this.displayedPropsRenderers.Except(objectHidden);
-
-            foreach (PropsRenderer propsRenderer in difference) {
-                propsRenderer.SetState(VisibilityStateEnum.SHOW);
             }
         }
 
@@ -141,46 +113,46 @@ namespace Sim {
             if ((leftMouseClick || rightMouseClick || leftMousePressed) &&
                 Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
                 Props propsToInteract = hit.collider.GetComponentInParent<Props>();
-                Character character = hit.collider.GetComponent<Character>();
-
+                PlayerController player = hit.collider.GetComponent<PlayerController>();
+                
                 if (propsToInteract) {
                     if (leftMousePressed && propsToInteract.GetType() == typeof(Ground)) {
-                        RoomManager.LocalCharacter.MoveTo(hit.point);
+                        PlayerController.Local.MoveTo(hit.point);
                     } else if (!leftMousePressed) {
                         if (propsToInteract.IsInteractable()) {
-                            bool canInteract = RoomManager.LocalCharacter.CanInteractWith(propsToInteract, hit.point);
+                            bool canInteract = PlayerController.Local.CanInteractWith(propsToInteract, hit.point);
                             Action[] actions = propsToInteract.GetActions();
 
-                            if (leftMouseClick && (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove) ||
-                                                   RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle))) {
+                            if (leftMouseClick && (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
+                                                   PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle))) {
                                 actions = propsToInteract.GetActions(true);
 
                                 canInteract = canInteract || (actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK));
                             }
 
                             if (canInteract) {
-                                if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove)) {
-                                    RoomManager.LocalCharacter.Idle();
-                                } else if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {
-                                    RoomManager.LocalCharacter.LookAt(propsToInteract.transform);
+                                if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
+                                    PlayerController.Local.Idle();
+                                } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
+                                    PlayerController.Local.LookAt(propsToInteract.transform);
                                 }
 
                                 HUDManager.Instance.ShowContextMenu(actions, propsToInteract.transform, leftMouseClick);
                             } else {
-                                RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract, leftMouseClick);
+                                PlayerController.Local.SetTarget(hit.point, propsToInteract, leftMouseClick);
                             }
                         } else if (leftMouseClick) {
-                            RoomManager.LocalCharacter.SetTarget(hit.point, propsToInteract);
+                            PlayerController.Local.SetTarget(hit.point, propsToInteract);
                         }
                     }
-                } else if (rightMouseClick && character && character != RoomManager.LocalCharacter) {
-                    if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterMove)) {
-                        RoomManager.LocalCharacter.Idle();
+                } else if (rightMouseClick && player && player != PlayerController.Local) {
+                    if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
+                        PlayerController.Local.Idle();
                     }
 
-                    if (RoomManager.LocalCharacter.CurrentState().GetType() == typeof(CharacterIdle)) {
-                        RoomManager.LocalCharacter.LookAt(character.transform);
-                        HUDManager.Instance.ShowContextMenu(character.Actions, character.transform);
+                    if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
+                        PlayerController.Local.LookAt(player.transform);
+                        HUDManager.Instance.ShowContextMenu(player.Actions, player.transform);
                     }
                 }
             }

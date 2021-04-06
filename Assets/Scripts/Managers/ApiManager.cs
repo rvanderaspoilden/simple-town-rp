@@ -186,7 +186,11 @@ namespace Sim {
             StartCoroutine(this.RetrieveCharactersCoroutine());
         }
 
-        private IEnumerator RetrieveCharactersCoroutine() {
+        public UnityWebRequest RetrieveCharacterRequest(string userId) {
+            return UnityWebRequest.Get($"{this.uri}/characters/by-user-id/{userId}");
+        }
+
+        private IEnumerator RetrieveCharactersCoroutine(Action<CharacterData> action = null) {
             UnityWebRequest characterRequest = UnityWebRequest.Get(this.uri + "/characters/by-user-id/" + this.user.Id);
 
             yield return characterRequest.SendWebRequest();
@@ -195,6 +199,8 @@ namespace Sim {
                 CharacterResponse characterResponse = JsonUtility.FromJson<CharacterResponse>(characterRequest.downloadHandler.text);
 
                 OnCharacterRetrieved?.Invoke(characterResponse.Characters[0]);
+
+                action?.Invoke(characterResponse.Characters[0]);
             } else {
                 OnCharacterRetrieved?.Invoke(null);
             }

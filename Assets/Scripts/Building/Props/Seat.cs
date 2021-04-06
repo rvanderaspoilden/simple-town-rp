@@ -32,13 +32,13 @@ namespace Sim.Building {
                 int seatIdx = GetAvailableSeatIdx();
 
                 if (seatIdx != -1) {
-                    photonView.RPC("RPC_AssignSeat", RpcTarget.All, RoomManager.LocalCharacter.photonView.ViewID, seatIdx);
+                    //photonView.RPC("RPC_AssignSeat", RpcTarget.All, RoomManager.LocalCharacter.photonView.ViewID, seatIdx);
                 }
             } else if (action.Type.Equals(ActionTypeEnum.COUCH)) {
                 int couchIdx = GetAvailableCouchIdx();
 
                 if (couchIdx != -1) {
-                    photonView.RPC("RPC_AssignCouch", RpcTarget.All, RoomManager.LocalCharacter.photonView.ViewID, couchIdx);
+                    //photonView.RPC("RPC_AssignCouch", RpcTarget.All, RoomManager.LocalCharacter.photonView.ViewID, couchIdx);
                 }
             }
         }
@@ -48,11 +48,11 @@ namespace Sim.Building {
 
             return actions.Where(x => {
                 if (x.Type.Equals(ActionTypeEnum.SIT)) {
-                    return !this.charactersAssociatedToSeatIdx.ContainsKey(RoomManager.LocalCharacter.photonView.ViewID) && GetAvailableSeatIdx() != -1;
+                    //return !this.charactersAssociatedToSeatIdx.ContainsKey(RoomManager.LocalCharacter.photonView.ViewID) && GetAvailableSeatIdx() != -1;
                 }
                 
                 if (x.Type.Equals(ActionTypeEnum.COUCH)) {
-                    return !this.charactersAssociatedToCouchIdx.ContainsKey(RoomManager.LocalCharacter.photonView.ViewID) && GetAvailableCouchIdx() != -1;
+                    //return !this.charactersAssociatedToCouchIdx.ContainsKey(RoomManager.LocalCharacter.photonView.ViewID) && GetAvailableCouchIdx() != -1;
                 }
                 
                 if (x.Type.Equals(ActionTypeEnum.SELL) || x.Type.Equals(ActionTypeEnum.MOVE) ) {
@@ -89,9 +89,9 @@ namespace Sim.Building {
             Debug.Log($"There is {this.charactersAssociatedToSeatIdx.Count} seats used for {this.name}");
 
             // Sit if it's my character
-            if (RoomManager.LocalCharacter.photonView.ViewID == photonViewId) {
+            /*if (RoomManager.LocalCharacter.photonView.ViewID == photonViewId) {
                 RoomManager.LocalCharacter.Sit(this, this.seatPositions[seatIdx]);
-            }
+            }*/
         }
         
         [PunRPC]
@@ -106,9 +106,9 @@ namespace Sim.Building {
             Debug.Log($"There is {this.charactersAssociatedToCouchIdx.Count} couch positions used for {this.name}");
 
             // Sit if it's my character
-            if (RoomManager.LocalCharacter.photonView.ViewID == photonViewId) {
+            /*if (RoomManager.LocalCharacter.photonView.ViewID == photonViewId) {
                 RoomManager.LocalCharacter.Sleep(this, this.couchPositions[couchIdx]);
-            }
+            }*/
         }
 
         /**
@@ -116,7 +116,7 @@ namespace Sim.Building {
          */
         private int GetAvailableSeatIdx() {
             var seatFound = seatPositions.Where((t, i) => !this.charactersAssociatedToSeatIdx.ContainsValue(i))
-                .OrderBy(t => Vector3.Distance(t.position, RoomManager.LocalCharacter.transform.position))
+                .OrderBy(t => Vector3.Distance(t.position, RoomManager.LocalPlayer.transform.position))
                 .FirstOrDefault();
 
             return seatFound ? Array.IndexOf(seatPositions, seatFound) : -1;
@@ -127,18 +127,18 @@ namespace Sim.Building {
          */
         private int GetAvailableCouchIdx() {
             var couchFound = couchPositions.Where((t, i) => !this.charactersAssociatedToCouchIdx.ContainsValue(i))
-                .OrderBy(t => Vector3.Distance(t.position, RoomManager.LocalCharacter.transform.position))
+                .OrderBy(t => Vector3.Distance(t.position, RoomManager.LocalPlayer.transform.position))
                 .FirstOrDefault();
 
             return couchFound ? Array.IndexOf(couchPositions, couchFound) : -1;
         }
 
-        public void RevokeSeat(Character character) {
-            photonView.RPC("RPC_RevokeSeat", RpcTarget.All, character.photonView.ViewID);
+        public void RevokeSeat(PlayerController player) {
+            //photonView.RPC("RPC_RevokeSeat", RpcTarget.All, character.photonView.ViewID);
         }
         
-        public void RevokeCouch(Character character) {
-            photonView.RPC("RPC_RevokeCouch", RpcTarget.All, character.photonView.ViewID);
+        public void RevokeCouch(PlayerController player) {
+            //photonView.RPC("RPC_RevokeCouch", RpcTarget.All, character.photonView.ViewID);
         }
 
         [PunRPC]

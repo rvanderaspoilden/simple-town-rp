@@ -16,7 +16,7 @@ namespace Sim.Interactables {
 
         protected override void Execute(Action action) {
             if (action.Type.Equals(ActionTypeEnum.TELEPORT)) {
-                NetworkManager.Instance.GoToRoom(RoomTypeEnum.BUILDING_HALL, null);
+                //NetworkManager.Instance.GoToRoom(RoomTypeEnum.BUILDING_HALL, null);
             }
         }
         

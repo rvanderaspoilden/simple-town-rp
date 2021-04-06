@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using DG.Tweening;
 using Sim.Enums;
-using Sim.Scriptables;
 using Sim.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -63,7 +60,7 @@ namespace Sim {
         private void Start() {
             this.moodsTransforms = new List<RectTransform>();
             DatabaseManager.MoodConfigs.ForEach(config => {
-                if (config.MoodEnum == NetworkManager.Instance.CharacterData.Mood) return;
+                if (config.MoodEnum == PlayerController.Local.CharacterData.Mood) return;
 
                 MoodButton moodButton = Instantiate(this.moodButtonPrefab, this.moodContainer);
                 moodButton.Setup(config);
@@ -73,8 +70,8 @@ namespace Sim {
         }
 
         private void SelectMood(MoodButton moodButton) {
-            MoodEnum currentMood = RoomManager.LocalCharacter.CharacterData.Mood;
-            RoomManager.LocalCharacter.SetMood(moodButton.MoodConfig);
+            MoodEnum currentMood = PlayerController.Local.CharacterData.Mood;
+            PlayerController.Local.SetMood(moodButton.MoodConfig);
             moodButton.Setup(DatabaseManager.GetMoodConfigByEnum(currentMood));
         }
 

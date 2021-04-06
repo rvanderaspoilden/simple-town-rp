@@ -3,17 +3,18 @@ using System.Linq;
 using AI;
 using AI.States;
 using DG.Tweening;
-using Photon.Pun;
+using Mirror;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
 using Sim.Scriptables;
+using Sim.UI;
 using UnityEngine;
 using UnityEngine.AI;
 using Action = Sim.Interactables.Action;
 
 namespace Sim {
-    public class Character : MonoBehaviourPunCallbacks {
+    public class PlayerController : NetworkBehaviour {
         [Header("Settings")]
         [SerializeField]
         private Transform headTargetForCamera;
@@ -43,11 +44,12 @@ namespace Sim {
         [SerializeField]
         private bool showRadialMenuWithPriority;
 
+        [SerializeField]
+        private CharacterData characterData; // represent all database info relative to the character
+        
         private PlayerAnimator animator;
 
         private new Rigidbody rigidbody;
-
-        private CharacterData characterData; // represent all database info relative to the character
 
         private StateMachine stateMachine;
 
@@ -58,8 +60,8 @@ namespace Sim {
         private CharacterLookAt lookAtState;
 
         private CharacterInteract characterInteractState;
-        
-        public delegate void StateChanged(Character character, StateType state);
+
+        public delegate void StateChanged(PlayerController player, StateType state);
 
         public static event StateChanged OnStateChanged;
 
@@ -67,35 +69,44 @@ namespace Sim {
 
         public static event CharacterDataChanged OnCharacterDataChanged;
 
+        public static PlayerController Local;
+
         private void Awake() {
             this.navMeshAgent = GetComponent<NavMeshAgent>();
             this.rigidbody = GetComponent<Rigidbody>();
             this.animator = GetComponent<PlayerAnimator>();
             this.Collider = GetComponent<Collider>();
-
-            this.navMeshAgent.updateRotation = false;
-
-            PhotonNetwork.AddCallbackTarget(this);
-        }
-
-        private void Start() {
-            if (!this.photonView.IsMine) {
-                this.navMeshAgent.enabled = false;
-                this.rigidbody.useGravity = false;
-                Destroy(GetComponent<AudioListener>());
-                this.SetupActions();
-            }
-
+            
             this.InitStateMachine();
         }
 
-        private void OnDestroy() {
-            PhotonNetwork.RemoveCallbackTarget(this);
-            this.UnSubscribeActions(this.actions);
+        public override void OnStartClient() {
+            if (!isLocalPlayer) {
+                this.navMeshAgent.enabled = false;
+                this.rigidbody.useGravity = false;
+                Destroy(GetComponent<AudioListener>());
+                Destroy(this.animator);
+                this.SetupActions();
+            } else {
+                CameraManager.Instance.SetCameraTarget(this.GetHeadTargetForCamera());
+            }
+        }
+
+        public override void OnStartLocalPlayer() {
+            this.navMeshAgent.updateRotation = false;
+            Local = this;
+            HUDManager.Instance.DisplayPanel(PanelTypeEnum.DEFAULT);
+            CharacterInfoPanelUI.Instance.Setup(this.characterData);
+        }
+
+        public override void OnStopClient() {
+            if (isLocalPlayer) {
+                this.UnSubscribeActions(this.actions);
+            }
         }
 
         private void Update() {
-            if (!this.photonView.IsMine) return;
+            if (!isLocalPlayer) return;
 
             this.stateMachine.Tick();
         }
@@ -135,25 +146,25 @@ namespace Sim {
             this.actions = this.actions.Where(x => x).Select(Instantiate).ToArray();
             this.SubscribeActions(this.actions);
         }
-        
+
         private void SubscribeActions(Action[] actionList) {
             foreach (var action in actionList) {
                 action.OnExecute += DoAction;
             }
         }
-        
-        private void  UnSubscribeActions(Action[] actionList) {
+
+        private void UnSubscribeActions(Action[] actionList) {
             foreach (var action in actionList) {
                 action.OnExecute -= DoAction;
             }
         }
-        
+
         public void DoAction(Action action) {
             Debug.Log("do action : " + action.Label);
 
             switch (action.Type) {
                 case ActionTypeEnum.LOOK:
-                    RoomManager.LocalCharacter.Look(this.transform);
+                    RoomManager.LocalPlayer.Look(this.transform);
                     break;
             }
         }
@@ -186,7 +197,7 @@ namespace Sim {
         public void Sit(Seat props, Transform seatTransform) {
             this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
         }
-        
+
         public void Sleep(Seat props, Transform couchTransform) {
             this.stateMachine.SetState(new CharacterSleep(this, props, couchTransform));
         }
