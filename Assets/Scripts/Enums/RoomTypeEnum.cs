@@ -5,5 +5,6 @@ namespace Sim.Enums {
     public enum RoomTypeEnum {
         HOME,
         BUILDING_HALL,
+        ENTRANCE
     }
 }

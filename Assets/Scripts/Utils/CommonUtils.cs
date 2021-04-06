@@ -69,6 +69,8 @@ namespace Sim.Utils {
                 return "Home";
             } else if (roomType.Equals(RoomTypeEnum.BUILDING_HALL)) {
                 return "Hall";
+            } else if (roomType.Equals(RoomTypeEnum.ENTRANCE)) {
+                return "Entrance";
             }
 
             throw new Exception($"No scene name associated to roomTypeEnum => {roomType}");
