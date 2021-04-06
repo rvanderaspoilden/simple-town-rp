@@ -4615,6 +4615,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6342119766356088067, guid: 2409027861421fa498051a0c08b389a4,
         type: 3}
+      propertyPath: testEntrance
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6342119766356088067, guid: 2409027861421fa498051a0c08b389a4,
+        type: 3}
       propertyPath: characterPrefab
       value: 
       objectReference: {fileID: 734558965602936367, guid: cdf47849e5cf2424992596d02f7960f0,

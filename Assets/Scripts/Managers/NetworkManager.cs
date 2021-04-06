@@ -16,6 +16,9 @@ namespace Sim {
         [SerializeField]
         private Character characterPrefab;
 
+        [SerializeField]
+        private bool testEntrance;
+
         [Header("Only for debug")]
         [SerializeField]
         private CharacterData characterData;
@@ -83,14 +86,14 @@ namespace Sim {
 
             PhotonNetwork.NickName = this.characterData.Identity.FullName;
 
-            this.nextRoomData = new RoomNavigationData(RoomTypeEnum.HOME, tenantHome.Address);
+            this.nextRoomData = new RoomNavigationData(this.testEntrance ? RoomTypeEnum.ENTRANCE : RoomTypeEnum.HOME, tenantHome.Address);
 
             PhotonNetwork.ConnectUsingSettings();
         }
 
         public void GoToRoom(RoomTypeEnum roomType, Address address) {
             LoadingManager.Instance.Show(true);
-            
+
             // If player is already in a room so leave it to rejoin
             if (PhotonNetwork.InRoom) {
                 this.nextRoomData = new RoomNavigationData(roomType, address);
@@ -129,53 +132,59 @@ namespace Sim {
             }
 
             Debug.Log("Room is loaded");
-            
+
             // Set navigation state
             this.oldRoomData = new RoomNavigationData(this.currentRoomData.RoomType, this.currentRoomData.Address);
             this.currentRoomData = new RoomNavigationData(this.nextRoomData.RoomType, this.nextRoomData.Address);
             this.nextRoomData = null;
 
-            if (PhotonNetwork.IsMasterClient && sceneName.Equals(SceneConstants.HALL)) {
-                // TODO use preset database
-                TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Hall");
-                SceneData sceneData = JsonUtility.FromJson<SceneData>(textAsset.text);
-                RoomManager.Instance.InstantiateLevel(sceneData, currentRoomData, oldRoomData);
-            }
-
-            if (sceneName.Equals(SceneConstants.HOME)) {
-                Home homeResponse = JsonUtility.FromJson<Home>(webRequest.downloadHandler.text);
-                SceneData sceneData = null;
-
-                if (homeResponse != null) {
-                    Home home = homeResponse;
-                    // If no data found from API use default apartment to prevent crash
-                    sceneData = home.SceneData;
-                    ApartmentManager.Instance.HomeData = home;
-                } else {
-                    // TODO prevent to go in 
-                    TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Default_Appartment_Talyah");
-                    sceneData = JsonUtility.FromJson<SceneData>(textAsset.text);
-                    ApartmentManager.Instance.HomeData = null;
-                }
-
-                if (PhotonNetwork.IsMasterClient) {
+            if (this.testEntrance) {
+                RoomManager.Instance.InstantiateLocalCharacter(this.characterPrefab, this.characterData, this.currentRoomData, this.oldRoomData);
+                yield return new WaitForSeconds(0.5f);
+                LoadingManager.Instance.Hide();
+            } else {
+                if (PhotonNetwork.IsMasterClient && sceneName.Equals(SceneConstants.HALL)) {
+                    // TODO use preset database
+                    TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Hall");
+                    SceneData sceneData = JsonUtility.FromJson<SceneData>(textAsset.text);
                     RoomManager.Instance.InstantiateLevel(sceneData, currentRoomData, oldRoomData);
                 }
-            }
 
-            bool isRoomGenerated;
-            do {
-                isRoomGenerated = PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated") && RoomManager.Instance.IsGenerated();
+                if (sceneName.Equals(SceneConstants.HOME)) {
+                    Home homeResponse = JsonUtility.FromJson<Home>(webRequest.downloadHandler.text);
+                    SceneData sceneData = null;
 
-                if (isRoomGenerated) {
-                    RoomManager.Instance.InstantiateLocalCharacter(this.characterPrefab, this.characterData, this.currentRoomData, this.oldRoomData);
+                    if (homeResponse != null) {
+                        Home home = homeResponse;
+                        // If no data found from API use default apartment to prevent crash
+                        sceneData = home.SceneData;
+                        ApartmentManager.Instance.HomeData = home;
+                    } else {
+                        // TODO prevent to go in 
+                        TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Default_Appartment_Talyah");
+                        sceneData = JsonUtility.FromJson<SceneData>(textAsset.text);
+                        ApartmentManager.Instance.HomeData = null;
+                    }
+
+                    if (PhotonNetwork.IsMasterClient) {
+                        RoomManager.Instance.InstantiateLevel(sceneData, currentRoomData, oldRoomData);
+                    }
                 }
 
-                yield return new WaitForSeconds(0.1f);
-            } while (!isRoomGenerated);
+                bool isRoomGenerated;
+                do {
+                    isRoomGenerated = PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated") && RoomManager.Instance.IsGenerated();
 
-            yield return new WaitForSeconds(0.5f);
-            LoadingManager.Instance.Hide();
+                    if (isRoomGenerated) {
+                        RoomManager.Instance.InstantiateLocalCharacter(this.characterPrefab, this.characterData, this.currentRoomData, this.oldRoomData);
+                    }
+
+                    yield return new WaitForSeconds(0.1f);
+                } while (!isRoomGenerated);
+
+                yield return new WaitForSeconds(0.5f);
+                LoadingManager.Instance.Hide();
+            }
         }
 
         #region Callbacks
