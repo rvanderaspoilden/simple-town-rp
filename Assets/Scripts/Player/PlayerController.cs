@@ -46,6 +46,9 @@ namespace Sim {
 
         [SerializeField]
         private CharacterData characterData; // represent all database info relative to the character
+
+        [SyncVar(hook = nameof(ParseCharacterData))]
+        private string rawCharacterData;
         
         private PlayerAnimator animator;
 
@@ -103,6 +106,15 @@ namespace Sim {
             if (isLocalPlayer) {
                 this.UnSubscribeActions(this.actions);
             }
+        }
+
+        public string RawCharacterData {
+            get => rawCharacterData;
+            set => rawCharacterData = value;
+        }
+        
+        public void ParseCharacterData(string old, string newValue) {
+            this.CharacterData = JsonUtility.FromJson<CharacterData>(newValue);
         }
 
         private void Update() {

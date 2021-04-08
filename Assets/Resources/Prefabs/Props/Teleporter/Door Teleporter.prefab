@@ -206,7 +206,6 @@ GameObject:
   - component: {fileID: 3146545893771245718}
   - component: {fileID: 6209186731355358698}
   - component: {fileID: 2739609833105942131}
-  - component: {fileID: -9145504947869361753}
   - component: {fileID: 3093486418350334970}
   m_Layer: 10
   m_Name: Door Teleporter
@@ -286,29 +285,6 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!114 &-9145504947869361753
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3093486418350334969}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 0
-  OwnershipTransfer: 0
-  observableSearch: 0
-  ObservedComponents:
-  - {fileID: 0}
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!114 &3093486418350334970
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -321,6 +297,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 320f5e67eaea6314dad19be10d680781, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 0d50fabf4756bf142bd803fd40997f04, type: 2}
   destination: 2
   spawnTransform: {fileID: 5846919597228383527}

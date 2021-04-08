@@ -1,4 +1,5 @@
-﻿using Photon.Pun;
+﻿using Mirror;
+using Photon.Pun;
 using Photon.Realtime;
 using Sim.Building;
 using Sim.Enums;
@@ -16,8 +17,14 @@ namespace Sim.Interactables {
 
         protected override void Execute(Action action) {
             if (action.Type.Equals(ActionTypeEnum.TELEPORT)) {
-                //NetworkManager.Instance.GoToRoom(RoomTypeEnum.BUILDING_HALL, null);
+                this.CmdGoToHall();
             }
+        }
+        
+        [Command(requiresAuthority = false)]
+        public void CmdGoToHall(NetworkConnectionToClient sender = null) {
+            Debug.Log($"{sender.connectionId} want to go to hall");
+            StartCoroutine(((SimpleTownNetwork)NetworkManager.singleton).LoadSubScene("Hall", sender));
         }
         
         /*public override void Synchronize(Player playerTarget) {

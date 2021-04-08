@@ -7,6 +7,7 @@ using Sim;
 using Sim.Entities;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 /*
 	Documentation: https://mirror-networking.com/docs/Components/NetworkManager.html
@@ -14,6 +15,29 @@ using UnityEngine.Networking;
 */
 
 public class SimpleTownNetwork : NetworkManager {
+
+    public IEnumerator LoadSubScene(string subScene, NetworkConnectionToClient conn) {
+        Debug.Log("Loading Sub scene");
+        yield return SceneManager.LoadSceneAsync(subScene, LoadSceneMode.Additive);
+        Debug.Log($"Loaded {subScene}");
+        
+        SceneMessage message = new SceneMessage{ sceneName = subScene, sceneOperation = SceneOperation.Normal };
+        conn.Send(message);
+
+        yield return new WaitForEndOfFrame();
+        
+        SceneManager.MoveGameObjectToScene(conn.identity.gameObject, SceneManager.GetSceneByName("Hall"));
+    }
+
+    IEnumerator UnloadScenes() {
+        Debug.Log("Unloading Subscenes");
+
+        yield return SceneManager.UnloadSceneAsync("Hall");
+
+        Debug.Log($"Unloaded Hall");
+
+        yield return Resources.UnloadUnusedAssets();
+    }
 
     #region Unity Callbacks
 
@@ -225,12 +249,15 @@ public class SimpleTownNetwork : NetworkManager {
     /// </summary>
     public override void OnStopServer() {
         NetworkServer.UnregisterHandler<CreateCharacterMessage>();
+        StartCoroutine(UnloadScenes());
     }
 
     /// <summary>
     /// This is called when a client is stopped.
     /// </summary>
-    public override void OnStopClient() { }
+    public override void OnStopClient() {
+        StartCoroutine(UnloadScenes());
+    }
 
     #endregion
 
@@ -253,8 +280,8 @@ public class SimpleTownNetwork : NetworkManager {
             GameObject go = Instantiate(this.playerPrefab, startPositions[0].transform.position, Quaternion.identity);
 
             PlayerController player = go.GetComponent<PlayerController>();
-            player.CharacterData = characterResponse.Characters[0];
-            
+            player.RawCharacterData = JsonUtility.ToJson(characterResponse.Characters[0]);
+
             NetworkServer.AddPlayerForConnection(conn, go);
         } else {
             Debug.LogError($"Cannot find character for userId {userId}");
