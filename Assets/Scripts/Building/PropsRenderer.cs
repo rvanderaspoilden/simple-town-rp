@@ -44,6 +44,9 @@ namespace Sim.Building {
         private void Awake() {
             this.props = GetComponent<Props>();
             this.SetupDefaultMaterials();
+        }
+
+        private void Start() {
             this.SetVisibilityMode(VisibilityModeEnum.AUTO);
         }
 

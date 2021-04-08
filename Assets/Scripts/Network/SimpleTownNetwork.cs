@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using Mirror;
 using Sim;
@@ -13,6 +14,7 @@ using UnityEngine.Networking;
 */
 
 public class SimpleTownNetwork : NetworkManager {
+
     #region Unity Callbacks
 
     public override void OnValidate() {
@@ -248,7 +250,7 @@ public class SimpleTownNetwork : NetworkManager {
         if (characterRequest.responseCode == 200) {
             CharacterResponse characterResponse = JsonUtility.FromJson<CharacterResponse>(characterRequest.downloadHandler.text);
 
-            GameObject go = Instantiate(this.playerPrefab);
+            GameObject go = Instantiate(this.playerPrefab, startPositions[0].transform.position, Quaternion.identity);
 
             PlayerController player = go.GetComponent<PlayerController>();
             player.CharacterData = characterResponse.Characters[0];

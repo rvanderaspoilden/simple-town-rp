@@ -272,7 +272,7 @@ GameObject:
   - component: {fileID: 7341811337459597355}
   - component: {fileID: 7933995681442427898}
   - component: {fileID: 7850704535388570682}
-  - component: {fileID: -301311907550045935}
+  - component: {fileID: 3498251243035854122}
   m_Layer: 0
   m_Name: Door
   m_TagString: Untagged
@@ -343,6 +343,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a135ca4bb1b07f49881fa0b5a6a6df1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 375410120f7019f4c949b3bc160a7c34, type: 2}
   doorDirection: 1
   colliderTriggered: []
@@ -365,7 +367,7 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!114 &-301311907550045935
+--- !u!114 &3498251243035854122
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -374,17 +376,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 6924292189066641840}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 0
-  OwnershipTransfer: 0
-  observableSearch: 0
-  ObservedComponents:
-  - {fileID: 0}
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 0

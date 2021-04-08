@@ -91,11 +91,11 @@ GameObject:
   m_Component:
   - component: {fileID: 1600480864028495110}
   - component: {fileID: 9105619071515786256}
-  - component: {fileID: 7363315719916903108}
   - component: {fileID: 7600579433937585451}
   - component: {fileID: 7124087126376872370}
   - component: {fileID: 6899209749786193636}
   - component: {fileID: 9052325171679445177}
+  - component: {fileID: 2428717385130761099}
   m_Layer: 10
   m_Name: Sideboard2
   m_TagString: Untagged
@@ -136,29 +136,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1.0600555, z: 0.37383258}
   m_Center: {x: 0, y: 0.5369681, z: -0.0054166913}
---- !u!114 &7363315719916903108
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2125096977624127420}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  observableSearch: 0
-  Synchronization: 0
-  OwnershipTransfer: 0
-  ObservedComponents:
-  - {fileID: 0}
-  viewIdField: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!208 &7600579433937585451
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -203,6 +180,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: d0ad8a2bf2f681244a539a9ec8859089, type: 2}
 --- !u!114 &9052325171679445177
 MonoBehaviour:
@@ -222,9 +201,33 @@ MonoBehaviour:
   - {fileID: 1656635441085192075}
   - {fileID: 7738347717834691967}
   - {fileID: 6298055375904468736}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
+--- !u!114 &2428717385130761099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2125096977624127420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 1
 --- !u!1 &2272772497135740509
 GameObject:
   m_ObjectHideFlags: 0

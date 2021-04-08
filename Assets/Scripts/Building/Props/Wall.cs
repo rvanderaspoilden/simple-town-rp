@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using Photon.Pun;
-using Photon.Realtime;
+using Mirror;
 using Sim.Enums;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Sim.Building {
@@ -12,19 +12,24 @@ namespace Sim.Building {
         [SerializeField]
         private int[] allowedSharedMaterialIds;
 
+        [ReadOnly]
         [SerializeField]
         private List<WallFace> wallFaces;
 
         [SerializeField]
         private bool exteriorWall;
 
+        [SyncVar(hook = nameof(ParseWallFaces))]
+        private string rawWallFaces;
+
         private new MeshRenderer renderer;
         private MeshCollider meshCollider;
         private Dictionary<int, WallFace> wallFacesPreviewed;
         private BoxCollider[] boxColliders;
 
-        protected override void Awake() {
-            base.Awake();
+        public override void OnStartClient() {
+            base.OnStartClient();
+            
             this.renderer = GetComponent<MeshRenderer>();
             this.meshCollider = GetComponent<MeshCollider>();
             this.boxColliders = GetComponents<BoxCollider>();
@@ -32,14 +37,11 @@ namespace Sim.Building {
             this.wallFacesPreviewed = new Dictionary<int, WallFace>();
 
             this.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER);
-        }
-
-        protected override void Start() {
-            base.Start();
-
+            
             this.UpdateWallFaces();
         }
 
+        [Client]
         public void Reset() {
             // rollback to wall face saved in wall face preview dictionnary
             foreach (KeyValuePair<int, WallFace> keyValuePair in this.wallFacesPreviewed) {
@@ -52,6 +54,7 @@ namespace Sim.Building {
             this.propsRenderer.SetupDefaultMaterials();
         }
 
+        [Client]
         public void EnableCollidersOfType(ColliderTypeEnum type) {
             foreach (BoxCollider boxCollider in this.boxColliders) {
                 boxCollider.enabled = type == ColliderTypeEnum.BOX_COLLIDER;
@@ -64,57 +67,42 @@ namespace Sim.Building {
             return this.wallFaces;
         }
 
-        /*public void SetWallFaces(List<WallFace> faces, RpcTarget rpcTarget) {
-            photonView.RPC("RPC_UpdateWallFaces", rpcTarget, JsonHelper.ToJson(faces.ToArray()));
+        public void SetWallFaces(List<WallFace> faces) {
+            this.CmdUpdateWallFaces(JsonHelper.ToJson(faces.ToArray()));
         }
 
-        public void SetWallFaces(List<WallFace> faces, Player targetPlayer) {
-            photonView.RPC("RPC_UpdateWallFaces", targetPlayer, JsonHelper.ToJson(faces.ToArray()));
+        public void SetExteriorWall(bool value) {
+            this.CmdSetExteriorWall(value);
         }
 
-        public void SetExteriorWall(bool value, RpcTarget rpcTarget) {
-            photonView.RPC("RPC_SetExteriorWall", rpcTarget, value);
-        }
-
-        public void SetExteriorWall(bool value, Player targetPlayer) {
-            photonView.RPC("RPC_SetExteriorWall", targetPlayer, value);
-        }*/
-
-        [PunRPC]
-        public void RPC_SetExteriorWall(bool value) {
+        [Command]
+        public void CmdSetExteriorWall(bool value) {
             this.exteriorWall = value;
         }
 
         public void ApplyModification() {
             this.wallFacesPreviewed.Clear();
 
-            //this.SetWallFaces(this.wallFaces, RpcTarget.Others);
+            this.SetWallFaces(this.wallFaces);
         }
 
         public bool IsPreview() {
             return this.wallFacesPreviewed.Count > 0;
         }
 
-        [PunRPC]
-        public void RPC_UpdateWallFaces(string faces) {
-            if (this.propsRenderer == null) {
-                this.renderer = GetComponent<MeshRenderer>();
-                this.meshCollider = GetComponent<MeshCollider>();
+        [Command]
+        public void CmdUpdateWallFaces(string faces) {
+            this.rawWallFaces = faces;
+        }
 
-                this.wallFacesPreviewed = new Dictionary<int, WallFace>();
-            }
-
-            this.wallFaces = new List<WallFace>(JsonHelper.FromJson<WallFace>(faces));
+        [Client]
+        private void ParseWallFaces(string oldFaces, string newFaces) {
+            this.wallFaces = new List<WallFace>(JsonHelper.FromJson<WallFace>(newFaces));
             this.UpdateWallFaces();
             this.propsRenderer.SetupDefaultMaterials();
         }
 
-        /*public override void Synchronize(Player playerTarget) {
-            base.Synchronize(playerTarget);
-            this.SetWallFaces(this.wallFaces, playerTarget);
-            this.SetExteriorWall(this.exteriorWall, playerTarget);
-        }*/
-
+        [Client]
         public void PreviewMaterialOnFace(RaycastHit hit, PaintBucket paintBucket) {
             if (this.IsAnExteriorFace(hit)) {
                 return;
@@ -154,6 +142,7 @@ namespace Sim.Building {
             this.propsRenderer.SetupDefaultMaterials();
         }
 
+        [Client]
         private bool IsAnExteriorFace(RaycastHit hitFace) {
             return !Physics.Raycast(hitFace.point, hitFace.normal + (Vector3.down * 5), 3, 1 << 9);
         }
@@ -162,8 +151,8 @@ namespace Sim.Building {
             Vector3 position = this.transform.position + Vector3.up;
             bool forwardRaycast = Physics.Raycast(position, this.transform.forward + (Vector3.down * 5), 3, 1 << 9);
             bool backwardRaycast = Physics.Raycast(position, -this.transform.forward + (Vector3.down * 5), 3, 1 << 9);
-
-            //this.SetExteriorWall(!(forwardRaycast && backwardRaycast), PhotonNetwork.LocalPlayer);
+            
+            this.SetExteriorWall(!(forwardRaycast && backwardRaycast));
         }
 
         public bool IsExteriorWall() {
@@ -180,7 +169,6 @@ namespace Sim.Building {
                 if (face.GetPaintConfig().AllowCustomColor()) {
                     materialToApply.color = face.GetAdditionalColor();
                 }
-
 
                 if (face.GetSharedMaterialIdx() >= sharedMaterials.Length) {
                     Debug.LogError($"An error occured during material apply on wall {this.name}");

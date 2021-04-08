@@ -9,12 +9,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 787365463784616115}
-  - component: {fileID: 9185854396774351786}
   - component: {fileID: 2749566814130690555}
   - component: {fileID: 5704431992475139183}
   - component: {fileID: 6442404660948925487}
   - component: {fileID: 1228723929308606025}
   - component: {fileID: 8896325259543280382}
+  - component: {fileID: -4051490287196086723}
   m_Layer: 10
   m_Name: Bidet
   m_TagString: Untagged
@@ -38,28 +38,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9185854396774351786
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 118949682507065865}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 3
-  OwnershipTransfer: 0
-  observableSearch: 2
-  ObservedComponents: []
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!114 &2749566814130690555
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -75,6 +53,9 @@ MonoBehaviour:
   renderersToModify:
   - {fileID: 3925660292159836940}
   - {fileID: 5773690116684505585}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -90,6 +71,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 773af611c2f95854183afcec6aa194c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 701ebf391a5e5ff49b67f8d75df85dcc, type: 2}
   seatPositions: []
   couchPositions: []
@@ -138,6 +121,27 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-4051490287196086723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 118949682507065865}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 0
 --- !u!1 &742273446130226868
 GameObject:
   m_ObjectHideFlags: 0

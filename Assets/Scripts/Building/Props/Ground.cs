@@ -1,11 +1,12 @@
-﻿using Photon.Pun;
-using Photon.Realtime;
+﻿using System;
+using Mirror;
 using Sim.Scriptables;
 using UnityEngine;
 
 namespace Sim.Building {
     public class Ground : Props {
         [Header("Ground settings")]
+        [SyncVar(hook = nameof(SetPaintConfigId))]
         [SerializeField]
         private int paintConfigId;
 
@@ -21,19 +22,17 @@ namespace Sim.Building {
             this.renderer = GetComponent<Renderer>();
         }
 
-        protected override void Start() {
-            base.Start();
-
+        public override void OnStartClient() {
             this.ApplyPaint();
         }
 
-        /*public override void Synchronize(Player playerTarget) {
-            base.Synchronize(playerTarget);
-
-            this.SetPaintConfigId(this.paintConfigId, playerTarget);
+        private void Update() {
+            /*if (Input.GetKeyDown(KeyCode.T)) {
+                this.ApplyModification();
+            }*/
         }
-        */
 
+        [Client]
         public void Preview(PaintConfig paintConfig) {
             if (this.preview) {
                 this.ResetPreview();
@@ -48,9 +47,16 @@ namespace Sim.Building {
         public void ApplyModification() {
             this.oldPaintConfigId = this.paintConfigId;
             this.preview = false;
-            //this.SetPaintConfigId(this.paintConfigId, RpcTarget.Others);
+
+            this.CmdApplyModification(this.paintConfigId);
         }
 
+        [Command]
+        public void CmdApplyModification(int newPaintConfigId) {
+            this.paintConfigId = newPaintConfigId;
+        }
+
+        [Client]
         public void ResetPreview() {
             this.paintConfigId = this.oldPaintConfigId;
             this.ApplyPaint();
@@ -61,31 +67,20 @@ namespace Sim.Building {
             return this.preview;
         }
 
-        public PaintConfig GetPaintConfig() {
-            return DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId);
-        }
-
         public int GetPaintConfigId() {
             return this.paintConfigId;
         }
 
-        /*public void SetPaintConfigId(int paintConfigId, RpcTarget rpcTarget) {
-            this.photonView.RPC("RPC_SetPaintConfigId", rpcTarget, paintConfigId);
-        }
-
-        public void SetPaintConfigId(int paintConfigId, Player playerTarget) {
-            this.photonView.RPC("RPC_SetPaintConfigId", playerTarget, paintConfigId);
-        }*/
-
-        [PunRPC]
-        public void RPC_SetPaintConfigId(int id) {
-            this.paintConfigId = id;
+        public void SetPaintConfigId(int _, int newPaintConfigId) {
+            this.paintConfigId = newPaintConfigId;
             this.ApplyPaint();
         }
 
         private void ApplyPaint() {
-            if (this.GetPaintConfig()) {
-                this.renderer.material = this.GetPaintConfig().GetMaterial();
+            PaintConfig paintConfig = DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId);
+
+            if (paintConfig) {
+                this.renderer.material = paintConfig.GetMaterial();
             }
         }
     }

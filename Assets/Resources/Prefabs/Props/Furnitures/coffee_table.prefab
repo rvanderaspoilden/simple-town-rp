@@ -56,11 +56,11 @@ GameObject:
   - component: {fileID: 7047365908167510952}
   - component: {fileID: 5055768584145682274}
   - component: {fileID: 5223507309464914178}
-  - component: {fileID: 1690109271855269201}
   - component: {fileID: 4133753161413823657}
   - component: {fileID: 8337194470537331864}
   - component: {fileID: 2195881077235731478}
   - component: {fileID: 8624260427845620483}
+  - component: {fileID: -217920201674301995}
   m_Layer: 10
   m_Name: coffee_table
   m_TagString: Untagged
@@ -145,29 +145,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 0.59989995, y: 0.40027344, z: 1.1998904}
   m_Center: {x: 0, y: 0.20013672, z: 0}
---- !u!114 &1690109271855269201
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6712983364803665591}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 0
-  OwnershipTransfer: 0
-  observableSearch: 0
-  ObservedComponents:
-  - {fileID: 0}
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!208 &4133753161413823657
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -214,6 +191,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderersToModify:
   - {fileID: 5055768584145682274}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -229,4 +209,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 596d88291fc5f98478dbf11e02e472e3, type: 2}
+--- !u!114 &-217920201674301995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6712983364803665591}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 1

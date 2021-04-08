@@ -11,11 +11,11 @@ GameObject:
   - component: {fileID: 575376285205977797}
   - component: {fileID: 3482406468759442784}
   - component: {fileID: 1708844970988609962}
-  - component: {fileID: 1220627290486212153}
   - component: {fileID: 8613461662352850709}
   - component: {fileID: 486989954042960643}
   - component: {fileID: 8452278186034629763}
   - component: {fileID: 518365032005803339}
+  - component: {fileID: 2325326059301558211}
   m_Layer: 10
   m_Name: Cabinet
   m_TagString: Untagged
@@ -90,29 +90,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &1220627290486212153
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 916470439362068607}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 0
-  OwnershipTransfer: 0
-  observableSearch: 0
-  ObservedComponents:
-  - {fileID: 0}
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!208 &8613461662352850709
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -157,6 +134,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 26b6381d98463234cb5da5e970666bd5, type: 2}
 --- !u!114 &518365032005803339
 MonoBehaviour:
@@ -172,9 +151,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderersToModify:
   - {fileID: 1708844970988609962}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
+--- !u!114 &2325326059301558211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 916470439362068607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 1
 --- !u!1 &1158982947089883476
 GameObject:
   m_ObjectHideFlags: 0

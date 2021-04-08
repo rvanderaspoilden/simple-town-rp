@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
-using Photon.Pun;
 using Sim.Enums;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
@@ -37,11 +36,11 @@ namespace Sim.Building {
 
             return actions.Where(x => {
                 if (x.Type.Equals(ActionTypeEnum.SIT)) {
-                    //return !this.charactersAssociatedToSeatIdx.ContainsKey(RoomManager.LocalCharacter.photonView.ViewID) && GetAvailableSeatIdx() != -1;
+                    return this.GetKeyFromValue(this.charactersAssociatedToSeatIdx, PlayerController.Local.netId) == -1 && GetAvailableSeatIdx() != -1;
                 }
 
                 if (x.Type.Equals(ActionTypeEnum.COUCH)) {
-                    //return !this.charactersAssociatedToCouchIdx.ContainsKey(RoomManager.LocalCharacter.photonView.ViewID) && GetAvailableCouchIdx() != -1;
+                    return this.GetKeyFromValue(this.charactersAssociatedToCouchIdx, PlayerController.Local.netId) == -1 && GetAvailableCouchIdx() != -1;
                 }
 
                 if (x.Type.Equals(ActionTypeEnum.SELL) || x.Type.Equals(ActionTypeEnum.MOVE)) {
@@ -95,12 +94,19 @@ namespace Sim.Building {
         public void CmdRevokeSeat(NetworkConnectionToClient sender = null) {
             if (sender == null) return;
 
-            foreach (KeyValuePair<int, uint> keyValuePair in this.charactersAssociatedToSeatIdx) {
-                if (keyValuePair.Value == sender.identity.netId) {
-                    this.charactersAssociatedToSeatIdx.Remove(keyValuePair.Key);
-                    return;
+            int seatIdx = GetKeyFromValue(this.charactersAssociatedToSeatIdx, sender.identity.netId);
+
+            if (seatIdx != -1) this.charactersAssociatedToSeatIdx.Remove(seatIdx);
+        }
+
+        private int GetKeyFromValue(SyncDictionary<int, uint> syncDictionary, uint value) {
+            foreach (KeyValuePair<int, uint> keyValuePair in syncDictionary) {
+                if (keyValuePair.Value == value) {
+                    return keyValuePair.Key;
                 }
             }
+
+            return -1;
         }
 
         #endregion
@@ -137,7 +143,7 @@ namespace Sim.Building {
         public void TargetSleep(NetworkConnection target, int couchIdx) {
             PlayerController.Local.Sleep(this, this.couchPositions[couchIdx]);
         }
-        
+
         public void RevokeCouch() {
             CmdRevokeCouch();
         }
@@ -146,12 +152,9 @@ namespace Sim.Building {
         public void CmdRevokeCouch(NetworkConnectionToClient sender = null) {
             if (sender == null) return;
 
-            foreach (KeyValuePair<int, uint> keyValuePair in this.charactersAssociatedToCouchIdx) {
-                if (keyValuePair.Value == sender.identity.netId) {
-                    this.charactersAssociatedToCouchIdx.Remove(keyValuePair.Key);
-                    return;
-                }
-            }
+            int couchIdx = GetKeyFromValue(this.charactersAssociatedToCouchIdx, sender.identity.netId);
+
+            if (couchIdx != -1) this.charactersAssociatedToCouchIdx.Remove(couchIdx);
         }
     }
 }

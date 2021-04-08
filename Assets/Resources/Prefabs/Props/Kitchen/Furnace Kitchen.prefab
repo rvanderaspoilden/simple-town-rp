@@ -90,12 +90,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 966753599172879884}
-  - component: {fileID: 5192700433597861151}
   - component: {fileID: 5192700433597861150}
   - component: {fileID: 5192700433597861137}
   - component: {fileID: 5192700433597861136}
   - component: {fileID: 5192700433597861148}
   - component: {fileID: 5192700433597861149}
+  - component: {fileID: -1204523379877593646}
   m_Layer: 10
   m_Name: Furnace Kitchen
   m_TagString: Untagged
@@ -121,29 +121,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5192700433597861151
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4265402107731989535}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 0
-  OwnershipTransfer: 0
-  observableSearch: 0
-  ObservedComponents:
-  - {fileID: 0}
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!114 &5192700433597861150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -161,6 +138,9 @@ MonoBehaviour:
   - {fileID: 3999496352688665298}
   - {fileID: 3861558983311083226}
   - {fileID: 8104443567123150248}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -176,6 +156,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: fab3e36aed922cc47a5981a886f658f7, type: 2}
 --- !u!65 &5192700433597861136
 BoxCollider:
@@ -222,6 +204,27 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-1204523379877593646
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4265402107731989535}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 0
 --- !u!1 &6910822706194853725
 GameObject:
   m_ObjectHideFlags: 0
