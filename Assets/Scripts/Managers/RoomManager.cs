@@ -106,7 +106,7 @@ namespace Sim {
 
         #region Level generation
 
-        public void InstantiateLevel(SceneData sceneData, RoomNavigationData currentRoom, RoomNavigationData oldRoom) {
+        /*public void InstantiateLevel(SceneData sceneData, RoomNavigationData currentRoom, RoomNavigationData oldRoom) {
             // Instantiate all grounds
             sceneData.grounds?.ToList().ForEach(data => {
                 Ground props = SaveUtils.InstantiatePropsFromSave(data) as Ground;
@@ -170,7 +170,7 @@ namespace Sim {
             Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
             properties.Add("isGenerated", true);
             PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
-        }
+        }*/
 
         public bool IsGenerated() {
             return this.generated;
@@ -287,9 +287,9 @@ namespace Sim {
                 yield return null;
             }
 
-            foreach (Props props in FindObjectsOfType<Props>()) {
+            /*foreach (Props props in FindObjectsOfType<Props>()) {
                 props.Synchronize(newPlayer);
-            }
+            }*/
 
             this.photonView.RPC("RPC_GenerateNavMesh", newPlayer);
         }

@@ -25,18 +25,18 @@ namespace Sim.Building {
                 OnOpened?.Invoke(this);
             }
         }
-        public override void Synchronize(Player playerTarget) {
+        /*public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
 
             this.SetPaintConfigId(this.paintConfig.GetId(), playerTarget);
             this.SetColor(this.color, playerTarget);
-        }
+        }*/
 
         public PaintConfig GetPaintConfig() {
             return this.paintConfig;
         }
 
-        public void SetColor(Color value, RpcTarget rpcTarget) {
+        /*public void SetColor(Color value, RpcTarget rpcTarget) {
             photonView.RPC("RPC_SetColor", rpcTarget, new float[3] {value.r, value.g, value.b});
         }
 
@@ -50,7 +50,7 @@ namespace Sim.Building {
 
         public void SetColor(float[] value, Player player) {
             photonView.RPC("RPC_SetColor", player, value);
-        }
+        }*/
 
         [PunRPC]
         public void RPC_SetColor(float[] value) {
@@ -67,13 +67,13 @@ namespace Sim.Building {
             this.paintConfig = config;
         }
 
-        public void SetPaintConfigId(int id, RpcTarget rpcTarget) {
+        /*public void SetPaintConfigId(int id, RpcTarget rpcTarget) {
             photonView.RPC("RPC_SetPaintInside", rpcTarget, id);
         }
 
         public void SetPaintConfigId(int id, Player player) {
             photonView.RPC("RPC_SetPaintInside", player, id);
-        }
+        }*/
 
         [PunRPC]
         public void RPC_SetPaintInside(int paintId) {

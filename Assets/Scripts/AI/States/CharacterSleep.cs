@@ -39,7 +39,7 @@ namespace AI.States {
             this.player.Animator.SetAction(CharacterAnimatorAction.NONE);
             this.player.SetHeadTargetPosition(this.player.IdleHeadPosition);
 
-            this.props.RevokeCouch(this.player);
+            this.props.RevokeCouch();
 
             this.player.transform.position = lastPosition;
             this.player.Collider.enabled = true;

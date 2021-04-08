@@ -25,13 +25,13 @@ namespace Sim {
             this.propsConfigs = DatabaseManager.PropsDatabase.GetProps().ToDictionary(config => config.GetId(), config => config);
         }
 
-        public void DestroyProps(Props props, bool network) {
+        /*public void DestroyProps(Props props, bool network) {
             if (network) {
                 PhotonNetwork.Destroy(props.photonView);
             } else {
                 Destroy(props.gameObject);
             }
-        }
+        }*/
 
         public Props InstantiateProps(PropsConfig config, int presetId, Vector3 position, Quaternion rotation, bool network) {
             GameObject propsInstanciated;
@@ -46,9 +46,9 @@ namespace Sim {
             Props props = propsInstanciated.GetComponent<Props>();
             props.SetConfiguration(Instantiate(config));
 
-            if (presetId != -1) {
+            /*if (presetId != -1) {
                 props.SetPresetId(presetId, network);
-            }
+            }*/
 
             return props;
         }

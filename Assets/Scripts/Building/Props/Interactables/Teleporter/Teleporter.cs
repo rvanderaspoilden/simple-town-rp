@@ -20,11 +20,11 @@ namespace Sim.Interactables {
             }
         }
         
-        public override void Synchronize(Player playerTarget) {
+        /*public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
 
             this.SetDestination(this.destination, playerTarget);
-        }
+        }*/
 
         public RoomTypeEnum GetDestination() {
             return this.destination;
@@ -32,13 +32,13 @@ namespace Sim.Interactables {
 
         public Transform Spawn => spawnTransform;
 
-        public void SetDestination(RoomTypeEnum destination, RpcTarget rpcTarget) { // TODO: look this
+        /*public void SetDestination(RoomTypeEnum destination, RpcTarget rpcTarget) { // TODO: look this
             this.photonView.RPC("RPC_SetDestination", rpcTarget, destination);
         }
 
         private void SetDestination(RoomTypeEnum destination, Player playerTarget) {
             this.photonView.RPC("RPC_SetDestination", playerTarget, destination);
-        }
+        }*/
 
         [PunRPC]
         public void RPC_SetDestination(RoomTypeEnum placesEnum) {

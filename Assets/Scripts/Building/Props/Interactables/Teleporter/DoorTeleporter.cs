@@ -43,7 +43,7 @@ namespace Sim.Interactables {
         protected override void Execute(Action action) {
             if (action.Type.Equals(ActionTypeEnum.TELEPORT)) {
                 // Play open animation for all
-                photonView.RPC("RPC_Animation", RpcTarget.All);
+                //photonView.RPC("RPC_Animation", RpcTarget.All);
 
                 if (this.destination.Equals(RoomTypeEnum.HOME)) {
                     //TODO: refacto this
@@ -56,7 +56,7 @@ namespace Sim.Interactables {
             }
         }
 
-        public override void Synchronize(Player playerTarget) {
+        /*public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
 
             this.SetDoorDirection(this.doorDirection, playerTarget);
@@ -69,7 +69,7 @@ namespace Sim.Interactables {
 
         public void SetDoorNumber(int value, Player playerTarget) {
             photonView.RPC("RPC_SetDoorNumber", playerTarget, value);
-        }
+        }*/
 
         [PunRPC]
         public void RPC_SetDoorNumber(int value) {
@@ -85,13 +85,13 @@ namespace Sim.Interactables {
             return this.doorDirection;
         }
 
-        public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum, RpcTarget rpcTarget) {
+        /*public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum, RpcTarget rpcTarget) {
             photonView.RPC("RPC_SetDoorDirection", rpcTarget, doorDirectionEnum);
         }
 
         public void SetDoorDirection(DoorDirectionEnum doorDirectionEnum, Player playerTarget) {
             photonView.RPC("RPC_SetDoorDirection", playerTarget, doorDirectionEnum);
-        }
+        }*/
 
         [PunRPC]
         public void RPC_SetDoorDirection(DoorDirectionEnum doorDirectionEnum) {

@@ -64,7 +64,7 @@ namespace Sim.Building {
             return this.wallFaces;
         }
 
-        public void SetWallFaces(List<WallFace> faces, RpcTarget rpcTarget) {
+        /*public void SetWallFaces(List<WallFace> faces, RpcTarget rpcTarget) {
             photonView.RPC("RPC_UpdateWallFaces", rpcTarget, JsonHelper.ToJson(faces.ToArray()));
         }
 
@@ -78,7 +78,7 @@ namespace Sim.Building {
 
         public void SetExteriorWall(bool value, Player targetPlayer) {
             photonView.RPC("RPC_SetExteriorWall", targetPlayer, value);
-        }
+        }*/
 
         [PunRPC]
         public void RPC_SetExteriorWall(bool value) {
@@ -88,7 +88,7 @@ namespace Sim.Building {
         public void ApplyModification() {
             this.wallFacesPreviewed.Clear();
 
-            this.SetWallFaces(this.wallFaces, RpcTarget.Others);
+            //this.SetWallFaces(this.wallFaces, RpcTarget.Others);
         }
 
         public bool IsPreview() {
@@ -109,11 +109,11 @@ namespace Sim.Building {
             this.propsRenderer.SetupDefaultMaterials();
         }
 
-        public override void Synchronize(Player playerTarget) {
+        /*public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
             this.SetWallFaces(this.wallFaces, playerTarget);
             this.SetExteriorWall(this.exteriorWall, playerTarget);
-        }
+        }*/
 
         public void PreviewMaterialOnFace(RaycastHit hit, PaintBucket paintBucket) {
             if (this.IsAnExteriorFace(hit)) {
@@ -163,7 +163,7 @@ namespace Sim.Building {
             bool forwardRaycast = Physics.Raycast(position, this.transform.forward + (Vector3.down * 5), 3, 1 << 9);
             bool backwardRaycast = Physics.Raycast(position, -this.transform.forward + (Vector3.down * 5), 3, 1 << 9);
 
-            this.SetExteriorWall(!(forwardRaycast && backwardRaycast), PhotonNetwork.LocalPlayer);
+            //this.SetExteriorWall(!(forwardRaycast && backwardRaycast), PhotonNetwork.LocalPlayer);
         }
 
         public bool IsExteriorWall() {

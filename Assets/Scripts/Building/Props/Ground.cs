@@ -27,11 +27,12 @@ namespace Sim.Building {
             this.ApplyPaint();
         }
 
-        public override void Synchronize(Player playerTarget) {
+        /*public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
 
             this.SetPaintConfigId(this.paintConfigId, playerTarget);
         }
+        */
 
         public void Preview(PaintConfig paintConfig) {
             if (this.preview) {
@@ -47,7 +48,7 @@ namespace Sim.Building {
         public void ApplyModification() {
             this.oldPaintConfigId = this.paintConfigId;
             this.preview = false;
-            this.SetPaintConfigId(this.paintConfigId, RpcTarget.Others);
+            //this.SetPaintConfigId(this.paintConfigId, RpcTarget.Others);
         }
 
         public void ResetPreview() {
@@ -68,13 +69,13 @@ namespace Sim.Building {
             return this.paintConfigId;
         }
 
-        public void SetPaintConfigId(int paintConfigId, RpcTarget rpcTarget) {
+        /*public void SetPaintConfigId(int paintConfigId, RpcTarget rpcTarget) {
             this.photonView.RPC("RPC_SetPaintConfigId", rpcTarget, paintConfigId);
         }
 
         public void SetPaintConfigId(int paintConfigId, Player playerTarget) {
             this.photonView.RPC("RPC_SetPaintConfigId", playerTarget, paintConfigId);
-        }
+        }*/
 
         [PunRPC]
         public void RPC_SetPaintConfigId(int id) {

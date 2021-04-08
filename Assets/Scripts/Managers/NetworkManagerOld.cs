@@ -149,7 +149,7 @@ namespace Sim {
                     // TODO use preset database
                     TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Hall");
                     SceneData sceneData = JsonUtility.FromJson<SceneData>(textAsset.text);
-                    RoomManager.Instance.InstantiateLevel(sceneData, currentRoomData, oldRoomData);
+                    //RoomManager.Instance.InstantiateLevel(sceneData, currentRoomData, oldRoomData);
                 }
 
                 if (sceneName.Equals(SceneConstants.HOME)) {
@@ -169,7 +169,7 @@ namespace Sim {
                     }
 
                     if (PhotonNetwork.IsMasterClient) {
-                        RoomManager.Instance.InstantiateLevel(sceneData, currentRoomData, oldRoomData);
+                        //RoomManager.Instance.InstantiateLevel(sceneData, currentRoomData, oldRoomData);
                     }
                 }
 

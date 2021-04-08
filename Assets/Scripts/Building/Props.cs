@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Linq;
 using Mirror;
-using Photon.Pun;
-using Photon.Realtime;
 using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
@@ -10,7 +8,7 @@ using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     [RequireComponent(typeof(PropsRenderer))]
-    public class Props : MonoBehaviourPun{
+    public class Props : NetworkBehaviour {
         [Header("Props settings")]
         [SerializeField]
         protected PropsConfig configuration;
@@ -19,12 +17,14 @@ namespace Sim.Building {
 
         private Action[] unbuiltActions;
 
+        [SyncVar(hook = nameof(SetIsBuilt))]
         private bool built;
 
         protected PropsRenderer propsRenderer;
 
         private Action currentAction;
 
+        [SyncVar(hook = nameof(SetPresetId))]
         private int presetId = -1;
 
         public delegate void PropsAction(Props props);
@@ -62,8 +62,8 @@ namespace Sim.Building {
                 action.OnExecute += DoAction;
             }
         }
-        
-        private void  UnSubscribeActions(Action[] actionList) {
+
+        private void UnSubscribeActions(Action[] actionList) {
             foreach (var action in actionList) {
                 action.OnExecute -= DoAction;
             }
@@ -96,7 +96,7 @@ namespace Sim.Building {
             if (withPriority) {
                 actionsToReturn = actionsToReturn.SkipWhile(x => x.Type.Equals(ActionTypeEnum.SELL) || x.Type.Equals(ActionTypeEnum.MOVE)).ToArray();
             }
-            
+
             return actionsToReturn;
         }
 
@@ -108,26 +108,9 @@ namespace Sim.Building {
             get => presetId;
             set => presetId = value;
         }
-        
-        public void SetPresetId(int id, bool network, Player playerTarget = null) {
-            if (!network) {
-                this.presetId = id;
-                this.UpdatePresetRender();
-                return;
-            }
-            
-            /*if (playerTarget != null) {
-                Debug.Log($"Set preset ID {id}");
-                photonView.RPC("RPC_SetPresetId", playerTarget, id);
-            } else {
-                photonView.RPC("RPC_SetPresetId", RpcTarget.All, id);
-            }*/
-        }
-        
-        [PunRPC]
-        public void RPC_SetPresetId(int id) {
-            this.presetId = id;
 
+        public void SetPresetId(int oldId, int newId) {
+            this.presetId = newId;
             this.UpdatePresetRender();
         }
 
@@ -135,7 +118,7 @@ namespace Sim.Building {
             if (this.configuration.Presets == null || this.configuration.Presets.Length == 0) {
                 return;
             }
-            
+
             PropsPreset preset = this.configuration.Presets.First(x => x.ID == this.PresetId);
 
             if (preset != null) {
@@ -145,20 +128,11 @@ namespace Sim.Building {
             }
         }
 
-        public void SetIsBuilt(bool value, Player playerTarget = null) {
-            /*if (playerTarget != null) {
-                photonView.RPC("RPC_SetIsBuilt", playerTarget, value);
-            } else {
-                photonView.RPC("RPC_SetIsBuilt", RpcTarget.All, value);
-            }*/
-        }
-
-        [PunRPC]
-        public void RPC_SetIsBuilt(bool value) {
-            this.built = value;
+        public void SetIsBuilt(bool oldValue, bool newValue) {
+            this.built = newValue;
             this.propsRenderer.UpdateGraphics();
         }
-
+        
         private void DoAction(Action action) {
             Debug.Log("do action : " + action.Label);
 
@@ -174,11 +148,11 @@ namespace Sim.Building {
                 case ActionTypeEnum.SELL:
                     this.Sell();
                     break;
-                
+
                 case ActionTypeEnum.LOOK:
                     this.Look();
                     break;
-                
+
                 default:
                     this.Execute(action);
                     break;
@@ -190,7 +164,7 @@ namespace Sim.Building {
         }
 
         private void Build() {
-            this.SetIsBuilt(true);
+            //this.SetIsBuilt(true); TODO: call server
 
             RoomManager.Instance.SaveRoom();
         }
@@ -204,21 +178,12 @@ namespace Sim.Building {
         }
 
         private void Sell() {
-           // photonView.RPC("RPC_SellProps", PhotonNetwork.MasterClient);
+            // photonView.RPC("RPC_SellProps", PhotonNetwork.MasterClient);
         }
 
-        [PunRPC]
         public void RPC_SellProps() {
-            PropsManager.Instance.DestroyProps(this, true);
+            //PropsManager.Instance.DestroyProps(this, true);
             RoomManager.Instance.SaveRoom();
-        }
-
-        public void UpdateTransform(Player playerTarget = null) {
-            if (playerTarget == null) {
-                //photonView.RPC("RPC_UpdateTransform", RpcTarget.Others, this.transform.position, this.transform.rotation);
-            } else {
-                //photonView.RPC("RPC_UpdateTransform", playerTarget, this.transform.position, this.transform.rotation);
-            }
         }
 
         public PropsConfig GetConfiguration() {
@@ -228,18 +193,11 @@ namespace Sim.Building {
         public void SetConfiguration(PropsConfig config) {
             this.configuration = config;
         }
-
-        [PunRPC]
-        public void RPC_UpdateTransform(Vector3 pos, Quaternion rot) {
-            this.transform.position = pos;
-            this.transform.rotation = rot;
-        }
-
-        public virtual void Synchronize(Player playerTarget) {
+        
+        /*public virtual void Synchronize(Player playerTarget) {
             this.SetPresetId(this.presetId, true, playerTarget);
             this.SetIsBuilt(this.built, playerTarget);
-            this.UpdateTransform(playerTarget);
-        }
+        }*/
 
         public bool IsWallProps() {
             return this.configuration.GetSurfaceToPose() == BuildSurfaceEnum.WALL;

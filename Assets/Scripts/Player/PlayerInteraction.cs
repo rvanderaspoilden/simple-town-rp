@@ -100,7 +100,7 @@ namespace Sim {
                 FindObjectsOfType<Ground>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
             }
 
-            PropsManager.Instance.DestroyProps(this.currentOpenedBucket, true);
+            //PropsManager.Instance.DestroyProps(this.currentOpenedBucket, true);
 
             RoomManager.Instance.SaveRoom();
 
@@ -110,15 +110,15 @@ namespace Sim {
         private void OnValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation) {
             Props props = PropsManager.Instance.InstantiateProps(propsConfig, presetId, position, rotation, true);
 
-            props.SetIsBuilt(!propsConfig.MustBeBuilt());
+            //props.SetIsBuilt(!propsConfig.MustBeBuilt());
 
             if (this.currentDelivery.Type.Equals(DeliveryType.COVER)) {
                 PaintBucket coverProps = props as PaintBucket;
 
                 if (coverProps) {
                     Debug.Log("Set cover properties");
-                    coverProps.SetPaintConfigId(this.currentDelivery.PaintConfigId, RpcTarget.All);
-                    coverProps.SetColor(this.currentDelivery.Color, RpcTarget.All);
+                    /*coverProps.SetPaintConfigId(this.currentDelivery.PaintConfigId, RpcTarget.All);
+                    coverProps.SetColor(this.currentDelivery.Color, RpcTarget.All);*/
                 }
             }
 
@@ -136,7 +136,7 @@ namespace Sim {
         }
 
         private void OnValidatePropEdit(Props props) {
-            props.UpdateTransform();
+            //props.UpdateTransform();
 
             RoomManager.Instance.SaveRoom();
 

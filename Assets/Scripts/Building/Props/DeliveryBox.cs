@@ -61,12 +61,12 @@ namespace Sim.Building {
             }*/
         }
 
-        public override void Synchronize(Player playerTarget) {
+        /*public override void Synchronize(Player playerTarget) {
             base.Synchronize(playerTarget);
 
             /*if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
                 this.RefreshDeliveriesQuantity(playerTarget);
-            }*/
+            }#1#
         }
 
         private void RefreshDeliveriesQuantity(Player playerTarget = null) {
@@ -75,7 +75,7 @@ namespace Sim.Building {
             } else {
                 photonView.RPC("RPC_RefreshDeliveriesQuantity", RpcTarget.Others, this.deliveries.Length);
             }
-        }
+        }*/
 
         [PunRPC]
         public void RPC_RefreshDeliveriesQuantity(int quantity) {
@@ -112,7 +112,7 @@ namespace Sim.Building {
 
             this.UpdateGraphics();
 
-            this.RefreshDeliveriesQuantity();
+            //this.RefreshDeliveriesQuantity();
 
             DefaultViewUI.Instance.RefreshPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
         }

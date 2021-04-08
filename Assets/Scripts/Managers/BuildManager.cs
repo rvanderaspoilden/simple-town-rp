@@ -197,7 +197,7 @@ namespace Sim {
                         this.currentPropSelected.PresetId,
                         this.currentPropSelected.transform.position,
                         this.currentPropSelected.transform.rotation);
-                    PropsManager.Instance.DestroyProps(this.currentPropSelected, false);
+                    //PropsManager.Instance.DestroyProps(this.currentPropSelected, false);
                 }
             } else if (this.mode == BuildModeEnum.PAINT) {
                 FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
