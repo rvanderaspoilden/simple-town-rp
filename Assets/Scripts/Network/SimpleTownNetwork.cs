@@ -1,13 +1,8 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Threading;
 using Mirror;
 using Sim;
-using Sim.Entities;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.SceneManagement;
 
 /*
 	Documentation: https://mirror-networking.com/docs/Components/NetworkManager.html
@@ -15,30 +10,7 @@ using UnityEngine.SceneManagement;
 */
 
 public class SimpleTownNetwork : NetworkManager {
-
-    public IEnumerator LoadSubScene(string subScene, NetworkConnectionToClient conn) {
-        Debug.Log("Loading Sub scene");
-        yield return SceneManager.LoadSceneAsync(subScene, LoadSceneMode.Additive);
-        Debug.Log($"Loaded {subScene}");
-        
-        SceneMessage message = new SceneMessage{ sceneName = subScene, sceneOperation = SceneOperation.Normal };
-        conn.Send(message);
-
-        yield return new WaitForEndOfFrame();
-        
-        SceneManager.MoveGameObjectToScene(conn.identity.gameObject, SceneManager.GetSceneByName("Hall"));
-    }
-
-    IEnumerator UnloadScenes() {
-        Debug.Log("Unloading Subscenes");
-
-        yield return SceneManager.UnloadSceneAsync("Hall");
-
-        Debug.Log($"Unloaded Hall");
-
-        yield return Resources.UnloadUnusedAssets();
-    }
-
+    
     #region Unity Callbacks
 
     public override void OnValidate() {
@@ -249,14 +221,12 @@ public class SimpleTownNetwork : NetworkManager {
     /// </summary>
     public override void OnStopServer() {
         NetworkServer.UnregisterHandler<CreateCharacterMessage>();
-        StartCoroutine(UnloadScenes());
     }
 
     /// <summary>
     /// This is called when a client is stopped.
     /// </summary>
     public override void OnStopClient() {
-        StartCoroutine(UnloadScenes());
     }
 
     #endregion

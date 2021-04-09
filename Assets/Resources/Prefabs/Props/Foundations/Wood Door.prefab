@@ -164,36 +164,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &2224363166218123021
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5846919597228383527}
-  m_Layer: 10
-  m_Name: Spawn
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5846919597228383527
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2224363166218123021}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.5, y: 0, z: 0.5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 2068590772505186794}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3093486418350334969
 GameObject:
   m_ObjectHideFlags: 0
@@ -206,9 +176,10 @@ GameObject:
   - component: {fileID: 3146545893771245718}
   - component: {fileID: 6209186731355358698}
   - component: {fileID: 2739609833105942131}
-  - component: {fileID: 3093486418350334970}
-  m_Layer: 10
-  m_Name: Door Teleporter
+  - component: {fileID: 5446098710083503854}
+  - component: {fileID: 8219415954111965407}
+  m_Layer: 0
+  m_Name: Wood Door
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -227,7 +198,6 @@ Transform:
   m_Children:
   - {fileID: 2728102464883895467}
   - {fileID: 1609858348734830232}
-  - {fileID: 5846919597228383527}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -242,8 +212,8 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1, y: 2.0393667, z: 0.18}
-  m_Center: {x: -0.50201845, y: 1.0143192, z: -0.05183959}
+  m_Size: {x: 1, y: 2.0043561, z: 1.67}
+  m_Center: {x: -0.50201845, y: 0.9968139, z: -0.05183959}
 --- !u!114 &6209186731355358698
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -285,7 +255,7 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!114 &3093486418350334970
+--- !u!114 &5446098710083503854
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -294,16 +264,33 @@ MonoBehaviour:
   m_GameObject: {fileID: 3093486418350334969}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 320f5e67eaea6314dad19be10d680781, type: 3}
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
+--- !u!114 &8219415954111965407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3093486418350334969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 532e252806626f64888ae6fbcf70eb5a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   syncMode: 0
   syncInterval: 0.1
-  configuration: {fileID: 11400000, guid: 0d50fabf4756bf142bd803fd40997f04, type: 2}
-  destination: 2
-  spawnTransform: {fileID: 5846919597228383527}
+  configuration: {fileID: 11400000, guid: 375410120f7019f4c949b3bc160a7c34, type: 2}
   doorDirection: 0
-  number: 1
+  colliderTriggered: []
+  numberTxt: {fileID: 3889002773284042804}
+  number: 0
 --- !u!1 &6721396813752071835
 GameObject:
   m_ObjectHideFlags: 0

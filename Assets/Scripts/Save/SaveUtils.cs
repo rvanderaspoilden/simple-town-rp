@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Mirror;
 using Photon.Pun;
 using Sim.Building;
 using Sim.Interactables;
@@ -14,22 +15,6 @@ namespace Sim.Utils {
             transformData.position = new Vector3Data(transform.localPosition);
             transformData.rotation = new Vector3Data(transform.localEulerAngles);
             return transformData;
-        }
-
-        public static DoorTeleporterData CreateDoorTeleporterData(DoorTeleporter doorTeleporter) {
-            DoorTeleporterData doorTeleporterData = new DoorTeleporterData();
-            doorTeleporterData.Init(doorTeleporter);
-            doorTeleporterData.destination = doorTeleporter.GetDestination().ToString();
-            doorTeleporterData.doorDirection = doorTeleporter.GetDoorDirection().ToString();
-            doorTeleporterData.number = doorTeleporter.GetDoorNumber();
-            return doorTeleporterData;
-        }
-
-        public static ElevatorTeleporterData CreateElevatorTeleporterData(ElevatorTeleporter elevatorTeleporter) {
-            ElevatorTeleporterData data = new ElevatorTeleporterData();
-            data.Init(elevatorTeleporter);
-            data.destination = elevatorTeleporter.GetDestination().ToString();
-            return data;
         }
 
         public static WallData CreateWallData(Wall wall) {
@@ -58,13 +43,6 @@ namespace Sim.Utils {
             return data;
         }
 
-        public static PackageData CreatePackageData(Package package) {
-            PackageData data = new PackageData();
-            data.Init(package);
-            data.propsConfigIdInside = package.GetPropsConfigInside().GetId();
-            return data;
-        }
-
         public static BucketData CreateBucketData(PaintBucket paintBucket) {
             BucketData data = new BucketData();
             data.Init(paintBucket);
@@ -77,11 +55,14 @@ namespace Sim.Utils {
             return data;
         }
 
-        public static Props InstantiatePropsFromSave(DefaultData data) {
+        [Server]
+        public static Props InstantiatePropsFromSave(DefaultData data, Vector3 relativeOrigin) {
             PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
-            Props props = PropsManager.Instance.InstantiateProps(propsConfig, data.presetId, data.transform.position.ToVector3(), Quaternion.Euler(data.transform.rotation.ToVector3()), true);
+            Props props = PropsManager.Instance.InstantiateProps(propsConfig, data.presetId, relativeOrigin + data.transform.position.ToVector3(), Quaternion.Euler(data.transform.rotation.ToVector3()), false);
 
-            //props.SetIsBuilt(!propsConfig.MustBeBuilt() || data.isBuilt, PhotonNetwork.LocalPlayer);
+            props.InitBuilt(!propsConfig.MustBeBuilt() || data.isBuilt);
+
+            NetworkServer.Spawn(props.gameObject);
 
             return props;
         }

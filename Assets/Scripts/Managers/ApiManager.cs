@@ -88,7 +88,7 @@ namespace Sim {
             StartCoroutine(this.SaveHomeSceneCoroutine(home, sceneData));
         }
 
-        public UnityWebRequest RetrieveHomeByAddress(Address address) {
+        public UnityWebRequest RetrieveHomeRequest(Address address) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(address));
 
             UnityWebRequest request = new UnityWebRequest($"{this.uri}/homes/by-address", "POST") {
@@ -99,9 +99,7 @@ namespace Sim {
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
             request.SetRequestHeader("Content-type", "application/json");
             request.SetRequestHeader("Accept", "application/json");
-
-            request.SendWebRequest();
-
+            
             return request;
         }
 

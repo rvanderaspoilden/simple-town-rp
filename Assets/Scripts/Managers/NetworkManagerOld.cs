@@ -125,7 +125,7 @@ namespace Sim {
             UnityWebRequest webRequest = null;
 
             if (sceneName.Equals(CommonUtils.GetSceneName(RoomTypeEnum.HOME))) {
-                webRequest = ApiManager.Instance.RetrieveHomeByAddress(this.nextRoomData.Address);
+               // webRequest = ApiManager.Instance.RetrieveHomeByAddress(this.nextRoomData.Address);
             }
 
             while (PhotonNetwork.LevelLoadingProgress < 1f || (webRequest != null && !webRequest.isDone)) {
@@ -160,12 +160,12 @@ namespace Sim {
                         Home home = homeResponse;
                         // If no data found from API use default apartment to prevent crash
                         sceneData = home.SceneData;
-                        ApartmentManager.Instance.HomeData = home;
+                        //ApartmentManager.Instance.HomeData = home;
                     } else {
                         // TODO prevent to go in 
                         TextAsset textAsset = Resources.Load<TextAsset>("PresetSceneDatas/Default_Appartment_Talyah");
                         sceneData = JsonUtility.FromJson<SceneData>(textAsset.text);
-                        ApartmentManager.Instance.HomeData = null;
+                        //ApartmentManager.Instance.HomeData = null;
                     }
 
                     if (PhotonNetwork.IsMasterClient) {

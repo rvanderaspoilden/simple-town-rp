@@ -227,12 +227,9 @@ namespace Sim {
 
         protected virtual SceneData GenerateSceneData() {
             SceneData sceneData = new SceneData {
-                doorTeleporters = FindObjectsOfType<DoorTeleporter>().ToList().Select(SaveUtils.CreateDoorTeleporterData).ToArray(),
-                elevatorTeleporters = FindObjectsOfType<ElevatorTeleporter>().ToList().Select(SaveUtils.CreateElevatorTeleporterData).ToArray(),
                 walls = FindObjectsOfType<Wall>().ToList().Select(SaveUtils.CreateWallData).ToArray(),
                 simpleDoors = FindObjectsOfType<SimpleDoor>().ToList().Select(SaveUtils.CreateDoorData).ToArray(),
                 grounds = FindObjectsOfType<Ground>().ToList().Select(SaveUtils.CreateGroundData).ToArray(),
-                packages = FindObjectsOfType<Package>().ToList().Select(SaveUtils.CreatePackageData).ToArray(),
                 buckets = FindObjectsOfType<PaintBucket>().ToList().Select(SaveUtils.CreateBucketData).ToArray(),
                 props = FindObjectsOfType<Props>().ToList()
                     .Where(props => defaultPropsTypes.Contains(props.GetType()))

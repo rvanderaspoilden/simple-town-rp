@@ -41,6 +41,11 @@ namespace Sim.Building {
             this.UpdateWallFaces();
         }
 
+        [Server]
+        public void Init(string faces) {
+            this.rawWallFaces = faces;
+        }
+
         [Client]
         public void Reset() {
             // rollback to wall face saved in wall face preview dictionnary
@@ -160,6 +165,10 @@ namespace Sim.Building {
         }
 
         private void UpdateWallFaces() {
+            if (this.renderer == null) {
+                this.renderer = GetComponent<MeshRenderer>();
+            }
+            
             Material[] sharedMaterials = this.renderer.sharedMaterials;
 
             for (int i = 0; i < this.wallFaces.Count; i++) {

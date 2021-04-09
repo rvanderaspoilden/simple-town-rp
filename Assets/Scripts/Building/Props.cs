@@ -49,6 +49,10 @@ namespace Sim.Building {
             throw new NotImplementedException();
         }
 
+        public void InitBuilt(bool isBuilt) {
+            this.built = isBuilt;
+        }
+
         /**
          * Setup all action when a props is built
          */
@@ -89,7 +93,7 @@ namespace Sim.Building {
         public virtual Action[] GetActions(bool withPriority = false) {
             Action[] actionsToReturn = this.IsBuilt() ? this.actions : this.unbuiltActions;
 
-            bool hasPermission = ApartmentManager.Instance && ApartmentManager.Instance.IsTenant(RoomManager.LocalPlayer.CharacterData);
+            bool hasPermission = hasAuthority;
 
             actionsToReturn = actionsToReturn.Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission).ToArray();
 
@@ -130,9 +134,14 @@ namespace Sim.Building {
 
         public void SetIsBuilt(bool oldValue, bool newValue) {
             this.built = newValue;
+
+            if (this.propsRenderer == null) {
+                this.propsRenderer = GetComponent<PropsRenderer>();
+            }
+
             this.propsRenderer.UpdateGraphics();
         }
-        
+
         private void DoAction(Action action) {
             Debug.Log("do action : " + action.Label);
 
@@ -193,7 +202,7 @@ namespace Sim.Building {
         public void SetConfiguration(PropsConfig config) {
             this.configuration = config;
         }
-        
+
         /*public virtual void Synchronize(Player playerTarget) {
             this.SetPresetId(this.presetId, true, playerTarget);
             this.SetIsBuilt(this.built, playerTarget);

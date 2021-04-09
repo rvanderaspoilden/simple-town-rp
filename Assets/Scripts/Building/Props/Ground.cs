@@ -26,10 +26,8 @@ namespace Sim.Building {
             this.ApplyPaint();
         }
 
-        private void Update() {
-            /*if (Input.GetKeyDown(KeyCode.T)) {
-                this.ApplyModification();
-            }*/
+        public void Init(int paintId) {
+            this.paintConfigId = paintId;
         }
 
         [Client]

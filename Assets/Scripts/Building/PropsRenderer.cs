@@ -117,6 +117,10 @@ namespace Sim.Building {
                 visibility = VisibilityStateEnum.SHOW;
             }
 
+            if (this.defaultMaterialsByRenderer == null) {
+                this.SetupDefaultMaterials();
+            }
+
 
             foreach (Renderer renderer in this.renderersToModify) {
                 Material[] newMaterials = new Material[renderer.materials.Length];

@@ -751,13 +751,12 @@
             <e p="BuildPreview.cs" t="Include" />
             <e p="Props" t="Include">
               <e p="DeliveryBox.cs" t="Include" />
+              <e p="FrontDoor.cs" t="Include" />
               <e p="Ground.cs" t="Include" />
               <e p="Interactables" t="Include">
                 <e p="Action.cs" t="Include" />
                 <e p="Package.cs" t="Include" />
                 <e p="Teleporter" t="Include">
-                  <e p="DoorTeleporter.cs" t="Include" />
-                  <e p="ElevatorTeleporter.cs" t="Include" />
                   <e p="Teleporter.cs" t="Include" />
                 </e>
               </e>
@@ -832,14 +831,15 @@
             <e p="MainMenuManager.cs" t="Include" />
           </e>
           <e p="Managers" t="Include">
+            <e p="ApartmentController.cs" t="Include" />
             <e p="ApartmentCreationManager.cs" t="Include" />
-            <e p="ApartmentManager.cs" t="Include" />
             <e p="ApiManager.cs" t="Include" />
             <e p="BuildManager.cs" t="Include" />
             <e p="CameraManager.cs" t="Include" />
             <e p="CharacterCreationManager.cs" t="Include" />
             <e p="CursorManager.cs" t="Include" />
             <e p="DatabaseManager.cs" t="Include" />
+            <e p="HallController.cs" t="Include" />
             <e p="HUDManager.cs" t="Include" />
             <e p="Launcher.cs" t="Include" />
             <e p="LoadingManager.cs" t="Include" />
