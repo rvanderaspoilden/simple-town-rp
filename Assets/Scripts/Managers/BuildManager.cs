@@ -1,7 +1,5 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using Photon.Pun;
+﻿using System.Linq;
+using Mirror;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
@@ -115,21 +113,10 @@ namespace Sim {
             }
         }
 
-        /**
-         * This method is the entrypoint to start build mode
-         */
-        public void Init(PropsConfig config) {
-            this.currentPropSelected = PropsManager.Instance.InstantiateProps(config, 0, false);
-            this.currentPropsCollider = this.currentPropSelected.GetComponent<BoxCollider>();
-            this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
-
-            this.SetMode(BuildModeEnum.POSING);
-        }
-
         public void Init(Delivery delivery) {
             PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(delivery.PropsConfigId);
 
-            this.currentPropSelected = PropsManager.Instance.InstantiateProps(propsConfig, delivery.PropsPresetId, false);
+            this.currentPropSelected = PropsManager.Instance.InstantiateProps(propsConfig, delivery.PropsPresetId);
             this.currentPropsCollider = this.currentPropSelected.GetComponent<BoxCollider>();
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
 
@@ -176,9 +163,15 @@ namespace Sim {
 
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
-            RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
-            RoomManager.Instance.SetPropsVisibility(VisibilityModeEnum.AUTO);
+            //RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
+            //RoomManager.Instance.SetPropsVisibility(VisibilityModeEnum.AUTO);
             OnCancel?.Invoke();
+        }
+
+        [Client]
+        public void EditionIsValidated() {
+            this.currentPreview.Destroy();
+            this.isEditing = false;
         }
 
         private void Apply() {
@@ -190,22 +183,20 @@ namespace Sim {
             if (this.mode == BuildModeEnum.VALIDATING) {
                 if (this.isEditing) {
                     OnValidatePropEdit?.Invoke(this.currentPropSelected);
-                    this.currentPreview.Destroy();
-                    this.isEditing = false;
                 } else {
                     OnValidatePropCreation?.Invoke(this.currentPropSelected.GetConfiguration(),
                         this.currentPropSelected.PresetId,
                         this.currentPropSelected.transform.position,
                         this.currentPropSelected.transform.rotation);
-                    //PropsManager.Instance.DestroyProps(this.currentPropSelected, false);
+                    Destroy(this.currentPropSelected.gameObject);
                 }
             } else if (this.mode == BuildModeEnum.PAINT) {
                 FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
                 OnValidatePaintModification?.Invoke();
             }
 
-            RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
-            RoomManager.Instance.SetPropsVisibility(VisibilityModeEnum.AUTO);
+            //RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
+            //RoomManager.Instance.SetPropsVisibility(VisibilityModeEnum.AUTO);
 
             this.SetMode(BuildModeEnum.NONE);
         }
@@ -213,7 +204,7 @@ namespace Sim {
         /**
          * This methods is used to reset buid preview to inital
          */
-        private void Reset() {
+        public void Reset() {
             if (this.currentPropSelected) {
                 if (this.isEditing) {
                     this.currentPropSelected.transform.position = this.originPosition;

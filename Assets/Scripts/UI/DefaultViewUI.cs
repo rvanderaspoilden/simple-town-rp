@@ -1,5 +1,4 @@
-﻿using Photon.Pun;
-using Sim.UI;
+﻿using Sim.UI;
 using TMPro;
 using UnityEngine;
 
@@ -34,7 +33,7 @@ namespace Sim {
             this.SetLocationText("Simple Town");
         }
 
-        private void SetLocationText(string value) {
+        public void SetLocationText(string value) {
             foreach (TextMeshProUGUI tmpPro in this.locationText.GetComponentsInChildren<TextMeshProUGUI>()) {
                 tmpPro.text = value;
             }

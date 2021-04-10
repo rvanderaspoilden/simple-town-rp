@@ -1,12 +1,12 @@
-using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
-using Photon.Pun;
-using Photon.Realtime;
+using Mirror;
 using Sim.Entities;
 using Sim.Enums;
 using Sim.Interactables;
 using Sim.UI;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Sim.Building {
     public class DeliveryBox : Props {
@@ -28,66 +28,79 @@ namespace Sim.Building {
 
         private AudioSource _audioSource;
 
+        [SyncVar(hook = nameof(RefreshDeliveriesQuantity))]
+        [SerializeField]
+        private uint deliveryCount;
+
         public delegate void UnPackageEvent(Delivery delivery);
 
         public static event UnPackageEvent UnPackage;
 
-        protected override void Awake() {
-            base.Awake();
-
+        public override void OnStartClient() {
+            base.OnStartClient();
+            
             this._audioSource = GetComponent<AudioSource>();
-            this.deliveries = new Delivery[0];
+            PropsContentUI.OnSelect += OnSelectDelivery;
         }
 
-        protected override void Start() {
-            base.Start();
-
-            /*if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
-                ApiManager.OnDeliveriesRetrieved += OnDeliveriesRetrieved;
-                ApiManager.OnDeliveryDeleted += OnDeliveryDeleted;
-                PropsContentUI.OnSelect += OnSelectDelivery;
-
-                ApiManager.Instance.RetrieveDeliveries(NetworkManager.Instance.CharacterData.Id);
-            }*/
+        public override void OnStopClient() {
+            base.OnStopClient();
+            
+            PropsContentUI.OnSelect -= OnSelectDelivery;
         }
 
-        protected override void OnDestroy() {
-            base.OnDestroy();
+        public override void OnStartServer() {
+            base.OnStartServer();
 
-            /*if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
-                ApiManager.OnDeliveriesRetrieved -= OnDeliveriesRetrieved;
-                ApiManager.OnDeliveryDeleted -= OnDeliveryDeleted;
-                PropsContentUI.OnSelect -= OnSelectDelivery;
-            }*/
+            StartCoroutine(this.RetrieveDeliveries());
         }
 
-        /*public override void Synchronize(Player playerTarget) {
-            base.Synchronize(playerTarget);
+        [Server]
+        public IEnumerator RetrieveDeliveries() {
+            UnityWebRequest request = ApiManager.Instance.RetrieveDeliveriesRequest(GetComponentInParent<ApartmentController>().HomeData.Tenant);
+            
+            yield return request.SendWebRequest();
 
-            /*if (ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
-                this.RefreshDeliveriesQuantity(playerTarget);
-            }#1#
-        }
-
-        private void RefreshDeliveriesQuantity(Player playerTarget = null) {
-            if (playerTarget != null) {
-                photonView.RPC("RPC_RefreshDeliveriesQuantity", playerTarget, this.deliveries.Length);
+            this.Deliveries = new Delivery[0];
+            this.deliveryCount = 0;
+            
+            if (request.responseCode == 200) {
+                DeliveryResponse deliveryResponse = JsonUtility.FromJson<DeliveryResponse>(request.downloadHandler.text);
+                this.deliveries = deliveryResponse.Deliveries.ToArray();
+                this.deliveryCount = (uint)this.deliveries.Length;
+                Debug.Log($"Delivery box has {this.deliveryCount} deliveries");
             } else {
-                photonView.RPC("RPC_RefreshDeliveriesQuantity", RpcTarget.Others, this.deliveries.Length);
+                Debug.Log("No deliveries found");
             }
-        }*/
+        }
 
-        [PunRPC]
-        public void RPC_RefreshDeliveriesQuantity(int quantity) {
-            this.deliveries = new Delivery[quantity];
+        public void RefreshDeliveriesQuantity(uint oldValue, uint newValue) {
+            this.deliveryCount = newValue;
             this.UpdateGraphics();
         }
 
         protected override void Execute(Action action) {
-            /*if (action.Type.Equals(ActionTypeEnum.OPEN) && ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
-                RoomManager.LocalCharacter.Interact(this);
-                DefaultViewUI.Instance.ShowPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
-            }*/
+            if (action.Type.Equals(ActionTypeEnum.OPEN) && GetComponentInParent<ApartmentController>().IsTenant(PlayerController.Local.CharacterData)) {
+                CmdLook();
+            }
+        }
+
+        [Command(requiresAuthority = false)]
+        public void CmdLook(NetworkConnectionToClient sender = null) {
+            Debug.Log($"Server: netId {sender.identity.netId} wants to look into delivery box");
+            TargetOpenDeliveryBox(sender, this.Deliveries);
+        }
+
+        [Server]
+        public void RefreshPlayerUI(NetworkConnectionToClient sender) {
+            this.TargetOpenDeliveryBox(sender, this.deliveries);
+        }
+
+        [TargetRpc]
+        public void TargetOpenDeliveryBox(NetworkConnection target, Delivery[] data) {
+            this.Deliveries = data;
+            PlayerController.Local.Interact(this);
+            DefaultViewUI.Instance.ShowPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
         }
 
         public override void StopInteraction() {
@@ -96,7 +109,7 @@ namespace Sim.Building {
 
         private void OnSelectDelivery(int idx) {
             if (this.deliveries == null || this.deliveries.Length == 0) {
-                RoomManager.LocalPlayer.Idle();
+                PlayerController.Local.Idle();
             } else {
                 UnPackage?.Invoke(this.deliveries[idx]);
             }
@@ -107,28 +120,12 @@ namespace Sim.Building {
             set => deliveries = value;
         }
 
-        private void OnDeliveriesRetrieved(List<Delivery> value) {
-            this.deliveries = value.ToArray();
-
-            this.UpdateGraphics();
-
-            //this.RefreshDeliveriesQuantity();
-
-            DefaultViewUI.Instance.RefreshPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
-        }
-
-        private void OnDeliveryDeleted(bool isDeleted) {
-            if (!isDeleted) return;
-
-            //ApiManager.Instance.RetrieveDeliveries(NetworkManager.Instance.CharacterData.Id);
-        }
-
         private void UpdateGraphics() {
-            if (this.deliveries?.Length > 0) {
-                this.clapTransform.rotation = this.openedClapRotation;
+            if (this.deliveryCount > 0) {
+                this.clapTransform.localRotation = this.openedClapRotation;
                 this.package.SetActive(true);
             } else {
-                this.clapTransform.rotation = Quaternion.Euler(0, 0, 0);
+                this.clapTransform.localRotation = Quaternion.Euler(0, 0, 0);
                 this.package.SetActive(false);
             }
         }

@@ -1,4 +1,3 @@
-using Mirror;
 using Sim.Building;
 using TMPro;
 using UnityEngine;
@@ -9,7 +8,6 @@ public class FrontDoor : SimpleDoor {
     private TextMeshPro numberTxt;
     
     [Header("Debug")]
-    [SyncVar]
     [SerializeField]
     private int number;
 

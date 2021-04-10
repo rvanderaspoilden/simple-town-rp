@@ -103,8 +103,8 @@ namespace Sim.Building {
             this.UpdateGraphics();
         }
 
-        public void SetPreviewState(PreviewStateEnum previewState) {
-            this.previewState = previewState;
+        public void SetPreviewState(PreviewStateEnum value) {
+            this.previewState = value;
             this.UpdateGraphics();
         }
 

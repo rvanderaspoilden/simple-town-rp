@@ -20,12 +20,18 @@ namespace Sim.Building {
         [SyncVar(hook = nameof(SetIsBuilt))]
         private bool built;
 
+        [SyncVar]
+        [SerializeField]
+        private uint parentId;
+
         protected PropsRenderer propsRenderer;
 
         private Action currentAction;
 
         [SyncVar(hook = nameof(SetPresetId))]
         private int presetId = -1;
+
+        private ApartmentController apartmentController;
 
         public delegate void PropsAction(Props props);
 
@@ -40,6 +46,24 @@ namespace Sim.Building {
             this.ConfigureActions();
         }
 
+        public override void OnStartClient() {
+            if (parentId == 0) return;
+            
+            Vector3 position = this.transform.position;
+            this.apartmentController = NetworkIdentity.spawned.ContainsKey(this.parentId)
+                ? NetworkIdentity.spawned[this.parentId].GetComponent<ApartmentController>()
+                : null;
+
+            if (!isClientOnly) return;
+            
+            if (this.apartmentController) {
+                this.transform.SetParent(this.apartmentController.PropsContainer);
+                this.transform.localPosition = position;
+            } else {
+                Debug.LogError($"Parent identity not found for props {this.name}");
+            }
+        }
+
         protected virtual void OnDestroy() {
             this.UnSubscribeActions(this.actions);
             this.UnSubscribeActions(this.unbuiltActions);
@@ -51,6 +75,11 @@ namespace Sim.Building {
 
         public void InitBuilt(bool isBuilt) {
             this.built = isBuilt;
+        }
+
+        public uint ParentId {
+            get => parentId;
+            set => parentId = value;
         }
 
         /**
@@ -92,8 +121,8 @@ namespace Sim.Building {
 
         public virtual Action[] GetActions(bool withPriority = false) {
             Action[] actionsToReturn = this.IsBuilt() ? this.actions : this.unbuiltActions;
-
-            bool hasPermission = hasAuthority;
+            
+            bool hasPermission = this.apartmentController && this.apartmentController.IsTenant(PlayerController.Local.CharacterData);
 
             actionsToReturn = actionsToReturn.Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission).ToArray();
 
@@ -110,7 +139,10 @@ namespace Sim.Building {
 
         public int PresetId {
             get => presetId;
-            set => presetId = value;
+            set {
+                presetId = value;
+                UpdatePresetRender();
+            }
         }
 
         public void SetPresetId(int oldId, int newId) {
@@ -202,12 +234,7 @@ namespace Sim.Building {
         public void SetConfiguration(PropsConfig config) {
             this.configuration = config;
         }
-
-        /*public virtual void Synchronize(Player playerTarget) {
-            this.SetPresetId(this.presetId, true, playerTarget);
-            this.SetIsBuilt(this.built, playerTarget);
-        }*/
-
+        
         public bool IsWallProps() {
             return this.configuration.GetSurfaceToPose() == BuildSurfaceEnum.WALL;
         }

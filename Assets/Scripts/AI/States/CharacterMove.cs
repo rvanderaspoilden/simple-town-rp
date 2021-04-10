@@ -10,7 +10,6 @@ namespace AI.States {
         }
 
         public void OnEnter() {
-            Debug.Log("Enter in Move state");
         }
 
         public void Tick() {

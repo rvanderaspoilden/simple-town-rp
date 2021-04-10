@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Mirror;
-using Photon.Pun;
 using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;

@@ -2,20 +2,15 @@
 using System.Collections;
 using System.IO;
 using System.Linq;
-using Photon.Pun;
-using Photon.Realtime;
 using Sim.Building;
-using Sim.Entities;
 using Sim.Enums;
-using Sim.Interactables;
 using Sim.Utils;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
-using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 namespace Sim {
-    public class RoomManager : MonoBehaviourPunCallbacks {
+    public class RoomManager : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
         protected Transform playerSpawnPoint;
@@ -176,21 +171,12 @@ namespace Sim {
             return this.generated;
         }
 
-        private void GenerateNavMesh(bool locally) {
-            if (locally) {
-                this.RPC_GenerateNavMesh();
-            } else {
-                this.photonView.RPC("RPC_GenerateNavMesh", PhotonNetwork.LocalPlayer);
-            }
-        }
-
         private void IdentifyExteriorWalls() {
             foreach (Wall wall in FindObjectsOfType<Wall>()) {
                 wall.CheckExteriorWall();
             }
         }
 
-        [PunRPC]
         public void RPC_GenerateNavMesh() {
             foreach (NavMeshSurface navMeshSurface in FindObjectsOfType<NavMeshSurface>()) {
                 navMeshSurface.BuildNavMesh();
@@ -207,10 +193,9 @@ namespace Sim {
          * Used to save a room 
          */
         public void SaveRoom() {
-            this.photonView.RPC("RPC_SaveRoom", RpcTarget.MasterClient);
+            //this.photonView.RPC("RPC_SaveRoom", RpcTarget.MasterClient);
         }
 
-        [PunRPC]
         public void RPC_SaveRoom() {
             if (saveCoroutine != null) {
                 StopCoroutine(this.saveCoroutine);
@@ -227,9 +212,9 @@ namespace Sim {
 
         protected virtual SceneData GenerateSceneData() {
             SceneData sceneData = new SceneData {
-                walls = FindObjectsOfType<Wall>().ToList().Select(SaveUtils.CreateWallData).ToArray(),
-                simpleDoors = FindObjectsOfType<SimpleDoor>().ToList().Select(SaveUtils.CreateDoorData).ToArray(),
-                grounds = FindObjectsOfType<Ground>().ToList().Select(SaveUtils.CreateGroundData).ToArray(),
+                //walls = FindObjectsOfType<Wall>().ToList().Select(SaveUtils.CreateWallData).ToArray(),
+                //simpleDoors = FindObjectsOfType<SimpleDoor>().ToList().Select(SaveUtils.CreateDoorData).ToArray(),
+                //grounds = FindObjectsOfType<Ground>().ToList().Select(SaveUtils.CreateGroundData).ToArray(),
                 buckets = FindObjectsOfType<PaintBucket>().ToList().Select(SaveUtils.CreateBucketData).ToArray(),
                 props = FindObjectsOfType<Props>().ToList()
                     .Where(props => defaultPropsTypes.Contains(props.GetType()))
@@ -270,30 +255,7 @@ namespace Sim {
             LocalCharacter = character.GetComponent<Character>();
             LocalCharacter.CharacterData = characterData;
         }*/
-
-        public override void OnPlayerEnteredRoom(Player newPlayer) {
-            Debug.Log(newPlayer.NickName + " joined the room");
-
-            if (PhotonNetwork.IsMasterClient) {
-                this.StartCoroutine(this.SynchronizeRoomForTarget(newPlayer));
-            }
-        }
-
-        private IEnumerator SynchronizeRoomForTarget(Player newPlayer) {
-            while (!PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("isGenerated")) {
-                yield return null;
-            }
-
-            /*foreach (Props props in FindObjectsOfType<Props>()) {
-                props.Synchronize(newPlayer);
-            }*/
-
-            this.photonView.RPC("RPC_GenerateNavMesh", newPlayer);
-        }
-
-        public override void OnMasterClientSwitched(Player newMasterClient) {
-            Debug.Log("Masterclient is now : " + newMasterClient.NickName);
-        }
+        
 
         #endregion
     }

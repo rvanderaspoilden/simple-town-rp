@@ -1,8 +1,13 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Mirror;
 using Sim;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 /*
 	Documentation: https://mirror-networking.com/docs/Components/NetworkManager.html
@@ -10,7 +15,81 @@ using UnityEngine.Networking;
 */
 
 public class SimpleTownNetwork : NetworkManager {
-    
+    [SerializeField]
+    [Scene]
+    private string hallScene;
+
+    [SerializeField]
+    [Min(50)]
+    private int hallSpacingY = 50;
+
+    private readonly Dictionary<int, Scene> hallSubScenesByFloor = new Dictionary<int, Scene>();
+
+    [Server]
+    public IEnumerator LoadHall(int hallFloor, NetworkConnectionToClient sender) {
+        HallController hallController = null;
+        Scene currentScene;
+
+        if (hallSubScenesByFloor.ContainsKey(hallFloor)) {
+            Debug.Log("Scene already created on server-side");
+            
+            currentScene = hallSubScenesByFloor[hallFloor];
+            GameObject hallGo = currentScene.GetRootGameObjects().First(x => x.GetComponent<HallController>());
+
+            if (hallGo) {
+                hallController = hallGo.GetComponent<HallController>();
+            } else {
+                Debug.LogError("Hall GO not found");
+            }
+        } else {
+            Debug.Log("Hall Scene need to be created on server-side");
+            
+            int index = SceneManager.sceneCount;
+
+            yield return SceneManager.LoadSceneAsync(hallScene,
+                new LoadSceneParameters {loadSceneMode = LoadSceneMode.Additive, localPhysicsMode = LocalPhysicsMode.Physics3D});
+
+            currentScene = SceneManager.GetSceneAt(index);
+            hallSubScenesByFloor.Add(hallFloor, currentScene);
+
+            foreach (var rootGameObject in currentScene.GetRootGameObjects()) {
+                rootGameObject.transform.position -= new Vector3(0, this.hallSpacingY * hallFloor, 0);
+            }
+
+            GameObject hallGo = currentScene.GetRootGameObjects().First(x => x.GetComponent<HallController>());
+
+            if (hallGo) {
+                hallController = hallGo.GetComponent<HallController>();
+                hallController.Init(hallFloor);
+            } else {
+                Debug.LogError("Hall GO not found");
+            }
+        }
+
+        if (hallController == null) throw new Exception("No hall controller found !!!");
+
+        sender.Send(new SceneMessage {sceneName = hallScene, sceneOperation = SceneOperation.LoadAdditive});
+
+        // Wait for end of frame before adding the player to ensure Scene Message goes first
+        yield return new WaitForEndOfFrame();
+
+        hallController.MoveToSpawn(sender);
+
+        SceneManager.MoveGameObjectToScene(sender.identity.gameObject, currentScene);
+    }
+
+    IEnumerator UnloadLoad(int hallFloor, NetworkConnectionToClient sender) {
+        if (!this.hallSubScenesByFloor.ContainsKey(hallFloor)) {
+            Debug.Log($"No hall found with floor {hallFloor}");
+        }
+        
+        yield return SceneManager.UnloadSceneAsync(this.hallSubScenesByFloor[hallFloor]);
+
+        this.hallSubScenesByFloor.Remove(hallFloor);
+
+        yield return Resources.UnloadUnusedAssets();
+    }
+
     #region Unity Callbacks
 
     public override void OnValidate() {
@@ -209,7 +288,9 @@ public class SimpleTownNetwork : NetworkManager {
     /// <summary>
     /// This is invoked when the client is started.
     /// </summary>
-    public override void OnStartClient() { }
+    public override void OnStartClient() {
+        NetworkClient.RegisterHandler<TeleportMessage>(OnTeleportPlayer);
+    }
 
     /// <summary>
     /// This is called when a host is stopped.
@@ -227,6 +308,7 @@ public class SimpleTownNetwork : NetworkManager {
     /// This is called when a client is stopped.
     /// </summary>
     public override void OnStopClient() {
+        NetworkClient.UnregisterHandler<TeleportMessage>();
     }
 
     #endregion
@@ -236,6 +318,13 @@ public class SimpleTownNetwork : NetworkManager {
     private void OnCreateCharacter(NetworkConnection conn, CreateCharacterMessage message) {
         Debug.Log($"Server: Retrieve character data for {message.characterId}");
         StartCoroutine(SetupCharacterCoroutine(conn, message.userId));
+    }
+
+    private void OnTeleportPlayer(NetworkConnection conn, TeleportMessage message) {
+        Debug.Log($"I received teleport message from conn ID {conn.identity.netId}");
+        conn.identity.GetComponent<NavMeshAgent>().enabled = false;
+        conn.identity.transform.position = message.destination;
+        conn.identity.GetComponent<NavMeshAgent>().enabled = true;
     }
 
     [Server]

@@ -1,5 +1,4 @@
-﻿using Photon.Voice.PUN;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Sim {
     public class BubbleUI : MonoBehaviour {
@@ -22,12 +21,10 @@ namespace Sim {
         [SerializeField]
         private float maxCameraPosY;
 
-        private PhotonVoiceView photonVoiceView;
 
         private Canvas canvas;
 
         private void Awake() {
-            this.photonVoiceView = GetComponentInParent<PhotonVoiceView>();
             this.canvas = GetComponent<Canvas>();
             if (canvas != null && canvas.worldCamera == null) {
                 canvas.worldCamera = Camera.main;
@@ -38,11 +35,11 @@ namespace Sim {
         }
 
         private void Update() {
-            if ((photonVoiceView.IsSpeaking || photonVoiceView.IsRecording) && !this.voiceBubble.activeSelf) {
+            /*if ((photonVoiceView.IsSpeaking || photonVoiceView.IsRecording) && !this.voiceBubble.activeSelf) {
                 this.voiceBubble.SetActive(true);
             } else if (!(photonVoiceView.IsSpeaking || photonVoiceView.IsRecording) && this.voiceBubble.activeSelf) {
                 this.voiceBubble.SetActive(false);
-            }
+            }*/
         }
 
         private void LateUpdate() {

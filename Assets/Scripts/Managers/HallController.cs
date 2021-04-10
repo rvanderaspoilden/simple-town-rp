@@ -1,10 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using Sim;
 using Sim.Entities;
 using Sim.Enums;
+using Sim.Interactables;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -17,7 +17,7 @@ public class HallController : NetworkBehaviour {
     private NavMeshSurface navMeshSurface;
 
     [SerializeField]
-    private Transform spawnPosition;
+    private Teleporter elevator;
 
     [Tooltip("Apartment controllers need to be well ordered")]
     [SerializeField]
@@ -30,13 +30,15 @@ public class HallController : NetworkBehaviour {
     [SerializeField]
     private bool isGenerated;
 
-    private List<GameObject> playersToMove = new List<GameObject>();
+    private List<NetworkConnectionToClient> playersToMove = new List<NetworkConnectionToClient>();
 
     private void Start() {
         navMeshSurface.BuildNavMesh();
     }
 
-    private void OnDestroy() {
+    public override void OnStopServer() {
+        base.OnStopServer();
+
         for (int i = 0; i < 1; i++) {
             this.apartmentControllers[i].OnApartmentGenerated -= OnApartmentGenerated;
         }
@@ -45,7 +47,7 @@ public class HallController : NetworkBehaviour {
     [Server]
     public void Init(int number) {
         this.floorNumber = number;
-
+        
         for (int i = 0; i < 1; i++) {
             Address address = new Address {
                 Street = this.street,
@@ -60,24 +62,22 @@ public class HallController : NetworkBehaviour {
     }
 
     [Server]
-    public void MoveToSpawn(GameObject player) {
-        this.playersToMove.Add(player);
+    public void MoveToSpawn(NetworkConnectionToClient conn) {
+        if (this.isGenerated) {
+            conn.Send(new TeleportMessage {destination = this.elevator.SpawnTransform.position});
+        } else {
+            this.playersToMove.Add(conn);
+        }
     }
 
-    private void OnApartmentGenerated(bool isGenerated) {
+    private void OnApartmentGenerated() {
         Debug.Log("Apartement has been generated");
         this.isGenerated = this.apartmentControllers.Where(x => x.IsGenerated).ToList().Count == this.apartmentControllers.Length;
 
         if (this.isGenerated) {
             Debug.Log("Hall is generated so teleport player");
-            this.playersToMove.ForEach(player => {
-                player.GetComponent<NavMeshAgent>().enabled = false;
-                player.transform.position = this.spawnPosition.position;
-                player.GetComponent<NavMeshAgent>().enabled = true;
-            });
+            this.playersToMove.ForEach(player => player.Send(new TeleportMessage {destination = this.elevator.SpawnTransform.position}));
             this.playersToMove.Clear();
         }
     }
-
-    public Transform SpawnPosition => spawnPosition;
 }

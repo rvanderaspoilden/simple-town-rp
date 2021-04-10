@@ -3,7 +3,7 @@ using Sim.Enums;
 using UnityEngine;
 
 namespace Sim.Building {
-    public class SimpleDoor : Props {
+    public class SimpleDoor : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
         private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
@@ -18,9 +18,7 @@ namespace Sim.Building {
         private int directionHash;
         private int isOpenedHash;
 
-        protected override void Awake() {
-            base.Awake();
-
+        protected void Awake() {
             this.directionHash = Animator.StringToHash("direction");
             this.isOpenedHash = Animator.StringToHash("isOpened");
 

@@ -1,11 +1,9 @@
-﻿using Photon.Pun;
-using Sim.Building;
-using Sim.Interactables;
+﻿using Sim.Interactables;
 using Sim.UI;
 using UnityEngine;
 
 namespace Sim {
-    public class HUDManager : MonoBehaviourPun {
+    public class HUDManager : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
         private AliDiscountCatalogUI aliDiscountCatalogUI;

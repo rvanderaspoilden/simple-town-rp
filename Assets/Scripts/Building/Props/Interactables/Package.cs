@@ -1,8 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using Photon.Pun;
-using Sim.Building;
+﻿using Sim.Building;
 using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
@@ -40,7 +36,6 @@ namespace Sim.Interactables {
             photonView.RPC("RPC_SetPropsInside", playerTarget, id);
         }*/
 
-        [PunRPC]
         public void RPC_SetPropsInside(int propsId) {
             this.propsInside = DatabaseManager.PropsDatabase.GetPropsById(propsId);
         }

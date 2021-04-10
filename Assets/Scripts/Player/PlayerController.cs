@@ -278,6 +278,8 @@ namespace Sim {
             set => showRadialMenuWithPriority = value;
         }
 
+        public Props GetInteractedProps() => this.characterInteractState.InteractedProps;
+
         public Collider Collider { get; private set; }
 
         #endregion
@@ -319,7 +321,7 @@ namespace Sim {
 
             Vector3 dir = hitPoint - this.GetHeadTargetForCamera().position;
             RaycastHit hit;
-            if (Physics.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
+            if (CameraManager.PhysicsScene.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
                 Props hitProps = hit.collider.GetComponentInParent<Props>();
 
                 if ((hitProps && hitProps.GetType() == typeof(Wall)) || !hitProps) {

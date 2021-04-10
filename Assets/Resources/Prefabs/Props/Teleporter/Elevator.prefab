@@ -21,7 +21,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 4294967295
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &2808400624486182488
 Transform:
@@ -168,8 +168,11 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: ef9881e59425baa42b6d1ba3fa89becb, type: 2}
-  hallPrefab: {fileID: 5496279082967967630, guid: 525f620fbb753f9448971022e0afe439,
-    type: 3}
+  scene: 
+  spawnTransform: {fileID: 7324135557444786934}
+  floorToGo: 1
+  hallSpacingY: 100
+  linkedTeleporter: {fileID: 0}
 --- !u!1 &7012034732280398628
 GameObject:
   m_ObjectHideFlags: 0

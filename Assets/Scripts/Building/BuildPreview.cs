@@ -21,6 +21,9 @@ namespace Sim.Building {
         private bool validRotation;
 
         [SerializeField]
+        private bool isInBuildableArea;
+
+        [SerializeField]
         private Props currentProps;
 
         [SerializeField]
@@ -34,6 +37,9 @@ namespace Sim.Building {
 
         [SerializeField]
         private List<Collider> colliderTriggered;
+
+        [SerializeField]
+        private Collider buildableArea;
 
         private PropsRenderer propsRenderer;
 
@@ -105,23 +111,36 @@ namespace Sim.Building {
         }
 
         private void OnTriggerStay(Collider other) {
-            if (this.currentProps.IsWallProps() && !this.colliderTriggered.Find(x => x == other)) {
-                this.colliderTriggered.Add(other);
-            } else if (this.currentProps.IsGroundProps() && other.gameObject.layer != LayerMask.NameToLayer("Ground") && !this.colliderTriggered.Find(x => x == other)) {
-                this.colliderTriggered.Add(other);
+            if (other.CompareTag("Buildable Area") && this.buildableArea != other) {
+                this.buildableArea = other;
+                this.isInBuildableArea = this.buildableArea.GetComponentInParent<ApartmentController>().IsTenant(PlayerController.Local.CharacterData);
+            } else if(!other.CompareTag("Buildable Area")){
+                if (this.currentProps.IsWallProps() && !this.colliderTriggered.Find(x => x == other)) {
+                    this.colliderTriggered.Add(other);
+                } else if (this.currentProps.IsGroundProps() && other.gameObject.layer != LayerMask.NameToLayer("Ground") &&
+                           !this.colliderTriggered.Find(x => x == other)) {
+                    this.colliderTriggered.Add(other);
+                }
             }
 
             this.CheckValidity();
         }
 
         private void OnTriggerExit(Collider other) {
+            if (buildableArea == other) {
+                buildableArea = null;
+                this.isInBuildableArea = false;
+            }
+
             this.colliderTriggered.Remove(other);
             this.CheckValidity();
         }
 
         private void CheckValidity() {
+            if (navMeshObstacle.enabled) return;
+                
             this.haveFreeArea = this.colliderTriggered.Count == 0;
-            this.placeable = this.haveFreeArea && this.detectGround && this.validRotation;
+            this.placeable = this.haveFreeArea && this.detectGround && this.validRotation && this.isInBuildableArea;
 
             this.propsRenderer.SetPreviewState(this.placeable ? PreviewStateEnum.VALID : PreviewStateEnum.ERROR);
 

@@ -1,7 +1,4 @@
-﻿using System.Linq;
-using Mirror;
-using Photon.Pun;
-using Photon.Realtime;
+﻿using Mirror;
 using Sim.Enums;
 using Sim.Interactables;
 using Sim.Scriptables;
@@ -42,6 +39,8 @@ namespace Sim.Building {
         public PaintConfig GetPaintConfig() {
             return this.paintConfig;
         }
+
+        public int PaintConfigId => paintConfigId;
         
         public Color GetColor() {
             return this.color;

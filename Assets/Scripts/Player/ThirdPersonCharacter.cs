@@ -1,10 +1,9 @@
-﻿using Photon.Pun;
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
 [RequireComponent(typeof(Animator))]
-public class ThirdPersonCharacter : MonoBehaviourPun {
+public class ThirdPersonCharacter : MonoBehaviour {
     [SerializeField] float m_MovingTurnSpeed = 360;
     [SerializeField] float m_StationaryTurnSpeed = 180;
     [SerializeField] float m_JumpPower = 6f;

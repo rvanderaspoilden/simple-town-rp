@@ -5,6 +5,7 @@ using Sim.Enums;
 using Sim.Interactables;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 namespace Sim {
     public class CameraManager : MonoBehaviour {
@@ -25,9 +26,10 @@ namespace Sim {
         private float mouseClickTimer;
 
         private new Camera camera;
-        
-        [SerializeField]
+
         private bool startLeftClickValid;
+
+        public static PhysicsScene physicsScene;
 
         public static CameraManager Instance;
 
@@ -51,10 +53,16 @@ namespace Sim {
 
         private void Start() {
             PlayerController.OnStateChanged += OnStateChanged;
+            SceneManager.sceneLoaded += SceneLoaded;
         }
 
         private void OnDestroy() {
             PlayerController.OnStateChanged -= OnStateChanged;
+            SceneManager.sceneLoaded -= SceneLoaded;
+        }
+        
+        private void SceneLoaded(Scene scene, LoadSceneMode mode) {
+            physicsScene = scene.GetPhysicsScene();
         }
 
         public Camera Camera => camera;
@@ -62,6 +70,8 @@ namespace Sim {
         public void SetCameraTarget(Transform target) {
             this.tpsCamera.SetCameraTarget(target);
         }
+
+        public static PhysicsScene PhysicsScene => physicsScene;
 
         void Update() {
             if (PlayerController.Local == null) return;
@@ -110,11 +120,12 @@ namespace Sim {
                 return;
             }
 
-            if ((leftMouseClick || rightMouseClick || leftMousePressed) &&
-                Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, this.layerMaskInFreeMode)) {
+            Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
+
+            if ((leftMouseClick || rightMouseClick || leftMousePressed) && physicsScene.Raycast(ray.origin, ray.direction, out hit, 100, this.layerMaskInFreeMode)) {
                 Props propsToInteract = hit.collider.GetComponentInParent<Props>();
                 PlayerController player = hit.collider.GetComponent<PlayerController>();
-                
+
                 if (propsToInteract) {
                     if (leftMousePressed && propsToInteract.GetType() == typeof(Ground)) {
                         PlayerController.Local.MoveTo(hit.point);
