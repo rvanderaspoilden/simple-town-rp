@@ -48,14 +48,14 @@ namespace Sim.Building {
 
         public override void OnStartClient() {
             if (parentId == 0) return;
-            
+
             Vector3 position = this.transform.position;
             this.apartmentController = NetworkIdentity.spawned.ContainsKey(this.parentId)
                 ? NetworkIdentity.spawned[this.parentId].GetComponent<ApartmentController>()
                 : null;
 
             if (!isClientOnly) return;
-            
+
             if (this.apartmentController) {
                 this.transform.SetParent(this.apartmentController.PropsContainer);
                 this.transform.localPosition = position;
@@ -121,7 +121,7 @@ namespace Sim.Building {
 
         public virtual Action[] GetActions(bool withPriority = false) {
             Action[] actionsToReturn = this.IsBuilt() ? this.actions : this.unbuiltActions;
-            
+
             bool hasPermission = this.apartmentController && this.apartmentController.IsTenant(PlayerController.Local.CharacterData);
 
             actionsToReturn = actionsToReturn.Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission).ToArray();
@@ -204,22 +204,34 @@ namespace Sim.Building {
             throw new NotImplementedException();
         }
 
+        [Client]
         private void Build() {
-            //this.SetIsBuilt(true); TODO: call server
-
-            RoomManager.Instance.SaveRoom();
+            this.CmdBuild();
         }
 
+        [Command(requiresAuthority = false)]
+        public void CmdBuild(NetworkConnectionToClient sender = null) {
+            // TODO(security): Check if sender is allowed to build props
+            this.built = true;
+
+            Debug.Log($"Server: player {sender.identity.netId} built {this.name}");
+
+            StartCoroutine(GetComponentInParent<ApartmentController>().Save());
+        }
+
+        [Client]
         private void Look() {
-            RoomManager.LocalPlayer.Look(this.transform);
+            PlayerController.Local.Look(this.transform);
         }
 
+        [Client]
         private void Move() {
             OnMoveRequest?.Invoke(this);
         }
 
+        [Client]
         private void Sell() {
-            // photonView.RPC("RPC_SellProps", PhotonNetwork.MasterClient);
+            PlayerController.Local.Sell(this);
         }
 
         public void RPC_SellProps() {
@@ -234,7 +246,7 @@ namespace Sim.Building {
         public void SetConfiguration(PropsConfig config) {
             this.configuration = config;
         }
-        
+
         public bool IsWallProps() {
             return this.configuration.GetSurfaceToPose() == BuildSurfaceEnum.WALL;
         }
