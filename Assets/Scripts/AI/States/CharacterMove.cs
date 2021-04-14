@@ -17,7 +17,9 @@ namespace AI.States {
 
             this.player.Animator.SetVelocity(this.player.NavMeshAgent.velocity.magnitude);
 
-            this.player.transform.rotation = Quaternion.LookRotation(this.player.NavMeshAgent.velocity.normalized);
+            if (this.player.NavMeshAgent.velocity.normalized != Vector3.zero) {
+                this.player.transform.rotation = Quaternion.LookRotation(this.player.NavMeshAgent.velocity.normalized);
+            }
         }
 
         public void OnExit() {
