@@ -65,13 +65,13 @@ namespace Sim {
         }
 
         private void UpdateWallVisibility(VisibilityModeEnum mode) {
-            FindObjectsOfType<Wall>().ToList().Where(x => !x.IsExteriorWall()).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(propsRenderer => {
+            /*FindObjectsOfType<Wall>().ToList().Where(x => !x.IsExteriorWall()).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(propsRenderer => {
                 if (propsRenderer) {
                     propsRenderer.SetVisibilityMode(mode);
                 }
             });
 
-            OnWallVisibilityModeChanged?.Invoke(mode);
+            OnWallVisibilityModeChanged?.Invoke(mode);*/
         }
 
         public void SetPropsVisibility(VisibilityModeEnum mode) {
@@ -169,12 +169,6 @@ namespace Sim {
 
         public bool IsGenerated() {
             return this.generated;
-        }
-
-        private void IdentifyExteriorWalls() {
-            foreach (Wall wall in FindObjectsOfType<Wall>()) {
-                wall.CheckExteriorWall();
-            }
         }
 
         public void RPC_GenerateNavMesh() {

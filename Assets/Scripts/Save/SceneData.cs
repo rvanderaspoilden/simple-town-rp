@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Mirror;
 using Sim.Building;
 using Sim.Utils;
 using UnityEngine;
@@ -8,7 +11,7 @@ namespace Sim {
     public class SceneData {
         public DoorTeleporterData[] doorTeleporters;
         public ElevatorTeleporterData[] elevatorTeleporters;
-        public WallData[] walls;
+        public WallData walls;
         public DoorData[] simpleDoors;
         public GroundData[] grounds;
         public PackageData[] packages;
@@ -98,33 +101,40 @@ namespace Sim {
     }
 
     [Serializable]
-    public class WallData : DefaultData {
+    public class WallData {
         public WallFaceData[] wallFaces;
         
         public WallData() { }
 
-        public WallData(Props props) {
-            base.Init(props);
+        public WallData(Dictionary<int, CoverSettings> settings) {
+            wallFaces = settings.Select(pair => new WallFaceData {
+                sharedMaterialIdx = pair.Key,
+                additionalColor = pair.Value.GetColor(),
+                paintConfigId = pair.Value.paintConfigId
+            }).ToArray();
+        }
+        
+        public WallData(SyncDictionary<int, CoverSettings> settings) {
+            wallFaces = settings.Select(pair => new WallFaceData {
+                sharedMaterialIdx = pair.Key,
+                additionalColor = pair.Value.GetColor(),
+                paintConfigId = pair.Value.paintConfigId
+            }).ToArray();
         }
     }
 
     [Serializable]
-    public class WallFaceData {
+    public struct WallFaceData {
         public int sharedMaterialIdx;
         public int paintConfigId;
         public float[] additionalColor;
 
-        public WallFaceData() { }
-
-        public WallFaceData(WallFace wallFace) {
-            this.sharedMaterialIdx = wallFace.GetSharedMaterialIdx();
-            this.paintConfigId = wallFace.GetPaintConfigId();
-            this.additionalColor = new float[4] {wallFace.GetAdditionalColor().r, wallFace.GetAdditionalColor().g, wallFace.GetAdditionalColor().b, wallFace.GetAdditionalColor().a};
-        }
-
-        public WallFace ToWallFace() {
-            Color color = this.additionalColor != null ? new Color(this.additionalColor[0], this.additionalColor[1], this.additionalColor[2], this.additionalColor[3]) : Color.white;
-            return new WallFace(this.sharedMaterialIdx, this.paintConfigId, color);
+        public Color GetColor() {
+            if (additionalColor.Length > 3) {
+                return new Color(additionalColor[0], additionalColor[1], additionalColor[2]);
+            }
+            
+            return Color.white;
         }
     }
 

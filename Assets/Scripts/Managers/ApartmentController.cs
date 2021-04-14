@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Mirror;
@@ -23,6 +24,12 @@ namespace Sim {
         [SerializeField]
         private Transform propsContainer;
 
+        [SerializeField]
+        private Wall wall;
+
+        [SerializeField]
+        private CoverSettings defaultCoverSettings;
+
         [Header("Only for debug")]
         [SerializeField]
         private Home homeData;
@@ -43,15 +50,11 @@ namespace Sim {
 
         private Type[] defaultPropsTypes = new[] {typeof(Props), typeof(Seat), typeof(DeliveryBox)};
 
+        private readonly SyncDictionary<int, CoverSettings> coverSettingsByFaces = new SyncDictionary<int, CoverSettings>();
+
         public delegate void GenerateResponse();
 
         public event GenerateResponse OnApartmentGenerated;
-
-        private void Update() {
-            /*if (Input.GetKeyDown(KeyCode.S)) {
-                CmdSaveHome();
-            }*/
-        }
 
         [Command(requiresAuthority = false)]
         public void CmdSaveHome(NetworkConnectionToClient sender = null) {
@@ -71,6 +74,24 @@ namespace Sim {
             this.Init(address);
         }
 
+        public override void OnStartClient() {
+            base.OnStartClient();
+
+            this.coverSettingsByFaces.Callback += OnWallSettingsChanged;
+
+            this.wall.Setup(this.coverSettingsByFaces.ToDictionary(x => x.Key, x => x.Value));
+        }
+
+        public override void OnStopClient() {
+            base.OnStopClient();
+
+            this.coverSettingsByFaces.Callback -= OnWallSettingsChanged;
+        }
+
+        private void OnWallSettingsChanged(SyncIDictionary<int, CoverSettings>.Operation operation, int key, CoverSettings item) {
+            this.wall.Setup(this.coverSettingsByFaces.ToDictionary(x => x.Key, x => x.Value));
+        }
+
         public Transform PropsContainer => propsContainer;
 
         [Client]
@@ -82,7 +103,7 @@ namespace Sim {
         [Server]
         public IEnumerator Save() {
             // TODO: handle save queue
-            
+
             Debug.Log("Save home....");
             UnityWebRequest request = ApiManager.Instance.SaveHomeRequest(this.homeData, this.GenerateSceneData());
 
@@ -164,13 +185,51 @@ namespace Sim {
                 Props props = SaveUtils.InstantiatePropsFromSave(data, this);
             });
 
+            if (sceneData.walls != null && sceneData.walls.wallFaces != null) {
+                Dictionary<int, CoverSettings> wallSettings = sceneData.walls.wallFaces.ToDictionary(
+                    x => x.sharedMaterialIdx,
+                    x => new CoverSettings {paintConfigId = x.paintConfigId, additionalColor = x.GetColor()}
+                );
+
+                for (int i = 0; i < this.wall.SharedMaterials().Length; i++) {
+                    if (wallSettings.ContainsKey(i)) {
+                        this.coverSettingsByFaces.Add(i, wallSettings[i]);
+                    }
+                    //this.coverSettingsByFaces.Add(i, defaultCoverSettings);
+                }
+            }
+
             this.isGenerated = true;
 
             OnApartmentGenerated?.Invoke();
         }
 
+        public void ResetWallPreview() {
+            this.wall.Reset();
+        }
+
+        public void ApplyWallSettings() {
+            this.CmdApplyWallSettings(SaveUtils.CreateWallData(this.wall.CoverSettingsInPreview).wallFaces);
+            this.wall.ApplyModification();
+        }
+
+        [Command(requiresAuthority = false)]
+        public void CmdApplyWallSettings(WallFaceData[] newSettings, NetworkConnectionToClient sender = null) {
+            foreach (var wallFaceData in newSettings) {
+                this.coverSettingsByFaces[wallFaceData.sharedMaterialIdx] = new CoverSettings {
+                    paintConfigId = wallFaceData.paintConfigId,
+                    additionalColor = wallFaceData.GetColor()
+                };
+            }
+
+            Debug.Log("Server: Apply wall settings");
+            StartCoroutine(this.Save());
+        }
+
+        [Server]
         private SceneData GenerateSceneData() {
             SceneData sceneData = new SceneData {
+                walls = SaveUtils.CreateWallData(this.coverSettingsByFaces),
                 buckets = FindObjectsOfType<PaintBucket>().ToList().Select(SaveUtils.CreateBucketData).ToArray(),
                 props = FindObjectsOfType<Props>().ToList()
                     .Where(props => defaultPropsTypes.Contains(props.GetType()))

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Mirror;
 using Sim.Building;
 using Sim.Scriptables;
@@ -13,11 +14,12 @@ namespace Sim.Utils {
             return transformData;
         }
 
-        public static WallData CreateWallData(Wall wall) {
-            WallData data = new WallData();
-            data.Init(wall);
-            data.wallFaces = wall.GetWallFaces().Select(face => new WallFaceData(face)).ToArray();
-            return data;
+        public static WallData CreateWallData(Dictionary<int, CoverSettings> settings) {
+            return new WallData(settings);
+        }
+        
+        public static WallData CreateWallData(SyncDictionary<int, CoverSettings> settings) {
+            return new WallData(settings);
         }
 
         /*public static DoorData CreateDoorData(SimpleDoor door) {

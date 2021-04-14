@@ -37,7 +37,7 @@ namespace Sim.Building {
         }
 
         public PaintConfig GetPaintConfig() {
-            return this.paintConfig;
+            return DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId);
         }
 
         public int PaintConfigId => paintConfigId;

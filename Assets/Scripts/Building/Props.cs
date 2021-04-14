@@ -234,11 +234,6 @@ namespace Sim.Building {
             PlayerController.Local.Sell(this);
         }
 
-        public void RPC_SellProps() {
-            //PropsManager.Instance.DestroyProps(this, true);
-            RoomManager.Instance.SaveRoom();
-        }
-
         public PropsConfig GetConfiguration() {
             return this.configuration;
         }

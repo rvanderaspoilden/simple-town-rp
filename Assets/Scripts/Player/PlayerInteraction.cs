@@ -70,9 +70,9 @@ namespace Sim {
 
             this.player.SetState(StateType.PAINTING);
 
-            if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
+            /*if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
                 RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.FORCE_SHOW);
-            }
+            }*/ // TODO 
 
             BuildManager.Instance.Init(this.currentOpenedBucket);
         }
@@ -84,16 +84,16 @@ namespace Sim {
 
         private void OnValidatePaintModification() {
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
+                //RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
 
-                FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
+                this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ApplyWallSettings();
             } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
                 FindObjectsOfType<Ground>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
             }
 
-            //PropsManager.Instance.DestroyProps(this.currentOpenedBucket, true);
+            Destroy(this.currentOpenedBucket.gameObject);
 
-            RoomManager.Instance.SaveRoom();
+            //StartCoroutine(this.currentOpenedBucket.GetComponentInParent<ApartmentController>().Save());
 
             this.player.SetState(StateType.FREE);
         }

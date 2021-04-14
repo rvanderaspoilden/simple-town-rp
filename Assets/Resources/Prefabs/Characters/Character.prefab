@@ -1911,6 +1911,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ca1105ea03e3dd4b933727e83c84c64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   headTargetForCamera: {fileID: 1544476717}
   idleHeadPosition: {x: 0, y: 1.482, z: 0}
   sitHeadPosition: {x: 0, y: 1, z: 0}
@@ -1921,6 +1923,20 @@ MonoBehaviour:
   state: 0
   propsTarget: {fileID: 0}
   showRadialMenuWithPriority: 0
+  characterData:
+    _id: 
+    user_id: 
+    identity:
+      firstname: 
+      lastname: 
+      originCountry: 
+      job: 0
+    money: 0
+    health:
+      thirst: 0
+      hungry: 0
+      sleep: 0
+    mood: 0
 --- !u!114 &7147682903337299061
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1933,6 +1949,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4656ce14be425234c8f9ee9554973653, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
 --- !u!195 &734558965602936366
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -1967,10 +1985,10 @@ Rigidbody:
   m_Drag: 0
   m_AngularDrag: 0.05
   m_UseGravity: 0
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 14
-  m_CollisionDetection: 1
+  m_CollisionDetection: 3
 --- !u!95 &5244262172006347672
 Animator:
   serializedVersion: 3

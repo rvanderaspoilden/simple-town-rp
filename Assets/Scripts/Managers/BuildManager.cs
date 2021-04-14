@@ -145,7 +145,7 @@ namespace Sim {
             this.currentOpenedBucket = paintBucket;
             this.SetMode(BuildModeEnum.PAINT);
 
-            FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.MESH_COLLIDER));
+            //FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.MESH_COLLIDER));
         }
 
         public BuildModeEnum GetMode() {
@@ -158,7 +158,7 @@ namespace Sim {
 
         private void Cancel() {
             if (this.mode == BuildModeEnum.PAINT) {
-                FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
+                //FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
             }
 
             this.Reset();
@@ -191,7 +191,6 @@ namespace Sim {
                     Destroy(this.currentPropSelected.gameObject);
                 }
             } else if (this.mode == BuildModeEnum.PAINT) {
-                FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
                 OnValidatePaintModification?.Invoke();
             }
 
@@ -222,13 +221,7 @@ namespace Sim {
             if (this.currentOpenedBucket) {
                 // if a bucket was opened reset it and all walls in preview
                 if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                    FindObjectsOfType<Wall>().ToList().Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
-                        propsRenderer => {
-                            if (propsRenderer) {
-                                propsRenderer.SetVisibilityMode(VisibilityModeEnum.AUTO);
-                            }
-                        });
-                    FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.Reset());
+                    this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetWallPreview();
                 } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
                     FindObjectsOfType<Ground>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ResetPreview());
                 }
