@@ -14,27 +14,22 @@ namespace Sim.Utils {
             return transformData;
         }
 
-        public static WallData CreateWallData(Dictionary<int, CoverSettings> settings) {
-            return new WallData(settings);
+        public static CoverData[] CreateCoverDatas(Dictionary<int, CoverSettings> settings) {
+            return settings.Select(pair => new CoverData {
+                idx = pair.Key,
+                additionalColor = pair.Value.GetColor(),
+                paintConfigId = pair.Value.paintConfigId
+            }).ToArray();
         }
         
-        public static WallData CreateWallData(SyncDictionary<int, CoverSettings> settings) {
-            return new WallData(settings);
+        public static CoverData[] CreateCoverDatas(SyncDictionary<int, CoverSettings> settings) {
+            return settings.Select(pair => new CoverData {
+                idx = pair.Key,
+                additionalColor = pair.Value.GetColor(),
+                paintConfigId = pair.Value.paintConfigId
+            }).ToArray();
         }
-
-        /*public static DoorData CreateDoorData(SimpleDoor door) {
-            DoorData data = new DoorData();
-            data.Init(door);
-            return data;
-        }*/
-
-        public static GroundData CreateGroundData(Ground ground) {
-            GroundData data = new GroundData();
-            data.Init(ground);
-            data.paintConfigId = ground.GetPaintConfigId();
-            return data;
-        }
-
+        
         public static DefaultData CreateDefaultData(Props props) {
             DefaultData data = new DefaultData();
             data.Init(props);

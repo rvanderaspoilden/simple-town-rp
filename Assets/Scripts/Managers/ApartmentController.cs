@@ -28,7 +28,13 @@ namespace Sim {
         private Wall wall;
 
         [SerializeField]
-        private CoverSettings defaultCoverSettings;
+        private CoverSettings defaultWallCoverSettings;
+
+        [SerializeField]
+        private CoverSettings defaultGroundCoverSettings;
+
+        [SerializeField]
+        private Ground[] grounds;
 
         [Header("Only for debug")]
         [SerializeField]
@@ -51,6 +57,8 @@ namespace Sim {
         private Type[] defaultPropsTypes = new[] {typeof(Props), typeof(Seat), typeof(DeliveryBox)};
 
         private readonly SyncDictionary<int, CoverSettings> coverSettingsByFaces = new SyncDictionary<int, CoverSettings>();
+
+        private readonly SyncDictionary<int, CoverSettings> coverSettingsByGround = new SyncDictionary<int, CoverSettings>();
 
         public delegate void GenerateResponse();
 
@@ -78,18 +86,30 @@ namespace Sim {
             base.OnStartClient();
 
             this.coverSettingsByFaces.Callback += OnWallSettingsChanged;
+            this.coverSettingsByGround.Callback += OnGroundSettingsChanged;
 
             this.wall.Setup(this.coverSettingsByFaces.ToDictionary(x => x.Key, x => x.Value));
+
+            for (int i = 0; i < this.grounds.Length; i++) {
+                if (this.coverSettingsByGround.ContainsKey(i)) {
+                    this.grounds[i].PaintConfigId = this.coverSettingsByGround[i].paintConfigId;
+                }
+            }
         }
 
         public override void OnStopClient() {
             base.OnStopClient();
 
             this.coverSettingsByFaces.Callback -= OnWallSettingsChanged;
+            this.coverSettingsByGround.Callback -= OnGroundSettingsChanged;
         }
 
         private void OnWallSettingsChanged(SyncIDictionary<int, CoverSettings>.Operation operation, int key, CoverSettings item) {
             this.wall.Setup(this.coverSettingsByFaces.ToDictionary(x => x.Key, x => x.Value));
+        }
+        
+        private void OnGroundSettingsChanged(SyncIDictionary<int, CoverSettings>.Operation operation, int key, CoverSettings item) {
+            this.grounds[key].PaintConfigId = item.paintConfigId;
         }
 
         public Transform PropsContainer => propsContainer;
@@ -155,25 +175,6 @@ namespace Sim {
 
         [Server]
         private void InstantiateLevel(SceneData sceneData) {
-            // Instantiate all grounds
-            /*sceneData.grounds?.ToList().ForEach(data => {
-                Ground props = SaveUtils.InstantiatePropsFromSave(data, originPoint.position) as Ground;
-                props.Init(data.paintConfigId);
-                props.transform.parent = this.transform;
-            });*/
-
-            // Instantiate all walls
-            /*sceneData.walls?.ToList().ForEach(data => {
-                Wall props = SaveUtils.InstantiatePropsFromSave(data) as Wall;
-                props.Init(JsonHelper.ToJson(data.wallFaces));
-            });*/
-
-            // Instantiate all simple doors
-            // sceneData.simpleDoors?.ToList().ForEach(data => {
-            //     Props props = SaveUtils.InstantiatePropsFromSave(data, originPoint.position);
-            //     props.transform.parent = this.transform;
-            // });
-
             // Instantiate all buckets
             sceneData.buckets?.ToList().ForEach(data => {
                 PaintBucket props = SaveUtils.InstantiatePropsFromSave(data, this) as PaintBucket;
@@ -185,17 +186,33 @@ namespace Sim {
                 Props props = SaveUtils.InstantiatePropsFromSave(data, this);
             });
 
-            if (sceneData.walls != null && sceneData.walls.wallFaces != null) {
-                Dictionary<int, CoverSettings> wallSettings = sceneData.walls.wallFaces.ToDictionary(
-                    x => x.sharedMaterialIdx,
+            if (sceneData.walls != null) {
+                Dictionary<int, CoverSettings> wallSettings = sceneData.walls.ToDictionary(
+                    x => x.idx,
                     x => new CoverSettings {paintConfigId = x.paintConfigId, additionalColor = x.GetColor()}
                 );
 
                 for (int i = 0; i < this.wall.SharedMaterials().Length; i++) {
                     if (wallSettings.ContainsKey(i)) {
                         this.coverSettingsByFaces.Add(i, wallSettings[i]);
+                    } else {
+                        this.coverSettingsByFaces.Add(i, defaultWallCoverSettings);
                     }
-                    //this.coverSettingsByFaces.Add(i, defaultCoverSettings);
+                }
+            }
+            
+            if (sceneData.grounds != null) {
+                Dictionary<int, CoverSettings> groundSettings = sceneData.grounds.ToDictionary(
+                    x => x.idx,
+                    x => new CoverSettings {paintConfigId = x.paintConfigId, additionalColor = x.GetColor()}
+                );
+
+                for (int i = 0; i < this.grounds.Length; i++) {
+                    if (groundSettings.ContainsKey(i)) {
+                        this.coverSettingsByGround.Add(i, groundSettings[i]);
+                    } else {
+                        this.coverSettingsByGround.Add(i, defaultGroundCoverSettings);
+                    }
                 }
             }
 
@@ -208,15 +225,30 @@ namespace Sim {
             this.wall.Reset();
         }
 
+        public void ResetGroundPreview() {
+            this.grounds.Where(x => x.IsPreview()).ToList().ForEach(x => x.ResetPreview());
+        }
+
         public void ApplyWallSettings() {
-            this.CmdApplyWallSettings(SaveUtils.CreateWallData(this.wall.CoverSettingsInPreview).wallFaces);
+            this.CmdApplyWallSettings(SaveUtils.CreateCoverDatas(this.wall.CoverSettingsInPreview));
             this.wall.ApplyModification();
         }
 
+        public void ApplyGroundSettings() {
+            Ground[] groundFiltered = this.grounds.Where(x => x.IsPreview()).ToArray(); 
+            Dictionary<int, CoverSettings> groundDataToUpdate = groundFiltered.ToDictionary(x => Array.IndexOf(grounds, x), x => x.CoverSettings());
+            
+            foreach (var ground in groundFiltered) {
+                ground.ApplyModification();
+            }
+            
+            this.CmdApplyGroundSettings(SaveUtils.CreateCoverDatas(groundDataToUpdate));
+        }
+
         [Command(requiresAuthority = false)]
-        public void CmdApplyWallSettings(WallFaceData[] newSettings, NetworkConnectionToClient sender = null) {
+        public void CmdApplyWallSettings(CoverData[] newSettings, NetworkConnectionToClient sender = null) {
             foreach (var wallFaceData in newSettings) {
-                this.coverSettingsByFaces[wallFaceData.sharedMaterialIdx] = new CoverSettings {
+                this.coverSettingsByFaces[wallFaceData.idx] = new CoverSettings {
                     paintConfigId = wallFaceData.paintConfigId,
                     additionalColor = wallFaceData.GetColor()
                 };
@@ -225,11 +257,25 @@ namespace Sim {
             Debug.Log("Server: Apply wall settings");
             StartCoroutine(this.Save());
         }
+        
+        [Command(requiresAuthority = false)]
+        public void CmdApplyGroundSettings(CoverData[] newSettings, NetworkConnectionToClient sender = null) {
+            foreach (var groundData in newSettings) {
+                this.coverSettingsByGround[groundData.idx] = new CoverSettings {
+                    paintConfigId = groundData.paintConfigId,
+                    additionalColor = groundData.GetColor()
+                };
+            }
+
+            Debug.Log("Server: Apply ground settings");
+            StartCoroutine(this.Save());
+        }
 
         [Server]
         private SceneData GenerateSceneData() {
             SceneData sceneData = new SceneData {
-                walls = SaveUtils.CreateWallData(this.coverSettingsByFaces),
+                walls = SaveUtils.CreateCoverDatas(this.coverSettingsByFaces),
+                grounds = SaveUtils.CreateCoverDatas(this.coverSettingsByGround),
                 buckets = FindObjectsOfType<PaintBucket>().ToList().Select(SaveUtils.CreateBucketData).ToArray(),
                 props = FindObjectsOfType<Props>().ToList()
                     .Where(props => defaultPropsTypes.Contains(props.GetType()))

@@ -223,7 +223,7 @@ namespace Sim {
                 if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
                     this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetWallPreview();
                 } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
-                    FindObjectsOfType<Ground>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ResetPreview());
+                    this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetGroundPreview();
                 }
 
                 this.currentOpenedBucket = null;

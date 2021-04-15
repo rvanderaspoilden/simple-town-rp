@@ -1,12 +1,10 @@
-﻿using System;
-using Mirror;
+﻿using Mirror;
 using Sim.Scriptables;
 using UnityEngine;
 
 namespace Sim.Building {
-    public class Ground : Props {
+    public class Ground: MonoBehaviour {
         [Header("Ground settings")]
-        [SyncVar(hook = nameof(SetPaintConfigId))]
         [SerializeField]
         private int paintConfigId;
 
@@ -16,18 +14,8 @@ namespace Sim.Building {
 
         private bool preview;
 
-        protected override void Awake() {
-            base.Awake();
-
+        private void Awake() {
             this.renderer = GetComponent<Renderer>();
-        }
-
-        public override void OnStartClient() {
-            this.ApplyPaint();
-        }
-
-        public void Init(int paintId) {
-            this.paintConfigId = paintId;
         }
 
         [Client]
@@ -36,50 +24,47 @@ namespace Sim.Building {
                 this.ResetPreview();
             } else {
                 this.oldPaintConfigId = this.paintConfigId;
-                this.paintConfigId = paintConfig.GetId();
-                this.ApplyPaint();
+                this.PaintConfigId = paintConfig.GetId();
                 this.preview = true;
             }
         }
 
+        [Client]
         public void ApplyModification() {
-            this.oldPaintConfigId = this.paintConfigId;
             this.preview = false;
-
-            this.CmdApplyModification(this.paintConfigId);
-        }
-
-        [Command]
-        public void CmdApplyModification(int newPaintConfigId) {
-            this.paintConfigId = newPaintConfigId;
         }
 
         [Client]
         public void ResetPreview() {
-            this.paintConfigId = this.oldPaintConfigId;
-            this.ApplyPaint();
+            this.PaintConfigId = this.oldPaintConfigId;
             this.preview = false;
+        }
+
+        public int PaintConfigId {
+            get => paintConfigId;
+            set {
+                paintConfigId = value;
+                this.ApplyPaint();
+            }
         }
 
         public bool IsPreview() {
             return this.preview;
         }
-
-        public int GetPaintConfigId() {
-            return this.paintConfigId;
-        }
-
-        public void SetPaintConfigId(int _, int newPaintConfigId) {
-            this.paintConfigId = newPaintConfigId;
-            this.ApplyPaint();
-        }
-
+        
         private void ApplyPaint() {
             PaintConfig paintConfig = DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId);
 
             if (paintConfig) {
                 this.renderer.material = paintConfig.GetMaterial();
             }
+        }
+
+        public CoverSettings CoverSettings() {
+            return new CoverSettings {
+                paintConfigId = paintConfigId,
+                additionalColor = Color.white
+            };
         }
     }
 }

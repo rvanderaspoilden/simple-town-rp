@@ -12,7 +12,7 @@ namespace Sim.Building {
         private int[] allowedSharedMaterialIds;
 
         private Dictionary<int, CoverSettings> coverSettingsByFaces = new Dictionary<int, CoverSettings>();
-        
+
         private Dictionary<int, CoverSettings> coverSettingsInPreview = new Dictionary<int, CoverSettings>();
 
         private new MeshRenderer renderer;
@@ -67,7 +67,7 @@ namespace Sim.Building {
             if (this.coverSettingsInPreview.Count == 0) {
                 this.coverSettingsInPreview = new Dictionary<int, CoverSettings>(this.coverSettingsByFaces);
             }
-            
+
             Mesh mesh = meshCollider.sharedMesh;
 
             int limit = hit.triangleIndex * 3;

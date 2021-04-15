@@ -1,20 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Mirror;
 using Sim.Building;
 using Sim.Utils;
 using UnityEngine;
 
 namespace Sim {
     [Serializable]
-    public class SceneData {
-        public DoorTeleporterData[] doorTeleporters;
-        public ElevatorTeleporterData[] elevatorTeleporters;
-        public WallData walls;
-        public DoorData[] simpleDoors;
-        public GroundData[] grounds;
-        public PackageData[] packages;
+    public struct SceneData {
+        public CoverData[] walls;
+        public CoverData[] grounds;
         public BucketData[] buckets;
         public DefaultData[] props;
     }
@@ -47,85 +40,8 @@ namespace Sim {
     }
 
     [Serializable]
-    public class PackageData : DefaultData {
-        public int propsConfigIdInside;
-        
-        public PackageData() { }
-
-        public PackageData(Props props) {
-            base.Init(props);
-        }
-    }
-
-    [Serializable]
-    public class DoorTeleporterData : DefaultData {
-        public String destination;
-        public String doorDirection;
-        public int number;
-        
-        public DoorTeleporterData() { }
-
-        public DoorTeleporterData(Props props) {
-            base.Init(props);
-        }
-    }
-
-    [Serializable]
-    public class DoorData : DefaultData {
-        public DoorData() { }
-
-        public DoorData(Props props) {
-            base.Init(props);
-        }
-    }
-
-    [Serializable]
-    public class GroundData : DefaultData {
-        public int paintConfigId;
-        public GroundData() { }
-
-        public GroundData(Props props) {
-            base.Init(props);
-        }
-    }
-
-    [Serializable]
-    public class ElevatorTeleporterData : DefaultData {
-        public String destination;
-        
-        public ElevatorTeleporterData() { }
-
-        public ElevatorTeleporterData(Props props) {
-            base.Init(props);
-        }
-    }
-
-    [Serializable]
-    public class WallData {
-        public WallFaceData[] wallFaces;
-        
-        public WallData() { }
-
-        public WallData(Dictionary<int, CoverSettings> settings) {
-            wallFaces = settings.Select(pair => new WallFaceData {
-                sharedMaterialIdx = pair.Key,
-                additionalColor = pair.Value.GetColor(),
-                paintConfigId = pair.Value.paintConfigId
-            }).ToArray();
-        }
-        
-        public WallData(SyncDictionary<int, CoverSettings> settings) {
-            wallFaces = settings.Select(pair => new WallFaceData {
-                sharedMaterialIdx = pair.Key,
-                additionalColor = pair.Value.GetColor(),
-                paintConfigId = pair.Value.paintConfigId
-            }).ToArray();
-        }
-    }
-
-    [Serializable]
-    public struct WallFaceData {
-        public int sharedMaterialIdx;
+    public struct CoverData {
+        public int idx;
         public int paintConfigId;
         public float[] additionalColor;
 

@@ -88,7 +88,7 @@ namespace Sim {
 
                 this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ApplyWallSettings();
             } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
-                FindObjectsOfType<Ground>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
+                this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ApplyGroundSettings();
             }
 
             Destroy(this.currentOpenedBucket.gameObject);
