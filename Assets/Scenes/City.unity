@@ -484,12 +484,12 @@ PrefabInstance:
     - target: {fileID: 9012590872342355820, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.000000055099466
+      value: -0.000000012504617
       objectReference: {fileID: 0}
     - target: {fileID: 9012590872342355820, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.00000003045131
+      value: -0.000000006910808
       objectReference: {fileID: 0}
     - target: {fileID: 9012590872342355820, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
@@ -2782,6 +2782,11 @@ PrefabInstance:
       propertyPath: sceneId
       value: 472169155
       objectReference: {fileID: 0}
+    - target: {fileID: 1037949008565667396, guid: f5137f024dc652947bf144c9fba66d37,
+        type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2961032393209898913, guid: f5137f024dc652947bf144c9fba66d37,
         type: 3}
       propertyPath: m_Layer
@@ -2846,6 +2851,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_TagString
       value: Buildable Area
+      objectReference: {fileID: 0}
+    - target: {fileID: 5133199628488032941, guid: f5137f024dc652947bf144c9fba66d37,
+        type: 3}
+      propertyPath: m_Layer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5133199628488032941, guid: f5137f024dc652947bf144c9fba66d37,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7401912225293903748, guid: f5137f024dc652947bf144c9fba66d37,
         type: 3}

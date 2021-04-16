@@ -60,7 +60,7 @@ namespace Sim {
             PlayerController.OnStateChanged -= OnStateChanged;
             SceneManager.sceneLoaded -= SceneLoaded;
         }
-        
+
         private void SceneLoaded(Scene scene, LoadSceneMode mode) {
             physicsScene = scene.GetPhysicsScene();
         }
@@ -126,36 +126,34 @@ namespace Sim {
                 Props propsToInteract = hit.collider.GetComponentInParent<Props>();
                 PlayerController player = hit.collider.GetComponent<PlayerController>();
 
-                if (propsToInteract) {
-                    if (leftMousePressed && propsToInteract.GetType() == typeof(Ground)) {
-                        PlayerController.Local.MoveTo(hit.point);
-                    } else if (!leftMousePressed) {
-                        if (propsToInteract.IsInteractable()) {
-                            bool canInteract = PlayerController.Local.CanInteractWith(propsToInteract, hit.point);
-                            Action[] actions = propsToInteract.GetActions();
+                if (propsToInteract && !leftMousePressed) {
+                    if (propsToInteract.IsInteractable()) {
+                        bool canInteract = PlayerController.Local.CanInteractWith(propsToInteract, hit.point);
+                        Action[] actions = propsToInteract.GetActions();
 
-                            if (leftMouseClick && (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
-                                                   PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle))) {
-                                actions = propsToInteract.GetActions(true);
+                        if (leftMouseClick && (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
+                                               PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle))) {
+                            actions = propsToInteract.GetActions(true);
 
-                                canInteract = canInteract || (actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK));
-                            }
-
-                            if (canInteract) {
-                                if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
-                                    PlayerController.Local.Idle();
-                                } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
-                                    PlayerController.Local.LookAt(propsToInteract.transform);
-                                }
-
-                                HUDManager.Instance.ShowContextMenu(actions, propsToInteract.transform, leftMouseClick);
-                            } else {
-                                PlayerController.Local.SetTarget(hit.point, propsToInteract, leftMouseClick);
-                            }
-                        } else if (leftMouseClick) {
-                            PlayerController.Local.SetTarget(hit.point, propsToInteract);
+                            canInteract = canInteract || (actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK));
                         }
+
+                        if (canInteract) {
+                            if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
+                                PlayerController.Local.Idle();
+                            } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
+                                PlayerController.Local.LookAt(propsToInteract.transform);
+                            }
+
+                            HUDManager.Instance.ShowContextMenu(actions, propsToInteract.transform, leftMouseClick);
+                        } else {
+                            PlayerController.Local.SetTarget(hit.point, propsToInteract, leftMouseClick);
+                        }
+                    } else {
+                        PlayerController.Local.SetTarget(hit.point, propsToInteract);
                     }
+                } else if (!propsToInteract && leftMousePressed && hit.collider.gameObject.layer.Equals(LayerMask.NameToLayer("Ground"))) {
+                    PlayerController.Local.MoveTo(hit.point);
                 } else if (rightMouseClick && player && player != PlayerController.Local) {
                     if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
                         PlayerController.Local.Idle();
