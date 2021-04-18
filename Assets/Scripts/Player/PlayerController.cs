@@ -49,7 +49,7 @@ namespace Sim {
 
         [SyncVar(hook = nameof(ParseCharacterData))]
         private string rawCharacterData;
-        
+
         private PlayerAnimator animator;
 
         private new Rigidbody rigidbody;
@@ -92,10 +92,12 @@ namespace Sim {
 
         public override void OnStartServer() {
             base.OnStartServer();
-            
-            this.navMeshAgent.enabled = false;
-            this.rigidbody.useGravity = false;
-            Destroy(GetComponent<AudioListener>());
+
+            if (!isClient) {
+                this.navMeshAgent.enabled = false;
+                this.rigidbody.useGravity = false;
+                Destroy(GetComponent<AudioListener>());
+            }
         }
 
         public override void OnStartLocalPlayer() {
@@ -117,7 +119,7 @@ namespace Sim {
             get => rawCharacterData;
             set => rawCharacterData = value;
         }
-        
+
         public void ParseCharacterData(string old, string newValue) {
             this.characterData = JsonUtility.FromJson<CharacterData>(newValue);
         }
@@ -228,7 +230,7 @@ namespace Sim {
         public void Sell(Props props) {
             CmdSell(props.netId);
         }
-        
+
         [Command]
         public void CmdSell(uint propsNetId) {
             if (!NetworkIdentity.spawned.ContainsKey(propsNetId)) {
@@ -236,13 +238,13 @@ namespace Sim {
             }
 
             GameObject propsObject = NetworkIdentity.spawned[propsNetId].gameObject;
-            
+
             Debug.Log($"Server: player {netId} sold {propsObject.name}");
-            
+
             propsObject.SetActive(false);
 
             NetworkServer.Destroy(propsObject);
-            
+
 
             StartCoroutine(propsObject.GetComponentInParent<ApartmentController>().Save());
         }
