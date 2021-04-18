@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 3481296056184142033}
   - component: {fileID: 3481296056184142035}
   - component: {fileID: 3481296056184142032}
+  - component: {fileID: 1091815741}
+  - component: {fileID: 1091815742}
   m_Layer: 0
   m_Name: Network Manager
   m_TagString: Untagged
@@ -25,7 +27,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3481296056184142034}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -17.09503, y: -27.587837, z: -18.575516}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -73,7 +75,7 @@ MonoBehaviour:
   serverTickRate: 30
   serverBatching: 1
   serverBatchInterval: 0
-  offlineScene: Assets/Scenes/Main Menu.unity
+  offlineScene: 
   onlineScene: Assets/Scenes/City.unity
   transport: {fileID: 3481296056184142035}
   networkAddress: localhost
@@ -83,6 +85,40 @@ MonoBehaviour:
   authenticator: {fileID: 0}
   playerPrefab: {fileID: 6953365128800779919, guid: cdf47849e5cf2424992596d02f7960f0,
     type: 3}
-  autoCreatePlayer: 1
+  autoCreatePlayer: 0
   playerSpawnMethod: 0
-  spawnPrefabs: []
+  spawnPrefabs:
+  - {fileID: 5496279082967967631, guid: 525f620fbb753f9448971022e0afe439, type: 3}
+  hallScene: Assets/Scenes/Hall.unity
+  hallSpacingY: 50
+--- !u!114 &1091815741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3481296056184142034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39adc6e09d5544ed955a50ce8600355a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visRange: 100
+  rebuildInterval: 1
+  checkMethod: 0
+  showSlider: 0
+--- !u!114 &1091815742
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3481296056184142034}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6442dc8070ceb41f094e44de0bf87274, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showGUI: 1
+  offsetX: 0
+  offsetY: 0

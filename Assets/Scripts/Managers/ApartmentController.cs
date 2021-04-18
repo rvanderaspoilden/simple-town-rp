@@ -36,6 +36,9 @@ namespace Sim {
         [SerializeField]
         private Ground[] grounds;
 
+        [SerializeField]
+        private Roof roof;
+
         [Header("Only for debug")]
         [SerializeField]
         private Home homeData;
@@ -72,6 +75,10 @@ namespace Sim {
 
         public override void OnStartServer() {
             base.OnStartServer();
+
+            if (!isClient) {
+                this.roof.gameObject.SetActive(false);
+            }
 
             Address address = new Address {
                 Street = "SALMON HOTEL",

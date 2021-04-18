@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using Sim;
+using Sim.Entities;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Networking;
@@ -23,7 +24,27 @@ public class SimpleTownNetwork : NetworkManager {
     [Min(50)]
     private int hallSpacingY = 50;
 
+    [SerializeField]
+    private bool debugMode;
+
+    [Header("Debug")]
+    [SerializeField]
+    private CharacterData characterData;
+
+    [SerializeField]
+    private List<Home> characterHomes;
+
     private readonly Dictionary<int, Scene> hallSubScenesByFloor = new Dictionary<int, Scene>();
+
+    public CharacterData CharacterData {
+        get => characterData;
+        set => characterData = value;
+    }
+
+    public List<Home> CharacterHomes {
+        get => characterHomes;
+        set => characterHomes = value;
+    }
 
     [Server]
     public IEnumerator LoadHall(int hallFloor, NetworkConnectionToClient sender) {
@@ -32,7 +53,7 @@ public class SimpleTownNetwork : NetworkManager {
 
         if (hallSubScenesByFloor.ContainsKey(hallFloor)) {
             Debug.Log("Scene already created on server-side");
-            
+
             currentScene = hallSubScenesByFloor[hallFloor];
             GameObject hallGo = currentScene.GetRootGameObjects().First(x => x.GetComponent<HallController>());
 
@@ -43,7 +64,7 @@ public class SimpleTownNetwork : NetworkManager {
             }
         } else {
             Debug.Log("Hall Scene need to be created on server-side");
-            
+
             int index = SceneManager.sceneCount;
 
             yield return SceneManager.LoadSceneAsync(hallScene,
@@ -82,7 +103,7 @@ public class SimpleTownNetwork : NetworkManager {
         if (!this.hallSubScenesByFloor.ContainsKey(hallFloor)) {
             Debug.Log($"No hall found with floor {hallFloor}");
         }
-        
+
         yield return SceneManager.UnloadSceneAsync(this.hallSubScenesByFloor[hallFloor]);
 
         this.hallSubScenesByFloor.Remove(hallFloor);
@@ -229,7 +250,7 @@ public class SimpleTownNetwork : NetworkManager {
 
     #endregion
 
-    #region Client System Callbacks
+    #region Client System Callbacks triple + croque + nuggets frites + petite frites + sprite
 
     /// <summary>
     /// Called on the client when connected to a server.
@@ -239,9 +260,19 @@ public class SimpleTownNetwork : NetworkManager {
     public override void OnClientConnect(NetworkConnection conn) {
         base.OnClientConnect(conn);
 
+        if (debugMode) { 
+            CreateCharacterMessage mock = new CreateCharacterMessage {
+                userId = "60468a435ebca93ebc119758",
+                characterId = "6064cd05b9d4fd3afca4a146"
+            };
+            conn.Send(mock);
+
+            return;
+        }
+
         CreateCharacterMessage characterMessage = new CreateCharacterMessage {
-            userId = "60468a435ebca93ebc119758",
-            characterId = "6064cd05b9d4fd3afca4a146"
+            userId = this.characterData.UserId,
+            characterId = this.characterData.Id
         };
 
         conn.Send(characterMessage);
@@ -340,6 +371,8 @@ public class SimpleTownNetwork : NetworkManager {
 
             PlayerController player = go.GetComponent<PlayerController>();
             player.RawCharacterData = JsonUtility.ToJson(characterResponse.Characters[0]);
+
+            go.name = $"Player [conn={conn.connectionId}] [{characterResponse.Characters[0].Identity.FullName}]";
 
             NetworkServer.AddPlayerForConnection(conn, go);
         } else {

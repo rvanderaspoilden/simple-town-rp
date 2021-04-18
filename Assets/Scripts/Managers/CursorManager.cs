@@ -99,7 +99,7 @@ namespace Sim {
         private bool IsCharacter() {
             PlayerController player = hit.collider.GetComponent<PlayerController>();
 
-            if (player != null && player != RoomManager.LocalPlayer) {
+            if (player != null && player != PlayerController.Local) {
                 this.SetCursor(this.socialCursor);
                 return true;
             }

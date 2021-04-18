@@ -79,8 +79,6 @@ namespace Sim {
             this.rigidbody = GetComponent<Rigidbody>();
             this.animator = GetComponent<PlayerAnimator>();
             this.Collider = GetComponent<Collider>();
-            
-            this.InitStateMachine();
         }
 
         public override void OnStartClient() {
@@ -88,14 +86,21 @@ namespace Sim {
                 this.navMeshAgent.enabled = false;
                 this.rigidbody.useGravity = false;
                 Destroy(GetComponent<AudioListener>());
-                Destroy(this.animator);
                 this.SetupActions();
-            } else {
-                CameraManager.Instance.SetCameraTarget(this.GetHeadTargetForCamera());
             }
         }
 
+        public override void OnStartServer() {
+            base.OnStartServer();
+            
+            this.navMeshAgent.enabled = false;
+            this.rigidbody.useGravity = false;
+            Destroy(GetComponent<AudioListener>());
+        }
+
         public override void OnStartLocalPlayer() {
+            this.InitStateMachine();
+            CameraManager.Instance.SetCameraTarget(this.GetHeadTargetForCamera());
             this.navMeshAgent.updateRotation = false;
             Local = this;
             HUDManager.Instance.DisplayPanel(PanelTypeEnum.DEFAULT);
@@ -114,7 +119,7 @@ namespace Sim {
         }
         
         public void ParseCharacterData(string old, string newValue) {
-            this.CharacterData = JsonUtility.FromJson<CharacterData>(newValue);
+            this.characterData = JsonUtility.FromJson<CharacterData>(newValue);
         }
 
         private void Update() {
@@ -176,7 +181,7 @@ namespace Sim {
 
             switch (action.Type) {
                 case ActionTypeEnum.LOOK:
-                    RoomManager.LocalPlayer.Look(this.transform);
+                    Local.Look(this.transform);
                     break;
             }
         }

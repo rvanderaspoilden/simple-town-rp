@@ -155,7 +155,7 @@ MonoBehaviour:
   errorText: {fileID: 380270966}
   pseudoInputField: {fileID: 2005252172}
   passwordInputField: {fileID: 1482923709}
-  debug: 1
+  debug: 0
   statusImg: {fileID: 1564845287}
 --- !u!4 &1813137
 Transform:
@@ -1033,6 +1033,93 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 749341174}
   m_CullTransparentMesh: 0
+--- !u!1001 &760321487
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1091815741, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa, type: 3}
+      propertyPath: showSlider
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1091815742, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: spawnPrefabs.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: spawnPrefabs.Array.data[0]
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -17.09503
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -27.587837
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -18.575516
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142034, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: m_Name
+      value: Network Manager
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa, type: 3}
 --- !u!1001 &848700043
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3115,7 +3202,7 @@ PrefabInstance:
     - target: {fileID: 7667094568108501628, guid: 7e48349476bdbed43b90a36ec7845d22,
         type: 3}
       propertyPath: accessToken
-      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InNwZWN0dXMiLCJzdWIiOiI2MDQ2OGE0MzVlYmNhOTNlYmMxMTk3NTgiLCJlbWFpbCI6InRlc3RAZ21haWwuY29tIiwiY2hhcmFjdGVycyI6W3siX2lkIjoiNjA0YTZkNTM2MGJkNjc0YjAwMzE5OTBiIiwidXNlcl9pZCI6IjYwNDY4YTQzNWViY2E5M2ViYzExOTc1OCIsImlkZW50aXR5Ijp7ImZpcnN0bmFtZSI6IkZmZXpmZSIsImxhc3RuYW1lIjoiRmV6emZlZWYiLCJvcmlnaW5Db3VudHJ5IjoiRHphZGRkemEiLCJqb2IiOjAsImVudHJhbmNlRGF0ZSI6IjExLzAzLzIwMjEifSwibW9uZXkiOjUwMDAsImhlYWx0aCI6eyJ0aGlyc3QiOjEwMCwiaHVuZ3J5IjoxMDAsInNsZWVwIjoxMDB9fSx7Il9pZCI6IjYwNGJhZGNmMzAyYmZiMjY0NGY1ZTA1ZSIsInVzZXJfaWQiOiI2MDQ2OGE0MzVlYmNhOTNlYmMxMTk3NTgiLCJpZGVudGl0eSI6eyJmaXJzdG5hbWUiOiJEZGF6ZCIsImxhc3RuYW1lIjoiWmFmZXplIiwib3JpZ2luQ291bnRyeSI6IlpmZXplZiIsImpvYiI6MCwiZW50cmFuY2VEYXRlIjoiMTIvMDMvMjAyMSJ9LCJtb25leSI6NTAwMCwiaGVhbHRoIjp7InRoaXJzdCI6MTAwLCJodW5ncnkiOjEwMCwic2xlZXAiOjEwMH19LHsiX2lkIjoiNjA0YmFlMWYzMDJiZmIyNjQ0ZjVlMDVmIiwidXNlcl9pZCI6IjYwNDY4YTQzNWViY2E5M2ViYzExOTc1OCIsImlkZW50aXR5Ijp7ImZpcnN0bmFtZSI6IkNjYyIsImxhc3RuYW1lIjoiRXpmeiIsIm9yaWdpbkNvdW50cnkiOiJWemVmeiIsImpvYiI6MCwiZW50cmFuY2VEYXRlIjoiMTIvMDMvMjAyMSJ9LCJtb25leSI6NTAwMCwiaGVhbHRoIjp7InRoaXJzdCI6MTAwLCJodW5ncnkiOjEwMCwic2xlZXAiOjEwMH19LHsiX2lkIjoiNjA0YmFlNmMzMDJiZmIyNjQ0ZjVlMDYwIiwidXNlcl9pZCI6IjYwNDY4YTQzNWViY2E5M2ViYzExOTc1OCIsImlkZW50aXR5Ijp7ImZpcnN0bmFtZSI6IkR6YSIsImxhc3RuYW1lIjoiRGRkIiwib3JpZ2luQ291bnRyeSI6IlpkYWF6ZCIsImpvYiI6MCwiZW50cmFuY2VEYXRlIjoiMTIvMDMvMjAyMSJ9LCJtb25leSI6NTAwMCwiaGVhbHRoIjp7InRoaXJzdCI6MTAwLCJodW5ncnkiOjEwMCwic2xlZXAiOjEwMH19LHsiX2lkIjoiNjA0YmFlOGMzMDJiZmIyNjQ0ZjVlMDYxIiwidXNlcl9pZCI6IjYwNDY4YTQzNWViY2E5M2ViYzExOTc1OCIsImlkZW50aXR5Ijp7ImZpcnN0bmFtZSI6IkRnIiwibGFzdG5hbWUiOiJSZ3JlIiwib3JpZ2luQ291bnRyeSI6IkdlciIsImpvYiI6MCwiZW50cmFuY2VEYXRlIjoiMTIvMDMvMjAyMSJ9LCJtb25leSI6NTAwMCwiaGVhbHRoIjp7InRoaXJzdCI6MTAwLCJodW5ncnkiOjEwMCwic2xlZXAiOjEwMH19LHsiX2lkIjoiNjA0YmFmYWUzMDJiZmIyNjQ0ZjVlMDYyIiwidXNlcl9pZCI6IjYwNDY4YTQzNWViY2E5M2ViYzExOTc1OCIsImlkZW50aXR5Ijp7ImZpcnN0bmFtZSI6IkZmemVlZiIsImxhc3RuYW1lIjoiRmV6ZnplIiwib3JpZ2luQ291bnRyeSI6IkZmemVmemVmIiwiam9iIjowLCJlbnRyYW5jZURhdGUiOiIxMi8wMy8yMDIxIn0sIm1vbmV5Ijo1MDAwLCJoZWFsdGgiOnsidGhpcnN0IjoxMDAsImh1bmdyeSI6MTAwLCJzbGVlcCI6MTAwfX0seyJfaWQiOiI2MDRiYjcxODMwMmJmYjI2NDRmNWUwNjMiLCJ1c2VyX2lkIjoiNjA0NjhhNDM1ZWJjYTkzZWJjMTE5NzU4IiwiaWRlbnRpdHkiOnsiZmlyc3RuYW1lIjoiRGZmZmUiLCJsYXN0bmFtZSI6IkZmZmUiLCJvcmlnaW5Db3VudHJ5IjoiRnplemVmIiwiam9iIjowLCJlbnRyYW5jZURhdGUiOiIxMi8wMy8yMDIxIn0sIm1vbmV5Ijo1MDAwLCJoZWFsdGgiOnsidGhpcnN0IjoxMDAsImh1bmdyeSI6MTAwLCJzbGVlcCI6MTAwfX0seyJfaWQiOiI2MDRiYjc0YzMwMmJmYjI2NDRmNWUwNjQiLCJ1c2VyX2lkIjoiNjA0NjhhNDM1ZWJjYTkzZWJjMTE5NzU4IiwiaWRlbnRpdHkiOnsiZmlyc3RuYW1lIjoiRGRkZGR6IiwibGFzdG5hbWUiOiJEZGQiLCJvcmlnaW5Db3VudHJ5IjoiRHpkeiIsImpvYiI6MCwiZW50cmFuY2VEYXRlIjoiMTIvMDMvMjAyMSJ9LCJtb25leSI6NTAwMCwiaGVhbHRoIjp7InRoaXJzdCI6MTAwLCJodW5ncnkiOjEwMCwic2xlZXAiOjEwMH19XSwiaWF0IjoxNjE1NjQxODY1LCJleHAiOjE2MTU3MjgyNjV9.VYkXBghGme12boQ4IMOm23XaWbqgIYy38C8acQBKS3I
+      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InNwZWN0dXMiLCJzdWIiOiI2MDQ2OGE0MzVlYmNhOTNlYmMxMTk3NTgiLCJlbWFpbCI6InRlc3RAZ21haWwuY29tIiwiaWF0IjoxNjE4NjQ5MzQxLCJleHAiOjE2MTg3MzU3NDF9.LiCsV58iSV1C-6dZQOk18FoftoEzSyUKBm5SqEf8biU
       objectReference: {fileID: 0}
     - target: {fileID: 7667094568108501629, guid: 7e48349476bdbed43b90a36ec7845d22,
         type: 3}
