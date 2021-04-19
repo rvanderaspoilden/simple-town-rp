@@ -5558,7 +5558,7 @@ MonoBehaviour:
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   defaultGroundCoverSettings:
-    paintConfigId: 6
+    paintConfigId: 1
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   grounds:
   - {fileID: 1421623182}
@@ -5603,6 +5603,7 @@ MonoBehaviour:
   - {fileID: 303516138}
   - {fileID: 2125223554}
   - {fileID: 392823684}
+  roof: {fileID: 1000362108}
   homeData:
     _id: 
     address:

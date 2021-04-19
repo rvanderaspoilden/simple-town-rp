@@ -114,7 +114,7 @@ namespace Sim {
         private void OnWallSettingsChanged(SyncIDictionary<int, CoverSettings>.Operation operation, int key, CoverSettings item) {
             this.wall.Setup(this.coverSettingsByFaces.ToDictionary(x => x.Key, x => x.Value));
         }
-        
+
         private void OnGroundSettingsChanged(SyncIDictionary<int, CoverSettings>.Operation operation, int key, CoverSettings item) {
             this.grounds[key].PaintConfigId = item.paintConfigId;
         }
@@ -206,8 +206,12 @@ namespace Sim {
                         this.coverSettingsByFaces.Add(i, defaultWallCoverSettings);
                     }
                 }
+            } else {
+                for (int i = 0; i < this.wall.SharedMaterials().Length; i++) {
+                    this.coverSettingsByFaces.Add(i, defaultWallCoverSettings);
+                }
             }
-            
+
             if (sceneData.grounds != null) {
                 Dictionary<int, CoverSettings> groundSettings = sceneData.grounds.ToDictionary(
                     x => x.idx,
@@ -220,6 +224,10 @@ namespace Sim {
                     } else {
                         this.coverSettingsByGround.Add(i, defaultGroundCoverSettings);
                     }
+                }
+            } else {
+                for (int i = 0; i < this.grounds.Length; i++) {
+                    this.coverSettingsByGround.Add(i, defaultGroundCoverSettings);
                 }
             }
 
@@ -242,13 +250,13 @@ namespace Sim {
         }
 
         public void ApplyGroundSettings() {
-            Ground[] groundFiltered = this.grounds.Where(x => x.IsPreview()).ToArray(); 
+            Ground[] groundFiltered = this.grounds.Where(x => x.IsPreview()).ToArray();
             Dictionary<int, CoverSettings> groundDataToUpdate = groundFiltered.ToDictionary(x => Array.IndexOf(grounds, x), x => x.CoverSettings());
-            
+
             foreach (var ground in groundFiltered) {
                 ground.ApplyModification();
             }
-            
+
             this.CmdApplyGroundSettings(SaveUtils.CreateCoverDatas(groundDataToUpdate));
         }
 
@@ -264,7 +272,7 @@ namespace Sim {
             Debug.Log("Server: Apply wall settings");
             StartCoroutine(this.Save());
         }
-        
+
         [Command(requiresAuthority = false)]
         public void CmdApplyGroundSettings(CoverData[] newSettings, NetworkConnectionToClient sender = null) {
             foreach (var groundData in newSettings) {

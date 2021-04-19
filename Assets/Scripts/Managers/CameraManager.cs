@@ -29,8 +29,6 @@ namespace Sim {
 
         private bool startLeftClickValid;
 
-        public static PhysicsScene physicsScene;
-
         public static CameraManager Instance;
 
         private void Awake() {
@@ -53,16 +51,10 @@ namespace Sim {
 
         private void Start() {
             PlayerController.OnStateChanged += OnStateChanged;
-            SceneManager.sceneLoaded += SceneLoaded;
         }
 
         private void OnDestroy() {
             PlayerController.OnStateChanged -= OnStateChanged;
-            SceneManager.sceneLoaded -= SceneLoaded;
-        }
-
-        private void SceneLoaded(Scene scene, LoadSceneMode mode) {
-            physicsScene = scene.GetPhysicsScene();
         }
 
         public Camera Camera => camera;
@@ -70,8 +62,6 @@ namespace Sim {
         public void SetCameraTarget(Transform target) {
             this.tpsCamera.SetCameraTarget(target);
         }
-
-        public static PhysicsScene PhysicsScene => physicsScene;
 
         void Update() {
             if (PlayerController.Local == null) return;
@@ -122,7 +112,7 @@ namespace Sim {
 
             Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
 
-            if ((leftMouseClick || rightMouseClick || leftMousePressed) && physicsScene.Raycast(ray.origin, ray.direction, out hit, 100, this.layerMaskInFreeMode)) {
+            if ((leftMouseClick || rightMouseClick || leftMousePressed) && Physics.Raycast(ray.origin, ray.direction, out hit, 100, this.layerMaskInFreeMode)) {
                 Props propsToInteract = hit.collider.GetComponentInParent<Props>();
                 PlayerController player = hit.collider.GetComponent<PlayerController>();
 

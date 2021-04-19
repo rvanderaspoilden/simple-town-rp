@@ -125,7 +125,7 @@ namespace Sim {
         }
 
         private void Update() {
-            if (!isLocalPlayer) return;
+            if (!isLocalPlayer || this.stateMachine == null) return;
 
             this.stateMachine.Tick();
         }
@@ -351,7 +351,7 @@ namespace Sim {
 
             Vector3 dir = hitPoint - this.GetHeadTargetForCamera().position;
             RaycastHit hit;
-            if (CameraManager.PhysicsScene.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
+            if (Physics.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
                 Props hitProps = hit.collider.GetComponentInParent<Props>();
 
                 if ((hitProps && hitProps.GetType() == typeof(Wall)) || !hitProps) {

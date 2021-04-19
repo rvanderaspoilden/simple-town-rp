@@ -54,10 +54,9 @@ namespace Sim {
             if (!CameraManager.Instance) return;
 
             Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
-            
-            if (CameraManager.Instance.GetMode() == CameraModeEnum.FREE &&
-                !EventSystem.current.IsPointerOverGameObject() &&
-                CameraManager.PhysicsScene.Raycast(ray.origin, ray.direction, out hit, 100)) {
+
+            if (CameraManager.Instance.GetMode() == CameraModeEnum.FREE && !EventSystem.current.IsPointerOverGameObject() &&
+                Physics.Raycast(ray.origin, ray.direction, out hit, 100)) {
                 if (!this.IsProps() && !this.IsCharacter()) {
                     this.SetCursor(null);
                 }
