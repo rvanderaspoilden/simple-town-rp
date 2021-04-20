@@ -1,14 +1,11 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Mirror;
 using Sim;
 using Sim.Entities;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Networking;
-using UnityEngine.SceneManagement;
 
 /*
 	Documentation: https://mirror-networking.com/docs/Components/NetworkManager.html
@@ -17,15 +14,10 @@ using UnityEngine.SceneManagement;
 
 public class SimpleTownNetwork : NetworkManager {
     [SerializeField]
-    [Scene]
-    private string hallScene;
-
+    private bool useElbloodyAccount;
+    
     [SerializeField]
-    [Min(50)]
-    private int hallSpacingY = 50;
-
-    [SerializeField]
-    private bool debugMode;
+    private bool useSpectusAccount;
 
     [Header("Debug")]
     [SerializeField]
@@ -33,8 +25,6 @@ public class SimpleTownNetwork : NetworkManager {
 
     [SerializeField]
     private List<Home> characterHomes;
-
-    private readonly Dictionary<int, Scene> hallSubScenesByFloor = new Dictionary<int, Scene>();
 
     public CharacterData CharacterData {
         get => characterData;
@@ -44,71 +34,6 @@ public class SimpleTownNetwork : NetworkManager {
     public List<Home> CharacterHomes {
         get => characterHomes;
         set => characterHomes = value;
-    }
-
-    [Server]
-    public IEnumerator LoadHall(int hallFloor, NetworkConnectionToClient sender) {
-        HallController hallController = null;
-        Scene currentScene;
-
-        if (hallSubScenesByFloor.ContainsKey(hallFloor)) {
-            Debug.Log("Scene already created on server-side");
-
-            currentScene = hallSubScenesByFloor[hallFloor];
-            GameObject hallGo = currentScene.GetRootGameObjects().First(x => x.GetComponent<HallController>());
-
-            if (hallGo) {
-                hallController = hallGo.GetComponent<HallController>();
-            } else {
-                Debug.LogError("Hall GO not found");
-            }
-        } else {
-            Debug.Log("Hall Scene need to be created on server-side");
-
-            int index = SceneManager.sceneCount;
-
-            yield return SceneManager.LoadSceneAsync(hallScene,
-                new LoadSceneParameters {loadSceneMode = LoadSceneMode.Additive, localPhysicsMode = LocalPhysicsMode.Physics3D});
-
-            currentScene = SceneManager.GetSceneAt(index);
-            hallSubScenesByFloor.Add(hallFloor, currentScene);
-
-            foreach (var rootGameObject in currentScene.GetRootGameObjects()) {
-                rootGameObject.transform.position -= new Vector3(0, this.hallSpacingY * hallFloor, 0);
-            }
-
-            GameObject hallGo = currentScene.GetRootGameObjects().First(x => x.GetComponent<HallController>());
-
-            if (hallGo) {
-                hallController = hallGo.GetComponent<HallController>();
-                hallController.Init(hallFloor);
-            } else {
-                Debug.LogError("Hall GO not found");
-            }
-        }
-
-        if (hallController == null) throw new Exception("No hall controller found !!!");
-
-        sender.Send(new SceneMessage {sceneName = hallScene, sceneOperation = SceneOperation.LoadAdditive});
-
-        // Wait for end of frame before adding the player to ensure Scene Message goes first
-        yield return new WaitForEndOfFrame();
-
-        hallController.MoveToSpawn(sender);
-
-        SceneManager.MoveGameObjectToScene(sender.identity.gameObject, currentScene);
-    }
-
-    IEnumerator UnloadLoad(int hallFloor, NetworkConnectionToClient sender) {
-        if (!this.hallSubScenesByFloor.ContainsKey(hallFloor)) {
-            Debug.Log($"No hall found with floor {hallFloor}");
-        }
-
-        yield return SceneManager.UnloadSceneAsync(this.hallSubScenesByFloor[hallFloor]);
-
-        this.hallSubScenesByFloor.Remove(hallFloor);
-
-        yield return Resources.UnloadUnusedAssets();
     }
 
     #region Unity Callbacks
@@ -260,12 +185,24 @@ public class SimpleTownNetwork : NetworkManager {
     public override void OnClientConnect(NetworkConnection conn) {
         base.OnClientConnect(conn);
 
-        if (debugMode) { 
+        if (useSpectusAccount) { 
             CreateCharacterMessage mock = new CreateCharacterMessage {
                 userId = "60468a435ebca93ebc119758",
                 characterId = "6064cd05b9d4fd3afca4a146"
             };
             conn.Send(mock);
+
+            Debug.Log("Connect with Spectus account");
+            
+            return;
+        } else if (useElbloodyAccount) {
+            CreateCharacterMessage mock = new CreateCharacterMessage {
+                userId = "60468a665ebca93ebc11975a",
+                characterId = "6064dcaa84de3905a65c94b0"
+            };
+            conn.Send(mock);
+            
+            Debug.Log("Connect with Elbloody account");
 
             return;
         }

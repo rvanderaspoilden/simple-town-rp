@@ -24,14 +24,6 @@ namespace Sim.Interactables {
         [Command(requiresAuthority = false)]
         public void CmdUse(NetworkConnectionToClient sender = null) {
             Debug.Log($"{sender.connectionId} want to go to hall number {this.floorToGo}");
-            if (this.floorToGo > 0) {
-                StartCoroutine(((SimpleTownNetwork)NetworkManager.singleton).LoadHall(this.floorToGo, sender));
-            } else {
-                SceneManager.MoveGameObjectToScene(sender.identity.gameObject, SceneManager.GetSceneAt(0));
-
-                sender.Send(new TeleportMessage {destination = NetworkManager.startPositions[0].position});
-                //               StartCoroutine(UnloadScene(hallSubScenes[0], sender));
-            }
         }
     }
 }
