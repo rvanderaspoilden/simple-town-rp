@@ -53,9 +53,10 @@ namespace Sim {
         private void Update() {
             if (!CameraManager.Instance) return;
 
-            if (CameraManager.Instance.GetMode() == CameraModeEnum.FREE &&
-                !EventSystem.current.IsPointerOverGameObject() &&
-                Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100)) {
+            Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
+
+            if (CameraManager.Instance.GetMode() == CameraModeEnum.FREE && !EventSystem.current.IsPointerOverGameObject() &&
+                Physics.Raycast(ray.origin, ray.direction, out hit, 100)) {
                 if (!this.IsProps() && !this.IsCharacter()) {
                     this.SetCursor(null);
                 }
@@ -95,9 +96,9 @@ namespace Sim {
         }
 
         private bool IsCharacter() {
-            Character character = hit.collider.GetComponent<Character>();
+            PlayerController player = hit.collider.GetComponent<PlayerController>();
 
-            if (character != null && character != RoomManager.LocalCharacter) {
+            if (player != null && player != PlayerController.Local) {
                 this.SetCursor(this.socialCursor);
                 return true;
             }
@@ -106,7 +107,7 @@ namespace Sim {
         }
 
         private void SceneLoaded(Scene scene, LoadSceneMode mode) {
-            this.SetCamera(Camera.main);
+            if (mode == LoadSceneMode.Single) this.SetCamera(Camera.main);
         }
 
         private void SetCamera(Camera camera) {

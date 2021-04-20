@@ -1,29 +1,21 @@
 using System;
-using UnityEngine;
 
 namespace Sim.Entities {
     [Serializable]
-    public class Delivery {
-        [SerializeField]
-        private string _id;
+    public struct Delivery {
+        public string _id;
 
-        [SerializeField]
-        private string recipientId;
+        public string recipientId;
 
-        [SerializeField]
-        private DeliveryType type;
+        public DeliveryType type;
 
-        [SerializeField]
-        private int paintConfigId;
+        public int paintConfigId;
 
-        [SerializeField]
-        private int propsConfigId;
+        public int propsConfigId;
 
-        [SerializeField]
-        private float[] color;
+        public float[] color;
 
-        [SerializeField]
-        private int propsPresetId;
+        public int propsPresetId;
 
         public string ID => _id;
 
@@ -68,7 +60,7 @@ namespace Sim.Entities {
         }
     }
 
-    public enum DeliveryType {
+    public enum DeliveryType : byte {
         PROPS,
         COVER
     }

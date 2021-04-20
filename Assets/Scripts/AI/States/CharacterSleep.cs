@@ -5,45 +5,45 @@ using UnityEngine;
 
 namespace AI.States {
     public class CharacterSleep : IState {
-        private readonly Character character;
+        private readonly PlayerController player;
         private readonly Seat props;
         private readonly Transform couchTransform;
         private readonly Vector3 lastPosition;
 
-        public CharacterSleep(Character character, Seat props, Transform couchTransform) {
-            this.character = character;
+        public CharacterSleep(PlayerController player, Seat props, Transform couchTransform) {
+            this.player = player;
             this.props = props;
             this.couchTransform = couchTransform;
-            this.lastPosition = this.character.transform.position;
+            this.lastPosition = this.player.transform.position;
         }
 
         public void OnEnter() {
-            this.character.NavMeshAgent.enabled = false;
-            this.character.Collider.enabled = false;
+            this.player.NavMeshAgent.enabled = false;
+            this.player.Collider.enabled = false;
 
-            Transform characterTransform = this.character.transform;
+            Transform characterTransform = this.player.transform;
             
             characterTransform.DOComplete(); // Do stop look at rotation
 
             characterTransform.position = couchTransform.position;
             characterTransform.rotation = couchTransform.rotation;
 
-            this.character.Animator.SetAction(CharacterAnimatorAction.SLEEP);
+            this.player.Animator.SetAction(CharacterAnimatorAction.SLEEP);
 
-            this.character.SetHeadTargetPosition(this.character.SitHeadPosition);
+            this.player.SetHeadTargetPosition(this.player.SitHeadPosition);
         }
 
         public void Tick() { }
 
         public void OnExit() {
-            this.character.Animator.SetAction(CharacterAnimatorAction.NONE);
-            this.character.SetHeadTargetPosition(this.character.IdleHeadPosition);
+            this.player.Animator.SetAction(CharacterAnimatorAction.NONE);
+            this.player.SetHeadTargetPosition(this.player.IdleHeadPosition);
 
-            this.props.RevokeCouch(this.character);
+            this.props.RevokeCouch();
 
-            this.character.transform.position = lastPosition;
-            this.character.Collider.enabled = true;
-            this.character.NavMeshAgent.enabled = true;
+            this.player.transform.position = lastPosition;
+            this.player.Collider.enabled = true;
+            this.player.NavMeshAgent.enabled = true;
         }
     }
 }

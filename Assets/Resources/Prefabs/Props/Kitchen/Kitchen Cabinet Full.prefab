@@ -10,11 +10,11 @@ GameObject:
   m_Component:
   - component: {fileID: 8656297624450562939}
   - component: {fileID: 4421387068743569514}
-  - component: {fileID: 4421387068743569513}
   - component: {fileID: 4421387068743569512}
   - component: {fileID: 4421387068743569511}
   - component: {fileID: 4421387068743569510}
   - component: {fileID: 4421387068743569515}
+  - component: {fileID: 8038279989681216886}
   m_Layer: 10
   m_Name: Kitchen Cabinet Full
   m_TagString: Untagged
@@ -55,29 +55,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &4421387068743569513
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5654833430500215144}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 0
-  OwnershipTransfer: 0
-  observableSearch: 0
-  ObservedComponents:
-  - {fileID: 0}
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!114 &4421387068743569512
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -94,6 +71,9 @@ MonoBehaviour:
   - {fileID: 956019141924115900}
   - {fileID: 7837597797123755092}
   - {fileID: 6629849054031862714}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -109,6 +89,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: bb7c9280e8d9fe74b9c67dc56b2b13af, type: 2}
 --- !u!65 &4421387068743569510
 BoxCollider:
@@ -139,6 +121,27 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 1.042588, z: 0.02013576}
   m_TimeToStationary: 0.5
+--- !u!114 &8038279989681216886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5654833430500215144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 0
 --- !u!1 &6294312478297390753
 GameObject:
   m_ObjectHideFlags: 0

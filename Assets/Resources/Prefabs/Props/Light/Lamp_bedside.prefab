@@ -173,10 +173,10 @@ GameObject:
   - component: {fileID: 2399394903676613945}
   - component: {fileID: 8465929610978679161}
   - component: {fileID: 6378857843754257630}
-  - component: {fileID: 3039729256275992821}
   - component: {fileID: 4332895180021918436}
   - component: {fileID: 1876401321583765242}
   - component: {fileID: 4877383474187893026}
+  - component: {fileID: -5115924481639146439}
   m_Layer: 10
   m_Name: Lamp_bedside
   m_TagString: Untagged
@@ -232,28 +232,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.1996696, z: 0.001113236}
   m_TimeToStationary: 0.5
---- !u!114 &3039729256275992821
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3028543615542931331}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 3
-  OwnershipTransfer: 0
-  observableSearch: 2
-  ObservedComponents: []
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!54 &4332895180021918436
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -287,6 +265,9 @@ MonoBehaviour:
   - {fileID: 6879634218999752387}
   - {fileID: 8413396217090969213}
   - {fileID: 5244564218234773337}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -302,7 +283,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 9f6858b3a7cdd7e408fc675d95fde771, type: 2}
+--- !u!114 &-5115924481639146439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3028543615542931331}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 0
 --- !u!1 &7406628637718529997
 GameObject:
   m_ObjectHideFlags: 0

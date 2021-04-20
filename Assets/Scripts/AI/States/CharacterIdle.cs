@@ -2,22 +2,22 @@ using Sim;
 
 namespace AI.States {
     public class CharacterIdle : IState {
-        private readonly Character character;
+        private readonly PlayerController player;
 
-        public CharacterIdle(Character character) {
-            this.character = character;
+        public CharacterIdle(PlayerController player) {
+            this.player = player;
         }
 
         public void OnEnter() {
-            if (this.character.PropsTarget && this.character.CanInteractWith(this.character.PropsTarget)) {
-                this.character.LookAt(this.character.PropsTarget.transform);
-                HUDManager.Instance.ShowContextMenu(this.character.PropsTarget.GetActions(this.character.ShowRadialMenuWithPriority), this.character.PropsTarget.transform, this.character.ShowRadialMenuWithPriority);
-                this.character.PropsTarget = null;
+            if (this.player.PropsTarget && this.player.CanInteractWith(this.player.PropsTarget)) {
+                this.player.LookAt(this.player.PropsTarget.transform);
+                HUDManager.Instance.ShowContextMenu(this.player.PropsTarget.GetActions(this.player.ShowRadialMenuWithPriority), this.player.PropsTarget.transform, this.player.ShowRadialMenuWithPriority);
+                this.player.PropsTarget = null;
             }
         }
 
         public void Tick() {
-            this.character.Animator.SetVelocity(this.character.NavMeshAgent.velocity.magnitude);
+            this.player.Animator.SetVelocity(this.player.NavMeshAgent.velocity.magnitude);
         }
 
         public void OnExit() {

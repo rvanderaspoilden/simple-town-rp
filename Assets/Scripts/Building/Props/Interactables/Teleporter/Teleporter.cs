@@ -1,48 +1,29 @@
-﻿using Photon.Pun;
-using Photon.Realtime;
+﻿using Mirror;
 using Sim.Building;
 using Sim.Enums;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Sim.Interactables {
-    public abstract class Teleporter : Props {
-        [Header("Teleporter Settings")]
+    public class Teleporter : Props {
+        [Header("Settings")]
         [SerializeField]
-        protected RoomTypeEnum destination;
-
-        [SerializeField]
-        [Tooltip("Represent the position where the player will be spawned after use")]
         private Transform spawnTransform;
 
+        [SerializeField]
+        private int floorToGo;
+        
         protected override void Execute(Action action) {
             if (action.Type.Equals(ActionTypeEnum.TELEPORT)) {
-                NetworkManager.Instance.GoToRoom(RoomTypeEnum.BUILDING_HALL, null);
+                this.CmdUse();
             }
         }
-        
-        public override void Synchronize(Player playerTarget) {
-            base.Synchronize(playerTarget);
 
-            this.SetDestination(this.destination, playerTarget);
-        }
+        public Transform SpawnTransform => spawnTransform;
 
-        public RoomTypeEnum GetDestination() {
-            return this.destination;
-        }
-
-        public Transform Spawn => spawnTransform;
-
-        public void SetDestination(RoomTypeEnum destination, RpcTarget rpcTarget) { // TODO: look this
-            this.photonView.RPC("RPC_SetDestination", rpcTarget, destination);
-        }
-
-        private void SetDestination(RoomTypeEnum destination, Player playerTarget) {
-            this.photonView.RPC("RPC_SetDestination", playerTarget, destination);
-        }
-
-        [PunRPC]
-        public void RPC_SetDestination(RoomTypeEnum placesEnum) {
-            this.destination = placesEnum;
+        [Command(requiresAuthority = false)]
+        public void CmdUse(NetworkConnectionToClient sender = null) {
+            Debug.Log($"{sender.connectionId} want to go to hall number {this.floorToGo}");
         }
     }
 }

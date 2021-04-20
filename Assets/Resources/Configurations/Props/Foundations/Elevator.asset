@@ -16,15 +16,15 @@ MonoBehaviour:
   displayName: Ascenseur
   propsType: 1
   buyable: 0
-  prefab: {fileID: 1753432056708833345, guid: e8a1ce33b2702924baddaaf48be553b7, type: 3}
+  prefab: {fileID: 4363248231917646557, guid: e8a1ce33b2702924baddaaf48be553b7, type: 3}
   packageConfig: {fileID: 0}
   surfaceToPose: 0
   posableOnProps: 0
+  connectedToWall: 0
   toBuild: 0
   rangeToInteract: 2
   actions:
-  - actionType: 1
-    actionLabel: Use
-    locked: 1
+  - {fileID: 11400000, guid: e0b5ac2a86718ef4b8826e62cf2d7168, type: 2}
   unbuiltActions: []
   cursor: {fileID: 2800000, guid: a14080e5d12741f4c83d072d4b7945ba, type: 3}
+  presets: []

@@ -10,11 +10,11 @@ GameObject:
   m_Component:
   - component: {fileID: 687569372197691311}
   - component: {fileID: 1845006526854234671}
-  - component: {fileID: 6701997198440910182}
   - component: {fileID: 4288973784563279020}
   - component: {fileID: 8454638469832739832}
   - component: {fileID: 8092480081677611694}
   - component: {fileID: 5646340073724405983}
+  - component: {fileID: 1673734229047382023}
   m_Layer: 10
   m_Name: Nightstand
   m_TagString: Untagged
@@ -52,28 +52,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 0.38701934, y: 0.49535966, z: 0.2949074}
   m_Center: {x: -0.0014256239, y: 0.25232017, z: 0.000000029802322}
---- !u!114 &6701997198440910182
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 198558742855828757}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 3
-  OwnershipTransfer: 0
-  observableSearch: 2
-  ObservedComponents: []
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!208 &4288973784563279020
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -121,6 +99,9 @@ MonoBehaviour:
   renderersToModify:
   - {fileID: 1790735760545675386}
   - {fileID: 5249965232376577449}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -136,7 +117,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 8ab4a6f35b411ad448f697901fd4d18a, type: 2}
+--- !u!114 &1673734229047382023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 198558742855828757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 1
 --- !u!1 &4140113544239135501
 GameObject:
   m_ObjectHideFlags: 0

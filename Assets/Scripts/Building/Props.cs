@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
-using Photon.Pun;
-using Photon.Realtime;
+using Mirror;
 using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
@@ -9,7 +8,7 @@ using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     [RequireComponent(typeof(PropsRenderer))]
-    public class Props : MonoBehaviourPun {
+    public class Props : NetworkBehaviour {
         [Header("Props settings")]
         [SerializeField]
         protected PropsConfig configuration;
@@ -18,13 +17,21 @@ namespace Sim.Building {
 
         private Action[] unbuiltActions;
 
+        [SyncVar(hook = nameof(SetIsBuilt))]
         private bool built;
+
+        [SyncVar]
+        [SerializeField]
+        private uint parentId;
 
         protected PropsRenderer propsRenderer;
 
         private Action currentAction;
 
+        [SyncVar(hook = nameof(SetPresetId))]
         private int presetId = -1;
+
+        private ApartmentController apartmentController;
 
         public delegate void PropsAction(Props props);
 
@@ -39,6 +46,24 @@ namespace Sim.Building {
             this.ConfigureActions();
         }
 
+        public override void OnStartClient() {
+            if (parentId == 0) return;
+
+            Vector3 position = this.transform.position;
+            this.apartmentController = NetworkIdentity.spawned.ContainsKey(this.parentId)
+                ? NetworkIdentity.spawned[this.parentId].GetComponent<ApartmentController>()
+                : null;
+
+            if (!isClientOnly) return;
+
+            if (this.apartmentController) {
+                this.transform.SetParent(this.apartmentController.PropsContainer);
+                this.transform.localPosition = position;
+            } else {
+                Debug.LogError($"Parent identity not found for props {this.name}");
+            }
+        }
+
         protected virtual void OnDestroy() {
             this.UnSubscribeActions(this.actions);
             this.UnSubscribeActions(this.unbuiltActions);
@@ -46,6 +71,15 @@ namespace Sim.Building {
 
         public virtual void StopInteraction() {
             throw new NotImplementedException();
+        }
+
+        public void InitBuilt(bool isBuilt) {
+            this.built = isBuilt;
+        }
+
+        public uint ParentId {
+            get => parentId;
+            set => parentId = value;
         }
 
         /**
@@ -61,8 +95,8 @@ namespace Sim.Building {
                 action.OnExecute += DoAction;
             }
         }
-        
-        private void  UnSubscribeActions(Action[] actionList) {
+
+        private void UnSubscribeActions(Action[] actionList) {
             foreach (var action in actionList) {
                 action.OnExecute -= DoAction;
             }
@@ -88,14 +122,14 @@ namespace Sim.Building {
         public virtual Action[] GetActions(bool withPriority = false) {
             Action[] actionsToReturn = this.IsBuilt() ? this.actions : this.unbuiltActions;
 
-            bool hasPermission = ApartmentManager.Instance && ApartmentManager.Instance.IsTenant(RoomManager.LocalCharacter.CharacterData);
+            bool hasPermission = this.apartmentController && this.apartmentController.IsTenant(PlayerController.Local.CharacterData);
 
             actionsToReturn = actionsToReturn.Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission).ToArray();
 
             if (withPriority) {
                 actionsToReturn = actionsToReturn.SkipWhile(x => x.Type.Equals(ActionTypeEnum.SELL) || x.Type.Equals(ActionTypeEnum.MOVE)).ToArray();
             }
-            
+
             return actionsToReturn;
         }
 
@@ -105,28 +139,14 @@ namespace Sim.Building {
 
         public int PresetId {
             get => presetId;
-            set => presetId = value;
-        }
-        
-        public void SetPresetId(int id, bool network, Player playerTarget = null) {
-            if (!network) {
-                this.presetId = id;
-                this.UpdatePresetRender();
-                return;
-            }
-            
-            if (playerTarget != null) {
-                Debug.Log($"Set preset ID {id}");
-                photonView.RPC("RPC_SetPresetId", playerTarget, id);
-            } else {
-                photonView.RPC("RPC_SetPresetId", RpcTarget.All, id);
+            set {
+                presetId = value;
+                UpdatePresetRender();
             }
         }
-        
-        [PunRPC]
-        public void RPC_SetPresetId(int id) {
-            this.presetId = id;
 
+        public void SetPresetId(int oldId, int newId) {
+            this.presetId = newId;
             this.UpdatePresetRender();
         }
 
@@ -134,7 +154,7 @@ namespace Sim.Building {
             if (this.configuration.Presets == null || this.configuration.Presets.Length == 0) {
                 return;
             }
-            
+
             PropsPreset preset = this.configuration.Presets.First(x => x.ID == this.PresetId);
 
             if (preset != null) {
@@ -144,17 +164,13 @@ namespace Sim.Building {
             }
         }
 
-        public void SetIsBuilt(bool value, Player playerTarget = null) {
-            if (playerTarget != null) {
-                photonView.RPC("RPC_SetIsBuilt", playerTarget, value);
-            } else {
-                photonView.RPC("RPC_SetIsBuilt", RpcTarget.All, value);
-            }
-        }
+        public void SetIsBuilt(bool oldValue, bool newValue) {
+            this.built = newValue;
 
-        [PunRPC]
-        public void RPC_SetIsBuilt(bool value) {
-            this.built = value;
+            if (this.propsRenderer == null) {
+                this.propsRenderer = GetComponent<PropsRenderer>();
+            }
+
             this.propsRenderer.UpdateGraphics();
         }
 
@@ -173,11 +189,11 @@ namespace Sim.Building {
                 case ActionTypeEnum.SELL:
                     this.Sell();
                     break;
-                
+
                 case ActionTypeEnum.LOOK:
                     this.Look();
                     break;
-                
+
                 default:
                     this.Execute(action);
                     break;
@@ -188,36 +204,34 @@ namespace Sim.Building {
             throw new NotImplementedException();
         }
 
+        [Client]
         private void Build() {
-            this.SetIsBuilt(true);
-
-            RoomManager.Instance.SaveRoom();
+            this.CmdBuild();
         }
 
+        [Command(requiresAuthority = false)]
+        public void CmdBuild(NetworkConnectionToClient sender = null) {
+            // TODO(security): Check if sender is allowed to build props
+            this.built = true;
+
+            Debug.Log($"Server: player {sender.identity.netId} built {this.name}");
+
+            StartCoroutine(GetComponentInParent<ApartmentController>().Save());
+        }
+
+        [Client]
         private void Look() {
-            RoomManager.LocalCharacter.Look(this.transform);
+            PlayerController.Local.Look(this.transform);
         }
 
+        [Client]
         private void Move() {
             OnMoveRequest?.Invoke(this);
         }
 
+        [Client]
         private void Sell() {
-            photonView.RPC("RPC_SellProps", PhotonNetwork.MasterClient);
-        }
-
-        [PunRPC]
-        public void RPC_SellProps() {
-            PropsManager.Instance.DestroyProps(this, true);
-            RoomManager.Instance.SaveRoom();
-        }
-
-        public void UpdateTransform(Player playerTarget = null) {
-            if (playerTarget == null) {
-                photonView.RPC("RPC_UpdateTransform", RpcTarget.Others, this.transform.position, this.transform.rotation);
-            } else {
-                photonView.RPC("RPC_UpdateTransform", playerTarget, this.transform.position, this.transform.rotation);
-            }
+            PlayerController.Local.Sell(this);
         }
 
         public PropsConfig GetConfiguration() {
@@ -226,18 +240,6 @@ namespace Sim.Building {
 
         public void SetConfiguration(PropsConfig config) {
             this.configuration = config;
-        }
-
-        [PunRPC]
-        public void RPC_UpdateTransform(Vector3 pos, Quaternion rot) {
-            this.transform.position = pos;
-            this.transform.rotation = rot;
-        }
-
-        public virtual void Synchronize(Player playerTarget) {
-            this.SetPresetId(this.presetId, true, playerTarget);
-            this.SetIsBuilt(this.built, playerTarget);
-            this.UpdateTransform(playerTarget);
         }
 
         public bool IsWallProps() {

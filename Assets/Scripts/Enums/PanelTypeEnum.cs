@@ -2,6 +2,7 @@
     public enum PanelTypeEnum
     {
         DEFAULT,
-        BUILD
+        BUILD,
+        NONE
     }   
 }

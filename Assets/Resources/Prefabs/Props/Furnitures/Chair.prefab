@@ -11,12 +11,12 @@ GameObject:
   - component: {fileID: 3263681674179389867}
   - component: {fileID: 5769651601205957533}
   - component: {fileID: 228947890602438500}
-  - component: {fileID: 7507599527909753480}
   - component: {fileID: 7507599527909753483}
   - component: {fileID: 7507599527909753525}
   - component: {fileID: 7507599527909753524}
   - component: {fileID: 4484540916602288562}
   - component: {fileID: -4294977466799568442}
+  - component: {fileID: 993479656699994885}
   m_Layer: 10
   m_Name: Chair
   m_TagString: Untagged
@@ -89,29 +89,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &7507599527909753480
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1950539022405000120}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 0
-  OwnershipTransfer: 0
-  observableSearch: 0
-  ObservedComponents:
-  - {fileID: 0}
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!114 &7507599527909753483
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -126,6 +103,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderersToModify:
   - {fileID: 228947890602438500}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -186,10 +166,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 773af611c2f95854183afcec6aa194c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 5850af5709851524dbba8790ec0dec6b, type: 2}
   seatPositions:
   - {fileID: 3999644446818767224}
   couchPositions: []
+--- !u!114 &993479656699994885
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1950539022405000120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 1
 --- !u!1 &8166508940558256813
 GameObject:
   m_ObjectHideFlags: 0

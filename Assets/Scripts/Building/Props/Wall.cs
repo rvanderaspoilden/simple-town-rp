@@ -1,123 +1,71 @@
 using System.Collections.Generic;
-using System.Linq;
-using Photon.Pun;
-using Photon.Realtime;
+using Mirror;
 using Sim.Enums;
+using Sim.Scriptables;
 using UnityEngine;
 
 namespace Sim.Building {
-    public class Wall : Props {
+    public class Wall : MonoBehaviour {
         [Header("Wall settings")]
         [Tooltip("Represent all id allowed to be modified")]
         [SerializeField]
         private int[] allowedSharedMaterialIds;
 
-        [SerializeField]
-        private List<WallFace> wallFaces;
+        private Dictionary<int, CoverSettings> coverSettingsByFaces = new Dictionary<int, CoverSettings>();
 
-        [SerializeField]
-        private bool exteriorWall;
+        private Dictionary<int, CoverSettings> coverSettingsInPreview = new Dictionary<int, CoverSettings>();
 
         private new MeshRenderer renderer;
         private MeshCollider meshCollider;
-        private Dictionary<int, WallFace> wallFacesPreviewed;
+
         private BoxCollider[] boxColliders;
 
-        protected override void Awake() {
-            base.Awake();
+        private void Awake() {
             this.renderer = GetComponent<MeshRenderer>();
             this.meshCollider = GetComponent<MeshCollider>();
             this.boxColliders = GetComponents<BoxCollider>();
 
-            this.wallFacesPreviewed = new Dictionary<int, WallFace>();
-
-            this.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER);
+            //this.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER);
         }
 
-        protected override void Start() {
-            base.Start();
-
+        public void Setup(Dictionary<int, CoverSettings> coverSettings) {
+            this.coverSettingsByFaces = coverSettings;
             this.UpdateWallFaces();
         }
 
+        [Client]
         public void Reset() {
-            // rollback to wall face saved in wall face preview dictionnary
-            foreach (KeyValuePair<int, WallFace> keyValuePair in this.wallFacesPreviewed) {
-                this.wallFaces[keyValuePair.Key] = keyValuePair.Value;
-            }
-
-            this.wallFacesPreviewed.Clear();
+            this.coverSettingsInPreview.Clear();
 
             this.UpdateWallFaces();
-            this.propsRenderer.SetupDefaultMaterials();
         }
 
-        public void EnableCollidersOfType(ColliderTypeEnum type) {
+        public Dictionary<int, CoverSettings> CoverSettingsInPreview => coverSettingsInPreview;
+
+        public Dictionary<int, CoverSettings> CoverSettingsByFaces => coverSettingsByFaces;
+
+        public Material[] SharedMaterials() => this.renderer.sharedMaterials;
+
+        /*public void EnableCollidersOfType(ColliderTypeEnum type) {
             foreach (BoxCollider boxCollider in this.boxColliders) {
                 boxCollider.enabled = type == ColliderTypeEnum.BOX_COLLIDER;
             }
 
             this.meshCollider.enabled = type == ColliderTypeEnum.MESH_COLLIDER;
-        }
-
-        public List<WallFace> GetWallFaces() {
-            return this.wallFaces;
-        }
-
-        public void SetWallFaces(List<WallFace> faces, RpcTarget rpcTarget) {
-            photonView.RPC("RPC_UpdateWallFaces", rpcTarget, JsonHelper.ToJson(faces.ToArray()));
-        }
-
-        public void SetWallFaces(List<WallFace> faces, Player targetPlayer) {
-            photonView.RPC("RPC_UpdateWallFaces", targetPlayer, JsonHelper.ToJson(faces.ToArray()));
-        }
-
-        public void SetExteriorWall(bool value, RpcTarget rpcTarget) {
-            photonView.RPC("RPC_SetExteriorWall", rpcTarget, value);
-        }
-
-        public void SetExteriorWall(bool value, Player targetPlayer) {
-            photonView.RPC("RPC_SetExteriorWall", targetPlayer, value);
-        }
-
-        [PunRPC]
-        public void RPC_SetExteriorWall(bool value) {
-            this.exteriorWall = value;
-        }
+        }*/
 
         public void ApplyModification() {
-            this.wallFacesPreviewed.Clear();
-
-            this.SetWallFaces(this.wallFaces, RpcTarget.Others);
+            this.coverSettingsInPreview.Clear();
         }
 
         public bool IsPreview() {
-            return this.wallFacesPreviewed.Count > 0;
+            return this.coverSettingsInPreview.Count > 0;
         }
 
-        [PunRPC]
-        public void RPC_UpdateWallFaces(string faces) {
-            if (this.propsRenderer == null) {
-                this.renderer = GetComponent<MeshRenderer>();
-                this.meshCollider = GetComponent<MeshCollider>();
-
-                this.wallFacesPreviewed = new Dictionary<int, WallFace>();
-            }
-
-            this.wallFaces = new List<WallFace>(JsonHelper.FromJson<WallFace>(faces));
-            this.UpdateWallFaces();
-            this.propsRenderer.SetupDefaultMaterials();
-        }
-
-        public override void Synchronize(Player playerTarget) {
-            base.Synchronize(playerTarget);
-            this.SetWallFaces(this.wallFaces, playerTarget);
-            this.SetExteriorWall(this.exteriorWall, playerTarget);
-        }
-
+        [Client]
         public void PreviewMaterialOnFace(RaycastHit hit, PaintBucket paintBucket) {
-            if (this.IsAnExteriorFace(hit)) {
-                return;
+            if (this.coverSettingsInPreview.Count == 0) {
+                this.coverSettingsInPreview = new Dictionary<int, CoverSettings>(this.coverSettingsByFaces);
             }
 
             Mesh mesh = meshCollider.sharedMesh;
@@ -133,60 +81,35 @@ namespace Sim.Building {
             }
 
             // Prevent to paint specific faces
-            if (!Enumerable.Contains(allowedSharedMaterialIds, submesh)) {
-                return;
-            }
+            //if (!Enumerable.Contains(allowedSharedMaterialIds, submesh)) return;
 
-            WallFace face = this.wallFaces.Find(x => x.GetSharedMaterialIdx() == submesh);
-
-            if (this.wallFacesPreviewed.ContainsKey(submesh)) {
-                face.SetPaintConfigId(this.wallFacesPreviewed[submesh].GetPaintConfigId());
-                face.SetAdditionalColor(this.wallFacesPreviewed[submesh].GetAdditionalColor());
-                this.wallFacesPreviewed.Remove(submesh);
+            if (this.coverSettingsInPreview[submesh].Equals(paintBucket)) {
+                this.coverSettingsInPreview[submesh] = this.coverSettingsByFaces[submesh];
             } else {
-                this.wallFacesPreviewed.Add(submesh, new WallFace(face));
-                face.SetPaintConfigId(paintBucket.GetPaintConfig().GetId());
-                face.SetAdditionalColor(paintBucket.GetColor());
+                this.coverSettingsInPreview[submesh] = new CoverSettings {paintConfigId = paintBucket.PaintConfigId, additionalColor = paintBucket.GetColor()};
             }
 
             this.UpdateWallFaces();
-
-            this.propsRenderer.SetupDefaultMaterials();
         }
 
-        private bool IsAnExteriorFace(RaycastHit hitFace) {
-            return !Physics.Raycast(hitFace.point, hitFace.normal + (Vector3.down * 5), 3, 1 << 9);
-        }
+        public void UpdateWallFaces() {
+            if (this.renderer == null) {
+                this.renderer = GetComponent<MeshRenderer>();
+            }
 
-        public void CheckExteriorWall() {
-            Vector3 position = this.transform.position + Vector3.up;
-            bool forwardRaycast = Physics.Raycast(position, this.transform.forward + (Vector3.down * 5), 3, 1 << 9);
-            bool backwardRaycast = Physics.Raycast(position, -this.transform.forward + (Vector3.down * 5), 3, 1 << 9);
-
-            this.SetExteriorWall(!(forwardRaycast && backwardRaycast), PhotonNetwork.LocalPlayer);
-        }
-
-        public bool IsExteriorWall() {
-            return this.exteriorWall;
-        }
-
-        private void UpdateWallFaces() {
+            Dictionary<int, CoverSettings> settingsToUse = this.coverSettingsInPreview.Count > 0 ? this.coverSettingsInPreview : this.coverSettingsByFaces;
             Material[] sharedMaterials = this.renderer.sharedMaterials;
 
-            for (int i = 0; i < this.wallFaces.Count; i++) {
-                WallFace face = this.wallFaces[i];
-                Material materialToApply = new Material(face.GetPaintConfig().GetMaterial());
+            for (int i = 0; i < settingsToUse.Count; i++) {
+                CoverSettings coverSettings = settingsToUse[i];
+                PaintConfig paintConfig = DatabaseManager.PaintDatabase.GetPaintById(coverSettings.paintConfigId);
+                Material materialToApply = new Material(paintConfig.GetMaterial());
 
-                if (face.GetPaintConfig().AllowCustomColor()) {
-                    materialToApply.color = face.GetAdditionalColor();
+                if (paintConfig.AllowCustomColor()) {
+                    materialToApply.color = coverSettings.additionalColor;
                 }
 
-
-                if (face.GetSharedMaterialIdx() >= sharedMaterials.Length) {
-                    Debug.LogError($"An error occured during material apply on wall {this.name}");
-                } else {
-                    sharedMaterials[face.GetSharedMaterialIdx()] = materialToApply;
-                }
+                sharedMaterials[i] = materialToApply;
             }
 
             this.renderer.sharedMaterials = sharedMaterials;

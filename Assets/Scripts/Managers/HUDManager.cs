@@ -1,11 +1,9 @@
-﻿using Photon.Pun;
-using Sim.Building;
-using Sim.Interactables;
+﻿using Sim.Interactables;
 using Sim.UI;
 using UnityEngine;
 
 namespace Sim {
-    public class HUDManager : MonoBehaviourPun {
+    public class HUDManager : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
         private AliDiscountCatalogUI aliDiscountCatalogUI;
@@ -36,7 +34,7 @@ namespace Sim {
         // Start is called before the first frame update
         void Start() {
             this.DisplayAdminPanel(false);
-            this.DisplayPanel(PanelTypeEnum.DEFAULT);
+            this.DisplayPanel(PanelTypeEnum.NONE);
             this.CloseContextMenu();
         }
 
@@ -45,8 +43,11 @@ namespace Sim {
                 this.buildPreviewPanelUI.gameObject.SetActive(true);
                 this.defaultViewUI.gameObject.SetActive(false);
                 this.DisplayAdminPanel(false);
-            } else {
+            } else if (panelType == PanelTypeEnum.DEFAULT) {
                 this.defaultViewUI.gameObject.SetActive(true);
+                this.buildPreviewPanelUI.gameObject.SetActive(false);
+            } else {
+                this.defaultViewUI.gameObject.SetActive(false);
                 this.buildPreviewPanelUI.gameObject.SetActive(false);
             }
         }

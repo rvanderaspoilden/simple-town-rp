@@ -10,12 +10,12 @@ GameObject:
   m_Component:
   - component: {fileID: 683220189644918596}
   - component: {fileID: 6182814828487345370}
-  - component: {fileID: 7137434217250511371}
   - component: {fileID: 6143171811788772055}
   - component: {fileID: 4207040394463709097}
   - component: {fileID: 2572363981237224747}
   - component: {fileID: 4492236850374378933}
   - component: {fileID: 6030021783315985112}
+  - component: {fileID: 5027993590988749555}
   m_Layer: 10
   m_Name: Deliveries_box
   m_TagString: Untagged
@@ -57,28 +57,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 0.48, y: 1.02, z: 0.48}
   m_Center: {x: 0.000000029802322, y: 0.51, z: 0}
---- !u!114 &7137434217250511371
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 157794796782048766}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 3
-  OwnershipTransfer: 0
-  observableSearch: 2
-  ObservedComponents: []
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!208 &6143171811788772055
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -147,11 +125,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dc54430586f3fc47aa8c28d5f730333, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: b43a5ecb6e6b9714fa38739a82e85e0a, type: 2}
+  parentId: 0
   clapTransform: {fileID: 138060944164593019}
   openedClapRotation: {x: -0.20557225, y: 0, z: 0, w: 0.9786419}
   package: {fileID: 4354147788758023283}
   alertSound: {fileID: 8300000, guid: 7cbe375f9e9b36b4ea781cdd1754436e, type: 3}
+  deliveryCount: 0
 --- !u!82 &6030021783315985112
 AudioSource:
   m_ObjectHideFlags: 0
@@ -248,6 +230,23 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &5027993590988749555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 157794796782048766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
 --- !u!1 &950377353407173432
 GameObject:
   m_ObjectHideFlags: 0

@@ -3,26 +3,27 @@ using UnityEngine;
 
 namespace AI.States {
     public class CharacterMove : IState {
-        private readonly Character character;
+        private readonly PlayerController player;
 
-        public CharacterMove(Character character) {
-            this.character = character;
+        public CharacterMove(PlayerController player) {
+            this.player = player;
         }
 
         public void OnEnter() {
-            Debug.Log("Enter in Move state");
         }
 
         public void Tick() {
-            MarkerController.Instance.ShowAt(this.character.NavMeshAgent.pathEndPosition);
+            MarkerController.Instance.ShowAt(this.player.NavMeshAgent.pathEndPosition);
 
-            this.character.Animator.SetVelocity(this.character.NavMeshAgent.velocity.magnitude);
+            this.player.Animator.SetVelocity(this.player.NavMeshAgent.velocity.magnitude);
 
-            this.character.transform.rotation = Quaternion.LookRotation(this.character.NavMeshAgent.velocity.normalized);
+            if (this.player.NavMeshAgent.velocity.normalized != Vector3.zero) {
+                this.player.transform.rotation = Quaternion.LookRotation(this.player.NavMeshAgent.velocity.normalized);
+            }
         }
 
         public void OnExit() {
-            this.character.NavMeshAgent.ResetPath();
+            this.player.NavMeshAgent.ResetPath();
 
             MarkerController.Instance.Hide();
         }

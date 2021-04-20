@@ -217,10 +217,10 @@ GameObject:
   - component: {fileID: 6869232886530175652}
   - component: {fileID: 265686802926975196}
   - component: {fileID: 4929738433403594458}
-  - component: {fileID: 4666162556481940173}
   - component: {fileID: 3551557995915264590}
   - component: {fileID: 6308244906838559916}
   - component: {fileID: 8333477539720295434}
+  - component: {fileID: -7621438094781797379}
   m_Layer: 10
   m_Name: Washing_machine
   m_TagString: Untagged
@@ -275,28 +275,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -0.0009716451, y: 0.4250796, z: -0.0009716749}
   m_TimeToStationary: 0.5
---- !u!114 &4666162556481940173
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6061768437498095646}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 3
-  OwnershipTransfer: 0
-  observableSearch: 2
-  ObservedComponents: []
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!54 &3551557995915264590
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -329,6 +307,9 @@ MonoBehaviour:
   - {fileID: 7585566042324667741}
   - {fileID: 8829775499367038634}
   - {fileID: 6980788344356071222}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -344,7 +325,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 583cfb8a18523174aba1465c66226cba, type: 2}
+--- !u!114 &-7621438094781797379
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6061768437498095646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 0
 --- !u!1 &7621544520772611530
 GameObject:
   m_ObjectHideFlags: 0

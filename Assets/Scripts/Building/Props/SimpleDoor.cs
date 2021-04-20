@@ -1,48 +1,52 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using Sim.Enums;
 using UnityEngine;
 
 namespace Sim.Building {
-    public class SimpleDoor : Props {
+    public class SimpleDoor : MonoBehaviour {
         [Header("Settings")]
-        [SerializeField] private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
-        
+        [SerializeField]
+        private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
+
+        [SerializeField]
+        private List<Collider> colliderTriggered;
+
         private Animator animator;
-        [SerializeField] private List<Collider> colliderTriggered;
 
         private bool isOpened;
 
-        protected override void Awake() {
-            base.Awake();
-            
+        private int directionHash;
+        private int isOpenedHash;
+
+        protected void Awake() {
+            this.directionHash = Animator.StringToHash("direction");
+            this.isOpenedHash = Animator.StringToHash("isOpened");
+
             this.colliderTriggered = new List<Collider>();
             this.animator = GetComponent<Animator>();
-            this.animator.SetFloat("direction", (float)doorDirection);
+            this.animator.SetFloat(this.directionHash, (float) doorDirection);
         }
 
         private void OnTriggerEnter(Collider other) {
             if (other.gameObject.layer == LayerMask.NameToLayer("Player") && !this.colliderTriggered.Find(x => x == other)) {
                 this.colliderTriggered.Add(other);
             }
-            
+
             this.UpdateAnimator();
         }
-        
+
         private void OnTriggerExit(Collider other) {
             this.colliderTriggered.Remove(other);
-            
+
             this.UpdateAnimator();
         }
 
         private void UpdateAnimator() {
             this.isOpened = this.colliderTriggered.Count > 0;
 
-            if (this.animator.GetBool("isOpened") != this.isOpened) {
-                this.animator.SetBool("isOpened", this.isOpened);
+            if (this.animator.GetBool(this.isOpenedHash) != this.isOpened) {
+                this.animator.SetBool(this.isOpenedHash, this.isOpened);
             }
         }
     }
 }
-

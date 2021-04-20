@@ -44,6 +44,9 @@ namespace Sim.Building {
         private void Awake() {
             this.props = GetComponent<Props>();
             this.SetupDefaultMaterials();
+        }
+
+        private void Start() {
             this.SetVisibilityMode(VisibilityModeEnum.AUTO);
         }
 
@@ -100,8 +103,8 @@ namespace Sim.Building {
             this.UpdateGraphics();
         }
 
-        public void SetPreviewState(PreviewStateEnum previewState) {
-            this.previewState = previewState;
+        public void SetPreviewState(PreviewStateEnum value) {
+            this.previewState = value;
             this.UpdateGraphics();
         }
 
@@ -112,6 +115,10 @@ namespace Sim.Building {
                 visibility = VisibilityStateEnum.HIDE;
             } else if (this.mode == VisibilityModeEnum.FORCE_SHOW) {
                 visibility = VisibilityStateEnum.SHOW;
+            }
+
+            if (this.defaultMaterialsByRenderer == null) {
+                this.SetupDefaultMaterials();
             }
 
 

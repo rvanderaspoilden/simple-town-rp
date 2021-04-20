@@ -8,6 +8,315 @@
       <e p="Assembly-CSharp-firstpass.csproj" t="IncludeRecursive" />
       <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
       <e p="Assets" t="Include">
+        <e p="Dissonance" t="Include">
+          <e p="changelog.txt" t="Include" />
+          <e p="Core" t="Include">
+            <e p="Jetbrains.cs" t="Include" />
+          </e>
+          <e p="Integrations" t="Include">
+            <e p="MirrorIgnorance" t="Include">
+              <e p="Demo" t="Include">
+                <e p="MirrorIgnorancePlayerController.cs" t="Include" />
+                <e p="readme.txt" t="Include" />
+              </e>
+              <e p="Editor" t="Include">
+                <e p="MirrorIgnoranceCommsNetworkEditor.cs" t="Include" />
+                <e p="MirrorIgnorancePlayerEditor.cs" t="Include" />
+              </e>
+              <e p="MirrorIgnoranceClient.cs" t="Include" />
+              <e p="MirrorIgnoranceCommsNetwork.cs" t="Include" />
+              <e p="MirrorIgnorancePlayer.cs" t="Include" />
+              <e p="MirrorIgnoranceServer.cs" t="Include" />
+              <e p="readme.txt" t="Include" />
+            </e>
+          </e>
+          <e p="readme.txt" t="Include" />
+        </e>
+        <e p="Mirror" t="Include">
+          <e p="Authenticators" t="Include">
+            <e p="BasicAuthenticator.cs" t="Include" />
+            <e p="Mirror.Authenticators.asmdef" t="Include" />
+            <e p="TimeoutAuthenticator.cs" t="Include" />
+          </e>
+          <e p="Cloud" t="Include">
+            <e p="ApiConnector.cs" t="Include" />
+            <e p="Core" t="Include">
+              <e p="BaseApi.cs" t="Include" />
+              <e p="Events.cs" t="Include" />
+              <e p="Extensions.cs" t="Include" />
+              <e p="ICoroutineRunner.cs" t="Include" />
+              <e p="IRequestCreator.cs" t="Include" />
+              <e p="IUnityEqualCheck.cs" t="Include" />
+              <e p="JsonStructs.cs" t="Include" />
+              <e p="Logger.cs" t="Include" />
+              <e p="RequestCreator.cs" t="Include" />
+            </e>
+            <e p="ListServer" t="Include">
+              <e p="ListServer.cs" t="Include" />
+              <e p="ListServerBaseApi.cs" t="Include" />
+              <e p="ListServerClientApi.cs" t="Include" />
+              <e p="ListServerJson.cs" t="Include" />
+              <e p="ListServerServerApi.cs" t="Include" />
+            </e>
+            <e p="Mirror.Cloud.asmdef" t="Include" />
+            <e p="version.txt" t="Include" />
+          </e>
+          <e p="CompilerSymbols" t="Include">
+            <e p="Mirror.CompilerSymbols.asmdef" t="Include" />
+            <e p="PreprocessorDefine.cs" t="Include" />
+          </e>
+          <e p="Components" t="Include">
+            <e p="AssemblyInfo.cs" t="Include" />
+            <e p="Discovery" t="Include">
+              <e p="NetworkDiscovery.cs" t="Include" />
+              <e p="NetworkDiscoveryBase.cs" t="Include" />
+              <e p="NetworkDiscoveryHUD.cs" t="Include" />
+              <e p="ServerRequest.cs" t="Include" />
+              <e p="ServerResponse.cs" t="Include" />
+            </e>
+            <e p="Experimental" t="Include">
+              <e p="NetworkLerpRigidbody.cs" t="Include" />
+              <e p="NetworkRigidbody.cs" t="Include" />
+              <e p="NetworkRigidbody2D.cs" t="Include" />
+              <e p="NetworkTransform.cs" t="Include" />
+              <e p="NetworkTransformBase.cs" t="Include" />
+              <e p="NetworkTransformChild.cs" t="Include" />
+            </e>
+            <e p="GUIConsole.cs" t="Include" />
+            <e p="InterestManagement" t="Include">
+              <e p="Distance" t="Include">
+                <e p="DistanceInterestManagement.cs" t="Include" />
+              </e>
+              <e p="SpatialHashing" t="Include">
+                <e p="Grid2D.cs" t="Include" />
+                <e p="SpatialHashingInterestManagement.cs" t="Include" />
+              </e>
+            </e>
+            <e p="Mirror.Components.asmdef" t="Include" />
+            <e p="NetworkAnimator.cs" t="Include" />
+            <e p="NetworkLobbyManager.cs" t="Include" />
+            <e p="NetworkLobbyPlayer.cs" t="Include" />
+            <e p="NetworkMatchChecker.cs" t="Include" />
+            <e p="NetworkOwnerChecker.cs" t="Include" />
+            <e p="NetworkPingDisplay.cs" t="Include" />
+            <e p="NetworkProximityChecker.cs" t="Include" />
+            <e p="NetworkRoomManager.cs" t="Include" />
+            <e p="NetworkRoomPlayer.cs" t="Include" />
+            <e p="NetworkSceneChecker.cs" t="Include" />
+            <e p="NetworkTransform.cs" t="Include" />
+            <e p="NetworkTransformBase.cs" t="Include" />
+            <e p="NetworkTransformChild.cs" t="Include" />
+          </e>
+          <e p="Editor" t="Include">
+            <e p="EditorHelper.cs" t="Include" />
+            <e p="EnterPlayModeSettingsCheck.cs" t="Include" />
+            <e p="InspectorHelper.cs" t="Include" />
+            <e p="Logging" t="Include">
+              <e p="LogLevelsGUI.cs" t="Include" />
+              <e p="LogLevelWindow.cs" t="Include" />
+              <e p="LogSettingsEditor.cs" t="Include" />
+              <e p="NetworkLogSettingsEditor.cs" t="Include" />
+            </e>
+            <e p="LogLevelWindow.cs" t="Include" />
+            <e p="Mirror.Editor.asmdef" t="Include" />
+            <e p="NetworkBehaviourInspector.cs" t="Include" />
+            <e p="NetworkInformationPreview.cs" t="Include" />
+            <e p="NetworkManagerEditor.cs" t="Include" />
+            <e p="NetworkScenePostProcess.cs" t="Include" />
+            <e p="SceneDrawer.cs" t="Include" />
+            <e p="ScriptableObjectUtility.cs" t="Include" />
+            <e p="SyncVarAttributeDrawer.cs" t="Include" />
+            <e p="Weaver" t="Include">
+              <e p="AssemblyInfo.cs" t="Include" />
+              <e p="CompilationFinishedHook.cs" t="Include" />
+              <e p="Extensions.cs" t="Include" />
+              <e p="Helpers.cs" t="Include" />
+              <e p="Log.cs" t="Include" />
+              <e p="Mirror.Weaver.asmdef" t="Include" />
+              <e p="Processors" t="Include">
+                <e p="CommandProcessor.cs" t="Include" />
+                <e p="GenericArgumentResolver.cs" t="Include" />
+                <e p="MessageClassProcessor.cs" t="Include" />
+                <e p="MethodProcessor.cs" t="Include" />
+                <e p="MonoBehaviourProcessor.cs" t="Include" />
+                <e p="NetworkBehaviourProcessor.cs" t="Include" />
+                <e p="PropertySiteProcessor.cs" t="Include" />
+                <e p="ReaderWriterProcessor.cs" t="Include" />
+                <e p="RpcProcessor.cs" t="Include" />
+                <e p="ServerClientAttributeProcessor.cs" t="Include" />
+                <e p="SyncDictionaryProcessor.cs" t="Include" />
+                <e p="SyncEventProcessor.cs" t="Include" />
+                <e p="SyncListProcessor.cs" t="Include" />
+                <e p="SyncObjectInitializer.cs" t="Include" />
+                <e p="SyncObjectProcessor.cs" t="Include" />
+                <e p="SyncVarProcessor.cs" t="Include" />
+                <e p="TargetRpcProcessor.cs" t="Include" />
+              </e>
+              <e p="Program.cs" t="Include" />
+              <e p="Readers.cs" t="Include" />
+              <e p="Resolvers.cs" t="Include" />
+              <e p="TypeReferenceComparer.cs" t="Include" />
+              <e p="Weaver.cs" t="Include" />
+              <e p="WeaverExceptions.cs" t="Include" />
+              <e p="WeaverTypes.cs" t="Include" />
+              <e p="Writers.cs" t="Include" />
+            </e>
+          </e>
+          <e p="Notice.txt" t="Include" />
+          <e p="Plugins" t="Include">
+            <e p="Mono.Cecil" t="Include">
+              <e p="LICENSE.txt" t="Include" />
+            </e>
+          </e>
+          <e p="readme.txt" t="Include" />
+          <e p="Runtime" t="Include">
+            <e p="AssemblyInfo.cs" t="Include" />
+            <e p="Attributes.cs" t="Include" />
+            <e p="ClientScene.cs" t="Include" />
+            <e p="Compression.cs" t="Include" />
+            <e p="Empty" t="Include">
+              <e p="DotNetCompatibility.cs" t="Include" />
+              <e p="LogFactory.cs" t="Include" />
+              <e p="LogFilter.cs" t="Include" />
+              <e p="Logging" t="Include">
+                <e p="ConsoleColorLogHandler.cs" t="Include" />
+                <e p="EditorLogSettingsLoader.cs" t="Include" />
+                <e p="LogFactory.cs" t="Include" />
+                <e p="LogSettings.cs" t="Include" />
+                <e p="NetworkHeadlessLogger.cs" t="Include" />
+                <e p="NetworkLogSettings.cs" t="Include" />
+              </e>
+              <e p="StringHash.cs" t="Include" />
+            </e>
+            <e p="ExponentialMovingAverage.cs" t="Include" />
+            <e p="Extensions.cs" t="Include" />
+            <e p="InterestManagement.cs" t="Include" />
+            <e p="LocalConnections.cs" t="Include" />
+            <e p="MessagePacking.cs" t="Include" />
+            <e p="Messages.cs" t="Include" />
+            <e p="Mirror.asmdef" t="Include" />
+            <e p="NetworkAuthenticator.cs" t="Include" />
+            <e p="NetworkBehaviour.cs" t="Include" />
+            <e p="NetworkClient.cs" t="Include" />
+            <e p="NetworkConnection.cs" t="Include" />
+            <e p="NetworkConnectionToClient.cs" t="Include" />
+            <e p="NetworkConnectionToServer.cs" t="Include" />
+            <e p="NetworkDiagnostics.cs" t="Include" />
+            <e p="NetworkIdentity.cs" t="Include" />
+            <e p="NetworkLoop.cs" t="Include" />
+            <e p="NetworkManager.cs" t="Include" />
+            <e p="NetworkManagerHUD.cs" t="Include" />
+            <e p="NetworkMessage.cs" t="Include" />
+            <e p="NetworkReader.cs" t="Include" />
+            <e p="NetworkReaderPool.cs" t="Include" />
+            <e p="NetworkServer.cs" t="Include" />
+            <e p="NetworkStartPosition.cs" t="Include" />
+            <e p="NetworkTime.cs" t="Include" />
+            <e p="NetworkVisibility.cs" t="Include" />
+            <e p="NetworkWriter.cs" t="Include" />
+            <e p="NetworkWriterPool.cs" t="Include" />
+            <e p="Pool.cs" t="Include" />
+            <e p="RemoteCallHelper.cs" t="Include" />
+            <e p="SyncDictionary.cs" t="Include" />
+            <e p="SyncList.cs" t="Include" />
+            <e p="SyncObject.cs" t="Include" />
+            <e p="SyncSet.cs" t="Include" />
+            <e p="Transport" t="Include">
+              <e p="FallbackTransport.cs" t="Include" />
+              <e p="KCP" t="Include">
+                <e p="kcp2k" t="Include">
+                  <e p="highlevel" t="Include">
+                    <e p="KcpChannel.cs" t="Include" />
+                    <e p="KcpClient.cs" t="Include" />
+                    <e p="KcpClientConnection.cs" t="Include" />
+                    <e p="KcpConnection.cs" t="Include" />
+                    <e p="KcpHeader.cs" t="Include" />
+                    <e p="KcpServer.cs" t="Include" />
+                    <e p="KcpServerConnection.cs" t="Include" />
+                    <e p="Log.cs" t="Include" />
+                  </e>
+                  <e p="KCP" t="Include">
+                    <e p="AssemblyInfo.cs" t="Include" />
+                    <e p="Kcp.cs" t="Include" />
+                    <e p="Segment.cs" t="Include" />
+                    <e p="Utils.cs" t="Include" />
+                  </e>
+                  <e p="kcp2k.asmdef" t="Include" />
+                </e>
+                <e p="MirrorTransport" t="Include">
+                  <e p="KcpTransport.cs" t="Include" />
+                </e>
+              </e>
+              <e p="LatencySimulation.cs" t="Include" />
+              <e p="MiddlewareTransport.cs" t="Include" />
+              <e p="MultiplexTransport.cs" t="Include" />
+              <e p="SimpleWebTransport" t="Include">
+                <e p="AssemblyInfo.cs" t="Include" />
+                <e p="Client" t="Include">
+                  <e p="SimpleWebClient.cs" t="Include" />
+                  <e p="StandAlone" t="Include">
+                    <e p="ClientHandshake.cs" t="Include" />
+                    <e p="ClientSslHelper.cs" t="Include" />
+                    <e p="WebSocketClientStandAlone.cs" t="Include" />
+                  </e>
+                  <e p="Webgl" t="Include">
+                    <e p="SimpleWebJSLib.cs" t="Include" />
+                    <e p="WebSocketClientWebGl.cs" t="Include" />
+                  </e>
+                </e>
+                <e p="Common" t="Include">
+                  <e p="BufferPool.cs" t="Include" />
+                  <e p="Connection.cs" t="Include" />
+                  <e p="Constants.cs" t="Include" />
+                  <e p="EventType.cs" t="Include" />
+                  <e p="Log.cs" t="Include" />
+                  <e p="Message.cs" t="Include" />
+                  <e p="MessageProcessor.cs" t="Include" />
+                  <e p="ReadHelper.cs" t="Include" />
+                  <e p="ReceiveLoop.cs" t="Include" />
+                  <e p="SendLoop.cs" t="Include" />
+                  <e p="TcpConfig.cs" t="Include" />
+                  <e p="Utils.cs" t="Include" />
+                </e>
+                <e p="readme.txt" t="Include" />
+                <e p="Server" t="Include">
+                  <e p="ServerHandshake.cs" t="Include" />
+                  <e p="ServerSslHelper.cs" t="Include" />
+                  <e p="SimpleWebServer.cs" t="Include" />
+                  <e p="WebSocketServer.cs" t="Include" />
+                </e>
+                <e p="SimpleWebTransport.asmdef" t="Include" />
+                <e p="SimpleWebTransport.cs" t="Include" />
+                <e p="SslConfigLoader.cs" t="Include" />
+              </e>
+              <e p="Telepathy" t="Include">
+                <e p="Telepathy" t="Include">
+                  <e p="Client.cs" t="Include" />
+                  <e p="Common.cs" t="Include" />
+                  <e p="ConnectionState.cs" t="Include" />
+                  <e p="EventType.cs" t="Include" />
+                  <e p="Log.cs" t="Include" />
+                  <e p="Logger.cs" t="Include" />
+                  <e p="MagnificentReceivePipe.cs" t="Include" />
+                  <e p="MagnificentSendPipe.cs" t="Include" />
+                  <e p="Message.cs" t="Include" />
+                  <e p="NetworkStreamExtensions.cs" t="Include" />
+                  <e p="Pool.cs" t="Include" />
+                  <e p="SafeQueue.cs" t="Include" />
+                  <e p="Server.cs" t="Include" />
+                  <e p="Telepathy.asmdef" t="Include" />
+                  <e p="ThreadExtensions.cs" t="Include" />
+                  <e p="ThreadFunctions.cs" t="Include" />
+                  <e p="Utils.cs" t="Include" />
+                </e>
+                <e p="TelepathyTransport.cs" t="Include" />
+              </e>
+              <e p="Transport.cs" t="Include" />
+            </e>
+            <e p="Utils.cs" t="Include" />
+          </e>
+          <e p="version.txt" t="Include" />
+        </e>
         <e p="NavMeshComponents" t="Include">
           <e p="Editor" t="Include">
             <e p="NavMeshAssetManager.cs" t="Include" />
@@ -26,292 +335,6 @@
             <e p="NavMeshSurface.cs" t="Include" />
           </e>
         </e>
-        <e p="Photon" t="Include">
-          <e p="PhotonChat" t="Include">
-            <e p="Code" t="Include">
-              <e p="changes-chat.txt" t="Include" />
-              <e p="ChannelCreationOptions.cs" t="Include" />
-              <e p="ChannelWellKnownProperties.cs" t="Include" />
-              <e p="ChatAppSettings.cs" t="Include" />
-              <e p="ChatChannel.cs" t="Include" />
-              <e p="ChatClient.cs" t="Include" />
-              <e p="ChatDisconnectCause.cs" t="Include" />
-              <e p="ChatEventCode.cs" t="Include" />
-              <e p="ChatOperationCode.cs" t="Include" />
-              <e p="ChatParameterCode.cs" t="Include" />
-              <e p="ChatPeer.cs" t="Include" />
-              <e p="ChatState.cs" t="Include" />
-              <e p="ChatUserStatus.cs" t="Include" />
-              <e p="IChatClientListener.cs" t="Include" />
-              <e p="PhotonChat.asmdef" t="Include" />
-            </e>
-          </e>
-          <e p="PhotonLibs" t="Include">
-            <e p="changes-library.txt" t="Include" />
-            <e p="netstandard2.0" t="Include">
-              <e p="Photon3Unity3D.xml" t="Include" />
-            </e>
-            <e p="Photon3Unity3D.xml" t="Include" />
-            <e p="WebSocket" t="Include">
-              <e p="PhotonWebSocket.asmdef" t="Include" />
-              <e p="SocketWebTcp.cs" t="Include" />
-              <e p="WebSocket.cs" t="Include" />
-            </e>
-          </e>
-          <e p="PhotonRealtime" t="Include">
-            <e p="Code" t="Include">
-              <e p="AppSettings.cs" t="Include" />
-              <e p="changes-realtime.txt" t="Include" />
-              <e p="ConnectionHandler.cs" t="Include" />
-              <e p="CustomTypesUnity.cs" t="Include" />
-              <e p="Extensions.cs" t="Include" />
-              <e p="FriendInfo.cs" t="Include" />
-              <e p="LoadBalancingClient.cs" t="Include" />
-              <e p="LoadbalancingPeer.cs" t="Include" />
-              <e p="PhotonPing.cs" t="Include" />
-              <e p="PhotonPingClasses.cs" t="Include" />
-              <e p="PhotonRealtime.asmdef" t="Include" />
-              <e p="Player.cs" t="Include" />
-              <e p="Region.cs" t="Include" />
-              <e p="RegionHandler.cs" t="Include" />
-              <e p="Room.cs" t="Include" />
-              <e p="RoomInfo.cs" t="Include" />
-              <e p="SupportLogger.cs" t="Include" />
-              <e p="Unity" t="Include">
-                <e p="PhotonAppSettings.cs" t="Include" />
-              </e>
-              <e p="WebRpc.cs" t="Include" />
-            </e>
-          </e>
-          <e p="PhotonUnityNetworking" t="Include">
-            <e p="changelog.txt" t="Include" />
-            <e p="Code" t="Include">
-              <e p="CustomTypes.cs" t="Include" />
-              <e p="Editor" t="Include">
-                <e p="AccountService.cs" t="Include" />
-                <e p="PhotonEditor.cs" t="Include" />
-                <e p="PhotonEditorUtils.cs" t="Include" />
-                <e p="PhotonGUI.cs" t="Include" />
-                <e p="PhotonUnityNetworking.Editor.asmdef" t="Include" />
-                <e p="PhotonViewHandler.cs" t="Include" />
-                <e p="PhotonViewInspector.cs" t="Include" />
-                <e p="PunSceneSettings.cs" t="Include" />
-                <e p="PunSceneSettingsInspector.cs" t="Include" />
-                <e p="ReordableList" t="Include">
-                  <e p="LICENSE.txt" t="Include" />
-                  <e p="ReorderableListResources.cs" t="Include" />
-                </e>
-                <e p="ServerSettingsInspector.cs" t="Include" />
-                <e p="Views" t="Include">
-                  <e p="MonoBehaviourPunEditor.cs" t="Include" />
-                  <e p="PhotonAnimatorViewEditor.cs" t="Include" />
-                  <e p="PhotonRigidbody2DViewEditor.cs" t="Include" />
-                  <e p="PhotonRigidbodyViewEditor.cs" t="Include" />
-                  <e p="PhotonTransformViewClassicEditor.cs" t="Include" />
-                  <e p="PhotonTransformViewEditor.cs" t="Include" />
-                </e>
-              </e>
-              <e p="Enums.cs" t="Include" />
-              <e p="Interfaces" t="Include">
-                <e p="IPhotonViewCallbacks.cs" t="Include" />
-                <e p="IPunCallbacks.cs" t="Include" />
-              </e>
-              <e p="PhotonHandler.cs" t="Include" />
-              <e p="PhotonNetwork.cs" t="Include" />
-              <e p="PhotonNetworkPart.cs" t="Include" />
-              <e p="PhotonStreamQueue.cs" t="Include" />
-              <e p="PhotonUnityNetworking.asmdef" t="Include" />
-              <e p="PhotonView.cs" t="Include" />
-              <e p="PunClasses.cs" t="Include" />
-              <e p="ServerSettings.cs" t="Include" />
-              <e p="Utilities" t="Include">
-                <e p="NestedComponentUtilities.cs" t="Include" />
-              </e>
-              <e p="Views" t="Include">
-                <e p="PhotonAnimatorView.cs" t="Include" />
-                <e p="PhotonRigidbody2DView.cs" t="Include" />
-                <e p="PhotonRigidbodyView.cs" t="Include" />
-                <e p="PhotonTransformView.cs" t="Include" />
-                <e p="PhotonTransformViewClassic.cs" t="Include" />
-              </e>
-            </e>
-            <e p="link.xml" t="Include" />
-            <e p="readme.txt" t="Include" />
-            <e p="UtilityScripts" t="Include">
-              <e p="Culling" t="Include">
-                <e p="CullArea.cs" t="Include" />
-                <e p="CullingHandler.cs" t="Include" />
-                <e p="Editor" t="Include">
-                  <e p="CullAreaEditor.cs" t="Include" />
-                  <e p="PhotonUnityNetworking.Utilities.Culling.Editor.asmdef" t="Include" />
-                </e>
-              </e>
-              <e p="Debugging" t="Include">
-                <e p="PhotonLagSimulationGui.cs" t="Include" />
-                <e p="PhotonStatsGui.cs" t="Include" />
-                <e p="PointedAtGameObjectInfo.cs" t="Include" />
-                <e p="StatesGui.cs" t="Include" />
-              </e>
-              <e p="PhotonPlayer" t="Include">
-                <e p="Editor" t="Include">
-                  <e p="PhotonTeamsManagerInspector.cs" t="Include" />
-                  <e p="PhotonUnityNetworking.Utilities.PhotonPlayer.Editor.asmdef" t="Include" />
-                  <e p="PlayerNumberingInspector.cs" t="Include" />
-                  <e p="PunTeamsInspector.cs" t="Include" />
-                </e>
-                <e p="PhotonTeamsManager.cs" t="Include" />
-                <e p="PlayerNumbering.cs" t="Include" />
-                <e p="PunPlayerScores.cs" t="Include" />
-                <e p="PunTeams.cs" t="Include" />
-              </e>
-              <e p="PhotonUnityNetworking.Utilities.asmdef" t="Include" />
-              <e p="PhotonView" t="Include">
-                <e p="SmoothSyncMovement.cs" t="Include" />
-              </e>
-              <e p="Prototyping" t="Include">
-                <e p="ConnectAndJoinRandom.cs" t="Include" />
-                <e p="MoveByKeys.cs" t="Include" />
-                <e p="OnClickDestroy.cs" t="Include" />
-                <e p="OnClickInstantiate.cs" t="Include" />
-                <e p="OnClickRpc.cs" t="Include" />
-                <e p="OnEscapeQuit.cs" t="Include" />
-                <e p="OnJoinedInstantiate.cs" t="Include" />
-                <e p="OnStartDelete.cs" t="Include" />
-              </e>
-              <e p="Room" t="Include">
-                <e p="CountdownTimer.cs" t="Include" />
-              </e>
-              <e p="TurnBased" t="Include">
-                <e p="PunTurnManager.cs" t="Include" />
-              </e>
-              <e p="UI" t="Include">
-                <e p="ButtonInsideScrollList.cs" t="Include" />
-                <e p="EventSystemSpawner.cs" t="Include" />
-                <e p="GraphicToggleIsOnTransition.cs" t="Include" />
-                <e p="OnPointerOverTooltip.cs" t="Include" />
-                <e p="TabViewManager.cs" t="Include" />
-                <e p="TextButtonTransition.cs" t="Include" />
-                <e p="TextToggleIsOnTransition.cs" t="Include" />
-              </e>
-            </e>
-          </e>
-          <e p="PhotonVoice" t="Include">
-            <e p="changes-voice.txt" t="Include" />
-            <e p="Code" t="Include">
-              <e p="Editor" t="Include">
-                <e p="ExitPlayModeOnScriptCompile.cs" t="Include" />
-                <e p="PhotonVoice.Editor.asmdef" t="Include" />
-                <e p="PhotonVoiceEditorUtils.cs" t="Include" />
-                <e p="RecorderEditor.cs" t="Include" />
-                <e p="SpeakerEditor.cs" t="Include" />
-                <e p="VoiceConnectionEditor.cs" t="Include" />
-                <e p="WebRtcAudioDspEditor.cs" t="Include" />
-              </e>
-              <e p="ILoggable.cs" t="Include" />
-              <e p="PhotonVoice.asmdef" t="Include" />
-              <e p="PUN" t="Include">
-                <e p="Editor" t="Include">
-                  <e p="PhotonVoice.PUN.Editor.asmdef" t="Include" />
-                  <e p="PhotonVoiceNetworkEditor.cs" t="Include" />
-                </e>
-                <e p="PhotonVoice.PUN.asmdef" t="Include" />
-                <e p="PhotonVoiceNetwork.cs" t="Include" />
-                <e p="PhotonVoiceView.cs" t="Include" />
-              </e>
-              <e p="Recorder.cs" t="Include" />
-              <e p="RemoteVoiceLink.cs" t="Include" />
-              <e p="Speaker.cs" t="Include" />
-              <e p="UtilityScripts" t="Include">
-                <e p="ConnectAndJoin.cs" t="Include" />
-                <e p="Editor" t="Include">
-                  <e p="ConnectAndJoinEditor.cs" t="Include" />
-                  <e p="PhotonVoice.Utilities.Editor.asmdef" t="Include" />
-                </e>
-                <e p="MicAmplifier" t="Include">
-                  <e p="MicAmplifier.cs" t="Include" />
-                  <e p="MicAmplifierEditor.cs" t="Include" />
-                  <e p="MicAmplifierFloat.cs" t="Include" />
-                  <e p="MicAmplifierShort.cs" t="Include" />
-                </e>
-                <e p="PhotonVoiceLagSimulationGui.cs" t="Include" />
-                <e p="PhotonVoiceStatsGui.cs" t="Include" />
-                <e p="TestTone.cs" t="Include" />
-              </e>
-              <e p="VoiceComponent.cs" t="Include" />
-              <e p="VoiceConnection.cs" t="Include" />
-              <e p="VoiceLogger.cs" t="Include" />
-              <e p="WebRtcAudioDsp.cs" t="Include" />
-            </e>
-            <e p="PhotonVoiceApi" t="Include">
-              <e p="Core" t="Include">
-                <e p="AudioGen.cs" t="Include" />
-                <e p="AudioInEnumerator.cs" t="Include" />
-                <e p="AudioStreamPlayer.cs" t="Include" />
-                <e p="AudioUtil.cs" t="Include" />
-                <e p="ObjectFactory.cs" t="Include" />
-                <e p="ObjectPool.cs" t="Include" />
-                <e p="OpusCodec.cs" t="Include" />
-                <e p="POpusCodec" t="Include">
-                  <e p="Enums" t="Include">
-                    <e p="Bandwidth.cs" t="Include" />
-                    <e p="Channels.cs" t="Include" />
-                    <e p="Complexity.cs" t="Include" />
-                    <e p="Delay.cs" t="Include" />
-                    <e p="ForceChannels.cs" t="Include" />
-                    <e p="OpusApplicationType.cs" t="Include" />
-                    <e p="OpusCtlGetRequest.cs" t="Include" />
-                    <e p="OpusCtlSetRequest.cs" t="Include" />
-                    <e p="OpusStatusCode.cs" t="Include" />
-                    <e p="SamplingRate.cs" t="Include" />
-                    <e p="SignalHint.cs" t="Include" />
-                  </e>
-                  <e p="OpusDecoder.cs" t="Include" />
-                  <e p="OpusEncoder.cs" t="Include" />
-                  <e p="OpusException.cs" t="Include" />
-                  <e p="OpusWrapper.cs" t="Include" />
-                </e>
-                <e p="RawCodec.cs" t="Include" />
-                <e p="Voice.cs" t="Include" />
-                <e p="VoiceAudio.cs" t="Include" />
-                <e p="VoiceClient.cs" t="Include" />
-                <e p="VoiceCodec.cs" t="Include" />
-                <e p="VoiceFramed.cs" t="Include" />
-                <e p="VoiceInfo.cs" t="Include" />
-                <e p="VoiceSourceAdapter.cs" t="Include" />
-                <e p="WebRTCAudioProcessor.cs" t="Include" />
-              </e>
-              <e p="LoadBalancingTransport.cs" t="Include" />
-              <e p="PhotonTransport.cs" t="Include" />
-              <e p="PhotonVoice.API.asmdef" t="Include" />
-              <e p="Platforms" t="Include">
-                <e p="Apple" t="Include">
-                  <e p="iOSAudioInPusher.cs" t="Include" />
-                  <e p="iOSAudioInReader.cs" t="Include" />
-                  <e p="iOSAudioSession.cs" t="Include" />
-                  <e p="MacOSAudioInPusher.cs" t="Include" />
-                  <e p="MacOSAudioInReader.cs" t="Include" />
-                </e>
-                <e p="Unity" t="Include">
-                  <e p="AudioClipWrapper.cs" t="Include" />
-                  <e p="AudioOutCapture.cs" t="Include" />
-                  <e p="Common.cs" t="Include" />
-                  <e p="IOSAudioForceToSpeaker.cs" t="Include" />
-                  <e p="Logger.cs" t="Include" />
-                  <e p="MicWrapper.cs" t="Include" />
-                  <e p="UnityAndroidAudioInAEC.cs" t="Include" />
-                  <e p="UnityAudioOut.cs" t="Include" />
-                </e>
-                <e p="Windows" t="Include">
-                  <e p="WindowsAudioIn.cs" t="Include" />
-                </e>
-              </e>
-              <e p="readme.txt" t="Include" />
-            </e>
-            <e p="PhotonVoiceLibs" t="Include">
-              <e p="WebRTC-LICENSE.txt" t="Include" />
-            </e>
-          </e>
-        </e>
         <e p="Plugins" t="Include">
           <e p="Demigiant" t="Include">
             <e p="DOTween" t="Include">
@@ -326,6 +349,289 @@
               </e>
               <e p="readme.txt" t="Include" />
             </e>
+          </e>
+          <e p="Dissonance" t="Include">
+            <e p="Core" t="Include">
+              <e p="AssemblyAttributes.cs" t="Include" />
+              <e p="Audio" t="Include">
+                <e p="AecDiagnostics.cs" t="Include" />
+                <e p="ArvCalculator.cs" t="Include" />
+                <e p="AudioFileWriter.cs" t="Include" />
+                <e p="AudioSettingsWatcher.cs" t="Include" />
+                <e p="Capture" t="Include">
+                  <e p="AecmRoutingMode.cs" t="Include" />
+                  <e p="AecSuppressionLevels.cs" t="Include" />
+                  <e p="BasePreprocessingPipeline.cs" t="Include" />
+                  <e p="BasicMicrophoneCapture.cs" t="Include" />
+                  <e p="BufferedSampleProvider.cs" t="Include" />
+                  <e p="CapturePipelineManager.cs" t="Include" />
+                  <e p="EmptyPreprocessingPipeline.cs" t="Include" />
+                  <e p="EncoderPipeline.cs" t="Include" />
+                  <e p="IAmplitudeProvider.cs" t="Include" />
+                  <e p="IChannelPriorityManager.cs" t="Include" />
+                  <e p="IFrameProvider.cs" t="Include" />
+                  <e p="IMicrophoneCapture.cs" t="Include" />
+                  <e p="IMicrophoneDeviceList.cs" t="Include" />
+                  <e p="IMicrophoneHandler.cs" t="Include" />
+                  <e p="IMicrophoneProvider.cs" t="Include" />
+                  <e p="IMicrophoneSubscriber.cs" t="Include" />
+                  <e p="IPreprocessingPipeline.cs" t="Include" />
+                  <e p="MicrophoneCapture.cs" t="Include" />
+                  <e p="NoiseSuppressionLevels.cs" t="Include" />
+                  <e p="PreprocessingPipeline.cs" t="Include" />
+                  <e p="Resampler.cs" t="Include" />
+                  <e p="SampleToFrameProvider.cs" t="Include" />
+                  <e p="SineSampleProvider.cs" t="Include" />
+                  <e p="SpeexDspNative.cs" t="Include" />
+                  <e p="VadSensitivityLevels.cs" t="Include" />
+                  <e p="WebRtcPreprocessingPipeline.cs" t="Include" />
+                </e>
+                <e p="Codecs" t="Include">
+                  <e p="Codec.cs" t="Include" />
+                  <e p="EncodedBuffer.cs" t="Include" />
+                  <e p="Identity" t="Include">
+                    <e p="IdentityDecoder.cs" t="Include" />
+                    <e p="IdentityEncoder.cs" t="Include" />
+                  </e>
+                  <e p="IVoiceDecoder.cs" t="Include" />
+                  <e p="IVoiceEncoder.cs" t="Include" />
+                  <e p="Opus" t="Include">
+                    <e p="Opus.cs" t="Include" />
+                    <e p="OpusDecoder.cs" t="Include" />
+                    <e p="OpusEncoder.cs" t="Include" />
+                  </e>
+                  <e p="Silence" t="Include">
+                    <e p="SilenceDecoder.cs" t="Include" />
+                  </e>
+                </e>
+                <e p="Fader.cs" t="Include" />
+                <e p="FormatConverter.cs" t="Include" />
+                <e p="OpenChannelVolumeDuck.cs" t="Include" />
+                <e p="Playback" t="Include">
+                  <e p="BufferedDecoder.cs" t="Include" />
+                  <e p="DecoderFactory.cs" t="Include" />
+                  <e p="DecoderPipeline.cs" t="Include" />
+                  <e p="DecoderPipelinePool.cs" t="Include" />
+                  <e p="DesyncCalculator.cs" t="Include" />
+                  <e p="EncodedAudio.cs" t="Include" />
+                  <e p="EncodedAudioBuffer.cs" t="Include" />
+                  <e p="FrameFormat.cs" t="Include" />
+                  <e p="FrameToSampleConverter.cs" t="Include" />
+                  <e p="IDecoderPipeline.cs" t="Include" />
+                  <e p="IFrameSource.cs" t="Include" />
+                  <e p="IPriorityManager.cs" t="Include" />
+                  <e p="IRateProvider.cs" t="Include" />
+                  <e p="IRemoteChannelProvider.cs" t="Include" />
+                  <e p="ISampleSource.cs" t="Include" />
+                  <e p="IVoicePlayback.cs" t="Include" />
+                  <e p="PlaybackOptions.cs" t="Include" />
+                  <e p="Resampler.cs" t="Include" />
+                  <e p="SamplePlaybackComponent.cs" t="Include" />
+                  <e p="SessionContext.cs" t="Include" />
+                  <e p="SoftClipSampleSource.cs" t="Include" />
+                  <e p="SpeechSession.cs" t="Include" />
+                  <e p="SpeechSessionStream.cs" t="Include" />
+                  <e p="SynchronizerSampleSource.cs" t="Include" />
+                  <e p="VoicePlayback.cs" t="Include" />
+                  <e p="VolumeRampedFrameSource.cs" t="Include" />
+                </e>
+              </e>
+              <e p="AudioQuality.cs" t="Include" />
+              <e p="BaseCommsTrigger.cs" t="Include" />
+              <e p="Channel" t="Include">
+                <e p="ChannelPriority.cs" t="Include" />
+                <e p="ChannelProperties.cs" t="Include" />
+                <e p="Channels.cs" t="Include" />
+                <e p="IChannel.cs" t="Include" />
+                <e p="PlayerChannel.cs" t="Include" />
+                <e p="PlayerChannels.cs" t="Include" />
+                <e p="RemoteChannel.cs" t="Include" />
+                <e p="RoomChannel.cs" t="Include" />
+                <e p="RoomChannels.cs" t="Include" />
+              </e>
+              <e p="Channels.cs" t="Include" />
+              <e p="ChannelType.cs" t="Include" />
+              <e p="CodecSettings.cs" t="Include" />
+              <e p="CodecSettingsLoader.cs" t="Include" />
+              <e p="CommActivationMode.cs" t="Include" />
+              <e p="CommTriggerTarget.cs" t="Include" />
+              <e p="Config" t="Include">
+                <e p="ChatRoomSettings.cs" t="Include" />
+                <e p="DebugSettings.cs" t="Include" />
+                <e p="Preferences.cs" t="Include" />
+                <e p="VoiceSettings.cs" t="Include" />
+              </e>
+              <e p="Datastructures" t="Include">
+                <e p="BaseWindowCalculator.cs" t="Include" />
+                <e p="ConcurrentPool.cs" t="Include" />
+                <e p="PacketLossCalculator.cs" t="Include" />
+                <e p="Pool.cs" t="Include" />
+                <e p="POTBuffer.cs" t="Include" />
+                <e p="RingBuffer.cs" t="Include" />
+                <e p="TransferBuffer.cs" t="Include" />
+                <e p="Unions.cs" t="Include" />
+                <e p="WindowDeviationCalculator.cs" t="Include" />
+              </e>
+              <e p="DissonanceCommsImpl.cs" t="Include" />
+              <e p="DissonanceCommsMic.cs" t="Include" />
+              <e p="DissonanceException.cs" t="Include" />
+              <e p="Extensions" t="Include">
+                <e p="ArraySegmentExtensions.cs" t="Include" />
+                <e p="IEnumerableExtensions.cs" t="Include" />
+                <e p="Int32Extensions.cs" t="Include" />
+                <e p="StringExtensions.cs" t="Include" />
+                <e p="UShortExtensions.cs" t="Include" />
+              </e>
+              <e p="FrameSize.cs" t="Include" />
+              <e p="FrameSkipDetector.cs" t="Include" />
+              <e p="HandyCollections" t="Include">
+                <e p="Heap" t="Include">
+                  <e p="IMinHeap.cs" t="Include" />
+                  <e p="MinHeap.cs" t="Include" />
+                </e>
+              </e>
+              <e p="IDissonancePlayer.cs" t="Include" />
+              <e p="ILossEstimator.cs" t="Include" />
+              <e p="Jetbrains.cs" t="Include" />
+              <e p="Log.cs" t="Include" />
+              <e p="LogCategory.cs" t="Include" />
+              <e p="LogLevel.cs" t="Include" />
+              <e p="Metrics.cs" t="Include" />
+              <e p="NAudio" t="Include">
+                <e p="ISampleProvider.cs" t="Include" />
+                <e p="WaveFileWriter.cs" t="Include" />
+                <e p="WaveFormat.cs" t="Include" />
+                <e p="WdlResampler.cs" t="Include" />
+              </e>
+              <e p="Networking" t="Include">
+                <e p="BaseClient.cs" t="Include" />
+                <e p="BaseClientCollection.cs" t="Include" />
+                <e p="BaseCommsNetwork.cs" t="Include" />
+                <e p="BaseServer.cs" t="Include" />
+                <e p="ChannelBitField.cs" t="Include" />
+                <e p="Client" t="Include">
+                  <e p="ChannelCollection.cs" t="Include" />
+                  <e p="ClientStatus.cs" t="Include" />
+                  <e p="CommsProcessor.cs" t="Include" />
+                  <e p="ConnectionNegotiator.cs" t="Include" />
+                  <e p="EventQueue.cs" t="Include" />
+                  <e p="IClient.cs" t="Include" />
+                  <e p="OpenChannel.cs" t="Include" />
+                  <e p="PacketDelaySimulator.cs" t="Include" />
+                  <e p="PacketRouter.cs" t="Include" />
+                  <e p="PeerCollection.cs" t="Include" />
+                  <e p="PeerVoiceReceiver.cs" t="Include" />
+                  <e p="RoomMembershipManager.cs" t="Include" />
+                  <e p="SendQueue.cs" t="Include" />
+                  <e p="SlaveClientCollection.cs" t="Include" />
+                  <e p="TextReceiver.cs" t="Include" />
+                  <e p="TextSender.cs" t="Include" />
+                  <e p="VoicePacketOptions.cs" t="Include" />
+                  <e p="VoiceReceiver.cs" t="Include" />
+                  <e p="VoiceSender.cs" t="Include" />
+                </e>
+                <e p="ClientIdCollection.cs" t="Include" />
+                <e p="ClientInfo.cs" t="Include" />
+                <e p="ICommsNetwork.cs" t="Include" />
+                <e p="ICommsNetworkState.cs" t="Include" />
+                <e p="MessageTypes.cs" t="Include" />
+                <e p="PacketReader.cs" t="Include" />
+                <e p="PacketWriter.cs" t="Include" />
+                <e p="ReceivingState.cs" t="Include" />
+                <e p="RoomClientsCollection.cs" t="Include" />
+                <e p="RoutingTable.cs" t="Include" />
+                <e p="Server" t="Include">
+                  <e p="ClientCollection.cs" t="Include" />
+                  <e p="IServer.cs" t="Include" />
+                  <e p="MasterClientCollection.cs" t="Include" />
+                  <e p="PacketRouter.cs" t="Include" />
+                  <e p="ServerRelay.cs" t="Include" />
+                  <e p="ServerState.cs" t="Include" />
+                </e>
+                <e p="TextPacket.cs" t="Include" />
+                <e p="TrafficCounter.cs" t="Include" />
+              </e>
+              <e p="PacketLossMonitor.cs" t="Include" />
+              <e p="PlaybackPool.cs" t="Include" />
+              <e p="PlayerCollection.cs" t="Include" />
+              <e p="PlayerTrackerManager.cs" t="Include" />
+              <e p="RoomIdConversion.cs" t="Include" />
+              <e p="Rooms.cs" t="Include" />
+              <e p="SemanticVersion.cs" t="Include" />
+              <e p="TextChat.cs" t="Include" />
+              <e p="Threading" t="Include">
+                <e p="DThread.cs" t="Include" />
+                <e p="LockedValue.cs" t="Include" />
+                <e p="SpinLock.cs" t="Include" />
+              </e>
+              <e p="TokenSet.cs" t="Include" />
+              <e p="Unit.cs" t="Include" />
+              <e p="VAD" t="Include">
+                <e p="IVoiceActivationListener.cs" t="Include" />
+                <e p="IVoiceDetector.cs" t="Include" />
+                <e p="VadDebugUI.cs" t="Include" />
+                <e p="WebRtcVoiceDetector.cs" t="Include" />
+              </e>
+              <e p="VoicePlayerState.cs" t="Include" />
+              <e p="VolumeFaderSettings.cs" t="Include" />
+            </e>
+            <e p="Demo" t="Include">
+              <e p="ChatInputController.cs" t="Include" />
+              <e p="ChatLogController.cs" t="Include" />
+              <e p="Logo.cs" t="Include" />
+              <e p="SpeakerIndicator.cs" t="Include" />
+              <e p="ToggleInvertMute.cs" t="Include" />
+              <e p="TriggerVisualizer.cs" t="Include" />
+            </e>
+            <e p="DissonanceComms.cs" t="Include" />
+            <e p="DissonanceVersion.cs" t="Include" />
+            <e p="DissonanceVoip.asmdef" t="Include" />
+            <e p="Editor" t="Include">
+              <e p="BaseDissonnanceCommsNetworkEditor.cs" t="Include" />
+              <e p="BaseIMicrophoneCaptureEditor.cs" t="Include" />
+              <e p="BasicMicrophoneCaptureEditor.cs" t="Include" />
+              <e p="ChatRoomSettingsEditor.cs" t="Include" />
+              <e p="DebugSettingsEditor.cs" t="Include" />
+              <e p="DissonanceAecFilterInspector.cs" t="Include" />
+              <e p="DissonanceCommsEditor.cs" t="Include" />
+              <e p="DissonancePlayerEditor.cs" t="Include" />
+              <e p="DissonanceVoipEditor.asmdef" t="Include" />
+              <e p="SamplePlaybackComponentEditor.cs" t="Include" />
+              <e p="TokenControl.cs" t="Include" />
+              <e p="UndoHelper.cs" t="Include" />
+              <e p="VoiceBroadcastTriggerEditor.cs" t="Include" />
+              <e p="VoicePlaybackEditor.cs" t="Include" />
+              <e p="VoiceReceiptTriggerEditor.cs" t="Include" />
+              <e p="VoiceSettingsEditor.cs" t="Include" />
+              <e p="VUMeter.cs" t="Include" />
+              <e p="Welcome" t="Include">
+                <e p="IntegrationMetadata.cs" t="Include" />
+                <e p="WelcomeLauncher.cs" t="Include" />
+                <e p="WelcomeWindow.cs" t="Include" />
+              </e>
+              <e p="Windows" t="Include">
+                <e p="BaseDissonanceEditorWindow.cs" t="Include" />
+                <e p="EditorMetadata.cs" t="Include" />
+                <e p="MenuSetup.cs" t="Include" />
+                <e p="SemanticVersion.cs" t="Include" />
+                <e p="Startup.cs" t="Include" />
+                <e p="Update" t="Include">
+                  <e p="UpdateLauncher.cs" t="Include" />
+                  <e p="UpdateWindow.cs" t="Include" />
+                </e>
+                <e p="Welcome" t="Include">
+                  <e p="IntegrationMetadata.cs" t="Include" />
+                  <e p="WelcomeLauncher.cs" t="Include" />
+                  <e p="WelcomeState.cs" t="Include" />
+                  <e p="WelcomeWindow.cs" t="Include" />
+                </e>
+              </e>
+            </e>
+            <e p="Resources" t="Include">
+              <e p="DissonanceRootPath.cs" t="Include" />
+            </e>
+            <e p="VoiceBroadcastTrigger.cs" t="Include" />
+            <e p="VoiceReceiptTrigger.cs" t="Include" />
           </e>
         </e>
         <e p="Scripts" t="Include">
@@ -346,13 +652,12 @@
             <e p="BuildPreview.cs" t="Include" />
             <e p="Props" t="Include">
               <e p="DeliveryBox.cs" t="Include" />
+              <e p="FrontDoor.cs" t="Include" />
               <e p="Ground.cs" t="Include" />
               <e p="Interactables" t="Include">
                 <e p="Action.cs" t="Include" />
                 <e p="Package.cs" t="Include" />
                 <e p="Teleporter" t="Include">
-                  <e p="DoorTeleporter.cs" t="Include" />
-                  <e p="ElevatorTeleporter.cs" t="Include" />
                   <e p="Teleporter.cs" t="Include" />
                 </e>
               </e>
@@ -364,6 +669,7 @@
             </e>
             <e p="Props.cs" t="Include" />
             <e p="PropsRenderer.cs" t="Include" />
+            <e p="Roof.cs" t="Include" />
           </e>
           <e p="Camera" t="Include">
             <e p="BuildCamera.cs" t="Include" />
@@ -380,6 +686,7 @@
           <e p="Entities" t="Include">
             <e p="Address.cs" t="Include" />
             <e p="CharacterData.cs" t="Include" />
+            <e p="CoverSettings.cs" t="Include" />
             <e p="Delivery.cs" t="Include" />
             <e p="Health.cs" t="Include" />
             <e p="Home.cs" t="Include" />
@@ -427,25 +734,32 @@
             <e p="MainMenuManager.cs" t="Include" />
           </e>
           <e p="Managers" t="Include">
+            <e p="ApartmentController.cs" t="Include" />
             <e p="ApartmentCreationManager.cs" t="Include" />
-            <e p="ApartmentManager.cs" t="Include" />
             <e p="ApiManager.cs" t="Include" />
             <e p="BuildManager.cs" t="Include" />
             <e p="CameraManager.cs" t="Include" />
             <e p="CharacterCreationManager.cs" t="Include" />
             <e p="CursorManager.cs" t="Include" />
             <e p="DatabaseManager.cs" t="Include" />
+            <e p="HallController.cs" t="Include" />
             <e p="HUDManager.cs" t="Include" />
             <e p="Launcher.cs" t="Include" />
             <e p="LoadingManager.cs" t="Include" />
-            <e p="NetworkManager.cs" t="Include" />
             <e p="PropsManager.cs" t="Include" />
             <e p="RoomManager.cs" t="Include" />
           </e>
+          <e p="Network" t="Include">
+            <e p="Messages" t="Include">
+              <e p="CreateCharacterMessage.cs" t="Include" />
+              <e p="TeleportMessage.cs" t="Include" />
+            </e>
+            <e p="SimpleTownNetwork.cs" t="Include" />
+          </e>
           <e p="Player" t="Include">
-            <e p="Character.cs" t="Include" />
             <e p="CharacterAnimatorAction.cs" t="Include" />
             <e p="PlayerAnimator.cs" t="Include" />
+            <e p="PlayerController.cs" t="Include" />
             <e p="PlayerInteraction.cs" t="Include" />
             <e p="ThirdPersonCharacter.cs" t="Include" />
           </e>
@@ -583,25 +897,23 @@
           </e>
         </e>
       </e>
+      <e p="DissonanceVoip.csproj" t="IncludeRecursive" />
+      <e p="DissonanceVoipEditor.csproj" t="IncludeRecursive" />
+      <e p="kcp2k.csproj" t="IncludeRecursive" />
+      <e p="Mirror.Authenticators.csproj" t="IncludeRecursive" />
+      <e p="Mirror.Cloud.csproj" t="IncludeRecursive" />
+      <e p="Mirror.CompilerSymbols.csproj" t="IncludeRecursive" />
+      <e p="Mirror.Components.csproj" t="IncludeRecursive" />
+      <e p="Mirror.csproj" t="IncludeRecursive" />
+      <e p="Mirror.Editor.csproj" t="IncludeRecursive" />
+      <e p="Mirror.Weaver.csproj" t="IncludeRecursive" />
       <e p="NavMeshComponents.csproj" t="IncludeRecursive" />
       <e p="NavMeshComponentsEditor.csproj" t="IncludeRecursive" />
       <e p="obj" t="ExcludeRecursive" />
       <e p="Packages" t="ExcludeRecursive" />
-      <e p="PhotonChat.csproj" t="IncludeRecursive" />
-      <e p="PhotonRealtime.csproj" t="IncludeRecursive" />
-      <e p="PhotonUnityNetworking.csproj" t="IncludeRecursive" />
-      <e p="PhotonUnityNetworking.Editor.csproj" t="IncludeRecursive" />
-      <e p="PhotonUnityNetworking.Utilities.csproj" t="IncludeRecursive" />
-      <e p="PhotonUnityNetworking.Utilities.Culling.Editor.csproj" t="IncludeRecursive" />
-      <e p="PhotonUnityNetworking.Utilities.PhotonPlayer.Editor.csproj" t="IncludeRecursive" />
-      <e p="PhotonVoice.API.csproj" t="IncludeRecursive" />
-      <e p="PhotonVoice.csproj" t="IncludeRecursive" />
-      <e p="PhotonVoice.Editor.csproj" t="IncludeRecursive" />
-      <e p="PhotonVoice.PUN.csproj" t="IncludeRecursive" />
-      <e p="PhotonVoice.PUN.Editor.csproj" t="IncludeRecursive" />
-      <e p="PhotonVoice.Utilities.Editor.csproj" t="IncludeRecursive" />
-      <e p="PhotonWebSocket.csproj" t="IncludeRecursive" />
       <e p="Sim.sln" t="IncludeFlat" />
+      <e p="SimpleWebTransport.csproj" t="IncludeRecursive" />
+      <e p="Telepathy.csproj" t="IncludeRecursive" />
       <e p="Temp\bin" t="ExcludeRecursive" />
     </e>
   </component>

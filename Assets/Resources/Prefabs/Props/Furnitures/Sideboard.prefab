@@ -253,11 +253,11 @@ GameObject:
   m_Component:
   - component: {fileID: 7985500637255967366}
   - component: {fileID: 9179156753369800045}
-  - component: {fileID: 5409569407917739141}
   - component: {fileID: 1488426032301205166}
   - component: {fileID: -6468876022950721504}
   - component: {fileID: -7908976540816177706}
   - component: {fileID: 1755971533757790933}
+  - component: {fileID: -5862047313978838024}
   m_Layer: 10
   m_Name: Sideboard
   m_TagString: Untagged
@@ -298,29 +298,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1.1962821, y: 0.5873589, z: 0.3793177}
   m_Center: {x: -0.00053858757, y: 0.29531124, z: -0.010344714}
---- !u!114 &5409569407917739141
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7321131338746853436}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 0
-  OwnershipTransfer: 0
-  observableSearch: 0
-  ObservedComponents:
-  - {fileID: 0}
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!208 &1488426032301205166
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -365,6 +342,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: e079772b818985c4dbb8af64eab57292, type: 2}
 --- !u!114 &1755971533757790933
 MonoBehaviour:
@@ -390,6 +369,27 @@ MonoBehaviour:
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
+--- !u!114 &-5862047313978838024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7321131338746853436}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 1
 --- !u!1 &7376915136336484197
 GameObject:
   m_ObjectHideFlags: 0

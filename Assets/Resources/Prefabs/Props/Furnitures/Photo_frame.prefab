@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1877362390716784399}
   - component: {fileID: 1877362390716784392}
   - component: {fileID: 1877362390716784393}
-  - component: {fileID: 1877362390716784398}
+  - component: {fileID: 7333976204388957776}
   m_Layer: 10
   m_Name: Photo_frame
   m_TagString: Untagged
@@ -65,6 +65,9 @@ MonoBehaviour:
   renderersToModify:
   - {fileID: 1894231206833554072}
   - {fileID: 4181112268760995297}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -80,6 +83,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: a21fd06878382e04f8d11893703996a2, type: 2}
 --- !u!54 &1877362390716784393
 Rigidbody:
@@ -97,7 +102,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &1877362390716784398
+--- !u!114 &7333976204388957776
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -106,19 +111,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 1642919910190817879}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 3
-  OwnershipTransfer: 0
-  observableSearch: 2
-  ObservedComponents: []
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 1
 --- !u!1 &3984352727748727481
 GameObject:
   m_ObjectHideFlags: 0

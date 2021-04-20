@@ -1,16 +1,15 @@
 using Sim;
 using Sim.Building;
-using UnityEngine;
 
 namespace AI.States {
     public class CharacterInteract : IState {
         
-        private readonly Character character;
+        private readonly PlayerController player;
 
         private Props interactedProps;
 
-        public CharacterInteract(Character character) {
-            this.character = character;
+        public CharacterInteract(PlayerController player) {
+            this.player = player;
         }
 
         public Props InteractedProps {
@@ -19,7 +18,6 @@ namespace AI.States {
         }
 
         public void OnEnter() {
-            Debug.Log($"Start to interact with {this.interactedProps.name}");
         }
 
         public void Tick() {

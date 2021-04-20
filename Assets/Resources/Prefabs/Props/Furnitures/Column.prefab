@@ -92,10 +92,10 @@ GameObject:
   - component: {fileID: 2964825769989328883}
   - component: {fileID: 5194204809023159378}
   - component: {fileID: 2422459272586944600}
-  - component: {fileID: 3128638378497360549}
   - component: {fileID: 6639245885873423084}
   - component: {fileID: 8191337679419381734}
   - component: {fileID: 104310962338254706}
+  - component: {fileID: -5007770712524827262}
   m_Layer: 10
   m_Name: Column
   m_TagString: Untagged
@@ -149,28 +149,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0.00000001490116, y: 0.9067512, z: -0.007101938}
   m_TimeToStationary: 0.5
---- !u!114 &3128638378497360549
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2481199689602635081}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 3
-  OwnershipTransfer: 0
-  observableSearch: 2
-  ObservedComponents: []
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!54 &6639245885873423084
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -203,6 +181,9 @@ MonoBehaviour:
   - {fileID: 2066944809215838680}
   - {fileID: 273228879066495359}
   - {fileID: 1626355532038888033}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -218,7 +199,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 29adf237983a87f47a778ee2277e33ac, type: 2}
+--- !u!114 &-5007770712524827262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2481199689602635081}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 1
 --- !u!1 &5804142900597014063
 GameObject:
   m_ObjectHideFlags: 0

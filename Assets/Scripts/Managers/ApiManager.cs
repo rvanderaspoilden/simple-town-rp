@@ -84,11 +84,21 @@ namespace Sim {
             this.authenticationCoroutine ??= StartCoroutine(this.AuthenticationCoroutine(username, password));
         }
 
-        public void SaveHomeScene(Home home, SceneData sceneData) {
-            StartCoroutine(this.SaveHomeSceneCoroutine(home, sceneData));
+        public UnityWebRequest SaveHomeRequest(Home home, SceneData sceneData) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(sceneData));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/homes/{home.Id}", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
         }
 
-        public UnityWebRequest RetrieveHomeByAddress(Address address) {
+        public UnityWebRequest RetrieveHomeRequest(Address address) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(address));
 
             UnityWebRequest request = new UnityWebRequest($"{this.uri}/homes/by-address", "POST") {
@@ -99,9 +109,7 @@ namespace Sim {
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
             request.SetRequestHeader("Content-type", "application/json");
             request.SetRequestHeader("Accept", "application/json");
-
-            request.SendWebRequest();
-
+            
             return request;
         }
 
@@ -162,31 +170,15 @@ namespace Sim {
             StartCoroutine(this.CheckServerStatusCoroutine());
         }
 
-        private IEnumerator SaveHomeSceneCoroutine(Home home, SceneData sceneData) {
-            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(sceneData));
-
-            UnityWebRequest request = new UnityWebRequest($"{this.uri}/homes/{home.Id}", "PUT") {
-                uploadHandler = new UploadHandlerRaw(encodedPayload),
-                downloadHandler = new DownloadHandlerBuffer()
-            };
-
-            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
-            request.SetRequestHeader("Content-type", "application/json");
-
-            yield return request.SendWebRequest();
-
-            if (request.responseCode == 200) {
-                Debug.Log("Saved successfully");
-            } else {
-                Debug.Log(ExtractErrorMessage(request));
-            }
-        }
-
         public void RetrieveCharacters() {
             StartCoroutine(this.RetrieveCharactersCoroutine());
         }
 
-        private IEnumerator RetrieveCharactersCoroutine() {
+        public UnityWebRequest RetrieveCharacterRequest(string userId) {
+            return UnityWebRequest.Get($"{this.uri}/characters/by-user-id/{userId}");
+        }
+
+        private IEnumerator RetrieveCharactersCoroutine(Action<CharacterData> action = null) {
             UnityWebRequest characterRequest = UnityWebRequest.Get(this.uri + "/characters/by-user-id/" + this.user.Id);
 
             yield return characterRequest.SendWebRequest();
@@ -195,48 +187,24 @@ namespace Sim {
                 CharacterResponse characterResponse = JsonUtility.FromJson<CharacterResponse>(characterRequest.downloadHandler.text);
 
                 OnCharacterRetrieved?.Invoke(characterResponse.Characters[0]);
+
+                action?.Invoke(characterResponse.Characters[0]);
             } else {
                 OnCharacterRetrieved?.Invoke(null);
             }
         }
 
-        public void DeleteDelivery(Delivery delivery) {
-            StartCoroutine(this.DeleteDeliveryCoroutine(delivery.ID));
-        }
-        
-        private IEnumerator DeleteDeliveryCoroutine(string deliveryId) {
-            UnityWebRequest request = UnityWebRequest.Delete($"{this.uri}/deliveries/{deliveryId}");
+        public UnityWebRequest DeleteDeliveryRequest(Delivery delivery) {
+            UnityWebRequest request = UnityWebRequest.Delete($"{this.uri}/deliveries/{delivery._id}");
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
-
-            yield return request.SendWebRequest();
-
-            if (request.responseCode == 200) {
-                OnDeliveryDeleted?.Invoke(true);
-            } else {
-                OnDeliveryDeleted?.Invoke(false);
-                Debug.LogError($"Cannot delete delivery ID {deliveryId} from server");
-            }
+            return request;
         }
 
-        public void RetrieveDeliveries(string characterId) {
-            Debug.Log("Retrieve deliveries....");
-
-            StartCoroutine(this.RetrieveDeliveriesCoroutine(characterId));
-        }
-        
-        private IEnumerator RetrieveDeliveriesCoroutine(string characterId) {
+        public UnityWebRequest RetrieveDeliveriesRequest(string characterId) {
             UnityWebRequest request = UnityWebRequest.Get($"{this.uri}/characters/{characterId}/deliveries");
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
 
-            yield return request.SendWebRequest();
-
-            if (request.responseCode == 200) {
-                DeliveryResponse deliveryResponse = JsonUtility.FromJson<DeliveryResponse>(request.downloadHandler.text);
-
-                OnDeliveriesRetrieved?.Invoke(deliveryResponse.Deliveries);
-            } else {
-                OnDeliveriesRetrieved?.Invoke(new List<Delivery>());
-            }
+            return request;
         }
 
         public void RetrieveHomesByCharacter(CharacterData characterData) {

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Photon.Pun;
 using Sim.Building;
 using Sim.Scriptables;
-using Sim.Utils;
 using UnityEngine;
 
 namespace Sim {
@@ -25,54 +22,38 @@ namespace Sim {
             this.propsConfigs = DatabaseManager.PropsDatabase.GetProps().ToDictionary(config => config.GetId(), config => config);
         }
 
-        public void DestroyProps(Props props, bool network) {
-            if (network) {
-                PhotonNetwork.Destroy(props.photonView);
-            } else {
-                Destroy(props.gameObject);
-            }
-        }
+        public Props InstantiateProps(PropsConfig config, int presetId, Vector3 position, Quaternion rotation) {
+            Props props = Instantiate(config.GetPrefab(), position, rotation);
 
-        public Props InstantiateProps(PropsConfig config, int presetId, Vector3 position, Quaternion rotation, bool network) {
-            GameObject propsInstanciated;
-
-            if (network) {
-                // TODO: be carefull PhotonNetwork.InstantiateSceneObject needs to be masterclient to works
-                propsInstanciated = PhotonNetwork.InstantiateRoomObject(config.GetPrefab().name, position, rotation);
-            } else {
-                propsInstanciated = Instantiate(config.GetPrefab().gameObject, position, rotation);
-            }
-
-            Props props = propsInstanciated.GetComponent<Props>();
             props.SetConfiguration(Instantiate(config));
 
             if (presetId != -1) {
-                props.SetPresetId(presetId, network);
+                props.PresetId = presetId;
             }
 
             return props;
         }
 
-        public Props InstantiateProps(PropsConfig config, int presetId, bool network) {
-            return this.InstantiateProps(config, presetId, Vector3.zero, config.GetPrefab().transform.rotation, network);
+        public Props InstantiateProps(PropsConfig config, int presetId) {
+            return this.InstantiateProps(config, presetId, Vector3.zero, config.GetPrefab().transform.rotation);
         }
 
-        public Props InstantiateProps(int propsConfigId, int presetId, Vector3 position, Quaternion rotation, bool network) {
+        public Props InstantiateProps(int propsConfigId, int presetId, Vector3 position, Quaternion rotation) {
             if (!this.propsConfigs.ContainsKey(propsConfigId)) {
                 Debug.LogError("Props config ID : " + propsConfigId + " not found in database");
                 return null;
             }
 
-            return this.InstantiateProps(this.propsConfigs[propsConfigId], presetId, position, rotation, network);
+            return this.InstantiateProps(this.propsConfigs[propsConfigId], presetId, position, rotation);
         }
 
-        public Props InstantiateProps(int propsConfigId, int presetId, bool network) {
+        public Props InstantiateProps(int propsConfigId, int presetId) {
             if (!this.propsConfigs.ContainsKey(propsConfigId)) {
                 Debug.LogError("Props config ID : " + propsConfigId + " not found in database");
                 return null;
             }
 
-            return this.InstantiateProps(this.propsConfigs[propsConfigId], presetId, Vector3.zero, this.propsConfigs[propsConfigId].GetPrefab().transform.rotation, network);
+            return this.InstantiateProps(this.propsConfigs[propsConfigId], presetId, Vector3.zero, this.propsConfigs[propsConfigId].GetPrefab().transform.rotation);
         }
     }
 }

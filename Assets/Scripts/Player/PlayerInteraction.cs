@@ -1,29 +1,29 @@
-﻿using System.Linq;
-using Photon.Pun;
+﻿using System.Collections;
+using System.Linq;
+using Mirror;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
-using Sim.Interactables;
 using Sim.Scriptables;
-using Sim.UI;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Sim {
-    [RequireComponent(typeof(Character))]
-    public class PlayerInteraction : MonoBehaviourPun {
+    [RequireComponent(typeof(PlayerController))]
+    public class PlayerInteraction : NetworkBehaviour {
         [Header("DEBUG")]
         private Delivery currentDelivery;
 
         private PaintBucket currentOpenedBucket;
 
-        private Character character;
+        private PlayerController player;
 
         private void Awake() {
-            this.character = GetComponent<Character>();
+            this.player = GetComponent<PlayerController>();
         }
 
-        private void Start() {
-            if (!photonView.IsMine) Destroy(this);
+        public override void OnStartClient() {
+            if (!isLocalPlayer) Destroy(this);
 
             BuildManager.OnCancel += OnBuildModificationCanceled;
             BuildManager.OnValidatePropCreation += OnValidatePropCreation;
@@ -32,31 +32,26 @@ namespace Sim {
             Props.OnMoveRequest += OnMoveRequest;
             PaintBucket.OnOpened += OpenBucket;
             DeliveryBox.UnPackage += OpenPackageFromDeliveryBox;
-            ApiManager.OnDeliveryDeleted += OnDeliveryDeleted;
-
-            this.character.SetState(StateType.FREE);
         }
 
-        private void Update() {
-            if (Input.GetKeyDown(KeyCode.F) && this.character.GetState() == StateType.FREE && PhotonNetwork.IsMasterClient && ApartmentManager.Instance &&
-                ApartmentManager.Instance.IsTenant(NetworkManager.Instance.CharacterData)) {
-                HUDManager.Instance.DisplayAdminPanel(true);
-            }
+        public override void OnStartLocalPlayer() {
+            this.player.SetState(StateType.FREE);
         }
 
         private void OnDestroy() {
-            BuildManager.OnCancel -= OnBuildModificationCanceled;
-            BuildManager.OnValidatePropCreation -= OnValidatePropCreation;
-            BuildManager.OnValidatePropEdit -= OnValidatePropEdit;
-            BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
-            Props.OnMoveRequest -= OnMoveRequest;
-            PaintBucket.OnOpened -= OpenBucket;
-            DeliveryBox.UnPackage -= OpenPackageFromDeliveryBox;
-            ApiManager.OnDeliveryDeleted -= OnDeliveryDeleted;
+            if (isLocalPlayer) {
+                BuildManager.OnCancel -= OnBuildModificationCanceled;
+                BuildManager.OnValidatePropCreation -= OnValidatePropCreation;
+                BuildManager.OnValidatePropEdit -= OnValidatePropEdit;
+                BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
+                Props.OnMoveRequest -= OnMoveRequest;
+                PaintBucket.OnOpened -= OpenBucket;
+                DeliveryBox.UnPackage -= OpenPackageFromDeliveryBox;
+            }
         }
 
         private void OnMoveRequest(Props props) {
-            this.character.SetState(StateType.MOVING_PROPS);
+            this.player.SetState(StateType.MOVING_PROPS);
 
             BuildManager.Instance.Edit(props);
         }
@@ -65,7 +60,7 @@ namespace Sim {
         private void OpenPackageFromDeliveryBox(Delivery delivery) {
             this.currentDelivery = delivery;
 
-            this.character.SetState(StateType.UNPACKAGING);
+            this.player.SetState(StateType.UNPACKAGING);
 
             BuildManager.Instance.Init(delivery);
         }
@@ -73,71 +68,136 @@ namespace Sim {
         private void OpenBucket(PaintBucket bucket) {
             this.currentOpenedBucket = bucket;
 
-            this.character.SetState(StateType.PAINTING);
+            this.player.SetState(StateType.PAINTING);
 
-            if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
+            /*if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
                 RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.FORCE_SHOW);
-            }
+            }*/ // TODO 
 
             BuildManager.Instance.Init(this.currentOpenedBucket);
         }
 
         private void OnBuildModificationCanceled() {
             this.currentOpenedBucket = null;
-            this.currentDelivery = null;
-            this.character.SetState(StateType.FREE);
+            this.player.SetState(StateType.FREE);
         }
 
         private void OnValidatePaintModification() {
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
+                //RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
 
-                FindObjectsOfType<Wall>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
+                this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ApplyWallSettings();
             } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
-                FindObjectsOfType<Ground>().ToList().Where(x => x.IsPreview()).ToList().ForEach(x => x.ApplyModification());
+                this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ApplyGroundSettings();
             }
 
-            PropsManager.Instance.DestroyProps(this.currentOpenedBucket, true);
+            Destroy(this.currentOpenedBucket.gameObject);
 
-            RoomManager.Instance.SaveRoom();
+            //StartCoroutine(this.currentOpenedBucket.GetComponentInParent<ApartmentController>().Save());
 
-            this.character.SetState(StateType.FREE);
+            this.player.SetState(StateType.FREE);
         }
 
         private void OnValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation) {
-            Props props = PropsManager.Instance.InstantiateProps(propsConfig, presetId, position, rotation, true);
+            uint deliveryBoxNetId = PlayerController.Local.GetInteractedProps().netId;
 
-            props.SetIsBuilt(!propsConfig.MustBeBuilt());
+            if (deliveryBoxNetId > 0) {
+                this.CmdValidatePropCreation(deliveryBoxNetId, this.currentDelivery, propsConfig.GetId(), presetId, position, rotation);
+            } else {
+                Debug.LogError("Client: OnValidatePropCreation not found deliveryBoxNetId");
+            }
+        }
 
-            if (this.currentDelivery.Type.Equals(DeliveryType.COVER)) {
+        [Command(requiresAuthority = false)]
+        public void CmdValidatePropCreation(uint deliveryBoxNetId, Delivery delivery, int propsConfigId, int presetId, Vector3 position, Quaternion rotation,
+            NetworkConnectionToClient sender = null) {
+            if (!NetworkIdentity.spawned.ContainsKey(deliveryBoxNetId)) {
+                Debug.LogError("Server: CmdValidatePropCreation not found deliveryBoxNetId");
+                return;
+            }
+
+            DeliveryBox deliveryBox = NetworkIdentity.spawned[deliveryBoxNetId].GetComponent<DeliveryBox>();
+            ApartmentController apartmentController = deliveryBox.GetComponentInParent<ApartmentController>();
+            PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(propsConfigId);
+            Props props = PropsManager.Instance.InstantiateProps(propsConfig, presetId, position, rotation);
+            props.ParentId = apartmentController.netId;
+            props.transform.SetParent(apartmentController.PropsContainer);
+            props.InitBuilt(!propsConfig.MustBeBuilt());
+
+            if (delivery.Type.Equals(DeliveryType.COVER)) {
                 PaintBucket coverProps = props as PaintBucket;
 
                 if (coverProps) {
                     Debug.Log("Set cover properties");
-                    coverProps.SetPaintConfigId(this.currentDelivery.PaintConfigId, RpcTarget.All);
-                    coverProps.SetColor(this.currentDelivery.Color, RpcTarget.All);
+                    coverProps.Init(delivery.PaintConfigId, delivery.Color);
                 }
             }
 
-            ApiManager.Instance.DeleteDelivery(this.currentDelivery);
+            StartCoroutine(this.DeleteDeliveryCoroutine(apartmentController, deliveryBox, delivery, props, sender));
         }
 
-        private void OnDeliveryDeleted(bool isDeleted) {
-            if (isDeleted) {
-                RoomManager.Instance.SaveRoom();
+        [Server]
+        private IEnumerator DeleteDeliveryCoroutine(ApartmentController apartmentController, DeliveryBox deliveryBox, Delivery delivery, Props props,
+            NetworkConnectionToClient sender) {
+            UnityWebRequest request = ApiManager.Instance.DeleteDeliveryRequest(delivery);
 
-                this.character.SetState(StateType.FREE);
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 200) {
+                NetworkServer.Spawn(props.gameObject);
+
+                Debug.Log("Server: Props spawned, now we need to save home");
+                StartCoroutine(apartmentController.Save());
+
+                Debug.Log("Server: Retrieve deliveries");
+                yield return StartCoroutine(deliveryBox.RetrieveDeliveries());
+
+                Debug.Log("Server: Refresh player view");
+                this.TargetPropsCreated(sender);
+
+                deliveryBox.RefreshPlayerUI(sender);
             } else {
-                // TODO DISCONNECT
+                Destroy(props.gameObject);
+                Debug.LogError($"Cannot delete delivery ID {delivery._id} from server");
             }
         }
 
+        [TargetRpc]
+        public void TargetPropsCreated(NetworkConnection conn) {
+            this.player.SetState(StateType.FREE);
+        }
+
+        [Client]
         private void OnValidatePropEdit(Props props) {
-            props.UpdateTransform();
+            this.CmdPropEdit(props.netId, props.transform.localPosition, props.transform.localRotation);
+        }
 
-            RoomManager.Instance.SaveRoom();
+        [Command(requiresAuthority = false)]
+        public void CmdPropEdit(uint propNetId, Vector3 localPosition, Quaternion localRotation, NetworkConnectionToClient sender = null) {
+            if (!NetworkIdentity.spawned.ContainsKey(propNetId)) {
+                Debug.LogError($"Server: propNetId {propNetId} not found");
+                this.TargetPropEdit(sender, false);
+            }
 
-            this.character.SetState(StateType.FREE);
+            Props props = NetworkIdentity.spawned[propNetId].GetComponent<Props>();
+            props.transform.localPosition = localPosition;
+            props.transform.localRotation = localRotation;
+
+            StartCoroutine(props.GetComponentInParent<ApartmentController>().Save());
+
+            this.TargetPropEdit(sender, true);
+        }
+
+        [TargetRpc]
+        public void TargetPropEdit(NetworkConnection conn, bool result) {
+            if (result) {
+                BuildManager.Instance.EditionIsValidated();
+            } else {
+                Debug.LogError("Client: PropEdit failed so reset local props transform");
+                BuildManager.Instance.Reset();
+            }
+
+            this.player.SetState(StateType.FREE);
         }
     }
 }

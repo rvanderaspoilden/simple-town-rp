@@ -253,11 +253,11 @@ GameObject:
   m_Component:
   - component: {fileID: 6578026420961939748}
   - component: {fileID: 6632169504880047354}
-  - component: {fileID: 7811964265333855038}
   - component: {fileID: 1466626548839341318}
   - component: {fileID: 8940089333339960254}
   - component: {fileID: 1003987204817308765}
   - component: {fileID: 7985545017175012805}
+  - component: {fileID: -6149607149375590553}
   m_Layer: 10
   m_Name: Wardrobe
   m_TagString: Untagged
@@ -296,28 +296,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1.9844134, y: 2.2195787, z: 0.546076}
   m_Center: {x: 0.005469084, y: 1.118403, z: 0.27618268}
---- !u!114 &7811964265333855038
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5765179823301479326}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 3
-  OwnershipTransfer: 0
-  observableSearch: 2
-  ObservedComponents: []
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!208 &1466626548839341318
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -385,7 +363,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 3d501203f5a3afa4fa22afe6fce19584, type: 2}
+--- !u!114 &-6149607149375590553
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5765179823301479326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 1
 --- !u!1 &5977779167920732799
 GameObject:
   m_ObjectHideFlags: 0

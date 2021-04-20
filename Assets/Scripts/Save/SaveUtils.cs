@@ -1,9 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Photon.Pun;
+using Mirror;
 using Sim.Building;
-using Sim.Interactables;
 using Sim.Scriptables;
 using UnityEngine;
 
@@ -16,72 +14,51 @@ namespace Sim.Utils {
             return transformData;
         }
 
-        public static DoorTeleporterData CreateDoorTeleporterData(DoorTeleporter doorTeleporter) {
-            DoorTeleporterData doorTeleporterData = new DoorTeleporterData();
-            doorTeleporterData.Init(doorTeleporter);
-            doorTeleporterData.destination = doorTeleporter.GetDestination().ToString();
-            doorTeleporterData.doorDirection = doorTeleporter.GetDoorDirection().ToString();
-            doorTeleporterData.number = doorTeleporter.GetDoorNumber();
-            return doorTeleporterData;
+        public static CoverData[] CreateCoverDatas(Dictionary<int, CoverSettings> settings) {
+            return settings.Select(pair => new CoverData {
+                idx = pair.Key,
+                additionalColor = pair.Value.GetColor(),
+                paintConfigId = pair.Value.paintConfigId
+            }).ToArray();
         }
-
-        public static ElevatorTeleporterData CreateElevatorTeleporterData(ElevatorTeleporter elevatorTeleporter) {
-            ElevatorTeleporterData data = new ElevatorTeleporterData();
-            data.Init(elevatorTeleporter);
-            data.destination = elevatorTeleporter.GetDestination().ToString();
-            return data;
+        
+        public static CoverData[] CreateCoverDatas(SyncDictionary<int, CoverSettings> settings) {
+            return settings.Select(pair => new CoverData {
+                idx = pair.Key,
+                additionalColor = pair.Value.GetColor(),
+                paintConfigId = pair.Value.paintConfigId
+            }).ToArray();
         }
-
-        public static WallData CreateWallData(Wall wall) {
-            WallData data = new WallData();
-            data.Init(wall);
-            data.wallFaces = wall.GetWallFaces().Select(face => new WallFaceData(face)).ToArray();
-            return data;
-        }
-
-        public static DoorData CreateDoorData(SimpleDoor door) {
-            DoorData data = new DoorData();
-            data.Init(door);
-            return data;
-        }
-
-        public static GroundData CreateGroundData(Ground ground) {
-            GroundData data = new GroundData();
-            data.Init(ground);
-            data.paintConfigId = ground.GetPaintConfigId();
-            return data;
-        }
-
+        
         public static DefaultData CreateDefaultData(Props props) {
             DefaultData data = new DefaultData();
             data.Init(props);
             return data;
         }
 
-        public static PackageData CreatePackageData(Package package) {
-            PackageData data = new PackageData();
-            data.Init(package);
-            data.propsConfigIdInside = package.GetPropsConfigInside().GetId();
-            return data;
-        }
-
         public static BucketData CreateBucketData(PaintBucket paintBucket) {
             BucketData data = new BucketData();
             data.Init(paintBucket);
-            data.paintConfigId = paintBucket.GetPaintConfig().GetId();
-
-            if (paintBucket.GetPaintConfig().AllowCustomColor()) {
-                data.color = new float[4] {paintBucket.GetColor().r, paintBucket.GetColor().g, paintBucket.GetColor().b, paintBucket.GetColor().a};
-            }
+            data.paintConfigId = paintBucket.PaintConfigId;
+            data.color = new float[4] {paintBucket.GetColor().r, paintBucket.GetColor().g, paintBucket.GetColor().b, paintBucket.GetColor().a};
 
             return data;
         }
 
-        public static Props InstantiatePropsFromSave(DefaultData data) {
+        [Server]
+        public static Props InstantiatePropsFromSave(DefaultData data, ApartmentController parent) {
             PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
-            Props props = PropsManager.Instance.InstantiateProps(propsConfig, data.presetId, data.transform.position.ToVector3(), Quaternion.Euler(data.transform.rotation.ToVector3()), true);
+            Props props = PropsManager.Instance.InstantiateProps(propsConfig, data.presetId, data.transform.position.ToVector3(),
+                Quaternion.Euler(data.transform.rotation.ToVector3()));
 
-            props.SetIsBuilt(!propsConfig.MustBeBuilt() || data.isBuilt, PhotonNetwork.LocalPlayer);
+            props.InitBuilt(!propsConfig.MustBeBuilt() || data.isBuilt);
+
+            props.transform.SetParent(parent.PropsContainer);
+            props.transform.localPosition = data.transform.position.ToVector3();
+
+            props.ParentId = parent.netId;
+
+            NetworkServer.Spawn(props.gameObject);
 
             return props;
         }

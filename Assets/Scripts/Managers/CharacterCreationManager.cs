@@ -78,7 +78,7 @@ namespace Sim {
         }
         
         private void OnCharacterCreated(CharacterData characterData) {
-            NetworkManager.Instance.CharacterData = characterData;
+            //NetworkManager.Instance.CharacterData = characterData;
             this.bufferImg.gameObject.SetActive(true);
             this.audioSource.PlayOneShot(this.bufferSound);
         }

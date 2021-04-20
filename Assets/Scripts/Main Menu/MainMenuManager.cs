@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using DG.Tweening;
+using Mirror;
 using Sim.Entities;
 using UnityEngine;
 using UnityEngine.UI;
@@ -50,13 +51,13 @@ namespace Sim {
         }
 
         public void Play() {
-            NetworkManager.Instance.Play();
+            ((SimpleTownNetwork) NetworkManager.singleton).StartClient();
         }
 
         private void OnCharacterRetrieved(CharacterData characterData) {
             if (characterData != null) {
                 Debug.Log("Character retrieved");
-                NetworkManager.Instance.CharacterData = characterData;
+                ((SimpleTownNetwork) NetworkManager.singleton).CharacterData = characterData;
 
                 ApiManager.Instance.RetrieveHomesByCharacter(characterData);
             } else {
@@ -74,7 +75,7 @@ namespace Sim {
 
             if (homes != null && homes.Count > 0) {
                 Debug.Log("Homes retrieved !");
-                NetworkManager.Instance.CharacterHomes = homes;
+                ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = homes;
                 
                 this.mainMenuPanel.SetActive(true);
             } else {
@@ -86,14 +87,14 @@ namespace Sim {
         }
 
         private void OnCharacterCreated(CharacterData characterData) {
-            NetworkManager.Instance.CharacterData = characterData;
+            ((SimpleTownNetwork) NetworkManager.singleton).CharacterData = characterData;
 
             this.apartmentCreationManager.ShowApartmentCreationPanel();
             Invoke(nameof(FadeIn), 2f);
         }
 
         private void OnApartmentAssigned(Home home) {
-            NetworkManager.Instance.CharacterHomes = new List<Home>() {home};
+            ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = new List<Home>() {home};
             Debug.Log("Apartment assigned !");
             this.apartmentCreationManager.HideApartmentCreationPanel();
             this.mainMenuPanel.SetActive(true);
