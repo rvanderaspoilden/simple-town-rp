@@ -46,6 +46,9 @@ namespace Sim {
         [SyncVar(hook = nameof(DoorNumberChanged))]
         [SerializeField]
         private int doorNumber;
+        
+        [SyncVar]
+        private uint parentId;
 
         [SerializeField]
         private Address address;
@@ -55,6 +58,9 @@ namespace Sim {
         private string tenantId;
 
         [SerializeField]
+        private HallController associatedHallController;
+
+        [SerializeField]
         private bool isGenerated;
 
         private Type[] defaultPropsTypes = new[] {typeof(Props), typeof(Seat), typeof(DeliveryBox)};
@@ -62,10 +68,6 @@ namespace Sim {
         private readonly SyncDictionary<int, CoverSettings> coverSettingsByFaces = new SyncDictionary<int, CoverSettings>();
 
         private readonly SyncDictionary<int, CoverSettings> coverSettingsByGround = new SyncDictionary<int, CoverSettings>();
-
-        public delegate void GenerateResponse();
-
-        public event GenerateResponse OnApartmentGenerated;
 
         [Command(requiresAuthority = false)]
         public void CmdSaveHome(NetworkConnectionToClient sender = null) {
@@ -79,18 +81,12 @@ namespace Sim {
             if (!isClient) {
                 this.roof.gameObject.SetActive(false);
             }
-
-            Address address = new Address {
-                Street = "SALMON HOTEL",
-                DoorNumber = 1,
-                HomeType = HomeTypeEnum.APARTMENT
-            };
-
-            this.Init(address);
         }
 
         public override void OnStartClient() {
             base.OnStartClient();
+            
+            AssignParent();
 
             this.coverSettingsByFaces.Callback += OnWallSettingsChanged;
             this.coverSettingsByGround.Callback += OnGroundSettingsChanged;
@@ -101,6 +97,21 @@ namespace Sim {
                 if (this.coverSettingsByGround.ContainsKey(i)) {
                     this.grounds[i].PaintConfigId = this.coverSettingsByGround[i].paintConfigId;
                 }
+            }
+        }
+
+        private void AssignParent() {
+            if (parentId == 0) return;
+
+            Vector3 position = this.transform.position;
+
+            if (!isClientOnly) return;
+
+            if (NetworkIdentity.spawned.ContainsKey(this.parentId)) {
+                this.transform.SetParent(NetworkIdentity.spawned[this.parentId].transform);
+                this.transform.localPosition = position;
+            } else {
+                Debug.LogError($"Parent identity not found for appartment {this.name}");
             }
         }
 
@@ -150,7 +161,8 @@ namespace Sim {
         }
 
         [Server]
-        public void Init(Address newAddress) {
+        public void Init(Address newAddress, HallController hallController) {
+            this.associatedHallController = hallController;
             this.address = newAddress;
             this.doorNumber = newAddress.DoorNumber;
 
@@ -165,10 +177,6 @@ namespace Sim {
 
             Home homeResponse = JsonUtility.FromJson<Home>(request.downloadHandler.text);
 
-            this.isGenerated = true;
-
-            OnApartmentGenerated?.Invoke();
-
             if (homeResponse != null) {
                 Debug.Log($"Home found for Address {address}");
                 this.homeData = homeResponse;
@@ -177,18 +185,21 @@ namespace Sim {
                 InstantiateLevel(homeResponse.SceneData);
             } else {
                 Debug.Log($"No Home found for Address {address}");
+                
+                // TODO: Lock the front door
+                
+                this.isGenerated = true;
+                this.associatedHallController.CheckGenerationState();
             }
         }
 
         [Server]
         private void InstantiateLevel(SceneData sceneData) {
-            // Instantiate all buckets
             sceneData.buckets?.ToList().ForEach(data => {
                 PaintBucket props = SaveUtils.InstantiatePropsFromSave(data, this) as PaintBucket;
                 props.Init(data.paintConfigId, data.color);
             });
 
-            // Instantiate all other props
             sceneData.props?.ToList().ForEach(data => {
                 Props props = SaveUtils.InstantiatePropsFromSave(data, this);
             });
@@ -232,8 +243,8 @@ namespace Sim {
             }
 
             this.isGenerated = true;
-
-            OnApartmentGenerated?.Invoke();
+            
+            this.associatedHallController.CheckGenerationState();
         }
 
         public void ResetWallPreview() {
@@ -309,6 +320,11 @@ namespace Sim {
 
         public bool IsTenant(CharacterData character) {
             return character.Id == this.tenantId;
+        }
+
+        public uint ParentId {
+            get => parentId;
+            set => parentId = value;
         }
     }
 }

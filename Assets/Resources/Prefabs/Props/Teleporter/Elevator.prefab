@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 7597156552802683900}
   - component: {fileID: 3806690590309955983}
   - component: {fileID: 4363248231917646557}
+  - component: {fileID: 4092442135871591979}
   m_Layer: 10
   m_Name: Elevator
   m_TagString: Untagged
@@ -168,11 +169,30 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: ef9881e59425baa42b6d1ba3fa89becb, type: 2}
-  scene: 
+  parentId: 0
   spawnTransform: {fileID: 7324135557444786934}
-  floorToGo: 1
-  hallSpacingY: 100
-  linkedTeleporter: {fileID: 0}
+  goToMainHall: 0
+--- !u!114 &4092442135871591979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1198565143842987083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  localPositionSensitivity: 0.01
+  localRotationSensitivity: 0.01
+  localScaleSensitivity: 0.01
+  compressRotation: 0
+  interpolateScale: 0
+  syncScale: 0
 --- !u!1 &7012034732280398628
 GameObject:
   m_ObjectHideFlags: 0
