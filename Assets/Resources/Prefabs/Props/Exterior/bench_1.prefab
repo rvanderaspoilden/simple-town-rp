@@ -96,7 +96,8 @@ GameObject:
   - component: {fileID: 2771511891607624702}
   - component: {fileID: 5352777861638834637}
   - component: {fileID: 4162791807566577246}
-  m_Layer: 0
+  - component: {fileID: 3172339694962803062}
+  m_Layer: 10
   m_Name: bench_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -198,7 +199,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  renderersToModify: []
+  renderersToModify:
+  - {fileID: 5835768302992175582}
+  - {fileID: 484855549518276889}
   primaryStyleMeshRenderers: []
   secondaryStyleMeshRenderers: []
   tertiaryStyleMeshRenderers: []
@@ -221,6 +224,22 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 184a6c90254d0ec4a9f7c9fe3d579c8e, type: 2}
   parentId: 0
+--- !u!208 &3172339694962803062
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4799508744634321900}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.9045775, y: 0.449628, z: 0.323813}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0.4455621, z: -0.03262721}
+  m_TimeToStationary: 0.5
 --- !u!1 &5589943370578285159
 GameObject:
   m_ObjectHideFlags: 0

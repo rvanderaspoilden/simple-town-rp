@@ -10,16 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Wall Window
+  m_Name: Household set
   m_EditorClassIdentifier: 
-  id: 8
-  displayName: "Mur de fen\xEAtre"
-  propsType: 1
-  buyable: 0
-  prefab: {fileID: 2323285634099980043, guid: 1d902a99a6d0db8499c4f1e96d8ad6a9, type: 3}
-  packageConfig: {fileID: 0}
-  surfaceToPose: 0
-  toBuild: 0
-  rangeToInteract: 2
+  id: 45
+  displayName: Household set
+  propsType: 0
+  buyable: 1
+  prefab: {fileID: 67030402629475098, guid: 0b358b00f06531741ad6ae29f2396e07, type: 3}
+  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  surfaceToPose: 1
+  posableOnProps: 0
+  connectedToWall: 0
+  toBuild: 1
+  rangeToInteract: 0
   actions: []
   unbuiltActions: []
+  cursor: {fileID: 0}
+  presets: []

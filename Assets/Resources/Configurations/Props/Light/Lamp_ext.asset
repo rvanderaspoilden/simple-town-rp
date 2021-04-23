@@ -10,21 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Bench_1
+  m_Name: Lamp_ext
   m_EditorClassIdentifier: 
-  id: 4
-  displayName: Bench_1
-  propsType: 0
+  id: 6
+  displayName: Outdoor lamp
+  propsType: 5
   buyable: 0
-  prefab: {fileID: 4162791807566577246, guid: e79e0e33d77e82943b6d40891c3d1315, type: 3}
-  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  prefab: {fileID: 2840373815613476715, guid: f50652a54dc78b34e86e29dddbebbd5b, type: 3}
+  packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
   connectedToWall: 0
   toBuild: 0
   rangeToInteract: 2
-  actions:
-  - {fileID: 11400000, guid: 7e0cdd3d63813974a95eeb645612607b, type: 2}
+  actions: []
   unbuiltActions: []
-  cursor: {fileID: 2800000, guid: 0e305d6abf1703c4eafb08ed62babf5f, type: 3}
+  cursor: {fileID: 0}
   presets: []
