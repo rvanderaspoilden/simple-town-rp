@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Mirror;
 using Sim.Enums;
 using Sim.Scriptables;
@@ -9,7 +11,7 @@ namespace Sim.Building {
         [Header("Wall settings")]
         [Tooltip("Represent all id allowed to be modified")]
         [SerializeField]
-        private int[] allowedSharedMaterialIds;
+        private int[] sharedMaterialsToIgnore;
 
         private Dictionary<int, CoverSettings> coverSettingsByFaces = new Dictionary<int, CoverSettings>();
 
@@ -101,6 +103,10 @@ namespace Sim.Building {
             Material[] sharedMaterials = this.renderer.sharedMaterials;
 
             for (int i = 0; i < settingsToUse.Count; i++) {
+                if (Array.IndexOf(this.sharedMaterialsToIgnore, i) != -1) {
+                    continue;
+                }
+                
                 CoverSettings coverSettings = settingsToUse[i];
                 PaintConfig paintConfig = DatabaseManager.PaintDatabase.GetPaintById(coverSettings.paintConfigId);
                 Material materialToApply = new Material(paintConfig.GetMaterial());

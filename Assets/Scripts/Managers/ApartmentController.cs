@@ -19,9 +19,6 @@ namespace Sim {
         private FrontDoor frontDoor;
 
         [SerializeField]
-        private Transform originPoint;
-
-        [SerializeField]
         private Transform propsContainer;
 
         [SerializeField]

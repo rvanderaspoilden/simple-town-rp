@@ -730,6 +730,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1560863211719967565}
+  - component: {fileID: 4482016201011370075}
+  - component: {fileID: 1881749703597043382}
   m_Layer: 0
   m_Name: Batiment1
   m_TagString: Untagged
@@ -815,6 +817,42 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4482016201011370075
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2225513233659927031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
+--- !u!114 &1881749703597043382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2225513233659927031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60e9066fc9bdb884c88cbe171bf4463c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  streetName: SALMON HOTEL
+  hallPrefab: {fileID: 5496279082967967630, guid: 525f620fbb753f9448971022e0afe439,
+    type: 3}
+  hallSpacingY: 100
+  mainElevator: {fileID: 6278538446722121626}
 --- !u!65 &4487906118472682901
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6051,6 +6089,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e8a1ce33b2702924baddaaf48be553b7, type: 3}
+--- !u!114 &6278538446722121626 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4363248231917646557, guid: e8a1ce33b2702924baddaaf48be553b7,
+    type: 3}
+  m_PrefabInstance: {fileID: 7758723959894068551}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d5aa8bcc00caab4c8c550ed30da293d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &5572631867438899999 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2808400624486182488, guid: e8a1ce33b2702924baddaaf48be553b7,
