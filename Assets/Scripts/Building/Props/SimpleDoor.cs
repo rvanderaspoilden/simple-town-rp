@@ -1,52 +1,69 @@
 ﻿using System.Collections.Generic;
+using DG.Tweening;
+using Mirror;
 using Sim.Enums;
 using UnityEngine;
 
 namespace Sim.Building {
-    public class SimpleDoor : MonoBehaviour {
+    public class SimpleDoor : NetworkBehaviour {
         [Header("Settings")]
         [SerializeField]
         private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
 
         [SerializeField]
+        private Transform doorBody;
+
+        [SerializeField]
         private List<Collider> colliderTriggered;
 
-        private Animator animator;
-
+        [SyncVar(hook = nameof(OnStateChanged))]
         private bool isOpened;
 
-        private int directionHash;
-        private int isOpenedHash;
-
         protected void Awake() {
-            this.directionHash = Animator.StringToHash("direction");
-            this.isOpenedHash = Animator.StringToHash("isOpened");
-
             this.colliderTriggered = new List<Collider>();
-            this.animator = GetComponent<Animator>();
-            this.animator.SetFloat(this.directionHash, (float) doorDirection);
+        }
+
+        [Client]
+        private void OnStateChanged(bool oldValue, bool newValue) {
+            this.isOpened = newValue;
+            
+            Debug.Log("Door state changed");
+
+            this.doorBody.DOComplete();
+
+            if (this.isOpened) {
+                this.doorBody.DOLocalRotate(Quaternion.Euler(0, doorDirection == DoorDirectionEnum.FORWARD ? 90 : -90, 0).eulerAngles, .3f);
+            } else {
+                this.doorBody.DOLocalRotate(Quaternion.Euler(0, 0, 0).eulerAngles, .3f);
+            }
         }
 
         private void OnTriggerEnter(Collider other) {
+            if (!isServer) {
+                return;
+            }
+
             if (other.gameObject.layer == LayerMask.NameToLayer("Player") && !this.colliderTriggered.Find(x => x == other)) {
                 this.colliderTriggered.Add(other);
             }
 
-            this.UpdateAnimator();
+            this.CheckState();
         }
 
         private void OnTriggerExit(Collider other) {
+            if (!isServer) {
+                return;
+            }
+
             this.colliderTriggered.Remove(other);
 
-            this.UpdateAnimator();
+            this.CheckState();
         }
 
-        private void UpdateAnimator() {
+        [Server]
+        private void CheckState() {
             this.isOpened = this.colliderTriggered.Count > 0;
-
-            if (this.animator.GetBool(this.isOpenedHash) != this.isOpened) {
-                this.animator.SetBool(this.isOpenedHash, this.isOpened);
-            }
+            Debug.Log($"Door opened : {this.isOpened}");
         }
     }
 }

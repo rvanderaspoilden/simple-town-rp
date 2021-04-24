@@ -92,7 +92,6 @@ GameObject:
   - component: {fileID: 5314398912769170892}
   - component: {fileID: 1681115416556156327}
   - component: {fileID: 564229097387979695}
-  - component: {fileID: 6989336307383645435}
   m_Layer: 0
   m_Name: Hall
   m_TagString: Untagged
@@ -177,22 +176,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!208 &6989336307383645435
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 725708121865022999}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 0.06, y: 1.3000001, z: 2.4}
-  m_MoveThreshold: 0.1
-  m_Carve: 1
-  m_CarveOnlyStationary: 1
-  m_Center: {x: -2.05, y: 1.3000001, z: -2.33}
-  m_TimeToStationary: 0.5
 --- !u!1 &1643195609780728255
 GameObject:
   m_ObjectHideFlags: 0

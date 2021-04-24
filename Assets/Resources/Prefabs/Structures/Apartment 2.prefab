@@ -4862,7 +4862,7 @@ MonoBehaviour:
     paintConfigId: 3
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   defaultGroundCoverSettings:
-    paintConfigId: 1
+    paintConfigId: 6
     additionalColor: {r: 1, g: 1, b: 1, a: 1}
   grounds:
   - {fileID: 338709742005140204}
@@ -6325,8 +6325,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5762905674270407635}
   - component: {fileID: 8711701818815025839}
-  - component: {fileID: 8451537778098342986}
   - component: {fileID: 2404310011379401446}
+  - component: {fileID: 2373267326073233552}
   m_Layer: 0
   m_Name: Front Door
   m_TagString: Untagged
@@ -6363,25 +6363,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 2.0043561, z: 1.67}
   m_Center: {x: -0.50201845, y: 0.9968139, z: -0.05183959}
---- !u!95 &8451537778098342986
-Animator:
-  serializedVersion: 3
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8764759095202712000}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 038abc74661ec5b43a476ce1a8d8410c, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!114 &2404310011379401446
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6394,10 +6375,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 532e252806626f64888ae6fbcf70eb5a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   doorDirection: 0
+  doorBody: {fileID: 8543542660230497938}
   colliderTriggered: []
   numberTxt: {fileID: 7400657866688844301}
   number: 0
+--- !u!114 &2373267326073233552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8764759095202712000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
 --- !u!1 &8794515848756685735
 GameObject:
   m_ObjectHideFlags: 0

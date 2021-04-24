@@ -269,10 +269,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6215916191798703011}
   - component: {fileID: 7015627864882207455}
-  - component: {fileID: 7341811337459597355}
   - component: {fileID: 7933995681442427898}
-  - component: {fileID: 7850704535388570682}
-  - component: {fileID: 3498251243035854122}
+  - component: {fileID: 7407824494658972058}
   m_Layer: 0
   m_Name: Door
   m_TagString: Untagged
@@ -309,28 +307,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 2.0043561, z: 1.67}
   m_Center: {x: -0.50201845, y: 0.9968139, z: -0.05183959}
---- !u!114 &7341811337459597355
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6924292189066641840}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  renderersToModify:
-  - {fileID: 1582989099626829078}
-  - {fileID: 4841964107874673495}
-  - {fileID: 4813816138780447555}
-  primaryStyleMeshRenderers: []
-  secondaryStyleMeshRenderers: []
-  tertiaryStyleMeshRenderers: []
-  hideable: 0
-  interactWithCameraDistance: 0
-  foundationObj: {fileID: 0}
 --- !u!114 &7933995681442427898
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -345,29 +321,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   syncMode: 0
   syncInterval: 0.1
-  configuration: {fileID: 11400000, guid: 375410120f7019f4c949b3bc160a7c34, type: 2}
   doorDirection: 1
+  doorBody: {fileID: 8010329451379658466}
   colliderTriggered: []
---- !u!95 &7850704535388570682
-Animator:
-  serializedVersion: 3
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6924292189066641840}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 038abc74661ec5b43a476ce1a8d8410c, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
---- !u!114 &3498251243035854122
+--- !u!114 &7407824494658972058
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -376,15 +333,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 6924292189066641840}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncMode: 0
-  syncInterval: 0.1
-  clientAuthority: 0
-  localPositionSensitivity: 0.01
-  localRotationSensitivity: 0.01
-  localScaleSensitivity: 0.01
-  compressRotation: 0
-  interpolateScale: 0
-  syncScale: 0
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
