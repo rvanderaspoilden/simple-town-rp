@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: Table_long
+  m_EditorClassIdentifier: 
+  id: 47
+  displayName: Long table
+  propsType: 0
+  buyable: 1
+  prefab: {fileID: 5973222490024165713, guid: c9f5b807d82028e4a8915cbecbd07e37, type: 3}
+  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  surfaceToPose: 0
+  posableOnProps: 0
+  connectedToWall: 1
+  toBuild: 1
+  rangeToInteract: 0
+  actions: []
+  unbuiltActions: []
+  cursor: {fileID: 0}
+  presets:
+  - id: 1
+    label: Metal
+    primary:
+      enabled: 1
+      color: {r: 0, g: 0, b: 0, a: 1}
+      material: {fileID: 2100000, guid: 85ebde6f201696c459449d19821f3ece, type: 2}
+    secondary:
+      enabled: 1
+      color: {r: 0, g: 0, b: 0, a: 1}
+      material: {fileID: 2100000, guid: 85ebde6f201696c459449d19821f3ece, type: 2}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 2
+    label: White
+    primary:
+      enabled: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
