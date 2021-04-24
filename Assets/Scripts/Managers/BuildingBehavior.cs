@@ -21,11 +21,11 @@ public class BuildingBehavior : NetworkBehaviour {
     private Dictionary<int, HallController> hallControllerByFloor = new Dictionary<int, HallController>();
 
     public override void OnStartServer() {
-        Teleporter.OnUse += TeleportToFloor;
+        this.mainElevator.OnUse += TeleportToFloor;
     }
 
     public override void OnStopServer() {
-        Teleporter.OnUse -= TeleportToFloor;
+        this.mainElevator.OnUse -= TeleportToFloor;
     }
 
     [ServerCallback]

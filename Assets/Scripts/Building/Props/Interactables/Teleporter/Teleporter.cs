@@ -16,7 +16,7 @@ namespace Sim.Interactables {
 
         public delegate void UseEvent(Teleporter teleporter, int originFloor, int floorDestination, NetworkConnectionToClient playerConn);
 
-        public static event UseEvent OnUse;
+        public event UseEvent OnUse;
 
         protected override void Execute(Action action) {
             if (action.Type.Equals(ActionTypeEnum.TELEPORT)) {
