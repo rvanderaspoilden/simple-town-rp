@@ -16,13 +16,13 @@ MonoBehaviour:
   displayName: Bench_1
   propsType: 0
   buyable: 0
-  prefab: {fileID: 4162791807566577246, guid: e79e0e33d77e82943b6d40891c3d1315, type: 3}
+  prefab: {fileID: 6424025961685690303, guid: e79e0e33d77e82943b6d40891c3d1315, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
   connectedToWall: 0
   toBuild: 0
-  rangeToInteract: 2
+  rangeToInteract: 1
   actions:
   - {fileID: 11400000, guid: 7e0cdd3d63813974a95eeb645612607b, type: 2}
   unbuiltActions: []

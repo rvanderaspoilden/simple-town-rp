@@ -16,15 +16,15 @@ MonoBehaviour:
   displayName: Bench without backrest
   propsType: 0
   buyable: 0
-  prefab: {fileID: 8401834646725787729, guid: e0a9fabb41767a64ba8d73b1d40dfe62, type: 3}
+  prefab: {fileID: 9111282334002608372, guid: e0a9fabb41767a64ba8d73b1d40dfe62, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
   connectedToWall: 0
   toBuild: 0
-  rangeToInteract: 2
+  rangeToInteract: 1
   actions:
   - {fileID: 11400000, guid: 7e0cdd3d63813974a95eeb645612607b, type: 2}
   unbuiltActions: []
-  cursor: {fileID: 2800000, guid: c5ba1ef019545a94993510cb70cca320, type: 3}
+  cursor: {fileID: 2800000, guid: 0e305d6abf1703c4eafb08ed62babf5f, type: 3}
   presets: []

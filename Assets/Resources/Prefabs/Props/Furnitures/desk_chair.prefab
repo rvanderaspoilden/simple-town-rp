@@ -81,6 +81,36 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &3959047308296733325
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9168256003685605395}
+  m_Layer: 0
+  m_Name: seat position
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9168256003685605395
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3959047308296733325}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.133}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 2871401011883938009}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6580361344474988824
 GameObject:
   m_ObjectHideFlags: 0
@@ -140,7 +170,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 5491466193098602861, guid: 8946e8fc711442c41b8d33da486369fa, type: 3}
+  - {fileID: 2100000, guid: 85ebde6f201696c459449d19821f3ece, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -177,7 +207,7 @@ GameObject:
   - component: {fileID: 4860214947180127936}
   - component: {fileID: 3694379026835627516}
   - component: {fileID: 7821387264910531632}
-  - component: {fileID: 4363546913609325468}
+  - component: {fileID: 5289875770363325487}
   m_Layer: 10
   m_Name: desk_chair
   m_TagString: Untagged
@@ -198,6 +228,7 @@ Transform:
   m_Children:
   - {fileID: 9074879384788382117}
   - {fileID: 7472724762068572637}
+  - {fileID: 9168256003685605395}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -299,13 +330,15 @@ MonoBehaviour:
   renderersToModify:
   - {fileID: 4399447960770740552}
   - {fileID: 6055116854236979952}
-  primaryStyleMeshRenderers: []
-  secondaryStyleMeshRenderers: []
+  primaryStyleMeshRenderers:
+  - {fileID: 4399447960770740552}
+  secondaryStyleMeshRenderers:
+  - {fileID: 6055116854236979952}
   tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
---- !u!114 &4363546913609325468
+--- !u!114 &5289875770363325487
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -314,10 +347,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 8716626213170472655}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
+  m_Script: {fileID: 11500000, guid: 773af611c2f95854183afcec6aa194c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   syncMode: 0
   syncInterval: 0.1
-  configuration: {fileID: 0}
+  configuration: {fileID: 11400000, guid: f1448cb703fab4248b9167d8541833cb, type: 2}
   parentId: 0
+  seatPositions:
+  - {fileID: 9168256003685605395}
+  couchPositions: []
