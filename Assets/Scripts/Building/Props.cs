@@ -22,7 +22,7 @@ namespace Sim.Building {
 
         [SyncVar]
         [SerializeField]
-        private uint parentId;
+        protected uint parentId;
 
         protected PropsRenderer propsRenderer;
 
@@ -47,6 +47,15 @@ namespace Sim.Building {
         }
 
         public override void OnStartClient() {
+            this.AssignParent();
+        }
+
+        protected virtual void OnDestroy() {
+            this.UnSubscribeActions(this.actions);
+            this.UnSubscribeActions(this.unbuiltActions);
+        }
+
+        protected virtual void AssignParent() {
             if (parentId == 0) return;
 
             Vector3 position = this.transform.position;
@@ -62,11 +71,7 @@ namespace Sim.Building {
             } else {
                 Debug.LogError($"Parent identity not found for props {this.name}");
             }
-        }
 
-        protected virtual void OnDestroy() {
-            this.UnSubscribeActions(this.actions);
-            this.UnSubscribeActions(this.unbuiltActions);
         }
 
         public virtual void StopInteraction() {
