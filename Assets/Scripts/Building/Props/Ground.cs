@@ -14,9 +14,14 @@ namespace Sim.Building {
 
         private bool preview;
 
+        private ApartmentController apartmentController;
+
         private void Awake() {
             this.renderer = GetComponent<Renderer>();
+            this.apartmentController = GetComponentInParent<ApartmentController>();
         }
+
+        public ApartmentController ApartmentController => apartmentController;
 
         [Client]
         public void Preview(PaintConfig paintConfig) {

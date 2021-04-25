@@ -23,7 +23,7 @@ namespace Sim {
         }
 
         public override void OnStartClient() {
-            if (!isLocalPlayer) Destroy(this);
+            if (!isLocalPlayer) return;
 
             BuildManager.OnCancel += OnBuildModificationCanceled;
             BuildManager.OnValidatePropCreation += OnValidatePropCreation;
@@ -91,9 +91,9 @@ namespace Sim {
                 this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ApplyGroundSettings();
             }
 
-            Destroy(this.currentOpenedBucket.gameObject);
+            StartCoroutine(this.currentOpenedBucket.GetComponentInParent<ApartmentController>().Save());
 
-            //StartCoroutine(this.currentOpenedBucket.GetComponentInParent<ApartmentController>().Save());
+            Destroy(this.currentOpenedBucket.gameObject);
 
             this.player.SetState(StateType.FREE);
         }
