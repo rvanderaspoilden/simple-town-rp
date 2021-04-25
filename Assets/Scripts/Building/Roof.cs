@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Sim;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class Roof : MonoBehaviour {
     [Header("Settings")]
@@ -36,10 +37,10 @@ public class Roof : MonoBehaviour {
     }
 
     private void Show() {
-        this.renderersToHide.ForEach(x => x.enabled = true);
+        this.renderersToHide.ForEach(x => x.shadowCastingMode = ShadowCastingMode.On);
     }
 
     private void Hide() {
-        this.renderersToHide.ForEach(x => x.enabled = false);
+        this.renderersToHide.ForEach(x => x.shadowCastingMode = ShadowCastingMode.ShadowsOnly);
     }
 }
