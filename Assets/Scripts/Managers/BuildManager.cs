@@ -412,10 +412,16 @@ namespace Sim {
                 if (Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) {
                     if (layerMask == (1 << 12)) {
                         Wall wall = hit.collider.GetComponent<Wall>();
-                        wall.PreviewMaterialOnFace(hit, this.currentOpenedBucket);
+
+                        if (wall.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
+                            wall.PreviewMaterialOnFace(hit, this.currentOpenedBucket);
+                        }
                     } else if (layerMask == (1 << 9)) {
                         Ground ground = hit.collider.GetComponent<Ground>();
-                        ground.Preview(this.currentOpenedBucket.GetPaintConfig());
+
+                        if (ground.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
+                            ground.Preview(this.currentOpenedBucket.GetPaintConfig());
+                        }
                     }
                 }
             }

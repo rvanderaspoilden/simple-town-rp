@@ -13,6 +13,9 @@ namespace Sim.Building {
         [SerializeField]
         protected PropsConfig configuration;
 
+        [SerializeField]
+        protected int defaultPresetId = -1;
+
         private Action[] actions;
 
         private Action[] unbuiltActions;
@@ -50,6 +53,14 @@ namespace Sim.Building {
             this.AssignParent();
         }
 
+        public override void OnStartServer() {
+            base.OnStartServer();
+
+            if (this.defaultPresetId != -1) {
+                PresetId = this.defaultPresetId;
+            }
+        }
+
         protected virtual void OnDestroy() {
             this.UnSubscribeActions(this.actions);
             this.UnSubscribeActions(this.unbuiltActions);
@@ -59,6 +70,8 @@ namespace Sim.Building {
             if (parentId == 0) return;
 
             Vector3 position = this.transform.position;
+            Quaternion rotation = this.transform.rotation;
+            
             this.apartmentController = NetworkIdentity.spawned.ContainsKey(this.parentId)
                 ? NetworkIdentity.spawned[this.parentId].GetComponent<ApartmentController>()
                 : null;
@@ -68,6 +81,7 @@ namespace Sim.Building {
             if (this.apartmentController) {
                 this.transform.SetParent(this.apartmentController.PropsContainer);
                 this.transform.localPosition = position;
+                this.transform.localRotation = rotation;
             } else {
                 Debug.LogError($"Parent identity not found for props {this.name}");
             }
@@ -86,6 +100,8 @@ namespace Sim.Building {
             get => parentId;
             set => parentId = value;
         }
+
+        public ApartmentController ApartmentController => apartmentController;
 
         /**
          * Setup all action when a props is built

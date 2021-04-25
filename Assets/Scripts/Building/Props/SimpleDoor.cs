@@ -19,8 +19,40 @@ namespace Sim.Building {
         [SyncVar(hook = nameof(OnStateChanged))]
         private bool isOpened;
 
+        [SyncVar]
+        private uint parentId;
+
         protected void Awake() {
             this.colliderTriggered = new List<Collider>();
+        }
+
+        public override void OnStartClient() {
+            base.OnStartClient();
+            
+            AssignParent();
+        }
+        
+        protected virtual void AssignParent() {
+            if (parentId == 0) return;
+
+            Vector3 position = this.transform.position;
+            Quaternion rotation = this.transform.rotation;
+
+            if (!isClientOnly) return;
+
+            if (NetworkIdentity.spawned.ContainsKey(this.parentId)) {
+                this.transform.SetParent(NetworkIdentity.spawned[this.parentId].transform);
+                this.transform.localPosition = position;
+                this.transform.localRotation = rotation;
+            } else {
+                Debug.LogError($"Parent identity not found for door {this.name}");
+            }
+
+        }
+
+        public uint ParentId {
+            get => parentId;
+            set => parentId = value;
         }
 
         [Client]

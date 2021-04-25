@@ -108,6 +108,10 @@ namespace Sim.Building {
         }
 
         private void OnSelectDelivery(int idx) {
+            if (!this.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
+                return;
+            }
+            
             if (this.deliveries == null || this.deliveries.Length == 0) {
                 PlayerController.Local.Idle();
             } else {

@@ -22,13 +22,18 @@ namespace Sim.Building {
 
         private BoxCollider[] boxColliders;
 
+        private ApartmentController apartmentController;
+
         private void Awake() {
             this.renderer = GetComponent<MeshRenderer>();
             this.meshCollider = GetComponent<MeshCollider>();
             this.boxColliders = GetComponents<BoxCollider>();
 
             //this.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER);
+            this.apartmentController = GetComponentInParent<ApartmentController>();
         }
+
+        public ApartmentController ApartmentController => apartmentController;
 
         public void Setup(Dictionary<int, CoverSettings> coverSettings) {
             this.coverSettingsByFaces = coverSettings;

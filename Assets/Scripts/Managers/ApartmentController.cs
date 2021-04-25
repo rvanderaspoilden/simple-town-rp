@@ -6,7 +6,6 @@ using System.Linq;
 using Mirror;
 using Sim.Building;
 using Sim.Entities;
-using Sim.Enums;
 using Sim.Utils;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -16,7 +15,10 @@ namespace Sim {
     public class ApartmentController : NetworkBehaviour {
         [Header("Settings")]
         [SerializeField]
-        private FrontDoor frontDoor;
+        private FrontDoor frontDoorPrefab;
+
+        [SerializeField]
+        private Transform frontDoorSpawn;
 
         [SerializeField]
         private Transform propsContainer;
@@ -40,10 +42,9 @@ namespace Sim {
         [SerializeField]
         private Home homeData;
 
-        [SyncVar(hook = nameof(DoorNumberChanged))]
         [SerializeField]
-        private int doorNumber;
-        
+        private FrontDoor frontDoor;
+
         [SyncVar]
         private uint parentId;
 
@@ -69,7 +70,6 @@ namespace Sim {
         [Command(requiresAuthority = false)]
         public void CmdSaveHome(NetworkConnectionToClient sender = null) {
             StartCoroutine(this.Save());
-            //this.SaveLocal();
         }
 
         public override void OnStartServer() {
@@ -82,7 +82,7 @@ namespace Sim {
 
         public override void OnStartClient() {
             base.OnStartClient();
-            
+
             AssignParent();
 
             this.coverSettingsByFaces.Callback += OnWallSettingsChanged;
@@ -129,15 +129,10 @@ namespace Sim {
 
         public Transform PropsContainer => propsContainer;
 
-        [Client]
-        public void DoorNumberChanged(int old, int newValue) {
-            this.doorNumber = newValue;
-            this.frontDoor.Number = newValue;
-        }
-
         [Server]
         public IEnumerator Save() {
             // TODO: handle save queue
+            yield return null;
 
             Debug.Log("Save home....");
             UnityWebRequest request = ApiManager.Instance.SaveHomeRequest(this.homeData, this.GenerateSceneData());
@@ -161,7 +156,12 @@ namespace Sim {
         public void Init(Address newAddress, HallController hallController) {
             this.associatedHallController = hallController;
             this.address = newAddress;
-            this.doorNumber = newAddress.DoorNumber;
+
+            this.frontDoor = Instantiate(this.frontDoorPrefab, this.frontDoorSpawn.position, this.frontDoorSpawn.rotation);
+            this.frontDoor.transform.SetParent(this.propsContainer);
+            this.frontDoor.ParentId = netId;
+            this.frontDoor.Number = newAddress.DoorNumber;
+            NetworkServer.Spawn(this.frontDoor.gameObject);
 
             StartCoroutine(RetrieveData());
         }
@@ -182,9 +182,9 @@ namespace Sim {
                 InstantiateLevel(homeResponse.SceneData);
             } else {
                 Debug.Log($"No Home found for Address {address}");
-                
+
                 // TODO: Lock the front door
-                
+
                 this.isGenerated = true;
                 this.associatedHallController.CheckGenerationState();
             }
@@ -240,7 +240,7 @@ namespace Sim {
             }
 
             this.isGenerated = true;
-            
+
             this.associatedHallController.CheckGenerationState();
         }
 
@@ -299,9 +299,9 @@ namespace Sim {
             SceneData sceneData = new SceneData {
                 walls = SaveUtils.CreateCoverDatas(this.coverSettingsByFaces),
                 grounds = SaveUtils.CreateCoverDatas(this.coverSettingsByGround),
-                buckets = FindObjectsOfType<PaintBucket>().ToList().Select(SaveUtils.CreateBucketData).ToArray(),
-                props = FindObjectsOfType<Props>().ToList()
-                    .Where(props => defaultPropsTypes.Contains(props.GetType()))
+                buckets = GetComponentsInChildren<PaintBucket>().ToList().Where(x => x.ApartmentController == this).Select(SaveUtils.CreateBucketData).ToArray(),
+                props = GetComponentsInChildren<Props>().ToList()
+                    .Where(props => props.ApartmentController == this && defaultPropsTypes.Contains(props.GetType()))
                     .Select(SaveUtils.CreateDefaultData).ToArray()
             };
 
