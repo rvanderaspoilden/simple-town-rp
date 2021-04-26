@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using DG.Tweening;
 using Mirror;
-using Sim.Enums;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Sim.Building {
     public class SimpleDoor : NetworkBehaviour {
@@ -14,10 +14,17 @@ namespace Sim.Building {
         private Transform doorBody;
 
         [SerializeField]
+        private NavMeshObstacle navMeshObstacle;
+
+        [Header("Debug")]
+        [SerializeField]
         private List<Collider> colliderTriggered;
 
         [SyncVar(hook = nameof(OnStateChanged))]
         private bool isOpened;
+
+        [SyncVar(hook = nameof(OnLockStateChanged))]
+        private DoorLockState lockState;
 
         [SyncVar]
         private uint parentId;
@@ -28,10 +35,15 @@ namespace Sim.Building {
 
         public override void OnStartClient() {
             base.OnStartClient();
-            
+
             AssignParent();
         }
-        
+
+        [Server]
+        public void SetLockState(DoorLockState state) {
+            lockState = state;
+        }
+
         protected virtual void AssignParent() {
             if (parentId == 0) return;
 
@@ -47,7 +59,6 @@ namespace Sim.Building {
             } else {
                 Debug.LogError($"Parent identity not found for door {this.name}");
             }
-
         }
 
         public uint ParentId {
@@ -58,7 +69,7 @@ namespace Sim.Building {
         [Client]
         private void OnStateChanged(bool oldValue, bool newValue) {
             this.isOpened = newValue;
-            
+
             this.doorBody.DOComplete();
 
             if (this.isOpened) {
@@ -66,6 +77,13 @@ namespace Sim.Building {
             } else {
                 this.doorBody.DOLocalRotate(Quaternion.Euler(0, 0, 0).eulerAngles, .3f);
             }
+        }
+
+        [Client]
+        private void OnLockStateChanged(DoorLockState oldValue, DoorLockState newValue) {
+            this.lockState = newValue;
+            this.navMeshObstacle.enabled = this.lockState == DoorLockState.LOCKED;
+            this.CheckState();
         }
 
         private void OnTriggerEnter(Collider other) {
@@ -92,8 +110,13 @@ namespace Sim.Building {
 
         [Server]
         private void CheckState() {
-            this.isOpened = this.colliderTriggered.Count > 0;
+            this.isOpened = this.lockState == DoorLockState.UNLOCKED && this.colliderTriggered.Count > 0;
             Debug.Log($"Door opened : {this.isOpened}");
         }
+    }
+
+    public enum DoorLockState : byte {
+        LOCKED,
+        UNLOCKED
     }
 }
