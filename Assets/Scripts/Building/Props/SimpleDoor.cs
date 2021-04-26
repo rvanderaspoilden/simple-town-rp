@@ -8,7 +8,7 @@ namespace Sim.Building {
     public class SimpleDoor : NetworkBehaviour {
         [Header("Settings")]
         [SerializeField]
-        private DoorDirectionEnum doorDirection = DoorDirectionEnum.FORWARD;
+        private Vector3 openedLocalRotation = new Vector3(0, -90, 0);
 
         [SerializeField]
         private Transform doorBody;
@@ -59,12 +59,10 @@ namespace Sim.Building {
         private void OnStateChanged(bool oldValue, bool newValue) {
             this.isOpened = newValue;
             
-            Debug.Log("Door state changed");
-
             this.doorBody.DOComplete();
 
             if (this.isOpened) {
-                this.doorBody.DOLocalRotate(Quaternion.Euler(0, doorDirection == DoorDirectionEnum.FORWARD ? 90 : -90, 0).eulerAngles, .3f);
+                this.doorBody.DOLocalRotate(Quaternion.Euler(openedLocalRotation).eulerAngles, .3f);
             } else {
                 this.doorBody.DOLocalRotate(Quaternion.Euler(0, 0, 0).eulerAngles, .3f);
             }
