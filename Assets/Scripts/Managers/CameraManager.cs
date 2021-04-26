@@ -66,14 +66,6 @@ namespace Sim {
         void Update() {
             if (PlayerController.Local == null) return;
 
-            /*Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
-            RaycastHit roofHit;
-
-            if (Physics.Raycast(ray.origin * 2, ray.direction, out roofHit, 100, (1 << 17))) {
-                Debug.Log("hit");
-                roofHit.collider.GetComponent<Roof>().Hide();
-            }*/
-
             if (this.currentMode == CameraModeEnum.FREE) {
                 this.ManageInteraction();
             }
