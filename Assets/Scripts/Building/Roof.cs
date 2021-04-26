@@ -1,44 +1,46 @@
-using DG.Tweening;
+using System.Collections.Generic;
 using Sim;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class Roof : MonoBehaviour {
     [Header("Settings")]
     [SerializeField]
-    private float fadeDuration = .3f;
-    
-    private new Renderer renderer;
+    private List<MeshRenderer> renderersToHide;
 
-    private Material customMaterial;
+    private bool playerInside;
 
-    private Color originColor;
-
-    private void Awake() {
-        this.renderer = GetComponent<Renderer>();
-        this.customMaterial = new Material(this.renderer.sharedMaterial);
-        this.originColor = this.customMaterial.color;
-        this.renderer.sharedMaterial = this.customMaterial;
-    }
+    private bool cameraInside;
 
     private void OnTriggerEnter(Collider other) {
-        if (other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
-            this.Hide();
+        if (PlayerController.Local && other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
+            playerInside = true;
+        } else if (other.CompareTag("MainCamera")) {
+            cameraInside = true;
+        }
+
+        if (playerInside || cameraInside) {
+            Hide();
         }
     }
 
     private void OnTriggerExit(Collider other) {
         if (other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
+            playerInside = false;
+        } else if (other.CompareTag("MainCamera")) {
+            cameraInside = false;
+        }
+
+        if (!playerInside && !cameraInside) {
             this.Show();
         }
     }
 
     private void Show() {
-        this.customMaterial.DOComplete();
-        this.customMaterial.DOColor(this.originColor, this.fadeDuration);
+        this.renderersToHide.ForEach(x => x.shadowCastingMode = ShadowCastingMode.On);
     }
 
     private void Hide() {
-        this.customMaterial.DOComplete();
-        this.customMaterial.DOColor(new Color(0, 0, 0, 0), this.fadeDuration);
+        this.renderersToHide.ForEach(x => x.shadowCastingMode = ShadowCastingMode.ShadowsOnly);
     }
 }
