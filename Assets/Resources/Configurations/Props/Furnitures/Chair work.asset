@@ -70,3 +70,31 @@ MonoBehaviour:
       enabled: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       material: {fileID: 0}
+  - id: 4
+    label: Green
+    primary:
+      enabled: 1
+      color: {r: 0.54383504, g: 1, b: 0.5137255, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 5
+    label: Orange
+    primary:
+      enabled: 1
+      color: {r: 1, g: 0.65469116, b: 0.36320752, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
