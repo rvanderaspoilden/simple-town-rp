@@ -16,21 +16,41 @@ namespace Sim {
 
         private Button button;
 
+        private ApartmentController bindApartment;
+
+        public static PropsVisibilityUI Instance;
+
         private void Awake() {
+            if (Instance != null && Instance != this) {
+                Destroy(this.gameObject);
+            } else {
+                Instance = this;
+            }
+            
             this.image = GetComponent<Image>();
             this.button = GetComponent<Button>();
         }
 
         private void Start() {
-            this.button.onClick.AddListener(() => RoomManager.Instance.TogglePropsVisible());
+            this.button.onClick.AddListener(() => {
+                if (this.bindApartment) {
+                    this.bindApartment.TogglePropsVisible();
+                } else {
+                    Debug.LogError("No apartment binded to toggle props visiblity");
+                }
+            });
 
-            RoomManager.OnPropsVisibilityModeChanged += this.UpdateGraphic;
+            ApartmentController.OnPropsVisibilityModeChanged += this.UpdateGraphic;
+        }
+
+        public void Bind(ApartmentController apartmentController) {
+            this.bindApartment = apartmentController;
         }
 
         private void OnDestroy() {
             this.button.onClick.RemoveAllListeners();
             
-            RoomManager.OnPropsVisibilityModeChanged -= this.UpdateGraphic;
+            ApartmentController.OnPropsVisibilityModeChanged -= this.UpdateGraphic;
         }
 
         private void UpdateGraphic(VisibilityModeEnum mode) {

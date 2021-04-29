@@ -1,5 +1,5 @@
 namespace Sim.Enums {
-    public enum HomeTypeEnum {
+    public enum HomeTypeEnum : byte {
         APARTMENT,
         HOUSE
     }
