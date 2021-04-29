@@ -48,6 +48,8 @@ namespace Sim {
 
         private new Camera camera;
 
+        private ApartmentController apartmentController;
+
         // Edit properties
 
         private bool isEditing;
@@ -121,6 +123,8 @@ namespace Sim {
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
 
             this.SetMode(BuildModeEnum.POSING);
+            
+            PropsVisibilityUI.Instance.Bind(this.apartmentController); // TODO: replace with area management
         }
 
         /**
@@ -134,8 +138,10 @@ namespace Sim {
             this.originRotation = this.currentPropSelected.transform.rotation;
 
             this.isEditing = true;
-
+            
             this.SetMode(BuildModeEnum.POSING);
+            
+            PropsVisibilityUI.Instance.Bind(this.apartmentController);
         }
 
         /**
@@ -144,6 +150,8 @@ namespace Sim {
         public void Init(PaintBucket paintBucket) {
             this.currentOpenedBucket = paintBucket;
             this.SetMode(BuildModeEnum.PAINT);
+            
+            PropsVisibilityUI.Instance.Bind(this.apartmentController);
 
             //FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.MESH_COLLIDER));
         }
@@ -163,8 +171,8 @@ namespace Sim {
 
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
-            //RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
-            //RoomManager.Instance.SetPropsVisibility(VisibilityModeEnum.AUTO);
+            //this.apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
+            this.apartmentController.SetPropsVisibility(VisibilityModeEnum.AUTO);
             OnCancel?.Invoke();
         }
 
@@ -195,7 +203,7 @@ namespace Sim {
             }
 
             //RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
-            //RoomManager.Instance.SetPropsVisibility(VisibilityModeEnum.AUTO);
+            this.apartmentController.SetPropsVisibility(VisibilityModeEnum.AUTO);
 
             this.SetMode(BuildModeEnum.NONE);
         }
@@ -221,7 +229,7 @@ namespace Sim {
             if (this.currentOpenedBucket) {
                 // if a bucket was opened reset it and all walls in preview
                 if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                    this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetWallPreview();
+                    this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetWallPreview(); // TODO: use apartmentController
                 } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
                     this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetGroundPreview();
                 }

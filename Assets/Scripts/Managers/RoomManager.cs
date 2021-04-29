@@ -22,7 +22,6 @@ namespace Sim {
 
         private bool forceWallHidden;
 
-        private bool forcePropsHidden;
 
         private Type[] defaultPropsTypes = new[] {typeof(Props), typeof(Seat), typeof(DeliveryBox)};
 
@@ -30,7 +29,6 @@ namespace Sim {
 
         public static event VisibilityModeChanged OnWallVisibilityModeChanged;
 
-        public static event VisibilityModeChanged OnPropsVisibilityModeChanged;
 
         public static PlayerController LocalPlayer;
 
@@ -73,29 +71,7 @@ namespace Sim {
 
             OnWallVisibilityModeChanged?.Invoke(mode);*/
         }
-
-        public void SetPropsVisibility(VisibilityModeEnum mode) {
-            this.forcePropsHidden = mode == VisibilityModeEnum.FORCE_HIDE;
-
-            this.UpdatePropsVisibility(mode);
-        }
-
-        public void TogglePropsVisible() {
-            this.forcePropsHidden = !this.forcePropsHidden;
-
-            this.UpdatePropsVisibility(this.forcePropsHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
-        }
-
-        private void UpdatePropsVisibility(VisibilityModeEnum mode) {
-            FindObjectsOfType<Props>().ToList().Where(x => x.GetType() != typeof(Wall)).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
-                propsRenderer => {
-                    if (propsRenderer && propsRenderer.IsHideable()) {
-                        propsRenderer.SetVisibilityMode(mode);
-                    }
-                });
-
-            OnPropsVisibilityModeChanged?.Invoke(mode);
-        }
+        
 
         #endregion
 

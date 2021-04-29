@@ -6,6 +6,7 @@ using System.Linq;
 using Mirror;
 using Sim.Building;
 using Sim.Entities;
+using Sim.Enums;
 using Sim.Utils;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -81,9 +82,15 @@ namespace Sim {
 
         private Type[] defaultPropsTypes = new[] {typeof(Props), typeof(Seat)};
 
+        private bool forcePropsHidden;
+
         private readonly SyncDictionary<int, CoverSettings> coverSettingsByFaces = new SyncDictionary<int, CoverSettings>();
 
         private readonly SyncDictionary<int, CoverSettings> coverSettingsByGround = new SyncDictionary<int, CoverSettings>();
+
+        public delegate void VisibilityModeChanged(VisibilityModeEnum mode);
+
+        public static event VisibilityModeChanged OnPropsVisibilityModeChanged;
 
         private void Awake() {
             this.talyahConfiguration.container.SetActive(false);
@@ -136,6 +143,29 @@ namespace Sim {
 
             // Setup Walls
             this.currentConfiguration.walls.Setup(this.coverSettingsByFaces.ToDictionary(x => x.Key, x => x.Value));
+        }
+
+        public void SetPropsVisibility(VisibilityModeEnum mode) {
+            this.forcePropsHidden = mode == VisibilityModeEnum.FORCE_HIDE;
+
+            this.UpdatePropsVisibility(mode);
+        }
+
+        public void TogglePropsVisible() {
+            this.forcePropsHidden = !this.forcePropsHidden;
+
+            this.UpdatePropsVisibility(this.forcePropsHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
+        }
+
+        private void UpdatePropsVisibility(VisibilityModeEnum mode) {
+            GetComponentsInChildren<Props>().ToList().Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
+                propsRenderer => {
+                    if (propsRenderer && propsRenderer.IsHideable()) {
+                        propsRenderer.SetVisibilityMode(mode);
+                    }
+                });
+
+            OnPropsVisibilityModeChanged?.Invoke(mode);
         }
 
         private void AssignParent() {
