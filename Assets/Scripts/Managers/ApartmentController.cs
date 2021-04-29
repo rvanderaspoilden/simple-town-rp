@@ -246,7 +246,6 @@ namespace Sim {
             this.frontDoor.transform.SetParent(this.propsContainer);
             this.frontDoor.ParentId = netId;
             this.frontDoor.Number = newAddress.doorNumber;
-            this.frontDoor.SetLockState(DoorLockState.LOCKED);
             NetworkServer.Spawn(this.frontDoor.gameObject);
 
             StartCoroutine(RetrieveData());
@@ -277,7 +276,7 @@ namespace Sim {
                 InstantiateLevel(homeResponse.SceneData);
             } else {
                 Debug.Log($"No Home found for Address {address}");
-
+                this.frontDoor.SetLockState(DoorLockState.LOCKED);
                 this.isGenerated = true;
                 this.associatedHallController.CheckGenerationState();
             }
