@@ -51,6 +51,7 @@ namespace Sim.Building {
         [Server]
         public void SetLockState(DoorLockState state) {
             lockState = state;
+            this.CheckState();
         }
 
         protected virtual void AssignParent() {
@@ -92,7 +93,6 @@ namespace Sim.Building {
         private void OnLockStateChanged(DoorLockState oldValue, DoorLockState newValue) {
             this.lockState = newValue;
             this.navMeshObstacle.enabled = this.lockState == DoorLockState.LOCKED;
-            this.CheckState();
         }
 
         private void OnTriggerEnter(Collider other) {
