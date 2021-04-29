@@ -667,6 +667,64 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0.0034102201, y: 1.3067294, z: 0.07283226}
   m_TimeToStationary: 0.5
+--- !u!1 &3333504496794898508
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3814597323060496368}
+  - component: {fileID: 784391895633276318}
+  - component: {fileID: 6936772801592755765}
+  m_Layer: 2
+  m_Name: Geographic Area
+  m_TagString: Geographic Area
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3814597323060496368
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3333504496794898508}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.035300255, y: 2.59, z: -10.5704}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 5496279082967967629}
+  m_RootOrder: 17
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &784391895633276318
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3333504496794898508}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 16.28, y: 2.6667657, z: 21.106895}
+  m_Center: {x: -0.048336923, y: -1.4216533, z: 0}
+--- !u!114 &6936772801592755765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3333504496794898508}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd96908bdc1aa64449387a6d39ffc146, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  locationText: SALMON HOTEL, HALL
 --- !u!1 &3360216042272639379
 GameObject:
   m_ObjectHideFlags: 0
@@ -819,7 +877,7 @@ GameObject:
   - component: {fileID: 3502795005718807706}
   - component: {fileID: 4782916530025614227}
   m_Layer: 0
-  m_Name: Plane
+  m_Name: Roof
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -833,7 +891,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3457123793527350992}
   m_LocalRotation: {x: 1, y: 0, z: 0, w: 0}
-  m_LocalPosition: {x: 0.0353, y: 2.61, z: -10.5704}
+  m_LocalPosition: {x: 0.0353, y: 2.6, z: -10.5704}
   m_LocalScale: {x: 1.6440849, y: 1, z: 2.1430745}
   m_Children: []
   m_Father: {fileID: 5496279082967967629}
@@ -866,7 +924,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 29b983b5102cc064e89e14b95497d2ba, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1255,6 +1313,7 @@ Transform:
   - {fileID: 6484935210731803657}
   - {fileID: 8455720217999929035}
   - {fileID: 1725510559954557802}
+  - {fileID: 3814597323060496368}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1301,6 +1360,7 @@ MonoBehaviour:
   elevatorPrefab: {fileID: 4363248231917646557, guid: e8a1ce33b2702924baddaaf48be553b7,
     type: 3}
   elevatorSpawn: {fileID: 769060359967482103}
+  geographicArea: {fileID: 6936772801592755765}
 --- !u!114 &6488376054699114662
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2000,7 +2060,7 @@ GameObject:
   - component: {fileID: 1755440077159327152}
   - component: {fileID: 2485653376102131882}
   m_Layer: 9
-  m_Name: Cube
+  m_Name: NavMesh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

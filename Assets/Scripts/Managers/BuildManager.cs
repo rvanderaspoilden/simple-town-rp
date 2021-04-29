@@ -124,7 +124,9 @@ namespace Sim {
 
             this.SetMode(BuildModeEnum.POSING);
             
-            PropsVisibilityUI.Instance.Bind(this.apartmentController); // TODO: replace with area management
+            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
+
+            PropsVisibilityUI.Instance.Bind(this.apartmentController);
         }
 
         /**
@@ -140,6 +142,8 @@ namespace Sim {
             this.isEditing = true;
             
             this.SetMode(BuildModeEnum.POSING);
+
+            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
             
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
         }
@@ -151,6 +155,8 @@ namespace Sim {
             this.currentOpenedBucket = paintBucket;
             this.SetMode(BuildModeEnum.PAINT);
             
+            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
+
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
 
             //FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.MESH_COLLIDER));

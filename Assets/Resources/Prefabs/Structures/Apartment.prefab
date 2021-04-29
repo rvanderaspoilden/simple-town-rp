@@ -5004,6 +5004,7 @@ Transform:
   - {fileID: 3338552606689692424}
   - {fileID: 9206331865974619853}
   - {fileID: 1293833945300934857}
+  - {fileID: 9150098797603411308}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -5046,6 +5047,7 @@ MonoBehaviour:
   deliveryBoxPrefab: {fileID: 4492236850374378933, guid: 3c5fddc122d575d419dbe304880aacff,
     type: 3}
   propsContainer: {fileID: 9206331865974619853}
+  geographicArea: {fileID: 3653648617068967680}
   ahmedConfiguration:
     container: {fileID: 338709741156252375}
     walls: {fileID: 7257782366945699826}
@@ -5622,6 +5624,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3338552606689692424}
   - component: {fileID: 3210343104702304038}
+  - component: {fileID: 3107383115981184712}
   m_Layer: 2
   m_Name: Buildable Area
   m_TagString: Buildable Area
@@ -5651,11 +5654,24 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3597072370385668122}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 5.9645367, y: 2.6039276, z: 6.93}
   m_Center: {x: 0.0076379776, y: 1.2907801, z: 0}
+--- !u!114 &3107383115981184712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3597072370385668122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd96908bdc1aa64449387a6d39ffc146, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  locationText: APARTMENT
 --- !u!1 &3696404439921117967
 GameObject:
   m_ObjectHideFlags: 0
@@ -6151,6 +6167,64 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0.4397507, y: 1.298332, z: 0}
   m_TimeToStationary: 0.5
+--- !u!1 &5394314461442110231
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9150098797603411308}
+  - component: {fileID: 2537548901626378994}
+  - component: {fileID: 3653648617068967680}
+  m_Layer: 2
+  m_Name: Geographic Area
+  m_TagString: Geographic Area
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9150098797603411308
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5394314461442110231}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 232480507653709765}
+  m_RootOrder: 8
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &2537548901626378994
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5394314461442110231}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 5.9645367, y: 2.6039276, z: 6.93}
+  m_Center: {x: 0.0076379776, y: 1.2907801, z: 0}
+--- !u!114 &3653648617068967680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5394314461442110231}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd96908bdc1aa64449387a6d39ffc146, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  locationText: APARTMENT
 --- !u!1 &5870704191893294892
 GameObject:
   m_ObjectHideFlags: 0

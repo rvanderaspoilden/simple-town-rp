@@ -23,12 +23,17 @@ public class HallController : NetworkBehaviour {
     private Transform elevatorSpawn;
 
     [SerializeField]
+    private GeographicArea geographicArea;
+
     private HashSet<NetworkIdentity> playersInside = new HashSet<NetworkIdentity>();
 
+    [SyncVar]
     private string street;
 
+    [SyncVar]
     private int floorNumber;
 
+    [SyncVar(hook = nameof(OnGenerationFinished))]
     private bool isGenerated;
 
     private Teleporter elevator;
@@ -36,6 +41,11 @@ public class HallController : NetworkBehaviour {
     private HashSet<ApartmentController> generatedApartments = new HashSet<ApartmentController>();
 
     private List<NetworkConnectionToClient> playersToMove = new List<NetworkConnectionToClient>();
+
+    public void OnGenerationFinished(bool old, bool newValue) {
+        this.isGenerated = newValue;
+        this.geographicArea.LocationText = $"{this.street}, Floor {this.floorNumber}";
+    }
 
     [Server]
     public void Init(string streetName, int floor) {
@@ -53,9 +63,9 @@ public class HallController : NetworkBehaviour {
         NetworkServer.Spawn(this.elevator.gameObject);
         for (int i = 0; i < this.apartmentSpawnPoints.Length; i++) {
             Address address = new Address {
-                Street = this.street,
-                DoorNumber = (i + 1) * this.floorNumber,
-                HomeType = HomeTypeEnum.APARTMENT
+                street = this.street,
+                doorNumber = (i + 1) * this.floorNumber,
+                homeType = HomeTypeEnum.APARTMENT
             };
 
             ApartmentController newApartment = Instantiate(this.talyahPrefab, this.apartmentSpawnPoints[i].position, this.apartmentSpawnPoints[i].rotation);
@@ -70,7 +80,6 @@ public class HallController : NetworkBehaviour {
 
             this.generatedApartments.Add(newApartment);
         }
-
     }
 
     [Server]

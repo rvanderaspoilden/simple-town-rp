@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7852871195986105015}
   - component: {fileID: 7119271919456595366}
   - component: {fileID: 8884159581025645762}
+  - component: {fileID: 2639468241950028372}
   m_Layer: 2
   m_Name: Big Door
   m_TagString: Untagged
@@ -80,8 +81,26 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   openedLocalRotation: {x: 0, y: 0, z: -90}
+  defaultLockState: 1
   doorBody: {fileID: 4153776992948611892}
+  navMeshObstacle: {fileID: 2639468241950028372}
   colliderTriggered: []
+--- !u!208 &2639468241950028372
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3154138925477934792}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 71.5338, y: 10.65, z: 101.50435}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: -128.1984, y: -4.227207, z: -101.8351}
+  m_TimeToStationary: 0.5
 --- !u!1 &5566666177824137078
 GameObject:
   m_ObjectHideFlags: 0

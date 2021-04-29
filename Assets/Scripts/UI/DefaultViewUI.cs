@@ -30,7 +30,7 @@ namespace Sim {
 
         private void Start() {
             this.HidePropsContentUI();
-            this.SetLocationText("Simple Town");
+            this.SetLocationText("Salmon Hotel");
         }
 
         public void SetLocationText(string value) {

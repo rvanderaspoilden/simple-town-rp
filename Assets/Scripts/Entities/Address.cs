@@ -4,33 +4,15 @@ using UnityEngine;
 
 namespace Sim.Entities {
     [Serializable]
-    public class Address {
-        [SerializeField]
-        private HomeTypeEnum homeType;
+    public struct Address {
+        public HomeTypeEnum homeType;
 
-        [SerializeField]
-        private int doorNumber;
+        public int doorNumber;
 
-        [SerializeField]
-        private string street;
-
-        public HomeTypeEnum HomeType {
-            get => homeType;
-            set => homeType = value;
-        }
-
-        public int DoorNumber {
-            get => doorNumber;
-            set => doorNumber = value;
-        }
-
-        public string Street {
-            get => street;
-            set => street = value;
-        }
+        public string street;
 
         public override string ToString() {
-            return $"{this.doorNumber}, {this.Street}";
+            return $"{this.doorNumber}, {this.street}";
         }
     }
 }

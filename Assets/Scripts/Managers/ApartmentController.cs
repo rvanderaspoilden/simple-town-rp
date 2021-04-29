@@ -31,6 +31,9 @@ namespace Sim {
         private Transform propsContainer;
 
         [SerializeField]
+        private GeographicArea geographicArea;
+
+        [SerializeField]
         private ApartmentPresetConfiguration ahmedConfiguration;
 
         [SerializeField]
@@ -61,6 +64,7 @@ namespace Sim {
         [SyncVar]
         private uint parentId;
 
+        [SyncVar(hook = nameof(OnSetAddress))]
         [SerializeField]
         private Address address;
 
@@ -113,17 +117,16 @@ namespace Sim {
 
         public override void OnStartClient() {
             base.OnStartClient();
-
+            
             AssignParent();
+        }
 
-            this.coverSettingsByFaces.Callback += OnWallSettingsChanged;
-            this.coverSettingsByGround.Callback += OnGroundSettingsChanged;
+        private void OnSetAddress(Address old, Address newValue) {
+            this.address = newValue;
+            
+            Debug.Log("OnSetAddress");
 
-            for (int i = 0; i < this.grounds.Length; i++) {
-                if (this.coverSettingsByGround.ContainsKey(i)) {
-                    this.grounds[i].PaintConfigId = this.coverSettingsByGround[i].paintConfigId;
-                }
-            }
+            this.geographicArea.LocationText = $"{this.address.street}, Floor {NetworkIdentity.spawned[this.parentId].GetComponent<HallController>().FloorNumber}, Door {this.address.doorNumber}";
         }
 
         private void OnSetPresetName(string old, string newValue) {
@@ -140,8 +143,16 @@ namespace Sim {
             this.currentConfiguration.container.SetActive(true);
 
             Debug.Log($"OnSetPresetName of {this.name} with presetName : {this.presetName}");
+            
+            this.coverSettingsByFaces.Callback += OnWallSettingsChanged;
+            this.coverSettingsByGround.Callback += OnGroundSettingsChanged;
 
-            // Setup Walls
+            for (int i = 0; i < this.grounds.Length; i++) {
+                if (this.coverSettingsByGround.ContainsKey(i)) {
+                    this.grounds[i].PaintConfigId = this.coverSettingsByGround[i].paintConfigId;
+                }
+            }
+
             this.currentConfiguration.walls.Setup(this.coverSettingsByFaces.ToDictionary(x => x.Key, x => x.Value));
         }
 
@@ -176,8 +187,11 @@ namespace Sim {
             if (!isClientOnly) return;
 
             if (NetworkIdentity.spawned.ContainsKey(this.parentId)) {
-                this.transform.SetParent(NetworkIdentity.spawned[this.parentId].transform);
+                this.associatedHallController = NetworkIdentity.spawned[this.parentId].GetComponent<HallController>();
+                this.transform.SetParent(this.associatedHallController.transform);
                 this.transform.localPosition = position;
+
+                Debug.Log("Assign parent");
             } else {
                 Debug.LogError($"Parent identity not found for appartment {this.name}");
             }
@@ -231,7 +245,7 @@ namespace Sim {
             this.frontDoor = Instantiate(this.frontDoorPrefab, this.frontDoorSpawn.position, this.frontDoorSpawn.rotation);
             this.frontDoor.transform.SetParent(this.propsContainer);
             this.frontDoor.ParentId = netId;
-            this.frontDoor.Number = newAddress.DoorNumber;
+            this.frontDoor.Number = newAddress.doorNumber;
             this.frontDoor.SetLockState(DoorLockState.LOCKED);
             NetworkServer.Spawn(this.frontDoor.gameObject);
 

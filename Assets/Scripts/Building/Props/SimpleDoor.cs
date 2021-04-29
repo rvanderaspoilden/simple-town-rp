@@ -11,6 +11,9 @@ namespace Sim.Building {
         private Vector3 openedLocalRotation = new Vector3(0, -90, 0);
 
         [SerializeField]
+        private DoorLockState defaultLockState = DoorLockState.UNLOCKED;
+
+        [SerializeField]
         private Transform doorBody;
 
         [SerializeField]
@@ -37,6 +40,12 @@ namespace Sim.Building {
             base.OnStartClient();
 
             AssignParent();
+        }
+
+        public override void OnStartServer() {
+            base.OnStartServer();
+
+            this.lockState = this.defaultLockState;
         }
 
         [Server]

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using AI;
 using AI.States;
@@ -53,6 +54,8 @@ namespace Sim {
         private PlayerAnimator animator;
 
         private new Rigidbody rigidbody;
+
+        private HashSet<GeographicArea> currentGeographicArea = new HashSet<GeographicArea>();
 
         private StateMachine stateMachine;
 
@@ -113,6 +116,38 @@ namespace Sim {
             if (isLocalPlayer) {
                 this.UnSubscribeActions(this.actions);
             }
+        }
+
+        private void OnTriggerEnter(Collider other) {
+            if (isLocalPlayer && other.CompareTag("Geographic Area")) {
+                SetGeographicArea(other.GetComponent<GeographicArea>());
+            }
+        }
+
+        private void OnTriggerExit(Collider other) {
+            if (isLocalPlayer && other.CompareTag("Geographic Area")) {
+                RemoveGeographicArea(other.GetComponent<GeographicArea>());
+            }
+        }
+
+        private void SetGeographicArea(GeographicArea geographicArea) {
+            this.currentGeographicArea.Add(geographicArea);
+
+            if (DefaultViewUI.Instance) {
+                DefaultViewUI.Instance.SetLocationText(this.currentGeographicArea.Count > 0 ? this.currentGeographicArea.Last().LocationText : string.Empty);
+            }
+        }
+
+        private void RemoveGeographicArea(GeographicArea geographicArea) {
+            this.currentGeographicArea.Remove(geographicArea);
+
+            if (DefaultViewUI.Instance) {
+                DefaultViewUI.Instance.SetLocationText(this.currentGeographicArea.Count > 0 ? this.currentGeographicArea.Last().LocationText : string.Empty);
+            }
+        }
+
+        public GeographicArea CurrentGeographicArea {
+            get => currentGeographicArea.LastOrDefault();
         }
 
         public string RawCharacterData {
