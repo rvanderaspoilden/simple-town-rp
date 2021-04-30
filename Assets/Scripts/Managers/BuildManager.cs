@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Mirror;
+﻿using Mirror;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
@@ -127,6 +126,7 @@ namespace Sim {
             this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
 
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
+            WallVisibilityUI.Instance.Bind(this.apartmentController);
         }
 
         /**
@@ -146,6 +146,7 @@ namespace Sim {
             this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
             
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
+            WallVisibilityUI.Instance.Bind(this.apartmentController);
         }
 
         /**
@@ -158,8 +159,7 @@ namespace Sim {
             this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
 
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
-
-            //FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.MESH_COLLIDER));
+            WallVisibilityUI.Instance.Bind(this.apartmentController);
         }
 
         public BuildModeEnum GetMode() {
@@ -171,13 +171,9 @@ namespace Sim {
         }
 
         private void Cancel() {
-            if (this.mode == BuildModeEnum.PAINT) {
-                //FindObjectsOfType<Wall>().ToList().ForEach(x => x.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER));
-            }
-
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
-            //this.apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
+            this.apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
             this.apartmentController.SetPropsVisibility(VisibilityModeEnum.AUTO);
             OnCancel?.Invoke();
         }
@@ -208,7 +204,7 @@ namespace Sim {
                 OnValidatePaintModification?.Invoke();
             }
 
-            //RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
+            this.apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
             this.apartmentController.SetPropsVisibility(VisibilityModeEnum.AUTO);
 
             this.SetMode(BuildModeEnum.NONE);

@@ -1,5 +1,4 @@
-﻿using System;
-using Sim.Building;
+﻿using Sim.Building;
 using Sim.Enums;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,8 +26,6 @@ namespace Sim.UI {
 
         private void OnEnable() {
             BuildPreview.OnPlaceableStateChanged += this.SetValidateButtonInteractable;
-
-            this.wallVisibilityUI.gameObject.SetActive(!CameraManager.Instance || BuildManager.Instance.GetMode() != BuildModeEnum.PAINT);
 
             this.currentModeImg.sprite = BuildManager.Instance.GetMode() == BuildModeEnum.PAINT ? this.paintEditSprite : propsEditSprite;
 

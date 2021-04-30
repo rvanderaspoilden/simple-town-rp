@@ -16,21 +16,51 @@ namespace Sim {
 
         private Button button;
 
+        private ApartmentController bindApartment;
+
+        public static WallVisibilityUI Instance;
+
         private void Awake() {
+            if (Instance != null && Instance != this) {
+                Destroy(this.gameObject);
+            } else {
+                Instance = this;
+            }
+
             this.image = GetComponent<Image>();
             this.button = GetComponent<Button>();
         }
 
-        private void Start() {
-            this.button.onClick.AddListener(() => RoomManager.Instance.ToggleWallVisibility());
+        private void OnEnable() {
+            this.CheckValidity();
+        }
 
-            RoomManager.OnWallVisibilityModeChanged += this.UpdateGraphic;
+        private void Start() {
+            this.button.onClick.AddListener(() => {
+                if (this.bindApartment) {
+                    this.bindApartment.ToggleWallVisibility();
+                } else {
+                    Debug.LogError("No apartment bind to toggle wall visibility");
+                }
+            });
+
+            this.CheckValidity();
+
+            ApartmentController.OnWallVisibilityModeChanged += this.UpdateGraphic;
         }
 
         private void OnDestroy() {
             this.button.onClick.RemoveAllListeners();
-            
-            RoomManager.OnWallVisibilityModeChanged -= this.UpdateGraphic;
+
+            ApartmentController.OnWallVisibilityModeChanged -= this.UpdateGraphic;
+        }
+
+        public void Bind(ApartmentController apartmentController) {
+            this.bindApartment = apartmentController;
+        }
+
+        private void CheckValidity() {
+            this.button.interactable = !CameraManager.Instance || BuildManager.Instance.GetMode() != BuildModeEnum.PAINT;
         }
 
         private void UpdateGraphic(VisibilityModeEnum mode) {
