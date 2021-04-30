@@ -20,14 +20,12 @@ namespace Sim {
 
         private bool generated;
 
-        private bool forceWallHidden;
 
 
         private Type[] defaultPropsTypes = new[] {typeof(Props), typeof(Seat), typeof(DeliveryBox)};
 
         public delegate void VisibilityModeChanged(VisibilityModeEnum mode);
 
-        public static event VisibilityModeChanged OnWallVisibilityModeChanged;
 
 
         public static PlayerController LocalPlayer;
@@ -42,38 +40,6 @@ namespace Sim {
             }
         }
 
-        private void Update() {
-            if (Input.GetKeyDown(KeyCode.H) && CameraManager.Instance.GetMode() == CameraModeEnum.FREE) {
-                this.ToggleWallVisibility();
-            }
-        }
-
-        #region Wall Visibility Management
-
-        public void SetWallVisibility(VisibilityModeEnum mode) {
-            this.forceWallHidden = mode == VisibilityModeEnum.FORCE_HIDE;
-
-            this.UpdateWallVisibility(mode);
-        }
-
-        public void ToggleWallVisibility() {
-            this.forceWallHidden = !this.forceWallHidden;
-
-            this.UpdateWallVisibility(this.forceWallHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
-        }
-
-        private void UpdateWallVisibility(VisibilityModeEnum mode) {
-            /*FindObjectsOfType<Wall>().ToList().Where(x => !x.IsExteriorWall()).Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(propsRenderer => {
-                if (propsRenderer) {
-                    propsRenderer.SetVisibilityMode(mode);
-                }
-            });
-
-            OnWallVisibilityModeChanged?.Invoke(mode);*/
-        }
-        
-
-        #endregion
 
         #region Level generation
 

@@ -13,24 +13,26 @@ namespace Sim.Building {
         [SerializeField]
         private int[] sharedMaterialsToIgnore;
 
+        [SerializeField]
+        private int[] sharedMaterialsToHide;
+
         private Dictionary<int, CoverSettings> coverSettingsByFaces = new Dictionary<int, CoverSettings>();
 
         private Dictionary<int, CoverSettings> coverSettingsInPreview = new Dictionary<int, CoverSettings>();
 
+        private Dictionary<int, Material> sharedMaterialsOrigin = new Dictionary<int, Material>();
+
         private new MeshRenderer renderer;
         private MeshCollider meshCollider;
-
-        private BoxCollider[] boxColliders;
 
         private ApartmentController apartmentController;
 
         private void Awake() {
             this.renderer = GetComponent<MeshRenderer>();
             this.meshCollider = GetComponent<MeshCollider>();
-            this.boxColliders = GetComponents<BoxCollider>();
-
-            //this.EnableCollidersOfType(ColliderTypeEnum.BOX_COLLIDER);
             this.apartmentController = GetComponentInParent<ApartmentController>();
+
+            this.sharedMaterialsOrigin = this.sharedMaterialsToIgnore.ToDictionary(x => x, x => this.renderer.sharedMaterials[x]);
         }
 
         public ApartmentController ApartmentController => apartmentController;
@@ -53,20 +55,22 @@ namespace Sim.Building {
 
         public Material[] SharedMaterials() => this.renderer.sharedMaterials;
 
-        /*public void EnableCollidersOfType(ColliderTypeEnum type) {
-            foreach (BoxCollider boxCollider in this.boxColliders) {
-                boxCollider.enabled = type == ColliderTypeEnum.BOX_COLLIDER;
-            }
-
-            this.meshCollider.enabled = type == ColliderTypeEnum.MESH_COLLIDER;
-        }*/
-
         public void ApplyModification() {
             this.coverSettingsInPreview.Clear();
         }
 
         public bool IsPreview() {
             return this.coverSettingsInPreview.Count > 0;
+        }
+
+        public void HideWalls() {
+            Material[] materials = this.renderer.sharedMaterials;
+                
+            foreach (var i in this.sharedMaterialsToHide) {
+                materials[i] = DatabaseManager.Instance.GetTransparentMaterial();
+            }
+
+            this.renderer.sharedMaterials = materials;
         }
 
         [Client]
@@ -87,9 +91,6 @@ namespace Sim.Building {
                 limit -= numIndices;
             }
 
-            // Prevent to paint specific faces
-            //if (!Enumerable.Contains(allowedSharedMaterialIds, submesh)) return;
-
             if (this.coverSettingsInPreview[submesh].Equals(paintBucket)) {
                 this.coverSettingsInPreview[submesh] = this.coverSettingsByFaces[submesh];
             } else {
@@ -109,6 +110,7 @@ namespace Sim.Building {
 
             for (int i = 0; i < settingsToUse.Count; i++) {
                 if (Array.IndexOf(this.sharedMaterialsToIgnore, i) != -1) {
+                    sharedMaterials[i] = this.sharedMaterialsOrigin[i];
                     continue;
                 }
                 

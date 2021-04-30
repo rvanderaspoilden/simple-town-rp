@@ -442,12 +442,12 @@ PrefabInstance:
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.000000028001013
+      value: -0.00000009491432
       objectReference: {fileID: 0}
     - target: {fileID: 1683741971749886207, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.000000016146815
+      value: -0.000000054732446
       objectReference: {fileID: 0}
     - target: {fileID: 8584576505696706517, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
@@ -512,22 +512,22 @@ PrefabInstance:
     - target: {fileID: 9012590871756554537, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.000000012376849
+      value: -0.00000005453646
       objectReference: {fileID: 0}
     - target: {fileID: 9012590871756554537, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.000000007137125
+      value: -0.000000031448504
       objectReference: {fileID: 0}
     - target: {fileID: 9012590872342355820, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.000000012504613
+      value: -0.000000012504617
       objectReference: {fileID: 0}
     - target: {fileID: 9012590872342355820, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.0000000069108044
+      value: -0.000000006910808
       objectReference: {fileID: 0}
     - target: {fileID: 9012590873082448382, guid: 9a091b9653bf819469b958c3c9724807,
         type: 3}
@@ -1947,12 +1947,12 @@ PrefabInstance:
     - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
       propertyPath: useSpectusAccount
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
       propertyPath: useElbloodyAccount
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
@@ -3453,6 +3453,11 @@ PrefabInstance:
       propertyPath: m_AssetId
       value: 1c27dbd4636ce564a91c3ad58223e3e0
       objectReference: {fileID: 0}
+    - target: {fileID: 3756460603756895743, guid: 1c27dbd4636ce564a91c3ad58223e3e0,
+        type: 3}
+      propertyPath: defaultLockState
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3798905780686078736, guid: 1c27dbd4636ce564a91c3ad58223e3e0,
         type: 3}
       propertyPath: sceneId
@@ -4192,6 +4197,11 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0.11529541
       objectReference: {fileID: 0}
+    - target: {fileID: 5004372002576368896, guid: f52ae71485157c148b926001a03b381c,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5229894731824824701, guid: f52ae71485157c148b926001a03b381c,
         type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -4459,7 +4469,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 2
+    m_Type: 1
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 0.931

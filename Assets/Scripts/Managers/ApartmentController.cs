@@ -87,6 +87,8 @@ namespace Sim {
         private Type[] defaultPropsTypes = new[] {typeof(Props), typeof(Seat)};
 
         private bool forcePropsHidden;
+        
+        private bool forceWallHidden;
 
         private readonly SyncDictionary<int, CoverSettings> coverSettingsByFaces = new SyncDictionary<int, CoverSettings>();
 
@@ -95,6 +97,8 @@ namespace Sim {
         public delegate void VisibilityModeChanged(VisibilityModeEnum mode);
 
         public static event VisibilityModeChanged OnPropsVisibilityModeChanged;
+        
+        public static event VisibilityModeChanged OnWallVisibilityModeChanged;
 
         private void Awake() {
             this.talyahConfiguration.container.SetActive(false);
@@ -430,6 +434,34 @@ namespace Sim {
             get => parentId;
             set => parentId = value;
         }
+        
+        #region Wall Visibility Management
+
+        public void SetWallVisibility(VisibilityModeEnum mode) {
+            this.forceWallHidden = mode == VisibilityModeEnum.FORCE_HIDE;
+
+            this.UpdateWallVisibility(mode);
+        }
+
+        private void UpdateWallVisibility(VisibilityModeEnum mode) {
+            if (mode == VisibilityModeEnum.FORCE_HIDE) {
+                this.currentConfiguration.walls.HideWalls();
+                this.currentConfiguration.shortWalls.SetActive(true);
+            } else {
+                this.currentConfiguration.walls.Reset();
+                this.currentConfiguration.shortWalls.SetActive(false);
+            }
+            
+            OnWallVisibilityModeChanged?.Invoke(mode);
+        }
+        
+        public void ToggleWallVisibility() {
+            this.forceWallHidden = !this.forceWallHidden;
+
+            this.UpdateWallVisibility(this.forceWallHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
+        }
+
+        #endregion
     }
 
     [Serializable]

@@ -9022,6 +9022,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wall Visibility Button
       objectReference: {fileID: 0}
+    - target: {fileID: 3684314752504359381, guid: 751b4ac36aa023a4f92513b2b11552cf,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 751b4ac36aa023a4f92513b2b11552cf, type: 3}
 --- !u!224 &4348426598250154198 stripped
