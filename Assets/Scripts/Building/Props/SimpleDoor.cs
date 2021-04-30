@@ -120,7 +120,6 @@ namespace Sim.Building {
         [Server]
         private void CheckState() {
             this.isOpened = this.lockState == DoorLockState.UNLOCKED && this.colliderTriggered.Count > 0;
-            Debug.Log($"Door opened : {this.isOpened}");
         }
     }
 
