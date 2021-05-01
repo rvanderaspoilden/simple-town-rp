@@ -1,4 +1,5 @@
-﻿using DG.Tweening;
+﻿using System;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -48,8 +49,8 @@ namespace Sim {
             DontDestroyOnLoad(this.gameObject);
         }
 
-        public void Show(bool instant = false) {
-            this.backgroundImg.DOColor(new Color(1, 1, 1, 1), instant ? 0 : this.fadeInDuration);
+        public void Show(bool instant = false, Action action = null) {
+            this.backgroundImg.DOColor(new Color(1, 1, 1, 1), instant ? 0 : this.fadeInDuration).OnComplete(() => action?.Invoke());
             this.frontImg.DOColor(new Color(1, 1, 1, this.maxFrontOpacity), instant ? 0 : this.fadeInDuration);
             this.loaderImg.DOColor(new Color(1, 1, 1, this.maxLoaderOpacity), instant ? 0 : this.fadeInDuration);
             OnStateChanged?.Invoke(true);

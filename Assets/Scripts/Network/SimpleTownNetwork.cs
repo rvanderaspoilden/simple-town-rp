@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Mirror;
 using Sim;
 using Sim.Entities;
+using Sim.Interactables;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Networking;
@@ -290,9 +291,17 @@ public class SimpleTownNetwork : NetworkManager {
 
     private void OnTeleportPlayer(NetworkConnection conn, TeleportMessage message) {
         Debug.Log($"I received teleport message from conn ID {conn.identity.netId}");
-        conn.identity.GetComponent<NavMeshAgent>().enabled = false;
-        conn.identity.transform.position = message.destination;
-        conn.identity.GetComponent<NavMeshAgent>().enabled = true;
+        StartCoroutine(this.TeleportCoroutine(message.destination));
+    }
+
+    private IEnumerator TeleportCoroutine(Vector3 destination) {
+        LoadingManager.Instance.Show(true);
+        yield return new WaitForSeconds(1f);
+        PlayerController.Local.NavMeshAgent.enabled = false;
+        PlayerController.Local.transform.position = destination;
+        PlayerController.Local.NavMeshAgent.enabled = true;
+        yield return new WaitForSeconds(2f);
+        LoadingManager.Instance.Hide();
     }
 
     [Server]

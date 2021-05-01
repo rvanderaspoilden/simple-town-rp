@@ -30,24 +30,11 @@ public class BuildingBehavior : NetworkBehaviour {
 
     [ServerCallback]
     public void TeleportToFloor(Teleporter elevator, int originFloor, int targetFloor, NetworkConnectionToClient conn) {
+        Debug.Log($"Server: Teleport from {originFloor} to {targetFloor}");
+
         if (targetFloor == 0) {
             // TELEPORT PLAYER TO MAIN HALL
-            Debug.Log("Teleport to main hall");
             conn.Send(new TeleportMessage {destination = this.mainElevator.SpawnTransform.position});
-
-            // Destroy hall if no players are in
-            if (hallControllerByFloor.ContainsKey(originFloor)) {
-                hallControllerByFloor[originFloor].RemovePlayer(conn.identity);
-                
-                if (!hallControllerByFloor[originFloor].ContainPlayers()) {
-                    NetworkServer.Destroy(hallControllerByFloor[originFloor].gameObject);
-                    hallControllerByFloor.Remove(originFloor);
-                } else {
-                    Debug.Log($"Can't destroy hall with floor number {originFloor} because not empty");
-                }
-            } else {
-                Debug.LogError($"Can't find hall with floor number {originFloor}");
-            }
         } else {
             HallController hallController = null;
 
@@ -61,6 +48,8 @@ public class BuildingBehavior : NetworkBehaviour {
 
                 newHallController.Init(streetName, targetFloor);
 
+                newHallController.Elevator.OnUse += TeleportToFloor;
+
                 hallControllerByFloor.Add(targetFloor, newHallController);
 
                 hallController = newHallController;
@@ -68,6 +57,24 @@ public class BuildingBehavior : NetworkBehaviour {
 
             // TELEPORT PLAYER
             hallController.MoveToSpawn(conn);
+        }
+
+        // Destroy hall if no players are in previous origin hall
+
+        if (originFloor <= 0) return;
+        
+        if (hallControllerByFloor.ContainsKey(originFloor)) {
+            hallControllerByFloor[originFloor].RemovePlayer(conn.identity);
+                
+            if (!hallControllerByFloor[originFloor].ContainPlayers()) {
+                hallControllerByFloor[originFloor].Elevator.OnUse -= TeleportToFloor;
+                NetworkServer.Destroy(hallControllerByFloor[originFloor].gameObject);
+                hallControllerByFloor.Remove(originFloor);
+            } else {
+                Debug.Log($"Can't destroy hall with floor number {originFloor} because not empty");
+            }
+        } else {
+            Debug.LogError($"Can't find hall with floor number {originFloor}");
         }
     }
 }
