@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Dissonance;
+using UnityEngine;
 
 namespace Sim {
     public class BubbleUI : MonoBehaviour {
@@ -20,26 +21,21 @@ namespace Sim {
 
         [SerializeField]
         private float maxCameraPosY;
-
-
+        
         private Canvas canvas;
-
+        
         private void Awake() {
             this.canvas = GetComponent<Canvas>();
             if (canvas != null && canvas.worldCamera == null) {
                 canvas.worldCamera = Camera.main;
             }
-
+            
             this.writeBubble.SetActive(false);
             this.voiceBubble.SetActive(false);
         }
 
-        private void Update() {
-            /*if ((photonVoiceView.IsSpeaking || photonVoiceView.IsRecording) && !this.voiceBubble.activeSelf) {
-                this.voiceBubble.SetActive(true);
-            } else if (!(photonVoiceView.IsSpeaking || photonVoiceView.IsRecording) && this.voiceBubble.activeSelf) {
-                this.voiceBubble.SetActive(false);
-            }*/
+        public void SetVoiceBubbleVisibility(bool isVisible) {
+            this.voiceBubble.SetActive(isVisible);
         }
 
         private void LateUpdate() {

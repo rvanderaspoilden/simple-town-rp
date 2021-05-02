@@ -4,6 +4,8 @@ using System.Linq;
 using AI;
 using AI.States;
 using DG.Tweening;
+using Dissonance;
+using Dissonance.Integrations.MirrorIgnorance;
 using Mirror;
 using Sim.Building;
 using Sim.Entities;
