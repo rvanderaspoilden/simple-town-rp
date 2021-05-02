@@ -25,7 +25,7 @@ public class Roof : MonoBehaviour {
     }
 
     private void OnTriggerExit(Collider other) {
-        if (other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
+        if (PlayerController.Local && other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
             playerInside = false;
         } else if (other.CompareTag("MainCamera")) {
             cameraInside = false;

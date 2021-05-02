@@ -53,7 +53,7 @@ namespace Sim.Building {
 
         public Dictionary<int, CoverSettings> CoverSettingsByFaces => coverSettingsByFaces;
 
-        public Material[] SharedMaterials() => this.renderer.sharedMaterials;
+        public Material[] SharedMaterials() => this.GetComponent<Renderer>().sharedMaterials;
 
         public void ApplyModification() {
             this.coverSettingsInPreview.Clear();

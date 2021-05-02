@@ -6,7 +6,6 @@ using Sim.Entities;
 using Sim.Enums;
 using Sim.Interactables;
 using UnityEngine;
-using UnityEngine.AI;
 
 public class HallController : NetworkBehaviour {
     [Header("Settings")]
@@ -58,13 +57,11 @@ public class HallController : NetworkBehaviour {
 
         this.elevator.ParentId = netId;
 
-        this.elevator.GOToMainHall = true;
-
         NetworkServer.Spawn(this.elevator.gameObject);
         for (int i = 0; i < this.apartmentSpawnPoints.Length; i++) {
             Address address = new Address {
                 street = this.street,
-                doorNumber = (i + 1) * this.floorNumber,
+                doorNumber = (i + 1) + (this.apartmentSpawnPoints.Length * (this.floorNumber - 1)),
                 homeType = HomeTypeEnum.APARTMENT
             };
 
@@ -111,4 +108,6 @@ public class HallController : NetworkBehaviour {
     public bool ContainPlayers() => this.playersInside.Count > 0 || this.playersToMove.Count > 0;
 
     public int FloorNumber => floorNumber;
+
+    public Teleporter Elevator => elevator;
 }

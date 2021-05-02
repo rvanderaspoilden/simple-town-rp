@@ -1,4 +1,5 @@
-﻿using Sim.UI;
+﻿using Sim.Interactables;
+using Sim.UI;
 using TMPro;
 using UnityEngine;
 
@@ -18,6 +19,9 @@ namespace Sim {
         [SerializeField]
         private PropsContentUI propsContentUI;
 
+        [SerializeField]
+        private ElevatorUI elevatorUI;
+
         public static DefaultViewUI Instance;
 
         private void Awake() {
@@ -30,6 +34,7 @@ namespace Sim {
 
         private void Start() {
             this.HidePropsContentUI();
+            this.HideElevatorUI();
             this.SetLocationText("Salmon Hotel");
         }
 
@@ -37,6 +42,15 @@ namespace Sim {
             foreach (TextMeshProUGUI tmpPro in this.locationText.GetComponentsInChildren<TextMeshProUGUI>()) {
                 tmpPro.text = value;
             }
+        }
+
+        public void ShowElevatorUI(Teleporter elevator) {
+            this.elevatorUI.Bind(elevator);
+            this.elevatorUI.gameObject.SetActive(true);
+        }
+
+        public void HideElevatorUI() {
+            this.elevatorUI.gameObject.SetActive(false);
         }
 
         public void ShowPropsContentUI(string[] items) {
