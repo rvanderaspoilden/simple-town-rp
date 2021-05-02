@@ -89,8 +89,26 @@ MonoBehaviour:
   playerSpawnMethod: 0
   spawnPrefabs:
   - {fileID: 5496279082967967631, guid: 525f620fbb753f9448971022e0afe439, type: 3}
-  hallScene: Assets/Scenes/Hall.unity
-  hallSpacingY: 50
+  - {fileID: 608618609674454399, guid: 9d46690be21fbd84ea50f4ecf012deeb, type: 3}
+  - {fileID: 2833636661058039448, guid: a3bce8cccb6db7d45bff1758e06fdd87, type: 3}
+  - {fileID: 6924292189066641840, guid: 3cb1bad74eac2ad4098dc85c2e5a439b, type: 3}
+  useElbloodyAccount: 0
+  useSpectusAccount: 0
+  characterData:
+    _id: 
+    user_id: 
+    identity:
+      firstname: 
+      lastname: 
+      originCountry: 
+      job: 0
+    money: 0
+    health:
+      thirst: 0
+      hungry: 0
+      sleep: 0
+    mood: 0
+  characterHomes: []
 --- !u!114 &1091815741
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -114,7 +132,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3481296056184142034}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6442dc8070ceb41f094e44de0bf87274, type: 3}
   m_Name: 
