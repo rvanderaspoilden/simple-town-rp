@@ -19,6 +19,15 @@ namespace Sim.Building {
         [SerializeField]
         private NavMeshObstacle navMeshObstacle;
 
+        [SerializeField]
+        private AudioClip doorOpenSound;
+
+        [SerializeField]
+        private AudioClip doorCloseSound;
+
+        [SerializeField]
+        private AudioSource audioSource;
+        
         [Header("Debug")]
         [SerializeField]
         private List<Collider> colliderTriggered;
@@ -31,6 +40,7 @@ namespace Sim.Building {
 
         [SyncVar]
         private uint parentId;
+
 
         protected void Awake() {
             this.colliderTriggered = new List<Collider>();
@@ -83,8 +93,10 @@ namespace Sim.Building {
             this.doorBody.DOComplete();
 
             if (this.isOpened) {
+                this.audioSource.PlayOneShot(this.doorOpenSound);
                 this.doorBody.DOLocalRotate(Quaternion.Euler(openedLocalRotation).eulerAngles, .3f);
             } else {
+                this.audioSource.PlayOneShot(this.doorCloseSound);
                 this.doorBody.DOLocalRotate(Quaternion.Euler(0, 0, 0).eulerAngles, .3f);
             }
         }
