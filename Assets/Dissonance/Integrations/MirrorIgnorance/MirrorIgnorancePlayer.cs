@@ -73,6 +73,8 @@ namespace Dissonance.Integrations.MirrorIgnorance
         }
 
         private void BindVoiceDetectionEvent() {
+            this._comms = FindObjectOfType<DissonanceComms>();
+            
             if (this.voicePlayerState != null) {
                 this.voicePlayerState.OnStartedSpeaking -= IsSpeaking;
                 this.voicePlayerState.OnStoppedSpeaking -= StopSpeaking;

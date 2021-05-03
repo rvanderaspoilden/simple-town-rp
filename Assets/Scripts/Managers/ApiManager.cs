@@ -28,21 +28,13 @@ namespace Sim {
 
         public delegate void SucceededResponse();
         
-        public delegate void DeliveryDeleteResponse(bool isDeleted);
-
         public delegate void HomeCreationSuceededResponse(Home home);
 
         public delegate void CharacterDataResponse(CharacterData characterData);
 
         public delegate void HomesResponse(List<Home> homes);
 
-        public delegate void DeliveriesResponse(List<Delivery> deliveries);
-
         public delegate void FailedResponse(String msg);
-
-        public static event DeliveriesResponse OnDeliveriesRetrieved;
-
-        public static event DeliveryDeleteResponse OnDeliveryDeleted;
 
         public static event SucceededResponse OnAuthenticationSucceeded;
 
