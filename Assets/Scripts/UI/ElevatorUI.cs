@@ -9,23 +9,24 @@ public class ElevatorUI : MonoBehaviour {
     private TMP_InputField searchTxt;
 
     [SerializeField]
-    private AudioClip buttonClickSound;
+    private AudioClip numberButtonClickSound;
+
+    [SerializeField]
+    private AudioClip navigateButtonClickSound;
+
+    [SerializeField]
+    private AudioClip backgroundSound;
 
     private Teleporter teleporterBind;
-
-    private AudioSource audioSource;
-
-    private void Awake() {
-        this.audioSource = GetComponent<AudioSource>();
-    }
 
     public void Bind(Teleporter bind) {
         this.teleporterBind = bind;
         this.searchTxt.text = string.Empty;
+        HUDManager.Instance.PlayBackgroundSound(this.backgroundSound, .03f);
     }
 
     public void AddNumber(int value) {
-        this.audioSource.PlayOneShot(this.buttonClickSound);
+        HUDManager.Instance.PlaySound(this.numberButtonClickSound, 1);
 
         if (this.searchTxt.text.Length < 2) {
             this.searchTxt.text += value.ToString();
@@ -33,7 +34,7 @@ public class ElevatorUI : MonoBehaviour {
     }
 
     public void Confirm() {
-        this.audioSource.PlayOneShot(this.buttonClickSound);
+        HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
 
         if (int.TryParse(this.searchTxt.text, out var floorToGo)) {
             this.teleporterBind.CmdUse(floorToGo);
@@ -42,12 +43,14 @@ public class ElevatorUI : MonoBehaviour {
     }
 
     public void GoToHall() {
-        this.audioSource.PlayOneShot(this.buttonClickSound);
+        HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
+        
         this.teleporterBind.CmdUse(0);
         DefaultViewUI.Instance.HideElevatorUI();
     }
 
     public void Abort() {
         DefaultViewUI.Instance.HideElevatorUI();
+        HUDManager.Instance.StopBackgroundSound();
     }
 }

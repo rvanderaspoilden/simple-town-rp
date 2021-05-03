@@ -17,6 +17,12 @@ namespace Sim {
         [SerializeField]
         private DefaultViewUI defaultViewUI;
 
+        [SerializeField]
+        private AudioSource audioSource;
+
+        [SerializeField]
+        private AudioSource backgroundAudioSource;
+
         public static HUDManager Instance;
 
         private PanelTypeEnum currentPanelType;
@@ -26,6 +32,7 @@ namespace Sim {
                 Destroy(this.gameObject);
             } else {
                 Instance = this;
+                this.audioSource = GetComponent<AudioSource>();
             }
 
             DontDestroyOnLoad(this.gameObject);
@@ -36,6 +43,25 @@ namespace Sim {
             this.DisplayAdminPanel(false);
             this.DisplayPanel(PanelTypeEnum.NONE);
             this.CloseContextMenu();
+        }
+
+        public void PlaySound(AudioClip sound, float volume) {
+            this.audioSource.volume = volume;
+            this.audioSource.PlayOneShot(sound);
+        }
+
+        public void PlayBackgroundSound(AudioClip audioClip, float volume) {
+            this.backgroundAudioSource.clip = audioClip;
+            this.backgroundAudioSource.volume = volume;
+            this.backgroundAudioSource.Play();
+        }
+
+        public void StopBackgroundSound() {
+            this.backgroundAudioSource.Stop();
+        }
+
+        public void StopSound() {
+            this.audioSource.Stop();
         }
 
         public void DisplayPanel(PanelTypeEnum panelType) {

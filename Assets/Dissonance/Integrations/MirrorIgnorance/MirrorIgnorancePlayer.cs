@@ -56,8 +56,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
             }
         }
         
-        public void OnDestroy()
-        {
+        public void OnDestroy() {
             if (_comms != null)
                 _comms.LocalPlayerNameChanged -= SetPlayerName;
         }
@@ -74,6 +73,8 @@ namespace Dissonance.Integrations.MirrorIgnorance
         }
 
         private void BindVoiceDetectionEvent() {
+            this._comms = FindObjectOfType<DissonanceComms>();
+            
             if (this.voicePlayerState != null) {
                 this.voicePlayerState.OnStartedSpeaking -= IsSpeaking;
                 this.voicePlayerState.OnStoppedSpeaking -= StopSpeaking;

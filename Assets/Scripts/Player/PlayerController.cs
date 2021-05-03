@@ -15,6 +15,7 @@ using Sim.UI;
 using UnityEngine;
 using UnityEngine.AI;
 using Action = Sim.Interactables.Action;
+using Random = UnityEngine.Random;
 
 namespace Sim {
     public class PlayerController : NetworkBehaviour {
@@ -33,6 +34,12 @@ namespace Sim {
 
         [SerializeField]
         private Action[] actions;
+
+        [SerializeField]
+        private AudioClip walkStepSound;
+
+        [SerializeField]
+        private AudioSource audioSource;
 
         [Header("Only for debug")]
         [SerializeField]
@@ -130,6 +137,11 @@ namespace Sim {
             if (isLocalPlayer && other.CompareTag("Geographic Area")) {
                 RemoveGeographicArea(other.GetComponent<GeographicArea>());
             }
+        }
+
+        public void PlayStepSound() {
+            this.audioSource.volume = Random.Range(0.05f, 0.1f);
+            this.audioSource.PlayOneShot(this.walkStepSound);
         }
 
         private void SetGeographicArea(GeographicArea geographicArea) {

@@ -289,8 +289,8 @@ public class SimpleTownNetwork : NetworkManager {
         StartCoroutine(SetupCharacterCoroutine(conn, message.userId));
     }
 
-    private void OnTeleportPlayer(NetworkConnection conn, TeleportMessage message) {
-        Debug.Log($"I received teleport message from conn ID {conn.identity.netId}");
+    private void OnTeleportPlayer(TeleportMessage message) {
+        Debug.Log($"I received teleport message from conn ID {NetworkClient.connection.identity.netId}");
         StartCoroutine(this.TeleportCoroutine(message.destination));
     }
 
@@ -301,6 +301,7 @@ public class SimpleTownNetwork : NetworkManager {
         PlayerController.Local.transform.position = destination;
         PlayerController.Local.NavMeshAgent.enabled = true;
         yield return new WaitForSeconds(2f);
+        HUDManager.Instance.StopBackgroundSound();
         LoadingManager.Instance.Hide();
     }
 
