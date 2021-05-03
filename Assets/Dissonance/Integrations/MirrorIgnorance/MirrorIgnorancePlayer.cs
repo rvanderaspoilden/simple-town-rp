@@ -56,8 +56,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
             }
         }
         
-        public void OnDestroy()
-        {
+        public void OnDestroy() {
             if (_comms != null)
                 _comms.LocalPlayerNameChanged -= SetPlayerName;
         }
