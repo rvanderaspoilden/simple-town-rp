@@ -2654,6 +2654,10 @@ MonoBehaviour:
   openedAnchorY: 0
   openAnimationDuration: 0.5
   closeAnimationDuration: 1
+  unlockSound: {fileID: 8300000, guid: 26ba141b9d89e4644b5e00f1cf484701, type: 3}
+  lockSound: {fileID: 8300000, guid: 26ba141b9d89e4644b5e00f1cf484701, type: 3}
+  applicationHoverSound: {fileID: 8300000, guid: b8d3b86287967524fa95a2c6d6369ed1,
+    type: 3}
 --- !u!1 &1567732769
 GameObject:
   m_ObjectHideFlags: 0

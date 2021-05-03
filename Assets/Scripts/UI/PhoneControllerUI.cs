@@ -14,6 +14,15 @@ namespace Sim {
         [SerializeField]
         private float closeAnimationDuration;
 
+        [SerializeField]
+        private AudioClip unlockSound;
+
+        [SerializeField]
+        private AudioClip lockSound;
+
+        [SerializeField]
+        private AudioClip applicationHoverSound;
+
         private Vector2 firstPressPos;
         private Vector2 secondPressPos;
         private Vector2 currentSwipe;
@@ -66,12 +75,14 @@ namespace Sim {
         
         private void OpenPhone() {
             if (!this.phoneOpened) {
+                HUDManager.Instance.PlaySound(this.unlockSound, .5f);
                 this.rectTransform.DOAnchorPosY(this.openedAnchorY, this.openAnimationDuration).SetEase(Ease.Flash).OnComplete(() => this.phoneOpened = true);
             }
         }
 
         private void ClosePhone() {
             if (this.phoneOpened) {
+                HUDManager.Instance.PlaySound(this.unlockSound, .1f);
                 this.rectTransform.DOAnchorPosY(this.defaultPhoneAnchorPosY, this.closeAnimationDuration).SetEase(Ease.OutBounce).OnComplete(() => this.phoneOpened = false);
             }
         }
