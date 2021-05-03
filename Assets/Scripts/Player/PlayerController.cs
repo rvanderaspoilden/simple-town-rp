@@ -139,8 +139,17 @@ namespace Sim {
             }
         }
 
+        public void ResetGeographicArea() {
+            this.currentGeographicArea.Clear();
+            
+            if (DefaultViewUI.Instance) {
+                DefaultViewUI.Instance.SetLocationText(this.currentGeographicArea.Count > 0 ? this.currentGeographicArea.Last().LocationText : string.Empty);
+            }
+        }
+
         public void PlayStepSound() {
-            this.audioSource.volume = Random.Range(0.05f, 0.1f);
+            this.audioSource.volume = 0.005f;
+            this.audioSource.pitch = Random.Range(1f, 1.2f);
             this.audioSource.PlayOneShot(this.walkStepSound);
         }
 
