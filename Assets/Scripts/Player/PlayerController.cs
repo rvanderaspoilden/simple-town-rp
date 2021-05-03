@@ -138,6 +138,8 @@ namespace Sim {
             if (DefaultViewUI.Instance) {
                 DefaultViewUI.Instance.SetLocationText(this.currentGeographicArea.Count > 0 ? this.currentGeographicArea.Last().LocationText : string.Empty);
             }
+
+            Debug.Log("Geo length : " + this.currentGeographicArea.Count);
         }
 
         private void RemoveGeographicArea(GeographicArea geographicArea) {
