@@ -15,12 +15,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
     {
         private static readonly Log Log = Logs.Create(LogCategory.Network, "Mirror Player Component");
         
-        [SerializeField]
-        private BubbleUI bubbleUI;
-
         private DissonanceComms _comms;
-
-        private VoicePlayerState voicePlayerState;
 
         public bool IsTracking { get; private set; }
 
@@ -71,26 +66,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
             if (IsTracking)
                 StopTracking();
         }
-
-        private void BindVoiceDetectionEvent() {
-            this._comms = FindObjectOfType<DissonanceComms>();
-            
-            if (this.voicePlayerState != null) {
-                this.voicePlayerState.OnStartedSpeaking -= IsSpeaking;
-                this.voicePlayerState.OnStoppedSpeaking -= StopSpeaking;
-            }
-                
-            this.voicePlayerState = this._comms.FindPlayer(PlayerId);
-                
-            if (this.voicePlayerState == null) {
-                Debug.LogError($"Client: Cannot find voice player state for {this.name}");
-                return;
-            }
-
-            this.voicePlayerState.OnStartedSpeaking += IsSpeaking;
-            this.voicePlayerState.OnStoppedSpeaking += StopSpeaking;
-        }
-
+        
         public override void OnStartLocalPlayer()
         {
             base.OnStartLocalPlayer();
@@ -142,27 +118,9 @@ namespace Dissonance.Integrations.MirrorIgnorance
             //A client is starting. Start tracking if the name has been properly initialised.
             if (!string.IsNullOrEmpty(PlayerId)) {
                 StartTracking();
-                BindVoiceDetectionEvent();
             }
         }
         
-        private void IsSpeaking(VoicePlayerState result) {
-            this.bubbleUI.SetVoiceBubbleVisibility(true);
-        }
-
-        private void StopSpeaking(VoicePlayerState result) {
-            this.bubbleUI.SetVoiceBubbleVisibility(false);
-        }
-
-        public override void OnStopClient() {
-            base.OnStopClient();
-
-            if (this.voicePlayerState == null) return;
-            
-            this.voicePlayerState.OnStartedSpeaking -= IsSpeaking;
-            this.voicePlayerState.OnStoppedSpeaking -= StopSpeaking;
-        }
-
         /// <summary>
         /// Invoking on client will cause it to run on the server
         /// </summary>
@@ -187,8 +145,6 @@ namespace Dissonance.Integrations.MirrorIgnorance
             if (!isLocalPlayer) {
                 SetPlayerName(playerName);
             }
-
-            BindVoiceDetectionEvent();
         }
 
         private void StartTracking()
