@@ -302,7 +302,6 @@ public class SimpleTownNetwork : NetworkManager {
         PlayerController.Local.transform.position = destination;
         PlayerController.Local.NavMeshAgent.enabled = true;
         yield return new WaitForSeconds(2f);
-        HUDManager.Instance.StopBackgroundSound();
         LoadingManager.Instance.Hide();
     }
 
