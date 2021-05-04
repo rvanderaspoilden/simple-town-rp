@@ -297,6 +297,7 @@ public class SimpleTownNetwork : NetworkManager {
     private IEnumerator TeleportCoroutine(Vector3 destination) {
         LoadingManager.Instance.Show(true);
         yield return new WaitForSeconds(1f);
+        PlayerController.Local.ResetGeographicArea();
         PlayerController.Local.NavMeshAgent.enabled = false;
         PlayerController.Local.transform.position = destination;
         PlayerController.Local.NavMeshAgent.enabled = true;

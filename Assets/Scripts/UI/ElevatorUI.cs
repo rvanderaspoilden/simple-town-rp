@@ -34,11 +34,11 @@ public class ElevatorUI : MonoBehaviour {
     }
 
     public void Confirm() {
-        HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
-
         if (int.TryParse(this.searchTxt.text, out var floorToGo)) {
+            HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
             this.teleporterBind.CmdUse(floorToGo);
             DefaultViewUI.Instance.HideElevatorUI();
+            LoadingManager.Instance.Show(true);
         }
     }
 
@@ -47,6 +47,7 @@ public class ElevatorUI : MonoBehaviour {
         
         this.teleporterBind.CmdUse(0);
         DefaultViewUI.Instance.HideElevatorUI();
+        LoadingManager.Instance.Show(true);
     }
 
     public void Abort() {

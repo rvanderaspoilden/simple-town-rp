@@ -1,4 +1,5 @@
-﻿using Dissonance;
+﻿using System;
+using Dissonance;
 using UnityEngine;
 
 namespace Sim {
@@ -37,6 +38,8 @@ namespace Sim {
         public void SetVoiceBubbleVisibility(bool isVisible) {
             this.voiceBubble.SetActive(isVisible);
         }
+
+        public GameObject VoiceBubble => voiceBubble;
 
         private void LateUpdate() {
             if (canvas == null || canvas.worldCamera == null) {

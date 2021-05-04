@@ -4,8 +4,6 @@ using System.Linq;
 using AI;
 using AI.States;
 using DG.Tweening;
-using Dissonance;
-using Dissonance.Integrations.MirrorIgnorance;
 using Mirror;
 using Sim.Building;
 using Sim.Entities;
@@ -41,6 +39,9 @@ namespace Sim {
         [SerializeField]
         private AudioSource audioSource;
 
+        [SerializeField]
+        private BubbleUI bubbleUI;
+
         [Header("Only for debug")]
         [SerializeField]
         private NavMeshAgent navMeshAgent;
@@ -59,6 +60,9 @@ namespace Sim {
 
         [SyncVar(hook = nameof(ParseCharacterData))]
         private string rawCharacterData;
+
+        [SyncVar(hook = nameof(OnTalkingStateChanged))]
+        private bool isTalking;
 
         private PlayerAnimator animator;
 
@@ -139,8 +143,23 @@ namespace Sim {
             }
         }
 
+        [Client]
+        public void OnTalkingStateChanged(bool old, bool newValue) {
+            this.isTalking = newValue;
+            this.bubbleUI.SetVoiceBubbleVisibility(this.isTalking);
+        }
+
+        public void ResetGeographicArea() {
+            this.currentGeographicArea.Clear();
+            
+            if (DefaultViewUI.Instance) {
+                DefaultViewUI.Instance.SetLocationText(this.currentGeographicArea.Count > 0 ? this.currentGeographicArea.Last().LocationText : string.Empty);
+            }
+        }
+
         public void PlayStepSound() {
-            this.audioSource.volume = Random.Range(0.05f, 0.1f);
+            this.audioSource.volume = 0.005f;
+            this.audioSource.pitch = Random.Range(1f, 1.2f);
             this.audioSource.PlayOneShot(this.walkStepSound);
         }
 
@@ -177,6 +196,19 @@ namespace Sim {
             if (!isLocalPlayer || this.stateMachine == null) return;
 
             this.stateMachine.Tick();
+            
+            if (!this.isTalking && Input.GetAxis("GlobalChat") != 0f) {
+                this.CmdSetTalk(true);
+                this.bubbleUI.SetVoiceBubbleVisibility(true);
+            } else if (this.isTalking && Input.GetAxis("GlobalChat") == 0f) {
+                this.CmdSetTalk(false);
+                this.bubbleUI.SetVoiceBubbleVisibility(false);
+            }
+        }
+
+        [Command]
+        public void CmdSetTalk(bool value) {
+            this.isTalking = value;
         }
 
         #region State Machine Management
