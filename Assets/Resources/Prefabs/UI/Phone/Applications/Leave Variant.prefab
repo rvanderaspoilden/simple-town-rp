@@ -1,5 +1,20 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &7172504174232076350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6718623415755066658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d4ac5185bdf24345ac3956d9ece7fd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverSound: {fileID: 8300000, guid: b8d3b86287967524fa95a2c6d6369ed1, type: 3}
+  clickSound: {fileID: 8300000, guid: 3cdf6946b7f8a1549ab339405d1c0146, type: 3}
+  application: {fileID: 0}
 --- !u!1001 &5457310971294584196
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -128,5 +143,12 @@ PrefabInstance:
       propertyPath: m_text
       value: Leave
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 8885749444577646992, guid: 596c17bc1a7fa1143a576005f6008971, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 596c17bc1a7fa1143a576005f6008971, type: 3}
+--- !u!1 &6718623415755066658 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1621607080448802982, guid: 596c17bc1a7fa1143a576005f6008971,
+    type: 3}
+  m_PrefabInstance: {fileID: 5457310971294584196}
+  m_PrefabAsset: {fileID: 0}
