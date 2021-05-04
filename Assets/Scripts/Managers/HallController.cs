@@ -55,6 +55,8 @@ public class HallController : NetworkBehaviour {
 
         this.elevator.transform.parent = this.transform;
 
+        this.elevator.HallController = this;
+
         this.elevator.ParentId = netId;
 
         NetworkServer.Spawn(this.elevator.gameObject);

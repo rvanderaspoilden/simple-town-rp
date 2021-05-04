@@ -23,6 +23,11 @@ namespace Sim.Interactables {
             }
         }
 
+        public HallController HallController {
+            get => hallController;
+            set => hallController = value;
+        }
+
         protected override void AssignParent() {
             if (parentId == 0) return;
 

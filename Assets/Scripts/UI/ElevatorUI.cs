@@ -1,3 +1,4 @@
+using System;
 using Sim;
 using Sim.Interactables;
 using TMPro;
@@ -33,25 +34,40 @@ public class ElevatorUI : MonoBehaviour {
         }
     }
 
+    private void OnDisable() {
+        HUDManager.Instance.StopBackgroundSound();
+    }
+
     public void Confirm() {
         if (int.TryParse(this.searchTxt.text, out var floorToGo)) {
-            HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
-            this.teleporterBind.CmdUse(floorToGo);
-            DefaultViewUI.Instance.HideElevatorUI();
-            LoadingManager.Instance.Show(true);
+            int originFloor = this.teleporterBind.HallController ? this.teleporterBind.HallController.FloorNumber : 0;
+
+            Debug.Log($"{originFloor} - {floorToGo}");
+            
+            if (originFloor != floorToGo) {
+                HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
+                this.teleporterBind.CmdUse(floorToGo);
+                DefaultViewUI.Instance.HideElevatorUI();
+                LoadingManager.Instance.Show(true);
+            } else {
+                DefaultViewUI.Instance.HideElevatorUI();
+            }
         }
     }
 
     public void GoToHall() {
-        HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
-        
-        this.teleporterBind.CmdUse(0);
-        DefaultViewUI.Instance.HideElevatorUI();
-        LoadingManager.Instance.Show(true);
+        int originFloor = this.teleporterBind.HallController ? this.teleporterBind.HallController.FloorNumber : 0;
+
+        if (originFloor != 0) {
+            HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
+            DefaultViewUI.Instance.HideElevatorUI();
+            this.teleporterBind.CmdUse(0);
+        } else {
+            DefaultViewUI.Instance.HideElevatorUI();
+        }
     }
 
     public void Abort() {
         DefaultViewUI.Instance.HideElevatorUI();
-        HUDManager.Instance.StopBackgroundSound();
     }
 }
