@@ -6,10 +6,9 @@ public class SimpleColorButton : ColorButton {
     [SerializeField]
     private Image primaryImg;
 
-    private PropsPreset preset;
-    
-    public override void Setup(PropsPreset propsPreset) {
-        this.preset = propsPreset;
-        this.primaryImg.color = propsPreset.Primary.Color;
+    public override void Setup(PropsPreset preset, PhoneArticleCardUI card) {
+        base.Setup(preset, card);
+        
+        this.primaryImg.color = preset.Primary.Color;
     }
 }

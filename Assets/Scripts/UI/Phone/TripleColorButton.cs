@@ -12,12 +12,11 @@ public class TripleColorButton : ColorButton {
     [SerializeField]
     private Image tertiaryImg;
 
-    private PropsPreset preset;
-    
-    public override void Setup(PropsPreset propsPreset) {
-        this.preset = propsPreset;
-        this.primaryImg.color = propsPreset.Primary.Color;
-        this.secondaryImg.color = propsPreset.Secondary.Color;
-        this.tertiaryImg.color = propsPreset.Tertiary.Color;
+    public override void Setup(PropsPreset preset, PhoneArticleCardUI card) {
+        base.Setup(preset, card);
+        
+        this.primaryImg.color = preset.Primary.Color;
+        this.secondaryImg.color = preset.Secondary.Color;
+        this.tertiaryImg.color = preset.Tertiary.Color;
     }
 }

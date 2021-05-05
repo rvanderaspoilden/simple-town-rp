@@ -8,12 +8,11 @@ public class DoubleColorButton : ColorButton {
     
     [SerializeField]
     private Image secondaryImg;
-    
-    private PropsPreset preset;
-    
-    public override void Setup(PropsPreset propsPreset) {
-        this.preset = propsPreset;
-        this.primaryImg.color = propsPreset.Primary.Color;
-        this.secondaryImg.color = propsPreset.Secondary.Color;
+
+    public override void Setup(PropsPreset preset, PhoneArticleCardUI card) {
+        base.Setup(preset, card);
+        
+        this.primaryImg.color = preset.Primary.Color;
+        this.secondaryImg.color = preset.Secondary.Color;
     }
 }
