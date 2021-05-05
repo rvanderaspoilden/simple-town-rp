@@ -698,7 +698,6 @@
             <e p="Requests" t="Include">
               <e p="AssignApartmentRequest.cs" t="Include" />
               <e p="CharacterCreationRequest.cs" t="Include" />
-              <e p="CreateDeliveryRequest.cs" t="Include" />
             </e>
             <e p="Responses" t="Include">
               <e p="AuthenticationResponse.cs" t="Include" />
@@ -754,6 +753,8 @@
           <e p="Network" t="Include">
             <e p="Messages" t="Include">
               <e p="CreateCharacterMessage.cs" t="Include" />
+              <e p="CreateDeliveryRequest.cs" t="Include" />
+              <e p="ShopResponseMessage.cs" t="Include" />
               <e p="TeleportMessage.cs" t="Include" />
             </e>
             <e p="SimpleTownNetwork.cs" t="Include" />

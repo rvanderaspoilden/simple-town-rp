@@ -75,8 +75,11 @@ public class PhoneArticleCardUI : MonoBehaviour {
             type = DeliveryType.PROPS,
             recipientId = PlayerController.Local.CharacterData.Id,
             propsConfigId = propsConfig.GetId(),
-            propsPresetId = selectedPreset.ID
         };
+
+        if (this.selectedPreset != null) {
+            request.propsPresetId = selectedPreset.ID;
+        }
         
         PlayerController.Local.connectionToServer.Send(request);
     }
