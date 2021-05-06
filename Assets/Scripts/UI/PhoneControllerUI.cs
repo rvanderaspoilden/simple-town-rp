@@ -41,16 +41,34 @@ namespace Sim {
 
         private RectTransform rectTransform;
 
-        private void Awake() {
-            this.rectTransform = GetComponent<RectTransform>();
-            this.defaultPhoneAnchorPosY = this.rectTransform.anchoredPosition.y;
-            this.firstPressPos = Vector2.negativeInfinity;
+        private PhoneApplication currentActiveApplication;
 
-            this.applications.ForEach(x => x.Application.SetActive(false));
+        public static PhoneControllerUI Instance;
+
+        private void Awake() {
+            if (Instance != null && Instance != this) {
+                Destroy(this);
+            } else {
+                Instance = this;
+                this.rectTransform = GetComponent<RectTransform>();
+                this.defaultPhoneAnchorPosY = this.rectTransform.anchoredPosition.y;
+                this.firstPressPos = Vector2.negativeInfinity;
+
+                this.applications.ForEach(x => x.Application.SetActive(false));
+            }
         }
 
         private void Update() {
             this.Swipe();
+        }
+
+        public void OpenApplication(PhoneApplication phoneApplication) {
+            phoneApplication.Application.SetActive(true);
+            this.currentActiveApplication = phoneApplication;
+        }
+
+        public void BackToHome() {
+            this.currentActiveApplication.Application.SetActive(false);
         }
 
         public void OnPointerDown(PointerEventData eventData) {
