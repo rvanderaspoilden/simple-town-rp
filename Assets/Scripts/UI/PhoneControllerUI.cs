@@ -29,6 +29,12 @@ namespace Sim {
         private HomeViewUI homeViewUI;
 
         [SerializeField]
+        private CanvasGroup lockScreenCanvasGroup;
+
+        [SerializeField]
+        private CanvasGroup actionBarCanvasGroup;
+
+        [SerializeField]
         private List<PhoneApplication> applications;
 
         private Vector2 firstPressPos;
@@ -54,6 +60,10 @@ namespace Sim {
                 this.defaultPhoneAnchorPosY = this.rectTransform.anchoredPosition.y;
                 this.firstPressPos = Vector2.negativeInfinity;
 
+                this.lockScreenCanvasGroup.alpha = 1;
+                this.actionBarCanvasGroup.alpha = 0;
+                this.actionBarCanvasGroup.interactable = false;
+
                 this.applications.ForEach(x => x.Application.SetActive(false));
             }
         }
@@ -65,10 +75,15 @@ namespace Sim {
         public void OpenApplication(PhoneApplication phoneApplication) {
             phoneApplication.Application.SetActive(true);
             this.currentActiveApplication = phoneApplication;
+            this.actionBarCanvasGroup.alpha = 1;
+            this.actionBarCanvasGroup.interactable = true;
         }
 
         public void BackToHome() {
             this.currentActiveApplication.Application.SetActive(false);
+            this.currentActiveApplication = null;
+            this.actionBarCanvasGroup.alpha = 0;
+            this.actionBarCanvasGroup.interactable = false;
         }
 
         public void OnPointerDown(PointerEventData eventData) {
@@ -103,14 +118,20 @@ namespace Sim {
             if (!this.phoneOpened) {
                 HUDManager.Instance.PlaySound(this.unlockSound, .5f);
                 this.rectTransform.DOAnchorPosY(this.openedAnchorY, this.openAnimationDuration).SetEase(Ease.Flash).OnComplete(() => this.phoneOpened = true);
+                this.lockScreenCanvasGroup.DOComplete();
+                this.lockScreenCanvasGroup.DOFade(0, .3f);
             }
         }
 
         private void ClosePhone() {
             if (this.phoneOpened) {
-                HUDManager.Instance.PlaySound(this.unlockSound, .1f);
-                this.rectTransform.DOAnchorPosY(this.defaultPhoneAnchorPosY, this.closeAnimationDuration).SetEase(Ease.OutBounce)
+                HUDManager.Instance.PlaySound(this.lockSound, .5f);
+                this.rectTransform.DOAnchorPosY(this.defaultPhoneAnchorPosY, this.closeAnimationDuration)
+                    .SetEase(Ease.OutBounce)
                     .OnComplete(() => this.phoneOpened = false);
+                
+                this.lockScreenCanvasGroup.DOComplete();
+                this.lockScreenCanvasGroup.DOFade(1, .3f);
             }
         }
     }
