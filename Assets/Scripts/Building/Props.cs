@@ -168,7 +168,6 @@ namespace Sim.Building {
 
         public void SetPresetId(int oldId, int newId) {
             this.presetId = newId;
-            Debug.Log($"Set preset ID {newId} for {this.name}");
             this.UpdatePresetRender();
         }
 
