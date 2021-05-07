@@ -114,7 +114,7 @@ namespace Sim.Building {
             if (other.CompareTag("Buildable Area") && this.buildableArea != other) {
                 this.buildableArea = other;
                 this.isInBuildableArea = this.buildableArea.GetComponentInParent<ApartmentController>().IsTenant(PlayerController.Local.CharacterData);
-            } else if(!other.CompareTag("Buildable Area") && !other.CompareTag("Roof") && !other.CompareTag("Geographic Area")){
+            } else if(!other.CompareTag("Buildable Area") && !other.CompareTag("Roof") && !other.CompareTag("Dissonance") && !other.CompareTag("Geographic Area")){
                 if (this.currentProps.IsWallProps() && !this.colliderTriggered.Find(x => x == other)) {
                     this.colliderTriggered.Add(other);
                 } else if (this.currentProps.IsGroundProps() && other.gameObject.layer != LayerMask.NameToLayer("Ground") &&
@@ -137,7 +137,7 @@ namespace Sim.Building {
         }
 
         private void CheckValidity() {
-            if (navMeshObstacle.enabled) return;
+            if (navMeshObstacle && navMeshObstacle.enabled) return;
                 
             this.haveFreeArea = this.colliderTriggered.Count == 0;
             this.placeable = this.haveFreeArea && this.detectGround && this.validRotation && this.isInBuildableArea;

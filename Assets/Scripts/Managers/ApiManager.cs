@@ -191,6 +191,21 @@ namespace Sim {
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
             return request;
         }
+        
+        public UnityWebRequest CreateDeliveryRequest(CreateDeliveryRequest body) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/deliveries", "POST") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+            request.SetRequestHeader("Content-type", "application/json");
+            request.SetRequestHeader("Accept", "application/json");
+            
+            return request;
+        }
 
         public UnityWebRequest RetrieveDeliveriesRequest(string characterId) {
             UnityWebRequest request = UnityWebRequest.Get($"{this.uri}/characters/{characterId}/deliveries");

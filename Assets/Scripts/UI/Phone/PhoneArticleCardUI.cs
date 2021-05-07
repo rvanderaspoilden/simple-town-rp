@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Sim;
@@ -43,6 +44,7 @@ public class PhoneArticleCardUI : MonoBehaviour {
         this.priceTxt.text = "250"; // TODO change this
 
         if (config.Presets?.Length > 0) {
+            Debug.Log(config.GetDisplayName());
             this.colorButtonOfPresetId = config.Presets.ToDictionary(preset => preset.ID, preset => {
                 ColorButton prefabToUse = this.simpleColorButtonPrefab;
 
@@ -75,8 +77,11 @@ public class PhoneArticleCardUI : MonoBehaviour {
             type = DeliveryType.PROPS,
             recipientId = PlayerController.Local.CharacterData.Id,
             propsConfigId = propsConfig.GetId(),
-            propsPresetId = selectedPreset.ID
         };
+
+        if (this.selectedPreset != null) {
+            request.propsPresetId = selectedPreset.ID;
+        }
         
         PlayerController.Local.connectionToServer.Send(request);
     }

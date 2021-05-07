@@ -21,7 +21,7 @@ public class PhoneApplication : MonoBehaviour, IPointerClickHandler, IPointerExi
     
     public void OnPointerClick(PointerEventData eventData) {
         HUDManager.Instance.PlaySound(clickSound, 1f);
-        this.application.SetActive(true);
+        PhoneControllerUI.Instance.OpenApplication(this);
     }
 
     public void OnPointerEnter(PointerEventData eventData) {

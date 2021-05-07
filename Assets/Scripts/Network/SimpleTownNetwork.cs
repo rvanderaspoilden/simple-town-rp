@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Mirror;
 using Sim;
+using Sim.Building;
 using Sim.Entities;
 using Sim.Interactables;
 using UnityEngine;
@@ -16,7 +17,7 @@ using UnityEngine.Networking;
 public class SimpleTownNetwork : NetworkManager {
     [SerializeField]
     private bool useElbloodyAccount;
-    
+
     [SerializeField]
     private bool useSpectusAccount;
 
@@ -186,7 +187,7 @@ public class SimpleTownNetwork : NetworkManager {
     public override void OnClientConnect(NetworkConnection conn) {
         base.OnClientConnect(conn);
 
-        if (useSpectusAccount) { 
+        if (useSpectusAccount) {
             CreateCharacterMessage mock = new CreateCharacterMessage {
                 userId = "60468a435ebca93ebc119758",
                 characterId = "6064cd05b9d4fd3afca4a146"
@@ -194,7 +195,7 @@ public class SimpleTownNetwork : NetworkManager {
             conn.Send(mock);
 
             Debug.Log("Connect with Spectus account");
-            
+
             return;
         } else if (useElbloodyAccount) {
             CreateCharacterMessage mock = new CreateCharacterMessage {
@@ -202,7 +203,7 @@ public class SimpleTownNetwork : NetworkManager {
                 characterId = "6064dcaa84de3905a65c94b0"
             };
             conn.Send(mock);
-            
+
             Debug.Log("Connect with Elbloody account");
 
             return;
@@ -252,6 +253,7 @@ public class SimpleTownNetwork : NetworkManager {
     /// </summary>
     public override void OnStartServer() {
         NetworkServer.RegisterHandler<CreateCharacterMessage>(OnCreateCharacter);
+        NetworkServer.RegisterHandler<CreateDeliveryRequest>(OnBuySomething);
     }
 
     /// <summary>
@@ -259,6 +261,7 @@ public class SimpleTownNetwork : NetworkManager {
     /// </summary>
     public override void OnStartClient() {
         NetworkClient.RegisterHandler<TeleportMessage>(OnTeleportPlayer);
+        NetworkClient.RegisterHandler<ShopResponseMessage>(OnShopResponse);
     }
 
     /// <summary>
@@ -271,6 +274,7 @@ public class SimpleTownNetwork : NetworkManager {
     /// </summary>
     public override void OnStopServer() {
         NetworkServer.UnregisterHandler<CreateCharacterMessage>();
+        NetworkServer.UnregisterHandler<CreateDeliveryRequest>();
     }
 
     /// <summary>
@@ -278,11 +282,45 @@ public class SimpleTownNetwork : NetworkManager {
     /// </summary>
     public override void OnStopClient() {
         NetworkClient.UnregisterHandler<TeleportMessage>();
+        NetworkClient.UnregisterHandler<ShopResponseMessage>();
     }
 
     #endregion
 
     #region Custom Register Handler Callback
+
+    [ServerCallback]
+    private void OnBuySomething(NetworkConnection conn, CreateDeliveryRequest request) {
+        StartCoroutine(BuyCoroutine(conn, request));
+    }
+
+    private IEnumerator BuyCoroutine(NetworkConnection conn, CreateDeliveryRequest body) {
+        Debug.Log($"Server: {body.recipientId} wants to buy props with config Id [{body.propsConfigId}]");
+
+        UnityWebRequest request = ApiManager.Instance.CreateDeliveryRequest(body);
+
+        yield return request.SendWebRequest();
+
+        if (request.responseCode == 201) {
+            Debug.Log($"Server: Props [{body.propsConfigId}] has been successfully bought");
+            
+            conn.Send(new ShopResponseMessage{isSuccess = true});
+            
+            foreach (var deliveryBox in FindObjectsOfType<DeliveryBox>()) {
+                deliveryBox.CheckDeliveries();
+            }
+        } else {
+            Debug.LogError($"Server: Props [{body.propsConfigId}] cannot be bought");
+            
+            conn.Send(new ShopResponseMessage{isSuccess = false});
+        }
+    }
+
+    [ClientCallback]
+    public void OnShopResponse(ShopResponseMessage message) {
+        Debug.Log($"Client: shopResponse success is : {message.isSuccess}");
+        ShopViewUI.Instance.OnBuyResponse(message.isSuccess);
+    }
 
     private void OnCreateCharacter(NetworkConnection conn, CreateCharacterMessage message) {
         Debug.Log($"Server: Retrieve character data for {message.characterId}");

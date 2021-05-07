@@ -172,11 +172,11 @@ namespace Sim.Building {
         }
 
         private void UpdatePresetRender() {
-            if (this.configuration.Presets == null || this.configuration.Presets.Length == 0) {
+            if (this.configuration.Presets == null || this.configuration.Presets.Length == 0 && this.PresetId != -1) {
                 return;
             }
 
-            PropsPreset preset = this.configuration.Presets.First(x => x.ID == this.PresetId);
+            PropsPreset preset = this.configuration.Presets.FirstOrDefault(x => x.ID == this.PresetId);
 
             if (preset != null) {
                 this.propsRenderer.SetPreset(preset);

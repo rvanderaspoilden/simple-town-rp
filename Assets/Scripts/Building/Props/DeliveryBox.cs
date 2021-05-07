@@ -51,7 +51,10 @@ namespace Sim.Building {
 
         public override void OnStartServer() {
             base.OnStartServer();
+            this.CheckDeliveries();
+        }
 
+        public void CheckDeliveries() {
             StartCoroutine(this.RetrieveDeliveries());
         }
 
@@ -61,9 +64,6 @@ namespace Sim.Building {
             
             yield return request.SendWebRequest();
 
-            this.Deliveries = new Delivery[0];
-            this.deliveryCount = 0;
-            
             if (request.responseCode == 200) {
                 DeliveryResponse deliveryResponse = JsonUtility.FromJson<DeliveryResponse>(request.downloadHandler.text);
                 this.deliveries = deliveryResponse.Deliveries.ToArray();
@@ -71,6 +71,8 @@ namespace Sim.Building {
                 Debug.Log($"Delivery box has {this.deliveryCount} deliveries");
             } else {
                 Debug.Log("No deliveries found");
+                this.Deliveries = new Delivery[0];
+                this.deliveryCount = 0;
             }
         }
 
