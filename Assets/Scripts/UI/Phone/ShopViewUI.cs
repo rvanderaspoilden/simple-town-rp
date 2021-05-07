@@ -37,6 +37,7 @@ public class ShopViewUI : MonoBehaviour {
     public void OnBuyResponse(bool isSuccess) {
         if (isSuccess) {
             HUDManager.Instance.PlaySound(this.buySuccessSound, .5f);
+            PhoneNotificationService.Instance.DisplayBuySuccessNotification();
         }
     }
 }
