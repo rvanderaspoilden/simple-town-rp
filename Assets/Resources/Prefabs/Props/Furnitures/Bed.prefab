@@ -719,7 +719,7 @@ MonoBehaviour:
   - {fileID: 203922792879164192}
   - {fileID: 5402000453673854536}
   tertiaryStyleMeshRenderers:
-  - {fileID: 8982801649956436467}
+  - {fileID: 2430161359487053670}
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -754,6 +754,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 6f19d4f4ec8df944886244eb4e2cda50, type: 2}
+  defaultPresetId: -1
+  parentId: 0
   seatPositions:
   - {fileID: 2031148820630749418}
   - {fileID: 3388856791303708046}

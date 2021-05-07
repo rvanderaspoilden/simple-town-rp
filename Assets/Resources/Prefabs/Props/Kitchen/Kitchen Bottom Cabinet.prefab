@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 3541074618040244364}
   - component: {fileID: 3541074618040244339}
   - component: {fileID: -5556198197858706862}
+  - component: {fileID: 9172454051542479054}
   m_Layer: 10
   m_Name: Kitchen Bottom Cabinet
   m_TagString: Untagged
@@ -53,8 +54,10 @@ MonoBehaviour:
   renderersToModify:
   - {fileID: 88936058210475433}
   - {fileID: 5800200986756699055}
-  primaryStyleMeshRenderers: []
-  secondaryStyleMeshRenderers: []
+  primaryStyleMeshRenderers:
+  - {fileID: 88936058210475433}
+  secondaryStyleMeshRenderers:
+  - {fileID: 5800200986756699055}
   tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
@@ -74,6 +77,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: d35c64d30ca587f43aa4818c4afdcf20, type: 2}
+  defaultPresetId: -1
+  parentId: 0
 --- !u!65 &3541074618040244336
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -140,6 +145,23 @@ MonoBehaviour:
   compressRotation: 0
   interpolateScale: 0
   syncScale: 0
+--- !u!114 &9172454051542479054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4757351023532540285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
 --- !u!1 &6568046362678458036
 GameObject:
   m_ObjectHideFlags: 0
@@ -199,7 +221,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 4607379677868691822, guid: 94da463d75d41b747931b9b65bd918e5, type: 3}
+  - {fileID: 2100000, guid: 9700d1d12df03f440b2837b8d2448c76, type: 2}
   - {fileID: 2100000, guid: 5895443ba1730fb449152bdf93c54835, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -281,7 +303,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -81521754641153140, guid: 94da463d75d41b747931b9b65bd918e5, type: 3}
+  - {fileID: 2100000, guid: 9700d1d12df03f440b2837b8d2448c76, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

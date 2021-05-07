@@ -31,3 +31,60 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
   - {fileID: 11400000, guid: 3e1f7b140e8e1c5419783ee5a990b41d, type: 2}
   cursor: {fileID: 2800000, guid: 5ebd2cb74cea3b644a5834d4596e3665, type: 3}
+  presets:
+  - id: 1
+    label: White
+    primary:
+      enabled: 1
+      color: {r: 0.990566, g: 0.990566, b: 0.990566, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.9921569, g: 0.9921569, b: 0.9921569, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 2
+    label: Wood and white
+    primary:
+      enabled: 1
+      color: {r: 0.9490197, g: 0.83921576, b: 0.7019608, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.9921569, g: 0.9921569, b: 0.9921569, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 3
+    label: Wood and blue
+    primary:
+      enabled: 1
+      color: {r: 0.9490197, g: 0.58431375, b: 0.26666668, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.56078434, g: 0.7137255, b: 0.7490196, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 3
+    label: Green
+    primary:
+      enabled: 1
+      color: {r: 0.7294118, g: 0.7607844, b: 0.34117648, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.8313726, g: 0.83921576, b: 0.36078432, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}

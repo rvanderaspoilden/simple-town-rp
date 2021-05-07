@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 4421387068743569510}
   - component: {fileID: 4421387068743569515}
   - component: {fileID: 8038279989681216886}
+  - component: {fileID: 6958829942010657029}
   m_Layer: 10
   m_Name: Kitchen Cabinet Full
   m_TagString: Untagged
@@ -71,8 +72,11 @@ MonoBehaviour:
   - {fileID: 956019141924115900}
   - {fileID: 7837597797123755092}
   - {fileID: 6629849054031862714}
-  primaryStyleMeshRenderers: []
-  secondaryStyleMeshRenderers: []
+  primaryStyleMeshRenderers:
+  - {fileID: 956019141924115900}
+  - {fileID: 7837597797123755092}
+  secondaryStyleMeshRenderers:
+  - {fileID: 6629849054031862714}
   tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
@@ -92,6 +96,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: bb7c9280e8d9fe74b9c67dc56b2b13af, type: 2}
+  defaultPresetId: -1
+  parentId: 0
 --- !u!65 &4421387068743569510
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -142,6 +148,23 @@ MonoBehaviour:
   compressRotation: 0
   interpolateScale: 0
   syncScale: 0
+--- !u!114 &6958829942010657029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5654833430500215144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
 --- !u!1 &6294312478297390753
 GameObject:
   m_ObjectHideFlags: 0
@@ -201,7 +224,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 4607379677868691822, guid: 4f7e5ef51977c144aa785277b75b74a1, type: 3}
+  - {fileID: 2100000, guid: 9700d1d12df03f440b2837b8d2448c76, type: 2}
   - {fileID: 2100000, guid: 000cbc684debddd458705d017f1de805, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -283,7 +306,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 4607379677868691822, guid: 4f7e5ef51977c144aa785277b75b74a1, type: 3}
+  - {fileID: 2100000, guid: 9700d1d12df03f440b2837b8d2448c76, type: 2}
   - {fileID: 2100000, guid: 5895443ba1730fb449152bdf93c54835, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -365,7 +388,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -81521754641153140, guid: 4f7e5ef51977c144aa785277b75b74a1, type: 3}
+  - {fileID: 2100000, guid: 9700d1d12df03f440b2837b8d2448c76, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

@@ -61,6 +61,7 @@ GameObject:
   - component: {fileID: 2195881077235731478}
   - component: {fileID: 8624260427845620483}
   - component: {fileID: -217920201674301995}
+  - component: {fileID: 1810798420043772269}
   m_Layer: 10
   m_Name: coffee_table
   m_TagString: Untagged
@@ -191,7 +192,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderersToModify:
   - {fileID: 5055768584145682274}
-  primaryStyleMeshRenderers: []
+  primaryStyleMeshRenderers:
+  - {fileID: 5055768584145682274}
   secondaryStyleMeshRenderers: []
   tertiaryStyleMeshRenderers: []
   hideable: 1
@@ -212,6 +214,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 596d88291fc5f98478dbf11e02e472e3, type: 2}
+  defaultPresetId: -1
+  parentId: 0
 --- !u!114 &-217920201674301995
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -233,3 +237,20 @@ MonoBehaviour:
   compressRotation: 0
   interpolateScale: 0
   syncScale: 1
+--- !u!114 &1810798420043772269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6712983364803665591}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
