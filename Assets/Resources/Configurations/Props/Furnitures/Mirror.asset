@@ -32,3 +32,60 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
   - {fileID: 11400000, guid: 3e1f7b140e8e1c5419783ee5a990b41d, type: 2}
   cursor: {fileID: 2800000, guid: e4eb3547be035d8408366b41fd723efa, type: 3}
+  presets:
+  - id: 1
+    label: Yellow
+    primary:
+      enabled: 1
+      color: {r: 0.9490197, g: 0.7176471, b: 0.019607844, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 2
+    label: Wood
+    primary:
+      enabled: 1
+      color: {r: 0.85098046, g: 0.7686275, b: 0.6117647, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 3
+    label: Dark wood
+    primary:
+      enabled: 1
+      color: {r: 0.34901962, g: 0.21176472, b: 0.13333334, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 4
+    label: Red wood
+    primary:
+      enabled: 1
+      color: {r: 0.45098042, g: 0.10588236, b: 0.027450982, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}

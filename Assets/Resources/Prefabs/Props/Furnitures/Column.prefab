@@ -96,6 +96,7 @@ GameObject:
   - component: {fileID: 8191337679419381734}
   - component: {fileID: 104310962338254706}
   - component: {fileID: -5007770712524827262}
+  - component: {fileID: 51274214731459066}
   m_Layer: 10
   m_Name: Column
   m_TagString: Untagged
@@ -181,8 +182,11 @@ MonoBehaviour:
   - {fileID: 2066944809215838680}
   - {fileID: 273228879066495359}
   - {fileID: 1626355532038888033}
-  primaryStyleMeshRenderers: []
-  secondaryStyleMeshRenderers: []
+  primaryStyleMeshRenderers:
+  - {fileID: 1626355532038888033}
+  secondaryStyleMeshRenderers:
+  - {fileID: 2066944809215838680}
+  - {fileID: 273228879066495359}
   tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
@@ -202,6 +206,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 29adf237983a87f47a778ee2277e33ac, type: 2}
+  defaultPresetId: -1
+  parentId: 0
 --- !u!114 &-5007770712524827262
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -223,6 +229,23 @@ MonoBehaviour:
   compressRotation: 0
   interpolateScale: 0
   syncScale: 1
+--- !u!114 &51274214731459066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2481199689602635081}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
 --- !u!1 &5804142900597014063
 GameObject:
   m_ObjectHideFlags: 0

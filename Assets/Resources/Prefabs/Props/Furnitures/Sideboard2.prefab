@@ -96,6 +96,7 @@ GameObject:
   - component: {fileID: 6899209749786193636}
   - component: {fileID: 9052325171679445177}
   - component: {fileID: 2428717385130761099}
+  - component: {fileID: 1496289013234370694}
   m_Layer: 10
   m_Name: Sideboard2
   m_TagString: Untagged
@@ -183,6 +184,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: d0ad8a2bf2f681244a539a9ec8859089, type: 2}
+  defaultPresetId: -1
+  parentId: 0
 --- !u!114 &9052325171679445177
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -201,9 +204,14 @@ MonoBehaviour:
   - {fileID: 1656635441085192075}
   - {fileID: 7738347717834691967}
   - {fileID: 6298055375904468736}
-  primaryStyleMeshRenderers: []
-  secondaryStyleMeshRenderers: []
-  tertiaryStyleMeshRenderers: []
+  primaryStyleMeshRenderers:
+  - {fileID: 6298055375904468736}
+  secondaryStyleMeshRenderers:
+  - {fileID: 2575041748291816237}
+  - {fileID: 4384700356106075018}
+  tertiaryStyleMeshRenderers:
+  - {fileID: 1656635441085192075}
+  - {fileID: 7738347717834691967}
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -228,6 +236,23 @@ MonoBehaviour:
   compressRotation: 0
   interpolateScale: 0
   syncScale: 1
+--- !u!114 &1496289013234370694
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2125096977624127420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
 --- !u!1 &2272772497135740509
 GameObject:
   m_ObjectHideFlags: 0

@@ -32,3 +32,32 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
   - {fileID: 11400000, guid: 3e1f7b140e8e1c5419783ee5a990b41d, type: 2}
   cursor: {fileID: 2800000, guid: abff926eddf4273498d407fc14709a34, type: 3}
+  presets:
+  - id: 1
+    label: Wood
+    primary:
+      enabled: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.6509804, g: 0.40784314, b: 0.26666668, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 1
+      color: {r: 0.7490196, g: 0.5372549, b: 0.3529412, a: 1}
+      material: {fileID: 0}
+  - id: 2
+    label: Wood and blue
+    primary:
+      enabled: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.9490197, g: 0.58431375, b: 0.26666668, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 1
+      color: {r: 0.56078434, g: 0.7137255, b: 0.7490196, a: 1}
+      material: {fileID: 0}

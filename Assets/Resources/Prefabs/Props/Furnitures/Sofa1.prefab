@@ -117,7 +117,8 @@ MonoBehaviour:
   renderersToModify:
   - {fileID: 8765138732616423555}
   - {fileID: 3316403332342720598}
-  primaryStyleMeshRenderers: []
+  primaryStyleMeshRenderers:
+  - {fileID: 8765138732616423555}
   secondaryStyleMeshRenderers: []
   tertiaryStyleMeshRenderers: []
   hideable: 1
@@ -167,6 +168,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: c1261f87ae7bb3848a24529340be7e41, type: 2}
+  defaultPresetId: -1
+  parentId: 0
   seatPositions:
   - {fileID: 3789614970243788274}
   - {fileID: 1824710861364030795}

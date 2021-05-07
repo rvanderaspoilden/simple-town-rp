@@ -140,6 +140,7 @@ GameObject:
   - component: {fileID: 4891391339150405137}
   - component: {fileID: 8502713996919600202}
   - component: {fileID: 3788220486133364806}
+  - component: {fileID: 649592839959059655}
   m_Layer: 10
   m_Name: Basin_furniture
   m_TagString: Untagged
@@ -231,9 +232,13 @@ MonoBehaviour:
   - {fileID: 2936329479323758437}
   - {fileID: 7070348684944871040}
   - {fileID: 2294645596901281593}
-  primaryStyleMeshRenderers: []
-  secondaryStyleMeshRenderers: []
-  tertiaryStyleMeshRenderers: []
+  primaryStyleMeshRenderers:
+  - {fileID: 284593307788649470}
+  secondaryStyleMeshRenderers:
+  - {fileID: 7070348684944871040}
+  tertiaryStyleMeshRenderers:
+  - {fileID: 7573909170681307986}
+  - {fileID: 2936329479323758437}
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
@@ -252,6 +257,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 8a77613ce704a5d4d95a4cde3c3fde4c, type: 2}
+  defaultPresetId: -1
+  parentId: 0
 --- !u!114 &3788220486133364806
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -273,6 +280,23 @@ MonoBehaviour:
   compressRotation: 0
   interpolateScale: 0
   syncScale: 0
+--- !u!114 &649592839959059655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2883463905135736380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
 --- !u!1 &2895617820470242445
 GameObject:
   m_ObjectHideFlags: 0

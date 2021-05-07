@@ -140,6 +140,7 @@ GameObject:
   - component: {fileID: 3653892642972873061}
   - component: {fileID: 574287359645260027}
   - component: {fileID: -477656992978841098}
+  - component: {fileID: 3979302433209103569}
   m_Layer: 10
   m_Name: Tv_stand
   m_TagString: Untagged
@@ -226,8 +227,11 @@ MonoBehaviour:
   - {fileID: 5320003971773486020}
   - {fileID: 1104758381838124603}
   - {fileID: 1149935815340078899}
-  primaryStyleMeshRenderers: []
-  secondaryStyleMeshRenderers: []
+  primaryStyleMeshRenderers:
+  - {fileID: 1149935815340078899}
+  secondaryStyleMeshRenderers:
+  - {fileID: 5320003971773486020}
+  - {fileID: 1104758381838124603}
   tertiaryStyleMeshRenderers: []
   hideable: 1
   interactWithCameraDistance: 0
@@ -247,6 +251,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 86d75529439440347ba3191cf37de9a5, type: 2}
+  defaultPresetId: -1
+  parentId: 0
 --- !u!114 &-477656992978841098
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -268,6 +274,23 @@ MonoBehaviour:
   compressRotation: 0
   interpolateScale: 0
   syncScale: 1
+--- !u!114 &3979302433209103569
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5039412568059580303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  serverOnly: 0
+  visible: 0
+  m_AssetId: 
+  hasSpawned: 0
 --- !u!1 &5689281657735228912
 GameObject:
   m_ObjectHideFlags: 0
