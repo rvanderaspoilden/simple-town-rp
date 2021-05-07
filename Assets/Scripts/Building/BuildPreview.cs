@@ -137,7 +137,7 @@ namespace Sim.Building {
         }
 
         private void CheckValidity() {
-            if (navMeshObstacle.enabled) return;
+            if (navMeshObstacle && navMeshObstacle.enabled) return;
                 
             this.haveFreeArea = this.colliderTriggered.Count == 0;
             this.placeable = this.haveFreeArea && this.detectGround && this.validRotation && this.isInBuildableArea;
