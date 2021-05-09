@@ -20,6 +20,7 @@ namespace Sim {
         public static PropsDatabaseConfig PropsDatabase;
         public static PaintDatabaseConfig PaintDatabase;
         public static List<MoodConfig> MoodConfigs;
+        public static List<ShopCategoryConfig> ShopCategoryConfigs;
 
         public static DatabaseManager Instance;
 
@@ -38,6 +39,9 @@ namespace Sim {
 
             MoodConfigs = Resources.LoadAll<MoodConfig>("Configurations/Moods").ToList();
             Debug.Log("Mood Configs loaded : " + MoodConfigs.Count);
+            
+            ShopCategoryConfigs = Resources.LoadAll<ShopCategoryConfig>("Configurations/Shop/Categories").ToList();
+            Debug.Log("Shop Category Configs loaded : " + ShopCategoryConfigs.Count);
 
             RegisterPrefabs();
 
@@ -52,6 +56,10 @@ namespace Sim {
 
         public static MoodConfig GetMoodConfigByEnum(MoodEnum moodEnum) {
             return MoodConfigs.Find(config => config.MoodEnum == moodEnum);
+        }
+
+        public static ShopCategoryConfig GetShopCategoryByPropsType(PropsType propsType) {
+            return ShopCategoryConfigs.Find(config => config.PropsType == propsType);
         }
 
         public Material GetTransparentMaterial() {

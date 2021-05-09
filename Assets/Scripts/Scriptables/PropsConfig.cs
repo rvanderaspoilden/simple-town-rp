@@ -19,6 +19,9 @@ namespace Sim.Scriptables {
         private bool buyable;
 
         [SerializeField]
+        private int price;
+
+        [SerializeField]
         private Props prefab;
 
         [SerializeField]
@@ -80,6 +83,8 @@ namespace Sim.Scriptables {
         public bool IsBuyable() {
             return this.buyable;
         }
+
+        public int Price => price;
 
         public int GetId() {
             return this.id;

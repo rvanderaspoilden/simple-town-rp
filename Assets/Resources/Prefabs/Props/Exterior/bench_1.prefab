@@ -221,7 +221,7 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4799508744634321900}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 1.8091552, y: 0.899256, z: 0.64762604}
@@ -332,6 +332,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 184a6c90254d0ec4a9f7c9fe3d579c8e, type: 2}
+  defaultPresetId: -1
   parentId: 0
   seatPositions:
   - {fileID: 4464586395131599633}

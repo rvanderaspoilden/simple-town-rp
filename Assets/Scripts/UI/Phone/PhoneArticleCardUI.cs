@@ -38,10 +38,9 @@ public class PhoneArticleCardUI : MonoBehaviour {
 
     public void Setup(PropsConfig config) {
         this.propsConfig = config;
-        
         this.nameTxt.text = config.GetDisplayName();
-        this.categoryTxt.text = "Furniture"; // TODO change this
-        this.priceTxt.text = "250"; // TODO change this
+        this.categoryTxt.text = DatabaseManager.GetShopCategoryByPropsType(config.GetPropsType()).CategoryName;
+        this.priceTxt.text = config.Price.ToString();
 
         if (config.Presets?.Length > 0) {
             Debug.Log(config.GetDisplayName());
@@ -63,6 +62,8 @@ public class PhoneArticleCardUI : MonoBehaviour {
             this.SelectPreset(config.Presets[0]);
         }
     }
+
+    public PropsConfig PropsConfig => propsConfig;
 
     public void SelectPreset(PropsPreset preset) {
         this.selectedPreset = preset;

@@ -777,6 +777,7 @@
             <e p="PaintDatabaseConfig.cs" t="Include" />
             <e p="PropsConfig.cs" t="Include" />
             <e p="PropsDatabaseConfig.cs" t="Include" />
+            <e p="ShopCategoryConfig.cs" t="Include" />
           </e>
           <e p="UI" t="Include">
             <e p="AliDiscountCatalogUI.cs" t="Include" />
@@ -794,7 +795,10 @@
               <e p="PhoneApplication.cs" t="Include" />
               <e p="PhoneArticleCardUI.cs" t="Include" />
               <e p="PhoneNotificationService.cs" t="Include" />
-              <e p="ShopViewUI.cs" t="Include" />
+              <e p="ShopListView.cs" t="Include" />
+              <e p="ShopMenuItem.cs" t="Include" />
+              <e p="ShopMenuUI.cs" t="Include" />
+              <e p="ShopUI.cs" t="Include" />
               <e p="SimpleColorButton.cs" t="Include" />
               <e p="TripleColorButton.cs" t="Include" />
             </e>

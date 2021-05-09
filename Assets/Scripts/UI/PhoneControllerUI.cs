@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 
 namespace Sim {
     public class PhoneControllerUI : MonoBehaviour, IPointerDownHandler {
@@ -22,8 +23,9 @@ namespace Sim {
         [SerializeField]
         private AudioClip lockSound;
 
+        [FormerlySerializedAs("shopViewUI")]
         [SerializeField]
-        private ShopViewUI shopViewUI;
+        private ShopUI shopUI;
 
         [SerializeField]
         private HomeViewUI homeViewUI;
