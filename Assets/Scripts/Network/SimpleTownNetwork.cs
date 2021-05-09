@@ -319,7 +319,7 @@ public class SimpleTownNetwork : NetworkManager {
     [ClientCallback]
     public void OnShopResponse(ShopResponseMessage message) {
         Debug.Log($"Client: shopResponse success is : {message.isSuccess}");
-        ShopViewUI.Instance.OnBuyResponse(message.isSuccess);
+        ShopUI.Instance.OnBuyResponse(message.isSuccess);
     }
 
     private void OnCreateCharacter(NetworkConnection conn, CreateCharacterMessage message) {
