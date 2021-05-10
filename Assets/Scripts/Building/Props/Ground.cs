@@ -24,12 +24,12 @@ namespace Sim.Building {
         public ApartmentController ApartmentController => apartmentController;
 
         [Client]
-        public void Preview(PaintConfig paintConfig) {
+        public void Preview(CoverConfig coverConfig) {
             if (this.preview) {
                 this.ResetPreview();
             } else {
                 this.oldPaintConfigId = this.paintConfigId;
-                this.PaintConfigId = paintConfig.GetId();
+                this.PaintConfigId = coverConfig.GetId();
                 this.preview = true;
             }
         }
@@ -58,10 +58,10 @@ namespace Sim.Building {
         }
         
         private void ApplyPaint() {
-            PaintConfig paintConfig = DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId);
+            CoverConfig coverConfig = DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId);
 
-            if (paintConfig) {
-                this.renderer.material = paintConfig.GetMaterial();
+            if (coverConfig) {
+                this.renderer.material = coverConfig.GetMaterial();
             }
         }
 

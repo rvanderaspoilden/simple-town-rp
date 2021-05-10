@@ -715,7 +715,6 @@
             <e p="BuildModeEnum.cs" t="Include" />
             <e p="BuildSurfaceEnum.cs" t="Include" />
             <e p="CameraModeEnum.cs" t="Include" />
-            <e p="CatalogCategoryEnum.cs" t="Include" />
             <e p="ColliderTypeEnum.cs" t="Include" />
             <e p="CursorTypeEnum.cs" t="Include" />
             <e p="DirectionEnum.cs" t="Include" />
@@ -771,16 +770,15 @@
             <e p="SceneData.cs" t="Include" />
           </e>
           <e p="Scriptables" t="Include">
+            <e p="CoverConfig.cs" t="Include" />
             <e p="CursorConfig.cs" t="Include" />
             <e p="MoodConfig.cs" t="Include" />
-            <e p="PaintConfig.cs" t="Include" />
             <e p="PaintDatabaseConfig.cs" t="Include" />
             <e p="PropsConfig.cs" t="Include" />
             <e p="PropsDatabaseConfig.cs" t="Include" />
             <e p="ShopCategoryConfig.cs" t="Include" />
           </e>
           <e p="UI" t="Include">
-            <e p="AliDiscountCatalogUI.cs" t="Include" />
             <e p="BuildPreviewPanelUI.cs" t="Include" />
             <e p="CharacterInfoPanelUI.cs" t="Include" />
             <e p="DefaultViewUI.cs" t="Include" />
@@ -794,7 +792,10 @@
               <e p="HomeViewUI.cs" t="Include" />
               <e p="PhoneApplication.cs" t="Include" />
               <e p="PhoneArticleCardUI.cs" t="Include" />
+              <e p="PhoneCardUI.cs" t="Include" />
+              <e p="PhoneCoverCardUI.cs" t="Include" />
               <e p="PhoneNotificationService.cs" t="Include" />
+              <e p="ShopCategoryType.cs" t="Include" />
               <e p="ShopListView.cs" t="Include" />
               <e p="ShopMenuItem.cs" t="Include" />
               <e p="ShopMenuUI.cs" t="Include" />

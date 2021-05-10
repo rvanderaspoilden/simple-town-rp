@@ -68,9 +68,23 @@ public class ShopMenuUI : MonoBehaviour {
         this.shopUI.ChangeCategory(this.selectedCategoryConfig);
     }
 
-    public void ToggleMenu() {
+    public void Toggle() {
         this.active = !this.active;
 
+        this.DoAnimation();
+    }
+
+    public void Close() {
+        this.active = false;
+        this.DoAnimation();
+    }
+
+    public void Open() {
+        this.active = true;
+        this.DoAnimation();
+    }
+
+    private void DoAnimation() {
         this.menuBackground.transform.DOComplete();
 
         if (this.active) {

@@ -9,15 +9,18 @@ public class ShopListView : MonoBehaviour {
     [Header("Settings")]
     [SerializeField]
     private GameObject itemListContainer;
-    
+
     [SerializeField]
     private VerticalLayoutGroup verticalLayoutGroup;
 
     [SerializeField]
     private PhoneArticleCardUI articleCardPrefab;
 
-    private List<PhoneArticleCardUI> items = new List<PhoneArticleCardUI>();
-    
+    [SerializeField]
+    private PhoneCoverCardUI coverCardPrefab;
+
+    private List<PhoneCardUI> items = new List<PhoneCardUI>();
+
     public void Setup(ShopCategoryConfig config) {
         if (items.Count > 0) {
             foreach (var item in items) {
@@ -26,20 +29,26 @@ public class ShopListView : MonoBehaviour {
 
             items.Clear();
         }
-        
-        DatabaseManager.PropsDatabase.GetProps().Where(x => x.GetPropsType().Equals(config.PropsType) && x.IsBuyable()).ToList().ForEach(x => {
-            PhoneArticleCardUI card = Instantiate(this.articleCardPrefab, this.verticalLayoutGroup.transform);
-            card.Setup(x);
-            items.Add(card);
-        });
-        
+
+        if (config.CategoryType == ShopCategoryType.PROPS) {
+            DatabaseManager.PropsDatabase.GetProps().Where(x => x.GetPropsType().Equals(config.PropsType) && x.IsBuyable()).ToList().ForEach(x => {
+                PhoneArticleCardUI card = Instantiate(this.articleCardPrefab, this.verticalLayoutGroup.transform);
+                card.Setup(x);
+                items.Add(card);
+            });
+        } else {
+            DatabaseManager.PaintDatabase.GetPaints().Where(x => x.GetSurface().Equals(config.CoverType) && x.IsBuyable()).ToList().ForEach(x => {
+                PhoneCoverCardUI card = Instantiate(this.coverCardPrefab, this.verticalLayoutGroup.transform);
+                card.Setup(x);
+                items.Add(card);
+            });
+        }
+
         this.Show();
     }
 
     public void Filter(string itemName) {
-        this.items.ForEach(item => {
-           item.gameObject.SetActive(item.PropsConfig.GetDisplayName().ToLower().IndexOf(itemName.ToLower(), StringComparison.Ordinal) != -1); 
-        });
+        this.items.ForEach(item => { item.gameObject.SetActive(item.GetDisplayName().ToLower().IndexOf(itemName.ToLower(), StringComparison.Ordinal) != -1); });
     }
 
     public void Show() {
