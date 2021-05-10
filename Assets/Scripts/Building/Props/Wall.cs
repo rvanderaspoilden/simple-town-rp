@@ -115,10 +115,10 @@ namespace Sim.Building {
                 }
                 
                 CoverSettings coverSettings = settingsToUse[i];
-                PaintConfig paintConfig = DatabaseManager.PaintDatabase.GetPaintById(coverSettings.paintConfigId);
-                Material materialToApply = new Material(paintConfig.GetMaterial());
+                CoverConfig coverConfig = DatabaseManager.PaintDatabase.GetPaintById(coverSettings.paintConfigId);
+                Material materialToApply = new Material(coverConfig.GetMaterial());
 
-                if (paintConfig.AllowCustomColor()) {
+                if (coverConfig.AllowCustomColor()) {
                     materialToApply.color = coverSettings.additionalColor;
                 }
 

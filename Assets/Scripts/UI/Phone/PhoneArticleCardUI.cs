@@ -7,7 +7,7 @@ using Sim.Scriptables;
 using TMPro;
 using UnityEngine;
 
-public class PhoneArticleCardUI : MonoBehaviour {
+public class PhoneArticleCardUI : PhoneCardUI {
     [Header("Settings")]
     [SerializeField]
     private TextMeshProUGUI nameTxt;
@@ -43,7 +43,6 @@ public class PhoneArticleCardUI : MonoBehaviour {
         this.priceTxt.text = config.Price.ToString();
 
         if (config.Presets?.Length > 0) {
-            Debug.Log(config.GetDisplayName());
             this.colorButtonOfPresetId = config.Presets.ToDictionary(preset => preset.ID, preset => {
                 ColorButton prefabToUse = this.simpleColorButtonPrefab;
 
@@ -83,7 +82,9 @@ public class PhoneArticleCardUI : MonoBehaviour {
         if (this.selectedPreset != null) {
             request.propsPresetId = selectedPreset.ID;
         }
-        
+
         PlayerController.Local.connectionToServer.Send(request);
     }
+
+    public override string GetDisplayName() => this.propsConfig.GetDisplayName();
 }

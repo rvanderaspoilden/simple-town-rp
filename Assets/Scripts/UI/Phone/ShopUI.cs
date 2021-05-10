@@ -15,6 +15,9 @@ public class ShopUI : MonoBehaviour {
 
     [SerializeField]
     private ShopListView listView;
+
+    [SerializeField]
+    private ShopMenuUI menuUI;
     
     public static ShopUI Instance;
 
@@ -39,6 +42,8 @@ public class ShopUI : MonoBehaviour {
         this.searchFilterInputField.text = string.Empty;
         
         this.listView.Setup(config);
+        
+        this.menuUI.Close();
     }
 
     public void SearchFilter(string value) {

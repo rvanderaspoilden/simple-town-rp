@@ -6,9 +6,6 @@ namespace Sim {
     public class HUDManager : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
-        private AliDiscountCatalogUI aliDiscountCatalogUI;
-
-        [SerializeField]
         private BuildPreviewPanelUI buildPreviewPanelUI;
 
         [SerializeField]
@@ -40,7 +37,6 @@ namespace Sim {
 
         // Start is called before the first frame update
         void Start() {
-            this.DisplayAdminPanel(false);
             this.DisplayPanel(PanelTypeEnum.NONE);
             this.CloseContextMenu();
         }
@@ -68,7 +64,6 @@ namespace Sim {
             if (panelType == PanelTypeEnum.BUILD) {
                 this.buildPreviewPanelUI.gameObject.SetActive(true);
                 this.defaultViewUI.gameObject.SetActive(false);
-                this.DisplayAdminPanel(false);
             } else if (panelType == PanelTypeEnum.DEFAULT) {
                 this.defaultViewUI.gameObject.SetActive(true);
                 this.buildPreviewPanelUI.gameObject.SetActive(false);
@@ -76,10 +71,6 @@ namespace Sim {
                 this.defaultViewUI.gameObject.SetActive(false);
                 this.buildPreviewPanelUI.gameObject.SetActive(false);
             }
-        }
-
-        public void DisplayAdminPanel(bool state) {
-            this.aliDiscountCatalogUI.gameObject.SetActive(state);
         }
 
         public void ShowContextMenu(Action[] actions = null, Transform target = null, bool withPriority = false) {

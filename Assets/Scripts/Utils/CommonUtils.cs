@@ -6,18 +6,6 @@ using UnityEngine;
 
 namespace Sim.Utils {
     public static class CommonUtils {
-        public static CatalogCategoryEnum ConvertBuildSurfaceToCategory(BuildSurfaceEnum surfaceEnum) {
-            switch (surfaceEnum) {
-                case BuildSurfaceEnum.WALL:
-                    return CatalogCategoryEnum.WALL_COVERING;
-
-                case BuildSurfaceEnum.GROUND:
-                    return CatalogCategoryEnum.GROUND_COVERING;
-            }
-
-            throw new Exception("No converter found");
-        }
-
         public static int GetApartmentFloor(int doorNumber, int limit) {
             return Mathf.CeilToInt(doorNumber / (float) limit);
         }
@@ -39,14 +27,14 @@ namespace Sim.Utils {
          * This method is used to give layers on which ones the paint can be used
          * Throw exception if different of wall or ground
          */
-        public static int GetLayerMaskSurfacesToPaint(PaintConfig paintConfig) {
-            if (paintConfig.IsGroundCover()) {
+        public static int GetLayerMaskSurfacesToPaint(CoverConfig coverConfig) {
+            if (coverConfig.IsGroundCover()) {
                 return (1 << 9); // Ground Layer
-            } else if (paintConfig.IsWallCover()) {
+            } else if (coverConfig.IsWallCover()) {
                 return (1 << 12); // Wall layer
             }
 
-            throw new Exception($"No surface type is defined for paint config ID => {paintConfig.GetId()}");
+            throw new Exception($"No surface type is defined for paint config ID => {coverConfig.GetId()}");
         }
 
         public static int GetDoorNumberFromFloorNumber(int initialNumber, int relativeDoorNumber) {

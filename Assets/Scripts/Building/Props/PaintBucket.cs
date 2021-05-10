@@ -16,7 +16,7 @@ namespace Sim.Building {
         [SerializeField]
         private int paintConfigId;
 
-        private PaintConfig paintConfig;
+        private CoverConfig coverConfig;
         public delegate void OnOpen(PaintBucket bucketOpened);
 
         public static event OnOpen OnOpened;
@@ -36,7 +36,7 @@ namespace Sim.Building {
             }
         }
 
-        public PaintConfig GetPaintConfig() {
+        public CoverConfig GetPaintConfig() {
             return DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId);
         }
 

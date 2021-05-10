@@ -4,13 +4,13 @@ using UnityEngine;
 namespace Sim.Scriptables {
     [CreateAssetMenu(fileName = "Paint Database", menuName = "Configurations/Database/Paint")]
     public class PaintDatabaseConfig : ScriptableObject {
-        [SerializeField] private List<PaintConfig> paints;
+        [SerializeField] private List<CoverConfig> paints;
 
-        public List<PaintConfig> GetPaints() {
+        public List<CoverConfig> GetPaints() {
             return this.paints;
         }
 
-        public PaintConfig GetPaintById(int id) {
+        public CoverConfig GetPaintById(int id) {
             return paints.Find(x => x.GetId() == id);
         }
     }

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbaf885a5d14d6a47b9fa12e227f8f40, type: 3}
+  m_Name: WP_eyes
+  m_EditorClassIdentifier: 
+  id: 14
+  displayName: Papier peint plein d'yeux
+  sprite: {fileID: 21300000, guid: 0e38dce05fff015438963c31846fc722, type: 3}
+  material: {fileID: 2100000, guid: aad7bf1365dc24d48a0e13ec3ffbfd43, type: 2}
+  bucketPropsConfig: {fileID: 11400000, guid: a993878725957364a872287ca92ae44d, type: 2}
+  surface: 1
+  customColor: 1
+  buyable: 1
