@@ -1,3 +1,5 @@
+using Sim;
+using Sim.Entities;
 using Sim.Scriptables;
 using TMPro;
 using UnityEngine;
@@ -27,6 +29,14 @@ public class ShopCoverDetailUI : MonoBehaviour {
     }
 
     public void AddToCart() {
-        
+        CreateDeliveryRequest request = new CreateDeliveryRequest {
+            type = DeliveryType.COVER,
+            recipientId = PlayerController.Local.CharacterData.Id,
+            paintConfigId = config.GetId(),
+            propsConfigId = config.GetBucketPropsConfig().GetId(),
+            color = new[]{this.selectedColor.r, this.selectedColor.g, this.selectedColor.b}
+        };
+
+        PlayerController.Local.connectionToServer.Send(request);
     }
 }
