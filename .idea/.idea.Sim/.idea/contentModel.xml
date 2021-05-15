@@ -8,6 +8,19 @@
       <e p="Assembly-CSharp-firstpass.csproj" t="IncludeRecursive" />
       <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
       <e p="Assets" t="Include">
+        <e p="AnotherColorPicker" t="Include">
+          <e p="Examples" t="Include">
+            <e p="Scripts" t="Include">
+              <e p="SVOption.cs" t="Include" />
+            </e>
+          </e>
+          <e p="Scripts" t="Include">
+            <e p="ColorPaletteController.cs" t="Include" />
+          </e>
+          <e p="Shaders" t="Include">
+            <e p="ColorWheel.shader" t="Include" />
+          </e>
+        </e>
         <e p="Dissonance" t="Include">
           <e p="changelog.txt" t="Include" />
           <e p="Core" t="Include">
@@ -790,12 +803,14 @@
               <e p="ColorButton.cs" t="Include" />
               <e p="DoubleColorButton.cs" t="Include" />
               <e p="HomeViewUI.cs" t="Include" />
-              <e p="PhoneApplication.cs" t="Include" />
+              <e p="PhoneApplicationButton.cs" t="Include" />
+              <e p="PhoneApplicationUI.cs" t="Include" />
               <e p="PhoneArticleCardUI.cs" t="Include" />
               <e p="PhoneCardUI.cs" t="Include" />
               <e p="PhoneCoverCardUI.cs" t="Include" />
               <e p="PhoneNotificationService.cs" t="Include" />
               <e p="ShopCategoryType.cs" t="Include" />
+              <e p="ShopCoverDetailUI.cs" t="Include" />
               <e p="ShopListView.cs" t="Include" />
               <e p="ShopMenuItem.cs" t="Include" />
               <e p="ShopMenuUI.cs" t="Include" />

@@ -4,6 +4,7 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 namespace Sim {
     public class PhoneControllerUI : MonoBehaviour, IPointerDownHandler {
@@ -23,13 +24,6 @@ namespace Sim {
         [SerializeField]
         private AudioClip lockSound;
 
-        [FormerlySerializedAs("shopViewUI")]
-        [SerializeField]
-        private ShopUI shopUI;
-
-        [SerializeField]
-        private HomeViewUI homeViewUI;
-
         [SerializeField]
         private CanvasGroup lockScreenCanvasGroup;
 
@@ -37,7 +31,7 @@ namespace Sim {
         private CanvasGroup actionBarCanvasGroup;
 
         [SerializeField]
-        private List<PhoneApplication> applications;
+        private List<PhoneApplicationButton> applications;
 
         private Vector2 firstPressPos;
         private Vector2 secondPressPos;
@@ -49,7 +43,7 @@ namespace Sim {
 
         private RectTransform rectTransform;
 
-        private PhoneApplication currentActiveApplication;
+        private PhoneApplicationUI currentActiveApplication;
 
         public static PhoneControllerUI Instance;
 
@@ -66,7 +60,7 @@ namespace Sim {
                 this.actionBarCanvasGroup.alpha = 0;
                 this.actionBarCanvasGroup.interactable = false;
 
-                this.applications.ForEach(x => x.Application.SetActive(false));
+                this.applications.ForEach(x => x.Application.gameObject.SetActive(false));
             }
         }
 
@@ -74,18 +68,24 @@ namespace Sim {
             this.Swipe();
         }
 
-        public void OpenApplication(PhoneApplication phoneApplication) {
-            phoneApplication.Application.SetActive(true);
-            this.currentActiveApplication = phoneApplication;
+        public void OpenApplication(PhoneApplicationButton phoneApplicationButton) {
+            phoneApplicationButton.Application.gameObject.SetActive(true);
+            this.currentActiveApplication = phoneApplicationButton.Application;
             this.actionBarCanvasGroup.alpha = 1;
             this.actionBarCanvasGroup.interactable = true;
         }
 
         public void BackToHome() {
-            this.currentActiveApplication.Application.SetActive(false);
+            this.currentActiveApplication.gameObject.SetActive(false);
             this.currentActiveApplication = null;
             this.actionBarCanvasGroup.alpha = 0;
             this.actionBarCanvasGroup.interactable = false;
+        }
+
+        public void BackAction() {
+            if (!this.currentActiveApplication) return;
+            
+            this.currentActiveApplication.Back();
         }
 
         public void OnPointerDown(PointerEventData eventData) {

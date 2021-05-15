@@ -27,7 +27,9 @@ public class PhoneCoverCardUI : PhoneCardUI {
         this.image.sprite = coverConfig.Sprite;
     }
 
-    public void Select() { }
+    public void Select() {
+        ShopUI.Instance.ShowCoverDetails(config);
+    }
 
     public override string GetDisplayName() => this.config.GetDisplayName();
 }

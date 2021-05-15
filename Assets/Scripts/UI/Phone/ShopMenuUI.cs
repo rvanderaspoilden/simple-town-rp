@@ -84,6 +84,8 @@ public class ShopMenuUI : MonoBehaviour {
         this.DoAnimation();
     }
 
+    public bool Active => active;
+
     private void DoAnimation() {
         this.menuBackground.transform.DOComplete();
 

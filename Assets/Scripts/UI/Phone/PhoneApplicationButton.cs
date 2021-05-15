@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class PhoneApplication : MonoBehaviour, IPointerClickHandler, IPointerExitHandler, IPointerEnterHandler {
+public class PhoneApplicationButton : MonoBehaviour, IPointerClickHandler, IPointerExitHandler, IPointerEnterHandler {
     [SerializeField]
     private AudioClip hoverSound;
 
@@ -12,12 +12,12 @@ public class PhoneApplication : MonoBehaviour, IPointerClickHandler, IPointerExi
     private AudioClip clickSound;
 
     [SerializeField]
-    private GameObject application;
+    private PhoneApplicationUI application;
 
     [SerializeField]
     private Image icon;
     
-    public GameObject Application => application;
+    public PhoneApplicationUI Application => application;
     
     public void OnPointerClick(PointerEventData eventData) {
         HUDManager.Instance.PlaySound(clickSound, 1f);

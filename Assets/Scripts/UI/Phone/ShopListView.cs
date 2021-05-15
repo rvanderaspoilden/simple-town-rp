@@ -21,6 +21,8 @@ public class ShopListView : MonoBehaviour {
 
     private List<PhoneCardUI> items = new List<PhoneCardUI>();
 
+    private string currentFilter = string.Empty;
+
     public void Setup(ShopCategoryConfig config) {
         if (items.Count > 0) {
             foreach (var item in items) {
@@ -48,10 +50,12 @@ public class ShopListView : MonoBehaviour {
     }
 
     public void Filter(string itemName) {
-        this.items.ForEach(item => { item.gameObject.SetActive(item.GetDisplayName().ToLower().IndexOf(itemName.ToLower(), StringComparison.Ordinal) != -1); });
+        this.currentFilter = itemName;
+        this.Show();
     }
 
     public void Show() {
+        this.items.ForEach(item => { item.gameObject.SetActive(item.GetDisplayName().ToLower().IndexOf(this.currentFilter.ToLower(), StringComparison.Ordinal) != -1); });
         this.itemListContainer.SetActive(true);
     }
 
