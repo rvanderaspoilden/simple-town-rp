@@ -2,9 +2,8 @@ using Sim;
 using Sim.Scriptables;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 
-public class ShopUI : MonoBehaviour {
+public class ShopUI : PhoneApplicationUI {
     [Header("Settings")]
     [SerializeField]
     private AudioClip buySuccessSound;
@@ -100,5 +99,14 @@ public class ShopUI : MonoBehaviour {
         }
 
         this.breadCrumbText.text = text;
+    }
+
+    public override void Back() {
+        if (currentCoverConfig) {
+            this.listView.Show();
+            this.HideCoverDetails();
+        } else if (this.menuUI.Active) {
+            this.menuUI.Close();
+        }
     }
 }

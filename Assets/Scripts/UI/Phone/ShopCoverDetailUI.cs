@@ -13,7 +13,10 @@ public class ShopCoverDetailUI : MonoBehaviour {
     [SerializeField]
     private TextMeshProUGUI priceTxt;
 
-    private Color selectedColor = Color.white;
+    [SerializeField]
+    private ColorPaletteController colorPicker;
+
+    private Color selectedColor;
 
     private CoverConfig config;
 
@@ -21,6 +24,11 @@ public class ShopCoverDetailUI : MonoBehaviour {
         this.config = coverConfig;
         this.previewImg.sprite = this.config.Sprite;
         this.priceTxt.text = $"{this.config.Price} / m²";
+        this.colorPicker.gameObject.SetActive(coverConfig.AllowCustomColor());
+
+        if (!coverConfig.AllowCustomColor()) {
+            this.SetColor(Color.white);
+        }
     }
 
     public void SetColor(Color color) {
@@ -34,7 +42,7 @@ public class ShopCoverDetailUI : MonoBehaviour {
             recipientId = PlayerController.Local.CharacterData.Id,
             paintConfigId = config.GetId(),
             propsConfigId = config.GetBucketPropsConfig().GetId(),
-            color = new[]{this.selectedColor.r, this.selectedColor.g, this.selectedColor.b}
+            color = new[] {this.selectedColor.r, this.selectedColor.g, this.selectedColor.b}
         };
 
         PlayerController.Local.connectionToServer.Send(request);
