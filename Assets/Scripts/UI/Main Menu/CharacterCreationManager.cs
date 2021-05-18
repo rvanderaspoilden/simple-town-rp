@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using Sim.Entities;
 using Sim.Utils;
@@ -11,6 +9,9 @@ using UnityEngine.UI;
 namespace Sim {
     public class CharacterCreationManager : MonoBehaviour {
         [Header("Character creation settings")]
+        [SerializeField]
+        private RectTransform characterCreationPanel;
+
         [SerializeField]
         private TMP_InputField firstNameInputField;
 
@@ -31,21 +32,30 @@ namespace Sim {
 
         [SerializeField]
         private AudioClip bufferSound;
-        
+
         [SerializeField]
         private AudioSource audioSource;
 
-        private void Awake() {
-            this.entranceDateField.text = CommonUtils.GetDate();
-            this.entranceDateField.readOnly = true;
+        [SerializeField]
+        private CharacterStyleSetup characterStyleSetup;
 
-            this.bufferImg.gameObject.SetActive(false);
-
-            this.firstNameInputField.Select();
-
-            CheckValidity();
-        }
+        [SerializeField]
+        private List<CharacterPartButton> characterPartButtons;
         
+        private CharacterPartType characterPartSelected;
+        
+        public static CharacterCreationManager Instance;
+
+        private void Awake() {
+            if (Instance != null && Instance != this) {
+                Destroy(this);
+            } else {
+                Instance = this;
+                this.entranceDateField.text = CommonUtils.GetDate();
+                this.entranceDateField.readOnly = true;
+            }
+        }
+
         private void OnEnable() {
             ApiManager.OnCharacterCreated += OnCharacterCreated;
             ApiManager.OnCharacterCreationFailed += OnCharacterCreationFailed;
@@ -65,7 +75,7 @@ namespace Sim {
                 if (next) next.Select();
             }
         }
-        
+
         public void CreateCharacter() {
             this.joinButton.gameObject.SetActive(false);
             ApiManager.Instance.CreateCharacter(new CharacterCreationRequest(firstNameInputField.text, lastNameInputField.text, originCountryInputField.text));
@@ -76,15 +86,50 @@ namespace Sim {
                                            lastNameInputField.text != string.Empty &&
                                            originCountryInputField.text != string.Empty;
         }
-        
+
         private void OnCharacterCreated(CharacterData characterData) {
-            //NetworkManager.Instance.CharacterData = characterData;
             this.bufferImg.gameObject.SetActive(true);
             this.audioSource.PlayOneShot(this.bufferSound);
         }
 
         private void OnCharacterCreationFailed(string err) {
             this.joinButton.gameObject.SetActive(true);
+        }
+
+        public void Show() {
+            this.characterCreationPanel.gameObject.SetActive(true);
+            
+            this.bufferImg.gameObject.SetActive(false);
+
+            this.firstNameInputField.Select();
+
+            CheckValidity();
+            
+            this.SetCurrentCharacterPart(CharacterPartType.HAIR);
+        }
+
+        public void Hide() {
+            this.characterCreationPanel.gameObject.SetActive(false);
+        }
+
+        public void SelectRight(string characterPart) {
+            CharacterPartType partType = CharacterStyleSetup.GetCharacterPartType(characterPart);
+            this.characterStyleSetup.SelectPart(partType, this.characterStyleSetup.GetCurrentPartIdx(partType) + 1);
+        }
+
+        public void SelectLeft(string characterPart) {
+            CharacterPartType partType = CharacterStyleSetup.GetCharacterPartType(characterPart);
+            this.characterStyleSetup.SelectPart(partType, this.characterStyleSetup.GetCurrentPartIdx(partType) - 1);
+        }
+
+        public void SetColor(Color color) {
+            this.characterStyleSetup.ApplyColor(this.characterPartSelected, color);
+        }
+
+        public void SetCurrentCharacterPart(CharacterPartType partType) {
+            this.characterPartSelected = partType;
+            
+            this.characterPartButtons.ForEach(x => x.SetActive(x.PartType == partType));
         }
     }
 }

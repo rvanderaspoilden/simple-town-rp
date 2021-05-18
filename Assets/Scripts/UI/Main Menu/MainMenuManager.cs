@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using DG.Tweening;
 using Mirror;
 using Sim.Entities;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Sim {
     public class MainMenuManager : MonoBehaviour {
@@ -16,14 +14,10 @@ namespace Sim {
 
         [SerializeField]
         private GameObject mainMenuPanel;
-
-        [SerializeField]
-        private CanvasGroup canvasGroup;
-
+        
         private void Awake() {
-            this.ShowCanvas(true);
-            this.characterCreationManager.gameObject.SetActive(false);
-            this.apartmentCreationManager.HideApartmentCreationPanel();
+            this.characterCreationManager.Hide();
+            this.apartmentCreationManager.Hide();
             this.mainMenuPanel.SetActive(false);
         }
 
@@ -53,7 +47,7 @@ namespace Sim {
         public void Play() {
             ((SimpleTownNetwork) NetworkManager.singleton).StartClient();
         }
-
+        
         private void OnCharacterRetrieved(CharacterData characterData) {
             if (characterData != null) {
                 Debug.Log("Character retrieved");
@@ -62,25 +56,20 @@ namespace Sim {
                 ApiManager.Instance.RetrieveHomesByCharacter(characterData);
             } else {
                 Debug.Log("No Character found");
-                this.canvasGroup.alpha = 0;
-                this.canvasGroup.GetComponent<GraphicRaycaster>().enabled = false;
-                this.characterCreationManager.gameObject.SetActive(true);
-                this.mainMenuPanel.SetActive(false);
+                this.characterCreationManager.Show();
                 LoadingManager.Instance.Hide();
             }
         }
 
         private void OnHomesRetrieved(List<Home> homes) {
-            this.ShowCanvas(true);
-
             if (homes != null && homes.Count > 0) {
                 Debug.Log("Homes retrieved !");
                 ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = homes;
-                
+
                 this.mainMenuPanel.SetActive(true);
             } else {
                 Debug.Log("Homes not found");
-                this.apartmentCreationManager.ShowApartmentCreationPanel();
+                this.apartmentCreationManager.Show();
             }
 
             LoadingManager.Instance.Hide();
@@ -89,29 +78,14 @@ namespace Sim {
         private void OnCharacterCreated(CharacterData characterData) {
             ((SimpleTownNetwork) NetworkManager.singleton).CharacterData = characterData;
 
-            this.apartmentCreationManager.ShowApartmentCreationPanel();
-            Invoke(nameof(FadeIn), 2f);
+            this.apartmentCreationManager.Show();
         }
 
         private void OnApartmentAssigned(Home home) {
-            ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = new List<Home>() {home};
             Debug.Log("Apartment assigned !");
-            this.apartmentCreationManager.HideApartmentCreationPanel();
+            ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = new List<Home>() {home};
+            this.apartmentCreationManager.Hide();
             this.mainMenuPanel.SetActive(true);
-        }
-
-        public void FadeIn() {
-            this.ShowCanvas();
-        }
-        
-        public void ShowCanvas(bool instant = false) {
-            this.canvasGroup.GetComponent<GraphicRaycaster>().enabled = true;
-
-            if (instant) {
-                this.canvasGroup.alpha = 1;
-            } else {
-                this.canvasGroup.DOFade(1, .3f);
-            }
         }
     }
 }

@@ -18,11 +18,6 @@ namespace Sim {
         
         private string selectedPreset;
 
-
-        private void Awake() {
-            this.HideApartmentCreationPanel();
-        }
-        
         private void OnEnable() {
             ApiManager.OnApartmentAssigned += OnApartmentAssigned;
             ApiManager.OnApartmentAssignmentFailed += OnApartmentAssignmentFailed;
@@ -51,12 +46,12 @@ namespace Sim {
             this.createApartmentButton.gameObject.SetActive(true);
         }
 
-        public void ShowApartmentCreationPanel() {
+        public void Show() {
             this.apartmentCreationPanel.gameObject.SetActive(true);
             this.createApartmentButton.interactable = false;
         }
 
-        public void HideApartmentCreationPanel() {
+        public void Hide() {
             this.apartmentCreationPanel.gameObject.SetActive(false);
         }
     }

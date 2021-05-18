@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2891067972080047098}
   - component: {fileID: 2891067972080047097}
   - component: {fileID: 2891067972080047096}
+  - component: {fileID: 2891067971407394977}
   m_Layer: 0
   m_Name: Main Menu Manager
   m_TagString: Untagged
@@ -45,9 +46,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a9ba469bbb52cd468e771efd0f9cd07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characterCreationManager: {fileID: 0}
-  apartmentCreationManager: {fileID: 0}
+  characterCreationManager: {fileID: 2891067971407394977}
+  apartmentCreationManager: {fileID: 2891067972080047097}
   mainMenuPanel: {fileID: 0}
+  canvasGroup: {fileID: 0}
 --- !u!114 &2891067972080047097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -158,3 +160,23 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2891067971407394977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2891067972080047101}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5e802c83566cd948887b186c562309c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  firstNameInputField: {fileID: 0}
+  lastNameInputField: {fileID: 0}
+  originCountryInputField: {fileID: 0}
+  entranceDateField: {fileID: 0}
+  joinButton: {fileID: 0}
+  bufferImg: {fileID: 0}
+  bufferSound: {fileID: 8300000, guid: 8b8d81aab040fda40935b1bc27876b60, type: 3}
+  audioSource: {fileID: 2891067972080047096}
