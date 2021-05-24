@@ -9,11 +9,6 @@
       <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
       <e p="Assets" t="Include">
         <e p="AnotherColorPicker" t="Include">
-          <e p="Examples" t="Include">
-            <e p="Scripts" t="Include">
-              <e p="SVOption.cs" t="Include" />
-            </e>
-          </e>
           <e p="Scripts" t="Include">
             <e p="ColorPaletteController.cs" t="Include" />
           </e>
@@ -702,6 +697,7 @@
             <e p="CharacterData.cs" t="Include" />
             <e p="CoverSettings.cs" t="Include" />
             <e p="Delivery.cs" t="Include" />
+            <e p="Gender.cs" t="Include" />
             <e p="Health.cs" t="Include" />
             <e p="Home.cs" t="Include" />
             <e p="HttpException.cs" t="Include" />
@@ -720,6 +716,7 @@
               <e p="ProfileResponse.cs" t="Include" />
             </e>
             <e p="RoomNavigationData.cs" t="Include" />
+            <e p="Style.cs" t="Include" />
             <e p="User.cs" t="Include" />
           </e>
           <e p="Enums" t="Include">
@@ -728,6 +725,7 @@
             <e p="BuildModeEnum.cs" t="Include" />
             <e p="BuildSurfaceEnum.cs" t="Include" />
             <e p="CameraModeEnum.cs" t="Include" />
+            <e p="CharacterPartType.cs" t="Include" />
             <e p="ColliderTypeEnum.cs" t="Include" />
             <e p="CursorTypeEnum.cs" t="Include" />
             <e p="DirectionEnum.cs" t="Include" />
@@ -743,17 +741,12 @@
             <e p="VisibilityModeEnum.cs" t="Include" />
             <e p="VisibilityStateEnum.cs" t="Include" />
           </e>
-          <e p="Main Menu" t="Include">
-            <e p="MainMenuManager.cs" t="Include" />
-          </e>
           <e p="Managers" t="Include">
             <e p="ApartmentController.cs" t="Include" />
-            <e p="ApartmentCreationManager.cs" t="Include" />
             <e p="ApiManager.cs" t="Include" />
             <e p="BuildingBehavior.cs" t="Include" />
             <e p="BuildManager.cs" t="Include" />
             <e p="CameraManager.cs" t="Include" />
-            <e p="CharacterCreationManager.cs" t="Include" />
             <e p="CursorManager.cs" t="Include" />
             <e p="DatabaseManager.cs" t="Include" />
             <e p="HallController.cs" t="Include" />
@@ -773,6 +766,7 @@
           </e>
           <e p="Player" t="Include">
             <e p="CharacterAnimatorAction.cs" t="Include" />
+            <e p="CharacterStyleSetup.cs" t="Include" />
             <e p="PlayerAnimator.cs" t="Include" />
             <e p="PlayerController.cs" t="Include" />
             <e p="PlayerInteraction.cs" t="Include" />
@@ -796,6 +790,12 @@
             <e p="CharacterInfoPanelUI.cs" t="Include" />
             <e p="DefaultViewUI.cs" t="Include" />
             <e p="ElevatorUI.cs" t="Include" />
+            <e p="Main Menu" t="Include">
+              <e p="ApartmentCreationManager.cs" t="Include" />
+              <e p="CharacterCreationManager.cs" t="Include" />
+              <e p="CharacterPartButton.cs" t="Include" />
+              <e p="MainMenuManager.cs" t="Include" />
+            </e>
             <e p="MarkerController.cs" t="Include" />
             <e p="MoodButton.cs" t="Include" />
             <e p="MoodSelectorUI.cs" t="Include" />

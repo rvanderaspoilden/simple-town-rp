@@ -9,6 +9,18 @@ namespace Sim.Utils {
         public static int GetApartmentFloor(int doorNumber, int limit) {
             return Mathf.CeilToInt(doorNumber / (float) limit);
         }
+        
+        public static float[] ColorToArray(Color color) {
+            return new float[4] {color.r, color.g, color.b, color.a};
+        } 
+        
+        public static Color ArrayToColor(float[] color) {
+            if (color.Length < 3) {
+                throw new Exception("[SAVE UTILS] Failed to convert color array");
+            }
+            
+            return new Color(color[0], color[1], color[2], color.Length > 3 ? color[3] : 1);
+        } 
 
         /**
          * This method is used to give layers on which ones the props can be posed

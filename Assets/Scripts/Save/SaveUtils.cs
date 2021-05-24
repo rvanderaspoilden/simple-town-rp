@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using Sim.Building;
@@ -40,7 +41,7 @@ namespace Sim.Utils {
             BucketData data = new BucketData();
             data.Init(paintBucket);
             data.paintConfigId = paintBucket.PaintConfigId;
-            data.color = new float[4] {paintBucket.GetColor().r, paintBucket.GetColor().g, paintBucket.GetColor().b, paintBucket.GetColor().a};
+            data.color = CommonUtils.ColorToArray(paintBucket.GetColor());
 
             return data;
         }

@@ -1,27 +1,18 @@
 using System;
-using Sim.Utils;
-using UnityEngine;
 
 namespace Sim.Entities {
     [Serializable]
     public struct CharacterCreationRequest {
-        [SerializeField]
-        private string firstname;
+        public string firstname;
 
-        [SerializeField]
-        private string lastname;
+        public string lastname;
 
-        [SerializeField]
-        private string originCountry;
+        public string originCountry;
 
-        [SerializeField]
-        private string entranceDate;
+        public string entranceDate;
 
-        public CharacterCreationRequest(string firstname, string lastname, string originCountry) {
-            this.firstname = firstname;
-            this.lastname = lastname;
-            this.originCountry = originCountry;
-            this.entranceDate = CommonUtils.GetDate();
-        }
+        public Gender gender;
+
+        public Style style;
     }
 }
