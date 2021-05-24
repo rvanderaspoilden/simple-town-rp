@@ -37,10 +37,10 @@ public class Roof : MonoBehaviour {
     }
 
     private void Show() {
-        this.renderersToHide.ForEach(x => x.shadowCastingMode = ShadowCastingMode.On);
+        this.renderersToHide.ForEach(x => x.enabled = true);
     }
 
     private void Hide() {
-        this.renderersToHide.ForEach(x => x.shadowCastingMode = ShadowCastingMode.ShadowsOnly);
+        this.renderersToHide.ForEach(x => x.enabled = false);
     }
 }

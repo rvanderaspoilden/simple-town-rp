@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Sim.Utils;
 using UnityEngine;
 
 public class CharacterStyleSetup : MonoBehaviour {
@@ -26,11 +27,35 @@ public class CharacterStyleSetup : MonoBehaviour {
     private Color currentPantColor = Color.white;
     private Color currentShoesColor = Color.white;
 
+    private Color skinColor;
+
     private void Start() {
         SelectPart(CharacterPartType.HAIR, 0);
         SelectPart(CharacterPartType.SHIRT, 0);
         SelectPart(CharacterPartType.PANT, 0);
         SelectPart(CharacterPartType.SHOES, 0);
+    }
+
+    public Style GetStyle() {
+        return new Style {
+            hair = new CharacterPartStyle {
+                color = CommonUtils.ColorToArray(this.currentHairColor),
+                idx = this.currentHairIdx
+            },
+            shirt = new CharacterPartStyle {
+                color = CommonUtils.ColorToArray(this.currentShirtColor),
+                idx = this.currentShirtIdx
+            },
+            pant = new CharacterPartStyle {
+                color = CommonUtils.ColorToArray(this.currentPantColor),
+                idx = this.currentPantIdx
+            },
+            shoes= new CharacterPartStyle {
+                color = CommonUtils.ColorToArray(this.currentShoesColor),
+                idx = this.currentShoesIdx
+            },
+            skinColor = CommonUtils.ColorToArray(this.skinColor)
+        };
     }
 
     public void ApplyColor(CharacterPartType partType, Color color) {

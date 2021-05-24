@@ -3,7 +3,6 @@ using Sim.Entities;
 using Sim.Utils;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Sim {
@@ -41,9 +40,9 @@ namespace Sim {
 
         [SerializeField]
         private List<CharacterPartButton> characterPartButtons;
-        
+
         private CharacterPartType characterPartSelected;
-        
+
         public static CharacterCreationManager Instance;
 
         private void Awake() {
@@ -66,19 +65,19 @@ namespace Sim {
             ApiManager.OnCharacterCreationFailed -= OnCharacterCreationFailed;
         }
 
-        private void Update() {
-            if (Input.GetKeyDown(KeyCode.Tab)) {
-                Selectable next = EventSystem.current.currentSelectedGameObject
-                    .GetComponent<Selectable>()
-                    .FindSelectableOnDown();
-
-                if (next) next.Select();
-            }
-        }
-
         public void CreateCharacter() {
             this.joinButton.gameObject.SetActive(false);
-            ApiManager.Instance.CreateCharacter(new CharacterCreationRequest(firstNameInputField.text, lastNameInputField.text, originCountryInputField.text));
+
+            CharacterCreationRequest request = new CharacterCreationRequest {
+                firstname = firstNameInputField.text,
+                lastname = lastNameInputField.text,
+                gender = Gender.MALE,
+                style = this.characterStyleSetup.GetStyle(),
+                entranceDate = CommonUtils.GetDate(),
+                originCountry = originCountryInputField.text
+            };
+
+            ApiManager.Instance.CreateCharacter(request);
         }
 
         public void CheckValidity() {
@@ -98,13 +97,13 @@ namespace Sim {
 
         public void Show() {
             this.characterCreationPanel.gameObject.SetActive(true);
-            
+
             this.bufferImg.gameObject.SetActive(false);
 
             this.firstNameInputField.Select();
 
             CheckValidity();
-            
+
             this.SetCurrentCharacterPart(CharacterPartType.HAIR);
         }
 
@@ -128,7 +127,7 @@ namespace Sim {
 
         public void SetCurrentCharacterPart(CharacterPartType partType) {
             this.characterPartSelected = partType;
-            
+
             this.characterPartButtons.ForEach(x => x.SetActive(x.PartType == partType));
         }
     }

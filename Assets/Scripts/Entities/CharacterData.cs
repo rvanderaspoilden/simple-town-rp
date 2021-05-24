@@ -21,11 +21,27 @@ namespace Sim.Entities {
         private Health health;
 
         [SerializeField]
+        private Gender gender;
+
+        [SerializeField]
+        private Style style;
+
+        [SerializeField]
         private MoodEnum mood = MoodEnum.HAPPY;
 
         public MoodEnum Mood {
             get => mood;
             set => mood = value;
+        }
+
+        public Gender Gender {
+            get => gender;
+            set => gender = value;
+        }
+
+        public Style Style {
+            get => style;
+            set => style = value;
         }
 
         public string Id {
