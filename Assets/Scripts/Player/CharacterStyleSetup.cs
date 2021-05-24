@@ -4,7 +4,7 @@ using Sim.Utils;
 using UnityEngine;
 
 public class CharacterStyleSetup : MonoBehaviour {
-    [Header("Settings")]
+    [Header("Clothes Settings")]
     [SerializeField]
     private List<GameObject> hairs;
 
@@ -16,6 +16,13 @@ public class CharacterStyleSetup : MonoBehaviour {
 
     [SerializeField]
     private List<GameObject> shoes;
+
+    [Header("Skin Settings")]
+    [SerializeField]
+    private Color defaultSkinColor;
+    
+    [SerializeField]
+    private List<Renderer> skinMeshRenderers;
 
     private int currentHairIdx;
     private int currentShirtIdx;
@@ -34,6 +41,8 @@ public class CharacterStyleSetup : MonoBehaviour {
         SelectPart(CharacterPartType.SHIRT, 0);
         SelectPart(CharacterPartType.PANT, 0);
         SelectPart(CharacterPartType.SHOES, 0);
+        
+        ApplySkinColor(this.defaultSkinColor);
     }
 
     public Style GetStyle() {
@@ -56,6 +65,15 @@ public class CharacterStyleSetup : MonoBehaviour {
             },
             skinColor = CommonUtils.ColorToArray(this.skinColor)
         };
+    }
+
+    public void ApplySkinColor(Color color) {
+        this.skinColor = color;
+        this.skinMeshRenderers.ForEach(x => {
+            Material newMaterial = x.material;
+            newMaterial.color = color;
+            x.material = newMaterial;
+        });
     }
 
     public void ApplyColor(CharacterPartType partType, Color color) {

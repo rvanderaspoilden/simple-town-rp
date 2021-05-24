@@ -3046,7 +3046,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5757999902219870894}
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 564526350253291040}
@@ -3499,6 +3499,21 @@ MonoBehaviour:
       thirst: 0
       hungry: 0
       sleep: 0
+    gender: 0
+    style:
+      hair:
+        idx: 0
+        color: []
+      shirt:
+        idx: 0
+        color: []
+      pant:
+        idx: 0
+        color: []
+      shoes:
+        idx: 0
+        color: []
+      skinColor: []
     mood: 0
 --- !u!114 &7147682903337299061
 MonoBehaviour:

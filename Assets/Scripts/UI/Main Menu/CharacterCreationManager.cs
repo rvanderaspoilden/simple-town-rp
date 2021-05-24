@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Sim.Entities;
 using Sim.Utils;
@@ -40,7 +41,13 @@ namespace Sim {
 
         [SerializeField]
         private List<CharacterPartButton> characterPartButtons;
-
+        
+        [SerializeField]
+        private Color skinColorLimitMin;
+    
+        [SerializeField]
+        private Color skinColorLimitMax;
+        
         private CharacterPartType characterPartSelected;
 
         public static CharacterCreationManager Instance;
@@ -54,7 +61,7 @@ namespace Sim {
                 this.entranceDateField.readOnly = true;
             }
         }
-
+        
         private void OnEnable() {
             ApiManager.OnCharacterCreated += OnCharacterCreated;
             ApiManager.OnCharacterCreationFailed += OnCharacterCreationFailed;
@@ -63,6 +70,16 @@ namespace Sim {
         private void OnDisable() {
             ApiManager.OnCharacterCreated -= OnCharacterCreated;
             ApiManager.OnCharacterCreationFailed -= OnCharacterCreationFailed;
+        }
+
+        public void SkinSliderChanged(float value) {
+            Color skinColorSubstract = this.skinColorLimitMax - this.skinColorLimitMin;
+
+            this.characterStyleSetup.ApplySkinColor(new Color {
+                r = (this.skinColorLimitMin.r + (skinColorSubstract.r * value)),
+                g = (this.skinColorLimitMin.g + (skinColorSubstract.g * value)),
+                b = (this.skinColorLimitMin.b + (skinColorSubstract.b * value))
+            });
         }
 
         public void CreateCharacter() {
@@ -114,11 +131,15 @@ namespace Sim {
         public void SelectRight(string characterPart) {
             CharacterPartType partType = CharacterStyleSetup.GetCharacterPartType(characterPart);
             this.characterStyleSetup.SelectPart(partType, this.characterStyleSetup.GetCurrentPartIdx(partType) + 1);
+            
+            this.SetCurrentCharacterPart(partType);
         }
 
         public void SelectLeft(string characterPart) {
             CharacterPartType partType = CharacterStyleSetup.GetCharacterPartType(characterPart);
             this.characterStyleSetup.SelectPart(partType, this.characterStyleSetup.GetCurrentPartIdx(partType) - 1);
+            
+            this.SetCurrentCharacterPart(partType);
         }
 
         public void SetColor(Color color) {
