@@ -42,9 +42,15 @@ namespace Sim {
 
         [SerializeField]
         private List<CharacterPartButton> characterPartButtons;
+        
+        [SerializeField]
+        private List<GenderSelector> genderSelectors;
 
         [SerializeField]
         private Slider skinSlider;
+
+        [SerializeField]
+        private float rotationSpeed = 2f;
 
         private CharacterPartType characterPartSelected;
 
@@ -58,6 +64,10 @@ namespace Sim {
                 this.entranceDateField.text = CommonUtils.GetDate();
                 this.entranceDateField.readOnly = true;
             }
+        }
+
+        private void Update() {
+            this.characterStyleSetup.gameObject.transform.Rotate(Vector3.up * Time.deltaTime * this.rotationSpeed); 
         }
 
         private void OnEnable() {
@@ -112,6 +122,8 @@ namespace Sim {
             this.characterStyleSetup.Randomize();
 
             this.skinSlider.value = this.characterStyleSetup.SkinColorPercent;
+            
+            this.genderSelectors.ForEach(x => x.SetActive(x.Gender == this.characterStyleSetup.Gender));
 
             this.SetCurrentCharacterPart(CharacterPartType.HAIR);
         }
@@ -142,6 +154,12 @@ namespace Sim {
             this.characterPartSelected = partType;
 
             this.characterPartButtons.ForEach(x => x.SetActive(x.PartType == partType));
+        }
+
+        public void SetGender(Gender gender) {
+            this.characterStyleSetup.SetGender(gender);
+            
+            this.genderSelectors.ForEach(x => x.SetActive(x.Gender == gender));
         }
 
         public void SkinSliderChanged(float value) {
