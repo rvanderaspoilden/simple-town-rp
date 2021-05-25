@@ -4,13 +4,15 @@ using System;
 public struct Style {
     public CharacterPartStyle hair;
     
+    public CharacterPartStyle eyebrow;
+    
     public CharacterPartStyle shirt;
     
     public CharacterPartStyle pant;
     
     public CharacterPartStyle shoes;
     
-    public float[] skinColor;
+    public float skinColorPercent;
 }
 
 [Serializable]
