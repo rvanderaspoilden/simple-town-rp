@@ -14,7 +14,7 @@ public class CharacterStyleSetup : MonoBehaviour {
 
     [SerializeField]
     private List<GameObject> shirtsMale;
-    
+
     [SerializeField]
     private List<GameObject> shirtsFemale;
 
@@ -23,10 +23,10 @@ public class CharacterStyleSetup : MonoBehaviour {
 
     [SerializeField]
     private List<GameObject> pantsFemale;
-    
+
     [SerializeField]
     private List<GameObject> bodyPartsMale;
-    
+
     [SerializeField]
     private List<GameObject> bodyPartsFemale;
 
@@ -39,7 +39,7 @@ public class CharacterStyleSetup : MonoBehaviour {
 
     [SerializeField]
     private Color skinColorLimitMax;
-    
+
     [SerializeField]
     private List<Renderer> skinMeshRenderers;
 
@@ -69,6 +69,8 @@ public class CharacterStyleSetup : MonoBehaviour {
         SetSkinColor(0f);
     }
 
+    public Gender Gender => gender;
+
     public float SkinColorPercent => skinColorPercent;
 
     public void SetGender(Gender genderType) {
@@ -76,16 +78,16 @@ public class CharacterStyleSetup : MonoBehaviour {
 
         this.bodyPartsMale.ForEach(x => x.SetActive(this.gender == Gender.MALE));
         this.bodyPartsFemale.ForEach(x => x.SetActive(this.gender == Gender.FEMALE));
-        
+
         SelectPart(CharacterPartType.SHIRT, this.currentShirtIdx);
         SelectPart(CharacterPartType.PANT, this.currentPantIdx);
     }
-    
+
     public void SetSkinColor(float percent) {
         this.skinColorPercent = percent;
-        
+
         Color skinColorSubstract = this.skinColorLimitMax - this.skinColorLimitMin;
-        
+
         this.skinMeshRenderers.ForEach(x => {
             Material newMaterial = x.material;
             newMaterial.color = new Color {
@@ -103,18 +105,18 @@ public class CharacterStyleSetup : MonoBehaviour {
         this.currentShirtColor = Random.ColorHSV();
         this.currentPantColor = Random.ColorHSV();
         this.currentShoesColor = Random.ColorHSV();
-        
+
         SelectPart(CharacterPartType.HAIR, Random.Range(0, this.hairs.Count));
         SelectPart(CharacterPartType.EYEBROW, Random.Range(0, this.eyebrows.Count));
         SelectPart(CharacterPartType.SHIRT, Random.Range(0, this.gender == Gender.MALE ? this.shirtsMale.Count : this.shirtsFemale.Count));
         SelectPart(CharacterPartType.PANT, Random.Range(0, this.gender == Gender.MALE ? this.pantsMale.Count : this.pantsFemale.Count));
         SelectPart(CharacterPartType.SHOES, Random.Range(0, this.shoes.Count));
-        
+
         SetGender(Random.Range(0f, 1f) >= .5f ? Gender.MALE : Gender.FEMALE);
 
         SetSkinColor(Random.Range(0f, 1f));
     }
-    
+
     public Style GetStyle() {
         return new Style {
             hair = new CharacterPartStyle {
@@ -153,7 +155,7 @@ public class CharacterStyleSetup : MonoBehaviour {
             case CharacterPartType.HAIR:
                 this.currentHairColor = color;
                 break;
-            
+
             case CharacterPartType.EYEBROW:
                 this.currentEyebrowColor = color;
                 break;
@@ -175,7 +177,9 @@ public class CharacterStyleSetup : MonoBehaviour {
     public void SelectPart(CharacterPartType partType, int idx) {
         List<GameObject> choices = GetPartList(partType);
 
-        if (idx < 0) {
+        if (partType == CharacterPartType.EYEBROW && (idx == -1 || idx == this.eyebrows.Count)) {
+            idx = -1;
+        } else if (idx < 0) {
             idx = choices.Count - 1;
         } else if (idx >= choices.Count) {
             idx = 0;
@@ -204,10 +208,10 @@ public class CharacterStyleSetup : MonoBehaviour {
                 this.currentHairIdx = idx;
                 this.ApplyColor(partType, this.currentHairColor);
                 break;
-            
+
             case CharacterPartType.EYEBROW:
                 this.currentEyebrowIdx = idx;
-                this.ApplyColor(partType, this.currentEyebrowColor);
+                if (idx >= 0) this.ApplyColor(partType, this.currentEyebrowColor);
                 break;
 
             case CharacterPartType.PANT:
@@ -231,7 +235,7 @@ public class CharacterStyleSetup : MonoBehaviour {
         switch (partType) {
             case CharacterPartType.HAIR:
                 return this.currentHairIdx;
-            
+
             case CharacterPartType.EYEBROW:
                 return this.currentEyebrowIdx;
 
@@ -252,7 +256,7 @@ public class CharacterStyleSetup : MonoBehaviour {
         switch (name) {
             case "HAIR":
                 return CharacterPartType.HAIR;
-            
+
             case "EYEBROW":
                 return CharacterPartType.EYEBROW;
 
@@ -276,7 +280,7 @@ public class CharacterStyleSetup : MonoBehaviour {
 
             case CharacterPartType.EYEBROW:
                 return eyebrows;
-            
+
             case CharacterPartType.PANT:
                 return this.gender == Gender.MALE ? pantsMale : pantsFemale;
 
