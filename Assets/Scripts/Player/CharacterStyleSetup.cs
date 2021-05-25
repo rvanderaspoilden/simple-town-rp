@@ -13,10 +13,22 @@ public class CharacterStyleSetup : MonoBehaviour {
     private List<GameObject> eyebrows;
 
     [SerializeField]
-    private List<GameObject> shirts;
+    private List<GameObject> shirtsMale;
+    
+    [SerializeField]
+    private List<GameObject> shirtsFemale;
 
     [SerializeField]
-    private List<GameObject> pants;
+    private List<GameObject> pantsMale;
+
+    [SerializeField]
+    private List<GameObject> pantsFemale;
+    
+    [SerializeField]
+    private List<GameObject> bodyPartsMale;
+    
+    [SerializeField]
+    private List<GameObject> bodyPartsFemale;
 
     [SerializeField]
     private List<GameObject> shoes;
@@ -45,6 +57,8 @@ public class CharacterStyleSetup : MonoBehaviour {
 
     private float skinColorPercent; // 0-1
 
+    private Gender gender = Gender.MALE;
+
     private void Start() {
         SelectPart(CharacterPartType.HAIR, 0);
         SelectPart(CharacterPartType.EYEBROW, 0);
@@ -56,6 +70,16 @@ public class CharacterStyleSetup : MonoBehaviour {
     }
 
     public float SkinColorPercent => skinColorPercent;
+
+    public void SetGender(Gender genderType) {
+        this.gender = genderType;
+
+        this.bodyPartsMale.ForEach(x => x.SetActive(this.gender == Gender.MALE));
+        this.bodyPartsFemale.ForEach(x => x.SetActive(this.gender == Gender.FEMALE));
+        
+        SelectPart(CharacterPartType.SHIRT, this.currentShirtIdx);
+        SelectPart(CharacterPartType.PANT, this.currentPantIdx);
+    }
     
     public void SetSkinColor(float percent) {
         this.skinColorPercent = percent;
@@ -82,9 +106,11 @@ public class CharacterStyleSetup : MonoBehaviour {
         
         SelectPart(CharacterPartType.HAIR, Random.Range(0, this.hairs.Count));
         SelectPart(CharacterPartType.EYEBROW, Random.Range(0, this.eyebrows.Count));
-        SelectPart(CharacterPartType.SHIRT, Random.Range(0, this.shirts.Count));
-        SelectPart(CharacterPartType.PANT, Random.Range(0, this.pants.Count));
+        SelectPart(CharacterPartType.SHIRT, Random.Range(0, this.gender == Gender.MALE ? this.shirtsMale.Count : this.shirtsFemale.Count));
+        SelectPart(CharacterPartType.PANT, Random.Range(0, this.gender == Gender.MALE ? this.pantsMale.Count : this.pantsFemale.Count));
         SelectPart(CharacterPartType.SHOES, Random.Range(0, this.shoes.Count));
+        
+        SetGender(Random.Range(0f, 1f) >= .5f ? Gender.MALE : Gender.FEMALE);
 
         SetSkinColor(Random.Range(0f, 1f));
     }
@@ -157,6 +183,20 @@ public class CharacterStyleSetup : MonoBehaviour {
 
         for (int i = 0; i < choices.Count; i++) {
             choices[i].SetActive(i == idx);
+        }
+
+        if (partType == CharacterPartType.SHIRT) {
+            if (this.gender == Gender.MALE) {
+                this.shirtsFemale.ForEach(x => x.SetActive(false));
+            } else {
+                this.shirtsMale.ForEach(x => x.SetActive(false));
+            }
+        } else if (partType == CharacterPartType.PANT) {
+            if (this.gender == Gender.MALE) {
+                this.pantsFemale.ForEach(x => x.SetActive(false));
+            } else {
+                this.pantsMale.ForEach(x => x.SetActive(false));
+            }
         }
 
         switch (partType) {
@@ -238,10 +278,10 @@ public class CharacterStyleSetup : MonoBehaviour {
                 return eyebrows;
             
             case CharacterPartType.PANT:
-                return pants;
+                return this.gender == Gender.MALE ? pantsMale : pantsFemale;
 
             case CharacterPartType.SHIRT:
-                return shirts;
+                return this.gender == Gender.MALE ? shirtsMale : shirtsFemale;
 
             case CharacterPartType.SHOES:
                 return shoes;
