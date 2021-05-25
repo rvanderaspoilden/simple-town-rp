@@ -5,6 +5,7 @@ using Sim.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 namespace Sim {
     public class CharacterCreationManager : MonoBehaviour {
@@ -41,13 +42,10 @@ namespace Sim {
 
         [SerializeField]
         private List<CharacterPartButton> characterPartButtons;
-        
+
         [SerializeField]
-        private Color skinColorLimitMin;
-    
-        [SerializeField]
-        private Color skinColorLimitMax;
-        
+        private Slider skinSlider;
+
         private CharacterPartType characterPartSelected;
 
         public static CharacterCreationManager Instance;
@@ -61,7 +59,7 @@ namespace Sim {
                 this.entranceDateField.readOnly = true;
             }
         }
-        
+
         private void OnEnable() {
             ApiManager.OnCharacterCreated += OnCharacterCreated;
             ApiManager.OnCharacterCreationFailed += OnCharacterCreationFailed;
@@ -70,16 +68,6 @@ namespace Sim {
         private void OnDisable() {
             ApiManager.OnCharacterCreated -= OnCharacterCreated;
             ApiManager.OnCharacterCreationFailed -= OnCharacterCreationFailed;
-        }
-
-        public void SkinSliderChanged(float value) {
-            Color skinColorSubstract = this.skinColorLimitMax - this.skinColorLimitMin;
-
-            this.characterStyleSetup.ApplySkinColor(new Color {
-                r = (this.skinColorLimitMin.r + (skinColorSubstract.r * value)),
-                g = (this.skinColorLimitMin.g + (skinColorSubstract.g * value)),
-                b = (this.skinColorLimitMin.b + (skinColorSubstract.b * value))
-            });
         }
 
         public void CreateCharacter() {
@@ -120,6 +108,10 @@ namespace Sim {
             this.firstNameInputField.Select();
 
             CheckValidity();
+            
+            this.characterStyleSetup.Randomize();
+
+            this.skinSlider.value = this.characterStyleSetup.SkinColorPercent;
 
             this.SetCurrentCharacterPart(CharacterPartType.HAIR);
         }
@@ -131,14 +123,14 @@ namespace Sim {
         public void SelectRight(string characterPart) {
             CharacterPartType partType = CharacterStyleSetup.GetCharacterPartType(characterPart);
             this.characterStyleSetup.SelectPart(partType, this.characterStyleSetup.GetCurrentPartIdx(partType) + 1);
-            
+
             this.SetCurrentCharacterPart(partType);
         }
 
         public void SelectLeft(string characterPart) {
             CharacterPartType partType = CharacterStyleSetup.GetCharacterPartType(characterPart);
             this.characterStyleSetup.SelectPart(partType, this.characterStyleSetup.GetCurrentPartIdx(partType) - 1);
-            
+
             this.SetCurrentCharacterPart(partType);
         }
 
@@ -150,6 +142,10 @@ namespace Sim {
             this.characterPartSelected = partType;
 
             this.characterPartButtons.ForEach(x => x.SetActive(x.PartType == partType));
+        }
+
+        public void SkinSliderChanged(float value) {
+            this.characterStyleSetup.SetSkinColor(value);
         }
     }
 }

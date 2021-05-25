@@ -244,19 +244,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 29627358}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
-        m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
-        m_MethodName: SetCurrentCharacterPart
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: HAIR
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &29627361
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3978,19 +3966,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1075273627}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
-        m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
-        m_MethodName: SetCurrentCharacterPart
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: SHIRT
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1075273627
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4041,7 +4017,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae63587d89a64594c8bf0a79b78cdcc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  partType: 1
+  partType: 2
 --- !u!1 &1110093752
 GameObject:
   m_ObjectHideFlags: 0
@@ -7120,19 +7096,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1622569120}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
-        m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
-        m_MethodName: SetCurrentCharacterPart
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: PANT
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1622569120
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7183,7 +7147,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae63587d89a64594c8bf0a79b78cdcc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  partType: 2
+  partType: 3
 --- !u!1 &1635914275
 GameObject:
   m_ObjectHideFlags: 0
@@ -8743,19 +8707,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2041497119}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
-        m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
-        m_MethodName: SetCurrentCharacterPart
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: SHOES
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &2041497119
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8806,7 +8758,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae63587d89a64594c8bf0a79b78cdcc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  partType: 3
+  partType: 4
 --- !u!1 &2058639350
 GameObject:
   m_ObjectHideFlags: 0
@@ -10836,6 +10788,11 @@ PrefabInstance:
       objectReference: {fileID: 1227271254}
     - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
         type: 3}
+      propertyPath: skinSlider
+      value: 
+      objectReference: {fileID: 918971570}
+    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
+        type: 3}
       propertyPath: entranceDateField
       value: 
       objectReference: {fileID: 1230028871}
@@ -10899,6 +10856,11 @@ PrefabInstance:
       propertyPath: characterCreationPanel
       value: 
       objectReference: {fileID: 974896562}
+    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
+        type: 3}
+      propertyPath: colorPaletteController
+      value: 
+      objectReference: {fileID: 386089358502040301}
     - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
         type: 3}
       propertyPath: originCountryInputField
@@ -14096,6 +14058,11 @@ MonoBehaviour:
   - {fileID: 1142686158347205335}
   - {fileID: 2436700133410467109}
   - {fileID: 4307301277759537240}
+  eyebrows:
+  - {fileID: 385337333476745928}
+  - {fileID: 5897683292577282747}
+  - {fileID: 7917239451360613307}
+  - {fileID: 253270611379537806}
   shirts:
   - {fileID: 3190773720289461099}
   - {fileID: 8250726568075255383}
@@ -14111,7 +14078,8 @@ MonoBehaviour:
   - {fileID: 6267059736385232499}
   - {fileID: 8316438338682874003}
   - {fileID: 3161256168234788400}
-  defaultSkinColor: {r: 0.9764706, g: 0.7921569, b: 0.72156864, a: 1}
+  skinColorLimitMin: {r: 0.9764706, g: 0.7921569, b: 0.72156864, a: 1}
+  skinColorLimitMax: {r: 0.5294118, g: 0.29411766, b: 0.16078432, a: 1}
   skinMeshRenderers:
   - {fileID: 6430203642128573324}
   - {fileID: 7201428865568372927}

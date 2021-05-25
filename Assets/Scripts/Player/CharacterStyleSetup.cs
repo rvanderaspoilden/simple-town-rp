@@ -2,11 +2,15 @@ using System;
 using System.Collections.Generic;
 using Sim.Utils;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class CharacterStyleSetup : MonoBehaviour {
     [Header("Clothes Settings")]
     [SerializeField]
     private List<GameObject> hairs;
+
+    [SerializeField]
+    private List<GameObject> eyebrows;
 
     [SerializeField]
     private List<GameObject> shirts;
@@ -19,37 +23,81 @@ public class CharacterStyleSetup : MonoBehaviour {
 
     [Header("Skin Settings")]
     [SerializeField]
-    private Color defaultSkinColor;
+    private Color skinColorLimitMin;
+
+    [SerializeField]
+    private Color skinColorLimitMax;
     
     [SerializeField]
     private List<Renderer> skinMeshRenderers;
 
     private int currentHairIdx;
+    private int currentEyebrowIdx;
     private int currentShirtIdx;
     private int currentPantIdx;
     private int currentShoesIdx;
-    
+
     private Color currentHairColor = Color.white;
+    private Color currentEyebrowColor = Color.white;
     private Color currentShirtColor = Color.white;
     private Color currentPantColor = Color.white;
     private Color currentShoesColor = Color.white;
 
-    private Color skinColor;
+    private float skinColorPercent; // 0-1
 
     private void Start() {
         SelectPart(CharacterPartType.HAIR, 0);
+        SelectPart(CharacterPartType.EYEBROW, 0);
         SelectPart(CharacterPartType.SHIRT, 0);
         SelectPart(CharacterPartType.PANT, 0);
         SelectPart(CharacterPartType.SHOES, 0);
-        
-        ApplySkinColor(this.defaultSkinColor);
+
+        SetSkinColor(0f);
     }
 
+    public float SkinColorPercent => skinColorPercent;
+    
+    public void SetSkinColor(float percent) {
+        this.skinColorPercent = percent;
+        
+        Color skinColorSubstract = this.skinColorLimitMax - this.skinColorLimitMin;
+        
+        this.skinMeshRenderers.ForEach(x => {
+            Material newMaterial = x.material;
+            newMaterial.color = new Color {
+                r = (this.skinColorLimitMin.r + (skinColorSubstract.r * percent)),
+                g = (this.skinColorLimitMin.g + (skinColorSubstract.g * percent)),
+                b = (this.skinColorLimitMin.b + (skinColorSubstract.b * percent))
+            };
+            x.material = newMaterial;
+        });
+    }
+
+    public void Randomize() {
+        this.currentHairColor = Random.ColorHSV();
+        this.currentEyebrowColor = this.currentHairColor;
+        this.currentShirtColor = Random.ColorHSV();
+        this.currentPantColor = Random.ColorHSV();
+        this.currentShoesColor = Random.ColorHSV();
+        
+        SelectPart(CharacterPartType.HAIR, Random.Range(0, this.hairs.Count));
+        SelectPart(CharacterPartType.EYEBROW, Random.Range(0, this.eyebrows.Count));
+        SelectPart(CharacterPartType.SHIRT, Random.Range(0, this.shirts.Count));
+        SelectPart(CharacterPartType.PANT, Random.Range(0, this.pants.Count));
+        SelectPart(CharacterPartType.SHOES, Random.Range(0, this.shoes.Count));
+
+        SetSkinColor(Random.Range(0f, 1f));
+    }
+    
     public Style GetStyle() {
         return new Style {
             hair = new CharacterPartStyle {
                 color = CommonUtils.ColorToArray(this.currentHairColor),
                 idx = this.currentHairIdx
+            },
+            eyebrow = new CharacterPartStyle {
+                color = CommonUtils.ColorToArray(this.currentEyebrowColor),
+                idx = this.currentEyebrowIdx
             },
             shirt = new CharacterPartStyle {
                 color = CommonUtils.ColorToArray(this.currentShirtColor),
@@ -59,21 +107,12 @@ public class CharacterStyleSetup : MonoBehaviour {
                 color = CommonUtils.ColorToArray(this.currentPantColor),
                 idx = this.currentPantIdx
             },
-            shoes= new CharacterPartStyle {
+            shoes = new CharacterPartStyle {
                 color = CommonUtils.ColorToArray(this.currentShoesColor),
                 idx = this.currentShoesIdx
             },
-            skinColor = CommonUtils.ColorToArray(this.skinColor)
+            skinColorPercent = this.skinColorPercent
         };
-    }
-
-    public void ApplySkinColor(Color color) {
-        this.skinColor = color;
-        this.skinMeshRenderers.ForEach(x => {
-            Material newMaterial = x.material;
-            newMaterial.color = color;
-            x.material = newMaterial;
-        });
     }
 
     public void ApplyColor(CharacterPartType partType, Color color) {
@@ -83,10 +122,14 @@ public class CharacterStyleSetup : MonoBehaviour {
         Material newMaterial = currentPart.material;
         newMaterial.color = color;
         currentPart.material = newMaterial;
-        
+
         switch (partType) {
             case CharacterPartType.HAIR:
                 this.currentHairColor = color;
+                break;
+            
+            case CharacterPartType.EYEBROW:
+                this.currentEyebrowColor = color;
                 break;
 
             case CharacterPartType.PANT:
@@ -121,6 +164,11 @@ public class CharacterStyleSetup : MonoBehaviour {
                 this.currentHairIdx = idx;
                 this.ApplyColor(partType, this.currentHairColor);
                 break;
+            
+            case CharacterPartType.EYEBROW:
+                this.currentEyebrowIdx = idx;
+                this.ApplyColor(partType, this.currentEyebrowColor);
+                break;
 
             case CharacterPartType.PANT:
                 this.currentPantIdx = idx;
@@ -137,13 +185,15 @@ public class CharacterStyleSetup : MonoBehaviour {
                 this.ApplyColor(partType, this.currentShoesColor);
                 break;
         }
-        
     }
 
     public int GetCurrentPartIdx(CharacterPartType partType) {
         switch (partType) {
             case CharacterPartType.HAIR:
                 return this.currentHairIdx;
+            
+            case CharacterPartType.EYEBROW:
+                return this.currentEyebrowIdx;
 
             case CharacterPartType.PANT:
                 return this.currentPantIdx;
@@ -162,6 +212,9 @@ public class CharacterStyleSetup : MonoBehaviour {
         switch (name) {
             case "HAIR":
                 return CharacterPartType.HAIR;
+            
+            case "EYEBROW":
+                return CharacterPartType.EYEBROW;
 
             case "PANT":
                 return CharacterPartType.PANT;
@@ -181,6 +234,9 @@ public class CharacterStyleSetup : MonoBehaviour {
             case CharacterPartType.HAIR:
                 return hairs;
 
+            case CharacterPartType.EYEBROW:
+                return eyebrows;
+            
             case CharacterPartType.PANT:
                 return pants;
 
