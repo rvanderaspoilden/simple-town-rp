@@ -9922,14 +9922,14 @@ MonoBehaviour:
   totalNumberofColors: 30
   wheelsCount: 1
   startingAngle: 0
-  controlSV: 0
+  controlSV: 1
   inertia: 0
   decelerationRate: 0.135
   wholeSegment: 0
   minimumSatValStep: 0.01
   minimumSaturation: 0.25
   maximumSaturation: 1
-  minimumValue: 0
+  minimumValue: 0.25
   maximumValue: 1
   OnColorChange:
     m_PersistentCalls:

@@ -80,6 +80,8 @@ namespace Sim {
 
         private CharacterInteract characterInteractState;
 
+        private CharacterStyleSetup characterStyleSetup;
+
         public delegate void StateChanged(PlayerController player, StateType state);
 
         public static event StateChanged OnStateChanged;
@@ -95,6 +97,7 @@ namespace Sim {
             this.rigidbody = GetComponent<Rigidbody>();
             this.animator = GetComponent<PlayerAnimator>();
             this.Collider = GetComponent<Collider>();
+            this.characterStyleSetup = GetComponent<CharacterStyleSetup>();
         }
 
         public override void OnStartClient() {
@@ -190,6 +193,7 @@ namespace Sim {
 
         public void ParseCharacterData(string old, string newValue) {
             this.characterData = JsonUtility.FromJson<CharacterData>(newValue);
+            this.characterStyleSetup.ApplyStyle(this.CharacterData.Style);
         }
 
         private void Update() {

@@ -58,17 +58,7 @@ public class CharacterStyleSetup : MonoBehaviour {
     private float skinColorPercent; // 0-1
 
     private Gender gender = Gender.MALE;
-
-    private void Start() {
-        SelectPart(CharacterPartType.HAIR, 0);
-        SelectPart(CharacterPartType.EYEBROW, 0);
-        SelectPart(CharacterPartType.SHIRT, 0);
-        SelectPart(CharacterPartType.PANT, 0);
-        SelectPart(CharacterPartType.SHOES, 0);
-
-        SetSkinColor(0f);
-    }
-
+    
     public Gender Gender => gender;
 
     public float SkinColorPercent => skinColorPercent;
@@ -142,6 +132,24 @@ public class CharacterStyleSetup : MonoBehaviour {
             skinColorPercent = this.skinColorPercent,
             gender = this.gender
         };
+    }
+
+    public void ApplyStyle(Style style) {
+        this.currentHairColor = CommonUtils.ArrayToColor(style.hair.color);
+        this.currentEyebrowColor = CommonUtils.ArrayToColor(style.eyebrow.color);
+        this.currentShirtColor = CommonUtils.ArrayToColor(style.shirt.color);
+        this.currentPantColor = CommonUtils.ArrayToColor(style.pant.color);
+        this.currentShoesColor = CommonUtils.ArrayToColor(style.shoes.color);
+        
+        SelectPart(CharacterPartType.HAIR, style.hair.idx);
+        SelectPart(CharacterPartType.EYEBROW, style.eyebrow.idx);
+        SelectPart(CharacterPartType.SHIRT, style.shirt.idx);
+        SelectPart(CharacterPartType.PANT, style.pant.idx);
+        SelectPart(CharacterPartType.SHOES, style.shoes.idx);
+
+        SetGender(style.gender);
+
+        SetSkinColor(style.skinColorPercent);
     }
 
     public void ApplyColor(CharacterPartType partType, Color color) {
