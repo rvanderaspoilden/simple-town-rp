@@ -16,7 +16,7 @@ namespace Sim {
         private GameObject mainMenuPanel;
         
         private void Awake() {
-            this.characterCreationManager.Hide();
+            //this.characterCreationManager.Hide();
             this.apartmentCreationManager.Hide();
             this.mainMenuPanel.SetActive(false);
         }

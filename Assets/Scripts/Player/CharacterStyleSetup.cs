@@ -146,10 +146,14 @@ public class CharacterStyleSetup : MonoBehaviour {
     public void ApplyColor(CharacterPartType partType, Color color) {
         List<GameObject> choices = GetPartList(partType);
 
-        Renderer currentPart = choices[this.GetCurrentPartIdx(partType)].GetComponent<Renderer>();
-        Material newMaterial = currentPart.material;
-        newMaterial.color = color;
-        currentPart.material = newMaterial;
+        int partIdx = this.GetCurrentPartIdx(partType);
+
+        if (partIdx >= 0 && partIdx < choices.Count) {
+            Renderer currentPart = choices[partIdx].GetComponent<Renderer>();
+            Material newMaterial = currentPart.material;
+            newMaterial.color = color;
+            currentPart.material = newMaterial;
+        }
 
         switch (partType) {
             case CharacterPartType.HAIR:
@@ -247,6 +251,27 @@ public class CharacterStyleSetup : MonoBehaviour {
 
             case CharacterPartType.SHOES:
                 return this.currentShoesIdx;
+        }
+
+        throw new Exception("[CharacterStyleSetup] Unknown part !");
+    }
+    
+    public Color GetCurrentPartColor(CharacterPartType partType) {
+        switch (partType) {
+            case CharacterPartType.HAIR:
+                return this.currentHairColor;
+
+            case CharacterPartType.EYEBROW:
+                return this.currentEyebrowColor;
+
+            case CharacterPartType.PANT:
+                return this.currentPantColor;
+
+            case CharacterPartType.SHIRT:
+                return this.currentShirtColor;
+
+            case CharacterPartType.SHOES:
+                return this.currentShoesColor;
         }
 
         throw new Exception("[CharacterStyleSetup] Unknown part !");

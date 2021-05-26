@@ -4,8 +4,8 @@ using Sim.Entities;
 using Sim.Utils;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
-using Random = UnityEngine.Random;
 
 namespace Sim {
     public class CharacterCreationManager : MonoBehaviour {
@@ -48,6 +48,9 @@ namespace Sim {
 
         [SerializeField]
         private Slider skinSlider;
+
+        [SerializeField]
+        private ColorPaletteController paletteController;
 
         [SerializeField]
         private float rotationSpeed = 2f;
@@ -162,7 +165,7 @@ namespace Sim {
             this.genderSelectors.ForEach(x => x.SetActive(x.Gender == gender));
         }
 
-        public void SkinSliderChanged(float value) {
+        public void SkinSliderChanged(Single value) {
             this.characterStyleSetup.SetSkinColor(value);
         }
     }
