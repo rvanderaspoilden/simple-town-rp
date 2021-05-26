@@ -13,6 +13,8 @@ public struct Style {
     public CharacterPartStyle shoes;
     
     public float skinColorPercent;
+
+    public Gender gender;
 }
 
 [Serializable]

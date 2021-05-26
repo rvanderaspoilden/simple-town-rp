@@ -11,8 +11,6 @@ namespace Sim.Entities {
 
         public string entranceDate;
 
-        public Gender gender;
-
         public Style style;
     }
 }

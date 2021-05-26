@@ -16,7 +16,7 @@ namespace Sim {
         private GameObject mainMenuPanel;
         
         private void Awake() {
-            //this.characterCreationManager.Hide();
+            this.characterCreationManager.Hide();
             this.apartmentCreationManager.Hide();
             this.mainMenuPanel.SetActive(false);
         }
@@ -78,7 +78,8 @@ namespace Sim {
         private void OnCharacterCreated(CharacterData characterData) {
             ((SimpleTownNetwork) NetworkManager.singleton).CharacterData = characterData;
 
-            this.apartmentCreationManager.Show();
+            this.characterCreationManager.Invoke(nameof(CharacterCreationManager.Hide), 2f);
+            this.apartmentCreationManager.Invoke(nameof(ApartmentCreationManager.Show), 2f);
         }
 
         private void OnApartmentAssigned(Home home) {

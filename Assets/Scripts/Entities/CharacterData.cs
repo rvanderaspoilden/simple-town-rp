@@ -21,9 +21,6 @@ namespace Sim.Entities {
         private Health health;
 
         [SerializeField]
-        private Gender gender;
-
-        [SerializeField]
         private Style style;
 
         [SerializeField]
@@ -32,11 +29,6 @@ namespace Sim.Entities {
         public MoodEnum Mood {
             get => mood;
             set => mood = value;
-        }
-
-        public Gender Gender {
-            get => gender;
-            set => gender = value;
         }
 
         public Style Style {

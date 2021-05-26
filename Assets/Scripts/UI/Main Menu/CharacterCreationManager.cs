@@ -89,7 +89,6 @@ namespace Sim {
             CharacterCreationRequest request = new CharacterCreationRequest {
                 firstname = firstNameInputField.text,
                 lastname = lastNameInputField.text,
-                gender = Gender.MALE,
                 style = this.characterStyleSetup.GetStyle(),
                 entranceDate = CommonUtils.GetDate(),
                 originCountry = originCountryInputField.text

@@ -139,7 +139,8 @@ public class CharacterStyleSetup : MonoBehaviour {
                 color = CommonUtils.ColorToArray(this.currentShoesColor),
                 idx = this.currentShoesIdx
             },
-            skinColorPercent = this.skinColorPercent
+            skinColorPercent = this.skinColorPercent,
+            gender = this.gender
         };
     }
 
