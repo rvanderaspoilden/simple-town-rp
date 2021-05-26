@@ -470,7 +470,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: CheckValidity
         m_Mode: 1
@@ -830,7 +830,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394975}
+      - m_Target: {fileID: 1751657316}
         m_TargetAssemblyTypeName: Sim.MainMenuManager, Assembly-CSharp
         m_MethodName: Play
         m_Mode: 1
@@ -1359,7 +1359,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394975}
+      - m_Target: {fileID: 1751657316}
         m_TargetAssemblyTypeName: Sim.MainMenuManager, Assembly-CSharp
         m_MethodName: Play
         m_Mode: 1
@@ -1491,7 +1491,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SelectLeft
         m_Mode: 5
@@ -1715,7 +1715,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394975}
+      - m_Target: {fileID: 1751657316}
         m_TargetAssemblyTypeName: Sim.MainMenuManager, Assembly-CSharp
         m_MethodName: Play
         m_Mode: 1
@@ -2054,7 +2054,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SelectRight
         m_Mode: 5
@@ -2321,7 +2321,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SelectLeft
         m_Mode: 5
@@ -2869,7 +2869,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SelectRight
         m_Mode: 5
@@ -3278,7 +3278,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SkinSliderChanged
         m_Mode: 0
@@ -3487,7 +3487,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SelectLeft
         m_Mode: 5
@@ -4227,7 +4227,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: CheckValidity
         m_Mode: 1
@@ -4452,7 +4452,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SelectRight
         m_Mode: 5
@@ -4720,7 +4720,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394975}
+      - m_Target: {fileID: 1751657316}
         m_TargetAssemblyTypeName: Sim.MainMenuManager, Assembly-CSharp
         m_MethodName: Play
         m_Mode: 1
@@ -4902,7 +4902,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SelectRight
         m_Mode: 5
@@ -5109,7 +5109,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: CreateCharacter
         m_Mode: 1
@@ -5277,19 +5277,7 @@ MonoBehaviour:
       m_Calls: []
   m_OnValueChanged:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
-        m_MethodName: CheckValidity
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   m_OnTouchScreenKeyboardStatusChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -5465,7 +5453,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: CheckValidity
         m_Mode: 1
@@ -6931,7 +6919,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SelectLeft
         m_Mode: 5
@@ -7551,18 +7539,199 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 10.06, y: -31.602, z: -9.649}
---- !u!114 &1751657319 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2891067972080047097, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-    type: 3}
-  m_PrefabInstance: {fileID: 2891067971407394974}
+--- !u!1 &1751657315
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1751657317}
+  - component: {fileID: 1751657316}
+  - component: {fileID: 1751657319}
+  - component: {fileID: 1751657318}
+  - component: {fileID: 1751657320}
+  m_Layer: 0
+  m_Name: Main Menu Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1751657316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1751657315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a9ba469bbb52cd468e771efd0f9cd07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  characterCreationManager: {fileID: 1751657320}
+  apartmentCreationManager: {fileID: 1751657319}
+  mainMenuPanel: {fileID: 1158836246}
+--- !u!4 &1751657317
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1751657315}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.2712567, y: 6.8002367, z: 0.8666153}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &1751657318
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1751657315}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.76
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &1751657319
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1751657315}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 258741e0ce308bf45908905108bc3e3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  apartmentCreationPanel: {fileID: 731061308}
+  createApartmentButton: {fileID: 1652654430}
+--- !u!114 &1751657320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1751657315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5e802c83566cd948887b186c562309c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  characterCreationPanel: {fileID: 974896562}
+  firstNameInputField: {fileID: 69506701}
+  lastNameInputField: {fileID: 1231544027}
+  originCountryInputField: {fileID: 1112045058}
+  entranceDateField: {fileID: 1230028871}
+  joinButton: {fileID: 1227271254}
+  bufferImg: {fileID: 1297789403}
+  bufferSound: {fileID: 8300000, guid: 8b8d81aab040fda40935b1bc27876b60, type: 3}
+  audioSource: {fileID: 1751657318}
+  characterStyleSetup: {fileID: 8054185884879233728}
+  characterPartButtons:
+  - {fileID: 29627361}
+  - {fileID: 290705237}
+  - {fileID: 1075273629}
+  - {fileID: 1622569122}
+  - {fileID: 2041497121}
+  genderSelectors:
+  - {fileID: 531977972}
+  - {fileID: 1501520702}
+  skinSlider: {fileID: 918971570}
+  paletteController: {fileID: 386089358502040301}
+  rotationSpeed: 40
 --- !u!1 &1751933721
 GameObject:
   m_ObjectHideFlags: 0
@@ -7645,7 +7814,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SelectRight
         m_Mode: 5
@@ -8329,13 +8498,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1861244810}
-  m_LocalRotation: {x: 0.05920015, y: -0.24375202, z: 0.014908505, w: 0.96791434}
-  m_LocalPosition: {x: 0.36999512, y: 1.2919922, z: -10.336998}
+  m_LocalRotation: {x: 0, y: -0.2442075, z: 0, w: 0.96972305}
+  m_LocalPosition: {x: 0.36999512, y: 0.87, z: -10.336998}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 9
-  m_LocalEulerAnglesHint: {x: 7, y: -28.27, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -28.27, z: 0}
 --- !u!1 &1993396545
 GameObject:
   m_ObjectHideFlags: 0
@@ -8809,7 +8978,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SelectLeft
         m_Mode: 5
@@ -9765,7 +9934,7 @@ MonoBehaviour:
   OnColorChange:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2891067971407394976}
+      - m_Target: {fileID: 1751657320}
         m_TargetAssemblyTypeName: Sim.CharacterCreationManager, Assembly-CSharp
         m_MethodName: SetColor
         m_Mode: 0
@@ -11550,254 +11719,6 @@ Transform:
   m_Father: {fileID: 4515154831302461778}
   m_RootOrder: 33
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &2891067971407394974
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: bufferImg
-      value: 
-      objectReference: {fileID: 1297789403}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: joinButton
-      value: 
-      objectReference: {fileID: 1227271254}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: skinSlider
-      value: 
-      objectReference: {fileID: 918971570}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: entranceDateField
-      value: 
-      objectReference: {fileID: 1230028871}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: lastNameInputField
-      value: 
-      objectReference: {fileID: 1231544027}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: characterStyleSetup
-      value: 
-      objectReference: {fileID: 8054185884879233728}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: firstNameInputField
-      value: 
-      objectReference: {fileID: 69506701}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: skinColorLimitMax.a
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: skinColorLimitMax.b
-      value: 0.16470589
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: skinColorLimitMax.g
-      value: 0.29411766
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: skinColorLimitMax.r
-      value: 0.5294118
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: skinColorLimitMin.a
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: skinColorLimitMin.b
-      value: 0.72156864
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: skinColorLimitMin.g
-      value: 0.79215693
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: skinColorLimitMin.r
-      value: 0.97647065
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: characterCreationPanel
-      value: 
-      objectReference: {fileID: 974896562}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: colorPaletteController
-      value: 
-      objectReference: {fileID: 386089358502040301}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: originCountryInputField
-      value: 
-      objectReference: {fileID: 1112045058}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: genderSelectors.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: genderSelectors.Array.data[0]
-      value: 
-      objectReference: {fileID: 531977972}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: genderSelectors.Array.data[1]
-      value: 
-      objectReference: {fileID: 1501520702}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: characterPartButtons.Array.size
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: characterPartButtons.Array.data[0]
-      value: 
-      objectReference: {fileID: 29627361}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: characterPartButtons.Array.data[1]
-      value: 
-      objectReference: {fileID: 290705237}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: characterPartButtons.Array.data[2]
-      value: 
-      objectReference: {fileID: 1075273629}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: characterPartButtons.Array.data[3]
-      value: 
-      objectReference: {fileID: 1622569122}
-    - target: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: characterPartButtons.Array.data[4]
-      value: 
-      objectReference: {fileID: 2041497121}
-    - target: {fileID: 2891067972080047097, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: createApartmentButton
-      value: 
-      objectReference: {fileID: 1652654430}
-    - target: {fileID: 2891067972080047097, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: apartmentCreationPanel
-      value: 
-      objectReference: {fileID: 731061308}
-    - target: {fileID: 2891067972080047098, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: canvasGroup
-      value: 
-      objectReference: {fileID: 415270220}
-    - target: {fileID: 2891067972080047098, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: mainMenuPanel
-      value: 
-      objectReference: {fileID: 1158836246}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -1.2712567
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 6.8002367
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0.8666153
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047099, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2891067972080047101, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-        type: 3}
-      propertyPath: m_Name
-      value: Main Menu Manager
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 1dfe1531e82553b4fb205de5bf1b4736, type: 3}
---- !u!114 &2891067971407394975 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2891067972080047098, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-    type: 3}
-  m_PrefabInstance: {fileID: 2891067971407394974}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a9ba469bbb52cd468e771efd0f9cd07, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &2891067971407394976 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2891067971407394977, guid: 1dfe1531e82553b4fb205de5bf1b4736,
-    type: 3}
-  m_PrefabInstance: {fileID: 2891067971407394974}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5e802c83566cd948887b186c562309c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &2971648239670033988
 Transform:
   m_ObjectHideFlags: 0

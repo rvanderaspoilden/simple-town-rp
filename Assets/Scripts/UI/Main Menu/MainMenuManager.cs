@@ -78,7 +78,8 @@ namespace Sim {
         private void OnCharacterCreated(CharacterData characterData) {
             ((SimpleTownNetwork) NetworkManager.singleton).CharacterData = characterData;
 
-            this.apartmentCreationManager.Show();
+            this.characterCreationManager.Invoke(nameof(CharacterCreationManager.Hide), 2f);
+            this.apartmentCreationManager.Invoke(nameof(ApartmentCreationManager.Show), 2f);
         }
 
         private void OnApartmentAssigned(Home home) {

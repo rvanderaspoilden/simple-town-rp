@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using Mirror;
 using Sim.Entities;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,7 +36,7 @@ namespace Sim {
 
         public void CreateApartment() {
             this.createApartmentButton.gameObject.SetActive(false);
-            //ApiManager.Instance.AssignApartment(new AssignApartmentRequest(NetworkManager.Instance.CharacterData.Id, this.selectedPreset));
+            ApiManager.Instance.AssignApartment(new AssignApartmentRequest(((SimpleTownNetwork) NetworkManager.singleton).CharacterData.Id, this.selectedPreset));
         }
         
         private void OnApartmentAssigned(Home home) {

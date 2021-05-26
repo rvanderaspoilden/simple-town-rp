@@ -49,7 +49,6 @@ MonoBehaviour:
   characterCreationManager: {fileID: 2891067971407394977}
   apartmentCreationManager: {fileID: 2891067972080047097}
   mainMenuPanel: {fileID: 0}
-  canvasGroup: {fileID: 0}
 --- !u!114 &2891067972080047097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -172,6 +171,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5e802c83566cd948887b186c562309c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterCreationPanel: {fileID: 0}
   firstNameInputField: {fileID: 0}
   lastNameInputField: {fileID: 0}
   originCountryInputField: {fileID: 0}
@@ -180,3 +180,15 @@ MonoBehaviour:
   bufferImg: {fileID: 0}
   bufferSound: {fileID: 8300000, guid: 8b8d81aab040fda40935b1bc27876b60, type: 3}
   audioSource: {fileID: 2891067972080047096}
+  characterStyleSetup: {fileID: 0}
+  characterPartButtons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  genderSelectors:
+  - {fileID: 0}
+  - {fileID: 0}
+  skinSlider: {fileID: 0}
+  rotationSpeed: 2
