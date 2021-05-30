@@ -6,6 +6,7 @@ using Sim.Entities;
 using Sim.Scriptables;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PhoneArticleCardUI : PhoneCardUI {
     [Header("Settings")]
@@ -20,6 +21,9 @@ public class PhoneArticleCardUI : PhoneCardUI {
 
     [SerializeField]
     private Transform colorContainer;
+
+    [SerializeField]
+    private Image previewImg;
 
     [SerializeField]
     private SimpleColorButton simpleColorButtonPrefab;
@@ -41,6 +45,10 @@ public class PhoneArticleCardUI : PhoneCardUI {
         this.nameTxt.text = config.GetDisplayName();
         this.categoryTxt.text = DatabaseManager.GetShopCategoryByPropsType(config.GetPropsType()).CategoryName;
         this.priceTxt.text = config.Price.ToString();
+
+        if (config.Sprite) {
+            this.previewImg.sprite = config.Sprite;
+        }
 
         if (config.Presets?.Length > 0) {
             this.colorButtonOfPresetId = config.Presets.ToDictionary(preset => preset.ID, preset => {

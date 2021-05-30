@@ -21,13 +21,17 @@ public class ShopMenuUI : MonoBehaviour {
     private ShopUI shopUI;
 
     [SerializeField]
-    private Image menuBackground;
+    private CanvasGroup menuBackground;
 
     private readonly List<ShopMenuItem> items = new List<ShopMenuItem>();
 
     private ShopCategoryConfig selectedCategoryConfig;
 
     private bool active;
+
+    private bool hover;
+
+    private bool isAnimating;
 
     private Sequence itemFadeSequence;
 
@@ -74,6 +78,15 @@ public class ShopMenuUI : MonoBehaviour {
         this.DoAnimation();
     }
 
+    public void Hover(bool isHover) {
+        this.hover = isHover;
+
+        if (this.active || this.isAnimating) return;
+
+        this.menuBackground.DOComplete();
+        this.menuBackground.DOFade(isHover ? 1f : 0f, .3f);
+    }
+
     public void Close() {
         this.active = false;
         this.DoAnimation();
@@ -88,12 +101,26 @@ public class ShopMenuUI : MonoBehaviour {
 
     private void DoAnimation() {
         this.menuBackground.transform.DOComplete();
+        this.menuBackground.DOComplete();
+
+        this.isAnimating = true;
 
         if (this.active) {
-            this.menuBackground.transform.DOScale(new Vector3(30, 30, 30), .3f).SetEase(Ease.Flash).OnComplete(() => SetVisibility(true));
+            this.menuBackground.DOFade(1f, .3f);
+            this.menuBackground.transform.DOScale(new Vector3(30, 30, 30), .3f).SetEase(Ease.Flash).OnComplete(() => {
+                SetVisibility(true);
+                this.isAnimating = false;
+            });
         } else {
             SetVisibility(false);
-            this.menuBackground.transform.DOScale(Vector3.one, .3f).SetEase(Ease.Flash);
+
+            this.menuBackground.transform.DOScale(Vector3.one, .3f).SetEase(Ease.Flash).OnComplete(() => {
+                if (!hover) {
+                    this.menuBackground.DOFade(0f, .3f);
+                }
+                
+                this.isAnimating = false;
+            });
         }
     }
 }
