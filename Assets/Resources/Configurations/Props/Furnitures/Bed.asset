@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 23
   displayName: Lit
+  sprite: {fileID: 21300000, guid: 6280596797e8d934c8bcacd7f840d86e, type: 3}
   propsType: 0
   buyable: 1
+  price: 0
   prefab: {fileID: 5492012384660244121, guid: 55a9801b5e85e284abe5470379263732, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0

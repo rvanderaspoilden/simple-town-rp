@@ -13,6 +13,9 @@ namespace Sim.Scriptables {
         private string displayName;
 
         [SerializeField]
+        private Sprite sprite;
+
+        [SerializeField]
         private PropsType propsType;
 
         [SerializeField]
@@ -89,6 +92,8 @@ namespace Sim.Scriptables {
         public int GetId() {
             return this.id;
         }
+
+        public Sprite Sprite => sprite;
 
         public float GetRangeToInteract() {
             return this.rangeToInteract;
