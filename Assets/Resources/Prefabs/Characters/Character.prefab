@@ -2036,7 +2036,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1588439368781661767
 Transform:
   m_ObjectHideFlags: 0
@@ -2071,7 +2071,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 78eefccf348047a499695bf1774dd34f, type: 2}
+  - {fileID: 2100000, guid: 6001dee8e8cd4994a91e8204e41c2627, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4565,7 +4565,6 @@ MonoBehaviour:
       thirst: 0
       hungry: 0
       sleep: 0
-    gender: 0
     style:
       hair:
         idx: 0
@@ -4583,6 +4582,7 @@ MonoBehaviour:
         idx: 0
         color: []
       skinColorPercent: 0
+      gender: 0
     mood: 0
 --- !u!114 &7147682903337299061
 MonoBehaviour:
@@ -6259,7 +6259,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8368200094562633061
 Transform:
   m_ObjectHideFlags: 0
@@ -6808,7 +6808,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 78eefccf348047a499695bf1774dd34f, type: 2}
+  - {fileID: 2100000, guid: 6001dee8e8cd4994a91e8204e41c2627, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
