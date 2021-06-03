@@ -181,8 +181,6 @@ MonoBehaviour:
   - {fileID: 728983523940142619}
   - {fileID: 7466380317082648113}
   - {fileID: 1850187598260317064}
-  hideMode: 0
-  showMode: 0
 --- !u!65 &2744478674338392222
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1484,6 +1482,7 @@ MonoBehaviour:
   streetName: SALMON HOTEL
   hallPrefab: {fileID: 5496279082967967630, guid: 525f620fbb753f9448971022e0afe439,
     type: 3}
+  nbDoorByFloor: 6
   hallSpacingY: 50
   mainElevator: {fileID: 6278538446722121626}
 --- !u!65 &5670701051119931217
@@ -8343,6 +8342,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_StaticEditorFlags
       value: 4294967295
+      objectReference: {fileID: 0}
+    - target: {fileID: 2986419338783676360, guid: 1f44d949aed682a4aa2819394f81174f,
+        type: 3}
+      propertyPath: m_AssetId
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 8308205822505068363, guid: 1f44d949aed682a4aa2819394f81174f,
         type: 3}
