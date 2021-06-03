@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: Bath_mat
+  m_EditorClassIdentifier: 
+  id: 50
+  displayName: Tapis de bain
+  sprite: {fileID: 0}
+  propsType: 0
+  buyable: 0
+  price: 0
+  prefab: {fileID: 292420141963304025, guid: fbe365bb133ae0f4cb94dca53b99dbab, type: 3}
+  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  surfaceToPose: 0
+  posableOnProps: 0
+  connectedToWall: 0
+  toBuild: 0
+  rangeToInteract: 1
+  actions:
+  - {fileID: 11400000, guid: eb2c51e8927332c40abe1682f0e39009, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
+  unbuiltActions: []
+  cursor: {fileID: 0}
+  presets:
+  - id: 0
+    label: Blue
+    primary:
+      enabled: 1
+      color: {r: 0.28627452, g: 0.53333336, b: 0.7490196, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 1
+    label: Green
+    primary:
+      enabled: 1
+      color: {r: 0.18039216, g: 0.6509804, b: 0.38431376, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 2
+    label: Yellow
+    primary:
+      enabled: 1
+      color: {r: 0.9490197, g: 0.7254902, b: 0.04705883, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 3
+    label: Red
+    primary:
+      enabled: 1
+      color: {r: 0.9490197, g: 0.15294118, b: 0.21960786, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 4
+    label: Pink
+    primary:
+      enabled: 1
+      color: {r: 0.85098046, g: 0.2901961, b: 0.43921572, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
