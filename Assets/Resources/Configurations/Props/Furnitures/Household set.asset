@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: Household set
   m_EditorClassIdentifier: 
   id: 45
-  displayName: Household set
+  displayName: Kit de nettoyage
+  sprite: {fileID: 0}
   propsType: 0
   buyable: 1
+  price: 0
   prefab: {fileID: 67030402629475098, guid: 0b358b00f06531741ad6ae29f2396e07, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 1

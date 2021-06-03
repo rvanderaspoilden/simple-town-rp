@@ -1,0 +1,104 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: Hanging bathrobe
+  m_EditorClassIdentifier: 
+  id: 49
+  displayName: Peignoir suspendu
+  sprite: {fileID: 0}
+  propsType: 0
+  buyable: 1
+  price: 0
+  prefab: {fileID: 3069445405203444945, guid: 76de0f8d583a81e46a801f1ebe67242e, type: 3}
+  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  surfaceToPose: 1
+  posableOnProps: 0
+  connectedToWall: 0
+  toBuild: 0
+  rangeToInteract: 1
+  actions:
+  - {fileID: 11400000, guid: eb2c51e8927332c40abe1682f0e39009, type: 2}
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
+  unbuiltActions: []
+  cursor: {fileID: 2800000, guid: e4eb3547be035d8408366b41fd723efa, type: 3}
+  presets:
+  - id: 0
+    label: Yellow
+    primary:
+      enabled: 1
+      color: {r: 1, g: 0.9607844, b: 0.5294118, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 1
+    label: Orange
+    primary:
+      enabled: 1
+      color: {r: 1, g: 0.54901963, b: 0.3921569, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 2
+    label: Red
+    primary:
+      enabled: 1
+      color: {r: 1, g: 0.40000004, b: 0.3529412, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 3
+    label: Purple
+    primary:
+      enabled: 1
+      color: {r: 0.4901961, g: 0.41960788, b: 0.4901961, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 4
+    label: Grey
+    primary:
+      enabled: 1
+      color: {r: 0.6392157, g: 0.6313726, b: 0.65882355, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}

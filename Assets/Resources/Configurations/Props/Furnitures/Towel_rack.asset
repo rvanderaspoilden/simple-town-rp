@@ -1,0 +1,104 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: Towel_rack
+  m_EditorClassIdentifier: 
+  id: 53
+  displayName: Porte serviette
+  sprite: {fileID: 0}
+  propsType: 0
+  buyable: 1
+  price: 0
+  prefab: {fileID: 1289759828794644080, guid: 01272fd313dba5245ab9591c0e830215, type: 3}
+  packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
+  surfaceToPose: 1
+  posableOnProps: 0
+  connectedToWall: 0
+  toBuild: 0
+  rangeToInteract: 1
+  actions:
+  - {fileID: 11400000, guid: eb2c51e8927332c40abe1682f0e39009, type: 2}
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
+  unbuiltActions: []
+  cursor: {fileID: 2800000, guid: e4eb3547be035d8408366b41fd723efa, type: 3}
+  presets:
+  - id: 0
+    label: Green
+    primary:
+      enabled: 1
+      color: {r: 0.6509804, g: 0.6509804, b: 0.6509804, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.18039216, g: 0.6509804, b: 0.38431376, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 1
+    label: Blue
+    primary:
+      enabled: 1
+      color: {r: 0.34901962, g: 0.34901962, b: 0.34901962, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.015686275, g: 0.5294118, b: 0.85098046, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 2
+    label: Red
+    primary:
+      enabled: 1
+      color: {r: 0.34901962, g: 0.3254902, b: 0.31764707, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.85098046, g: 0.13725491, b: 0.13725491, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 3
+    label: Yellow
+    primary:
+      enabled: 1
+      color: {r: 0.65882355, g: 0.73333335, b: 0.7490196, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.9490197, g: 0.8588236, b: 0.40000004, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 4
+    label: Clear blue
+    primary:
+      enabled: 1
+      color: {r: 0.65882355, g: 0.73333335, b: 0.7490196, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.019607844, g: 0.9490197, b: 0.8588236, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}

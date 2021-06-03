@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: Table_long
   m_EditorClassIdentifier: 
   id: 47
-  displayName: Long table
+  displayName: Grande table
+  sprite: {fileID: 0}
   propsType: 0
   buyable: 1
+  price: 0
   prefab: {fileID: 5973222490024165713, guid: c9f5b807d82028e4a8915cbecbd07e37, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
