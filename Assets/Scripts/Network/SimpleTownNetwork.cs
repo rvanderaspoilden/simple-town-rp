@@ -328,8 +328,8 @@ public class SimpleTownNetwork : NetworkManager {
         StartCoroutine(SetupCharacterCoroutine(conn, message.userId));
     }
 
+    [Client]
     private void OnTeleportPlayer(TeleportMessage message) {
-        Debug.Log($"I received teleport message from conn ID {NetworkClient.connection.identity.netId}");
         StartCoroutine(this.TeleportCoroutine(message.destination));
     }
 
