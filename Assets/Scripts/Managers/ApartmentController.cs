@@ -54,6 +54,9 @@ namespace Sim {
         [SerializeField]
         private Roof roof;
 
+        [SerializeField]
+        private Transform spawnPosition;
+
         [Header("Only for debug")]
         [SerializeField]
         private Home homeData;
@@ -132,6 +135,10 @@ namespace Sim {
 
             this.geographicArea.LocationText = $"{this.address.street}, Floor {NetworkIdentity.spawned[this.parentId].GetComponent<HallController>().FloorNumber}, Door {this.address.doorNumber}";
         }
+
+        public Address Address => address;
+
+        public Transform SpawnPosition => spawnPosition;
 
         private void OnSetPresetName(string old, string newValue) {
             this.presetName = newValue;

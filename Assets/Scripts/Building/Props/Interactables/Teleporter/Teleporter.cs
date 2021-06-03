@@ -12,7 +12,7 @@ namespace Sim.Interactables {
 
         private HallController hallController;
 
-        public delegate void UseEvent(Teleporter teleporter, int originFloor, int floorDestination, NetworkConnectionToClient playerConn);
+        public delegate void UseEvent(int originFloor, int floorDestination, NetworkConnectionToClient playerConn);
 
         public event UseEvent OnUse;
 
@@ -58,7 +58,7 @@ namespace Sim.Interactables {
             int originFloor = this.hallController ? this.hallController.FloorNumber : 0;
 
             if (originFloor != floorDestination) {
-                OnUse?.Invoke(this, originFloor, floorDestination, sender);
+                OnUse?.Invoke(originFloor, floorDestination, sender);
             }
         }
     }

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Mirror;
 using Sim;
 using Sim.Building;
@@ -358,8 +359,33 @@ public class SimpleTownNetwork : NetworkManager {
             player.RawCharacterData = JsonUtility.ToJson(characterResponse.Characters[0]);
 
             go.name = $"Player [conn={conn.connectionId}] [{characterResponse.Characters[0].Identity.FullName}]";
+            
+            // Retrieve home and teleport
 
+            UnityWebRequest homeRequest = ApiManager.Instance.RetrieveHomesByCharacterRequest(characterResponse.Characters[0]);
+
+            yield return homeRequest.SendWebRequest();
+            
+            if (homeRequest.responseCode == 200) {
+                HomeResponse homeResponse = JsonUtility.FromJson<HomeResponse>(homeRequest.downloadHandler.text);
+
+                if (homeResponse.Homes.Length > 0) {
+                    Address address = homeResponse.Homes[0].Address;
+
+                    BuildingBehavior buildingBehavior = FindObjectsOfType<BuildingBehavior>().FirstOrDefault(x => x.Match(address));
+
+                    if (buildingBehavior) {
+                        buildingBehavior.TeleportToApartment(address.doorNumber, conn);
+                    } else {
+                        Debug.LogError($"Cannot find building with street name {address.street}");
+                    }
+                } else {
+                    Debug.LogError($"Cannot find home for userId {userId}");
+                }
+            }
+            
             NetworkServer.AddPlayerForConnection(conn, go);
+
         } else {
             Debug.LogError($"Cannot find character for userId {userId}");
             conn.Disconnect();

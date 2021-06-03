@@ -218,6 +218,10 @@ namespace Sim {
             StartCoroutine(this.RetrieveHomesByCharacterCoroutine(characterData));
         }
 
+        public UnityWebRequest RetrieveHomesByCharacterRequest(CharacterData characterData) {
+            return UnityWebRequest.Get($"{this.uri}/characters/{characterData.Id}/homes");
+        }
+
         private IEnumerator RetrieveHomesByCharacterCoroutine(CharacterData characterData) {
             UnityWebRequest request = UnityWebRequest.Get($"{this.uri}/characters/{characterData.Id}/homes");
 
