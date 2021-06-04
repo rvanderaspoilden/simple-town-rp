@@ -83,6 +83,26 @@ public class HallController : NetworkBehaviour {
     }
 
     [Server]
+    public void CheckApartmentState(int doorNumber) {
+        ApartmentController apartmentTarget = GetApartmentByDoorNumber(doorNumber);
+
+        if (apartmentTarget.State != ApartmentState.GENERATED) {
+            Debug.Log($"Server: apartment {doorNumber} isn't generated so create it");
+            apartmentTarget.Regenerate();
+        }
+    }
+
+    private ApartmentController GetApartmentByDoorNumber(int doorNumber) {
+        ApartmentController apartmentTarget = this.generatedApartments.FirstOrDefault(x => x.Address.doorNumber.Equals(doorNumber));
+
+        if (!apartmentTarget) {
+            throw new Exception($"[HallController] Cannot move player to door number {doorNumber}");
+        }
+
+        return apartmentTarget;
+    }
+
+    [Server]
     public void MoveToSpawn(NetworkConnectionToClient conn) {
         if (this.isGenerated) {
             conn.Send(new TeleportMessage {destination = this.elevator.SpawnTransform.position});
@@ -95,11 +115,7 @@ public class HallController : NetworkBehaviour {
     [Server]
     public void MoveToApartment(int doorNumber, NetworkConnection conn) {
         if (this.isGenerated) {
-            ApartmentController apartmentTarget = this.generatedApartments.FirstOrDefault(x => x.Address.doorNumber.Equals(doorNumber));
-
-            if (!apartmentTarget) {
-                throw new Exception($"[HallController] Cannot move player to door number {doorNumber}");
-            }
+            ApartmentController apartmentTarget = GetApartmentByDoorNumber(doorNumber);
 
             conn.Send(new TeleportMessage {destination = apartmentTarget.SpawnPosition.position});
             this.playersInside.Add(conn.identity);
@@ -110,11 +126,11 @@ public class HallController : NetworkBehaviour {
 
     [Server]
     public void CheckGenerationState() {
-        this.isGenerated = this.generatedApartments.Where(x => x.IsGenerated).ToList().Count == this.generatedApartments.Count;
+        this.isGenerated = this.generatedApartments.Where(x => x.State != ApartmentState.NOT_CREATED).ToList().Count == this.generatedApartments.Count;
 
         if (this.isGenerated) {
             Debug.Log("Hall is generated so teleport player");
-            foreach(KeyValuePair<NetworkConnection, int> entry in this.playersToMove) {
+            foreach (KeyValuePair<NetworkConnection, int> entry in this.playersToMove) {
                 TeleportMessage teleportMessage = new TeleportMessage {destination = this.elevator.SpawnTransform.position};
 
                 if (entry.Value != -1) {
@@ -126,10 +142,11 @@ public class HallController : NetworkBehaviour {
 
                     teleportMessage = new TeleportMessage {destination = apartmentTarget.SpawnPosition.position};
                 }
-                
+
                 entry.Key.Send(teleportMessage);
                 this.playersInside.Add(entry.Key.identity);
             }
+
             this.playersToMove.Clear();
         }
     }

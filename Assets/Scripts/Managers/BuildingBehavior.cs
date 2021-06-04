@@ -50,6 +50,8 @@ public class BuildingBehavior : NetworkBehaviour {
 
         if (hallControllerByFloor.ContainsKey(targetFloor)) {
             hallController = hallControllerByFloor[targetFloor];
+
+            hallController.CheckApartmentState(doorNumber);
         } else {
             // CREATE FLOOR
             HallController newHallController = Instantiate(this.hallPrefab, new Vector3(0, -this.hallSpacingY * targetFloor, 0), Quaternion.identity);
