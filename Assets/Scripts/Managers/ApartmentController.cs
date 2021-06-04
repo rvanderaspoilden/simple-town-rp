@@ -160,7 +160,7 @@ namespace Sim {
 
             for (int i = 0; i < this.grounds.Length; i++) {
                 if (this.coverSettingsByGround.ContainsKey(i)) {
-                    this.grounds[i].PaintConfigId = this.coverSettingsByGround[i].paintConfigId;
+                    this.grounds[i].SetCoverSettings(this.coverSettingsByGround[i]);
                 }
             }
 
@@ -220,7 +220,7 @@ namespace Sim {
         }
 
         private void OnGroundSettingsChanged(SyncIDictionary<int, CoverSettings>.Operation operation, int key, CoverSettings item) {
-            this.grounds[key].PaintConfigId = item.paintConfigId;
+            this.grounds[key].SetCoverSettings(item);
         }
 
         public Transform PropsContainer => propsContainer;
@@ -384,7 +384,7 @@ namespace Sim {
 
         public void ApplyGroundSettings() {
             Ground[] groundFiltered = this.grounds.Where(x => x.IsPreview()).ToArray();
-            Dictionary<int, CoverSettings> groundDataToUpdate = groundFiltered.ToDictionary(x => Array.IndexOf(grounds, x), x => x.CoverSettings());
+            Dictionary<int, CoverSettings> groundDataToUpdate = groundFiltered.ToDictionary(x => Array.IndexOf(grounds, x), x => x.CurrentCover);
 
             foreach (var ground in groundFiltered) {
                 ground.ApplyModification();

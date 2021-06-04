@@ -6,11 +6,14 @@ namespace Sim.Building {
     public class Ground: MonoBehaviour {
         [Header("Ground settings")]
         [SerializeField]
-        private int paintConfigId;
+        private CoverSettings currentCover = new CoverSettings {
+            paintConfigId = 6,
+            additionalColor = Color.white
+        };
 
         private new Renderer renderer;
 
-        private int oldPaintConfigId;
+        private CoverSettings oldCoverSettings;
 
         private bool preview;
 
@@ -24,12 +27,12 @@ namespace Sim.Building {
         public ApartmentController ApartmentController => apartmentController;
 
         [Client]
-        public void Preview(CoverConfig coverConfig) {
+        public void Preview(CoverSettings settings) {
             if (this.preview) {
                 this.ResetPreview();
             } else {
-                this.oldPaintConfigId = this.paintConfigId;
-                this.PaintConfigId = coverConfig.GetId();
+                this.oldCoverSettings = this.currentCover;
+                this.SetCoverSettings(settings);
                 this.preview = true;
             }
         }
@@ -41,16 +44,13 @@ namespace Sim.Building {
 
         [Client]
         public void ResetPreview() {
-            this.PaintConfigId = this.oldPaintConfigId;
+            this.SetCoverSettings(this.oldCoverSettings);
             this.preview = false;
         }
 
-        public int PaintConfigId {
-            get => paintConfigId;
-            set {
-                paintConfigId = value;
-                this.ApplyPaint();
-            }
+        public void SetCoverSettings(CoverSettings settings) {
+            this.currentCover = settings;
+            this.ApplyPaint();
         }
 
         public bool IsPreview() {
@@ -58,18 +58,19 @@ namespace Sim.Building {
         }
         
         private void ApplyPaint() {
-            CoverConfig coverConfig = DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId);
+            CoverConfig coverConfig = DatabaseManager.PaintDatabase.GetPaintById(this.currentCover.paintConfigId);
 
             if (coverConfig) {
-                this.renderer.material = coverConfig.GetMaterial();
+                Material materialToApply = new Material(coverConfig.GetMaterial());
+
+                if (coverConfig.AllowCustomColor()) {
+                    materialToApply.color = this.currentCover.additionalColor;
+                }
+
+                this.renderer.material = materialToApply;
             }
         }
 
-        public CoverSettings CoverSettings() {
-            return new CoverSettings {
-                paintConfigId = paintConfigId,
-                additionalColor = Color.white
-            };
-        }
+        public CoverSettings CurrentCover => currentCover;
     }
 }
