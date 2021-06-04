@@ -263,6 +263,11 @@ namespace Sim {
         }
 
         [Server]
+        private void Regenerate() {
+            StartCoroutine(RetrieveData());
+        }
+
+        [Server]
         private IEnumerator RetrieveData() {
             UnityWebRequest request = ApiManager.Instance.RetrieveHomeRequest(this.address);
 
@@ -285,6 +290,8 @@ namespace Sim {
                 }
 
                 InstantiateLevel(homeResponse.SceneData);
+                
+                this.frontDoor.SetLockState(DoorLockState.UNLOCKED);
             } else {
                 Debug.Log($"No Home found for Address {address}");
                 this.frontDoor.SetLockState(DoorLockState.LOCKED);

@@ -169,6 +169,8 @@ namespace Sim {
         private void SetGeographicArea(GeographicArea geographicArea) {
             this.currentGeographicArea.Add(geographicArea);
 
+            this.currentGeographicArea = new HashSet<GeographicArea>(this.currentGeographicArea.OrderBy(x => x.PriorityOrder).ToList());
+
             if (DefaultViewUI.Instance) {
                 DefaultViewUI.Instance.SetLocationText(this.currentGeographicArea.Count > 0 ? this.currentGeographicArea.Last().LocationText : string.Empty);
             }
@@ -183,7 +185,9 @@ namespace Sim {
         }
 
         public GeographicArea CurrentGeographicArea {
-            get => currentGeographicArea.LastOrDefault();
+            get {
+                return currentGeographicArea.LastOrDefault();
+            }
         }
 
         public string RawCharacterData {
