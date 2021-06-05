@@ -7,23 +7,36 @@ using UnityEngine.UI;
 
 namespace Sim {
     public class MoodSelectorUI : MonoBehaviour {
-        [Header("Settings")] [SerializeField] private Image arrow;
+        [Header("Settings")]
+        [SerializeField]
+        private Image arrow;
 
-        [SerializeField] private Vector2 moodSizeDelta;
+        [SerializeField]
+        private Vector2 moodSizeDelta;
 
-        [SerializeField] private float openAnimationDuration;
+        [SerializeField]
+        private float openAnimationDuration;
 
-        [SerializeField] private float closeAnimationDuration;
+        [SerializeField]
+        private float closeAnimationDuration;
 
-        [SerializeField] private float showMoodAnimationDuration;
+        [SerializeField]
+        private float showMoodAnimationDuration;
 
-        [SerializeField] private float hideMoodAnimationDuration;
+        [SerializeField]
+        private float hideMoodAnimationDuration;
 
-        [SerializeField] private float moodAnimationDelay;
+        [SerializeField]
+        private float moodAnimationDelay;
 
-        [SerializeField] private MoodButton moodButtonPrefab;
+        [SerializeField]
+        private MoodButton moodButtonPrefab;
 
-        [SerializeField] private Transform moodContainer;
+        [SerializeField]
+        private Transform moodContainer;
+
+        [SerializeField]
+        private AudioClip bubbleSound;
 
         private bool moodSelectorOpened;
 
@@ -90,9 +103,7 @@ namespace Sim {
             this.isOpening = true;
 
             if (this.moodSelectorOpened) {
-                this.moodsTransforms.ForEach(mood => {
-                    sequence.Join(mood.DOSizeDelta(Vector2.zero, this.hideMoodAnimationDuration).SetEase(Ease.Linear));
-                });
+                this.moodsTransforms.ForEach(mood => { sequence.Join(mood.DOSizeDelta(Vector2.zero, this.hideMoodAnimationDuration).SetEase(Ease.Linear)); });
 
                 sequence.Join(this.rectTransform.DOAnchorPosX(this.initialAnchorX, this.closeAnimationDuration)
                     .SetEase(Ease.Linear));
@@ -105,8 +116,7 @@ namespace Sim {
                 });
 
                 this.arrow.transform.localScale = Vector3.one;
-            }
-            else {
+            } else {
                 sequence.Join(this.rectTransform.DOAnchorPosX(this.openedAnchorX, this.openAnimationDuration)
                     .SetEase(Ease.OutBounce));
 
@@ -117,7 +127,8 @@ namespace Sim {
                     sequence.Join(mood.DOSizeDelta(this.moodSizeDelta, this.showMoodAnimationDuration)
                         .SetEase(Ease.OutBounce)
                         .From(Vector2.zero)
-                        .SetDelay(this.moodAnimationDelay));
+                        .SetDelay(this.moodAnimationDelay)
+                        .OnStart(() => HUDManager.Instance.PlaySound(this.bubbleSound, .5f)));
                 });
 
                 sequence.OnComplete(() => {
