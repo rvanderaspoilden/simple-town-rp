@@ -18,7 +18,7 @@ public class BuildingBehavior : NetworkBehaviour {
     private int nbDoorByFloor;
 
     [SerializeField]
-    private int hallSpacingY = 100;
+    private int hallSpacingY = 200;
 
     [SerializeField]
     private Teleporter mainElevator;
@@ -50,9 +50,11 @@ public class BuildingBehavior : NetworkBehaviour {
 
         if (hallControllerByFloor.ContainsKey(targetFloor)) {
             hallController = hallControllerByFloor[targetFloor];
+
+            hallController.CheckApartmentState(doorNumber);
         } else {
             // CREATE FLOOR
-            HallController newHallController = Instantiate(this.hallPrefab, new Vector3(0, -this.hallSpacingY * targetFloor, 0), Quaternion.identity);
+            HallController newHallController = Instantiate(this.hallPrefab, new Vector3(0, -this.hallSpacingY * (this.hallControllerByFloor.Count + 1), 0), Quaternion.identity);
 
             NetworkServer.Spawn(newHallController.gameObject);
 
@@ -83,7 +85,7 @@ public class BuildingBehavior : NetworkBehaviour {
                 hallController = hallControllerByFloor[targetFloor];
             } else {
                 // CREATE FLOOR
-                HallController newHallController = Instantiate(this.hallPrefab, new Vector3(0, -this.hallSpacingY * targetFloor, 0), Quaternion.identity);
+                HallController newHallController = Instantiate(this.hallPrefab, new Vector3(0, -this.hallSpacingY * (this.hallControllerByFloor.Count + 1), 0), Quaternion.identity);
 
                 NetworkServer.Spawn(newHallController.gameObject);
 

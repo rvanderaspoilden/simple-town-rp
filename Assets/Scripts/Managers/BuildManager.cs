@@ -122,7 +122,7 @@ namespace Sim {
             this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
 
             this.SetMode(BuildModeEnum.POSING);
-            
+
             this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
 
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
@@ -140,11 +140,11 @@ namespace Sim {
             this.originRotation = this.currentPropSelected.transform.rotation;
 
             this.isEditing = true;
-            
+
             this.SetMode(BuildModeEnum.POSING);
 
             this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
-            
+
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
             WallVisibilityUI.Instance.Bind(this.apartmentController);
         }
@@ -155,7 +155,7 @@ namespace Sim {
         public void Init(PaintBucket paintBucket) {
             this.currentOpenedBucket = paintBucket;
             this.SetMode(BuildModeEnum.PAINT);
-            
+
             this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
 
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
@@ -430,7 +430,7 @@ namespace Sim {
                         Ground ground = hit.collider.GetComponent<Ground>();
 
                         if (ground.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
-                            ground.Preview(this.currentOpenedBucket.GetPaintConfig());
+                            ground.Preview(this.currentOpenedBucket.GetCoverSettings());
                         }
                     }
                 }

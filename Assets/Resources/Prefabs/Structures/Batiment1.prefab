@@ -1483,7 +1483,7 @@ MonoBehaviour:
   hallPrefab: {fileID: 5496279082967967630, guid: 525f620fbb753f9448971022e0afe439,
     type: 3}
   nbDoorByFloor: 6
-  hallSpacingY: 50
+  hallSpacingY: 100
   mainElevator: {fileID: 6278538446722121626}
 --- !u!65 &5670701051119931217
 BoxCollider:
@@ -2476,6 +2476,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   locationText: SALMON HOTEL
+  priorityOrder: 2
 --- !u!65 &8623096676586607952
 BoxCollider:
   m_ObjectHideFlags: 0

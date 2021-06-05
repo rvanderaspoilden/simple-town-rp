@@ -40,6 +40,10 @@ namespace Sim.Building {
             return DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId);
         }
 
+        public CoverSettings GetCoverSettings() {
+            return new CoverSettings {paintConfigId = this.PaintConfigId, additionalColor = this.GetColor()};
+        }
+
         public int PaintConfigId => paintConfigId;
         
         public Color GetColor() {

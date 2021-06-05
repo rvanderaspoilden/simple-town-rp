@@ -83,9 +83,9 @@ namespace Sim {
 
         [SerializeField]
         private HallController associatedHallController;
-
+        
         [SerializeField]
-        private bool isGenerated;
+        private ApartmentState state = ApartmentState.NOT_CREATED;
 
         private Type[] defaultPropsTypes = new[] {typeof(Props), typeof(Seat)};
 
@@ -160,7 +160,7 @@ namespace Sim {
 
             for (int i = 0; i < this.grounds.Length; i++) {
                 if (this.coverSettingsByGround.ContainsKey(i)) {
-                    this.grounds[i].PaintConfigId = this.coverSettingsByGround[i].paintConfigId;
+                    this.grounds[i].SetCoverSettings(this.coverSettingsByGround[i]);
                 }
             }
 
@@ -220,7 +220,7 @@ namespace Sim {
         }
 
         private void OnGroundSettingsChanged(SyncIDictionary<int, CoverSettings>.Operation operation, int key, CoverSettings item) {
-            this.grounds[key].PaintConfigId = item.paintConfigId;
+            this.grounds[key].SetCoverSettings(item);
         }
 
         public Transform PropsContainer => propsContainer;
@@ -263,6 +263,11 @@ namespace Sim {
         }
 
         [Server]
+        public void Regenerate() {
+            StartCoroutine(RetrieveData());
+        }
+
+        [Server]
         private IEnumerator RetrieveData() {
             UnityWebRequest request = ApiManager.Instance.RetrieveHomeRequest(this.address);
 
@@ -285,10 +290,12 @@ namespace Sim {
                 }
 
                 InstantiateLevel(homeResponse.SceneData);
+                
+                this.frontDoor.SetLockState(DoorLockState.UNLOCKED);
             } else {
                 Debug.Log($"No Home found for Address {address}");
                 this.frontDoor.SetLockState(DoorLockState.LOCKED);
-                this.isGenerated = true;
+                this.state = ApartmentState.NOT_GENERATED;
                 this.associatedHallController.CheckGenerationState();
             }
         }
@@ -357,7 +364,7 @@ namespace Sim {
 
             this.frontDoor.SetLockState(DoorLockState.UNLOCKED);
 
-            this.isGenerated = true;
+            this.state = ApartmentState.GENERATED;
 
             this.associatedHallController.CheckGenerationState();
         }
@@ -377,7 +384,7 @@ namespace Sim {
 
         public void ApplyGroundSettings() {
             Ground[] groundFiltered = this.grounds.Where(x => x.IsPreview()).ToArray();
-            Dictionary<int, CoverSettings> groundDataToUpdate = groundFiltered.ToDictionary(x => Array.IndexOf(grounds, x), x => x.CoverSettings());
+            Dictionary<int, CoverSettings> groundDataToUpdate = groundFiltered.ToDictionary(x => Array.IndexOf(grounds, x), x => x.CurrentCover);
 
             foreach (var ground in groundFiltered) {
                 ground.ApplyModification();
@@ -426,7 +433,7 @@ namespace Sim {
             return sceneData;
         }
 
-        public bool IsGenerated => isGenerated;
+        public ApartmentState State => state;
 
         public Home HomeData {
             get => homeData;
@@ -478,5 +485,12 @@ namespace Sim {
         public GameObject shortWalls;
         public Transform[] doorSpawners;
         public Transform deliveryBoxSpawn;
+    }
+
+    [Serializable]
+    public enum ApartmentState {
+        NOT_CREATED,
+        GENERATED,
+        NOT_GENERATED
     }
 }
