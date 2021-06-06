@@ -86,15 +86,14 @@ namespace Sim {
             ApartmentController apartmentController = this.currentOpenedBucket.GetComponentInParent<ApartmentController>();
             
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
                 apartmentController.ApplyWallSettings();
             } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
                 apartmentController.ApplyGroundSettings();
             }
 
-            apartmentController.CmdSaveHome();
-
             Destroy(this.currentOpenedBucket.gameObject);
+            
+            apartmentController.CmdSaveHome();
 
             this.player.SetState(StateType.FREE);
         }
