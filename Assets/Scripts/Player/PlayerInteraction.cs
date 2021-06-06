@@ -123,6 +123,7 @@ namespace Sim {
             props.ParentId = apartmentController.netId;
             props.transform.SetParent(apartmentController.PropsContainer);
             props.InitBuilt(!propsConfig.MustBeBuilt());
+            props.ApartmentController = apartmentController;
 
             if (delivery.Type.Equals(DeliveryType.COVER)) {
                 PaintBucket coverProps = props as PaintBucket;

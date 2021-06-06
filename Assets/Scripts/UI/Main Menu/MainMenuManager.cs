@@ -45,7 +45,9 @@ namespace Sim {
         }
 
         public void Play() {
-            ((SimpleTownNetwork) NetworkManager.singleton).StartClient();
+            LoadingManager.Instance.Show();
+            
+            ((SimpleTownNetwork) NetworkManager.singleton).Invoke(nameof(NetworkManager.StartClient), 1f);
         }
         
         private void OnCharacterRetrieved(CharacterData characterData) {
