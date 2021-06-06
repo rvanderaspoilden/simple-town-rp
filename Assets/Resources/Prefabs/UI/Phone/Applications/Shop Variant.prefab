@@ -138,6 +138,26 @@ PrefabInstance:
       propertyPath: m_text
       value: Shop
       objectReference: {fileID: 0}
+    - target: {fileID: 8778834737615047439, guid: 596c17bc1a7fa1143a576005f6008971,
+        type: 3}
+      propertyPath: m_fontColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8778834737615047439, guid: 596c17bc1a7fa1143a576005f6008971,
+        type: 3}
+      propertyPath: m_fontColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8778834737615047439, guid: 596c17bc1a7fa1143a576005f6008971,
+        type: 3}
+      propertyPath: m_fontColor.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8778834737615047439, guid: 596c17bc1a7fa1143a576005f6008971,
+        type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4278190080
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 8885749444577646992, guid: 596c17bc1a7fa1143a576005f6008971, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 596c17bc1a7fa1143a576005f6008971, type: 3}
