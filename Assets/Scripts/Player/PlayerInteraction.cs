@@ -83,17 +83,17 @@ namespace Sim {
         }
 
         private void OnValidatePaintModification() {
+            ApartmentController apartmentController = this.currentOpenedBucket.GetComponentInParent<ApartmentController>();
+            
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                //RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
-
-                this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ApplyWallSettings();
+                apartmentController.ApplyWallSettings();
             } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
-                this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ApplyGroundSettings();
+                apartmentController.ApplyGroundSettings();
             }
 
-            StartCoroutine(this.currentOpenedBucket.GetComponentInParent<ApartmentController>().Save());
-
             Destroy(this.currentOpenedBucket.gameObject);
+            
+            apartmentController.CmdSaveHome();
 
             this.player.SetState(StateType.FREE);
         }
@@ -123,6 +123,7 @@ namespace Sim {
             props.ParentId = apartmentController.netId;
             props.transform.SetParent(apartmentController.PropsContainer);
             props.InitBuilt(!propsConfig.MustBeBuilt());
+            props.ApartmentController = apartmentController;
 
             if (delivery.Type.Equals(DeliveryType.COVER)) {
                 PaintBucket coverProps = props as PaintBucket;

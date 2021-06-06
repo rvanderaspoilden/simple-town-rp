@@ -101,7 +101,10 @@ namespace Sim.Building {
             set => parentId = value;
         }
 
-        public ApartmentController ApartmentController => apartmentController;
+        public ApartmentController ApartmentController {
+            get => apartmentController;
+            set => apartmentController = value;
+        }
 
         /**
          * Setup all action when a props is built

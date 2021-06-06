@@ -9,6 +9,7 @@ using Sim.Interactables;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 /*
 	Documentation: https://mirror-networking.com/docs/Components/NetworkManager.html
@@ -284,6 +285,8 @@ public class SimpleTownNetwork : NetworkManager {
     public override void OnStopClient() {
         NetworkClient.UnregisterHandler<TeleportMessage>();
         NetworkClient.UnregisterHandler<ShopResponseMessage>();
+        
+        SceneManager.LoadScene("Main Menu");
     }
 
     #endregion

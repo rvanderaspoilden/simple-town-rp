@@ -62,15 +62,13 @@ namespace Sim {
             this.initialAnchorX = this.rectTransform.anchoredPosition.x;
         }
 
-        private void OnEnable() {
-            MoodButton.OnClick += SelectMood;
-        }
-
-        private void OnDisable() {
+        private void OnDestroy() {
             MoodButton.OnClick -= SelectMood;
         }
 
         private void Start() {
+            MoodButton.OnClick += SelectMood;
+
             this.moodsTransforms = new List<RectTransform>();
             DatabaseManager.MoodConfigs.ForEach(config => {
                 if (config.MoodEnum == PlayerController.Local.CharacterData.Mood) return;
