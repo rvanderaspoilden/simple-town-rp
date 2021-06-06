@@ -83,15 +83,16 @@ namespace Sim {
         }
 
         private void OnValidatePaintModification() {
+            ApartmentController apartmentController = this.currentOpenedBucket.GetComponentInParent<ApartmentController>();
+            
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                //RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.AUTO);
-
-                this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ApplyWallSettings();
+                apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
+                apartmentController.ApplyWallSettings();
             } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
-                this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ApplyGroundSettings();
+                apartmentController.ApplyGroundSettings();
             }
 
-            StartCoroutine(this.currentOpenedBucket.GetComponentInParent<ApartmentController>().Save());
+            apartmentController.CmdSaveHome();
 
             Destroy(this.currentOpenedBucket.gameObject);
 

@@ -356,7 +356,7 @@ namespace Sim {
             OnStateChanged?.Invoke(this, stateType);
         }
 
-        public void SetMood(MoodConfig moodConfig) {
+        public void  SetMood(MoodConfig moodConfig) {
             this.characterData.Mood = moodConfig.MoodEnum;
             this.animator.SetMood((int) moodConfig.MoodEnum);
             OnCharacterDataChanged?.Invoke(this.characterData);
