@@ -20,12 +20,18 @@ MonoBehaviour:
   price: 0
   prefab: {fileID: 67030402629475098, guid: 0b358b00f06531741ad6ae29f2396e07, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
-  surfaceToPose: 1
+  surfaceToPose: 0
   posableOnProps: 0
-  connectedToWall: 0
+  connectedToWall: 1
   toBuild: 1
   rangeToInteract: 0
-  actions: []
-  unbuiltActions: []
+  actions:
+  - {fileID: 11400000, guid: eb2c51e8927332c40abe1682f0e39009, type: 2}
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
+  unbuiltActions:
+  - {fileID: 11400000, guid: 3e1f7b140e8e1c5419783ee5a990b41d, type: 2}
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
   cursor: {fileID: 0}
   presets: []
