@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 39
   displayName: Christmas tree
+  sprite: {fileID: 0}
   propsType: 4
   buyable: 1
+  price: 0
   prefab: {fileID: 2184626562250176996, guid: b83574af68279e24980a9c6909a984c6, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
@@ -30,4 +32,5 @@ MonoBehaviour:
   unbuiltActions:
   - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
   - {fileID: 11400000, guid: 3e1f7b140e8e1c5419783ee5a990b41d, type: 2}
-  cursor: {fileID: 0}
+  cursor: {fileID: 2800000, guid: b5ca50659d52b0c43b56fdc1455e5a41, type: 3}
+  presets: []
