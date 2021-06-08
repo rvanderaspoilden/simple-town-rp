@@ -586,7 +586,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741014542941
 GameObject:
   m_ObjectHideFlags: 0
@@ -695,7 +697,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741075075786
 GameObject:
   m_ObjectHideFlags: 0
@@ -804,7 +808,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741088603843
 GameObject:
   m_ObjectHideFlags: 0
@@ -913,7 +919,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741137107439
 GameObject:
   m_ObjectHideFlags: 0
@@ -1022,7 +1030,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741156252375
 GameObject:
   m_ObjectHideFlags: 0
@@ -1171,7 +1181,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741215511540
 GameObject:
   m_ObjectHideFlags: 0
@@ -1280,7 +1292,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741337291751
 GameObject:
   m_ObjectHideFlags: 0
@@ -1389,7 +1403,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741382172257
 GameObject:
   m_ObjectHideFlags: 0
@@ -1498,7 +1514,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741390825269
 GameObject:
   m_ObjectHideFlags: 0
@@ -1607,7 +1625,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741601690459
 GameObject:
   m_ObjectHideFlags: 0
@@ -1716,7 +1736,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741650990075
 GameObject:
   m_ObjectHideFlags: 0
@@ -1825,7 +1847,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741714957674
 GameObject:
   m_ObjectHideFlags: 0
@@ -1934,7 +1958,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741716039684
 GameObject:
   m_ObjectHideFlags: 0
@@ -2043,7 +2069,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741746722671
 GameObject:
   m_ObjectHideFlags: 0
@@ -2152,7 +2180,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741777469917
 GameObject:
   m_ObjectHideFlags: 0
@@ -2261,7 +2291,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741836507181
 GameObject:
   m_ObjectHideFlags: 0
@@ -2370,7 +2402,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741884116531
 GameObject:
   m_ObjectHideFlags: 0
@@ -2479,7 +2513,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709741941790522
 GameObject:
   m_ObjectHideFlags: 0
@@ -2588,7 +2624,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742005140206
 GameObject:
   m_ObjectHideFlags: 0
@@ -2697,7 +2735,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742080547065
 GameObject:
   m_ObjectHideFlags: 0
@@ -2806,7 +2846,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742139742743
 GameObject:
   m_ObjectHideFlags: 0
@@ -2915,7 +2957,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742142023832
 GameObject:
   m_ObjectHideFlags: 0
@@ -3024,7 +3068,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742189190046
 GameObject:
   m_ObjectHideFlags: 0
@@ -3133,7 +3179,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742252893627
 GameObject:
   m_ObjectHideFlags: 0
@@ -3242,7 +3290,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742279344665
 GameObject:
   m_ObjectHideFlags: 0
@@ -3351,7 +3401,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742403168464
 GameObject:
   m_ObjectHideFlags: 0
@@ -3460,7 +3512,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742479164188
 GameObject:
   m_ObjectHideFlags: 0
@@ -3569,7 +3623,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742541642030
 GameObject:
   m_ObjectHideFlags: 0
@@ -3678,7 +3734,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742561230979
 GameObject:
   m_ObjectHideFlags: 0
@@ -3787,7 +3845,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742573033565
 GameObject:
   m_ObjectHideFlags: 0
@@ -3896,7 +3956,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742576181323
 GameObject:
   m_ObjectHideFlags: 0
@@ -4005,7 +4067,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742623665010
 GameObject:
   m_ObjectHideFlags: 0
@@ -4114,7 +4178,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742695540097
 GameObject:
   m_ObjectHideFlags: 0
@@ -4223,7 +4289,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742698604420
 GameObject:
   m_ObjectHideFlags: 0
@@ -4332,7 +4400,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742740273945
 GameObject:
   m_ObjectHideFlags: 0
@@ -4441,7 +4511,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742758683513
 GameObject:
   m_ObjectHideFlags: 0
@@ -4550,7 +4622,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742887724121
 GameObject:
   m_ObjectHideFlags: 0
@@ -4659,7 +4733,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742898072011
 GameObject:
   m_ObjectHideFlags: 0
@@ -4768,7 +4844,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709742982495208
 GameObject:
   m_ObjectHideFlags: 0
@@ -4949,7 +5027,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709743024968492
 GameObject:
   m_ObjectHideFlags: 0
@@ -5058,7 +5138,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &338709743032016758
 GameObject:
   m_ObjectHideFlags: 0
@@ -5167,7 +5249,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ef09ca710ced346a9a6a4bc9281457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paintConfigId: 6
+  currentCover:
+    paintConfigId: 6
+    additionalColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &440539064094267955
 GameObject:
   m_ObjectHideFlags: 0
@@ -5665,7 +5749,7 @@ MonoBehaviour:
   tenantId: 
   presetName: 
   associatedHallController: {fileID: 0}
-  isGenerated: 0
+  state: 0
 --- !u!114 &608618609674454396
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6863,8 +6947,8 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 5.9645367, y: 2.6039276, z: 6.93}
-  m_Center: {x: 0.0076379776, y: 1.2907801, z: 0}
+  m_Size: {x: 6.016862, y: 2.6039276, z: 6.997646}
+  m_Center: {x: 0.005032897, y: 1.2907801, z: -0.006109953}
 --- !u!114 &3107383115981184712
 MonoBehaviour:
   m_ObjectHideFlags: 0
