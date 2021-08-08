@@ -60,7 +60,7 @@ namespace Sim {
         }
 
         private void CheckValidity() {
-            this.button.interactable = !CameraManager.Instance || BuildManager.Instance.GetMode() != BuildModeEnum.PAINT;
+            this.button.interactable = !CameraManager.Instance || BuildManager.Instance.GetMode() != BuildModeEnum.WALL_PAINT;
         }
 
         private void UpdateGraphic(VisibilityModeEnum mode) {

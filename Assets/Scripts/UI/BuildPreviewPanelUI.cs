@@ -27,7 +27,7 @@ namespace Sim.UI {
         private void OnEnable() {
             BuildPreview.OnPlaceableStateChanged += this.SetValidateButtonInteractable;
 
-            this.currentModeImg.sprite = BuildManager.Instance.GetMode() == BuildModeEnum.PAINT ? this.paintEditSprite : propsEditSprite;
+            this.currentModeImg.sprite = BuildManager.Instance.GetMode() == BuildModeEnum.WALL_PAINT || BuildManager.Instance.GetMode() == BuildModeEnum.GROUND_PAINT ? this.paintEditSprite : propsEditSprite;
 
             this.SetValidateButtonInteractable(true);
         }
