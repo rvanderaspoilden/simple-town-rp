@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using Mirror;
 using UnityEngine;
@@ -56,6 +57,14 @@ namespace Sim.Building {
             base.OnStartServer();
 
             this.lockState = this.defaultLockState;
+
+            SimpleTownNetwork.OnPlayerDisconnected += RemoveDisconnectedPlayer;
+        }
+
+        public override void OnStopServer() {
+            base.OnStopServer();
+            
+            SimpleTownNetwork.OnPlayerDisconnected -= RemoveDisconnectedPlayer;
         }
 
         [Server]
@@ -132,6 +141,15 @@ namespace Sim.Building {
         [Server]
         private void CheckState() {
             this.isOpened = this.lockState == DoorLockState.UNLOCKED && this.colliderTriggered.Count > 0;
+        }
+        
+        [Server]
+        private void RemoveDisconnectedPlayer(int connId) {
+            this.colliderTriggered = this.colliderTriggered.Where(x => {
+                return x != null && (!x.CompareTag("Player") || (x.CompareTag("Player") && x.GetComponent<NetworkIdentity>()?.connectionToClient.connectionId != connId));
+            }).ToList();
+            
+            this.CheckState();
         }
     }
 

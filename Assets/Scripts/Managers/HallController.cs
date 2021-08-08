@@ -38,19 +38,34 @@ public class HallController : NetworkBehaviour {
 
     private Teleporter elevator;
 
+    private BuildingBehavior associatedBuilding;
+
     private HashSet<ApartmentController> generatedApartments = new HashSet<ApartmentController>();
 
     private Dictionary<NetworkConnection, int> playersToMove = new Dictionary<NetworkConnection, int>();
 
+    public override void OnStartServer() {
+        base.OnStartServer();
+
+        SimpleTownNetwork.OnPlayerDisconnected += RemoveDisconnectedPlayer;
+    }
+
+    public override void OnStopServer() {
+        base.OnStopServer();
+            
+        SimpleTownNetwork.OnPlayerDisconnected -= RemoveDisconnectedPlayer;
+    }
+    
     public void OnGenerationFinished(bool old, bool newValue) {
         this.isGenerated = newValue;
         this.geographicArea.LocationText = $"{this.street}, Floor {this.floorNumber}";
     }
 
     [Server]
-    public void Init(string streetName, int floor) {
+    public void Init(string streetName, int floor, BuildingBehavior building) {
         this.floorNumber = floor;
         this.street = streetName;
+        this.associatedBuilding = building;
 
         this.elevator = Instantiate(this.elevatorPrefab, this.elevatorSpawn.position, this.elevatorSpawn.rotation);
 
@@ -158,4 +173,18 @@ public class HallController : NetworkBehaviour {
     public int FloorNumber => floorNumber;
 
     public Teleporter Elevator => elevator;
+
+    public BuildingBehavior AssociatedBuilding {
+        get => associatedBuilding;
+        set => associatedBuilding = value;
+    }
+    
+    [Server]
+    private void RemoveDisconnectedPlayer(int connId) {
+        Debug.Log($"Server : [HallController] a player has disconnected so remove from player inside list");
+
+        this.playersInside = new HashSet<NetworkIdentity>(this.playersInside.Where(x => x != null && x.isActiveAndEnabled).ToList());
+        
+        this.associatedBuilding.TryToCleanHall(this);
+    }
 }

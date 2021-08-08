@@ -58,7 +58,7 @@ public class BuildingBehavior : NetworkBehaviour {
 
             NetworkServer.Spawn(newHallController.gameObject);
 
-            newHallController.Init(streetName, targetFloor);
+            newHallController.Init(streetName, targetFloor, this);
 
             newHallController.Elevator.OnUse += TeleportToFloor;
 
@@ -89,7 +89,7 @@ public class BuildingBehavior : NetworkBehaviour {
 
                 NetworkServer.Spawn(newHallController.gameObject);
 
-                newHallController.Init(streetName, targetFloor);
+                newHallController.Init(streetName, targetFloor, this);
 
                 newHallController.Elevator.OnUse += TeleportToFloor;
 
@@ -109,15 +109,20 @@ public class BuildingBehavior : NetworkBehaviour {
         if (hallControllerByFloor.ContainsKey(originFloor)) {
             hallControllerByFloor[originFloor].RemovePlayer(conn.identity);
                 
-            if (!hallControllerByFloor[originFloor].ContainPlayers()) {
-                hallControllerByFloor[originFloor].Elevator.OnUse -= TeleportToFloor;
-                NetworkServer.Destroy(hallControllerByFloor[originFloor].gameObject);
-                hallControllerByFloor.Remove(originFloor);
-            } else {
-                Debug.Log($"Can't destroy hall with floor number {originFloor} because not empty");
-            }
+            this.TryToCleanHall(hallControllerByFloor[originFloor]);
         } else {
             Debug.LogError($"Can't find hall with floor number {originFloor}");
+        }
+    }
+
+    [Server]
+    public void TryToCleanHall(HallController hallController) {
+        if (!hallController.ContainPlayers()) {
+           hallController.Elevator.OnUse -= TeleportToFloor;
+            hallControllerByFloor.Remove(hallController.FloorNumber);
+            NetworkServer.Destroy(hallController.gameObject);
+        } else {
+            Debug.Log($"Can't destroy hall with floor number {hallController.FloorNumber} because not empty");
         }
     }
 }

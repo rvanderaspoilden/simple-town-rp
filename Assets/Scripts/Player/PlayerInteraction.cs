@@ -91,11 +91,24 @@ namespace Sim {
                 apartmentController.ApplyGroundSettings();
             }
 
-            Destroy(this.currentOpenedBucket.gameObject);
-            
-            apartmentController.CmdSaveHome();
+            this.CmdDestroyProps(this.currentOpenedBucket.netId);
 
             this.player.SetState(StateType.FREE);
+        }
+
+        [Command(requiresAuthority = false)]
+        public void CmdDestroyProps(uint netId) {
+            if (!NetworkIdentity.spawned.ContainsKey(netId)) {
+                Debug.LogError($"Server: Try to destroy {netId} but it not exist");
+            }
+
+            GameObject propsObject = NetworkIdentity.spawned[netId].gameObject;
+
+            ApartmentController apartmentController = propsObject.GetComponentInParent<ApartmentController>();
+
+            NetworkServer.Destroy(propsObject);
+            
+            StartCoroutine(apartmentController.Save());
         }
 
         private void OnValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation) {
