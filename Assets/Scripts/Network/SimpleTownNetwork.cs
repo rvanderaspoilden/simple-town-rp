@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Mirror;
 using Sim;
 using Sim.Building;
@@ -29,6 +30,10 @@ public class SimpleTownNetwork : NetworkManager {
 
     [SerializeField]
     private List<Home> characterHomes;
+    
+    public delegate void PlayerDisconnected(int connId);
+
+    public static event PlayerDisconnected OnPlayerDisconnected;
 
     public CharacterData CharacterData {
         get => characterData;
@@ -175,11 +180,14 @@ public class SimpleTownNetwork : NetworkManager {
     /// <param name="conn">Connection from client.</param>
     public override void OnServerDisconnect(NetworkConnection conn) {
         base.OnServerDisconnect(conn);
+        
+        Debug.Log($"[Server] A player has been disconnected {conn.connectionId}");
+        OnPlayerDisconnected?.Invoke(conn.connectionId);
     }
 
     #endregion
 
-    #region Client System Callbacks triple + croque + nuggets frites + petite frites + sprite
+    #region Client System Callbacks
 
     /// <summary>
     /// Called on the client when connected to a server.

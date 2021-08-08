@@ -15,9 +15,21 @@ namespace Sim.Building {
         [SerializeField]
         private Transform[] couchPositions;
 
-        private readonly SyncDictionary<int, uint> charactersAssociatedToSeatIdx = new SyncDictionary<int, uint>();
+        private readonly SyncDictionary<int, int> charactersAssociatedToSeatIdx = new SyncDictionary<int, int>();
 
-        private readonly SyncDictionary<int, uint> charactersAssociatedToCouchIdx = new SyncDictionary<int, uint>();
+        private readonly SyncDictionary<int, int> charactersAssociatedToCouchIdx = new SyncDictionary<int, int>();
+        
+        public override void OnStartServer() {
+            base.OnStartServer();
+
+            SimpleTownNetwork.OnPlayerDisconnected += RemoveDisconnectedPlayer;
+        }
+
+        public override void OnStopServer() {
+            base.OnStopServer();
+            
+            SimpleTownNetwork.OnPlayerDisconnected -= RemoveDisconnectedPlayer;
+        }
 
         protected override void Execute(Action action) {
             if (action.Type.Equals(ActionTypeEnum.SIT)) {
@@ -36,11 +48,11 @@ namespace Sim.Building {
 
             return actions.Where(x => {
                 if (x.Type.Equals(ActionTypeEnum.SIT)) {
-                    return this.GetKeyFromValue(this.charactersAssociatedToSeatIdx, PlayerController.Local.netId) == -1 && GetAvailableSeatIdx() != -1;
+                    return this.GetKeyFromValue(this.charactersAssociatedToSeatIdx, PlayerController.Local.connectionToServer.connectionId) == -1 && GetAvailableSeatIdx() != -1;
                 }
 
                 if (x.Type.Equals(ActionTypeEnum.COUCH)) {
-                    return this.GetKeyFromValue(this.charactersAssociatedToCouchIdx, PlayerController.Local.netId) == -1 && GetAvailableCouchIdx() != -1;
+                    return this.GetKeyFromValue(this.charactersAssociatedToCouchIdx, PlayerController.Local.connectionToServer.connectionId) == -1 && GetAvailableCouchIdx() != -1;
                 }
 
                 if (x.Type.Equals(ActionTypeEnum.SELL) || x.Type.Equals(ActionTypeEnum.MOVE)) {
@@ -76,7 +88,7 @@ namespace Sim.Building {
                 return;
             }
 
-            this.charactersAssociatedToSeatIdx.Add(seatIdx, sender.identity.netId);
+            this.charactersAssociatedToSeatIdx.Add(seatIdx, sender.connectionId);
 
             TargetSit(sender.identity.connectionToClient, seatIdx);
         }
@@ -94,13 +106,13 @@ namespace Sim.Building {
         public void CmdRevokeSeat(NetworkConnectionToClient sender = null) {
             if (sender == null) return;
 
-            int seatIdx = GetKeyFromValue(this.charactersAssociatedToSeatIdx, sender.identity.netId);
+            int seatIdx = GetKeyFromValue(this.charactersAssociatedToSeatIdx, sender.connectionId);
 
             if (seatIdx != -1) this.charactersAssociatedToSeatIdx.Remove(seatIdx);
         }
 
-        private int GetKeyFromValue(SyncDictionary<int, uint> syncDictionary, uint value) {
-            foreach (KeyValuePair<int, uint> keyValuePair in syncDictionary) {
+        private int GetKeyFromValue(SyncDictionary<int, int> syncDictionary, int value) {
+            foreach (KeyValuePair<int, int> keyValuePair in syncDictionary) {
                 if (keyValuePair.Value == value) {
                     return keyValuePair.Key;
                 }
@@ -134,7 +146,7 @@ namespace Sim.Building {
                 return;
             }
 
-            this.charactersAssociatedToCouchIdx.Add(couchIdx, sender.identity.netId);
+            this.charactersAssociatedToCouchIdx.Add(couchIdx, sender.connectionId);
 
             TargetSleep(sender.identity.connectionToClient, couchIdx);
         }
@@ -152,9 +164,22 @@ namespace Sim.Building {
         public void CmdRevokeCouch(NetworkConnectionToClient sender = null) {
             if (sender == null) return;
 
-            int couchIdx = GetKeyFromValue(this.charactersAssociatedToCouchIdx, sender.identity.netId);
+            int couchIdx = GetKeyFromValue(this.charactersAssociatedToCouchIdx, sender.connectionId);
 
             if (couchIdx != -1) this.charactersAssociatedToCouchIdx.Remove(couchIdx);
+        }
+
+        [Server]
+        private void RemoveDisconnectedPlayer(int connId) {
+            Debug.Log($"Server : [Seat] a player has disconnected so remove from sit and couch");
+
+            int couchIdx = GetKeyFromValue(this.charactersAssociatedToCouchIdx, connId);
+
+            if (couchIdx != -1) this.charactersAssociatedToCouchIdx.Remove(couchIdx);
+            
+            int seatIdx = GetKeyFromValue(this.charactersAssociatedToSeatIdx, connId);
+
+            if (seatIdx != -1) this.charactersAssociatedToSeatIdx.Remove(seatIdx);
         }
     }
 }

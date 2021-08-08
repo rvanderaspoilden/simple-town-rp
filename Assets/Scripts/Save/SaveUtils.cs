@@ -22,7 +22,7 @@ namespace Sim.Utils {
                 paintConfigId = pair.Value.paintConfigId
             }).ToArray();
         }
-        
+
         public static CoverData[] CreateCoverDatas(SyncDictionary<int, CoverSettings> settings) {
             return settings.Select(pair => new CoverData {
                 idx = pair.Key,
@@ -30,7 +30,7 @@ namespace Sim.Utils {
                 paintConfigId = pair.Value.paintConfigId
             }).ToArray();
         }
-        
+
         public static DefaultData CreateDefaultData(Props props) {
             DefaultData data = new DefaultData();
             data.Init(props);
@@ -58,6 +58,7 @@ namespace Sim.Utils {
             props.transform.localPosition = data.transform.position.ToVector3();
 
             props.ParentId = parent.netId;
+            props.ApartmentController = parent;
 
             NetworkServer.Spawn(props.gameObject);
 
