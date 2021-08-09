@@ -47,6 +47,8 @@ namespace Sim.Building {
             this.coverSettingsInPreview.Clear();
 
             this.UpdateWallFaces();
+            
+            this.meshCollider.enabled = true;
         }
 
         public Dictionary<int, CoverSettings> CoverSettingsInPreview => coverSettingsInPreview;
@@ -71,6 +73,8 @@ namespace Sim.Building {
             }
 
             this.renderer.sharedMaterials = materials;
+
+            this.meshCollider.enabled = false;
         }
 
         [Client]

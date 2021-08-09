@@ -110,6 +110,8 @@ namespace Sim {
             if (this.mode == BuildModeEnum.WALL_PAINT || this.mode == BuildModeEnum.GROUND_PAINT) {
                 this.Painting();
             } else {
+                this.magnetic = Input.GetKey(KeyCode.LeftShift);
+
                 this.PropsPosing();
             }
         }
@@ -186,7 +188,8 @@ namespace Sim {
 
         private void Apply() {
             // Prevent to apply if mode is not correct or if preview is invalid
-            if (!(this.mode == BuildModeEnum.VALIDATING && this.currentPreview.IsPlaceable()) && this.mode != BuildModeEnum.WALL_PAINT && this.mode != BuildModeEnum.GROUND_PAINT) {
+            if (!(this.mode == BuildModeEnum.VALIDATING && this.currentPreview.IsPlaceable()) && this.mode != BuildModeEnum.WALL_PAINT &&
+                this.mode != BuildModeEnum.GROUND_PAINT) {
                 return;
             }
 

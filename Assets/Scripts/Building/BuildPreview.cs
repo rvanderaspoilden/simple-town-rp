@@ -139,7 +139,7 @@ namespace Sim.Building {
         private void CheckValidity() {
             if (navMeshObstacle && navMeshObstacle.enabled) return;
                 
-            this.haveFreeArea = this.colliderTriggered.Count == 0;
+            this.haveFreeArea = this.colliderTriggered.Count(x => x.gameObject.activeInHierarchy) == 0;
             this.placeable = this.haveFreeArea && this.detectGround && this.validRotation && this.isInBuildableArea;
 
             this.propsRenderer.SetPreviewState(this.placeable ? PreviewStateEnum.VALID : PreviewStateEnum.ERROR);
