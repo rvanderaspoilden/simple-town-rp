@@ -20,13 +20,8 @@ namespace Sim.Building {
         [SerializeField]
         private GameObject package;
 
-        [SerializeField]
-        private AudioClip alertSound;
-
         [Header("Debug")]
         private Delivery[] deliveries;
-
-        private AudioSource _audioSource;
 
         [SyncVar(hook = nameof(RefreshDeliveriesQuantity))]
         [SerializeField]
@@ -39,7 +34,6 @@ namespace Sim.Building {
         public override void OnStartClient() {
             base.OnStartClient();
             
-            this._audioSource = GetComponent<AudioSource>();
             PropsContentUI.OnSelect += OnSelectDelivery;
         }
 
@@ -68,9 +62,7 @@ namespace Sim.Building {
                 DeliveryResponse deliveryResponse = JsonUtility.FromJson<DeliveryResponse>(request.downloadHandler.text);
                 this.deliveries = deliveryResponse.Deliveries.ToArray();
                 this.deliveryCount = (uint)this.deliveries.Length;
-                Debug.Log($"Delivery box has {this.deliveryCount} deliveries");
             } else {
-                Debug.Log("No deliveries found");
                 this.Deliveries = new Delivery[0];
                 this.deliveryCount = 0;
             }

@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 32
   displayName: Vasque
+  sprite: {fileID: 0}
   propsType: 0
   buyable: 1
+  price: 0
   prefab: {fileID: 8502713996919600202, guid: 8f2711996fe5d4b47b043dda9bed4a14, type: 3}
   packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
@@ -60,3 +62,4 @@ MonoBehaviour:
       enabled: 1
       color: {r: 0.56078434, g: 0.7137255, b: 0.7490196, a: 1}
       material: {fileID: 0}
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}

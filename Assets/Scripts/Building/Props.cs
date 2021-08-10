@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using DG.Tweening;
 using Mirror;
 using Sim.Enums;
 using Sim.Scriptables;
@@ -36,6 +37,8 @@ namespace Sim.Building {
 
         private ApartmentController apartmentController;
 
+        protected AudioSource audioSource;
+
         public delegate void PropsAction(Props props);
 
         public static event PropsAction OnMoveRequest;
@@ -43,6 +46,7 @@ namespace Sim.Building {
         protected virtual void Awake() {
             this.built = true;
             this.propsRenderer = GetComponent<PropsRenderer>();
+            this.audioSource = GetComponent<AudioSource>();
         }
 
         protected virtual void Start() {
@@ -71,7 +75,7 @@ namespace Sim.Building {
 
             Vector3 position = this.transform.position;
             Quaternion rotation = this.transform.rotation;
-            
+
             this.apartmentController = NetworkIdentity.spawned.ContainsKey(this.parentId)
                 ? NetworkIdentity.spawned[this.parentId].GetComponent<ApartmentController>()
                 : null;
@@ -85,7 +89,6 @@ namespace Sim.Building {
             } else {
                 Debug.LogError($"Parent identity not found for props {this.name}");
             }
-
         }
 
         public virtual void StopInteraction() {
@@ -240,7 +243,19 @@ namespace Sim.Building {
 
             Debug.Log($"Server: player {sender.identity.netId} built {this.name}");
 
+            RpcBuild();
+
             StartCoroutine(GetComponentInParent<ApartmentController>().Save());
+        }
+
+        [ClientRpc]
+        public void RpcBuild() {
+            this.transform.localScale = Vector3.zero;
+            this.transform.DOScale(Vector3.one, 1f).SetEase(Ease.OutBounce);
+
+            if (this.audioSource && this.configuration.BuildSound) {
+                this.audioSource.PlayOneShot(this.configuration.BuildSound);
+            }
         }
 
         [Client]

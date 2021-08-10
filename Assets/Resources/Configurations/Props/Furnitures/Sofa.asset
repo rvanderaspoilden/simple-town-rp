@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 1
   displayName: "Canap\xE9 2 places"
+  sprite: {fileID: 0}
   propsType: 0
   buyable: 1
+  price: 0
   prefab: {fileID: 213926998, guid: 99681d55c42d2734e97eec098bf50f6b, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
@@ -90,3 +92,4 @@ MonoBehaviour:
       enabled: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       material: {fileID: 0}
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}

@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 31
   displayName: Penderie
+  sprite: {fileID: 0}
   propsType: 0
   buyable: 1
+  price: 0
   prefab: {fileID: 7985545017175012805, guid: a2cd00e16db769447a7239373b4cb7bb, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
@@ -74,3 +76,4 @@ MonoBehaviour:
       enabled: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       material: {fileID: 0}
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}

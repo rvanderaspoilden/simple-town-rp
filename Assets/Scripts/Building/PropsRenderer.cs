@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using DG.Tweening;
 using Sim.Enums;
 using UnityEngine;
 
@@ -10,15 +11,15 @@ namespace Sim.Building {
         [Tooltip("Set all renderers which can be impacted by material changes")]
         [SerializeField]
         private Renderer[] renderersToModify;
-        
+
         [Tooltip("Mesh renderers will be impacted by primary style of selected preset in configuration")]
         [SerializeField]
         private MeshRenderer[] primaryStyleMeshRenderers;
-        
+
         [Tooltip("Mesh renderers will be impacted by secondary style of selected preset in configuration")]
         [SerializeField]
         private MeshRenderer[] secondaryStyleMeshRenderers;
-        
+
         [Tooltip("Mesh renderers will be impacted by tertiary style of selected preset in configuration")]
         [SerializeField]
         private MeshRenderer[] tertiaryStyleMeshRenderers;
@@ -60,16 +61,16 @@ namespace Sim.Building {
             this.TryToApplyStyle(preset.Primary, this.primaryStyleMeshRenderers);
             this.TryToApplyStyle(preset.Secondary, this.secondaryStyleMeshRenderers);
             this.TryToApplyStyle(preset.Tertiary, this.tertiaryStyleMeshRenderers);
-            
+
             this.UpdateGraphics();
         }
 
         private bool TryToApplyStyle(PropsStyle propsStyle, IEnumerable<MeshRenderer> meshRenderers) {
             if (!propsStyle.Enabled) return false;
-            
+
             foreach (var meshRenderer in meshRenderers) {
                 Material[] materialsToModify = this.defaultMaterialsByRenderer[meshRenderer];
-                
+
                 foreach (var material in materialsToModify) {
                     if (propsStyle.Material) {
                         material.CopyPropertiesFromMaterial(propsStyle.Material);
