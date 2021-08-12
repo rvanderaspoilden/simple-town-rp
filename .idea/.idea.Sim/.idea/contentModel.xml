@@ -695,6 +695,7 @@
           <e p="Entities" t="Include">
             <e p="Address.cs" t="Include" />
             <e p="CharacterData.cs" t="Include" />
+            <e p="City.cs" t="Include" />
             <e p="CoverSettings.cs" t="Include" />
             <e p="Delivery.cs" t="Include" />
             <e p="Gender.cs" t="Include" />
@@ -707,6 +708,7 @@
             <e p="Requests" t="Include">
               <e p="AssignApartmentRequest.cs" t="Include" />
               <e p="CharacterCreationRequest.cs" t="Include" />
+              <e p="CityUpdateTimestampRequest.cs" t="Include" />
             </e>
             <e p="Responses" t="Include">
               <e p="AuthenticationResponse.cs" t="Include" />
@@ -754,6 +756,7 @@
             <e p="Launcher.cs" t="Include" />
             <e p="LoadingManager.cs" t="Include" />
             <e p="PropsManager.cs" t="Include" />
+            <e p="TimeManager.cs" t="Include" />
           </e>
           <e p="Network" t="Include">
             <e p="Messages" t="Include">
@@ -820,6 +823,7 @@
               <e p="ShopMenuUI.cs" t="Include" />
               <e p="ShopUI.cs" t="Include" />
               <e p="SimpleColorButton.cs" t="Include" />
+              <e p="TimeUI.cs" t="Include" />
               <e p="TripleColorButton.cs" t="Include" />
             </e>
             <e p="PhoneControllerUI.cs" t="Include" />
