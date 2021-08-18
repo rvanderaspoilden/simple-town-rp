@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 28
   displayName: "Buffet carr\xE9"
+  sprite: {fileID: 0}
   propsType: 0
   buyable: 1
+  price: 0
   prefab: {fileID: 6899209749786193636, guid: e3a6ee4060d5a8e4a9ba82731b85c21e, type: 3}
   packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
@@ -74,3 +76,4 @@ MonoBehaviour:
       enabled: 1
       color: {r: 0.45098042, g: 0.10588236, b: 0.027450982, a: 1}
       material: {fileID: 0}
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}

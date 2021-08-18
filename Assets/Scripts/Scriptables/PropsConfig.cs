@@ -57,6 +57,9 @@ namespace Sim.Scriptables {
         [SerializeField]
         private PropsPreset[] presets;
 
+        [SerializeField]
+        private AudioClip buildSound;
+
         public PropsPreset[] Presets => presets;
 
         public Texture2D GetCursor() {
@@ -66,6 +69,8 @@ namespace Sim.Scriptables {
         public PropsType GetPropsType() {
             return this.propsType;
         }
+
+        public AudioClip BuildSound => buildSound;
 
         public bool NeedToBeConnectedToWall() {
             return this.connectedToWall;

@@ -213,6 +213,24 @@ namespace Sim {
 
             return request;
         }
+        
+        public UnityWebRequest RetrieveCityRequest() {
+            return UnityWebRequest.Get($"{this.uri}/city/by-name/Simple Town");
+        }
+        
+        public UnityWebRequest UpdateCityTimestampRequest(CityUpdateTimestampRequest body) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/city/{body.id}", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
 
         public void RetrieveHomesByCharacter(CharacterData characterData) {
             StartCoroutine(this.RetrieveHomesByCharacterCoroutine(characterData));

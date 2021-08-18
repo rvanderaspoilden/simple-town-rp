@@ -107,9 +107,11 @@ namespace Sim {
             if (this.mode == BuildModeEnum.NONE)
                 return;
 
-            if (this.mode == BuildModeEnum.PAINT) {
+            if (this.mode == BuildModeEnum.WALL_PAINT || this.mode == BuildModeEnum.GROUND_PAINT) {
                 this.Painting();
             } else {
+                this.magnetic = Input.GetKey(KeyCode.LeftShift);
+
                 this.PropsPosing();
             }
         }
@@ -154,7 +156,7 @@ namespace Sim {
          */
         public void Init(PaintBucket paintBucket) {
             this.currentOpenedBucket = paintBucket;
-            this.SetMode(BuildModeEnum.PAINT);
+            this.SetMode(this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.WALL ? BuildModeEnum.WALL_PAINT : BuildModeEnum.GROUND_PAINT);
 
             this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
 
@@ -186,7 +188,8 @@ namespace Sim {
 
         private void Apply() {
             // Prevent to apply if mode is not correct or if preview is invalid
-            if (!(this.mode == BuildModeEnum.VALIDATING && this.currentPreview.IsPlaceable()) && this.mode != BuildModeEnum.PAINT) {
+            if (!(this.mode == BuildModeEnum.VALIDATING && this.currentPreview.IsPlaceable()) && this.mode != BuildModeEnum.WALL_PAINT &&
+                this.mode != BuildModeEnum.GROUND_PAINT) {
                 return;
             }
 
@@ -200,7 +203,7 @@ namespace Sim {
                         this.currentPropSelected.transform.rotation);
                     Destroy(this.currentPropSelected.gameObject);
                 }
-            } else if (this.mode == BuildModeEnum.PAINT) {
+            } else if (this.mode == BuildModeEnum.WALL_PAINT || this.mode == BuildModeEnum.GROUND_PAINT) {
                 OnValidatePaintModification?.Invoke();
             }
 

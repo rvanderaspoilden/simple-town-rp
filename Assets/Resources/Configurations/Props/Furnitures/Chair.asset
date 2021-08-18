@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 19
   displayName: Chaise
+  sprite: {fileID: 0}
   propsType: 0
   buyable: 1
+  price: 0
   prefab: {fileID: -4294977466799568442, guid: db4d95f24cbaeb04590ad10ebb5bd860, type: 3}
   packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
@@ -32,3 +34,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
   - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
   cursor: {fileID: 2800000, guid: 0e305d6abf1703c4eafb08ed62babf5f, type: 3}
+  presets: []
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}

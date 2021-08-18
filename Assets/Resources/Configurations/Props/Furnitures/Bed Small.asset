@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 48
   displayName: Lit 1 place
+  sprite: {fileID: 0}
   propsType: 0
   buyable: 1
+  price: 0
   prefab: {fileID: 3367786146348142288, guid: 7c781fe7df6cc2344b37bb4b6247cd02, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
@@ -76,3 +78,4 @@ MonoBehaviour:
       enabled: 1
       color: {r: 0.9245283, g: 0.9245283, b: 0.9245283, a: 1}
       material: {fileID: 0}
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}

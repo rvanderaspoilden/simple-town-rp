@@ -1,12 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-namespace Sim.Enums {
+﻿namespace Sim.Enums {
     public enum BuildModeEnum
     {
         NONE,
-        PAINT,
+        WALL_PAINT,
+        GROUND_PAINT,
         POSING,
         VALIDATING,
         EDITING
