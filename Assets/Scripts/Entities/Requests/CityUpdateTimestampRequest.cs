@@ -3,5 +3,5 @@ using System;
 [Serializable]
 public struct CityUpdateTimestampRequest {
     public string id;
-    public long timestamp;
+    public long newTimestamp;
 }

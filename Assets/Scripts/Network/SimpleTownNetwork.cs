@@ -18,6 +18,10 @@ using UnityEngine.SceneManagement;
 */
 
 public class SimpleTownNetwork : NetworkManager {
+    [Header("Settings")]
+    [SerializeField]
+    private string cityName = "Simple Town";
+
     [SerializeField]
     private bool useElbloodyAccount;
 
@@ -30,7 +34,10 @@ public class SimpleTownNetwork : NetworkManager {
 
     [SerializeField]
     private List<Home> characterHomes;
-    
+
+    [SerializeField]
+    private City cityData;
+
     public delegate void PlayerDisconnected(int connId);
 
     public static event PlayerDisconnected OnPlayerDisconnected;
@@ -180,7 +187,7 @@ public class SimpleTownNetwork : NetworkManager {
     /// <param name="conn">Connection from client.</param>
     public override void OnServerDisconnect(NetworkConnection conn) {
         base.OnServerDisconnect(conn);
-        
+
         Debug.Log($"[Server] A player has been disconnected {conn.connectionId}");
         OnPlayerDisconnected?.Invoke(conn.connectionId);
     }
@@ -264,6 +271,8 @@ public class SimpleTownNetwork : NetworkManager {
     public override void OnStartServer() {
         NetworkServer.RegisterHandler<CreateCharacterMessage>(OnCreateCharacter);
         NetworkServer.RegisterHandler<CreateDeliveryRequest>(OnBuySomething);
+
+        StartCoroutine(this.RetrieveCityData());
     }
 
     /// <summary>
@@ -272,6 +281,7 @@ public class SimpleTownNetwork : NetworkManager {
     public override void OnStartClient() {
         NetworkClient.RegisterHandler<TeleportMessage>(OnTeleportPlayer);
         NetworkClient.RegisterHandler<ShopResponseMessage>(OnShopResponse);
+        NetworkClient.RegisterHandler<UpdateCityDataMessage>(OnCityDataUpdatedResponse);
     }
 
     /// <summary>
@@ -285,6 +295,8 @@ public class SimpleTownNetwork : NetworkManager {
     public override void OnStopServer() {
         NetworkServer.UnregisterHandler<CreateCharacterMessage>();
         NetworkServer.UnregisterHandler<CreateDeliveryRequest>();
+
+        this.UpdateTimestamp();
     }
 
     /// <summary>
@@ -293,11 +305,37 @@ public class SimpleTownNetwork : NetworkManager {
     public override void OnStopClient() {
         NetworkClient.UnregisterHandler<TeleportMessage>();
         NetworkClient.UnregisterHandler<ShopResponseMessage>();
-        
+        NetworkClient.UnregisterHandler<UpdateCityDataMessage>();
+
         SceneManager.LoadScene("Main Menu");
     }
 
     #endregion
+
+    private IEnumerator RetrieveCityData() {
+        UnityWebRequest request = ApiManager.Instance.RetrieveCityRequest(this.cityName);
+
+        Debug.Log($"[Server] Retrieve city data of {cityName}");
+
+        yield return request.SendWebRequest();
+
+        if (request.responseCode == 200) {
+            this.cityData = JsonUtility.FromJson<City>(request.downloadHandler.text);
+            Debug.Log("[Server] City data has been retrieved !");
+            TimeManager.StartTimestamp = this.cityData.last_timestamp;
+        } else {
+            Debug.LogError($"[Server] Cannot retrieve city data");
+        }
+    }
+
+    private void UpdateTimestamp() {
+        UnityWebRequest request = ApiManager.Instance.UpdateCityTimestampRequest(new CityUpdateTimestampRequest()
+            {id = this.cityData._id, newTimestamp = (long) TimeManager.CurrentTime.TotalSeconds});
+
+        Debug.Log($"[Server] Try to save timestamp {(long) TimeManager.CurrentTime.TotalSeconds}");
+
+        request.SendWebRequest();
+    }
 
     #region Custom Register Handler Callback
 
@@ -315,16 +353,16 @@ public class SimpleTownNetwork : NetworkManager {
 
         if (request.responseCode == 201) {
             Debug.Log($"Server: Props [{body.propsConfigId}] has been successfully bought");
-            
-            conn.Send(new ShopResponseMessage{isSuccess = true});
-            
+
+            conn.Send(new ShopResponseMessage {isSuccess = true});
+
             foreach (var deliveryBox in FindObjectsOfType<DeliveryBox>()) {
                 deliveryBox.CheckDeliveries();
             }
         } else {
             Debug.LogError($"Server: Props [{body.propsConfigId}] cannot be bought");
-            
-            conn.Send(new ShopResponseMessage{isSuccess = false});
+
+            conn.Send(new ShopResponseMessage {isSuccess = false});
         }
     }
 
@@ -332,6 +370,13 @@ public class SimpleTownNetwork : NetworkManager {
     public void OnShopResponse(ShopResponseMessage message) {
         Debug.Log($"Client: shopResponse success is : {message.isSuccess}");
         ShopUI.Instance.OnBuyResponse(message.isSuccess);
+    }
+
+    [ClientCallback]
+    public void OnCityDataUpdatedResponse(UpdateCityDataMessage message) {
+        Debug.Log($"Client: city data has been updated");
+        this.cityData = message.City;
+        TimeManager.StartTimestamp = this.cityData.last_timestamp;
     }
 
     private void OnCreateCharacter(NetworkConnection conn, CreateCharacterMessage message) {
@@ -370,13 +415,13 @@ public class SimpleTownNetwork : NetworkManager {
             player.RawCharacterData = JsonUtility.ToJson(characterResponse.Characters[0]);
 
             go.name = $"Player [conn={conn.connectionId}] [{characterResponse.Characters[0].Identity.FullName}]";
-            
+
             // Retrieve home and teleport
 
             UnityWebRequest homeRequest = ApiManager.Instance.RetrieveHomesByCharacterRequest(characterResponse.Characters[0]);
 
             yield return homeRequest.SendWebRequest();
-            
+
             if (homeRequest.responseCode == 200) {
                 HomeResponse homeResponse = JsonUtility.FromJson<HomeResponse>(homeRequest.downloadHandler.text);
 
@@ -394,9 +439,10 @@ public class SimpleTownNetwork : NetworkManager {
                     Debug.LogError($"Cannot find home for userId {userId}");
                 }
             }
-            
+
             NetworkServer.AddPlayerForConnection(conn, go);
 
+            conn.Send(new UpdateCityDataMessage() {City = this.cityData});
         } else {
             Debug.LogError($"Cannot find character for userId {userId}");
             conn.Disconnect();

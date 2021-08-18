@@ -214,8 +214,8 @@ namespace Sim {
             return request;
         }
         
-        public UnityWebRequest RetrieveCityRequest() {
-            return UnityWebRequest.Get($"{this.uri}/city/by-name/Simple Town");
+        public UnityWebRequest RetrieveCityRequest(string cityName) {
+            return UnityWebRequest.Get($"{this.uri}/city/by-name/{cityName}");
         }
         
         public UnityWebRequest UpdateCityTimestampRequest(CityUpdateTimestampRequest body) {
