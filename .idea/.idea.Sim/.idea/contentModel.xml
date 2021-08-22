@@ -749,7 +749,6 @@
             <e p="BuildingBehavior.cs" t="Include" />
             <e p="BuildManager.cs" t="Include" />
             <e p="CameraManager.cs" t="Include" />
-            <e p="CityManager.cs" t="Include" />
             <e p="CursorManager.cs" t="Include" />
             <e p="DatabaseManager.cs" t="Include" />
             <e p="HallController.cs" t="Include" />
@@ -784,6 +783,7 @@
           <e p="Scriptables" t="Include">
             <e p="CoverConfig.cs" t="Include" />
             <e p="CursorConfig.cs" t="Include" />
+            <e p="HelpConfig.cs" t="Include" />
             <e p="MoodConfig.cs" t="Include" />
             <e p="PaintDatabaseConfig.cs" t="Include" />
             <e p="PropsConfig.cs" t="Include" />
@@ -795,6 +795,7 @@
             <e p="CharacterInfoPanelUI.cs" t="Include" />
             <e p="DefaultViewUI.cs" t="Include" />
             <e p="ElevatorUI.cs" t="Include" />
+            <e p="HelpPanel.cs" t="Include" />
             <e p="Main Menu" t="Include">
               <e p="ApartmentCreationManager.cs" t="Include" />
               <e p="CharacterCreationManager.cs" t="Include" />

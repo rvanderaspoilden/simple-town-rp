@@ -2,6 +2,7 @@
 using DG.Tweening;
 using Sim.Enums;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Sim {
     public class BuildCamera : MonoBehaviour {
@@ -50,7 +51,8 @@ namespace Sim {
 
         void Update() {
             this.ManageRotation();
-
+            this.ManageZoom();
+            
             if (BuildManager.Instance.GetMode() != BuildModeEnum.VALIDATING) {
                 if (Input.GetMouseButtonDown(1)) {
                     this.dragOrigin = Input.mousePosition;
@@ -96,7 +98,7 @@ namespace Sim {
         }
 
         private void ManageRotation() {
-            if (Input.GetMouseButtonDown(2)) {
+            if (Input.GetMouseButtonDown(2) && !EventSystem.current.IsPointerOverGameObject()) {
                 this.freelookCamera.m_XAxis.m_MaxSpeed = this.maxRotationSpeed;
             }
 
@@ -119,6 +121,10 @@ namespace Sim {
             Vector3 move = this.camera.transform.TransformDirection(new Vector3(pos.x, 0, pos.y));
 
             this.cameraTarget.transform.Translate(new Vector3(move.x, 0, move.z) * dragSpeed * Time.deltaTime, Space.World);
+        }
+        
+        private void ManageZoom() {
+            this.freelookCamera.m_YAxis.m_InputAxisName = !EventSystem.current.IsPointerOverGameObject() ? "Mouse ScrollWheel" : string.Empty;
         }
     }
 }

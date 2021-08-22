@@ -15,6 +15,9 @@ namespace Sim {
         private DefaultViewUI defaultViewUI;
 
         [SerializeField]
+        private HelpPanel helpPanel;
+
+        [SerializeField]
         private AudioSource audioSource;
 
         [SerializeField]
@@ -63,12 +66,15 @@ namespace Sim {
         public void DisplayPanel(PanelTypeEnum panelType) {
             if (panelType == PanelTypeEnum.BUILD) {
                 this.buildPreviewPanelUI.gameObject.SetActive(true);
+                this.helpPanel.gameObject.SetActive(true);
                 this.defaultViewUI.gameObject.SetActive(false);
             } else if (panelType == PanelTypeEnum.DEFAULT) {
                 this.defaultViewUI.gameObject.SetActive(true);
+                this.helpPanel.gameObject.SetActive(false);
                 this.buildPreviewPanelUI.gameObject.SetActive(false);
             } else {
                 this.defaultViewUI.gameObject.SetActive(false);
+                this.helpPanel.gameObject.SetActive(false);
                 this.buildPreviewPanelUI.gameObject.SetActive(false);
             }
         }

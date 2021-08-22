@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d5b807ad10e2964da136d85cf4dd3d5, type: 3}
+  m_Name: Build Help
+  m_EditorClassIdentifier: 
+  context: Display for build view
+  orderedContent:
+  - {fileID: 3166672633306493285, guid: 480592d06af586a4f87f10afa45635af, type: 3}
+  - {fileID: 3166672633306493285, guid: 4bb106fc8b223bf4a8cef58b8f60ba5f, type: 3}
