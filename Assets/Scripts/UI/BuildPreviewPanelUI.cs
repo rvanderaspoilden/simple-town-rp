@@ -6,15 +6,23 @@ using UnityEngine.UI;
 namespace Sim.UI {
     public class BuildPreviewPanelUI : MonoBehaviour {
         [Header("Settings")]
-        [SerializeField] private Button validationBtn;
+        [SerializeField]
+        private Button validationBtn;
 
-        [SerializeField] private WallVisibilityUI wallVisibilityUI;
+        [SerializeField]
+        private WallVisibilityUI wallVisibilityUI;
 
-        [SerializeField] private Image currentModeImg;
+        [SerializeField]
+        private Image currentModeImg;
 
-        [SerializeField] private Sprite propsEditSprite;
+        [SerializeField]
+        private Sprite propsEditSprite;
 
-        [SerializeField] private Sprite paintEditSprite;
+        [SerializeField]
+        private Sprite paintEditSprite;
+
+        [SerializeField]
+        private HelpConfig helpConfig;
 
         public delegate void OnValidateEvent();
 
@@ -27,7 +35,11 @@ namespace Sim.UI {
         private void OnEnable() {
             BuildPreview.OnPlaceableStateChanged += this.SetValidateButtonInteractable;
 
-            this.currentModeImg.sprite = BuildManager.Instance.GetMode() == BuildModeEnum.WALL_PAINT || BuildManager.Instance.GetMode() == BuildModeEnum.GROUND_PAINT ? this.paintEditSprite : propsEditSprite;
+            HelpPanel.Instance.Setup(this.helpConfig);
+
+            this.currentModeImg.sprite = BuildManager.Instance.GetMode() == BuildModeEnum.WALL_PAINT || BuildManager.Instance.GetMode() == BuildModeEnum.GROUND_PAINT
+                ? this.paintEditSprite
+                : propsEditSprite;
 
             this.SetValidateButtonInteractable(true);
         }
