@@ -39,7 +39,7 @@ namespace Sim {
                     Debug.LogError("No apartment binded to toggle props visiblity");
                 }
             });
-
+            
             ApartmentController.OnPropsVisibilityModeChanged += this.UpdateGraphic;
         }
 
