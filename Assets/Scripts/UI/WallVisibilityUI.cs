@@ -54,9 +54,14 @@ namespace Sim {
 
             ApartmentController.OnWallVisibilityModeChanged -= this.UpdateGraphic;
         }
-
+        
         public void Bind(ApartmentController apartmentController) {
             this.bindApartment = apartmentController;
+        }
+
+        public void Bind(ApartmentController apartmentController, VisibilityModeEnum currentVisibility) {
+            this.Bind(apartmentController);
+            this.UpdateGraphic(currentVisibility);
         }
 
         private void CheckValidity() {

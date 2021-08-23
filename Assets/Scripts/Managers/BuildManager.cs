@@ -25,7 +25,10 @@ namespace Sim {
 
         [Header("Debug")]
         [SerializeField]
-        private bool magnetic;
+        private bool magnetismActivated;
+
+        [SerializeField]
+        private bool instantMagnetismActivated;
 
         private Props currentPropSelected;
 
@@ -72,6 +75,10 @@ namespace Sim {
         public delegate void ValidatePaintModification();
 
         public static event ValidatePaintModification OnValidatePaintModification;
+        
+        public delegate void MagnetismStateChanged();
+
+        public static event MagnetismStateChanged OnMagnetismStateChange;
 
         public delegate void CancelModification();
 
@@ -110,7 +117,15 @@ namespace Sim {
             if (this.mode == BuildModeEnum.WALL_PAINT || this.mode == BuildModeEnum.GROUND_PAINT) {
                 this.Painting();
             } else {
-                this.magnetic = Input.GetKey(KeyCode.LeftShift);
+                if (Input.GetKey(KeyCode.LeftShift)) {
+                    if (!this.instantMagnetismActivated) {
+                        this.instantMagnetismActivated = true;
+                        OnMagnetismStateChange?.Invoke();
+                    }
+                } else if (this.instantMagnetismActivated) {
+                    this.instantMagnetismActivated = false;
+                    OnMagnetismStateChange?.Invoke();
+                }
 
                 this.PropsPosing();
             }
@@ -128,7 +143,13 @@ namespace Sim {
             this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
 
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
-            WallVisibilityUI.Instance.Bind(this.apartmentController);
+
+            if (propsConfig.GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
+                this.apartmentController.SetWallVisibility(VisibilityModeEnum.FORCE_HIDE);
+                WallVisibilityUI.Instance.Bind(this.apartmentController, VisibilityModeEnum.FORCE_HIDE);
+            } else {
+                WallVisibilityUI.Instance.Bind(this.apartmentController);
+            }
         }
 
         /**
@@ -148,7 +169,13 @@ namespace Sim {
             this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
 
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
-            WallVisibilityUI.Instance.Bind(this.apartmentController);
+
+            if (props.GetConfiguration().GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
+                this.apartmentController.SetWallVisibility(VisibilityModeEnum.FORCE_HIDE);
+                WallVisibilityUI.Instance.Bind(this.apartmentController, VisibilityModeEnum.FORCE_HIDE);
+            } else {
+                WallVisibilityUI.Instance.Bind(this.apartmentController);
+            }
         }
 
         /**
@@ -171,6 +198,14 @@ namespace Sim {
         public Props GetCurrentPreviewedProps() {
             return this.currentPropSelected;
         }
+
+        public void ToggleMagnetismState() {
+            this.magnetismActivated = !this.magnetismActivated;
+        }
+
+        public bool MagnetismActivated => magnetismActivated;
+
+        public bool InstantMagnetismActivated => instantMagnetismActivated;
 
         private void Cancel() {
             this.Reset();
@@ -261,6 +296,10 @@ namespace Sim {
                     Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
                     this.currentPropSelected.transform.localEulerAngles =
                         new Vector3(currentLocalAngle.x, currentLocalAngle.y + this.propsRotationSpeed, currentLocalAngle.z);
+                } else if (Input.GetKeyDown(KeyCode.R)) {
+                    Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
+                    float newAngle = (Mathf.FloorToInt(Mathf.Round(currentLocalAngle.y / 45f)) * 45f) + 45f;
+                    this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
                 }
             }
         }
@@ -276,7 +315,7 @@ namespace Sim {
                         if (Physics.Raycast(point, Vector3.up, out hit, 10, (1 << 16))) {
                             point = hit.point;
                         }
-                    } else if (this.magnetic) {
+                    } else if (this.magnetismActivated || this.instantMagnetismActivated) {
                         float maxHitDistanceZ = Mathf.Abs(this.currentPropsBounds.z) + this.magneticRange;
                         float maxHitDistanceX = Mathf.Abs(this.currentPropsBounds.x) + this.magneticRange;
 
@@ -301,7 +340,8 @@ namespace Sim {
                     }
 
                     this.CalculatePlacement(point, currentPropsTransform);
-                } else if (this.magnetic && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall") && hit.normal.y == 0) {
+                } else if ((this.magnetismActivated || this.instantMagnetismActivated) && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall") &&
+                           hit.normal.y == 0) {
                     if (Physics.Raycast(point, Vector3.down, out magneticHit, 10, (1 << 9))) {
                         point = magneticHit.point;
                         this.lastMagneticPoint = point;
@@ -350,7 +390,7 @@ namespace Sim {
             if (lastPosition.x != x || lastPosition.z != z) {
                 lastPosition = new Vector3(x, 0, z);
 
-                if (magnetic && this.lastMagneticPoint == point) {
+                if ((this.magnetismActivated || this.instantMagnetismActivated) && this.lastMagneticPoint == point) {
                     Vector3 offset = Vector3.zero;
 
                     if (this.magneticDirection == DirectionEnum.BACK || this.magneticDirection == DirectionEnum.DOWN) {
