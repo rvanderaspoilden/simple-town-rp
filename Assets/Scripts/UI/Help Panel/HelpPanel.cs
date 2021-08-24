@@ -1,8 +1,9 @@
 using System;
+using DG.Tweening;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
-public class HelpPanel : MonoBehaviour {
-
+public class HelpPanel : MonoBehaviour, IPointerExitHandler {
     [Header("Settings")]
     [SerializeField]
     private GameObject helpContainer;
@@ -10,12 +11,18 @@ public class HelpPanel : MonoBehaviour {
     [SerializeField]
     private Transform scrollViewContent;
 
+
+    [SerializeField]
+    private CanvasGroup popupCanvasGroup;
+
     [Header("Only for debug")]
     [SerializeField]
     private HelpConfig currentConfig;
-    
+
     private bool isOpened;
-    
+
+    private bool isHover;
+
     public static HelpPanel Instance;
 
     private void Awake() {
@@ -23,6 +30,7 @@ public class HelpPanel : MonoBehaviour {
             Destroy(this.gameObject);
         } else {
             Instance = this;
+            this.UpdatePopupVisibility();
         }
     }
 
@@ -30,21 +38,36 @@ public class HelpPanel : MonoBehaviour {
         this.CloseView();
     }
 
+    public void OnPointerExit(PointerEventData eventData) {
+        if (!isOpened) {
+            this.isHover = false;
+            this.UpdatePopupVisibility();
+        }
+    }
+
     public void Setup(HelpConfig config) {
         this.currentConfig = config;
         this.ClearContent();
-        
+
         config.OrderedContent.ForEach(x => Instantiate(x, this.scrollViewContent));
     }
 
     public void Toggle() {
         this.isOpened = !this.isOpened;
-        this.UpdateVisibility();
+        this.UpdateContentVisibility();
     }
 
     public void CloseView() {
         this.isOpened = false;
-        this.UpdateVisibility();
+        this.UpdateContentVisibility();
+    }
+
+    public bool IsHover {
+        get => isHover;
+        set {
+            isHover = value;
+            this.UpdatePopupVisibility();
+        }
     }
 
     private void ClearContent() {
@@ -53,7 +76,13 @@ public class HelpPanel : MonoBehaviour {
         }
     }
 
-    private void UpdateVisibility() {
+    private void UpdateContentVisibility() {
         this.helpContainer.SetActive(this.isOpened);
+    }
+
+    private void UpdatePopupVisibility() {
+        this.popupCanvasGroup.DOFade(this.isHover ? 1 : 0, .3f);
+        this.popupCanvasGroup.blocksRaycasts = this.isHover;
+        this.popupCanvasGroup.interactable = this.isHover;
     }
 }

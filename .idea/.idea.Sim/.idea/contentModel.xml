@@ -795,7 +795,10 @@
             <e p="CharacterInfoPanelUI.cs" t="Include" />
             <e p="DefaultViewUI.cs" t="Include" />
             <e p="ElevatorUI.cs" t="Include" />
-            <e p="HelpPanel.cs" t="Include" />
+            <e p="Help Panel" t="Include">
+              <e p="HelpPanel.cs" t="Include" />
+              <e p="HelpPanelHover.cs" t="Include" />
+            </e>
             <e p="MagnetismButton.cs" t="Include" />
             <e p="Main Menu" t="Include">
               <e p="ApartmentCreationManager.cs" t="Include" />
