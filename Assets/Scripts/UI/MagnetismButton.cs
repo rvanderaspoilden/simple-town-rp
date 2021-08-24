@@ -51,6 +51,8 @@ public class MagnetismButton : MonoBehaviour {
     }
 
     private void UpdateGraphic() {
+        if (!BuildManager.Instance) return;
+        
         this.image.sprite = BuildManager.Instance.MagnetismActivated || BuildManager.Instance.InstantMagnetismActivated ? this.magnetismActivatedSprite : this.magnestismDeactivatedSprite;
     }
 }
