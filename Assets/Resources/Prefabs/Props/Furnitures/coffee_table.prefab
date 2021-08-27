@@ -42,8 +42,8 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.59750974, y: 0.0017076731, z: 1.1965992}
-  m_Center: {x: 0.0005483031, y: 0.20126909, z: -0.00000011920929}
+  m_Size: {x: 1.1927861, y: 0.0017076731, z: 0.59440124}
+  m_Center: {x: 0.0005483031, y: 0.20126909, z: -0.0011538118}
 --- !u!1 &6712983364803665591
 GameObject:
   m_ObjectHideFlags: 0
@@ -145,8 +145,8 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.59989995, y: 0.40027344, z: 1.1998904}
-  m_Center: {x: 0, y: 0.20013672, z: 0}
+  m_Size: {x: 1.192869, y: 0.40027344, z: 0.59769225}
+  m_Center: {x: -0.0011535883, y: 0.20013672, z: 0.0011535883}
 --- !u!208 &4133753161413823657
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -157,11 +157,11 @@ NavMeshObstacle:
   m_Enabled: 1
   serializedVersion: 3
   m_Shape: 1
-  m_Extents: {x: 0.29994994, y: 0.2001367, z: 0.599945}
+  m_Extents: {x: 0.5964345, y: 0.2001367, z: 0.29884616}
   m_MoveThreshold: 0.1
   m_Carve: 1
   m_CarveOnlyStationary: 1
-  m_Center: {x: 0, y: 0.2001367, z: 0}
+  m_Center: {x: -0.001153588, y: 0.2001367, z: 0.001153588}
   m_TimeToStationary: 0.5
 --- !u!54 &8337194470537331864
 Rigidbody:
