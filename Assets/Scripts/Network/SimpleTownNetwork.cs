@@ -330,7 +330,7 @@ public class SimpleTownNetwork : NetworkManager {
 
     private void UpdateTimestamp() {
         UnityWebRequest request = ApiManager.Instance.UpdateCityTimestampRequest(new CityUpdateTimestampRequest()
-            {id = this.cityData._id, newTimestamp = (long) TimeManager.CurrentTime.TotalSeconds});
+            { id = this.cityData._id, newTimestamp = (long) TimeManager.CurrentTime.TotalSeconds });
 
         Debug.Log($"[Server] Try to save timestamp {(long) TimeManager.CurrentTime.TotalSeconds}");
 
@@ -354,7 +354,7 @@ public class SimpleTownNetwork : NetworkManager {
         if (request.responseCode == 201) {
             Debug.Log($"Server: Props [{body.propsConfigId}] has been successfully bought");
 
-            conn.Send(new ShopResponseMessage {isSuccess = true});
+            conn.Send(new ShopResponseMessage { isSuccess = true });
 
             foreach (var deliveryBox in FindObjectsOfType<DeliveryBox>()) {
                 deliveryBox.CheckDeliveries();
@@ -362,7 +362,7 @@ public class SimpleTownNetwork : NetworkManager {
         } else {
             Debug.LogError($"Server: Props [{body.propsConfigId}] cannot be bought");
 
-            conn.Send(new ShopResponseMessage {isSuccess = false});
+            conn.Send(new ShopResponseMessage { isSuccess = false });
         }
     }
 
@@ -426,6 +426,8 @@ public class SimpleTownNetwork : NetworkManager {
                 HomeResponse homeResponse = JsonUtility.FromJson<HomeResponse>(homeRequest.downloadHandler.text);
 
                 if (homeResponse.Homes.Length > 0) {
+                    player.CharacterHomes = homeResponse.Homes.ToList();
+
                     Address address = homeResponse.Homes[0].Address;
 
                     BuildingBehavior buildingBehavior = FindObjectsOfType<BuildingBehavior>().FirstOrDefault(x => x.Match(address));
@@ -442,7 +444,7 @@ public class SimpleTownNetwork : NetworkManager {
 
             NetworkServer.AddPlayerForConnection(conn, go);
 
-            conn.Send(new UpdateCityDataMessage() {City = this.cityData});
+            conn.Send(new UpdateCityDataMessage() { City = this.cityData });
         } else {
             Debug.LogError($"Cannot find character for userId {userId}");
             conn.Disconnect();

@@ -58,6 +58,9 @@ namespace Sim {
         [SerializeField]
         private CharacterData characterData; // represent all database info relative to the character
 
+        [SerializeField]
+        private List<Home> characterHomes;
+
         [SyncVar(hook = nameof(ParseCharacterData))]
         private string rawCharacterData;
 
@@ -126,6 +129,7 @@ namespace Sim {
             Local = this;
             HUDManager.Instance.DisplayPanel(PanelTypeEnum.DEFAULT);
             CharacterInfoPanelUI.Instance.Setup(this.characterData);
+            CharacterInfoPanelUI.Instance.Setup(this.CharacterHomes[0]);
         }
 
         public override void OnStopClient() {
@@ -193,6 +197,11 @@ namespace Sim {
         public string RawCharacterData {
             get => rawCharacterData;
             set => rawCharacterData = value;
+        }
+
+        public List<Home> CharacterHomes {
+            get => characterHomes;
+            set => characterHomes = value;
         }
 
         public void ParseCharacterData(string old, string newValue) {

@@ -12,6 +12,12 @@ namespace Sim.UI {
         private TextMeshProUGUI nameText;
 
         [SerializeField]
+        private TextMeshProUGUI addressHotelText;
+
+        [SerializeField]
+        private TextMeshProUGUI addressDoorText;
+
+        [SerializeField]
         private TextMeshProUGUI jobText;
 
         [SerializeField]
@@ -57,6 +63,11 @@ namespace Sim.UI {
             this.SetFillBarAmount(this.sleepBar, characterData.Health.Sleep / CommonConstants.MAX_BAR_AMOUNT);
 
             this.SetMood(DatabaseManager.GetMoodConfigByEnum(characterData.Mood));
+        }
+
+        public void Setup(Home home) {
+            this.addressHotelText.text = home.Address.street;
+            this.addressDoorText.text = $"Floor {Mathf.CeilToInt(home.Address.doorNumber / (float)6)}, Apt {home.Address.doorNumber}";
         }
 
         private void SetText(TextMeshProUGUI tmpPro, string value) {
