@@ -3,6 +3,7 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -13,36 +14,36 @@ namespace Sim {
         private TextMeshProUGUI errorText;
 
         [SerializeField]
-        private TMP_InputField pseudoInputField;
+        private TMP_InputField signInPseudoInputField;
 
         [SerializeField]
-        private TMP_InputField passwordInputField;
+        private TMP_InputField signInPasswordInputField;
 
         [SerializeField]
-        private bool debug;
+        private TMP_InputField signUpPseudoInputField;
+
+        [SerializeField]
+        private TMP_InputField signUpPasswordInputField;
+
+        [SerializeField]
+        private GameObject signInPanel;
+
+        [SerializeField]
+        private GameObject signupPanel;
 
         [SerializeField]
         private Image statusImg;
-
-        private string username;
-        private string password;
 
         private void Awake() {
             ApiManager.OnAuthenticationSucceeded += OnAuthenticationSucceeded;
             ApiManager.OnAuthenticationFailed += this.OnAuthenticationFailed;
             ApiManager.OnServerStatusChanged += this.OnServerStatusChanged;
+
+            this.DisplaySignInPanel();
         }
 
         private void Start() {
             ApiManager.Instance.CheckServerStatus();
-
-            this.pseudoInputField.Select();
-
-            if (debug) {
-                this.username = "spectus";
-                this.password = "test";
-                this.Authenticate();
-            }
         }
 
         private void Update() {
@@ -55,7 +56,11 @@ namespace Sim {
             }
 
             if (Input.GetKeyDown(KeyCode.Return)) {
-                this.Authenticate();
+                if (this.signInPanel.activeSelf) {
+                    this.SignIn();
+                } else {
+                    this.SignUp();
+                }
             }
         }
 
@@ -65,16 +70,61 @@ namespace Sim {
             ApiManager.OnServerStatusChanged -= this.OnServerStatusChanged;
         }
 
-        public void SetUsername(string username) => this.username = username;
+        public void DisplaySignInPanel() {
+            this.signInPanel.SetActive(true);
+            this.signupPanel.SetActive(false);
 
-        public void SetPassword(string password) => this.password = password;
+            this.ClearForm();
 
-        public void Authenticate() {
-            if (username == string.Empty || password == string.Empty) return;
+            this.signInPseudoInputField.Select();
+        }
+
+        public void DisplaySignUpPanel() {
+            this.signupPanel.SetActive(true);
+            this.signInPanel.SetActive(false);
+
+            this.ClearForm();
+
+            this.signUpPseudoInputField.Select();
+        }
+
+        private void ClearForm() {
+            this.signUpPseudoInputField.text = string.Empty;
+            this.signUpPasswordInputField.text = string.Empty;
+            this.signInPseudoInputField.text = string.Empty;
+            this.signInPasswordInputField.text = string.Empty;
+        }
+
+        public void SignIn() {
+            if (this.signInPseudoInputField.text == string.Empty || this.signInPasswordInputField.text == string.Empty) return;
 
             this.ResetErrorText();
 
-            ApiManager.Instance.Authenticate(username, password);
+            ApiManager.Instance.Authenticate(this.signInPseudoInputField.text, this.signInPasswordInputField.text);
+        }
+
+        public void SignUp() {
+            if (this.signUpPseudoInputField.text == string.Empty || this.signUpPasswordInputField.text == string.Empty) return;
+
+            this.ResetErrorText();
+
+            StartCoroutine(this.SignUpCoroutine());
+        }
+
+        private IEnumerator SignUpCoroutine() {
+            UnityWebRequest request = ApiManager.Instance.CreateUserRequest(new CreateUserRequest() {
+                username = this.signUpPseudoInputField.text,
+                password = this.signUpPasswordInputField.text
+            });
+
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 201) {
+                Debug.Log("Account creation succeeded !");
+                this.DisplaySignInPanel();
+            } else {
+                this.errorText.text = ApiManager.ExtractErrorMessage(request);
+            }
         }
 
         private void ResetErrorText() => this.errorText.text = String.Empty;

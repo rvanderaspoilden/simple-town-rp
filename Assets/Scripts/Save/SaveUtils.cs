@@ -56,6 +56,7 @@ namespace Sim.Utils {
 
             props.transform.SetParent(parent.PropsContainer);
             props.transform.localPosition = data.transform.position.ToVector3();
+            props.transform.localEulerAngles = data.transform.rotation.ToVector3();
 
             props.ParentId = parent.netId;
             props.ApartmentController = parent;

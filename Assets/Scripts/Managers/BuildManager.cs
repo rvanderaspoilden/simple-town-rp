@@ -378,7 +378,7 @@ namespace Sim {
                     rotation.y = 270f;
                 }
 
-                this.currentPropSelected.transform.localEulerAngles = rotation;
+                this.currentPropSelected.transform.eulerAngles = rotation;
             }
         }
 

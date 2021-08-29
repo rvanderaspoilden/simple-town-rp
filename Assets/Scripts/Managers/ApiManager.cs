@@ -131,6 +131,20 @@ namespace Sim {
                 OnApartmentAssignmentFailed?.Invoke(ExtractErrorMessage(request));
             }
         }
+        
+        public UnityWebRequest CreateUserRequest(CreateUserRequest data) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(data));
+
+            UnityWebRequest request = new UnityWebRequest(this.uri + "/users/signup", "POST") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Content-type", "application/json");
+            request.SetRequestHeader("Accept", "application/json");
+
+            return request;
+        }
 
         public void CreateCharacter(CharacterCreationRequest data) {
             StartCoroutine(this.CreateCharacterCoroutine(data));
@@ -296,7 +310,7 @@ namespace Sim {
             this.authenticationCoroutine = null;
         }
 
-        private string ExtractErrorMessage(UnityWebRequest request) {
+        public static string ExtractErrorMessage(UnityWebRequest request) {
             HttpException exception = JsonUtility.FromJson<HttpException>(request.downloadHandler.text);
             return exception != null ? exception?.Message : request.error;
         }
