@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: light_hublot
+  m_EditorClassIdentifier: 
+  id: 58
+  displayName: Hublot light
+  sprite: {fileID: 0}
+  propsType: 5
+  buyable: 0
+  price: 0
+  prefab: {fileID: 1033064380054611299, guid: e5726b86afc581c4d95eef8950538e6a, type: 3}
+  packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
+  surfaceToPose: 1
+  posableOnProps: 0
+  connectedToWall: 0
+  toBuild: 0
+  rangeToInteract: 1
+  actions: []
+  unbuiltActions: []
+  cursor: {fileID: 0}
+  presets: []
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
