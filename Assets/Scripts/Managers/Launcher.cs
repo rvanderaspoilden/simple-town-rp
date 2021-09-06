@@ -33,7 +33,7 @@ namespace Sim {
 
         [SerializeField]
         private Image statusImg;
-
+        
         private void Awake() {
             ApiManager.OnAuthenticationSucceeded += OnAuthenticationSucceeded;
             ApiManager.OnAuthenticationFailed += this.OnAuthenticationFailed;

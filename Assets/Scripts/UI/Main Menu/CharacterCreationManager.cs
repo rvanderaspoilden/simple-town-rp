@@ -57,6 +57,8 @@ namespace Sim {
 
         private CharacterPartType characterPartSelected;
 
+        private RotatingState characterRotating = RotatingState.NONE;
+
         public static CharacterCreationManager Instance;
 
         private void Awake() {
@@ -69,10 +71,6 @@ namespace Sim {
             }
         }
 
-        private void Update() {
-            this.characterStyleSetup.gameObject.transform.Rotate(Vector3.up * Time.deltaTime * this.rotationSpeed); 
-        }
-
         private void OnEnable() {
             ApiManager.OnCharacterCreated += OnCharacterCreated;
             ApiManager.OnCharacterCreationFailed += OnCharacterCreationFailed;
@@ -81,6 +79,27 @@ namespace Sim {
         private void OnDisable() {
             ApiManager.OnCharacterCreated -= OnCharacterCreated;
             ApiManager.OnCharacterCreationFailed -= OnCharacterCreationFailed;
+        }
+
+        private void Update() {
+            if (characterRotating == RotatingState.LEFT) {
+                this.RotateLeft();
+            } else if (characterRotating == RotatingState.RIGHT) {
+                this.RotateRight();
+            }
+        }
+
+        public RotatingState CharacterRotating {
+            get => characterRotating;
+            set => characterRotating = value;
+        }
+
+        public void RotateRight() {
+            this.characterStyleSetup.gameObject.transform.Rotate(Vector3.up * Time.deltaTime * this.rotationSpeed);
+        }
+        
+        public void RotateLeft() {
+            this.characterStyleSetup.gameObject.transform.Rotate(Vector3.up * Time.deltaTime * -this.rotationSpeed);
         }
 
         public void CreateCharacter() {
@@ -167,5 +186,11 @@ namespace Sim {
         public void SkinSliderChanged(Single value) {
             this.characterStyleSetup.SetSkinColor(value);
         }
+    }
+    
+    public enum RotatingState {
+        NONE,
+        LEFT,
+        RIGHT
     }
 }
