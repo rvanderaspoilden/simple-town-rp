@@ -37,6 +37,9 @@ namespace Sim.Scriptables {
         private bool posableOnProps;
 
         [SerializeField]
+        private bool hasPosableSurface;
+
+        [SerializeField]
         private bool connectedToWall;
 
         [SerializeField]
@@ -119,6 +122,8 @@ namespace Sim.Scriptables {
         public PropsConfig GetPackageConfig() {
             return this.packageConfig;
         }
+
+        public bool HasPosableSurface => hasPosableSurface;
 
         public bool MustBeBuilt() {
             return this.toBuild;
