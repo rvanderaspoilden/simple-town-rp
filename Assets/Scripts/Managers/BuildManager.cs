@@ -1,4 +1,5 @@
-﻿using Mirror;
+﻿using System;
+using Mirror;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
@@ -75,7 +76,7 @@ namespace Sim {
         public delegate void ValidatePaintModification();
 
         public static event ValidatePaintModification OnValidatePaintModification;
-        
+
         public delegate void MagnetismStateChanged();
 
         public static event MagnetismStateChanged OnMagnetismStateChange;
@@ -162,6 +163,23 @@ namespace Sim {
             this.originPosition = this.currentPropSelected.transform.position;
             this.originRotation = this.currentPropSelected.transform.rotation;
 
+            if (props.GetConfiguration().HasPosableSurface) { // Put props as children during edit mode
+                RaycastHit[] hits = new RaycastHit[30];
+                Vector3 colliderBounds = this.transform.InverseTransformDirection(this.currentPropsCollider.bounds.extents);
+
+                var size = Physics.BoxCastNonAlloc(this.originPosition + new Vector3(0, colliderBounds.y, 0), colliderBounds, Vector3.up, hits, Quaternion.identity,
+                    0.05f, (1 << 10));
+
+                if (size > 0) {
+                    foreach (var raycastHit in hits) {
+                        if (raycastHit.collider && raycastHit.collider != this.currentPropsCollider) {
+                            raycastHit.collider.gameObject.AddComponent<BuildPreview>();
+                            raycastHit.collider.transform.parent = this.currentPropSelected.transform;
+                        }
+                    }
+                }
+            }
+
             this.isEditing = true;
 
             this.SetMode(BuildModeEnum.POSING);
@@ -217,7 +235,10 @@ namespace Sim {
 
         [Client]
         public void EditionIsValidated() {
-            this.currentPreview.Destroy();
+            if (this.currentPreview) {
+                this.currentPreview.Destroy();
+            }
+
             this.isEditing = false;
         }
 
@@ -230,7 +251,15 @@ namespace Sim {
 
             if (this.mode == BuildModeEnum.VALIDATING) {
                 if (this.isEditing) {
-                    OnValidatePropEdit?.Invoke(this.currentPropSelected);
+                    if (this.currentPropSelected.GetConfiguration().HasPosableSurface) { // Reset child parent in case of posable surface props
+                        foreach (Props child in this.currentPropSelected.GetComponentsInChildren<Props>()) {
+                            child.transform.parent = this.currentPropSelected.transform.parent;
+                            child.GetComponent<BuildPreview>().Destroy();
+                            OnValidatePropEdit?.Invoke(child);
+                        }
+                    } else {
+                        OnValidatePropEdit?.Invoke(this.currentPropSelected);
+                    }
                 } else {
                     OnValidatePropCreation?.Invoke(this.currentPropSelected.GetConfiguration(),
                         this.currentPropSelected.PresetId,
@@ -256,6 +285,14 @@ namespace Sim {
                 if (this.isEditing) {
                     this.currentPropSelected.transform.position = this.originPosition;
                     this.currentPropSelected.transform.rotation = this.originRotation;
+
+                    if (this.currentPropSelected.GetConfiguration().HasPosableSurface) { // Reset child parent in case of posable surface props
+                        foreach (Props child in this.currentPropSelected.GetComponentsInChildren<Props>()) {
+                            child.GetComponent<BuildPreview>().Destroy();
+                            child.transform.parent = this.currentPropSelected.transform.parent;
+                        }
+                    }
+
                     this.currentPreview.Destroy();
                     this.currentPropSelected = null;
                     this.isEditing = false;
