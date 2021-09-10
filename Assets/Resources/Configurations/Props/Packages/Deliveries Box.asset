@@ -14,12 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 42
   displayName: Deliveries Box
+  sprite: {fileID: 0}
   propsType: 0
   buyable: 0
+  price: 0
   prefab: {fileID: 4492236850374378933, guid: 3c5fddc122d575d419dbe304880aacff, type: 3}
   packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
+  hasPosableSurface: 0
   connectedToWall: 1
   toBuild: 0
   rangeToInteract: 1
@@ -27,4 +30,19 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f7c05acb8cfd0b94b963c0aa451d4bfe, type: 2}
   unbuiltActions: []
   cursor: {fileID: 2800000, guid: b642424dd84566a4faa0d7cfadc2ac5f, type: 3}
-  presets: []
+  presets:
+  - id: 0
+    label: Default
+    primary:
+      enabled: 1
+      color: {r: 0.8509804, g: 0.85882354, b: 0.8980392, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  buildSound: {fileID: 0}
