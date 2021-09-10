@@ -154,7 +154,7 @@ namespace Sim.Building {
             actionsToReturn = actionsToReturn.Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission).ToArray();
 
             if (withPriority) {
-                actionsToReturn = actionsToReturn.SkipWhile(x => x.Type.Equals(ActionTypeEnum.SELL) || x.Type.Equals(ActionTypeEnum.MOVE)).ToArray();
+                actionsToReturn = actionsToReturn.Where(x => !x.Type.Equals(ActionTypeEnum.SELL) && !x.Type.Equals(ActionTypeEnum.MOVE)).ToArray();
             }
 
             return actionsToReturn;
