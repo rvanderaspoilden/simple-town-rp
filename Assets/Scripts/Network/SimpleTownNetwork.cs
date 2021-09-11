@@ -271,6 +271,7 @@ public class SimpleTownNetwork : NetworkManager {
     public override void OnStartServer() {
         NetworkServer.RegisterHandler<CreateCharacterMessage>(OnCreateCharacter);
         NetworkServer.RegisterHandler<CreateDeliveryRequest>(OnBuySomething);
+        NetworkServer.RegisterHandler<TeleportMessage>(OnPlayerTeleportTo);
 
         StartCoroutine(this.RetrieveCityData());
     }
@@ -295,6 +296,7 @@ public class SimpleTownNetwork : NetworkManager {
     public override void OnStopServer() {
         NetworkServer.UnregisterHandler<CreateCharacterMessage>();
         NetworkServer.UnregisterHandler<CreateDeliveryRequest>();
+        NetworkServer.UnregisterHandler<TeleportMessage>();
 
         this.UpdateTimestamp();
     }
@@ -342,6 +344,12 @@ public class SimpleTownNetwork : NetworkManager {
     [ServerCallback]
     private void OnBuySomething(NetworkConnection conn, CreateDeliveryRequest request) {
         StartCoroutine(BuyCoroutine(conn, request));
+    }
+
+    [ServerCallback]
+    private void OnPlayerTeleportTo(NetworkConnection conn, TeleportMessage request) {
+        Debug.Log($"Player {conn.identity.gameObject.name} want to teleport");
+        conn.Send(request);
     }
 
     private IEnumerator BuyCoroutine(NetworkConnection conn, CreateDeliveryRequest body) {

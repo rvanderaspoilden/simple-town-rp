@@ -1,4 +1,5 @@
-﻿using Sim.Interactables;
+﻿using System;
+using Sim.Interactables;
 using Sim.UI;
 using TMPro;
 using UnityEngine;
@@ -22,6 +23,9 @@ namespace Sim {
         [SerializeField]
         private ElevatorUI elevatorUI;
 
+        [SerializeField]
+        private AdminPanelManager adminPanelManager;
+
         public static DefaultViewUI Instance;
 
         private void Awake() {
@@ -33,9 +37,16 @@ namespace Sim {
         }
 
         private void Start() {
+            this.adminPanelManager.gameObject.SetActive(false);
             this.HidePropsContentUI();
             this.HideElevatorUI();
             this.SetLocationText("Salmon Hotel");
+        }
+
+        private void Update() {
+            if (Input.GetKeyDown(KeyCode.F2)) {
+                this.ToggleAdminPanel();
+            }
         }
 
         public void SetLocationText(string value) {
@@ -64,6 +75,10 @@ namespace Sim {
 
         public void HidePropsContentUI() {
             this.propsContentUI.gameObject.SetActive(false);
+        }
+
+        public void ToggleAdminPanel() {
+            this.adminPanelManager.gameObject.SetActive(!this.adminPanelManager.gameObject.activeSelf);
         }
     }
 }
