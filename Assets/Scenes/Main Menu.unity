@@ -1310,10 +1310,10 @@ RectTransform:
   m_Father: {fileID: 1158836247}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.023520835, y: 0.20500001}
-  m_AnchorMax: {x: 0.15300001, y: 0.275}
-  m_AnchoredPosition: {x: -0.079589844, y: 0}
-  m_SizeDelta: {x: -0.077026, y: 0.000015259}
+  m_AnchorMin: {x: 0.023520835, y: 0.356}
+  m_AnchorMax: {x: 0.15300001, y: 0.425}
+  m_AnchoredPosition: {x: -0.079589844, y: -1}
+  m_SizeDelta: {x: -0.07702637, y: 1.0000153}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &513759545
 MonoBehaviour:
@@ -1354,14 +1354,14 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 513759546}
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1751657316}
         m_TargetAssemblyTypeName: Sim.MainMenuManager, Assembly-CSharp
-        m_MethodName: Play
+        m_MethodName: ShowAbout
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1666,10 +1666,10 @@ RectTransform:
   m_Father: {fileID: 1158836247}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.023520835, y: 0.13155557}
-  m_AnchorMax: {x: 0.15300001, y: 0.2012963}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: -0.000030518}
+  m_AnchorMin: {x: 0.023520835, y: 0.28263104}
+  m_AnchorMax: {x: 0.15300001, y: 0.34837037}
+  m_AnchoredPosition: {x: 0, y: 0.5}
+  m_SizeDelta: {x: 0, y: 3.9999695}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &532241679
 MonoBehaviour:
@@ -1717,7 +1717,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1751657316}
         m_TargetAssemblyTypeName: Sim.MainMenuManager, Assembly-CSharp
-        m_MethodName: Play
+        m_MethodName: Quit
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2607,7 +2607,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &731061308
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3457,10 +3457,10 @@ RectTransform:
   m_Father: {fileID: 225673721}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 640, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 1600, y: -311.03436}
+  m_SizeDelta: {x: 640, y: 622.0687}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &924206775
 CanvasRenderer:
@@ -4925,7 +4925,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1152988060
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4989,19 +4989,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1152988062}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1751657316}
-        m_TargetAssemblyTypeName: Sim.MainMenuManager, Assembly-CSharp
-        m_MethodName: Play
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1152988062
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5056,7 +5044,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1158836247
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5074,6 +5062,7 @@ RectTransform:
   - {fileID: 513759544}
   - {fileID: 532241678}
   - {fileID: 2115405116}
+  - {fileID: 2054592526}
   m_Father: {fileID: 415270219}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -6721,10 +6710,10 @@ RectTransform:
   m_Father: {fileID: 225673721}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 640, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 320, y: -311.03436}
+  m_SizeDelta: {x: 640, y: 622.0687}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1401456966
 CanvasRenderer:
@@ -7094,10 +7083,10 @@ RectTransform:
   m_Father: {fileID: 225673721}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 640, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 960, y: -311.03436}
+  m_SizeDelta: {x: 640, y: 622.0687}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1611558810
 CanvasRenderer:
@@ -7844,6 +7833,7 @@ MonoBehaviour:
   characterCreationManager: {fileID: 1751657320}
   apartmentCreationManager: {fileID: 1751657319}
   mainMenuPanel: {fileID: 1158836246}
+  aboutText: {fileID: 2054592525}
 --- !u!4 &1751657317
 Transform:
   m_ObjectHideFlags: 0
@@ -9166,6 +9156,166 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   partType: 4
+--- !u!1 &2054592525
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2054592526}
+  - component: {fileID: 2054592528}
+  - component: {fileID: 2054592527}
+  m_Layer: 5
+  m_Name: About Text
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &2054592526
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2054592525}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1158836247}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 179.86989, y: -131.80865}
+  m_SizeDelta: {x: 1423.0594, y: 697.1851}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2054592527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2054592525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_text: "Bienvenue \xE0 Simple Town, la ville o\xF9 tu peux \xEAtre qui tu veux.
+    Ici, c\u2019est toi qui cr\xE9es ta propre histoire. Chaque exp\xE9rience est
+    unique car rien n\u2019est script\xE9.\r\nCr\xE9es ton personnage, trouves un
+    travail passionnant, am\xE9nage ton appartement, ach\xE8tes une maison, partage
+    des moments avec tes amis, \u2026 Tant de choix s\u2019offrent \xE0 toi alors
+    \xE9clate toi.\r\n \r\nSimple Town est un jeu RolePlay communautaire d\xE9velopp\xE9
+    par HGames.\r\n \r\nQu\u2019est-ce que le Roleplay ?\r\nAu sein d\u2019un jeu
+    Roleplay, l\u2019interpr\xE9tation d\u2019un r\xF4le est l'ensemble des apports
+    perceptibles d'un participant, pour le jeu du personnage qu\u2019il interpr\xE8te.
+    L'interpr\xE9tation r\xE9sulte du choix de comportements que le participant manifeste
+    pour le personnage et qu'il exprime aux autres participants.\r\nOn associe fr\xE9quemment
+    l'interpr\xE9tation du r\xF4le \xE0 l'identification au personnage. L'identification
+    facilite l'interpr\xE9tation, et l'interpr\xE9tation permet aux autres joueurs
+    de mieux rentrer dans l'imaginaire du jeu.\r\nLe RolePlay se base plus pr\xE9cis\xE9ment
+    sur les \xE9changes entre les personnages des joueurs qui permettent de faire
+    \xE9voluer chaque personnage en lui faisant ressentir ses propres \xE9motions
+    et prendre ses propres d\xE9cisions.\r\nIl convient bien \xE9videmment de s\xE9parer
+    les paroles exprim\xE9es par le joueur et par son personnage.\r\nDe plus, chaque
+    personnage se doit d'assumer les cons\xE9quences de ses actes et le joueur ne
+    peut en aucun cas soustraire son personnage \xE0 ce que l'on appelle une \"sc\xE8ne\"
+    qui se jouerait totalement InGame (et donc \xE0 travers son personnage).\r\n\r\nQu\u2019est-ce
+    que HGames ?\r\nHGames est le futur studio de cr\xE9ation jeux-vid\xE9oludique
+    ind\xE9pendant cr\xE9\xE9 par Rodolphe Vanderaspoilden et R\xE9my Bernard. Il
+    est la finalit\xE9 d\u2019une longue d\xE9marche de cr\xE9ation vid\xE9oludique.
+    HGames prend son temps pour \xE9diter du contenu (nous l'esp\xE9rons) de qualit\xE9.
+    Enjoy!\r\n"
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 11400000, guid: 37bcb7a2340d2e744a5c2ecb2e776214, type: 2}
+  m_sharedMaterial: {fileID: -1874975516729650738, guid: 37bcb7a2340d2e744a5c2ecb2e776214,
+    type: 2}
+  m_fontSharedMaterials: []
+  m_fontMaterial: {fileID: 0}
+  m_fontMaterials: []
+  m_fontColor32:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_enableVertexGradient: 0
+  m_colorMode: 3
+  m_fontColorGradient:
+    topLeft: {r: 1, g: 1, b: 1, a: 1}
+    topRight: {r: 1, g: 1, b: 1, a: 1}
+    bottomLeft: {r: 1, g: 1, b: 1, a: 1}
+    bottomRight: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColorGradientPreset: {fileID: 0}
+  m_spriteAsset: {fileID: 0}
+  m_tintAllSprites: 0
+  m_StyleSheet: {fileID: 0}
+  m_TextStyleHashCode: -1183493901
+  m_overrideHtmlColors: 0
+  m_faceColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontSize: 36
+  m_fontSizeBase: 36
+  m_fontWeight: 400
+  m_enableAutoSizing: 0
+  m_fontSizeMin: 18
+  m_fontSizeMax: 72
+  m_fontStyle: 0
+  m_HorizontalAlignment: 1
+  m_VerticalAlignment: 256
+  m_textAlignment: 65535
+  m_characterSpacing: 0
+  m_wordSpacing: 0
+  m_lineSpacing: 0
+  m_lineSpacingMax: 0
+  m_paragraphSpacing: 0
+  m_charWidthMaxAdj: 0
+  m_enableWordWrapping: 1
+  m_wordWrappingRatios: 0.4
+  m_overflowMode: 4
+  m_linkedTextComponent: {fileID: 0}
+  parentLinkedComponent: {fileID: 0}
+  m_enableKerning: 1
+  m_enableExtraPadding: 0
+  checkPaddingRequired: 0
+  m_isRichText: 1
+  m_parseCtrlCharacters: 1
+  m_isOrthographic: 1
+  m_isCullingEnabled: 0
+  m_horizontalMapping: 0
+  m_verticalMapping: 0
+  m_uvLineOffset: 0
+  m_geometrySortingOrder: 0
+  m_IsTextObjectScaleStatic: 0
+  m_VertexBufferAutoSizeReduction: 0
+  m_useMaxVisibleDescender: 1
+  m_pageToDisplay: 1
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_isUsingLegacyAnimationComponent: 0
+  m_isVolumetricText: 0
+  m_hasFontAssetChanged: 0
+  m_baseMaterial: {fileID: 0}
+  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!222 &2054592528
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2054592525}
+  m_CullTransparentMesh: 1
 --- !u!1 &2058639350
 GameObject:
   m_ObjectHideFlags: 0
@@ -9582,7 +9732,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2115405116
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9707,8 +9857,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4292927712
+  m_fontColor: {r: 0.8773585, g: 0.8773585, b: 0.8773585, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

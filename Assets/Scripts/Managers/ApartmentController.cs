@@ -83,14 +83,14 @@ namespace Sim {
 
         [SerializeField]
         private HallController associatedHallController;
-        
+
         [SerializeField]
         private ApartmentState state = ApartmentState.NOT_CREATED;
 
-        private Type[] defaultPropsTypes = new[] {typeof(Props), typeof(Seat)};
+        private Type[] defaultPropsTypes = new[] { typeof(Props), typeof(Seat) };
 
         private bool forcePropsHidden;
-        
+
         private bool forceWallHidden;
 
         private readonly SyncDictionary<int, CoverSettings> coverSettingsByFaces = new SyncDictionary<int, CoverSettings>();
@@ -100,7 +100,7 @@ namespace Sim {
         public delegate void VisibilityModeChanged(VisibilityModeEnum mode);
 
         public static event VisibilityModeChanged OnPropsVisibilityModeChanged;
-        
+
         public static event VisibilityModeChanged OnWallVisibilityModeChanged;
 
         private void Awake() {
@@ -124,16 +124,20 @@ namespace Sim {
 
         public override void OnStartClient() {
             base.OnStartClient();
-            
+
             AssignParent();
         }
 
         private void OnSetAddress(Address old, Address newValue) {
             this.address = newValue;
-            
             Debug.Log("OnSetAddress");
 
-            this.geographicArea.LocationText = $"{this.address.street}, Floor {NetworkIdentity.spawned[this.parentId].GetComponent<HallController>().FloorNumber}, Door {this.address.doorNumber}";
+            if (NetworkIdentity.spawned.ContainsKey(this.parentId)) {
+                this.geographicArea.LocationText =
+                    $"{this.address.street}, Floor {NetworkIdentity.spawned[this.parentId].GetComponent<HallController>().FloorNumber}, Door {this.address.doorNumber}";
+            } else {
+                Debug.LogError($"Parent identity not found for appartment {this.name}");
+            }
         }
 
         public Address Address => address;
@@ -154,7 +158,7 @@ namespace Sim {
             this.currentConfiguration.container.SetActive(true);
 
             Debug.Log($"OnSetPresetName of {this.name} with presetName : {this.presetName}");
-            
+
             this.coverSettingsByFaces.Callback += OnWallSettingsChanged;
             this.coverSettingsByGround.Callback += OnGroundSettingsChanged;
 
@@ -201,6 +205,8 @@ namespace Sim {
                 this.associatedHallController = NetworkIdentity.spawned[this.parentId].GetComponent<HallController>();
                 this.transform.SetParent(this.associatedHallController.transform);
                 this.transform.localPosition = position;
+
+                this.geographicArea.LocationText = $"{this.address.street}, Floor {this.associatedHallController.FloorNumber}, Door {this.address.doorNumber}";
 
                 Debug.Log("Assign parent");
             } else {
@@ -290,7 +296,7 @@ namespace Sim {
                 }
 
                 InstantiateLevel(homeResponse.SceneData);
-                
+
                 this.frontDoor.SetLockState(DoorLockState.UNLOCKED);
             } else {
                 Debug.Log($"No Home found for Address {address}");
@@ -314,7 +320,7 @@ namespace Sim {
             if (sceneData.walls != null) {
                 Dictionary<int, CoverSettings> wallSettings = sceneData.walls.ToDictionary(
                     x => x.idx,
-                    x => new CoverSettings {paintConfigId = x.paintConfigId, additionalColor = x.GetColor()}
+                    x => new CoverSettings { paintConfigId = x.paintConfigId, additionalColor = x.GetColor() }
                 );
 
                 for (int i = 0; i < this.currentConfiguration.walls.SharedMaterials().Length; i++) {
@@ -333,7 +339,7 @@ namespace Sim {
             if (sceneData.grounds != null) {
                 Dictionary<int, CoverSettings> groundSettings = sceneData.grounds.ToDictionary(
                     x => x.idx,
-                    x => new CoverSettings {paintConfigId = x.paintConfigId, additionalColor = x.GetColor()}
+                    x => new CoverSettings { paintConfigId = x.paintConfigId, additionalColor = x.GetColor() }
                 );
 
                 for (int i = 0; i < this.grounds.Length; i++) {
@@ -448,7 +454,7 @@ namespace Sim {
             get => parentId;
             set => parentId = value;
         }
-        
+
         #region Wall Visibility Management
 
         public void SetWallVisibility(VisibilityModeEnum mode) {
@@ -465,10 +471,10 @@ namespace Sim {
                 this.currentConfiguration.walls.Reset();
                 this.currentConfiguration.shortWalls.SetActive(false);
             }
-            
+
             OnWallVisibilityModeChanged?.Invoke(mode);
         }
-        
+
         public void ToggleWallVisibility() {
             this.forceWallHidden = !this.forceWallHidden;
 

@@ -14,11 +14,15 @@ namespace Sim {
 
         [SerializeField]
         private GameObject mainMenuPanel;
+
+        [SerializeField]
+        private GameObject aboutText;
         
         private void Awake() {
             this.characterCreationManager.Hide();
             this.apartmentCreationManager.Hide();
             this.mainMenuPanel.SetActive(false);
+            this.aboutText.SetActive(false);
         }
 
         private void Start() {
@@ -89,6 +93,14 @@ namespace Sim {
             ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = new List<Home>() {home};
             this.apartmentCreationManager.Hide();
             this.mainMenuPanel.SetActive(true);
+        }
+
+        public void Quit() {
+            Application.Quit();
+        }
+
+        public void ShowAbout() {
+            this.aboutText.SetActive(true);
         }
     }
 }
