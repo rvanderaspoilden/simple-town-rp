@@ -1970,7 +1970,7 @@ PrefabInstance:
     - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
       propertyPath: networkAddress
-      value: 51.158.116.183
+      value: 15.236.91.208
       objectReference: {fileID: 0}
     - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
@@ -4877,6 +4877,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 7667094568108501628, guid: 7e48349476bdbed43b90a36ec7845d22,
+        type: 3}
+      propertyPath: uri
+      value: http://15.236.91.208:3000
+      objectReference: {fileID: 0}
     - target: {fileID: 7667094568108501628, guid: 7e48349476bdbed43b90a36ec7845d22,
         type: 3}
       propertyPath: local
