@@ -18,9 +18,6 @@ public class BuildingBehavior : NetworkBehaviour {
     private int nbDoorByFloor;
 
     [SerializeField]
-    private int hallSpacingY = 200;
-
-    [SerializeField]
     private Teleporter mainElevator;
 
     private Dictionary<int, HallController> hallControllerByFloor = new Dictionary<int, HallController>();
@@ -54,7 +51,7 @@ public class BuildingBehavior : NetworkBehaviour {
             hallController.CheckApartmentState(doorNumber);
         } else {
             // CREATE FLOOR
-            HallController newHallController = Instantiate(this.hallPrefab, new Vector3(0, -this.hallSpacingY * (this.hallControllerByFloor.Count + 1), 0), Quaternion.identity);
+            HallController newHallController = Instantiate(this.hallPrefab, this.GetSpawnPositionForHall(targetFloor), Quaternion.identity);
 
             NetworkServer.Spawn(newHallController.gameObject);
 
@@ -85,7 +82,9 @@ public class BuildingBehavior : NetworkBehaviour {
                 hallController = hallControllerByFloor[targetFloor];
             } else {
                 // CREATE FLOOR
-                HallController newHallController = Instantiate(this.hallPrefab, new Vector3(0, -this.hallSpacingY * (this.hallControllerByFloor.Count + 1), 0), Quaternion.identity);
+                HallController newHallController = Instantiate(this.hallPrefab, this.GetSpawnPositionForHall(targetFloor), Quaternion.identity);
+                
+                Debug.Log($"[BuildingBehavior] [TeleportToFloor] hall has been created at {newHallController.transform.position.y}");
 
                 NetworkServer.Spawn(newHallController.gameObject);
 
@@ -101,17 +100,11 @@ public class BuildingBehavior : NetworkBehaviour {
             // TELEPORT PLAYER
             hallController.MoveToSpawn(conn);
         }
-
-        // Destroy hall if no players are in previous origin hall
-
-        if (originFloor <= 0) return;
         
-        if (hallControllerByFloor.ContainsKey(originFloor)) {
+        // Destroy hall if no players are in previous origin hall
+        if (originFloor > 0 && hallControllerByFloor.ContainsKey(originFloor)) {
             hallControllerByFloor[originFloor].RemovePlayer(conn.identity);
-                
             this.TryToCleanHall(hallControllerByFloor[originFloor]);
-        } else {
-            Debug.LogError($"Can't find hall with floor number {originFloor}");
         }
     }
 
@@ -124,5 +117,10 @@ public class BuildingBehavior : NetworkBehaviour {
         } else {
             Debug.Log($"Can't destroy hall with floor number {hallController.FloorNumber} because not empty");
         }
+    }
+
+    private Vector3 GetSpawnPositionForHall(int floorNumber) {
+        int x = floorNumber - (Mathf.FloorToInt(floorNumber / 10f) * 10);
+        return new Vector3(x * 100, -100 + (-100 * floorNumber % 10), 0);
     }
 }

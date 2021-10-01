@@ -142,7 +142,6 @@ namespace Sim {
                 PaintBucket coverProps = props as PaintBucket;
 
                 if (coverProps) {
-                    Debug.Log("Set cover properties");
                     coverProps.Init(delivery.PaintConfigId, delivery.Color);
                 }
             }
@@ -160,13 +159,10 @@ namespace Sim {
             if (request.responseCode == 200) {
                 NetworkServer.Spawn(props.gameObject);
 
-                Debug.Log("Server: Props spawned, now we need to save home");
                 StartCoroutine(apartmentController.Save());
 
-                Debug.Log("Server: Retrieve deliveries");
                 yield return StartCoroutine(deliveryBox.RetrieveDeliveries());
 
-                Debug.Log("Server: Refresh player view");
                 this.TargetPropsCreated(sender);
 
                 deliveryBox.RefreshPlayerUI(sender);

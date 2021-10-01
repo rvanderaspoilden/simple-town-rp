@@ -25,7 +25,7 @@ public class HallController : NetworkBehaviour {
     [SerializeField]
     private GeographicArea geographicArea;
 
-    private HashSet<NetworkIdentity> playersInside = new HashSet<NetworkIdentity>();
+    private HashSet<NetworkConnection> playersInside = new HashSet<NetworkConnection>();
 
     [SyncVar]
     private string street;
@@ -121,7 +121,7 @@ public class HallController : NetworkBehaviour {
     public void MoveToSpawn(NetworkConnectionToClient conn) {
         if (this.isGenerated) {
             conn.Send(new TeleportMessage {destination = this.elevator.SpawnTransform.position});
-            this.playersInside.Add(conn.identity);
+            this.playersInside.Add(conn);
         } else {
             this.playersToMove.Add(conn, -1);
         }
@@ -133,7 +133,7 @@ public class HallController : NetworkBehaviour {
             ApartmentController apartmentTarget = GetApartmentByDoorNumber(doorNumber);
 
             conn.Send(new TeleportMessage {destination = apartmentTarget.SpawnPosition.position});
-            this.playersInside.Add(conn.identity);
+            this.playersInside.Add(conn);
         } else {
             this.playersToMove.Add(conn, doorNumber);
         }
@@ -159,16 +159,26 @@ public class HallController : NetworkBehaviour {
                 }
 
                 entry.Key.Send(teleportMessage);
-                this.playersInside.Add(entry.Key.identity);
+                this.playersInside.Add(entry.Key);
             }
 
             this.playersToMove.Clear();
         }
     }
 
-    public void RemovePlayer(NetworkIdentity networkIdentity) => this.playersInside.Remove(networkIdentity);
+    public void RemovePlayer(NetworkIdentity networkIdentity) {
+        this.playersInside.Remove(networkIdentity.connectionToClient);
+        
+        Debug.Log($"[HallController] [RemovePlayer] There is {this.playersInside.Count} players in floor {this.floorNumber}");
+        Debug.Log($"[HallController] [RemovePlayer] There is {this.playersToMove.Count} players awaiting in floor {this.floorNumber}");
+    }
 
-    public bool ContainPlayers() => this.playersInside.Count > 0 || this.playersToMove.Count > 0;
+    public bool ContainPlayers() {
+        Debug.Log($"[HallController] [ContainPlayers] There is {this.playersInside.Count} players in floor {this.floorNumber}");
+        Debug.Log($"[HallController] [ContainPlayers] There is {this.playersToMove.Count} players awaiting in floor {this.floorNumber}");
+        
+        return this.playersInside.Count > 0 || this.playersToMove.Count > 0;
+    }
 
     public int FloorNumber => floorNumber;
 
@@ -183,7 +193,10 @@ public class HallController : NetworkBehaviour {
     private void RemoveDisconnectedPlayer(int connId) {
         Debug.Log($"Server : [HallController] a player has disconnected so remove from player inside list");
 
-        this.playersInside = new HashSet<NetworkIdentity>(this.playersInside.Where(x => x != null && x.isActiveAndEnabled).ToList());
+        this.playersInside = new HashSet<NetworkConnection>(this.playersInside.Where(x => x != null && x.connectionId != connId).ToList());
+        
+        Debug.Log($"[HallController] [RemoveDisconnectedPlayer] There is {this.playersInside.Count} players in floor {this.floorNumber}");
+        Debug.Log($"[HallController] [RemoveDisconnectedPlayer] There is {this.playersToMove.Count} players awaiting in floor {this.floorNumber}");
         
         this.associatedBuilding.TryToCleanHall(this);
     }

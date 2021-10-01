@@ -29,14 +29,10 @@ namespace Sim.Interactables {
         }
 
         protected override void AssignParent() {
-            if (parentId == 0) return;
-
             Vector3 position = this.transform.position;
 
-            if (!isClientOnly) return;
-
-            if (NetworkIdentity.spawned.ContainsKey(this.parentId)) {
-                this.hallController = NetworkIdentity.spawned[this.parentId].GetComponent<HallController>();
+            if (NetworkIdentity.spawned.ContainsKey(ParentId)) {
+                this.hallController = NetworkIdentity.spawned[ParentId].GetComponent<HallController>();
                 this.transform.SetParent(this.hallController.transform);
                 this.transform.localPosition = position;
             } else {
