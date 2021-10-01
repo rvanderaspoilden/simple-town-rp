@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 namespace Sim.Building {
-    public class SimpleDoor : NetworkBehaviour {
+    public class SimpleDoor : NetworkEntity {
         [Header("Settings")]
         [SerializeField]
         private Vector3 openedLocalRotation = new Vector3(0, -90, 0);
@@ -39,18 +39,8 @@ namespace Sim.Building {
         [SyncVar(hook = nameof(OnLockStateChanged))]
         private DoorLockState lockState;
 
-        [SyncVar]
-        private uint parentId;
-
-
         protected void Awake() {
             this.colliderTriggered = new List<Collider>();
-        }
-
-        public override void OnStartClient() {
-            base.OnStartClient();
-
-            AssignParent();
         }
 
         public override void OnStartServer() {
@@ -71,28 +61,6 @@ namespace Sim.Building {
         public void SetLockState(DoorLockState state) {
             lockState = state;
             this.CheckState();
-        }
-
-        protected virtual void AssignParent() {
-            if (parentId == 0) return;
-
-            Vector3 position = this.transform.position;
-            Quaternion rotation = this.transform.rotation;
-
-            if (!isClientOnly) return;
-
-            if (NetworkIdentity.spawned.ContainsKey(this.parentId)) {
-                this.transform.SetParent(NetworkIdentity.spawned[this.parentId].transform);
-                this.transform.localPosition = position;
-                this.transform.localRotation = rotation;
-            } else {
-                Debug.LogError($"Parent identity not found for door {this.name}");
-            }
-        }
-
-        public uint ParentId {
-            get => parentId;
-            set => parentId = value;
         }
 
         [Client]

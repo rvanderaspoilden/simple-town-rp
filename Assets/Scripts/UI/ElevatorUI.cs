@@ -42,8 +42,6 @@ public class ElevatorUI : MonoBehaviour {
         if (int.TryParse(this.searchTxt.text, out var floorToGo)) {
             int originFloor = this.teleporterBind.HallController ? this.teleporterBind.HallController.FloorNumber : 0;
 
-            Debug.Log($"{originFloor} - {floorToGo}");
-            
             if (originFloor != floorToGo) {
                 HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
                 this.teleporterBind.CmdUse(floorToGo);

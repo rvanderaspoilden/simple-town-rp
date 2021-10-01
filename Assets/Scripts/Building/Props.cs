@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
 using DG.Tweening;
 using Mirror;
@@ -9,7 +10,7 @@ using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     [RequireComponent(typeof(PropsRenderer))]
-    public class Props : NetworkBehaviour {
+    public class Props : NetworkEntity {
         [Header("Props settings")]
         [SerializeField]
         protected PropsConfig configuration;
@@ -23,10 +24,6 @@ namespace Sim.Building {
 
         [SyncVar(hook = nameof(SetIsBuilt))]
         private bool built;
-
-        [SyncVar]
-        [SerializeField]
-        protected uint parentId;
 
         protected PropsRenderer propsRenderer;
 
@@ -53,10 +50,6 @@ namespace Sim.Building {
             this.ConfigureActions();
         }
 
-        public override void OnStartClient() {
-            this.AssignParent();
-        }
-
         public override void OnStartServer() {
             base.OnStartServer();
 
@@ -70,22 +63,19 @@ namespace Sim.Building {
             this.UnSubscribeActions(this.unbuiltActions);
         }
 
-        protected virtual void AssignParent() {
-            if (parentId == 0) return;
+        protected override void AssignParent() {
+            Transform curTransform = this.transform;
+            Vector3 position = curTransform.position;
+            Quaternion rotation = curTransform.rotation;
 
-            Vector3 position = this.transform.position;
-            Quaternion rotation = this.transform.rotation;
-
-            this.apartmentController = NetworkIdentity.spawned.ContainsKey(this.parentId)
-                ? NetworkIdentity.spawned[this.parentId].GetComponent<ApartmentController>()
+            this.apartmentController = NetworkIdentity.spawned.ContainsKey(ParentId)
+                ? NetworkIdentity.spawned[ParentId].GetComponent<ApartmentController>()
                 : null;
 
-            if (!isClientOnly) return;
-
             if (this.apartmentController) {
-                this.transform.SetParent(this.apartmentController.PropsContainer);
-                this.transform.localPosition = position;
-                this.transform.localRotation = rotation;
+                curTransform.SetParent(this.apartmentController.PropsContainer);
+                curTransform.localPosition = position;
+                curTransform.localRotation = rotation;
             } else {
                 Debug.LogError($"Parent identity not found for props {this.name}");
             }
@@ -97,11 +87,6 @@ namespace Sim.Building {
 
         public void InitBuilt(bool isBuilt) {
             this.built = isBuilt;
-        }
-
-        public uint ParentId {
-            get => parentId;
-            set => parentId = value;
         }
 
         public ApartmentController ApartmentController {

@@ -171,8 +171,6 @@ namespace Sim.Building {
 
         [Server]
         private void RemoveDisconnectedPlayer(int connId) {
-            Debug.Log($"Server : [Seat] a player has disconnected so remove from sit and couch");
-
             int couchIdx = GetKeyFromValue(this.charactersAssociatedToCouchIdx, connId);
 
             if (couchIdx != -1) this.charactersAssociatedToCouchIdx.Remove(couchIdx);

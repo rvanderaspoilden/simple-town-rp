@@ -13,7 +13,7 @@ using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
 namespace Sim {
-    public class ApartmentController : NetworkBehaviour {
+    public class ApartmentController : NetworkEntity {
         [Header("Settings")]
         [SerializeField]
         private FrontDoor frontDoorPrefab;
@@ -63,9 +63,6 @@ namespace Sim {
 
         [SerializeField]
         private FrontDoor frontDoor;
-
-        [SyncVar]
-        private uint parentId;
 
         [SyncVar(hook = nameof(OnSetAddress))]
         [SerializeField]
@@ -122,21 +119,12 @@ namespace Sim {
             }
         }
 
-        public override void OnStartClient() {
-            base.OnStartClient();
-
-            AssignParent();
-        }
-
         private void OnSetAddress(Address old, Address newValue) {
             this.address = newValue;
-            Debug.Log("OnSetAddress");
 
-            if (NetworkIdentity.spawned.ContainsKey(this.parentId)) {
+            if (NetworkIdentity.spawned.ContainsKey(ParentId)) {
                 this.geographicArea.LocationText =
-                    $"{this.address.street}, Floor {NetworkIdentity.spawned[this.parentId].GetComponent<HallController>().FloorNumber}, Door {this.address.doorNumber}";
-            } else {
-                Debug.LogError($"Parent identity not found for appartment {this.name}");
+                    $"{this.address.street}, Floor {NetworkIdentity.spawned[ParentId].GetComponent<HallController>().FloorNumber}, Door {this.address.doorNumber}";
             }
         }
 
@@ -156,8 +144,6 @@ namespace Sim {
             }
 
             this.currentConfiguration.container.SetActive(true);
-
-            Debug.Log($"OnSetPresetName of {this.name} with presetName : {this.presetName}");
 
             this.coverSettingsByFaces.Callback += OnWallSettingsChanged;
             this.coverSettingsByGround.Callback += OnGroundSettingsChanged;
@@ -193,24 +179,19 @@ namespace Sim {
 
             OnPropsVisibilityModeChanged?.Invoke(mode);
         }
+        
+        protected override void AssignParent() {
+            Transform curTransform = this.transform;
+            Vector3 position = curTransform.position;
 
-        private void AssignParent() {
-            if (parentId == 0) return;
-
-            Vector3 position = this.transform.position;
-
-            if (!isClientOnly) return;
-
-            if (NetworkIdentity.spawned.ContainsKey(this.parentId)) {
-                this.associatedHallController = NetworkIdentity.spawned[this.parentId].GetComponent<HallController>();
-                this.transform.SetParent(this.associatedHallController.transform);
-                this.transform.localPosition = position;
+            if (NetworkIdentity.spawned.ContainsKey(ParentId)) {
+                this.associatedHallController = NetworkIdentity.spawned[ParentId].GetComponent<HallController>();
+                curTransform.SetParent(this.associatedHallController.transform);
+                curTransform.localPosition = position;
 
                 this.geographicArea.LocationText = $"{this.address.street}, Floor {this.associatedHallController.FloorNumber}, Door {this.address.doorNumber}";
-
-                Debug.Log("Assign parent");
             } else {
-                Debug.LogError($"Parent identity not found for appartment {this.name}");
+                Debug.LogError($"[ApartmentController] [AssignParent] Parent identity not found for apartment {this.name}");
             }
         }
 
@@ -282,7 +263,6 @@ namespace Sim {
             Home homeResponse = JsonUtility.FromJson<Home>(request.downloadHandler.text);
 
             if (homeResponse?.Id != null) {
-                Debug.Log($"Home found for Address {address}");
                 this.homeData = homeResponse;
                 this.tenantId = this.homeData.Tenant;
                 this.presetName = this.homeData.Preset;
@@ -299,7 +279,6 @@ namespace Sim {
 
                 this.frontDoor.SetLockState(DoorLockState.UNLOCKED);
             } else {
-                Debug.Log($"No Home found for Address {address}");
                 this.frontDoor.SetLockState(DoorLockState.LOCKED);
                 this.state = ApartmentState.NOT_GENERATED;
                 this.associatedHallController.CheckGenerationState();
@@ -449,12 +428,7 @@ namespace Sim {
         public bool IsTenant(CharacterData character) {
             return character.Id == this.tenantId;
         }
-
-        public uint ParentId {
-            get => parentId;
-            set => parentId = value;
-        }
-
+        
         #region Wall Visibility Management
 
         public void SetWallVisibility(VisibilityModeEnum mode) {
