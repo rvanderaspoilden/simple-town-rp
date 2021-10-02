@@ -66,6 +66,14 @@ namespace Sim {
 
         private void Update() {
             this.Swipe();
+
+            if (Input.GetKeyDown(KeyCode.Escape)) {
+                if (this.phoneOpened) {
+                    this.ClosePhone();
+                } else {
+                    this.OpenPhone();
+                }
+            }
         }
 
         public void OpenApplication(PhoneApplicationButton phoneApplicationButton) {
