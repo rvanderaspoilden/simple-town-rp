@@ -19,15 +19,15 @@ MonoBehaviour:
     m_Value: 1
   gaussianStart:
     m_OverrideState: 1
-    m_Value: 30
+    m_Value: 36
     min: 0
   gaussianEnd:
     m_OverrideState: 1
-    m_Value: 36
+    m_Value: 84
     min: 0
   gaussianMaxRadius:
     m_OverrideState: 1
-    m_Value: 0.555
+    m_Value: 0.5
     min: 0.5
     max: 1.5
   highQualitySampling:
@@ -35,7 +35,7 @@ MonoBehaviour:
     m_Value: 0
   focusDistance:
     m_OverrideState: 1
-    m_Value: 2.58
+    m_Value: 2.73
     min: 0.1
   aperture:
     m_OverrideState: 0
@@ -120,7 +120,7 @@ MonoBehaviour:
     m_Value: 0.18
   contrast:
     m_OverrideState: 1
-    m_Value: 18
+    m_Value: 17
     min: -100
     max: 100
   colorFilter:
@@ -136,7 +136,7 @@ MonoBehaviour:
     max: 180
   saturation:
     m_OverrideState: 1
-    m_Value: 2
+    m_Value: 10
     min: -100
     max: 100
 --- !u!114 &-300819784304523682
@@ -191,19 +191,19 @@ MonoBehaviour:
   m_AdvancedMode: 0
   shadows:
     m_OverrideState: 1
-    m_Value: {r: 0.5754717, g: 0.5754717, b: 0.5754717, a: 1}
+    m_Value: {r: 0.4433962, g: 0.4433962, b: 0.4433962, a: 1}
     hdr: 0
     showAlpha: 0
     showEyeDropper: 1
   highlights:
     m_OverrideState: 1
-    m_Value: {r: 0.7924528, g: 0.75133497, b: 0.75133497, a: 1}
+    m_Value: {r: 0.9716981, g: 0.9716981, b: 0.9716981, a: 1}
     hdr: 0
     showAlpha: 0
     showEyeDropper: 1
   balance:
     m_OverrideState: 1
-    m_Value: 21
+    m_Value: -2
     min: -100
     max: 100
 --- !u!114 &11400000
