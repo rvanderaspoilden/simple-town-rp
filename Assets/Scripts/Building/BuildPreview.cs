@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using DG.Tweening.Core;
 using Sim.Enums;
 using UnityEngine;
 using UnityEngine.AI;
@@ -97,16 +98,18 @@ namespace Sim.Building {
         private bool CheckWallPropsIntegrity() {
             this.colliderBounds = this.transform.InverseTransformDirection(this.collider.bounds.extents);
 
-            Vector3 upperLeftPos = this.transform.position + this.transform.TransformDirection(new Vector3(-this.colliderBounds.x, this.colliderBounds.y, 0));
-            Vector3 upperRightPos = this.transform.position + this.transform.TransformDirection(new Vector3(this.colliderBounds.x, this.colliderBounds.y, 0));
-            Vector3 lowerLeftPos = this.transform.position + this.transform.TransformDirection(new Vector3(-this.colliderBounds.x, -this.colliderBounds.y, 0));
-            Vector3 lowerRightPos = this.transform.position + this.transform.TransformDirection(new Vector3(this.colliderBounds.x, -this.colliderBounds.y, 0));
+            Vector3 offset = this.transform.TransformDirection(new Vector3(0, ((BoxCollider)this.collider).center.y, 0));
+            
+            Vector3 upperLeftPos = this.transform.position + offset + this.transform.TransformDirection(new Vector3(-this.colliderBounds.x, this.colliderBounds.y, 0));
+            Vector3 upperRightPos = this.transform.position + offset + this.transform.TransformDirection(new Vector3(this.colliderBounds.x, this.colliderBounds.y, 0));
+            Vector3 lowerLeftPos = this.transform.position + offset + this.transform.TransformDirection(new Vector3(-this.colliderBounds.x, -this.colliderBounds.y, 0));
+            Vector3 lowerRightPos = this.transform.position + offset + this.transform.TransformDirection(new Vector3(this.colliderBounds.x, -this.colliderBounds.y, 0));
 
             bool isUpperLeftValid = Physics.Raycast(upperLeftPos, -this.transform.forward, Mathf.Abs(this.colliderBounds.z) + 0.1f, (1 << 12));
             bool isUpperRightValid = Physics.Raycast(upperRightPos, -this.transform.forward, Mathf.Abs(this.colliderBounds.z) + 0.1f, (1 << 12));
             bool isLowerLeftValid = Physics.Raycast(lowerLeftPos, -this.transform.forward, Mathf.Abs(this.colliderBounds.z) + 0.1f, (1 << 12));
             bool isLowerRightValid = Physics.Raycast(lowerRightPos, -this.transform.forward, Mathf.Abs(this.colliderBounds.z) + 0.1f, (1 << 12));
-            
+
             return this.transform.rotation.eulerAngles != Vector3.zero && isUpperLeftValid && isUpperRightValid && isLowerRightValid && isLowerLeftValid;
         }
 
@@ -114,7 +117,7 @@ namespace Sim.Building {
             if (other.CompareTag("Buildable Area") && this.buildableArea != other) {
                 this.buildableArea = other;
                 this.isInBuildableArea = this.buildableArea.GetComponentInParent<ApartmentController>().IsTenant(PlayerController.Local.CharacterData);
-            } else if(!other.CompareTag("Buildable Area") && !other.CompareTag("Roof") && !other.CompareTag("Dissonance") && !other.CompareTag("Geographic Area")){
+            } else if (!other.CompareTag("Buildable Area") && !other.CompareTag("Roof") && !other.CompareTag("Dissonance") && !other.CompareTag("Geographic Area")) {
                 if (this.currentProps.IsWallProps() && !this.colliderTriggered.Find(x => x == other)) {
                     this.colliderTriggered.Add(other);
                 } else if (this.currentProps.IsGroundProps() && other.gameObject.layer != LayerMask.NameToLayer("Ground") &&
@@ -138,7 +141,7 @@ namespace Sim.Building {
 
         private void CheckValidity() {
             if (navMeshObstacle && navMeshObstacle.enabled) return;
-                
+
             this.haveFreeArea = this.colliderTriggered.Count(x => x.gameObject.activeInHierarchy) == 0;
             this.placeable = this.haveFreeArea && this.detectGround && this.validRotation && this.isInBuildableArea;
 

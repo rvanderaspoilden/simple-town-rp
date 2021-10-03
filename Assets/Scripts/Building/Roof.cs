@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Sim;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 public class Roof : MonoBehaviour {
     [Header("Settings")]
@@ -12,7 +11,13 @@ public class Roof : MonoBehaviour {
 
     private bool cameraInside;
 
-    private void OnTriggerEnter(Collider other) {
+    private static readonly int Surface = Shader.PropertyToID("_Surface");
+
+    private void Awake() {
+        this.renderersToHide.ForEach(x => x.material = new Material(x.material));
+    }
+
+    private void OnTriggerStay(Collider other) {
         if (PlayerController.Local && other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
             playerInside = true;
         } else if (other.CompareTag("MainCamera")) {
@@ -37,7 +42,7 @@ public class Roof : MonoBehaviour {
     }
 
     private void Show() {
-        this.renderersToHide.ForEach(x => x.enabled = true);
+        this.renderersToHide.ForEach(x =>  x.enabled = true);
     }
 
     private void Hide() {
