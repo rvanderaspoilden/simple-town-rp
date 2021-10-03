@@ -11,7 +11,8 @@
         PAINT,
         OPEN,
         TELEPORT,
-        UNPACKAGE
+        UNPACKAGE,
+        PICK
     }
 
 }

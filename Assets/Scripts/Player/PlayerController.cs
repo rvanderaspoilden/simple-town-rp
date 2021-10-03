@@ -63,7 +63,7 @@ namespace Sim {
 
         [SyncVar(hook = nameof(ParseCharacterData))]
         private string rawCharacterData;
-        
+
         [SyncVar(hook = nameof(ParseCharacterHome))]
         private string rawCharacterHome;
 
@@ -158,7 +158,7 @@ namespace Sim {
             this.isTalking = newValue;
             this.bubbleUI.SetVoiceBubbleVisibility(this.isTalking);
         }
-        
+
         public void PlayStepSound() {
             this.audioSource.volume = 0.005f;
             this.audioSource.pitch = Random.Range(1f, 1.2f);
@@ -167,7 +167,7 @@ namespace Sim {
 
         public void ResetGeographicArea() {
             this.currentGeographicArea.Clear();
-            
+
             this.RefreshDefaultView();
         }
 
@@ -187,7 +187,7 @@ namespace Sim {
 
         private void RefreshDefaultView() {
             if (!DefaultViewUI.Instance) return;
-            
+
             GeographicArea current = CurrentGeographicArea;
 
             if (current) {
@@ -210,7 +210,7 @@ namespace Sim {
             get => rawCharacterData;
             set => rawCharacterData = value;
         }
-        
+
         public void ParseCharacterData(string old, string newValue) {
             this.characterData = JsonUtility.FromJson<CharacterData>(newValue);
             this.characterStyleSetup.ApplyStyle(this.CharacterData.Style);
@@ -229,7 +229,7 @@ namespace Sim {
             if (!isLocalPlayer || this.stateMachine == null) return;
 
             this.stateMachine.Tick();
-            
+
             if (!this.isTalking && Input.GetAxis("GlobalChat") != 0f) {
                 this.CmdSetTalk(true);
                 this.bubbleUI.SetVoiceBubbleVisibility(true);
@@ -381,7 +381,7 @@ namespace Sim {
             OnStateChanged?.Invoke(this, stateType);
         }
 
-        public void  SetMood(MoodConfig moodConfig) {
+        public void SetMood(MoodConfig moodConfig) {
             this.characterData.Mood = moodConfig.MoodEnum;
             this.animator.SetMood((int) moodConfig.MoodEnum);
             OnCharacterDataChanged?.Invoke(this.characterData);
@@ -473,6 +473,26 @@ namespace Sim {
                 }
 
                 return hitProps.Equals(propsToInteract);
+            }
+
+            return false;
+        }
+
+        public bool CanInteractWith(Item itemToInteract, Vector3 hitPoint) {
+            Vector3 origin = Vector3.Scale(hitPoint, new Vector3(1, 0, 1));
+            Vector3 target = Vector3.Scale(this.transform.position, new Vector3(1, 0, 1));
+
+            if (Mathf.Abs(Vector3.Distance(origin, target)) > 1f) {
+                return false;
+            }
+
+            Vector3 dir = hitPoint - this.GetHeadTargetForCamera().position;
+            RaycastHit hit;
+            
+            if (Physics.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
+                Item hitItem = hit.collider.GetComponentInParent<Item>();
+
+                return hitItem && hitItem.Equals(itemToInteract);
             }
 
             return false;

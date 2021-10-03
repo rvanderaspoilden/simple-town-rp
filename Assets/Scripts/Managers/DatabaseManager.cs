@@ -21,6 +21,7 @@ namespace Sim {
         public static PaintDatabaseConfig PaintDatabase;
         public static List<MoodConfig> MoodConfigs;
         public static List<ShopCategoryConfig> ShopCategoryConfigs;
+        public static List<ItemConfig> ItemConfigs;
 
         public static DatabaseManager Instance;
 
@@ -42,6 +43,9 @@ namespace Sim {
             
             ShopCategoryConfigs = Resources.LoadAll<ShopCategoryConfig>("Configurations/Shop/Categories").ToList();
             Debug.Log("Shop Category Configs loaded : " + ShopCategoryConfigs.Count);
+            
+            ItemConfigs = Resources.LoadAll<ItemConfig>("Configurations/Items").ToList();
+            Debug.Log("Item Configs loaded : " + ItemConfigs.Count);
 
             RegisterPrefabs();
 
@@ -51,6 +55,10 @@ namespace Sim {
         private static void RegisterPrefabs() {
             foreach (PropsConfig propsConfig in PropsDatabase.GetProps()) {
                 NetworkManager.singleton.spawnPrefabs.Add(propsConfig.GetPrefab().gameObject);
+            }
+            
+            foreach (ItemConfig config in ItemConfigs) {
+                NetworkManager.singleton.spawnPrefabs.Add(config.Prefab.gameObject);
             }
         }
 

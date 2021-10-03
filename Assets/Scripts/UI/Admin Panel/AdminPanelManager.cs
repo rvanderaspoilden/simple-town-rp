@@ -10,10 +10,14 @@ public class AdminPanelManager : MonoBehaviour {
 
     [SerializeField]
     private Transform teleportContentTransform;
+    
+    [SerializeField]
+    private Transform itemSpawnerContentTransform;
 
     // Start is called before the first frame update
     void Start() {
         this.InitTeleportPlaces();
+        this.InitSpawnerItems();
     }
 
     private void InitTeleportPlaces() {
@@ -22,6 +26,16 @@ public class AdminPanelManager : MonoBehaviour {
             button.GetComponentInChildren<TextMeshProUGUI>().text = teleportPosition.DisplayName;
             button.onClick.AddListener((() => {
                 PlayerController.Local.connectionToServer.Send(new TeleportMessage() { destination = teleportPosition.GetPosition() });
+            }));
+        }
+    }
+    
+    private void InitSpawnerItems() {
+        foreach (var itemConfig in DatabaseManager.ItemConfigs) {
+            Button button = Instantiate(this.buttonPrefab, this.itemSpawnerContentTransform);
+            button.GetComponentInChildren<TextMeshProUGUI>().text = itemConfig.Label;
+            button.onClick.AddListener((() => {
+                PlayerController.Local.connectionToServer.Send(new SpawnItemMessage() { itemId = itemConfig.ID, position = PlayerController.Local.transform.position});
             }));
         }
     }
