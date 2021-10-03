@@ -64,6 +64,8 @@ public class SimpleTownNetwork : NetworkManager {
     /// </summary>
     public override void Awake() {
         base.Awake();
+
+        Application.targetFrameRate = 144;
     }
 
     /// <summary>

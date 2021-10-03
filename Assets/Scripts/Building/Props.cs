@@ -56,6 +56,12 @@ namespace Sim.Building {
             if (this.defaultPresetId != -1) {
                 PresetId = this.defaultPresetId;
             }
+
+            if (isClient) {
+                this.apartmentController = NetworkIdentity.spawned.ContainsKey(ParentId)
+                    ? NetworkIdentity.spawned[ParentId].GetComponent<ApartmentController>()
+                    : null;
+            }
         }
 
         protected virtual void OnDestroy() {

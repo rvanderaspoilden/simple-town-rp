@@ -144,7 +144,6 @@ public class HallController : NetworkBehaviour {
         this.isGenerated = this.generatedApartments.Where(x => x.State != ApartmentState.NOT_CREATED).ToList().Count == this.generatedApartments.Count;
 
         if (this.isGenerated) {
-            Debug.Log("Hall is generated so teleport player");
             foreach (KeyValuePair<NetworkConnection, int> entry in this.playersToMove) {
                 TeleportMessage teleportMessage = new TeleportMessage {destination = this.elevator.SpawnTransform.position};
 
@@ -168,15 +167,9 @@ public class HallController : NetworkBehaviour {
 
     public void RemovePlayer(NetworkIdentity networkIdentity) {
         this.playersInside.Remove(networkIdentity.connectionToClient);
-        
-        Debug.Log($"[HallController] [RemovePlayer] There is {this.playersInside.Count} players in floor {this.floorNumber}");
-        Debug.Log($"[HallController] [RemovePlayer] There is {this.playersToMove.Count} players awaiting in floor {this.floorNumber}");
     }
 
     public bool ContainPlayers() {
-        Debug.Log($"[HallController] [ContainPlayers] There is {this.playersInside.Count} players in floor {this.floorNumber}");
-        Debug.Log($"[HallController] [ContainPlayers] There is {this.playersToMove.Count} players awaiting in floor {this.floorNumber}");
-        
         return this.playersInside.Count > 0 || this.playersToMove.Count > 0;
     }
 
@@ -191,12 +184,7 @@ public class HallController : NetworkBehaviour {
     
     [Server]
     private void RemoveDisconnectedPlayer(int connId) {
-        Debug.Log($"Server : [HallController] a player has disconnected so remove from player inside list");
-
         this.playersInside = new HashSet<NetworkConnection>(this.playersInside.Where(x => x != null && x.connectionId != connId).ToList());
-        
-        Debug.Log($"[HallController] [RemoveDisconnectedPlayer] There is {this.playersInside.Count} players in floor {this.floorNumber}");
-        Debug.Log($"[HallController] [RemoveDisconnectedPlayer] There is {this.playersToMove.Count} players awaiting in floor {this.floorNumber}");
         
         this.associatedBuilding.TryToCleanHall(this);
     }
