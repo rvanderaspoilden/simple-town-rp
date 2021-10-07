@@ -296,8 +296,8 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1.9844134, y: 2.2195787, z: 0.546076}
-  m_Center: {x: 0.005469084, y: 1.118403, z: 0.27618268}
+  m_Size: {x: 2.0460896, y: 2.2270336, z: 0.56159014}
+  m_Center: {x: -0.0022125244, y: 1.1146755, z: 0}
 --- !u!208 &1466626548839341318
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -308,11 +308,11 @@ NavMeshObstacle:
   m_Enabled: 1
   serializedVersion: 3
   m_Shape: 1
-  m_Extents: {x: 0.9922065, y: 1.1097895, z: 0.273038}
+  m_Extents: {x: 1.023045, y: 1.113517, z: 0.28079504}
   m_MoveThreshold: 0.1
   m_Carve: 1
   m_CarveOnlyStationary: 1
-  m_Center: {x: 0.005469084, y: 1.118403, z: 0.2761827}
+  m_Center: {x: -0.002212524, y: 1.114676, z: 0}
   m_TimeToStationary: 0.5
 --- !u!54 &8940089333339960254
 Rigidbody:
@@ -373,7 +373,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 3d501203f5a3afa4fa22afe6fce19584, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!114 &-6149607149375590553
 MonoBehaviour:
   m_ObjectHideFlags: 0
