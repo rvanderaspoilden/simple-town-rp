@@ -3621,7 +3621,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Add to cart
+  m_text: Ajouter au panier
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37bcb7a2340d2e744a5c2ecb2e776214, type: 2}
   m_sharedMaterial: {fileID: -1874975516729650738, guid: 37bcb7a2340d2e744a5c2ecb2e776214,
@@ -4679,7 +4679,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Apply
+  m_text: Appliquer
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: bac22f22b6065f14dbe2cb910a85ad7f, type: 2}
   m_sharedMaterial: {fileID: -4694863301002460360, guid: bac22f22b6065f14dbe2cb910a85ad7f,
@@ -4707,10 +4707,10 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24.09
+  m_fontSize: 23.75
   m_fontSizeBase: 24.09
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 8
   m_fontSizeMax: 72
   m_fontStyle: 16
@@ -5412,7 +5412,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Do you need help ?
+  m_text: Besoin d'aide ?
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37bcb7a2340d2e744a5c2ecb2e776214, type: 2}
   m_sharedMaterial: {fileID: -1874975516729650738, guid: 37bcb7a2340d2e744a5c2ecb2e776214,
@@ -5440,7 +5440,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 19.6
+  m_fontSize: 25.25
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -7463,7 +7463,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: preview
+  m_text: "Aper\xE7u"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: bac22f22b6065f14dbe2cb910a85ad7f, type: 2}
   m_sharedMaterial: {fileID: -4694863301002460360, guid: bac22f22b6065f14dbe2cb910a85ad7f,
@@ -8966,7 +8966,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Are you sure ?
+  m_text: "\xCAtes-vous s\xFBr ?"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37bcb7a2340d2e744a5c2ecb2e776214, type: 2}
   m_sharedMaterial: {fileID: -1874975516729650738, guid: 37bcb7a2340d2e744a5c2ecb2e776214,
@@ -11117,7 +11117,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Check your delivery box to retrieve the order.
+  m_text: "Ta commande a \xE9t\xE9 livr\xE9e dans ta boite \xE0 colis."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37bcb7a2340d2e744a5c2ecb2e776214, type: 2}
   m_sharedMaterial: {fileID: -1874975516729650738, guid: 37bcb7a2340d2e744a5c2ecb2e776214,
@@ -11328,7 +11328,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Search something....
+  m_text: Rechercher...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37bcb7a2340d2e744a5c2ecb2e776214, type: 2}
   m_sharedMaterial: {fileID: -1874975516729650738, guid: 37bcb7a2340d2e744a5c2ecb2e776214,
@@ -11483,7 +11483,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: EDIT MODE
+  m_text: MODE EDITION
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 719e796e2b0afd44f9aede495581dfb9, type: 2}
   m_sharedMaterial: {fileID: 594353164542243810, guid: 719e796e2b0afd44f9aede495581dfb9,
@@ -15084,7 +15084,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: slide to leave
+  m_text: Glisser pour quitter
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37bcb7a2340d2e744a5c2ecb2e776214, type: 2}
   m_sharedMaterial: {fileID: -1874975516729650738, guid: 37bcb7a2340d2e744a5c2ecb2e776214,
@@ -16521,6 +16521,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3632413427873121931, guid: 1a347f06f8d02184d9735d2c820c891a,
         type: 3}
+      propertyPath: m_text
+      value: Quitter
+      objectReference: {fileID: 0}
+    - target: {fileID: 3632413427873121931, guid: 1a347f06f8d02184d9735d2c820c891a,
+        type: 3}
       propertyPath: m_fontColor.b
       value: 0
       objectReference: {fileID: 0}
@@ -17935,6 +17940,11 @@ PrefabInstance:
       propertyPath: application
       value: 
       objectReference: {fileID: 4368973098924545094}
+    - target: {fileID: 7895775840669027512, guid: acb4eb0e001568d4d9ae9557b9ee3bf1,
+        type: 3}
+      propertyPath: m_text
+      value: Magasin
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: acb4eb0e001568d4d9ae9557b9ee3bf1, type: 3}
 --- !u!224 &5263253204007028288 stripped

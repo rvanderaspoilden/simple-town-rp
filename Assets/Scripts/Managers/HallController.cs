@@ -58,7 +58,7 @@ public class HallController : NetworkBehaviour {
     
     public void OnGenerationFinished(bool old, bool newValue) {
         this.isGenerated = newValue;
-        this.geographicArea.LocationText = $"{this.street}, Floor {this.floorNumber}";
+        this.geographicArea.LocationText = $"{this.street}, Étage {this.floorNumber}";
     }
 
     [Server]

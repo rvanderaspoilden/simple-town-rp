@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Christmas_tree
   m_EditorClassIdentifier: 
   id: 39
-  displayName: Christmas tree
+  displayName: "Arbre de no\xEBl"
   sprite: {fileID: 0}
   propsType: 4
   buyable: 1
@@ -22,6 +22,7 @@ MonoBehaviour:
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
+  hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 1
   rangeToInteract: 1
