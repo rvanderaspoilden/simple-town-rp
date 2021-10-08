@@ -55,7 +55,7 @@ namespace Sim.UI {
 
         public void Setup(CharacterData characterData) {
             this.SetText(this.nameText, characterData.Identity.FullName);
-            this.SetText(this.jobText, "UNEMPLOYED");
+            this.SetText(this.jobText, "CHÔMEUR");
             this.SetText(this.moneyText, characterData.Money.ToString());
 
             this.SetFillBarAmount(this.thirstBar, characterData.Health.Thirst / CommonConstants.MAX_BAR_AMOUNT);
@@ -67,7 +67,7 @@ namespace Sim.UI {
 
         public void Setup(Home home) {
             this.addressHotelText.text = home.Address.street;
-            this.addressDoorText.text = $"Floor {Mathf.CeilToInt(home.Address.doorNumber / (float)6)}, Apt {home.Address.doorNumber}";
+            this.addressDoorText.text = $"Étage {Mathf.CeilToInt(home.Address.doorNumber / (float)6)}, Appt {home.Address.doorNumber}";
         }
 
         private void SetText(TextMeshProUGUI tmpPro, string value) {

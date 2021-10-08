@@ -124,7 +124,7 @@ namespace Sim {
 
             if (NetworkIdentity.spawned.ContainsKey(ParentId)) {
                 this.geographicArea.LocationText =
-                    $"{this.address.street}, Floor {NetworkIdentity.spawned[ParentId].GetComponent<HallController>().FloorNumber}, Door {this.address.doorNumber}";
+                    $"{this.address.street}, Étage {NetworkIdentity.spawned[ParentId].GetComponent<HallController>().FloorNumber}, Porte {this.address.doorNumber}";
             }
         }
 
@@ -189,7 +189,7 @@ namespace Sim {
                 curTransform.SetParent(this.associatedHallController.transform);
                 curTransform.localPosition = position;
 
-                this.geographicArea.LocationText = $"{this.address.street}, Floor {this.associatedHallController.FloorNumber}, Door {this.address.doorNumber}";
+                this.geographicArea.LocationText = $"{this.address.street}, Étage {this.associatedHallController.FloorNumber}, Porte {this.address.doorNumber}";
             } else {
                 Debug.LogError($"[ApartmentController] [AssignParent] Parent identity not found for apartment {this.name}");
             }
