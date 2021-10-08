@@ -18,7 +18,7 @@ public class NetworkEntity : NetworkBehaviour
     private IEnumerator AssignParentCoroutine() {
         int retryCounter = 0;
 
-        while (retryCounter < 5 && !NetworkIdentity.spawned.ContainsKey(this.parentId)) {
+        while (retryCounter < 10 && !NetworkIdentity.spawned.ContainsKey(this.parentId)) {
             retryCounter++;
             yield return new WaitForSeconds(.3f);
         }
