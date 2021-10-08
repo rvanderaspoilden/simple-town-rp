@@ -185,6 +185,7 @@ GameObject:
   - component: {fileID: 60903504}
   - component: {fileID: 60903506}
   - component: {fileID: 60903505}
+  - component: {fileID: 60903507}
   m_Layer: 5
   m_Name: Tiktok Icon
   m_TagString: Untagged
@@ -249,6 +250,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 60903503}
   m_CullTransparentMesh: 1
+--- !u!114 &60903507
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 60903503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19695d80116315745836d5bfb8046303, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  urlToRedirect: https://www.tiktok.com/@hermitgames
 --- !u!1 &108647467
 GameObject:
   m_ObjectHideFlags: 0
@@ -2385,6 +2399,7 @@ GameObject:
   - component: {fileID: 793914757}
   - component: {fileID: 793914759}
   - component: {fileID: 793914758}
+  - component: {fileID: 793914760}
   m_Layer: 5
   m_Name: HGame Icon
   m_TagString: Untagged
@@ -2449,6 +2464,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 793914756}
   m_CullTransparentMesh: 1
+--- !u!114 &793914760
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793914756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19695d80116315745836d5bfb8046303, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  urlToRedirect: https://www.facebook.com/HermitGames
 --- !u!1001 &848700043
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2604,7 +2632,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.42178127, y: 0.5292284}
   m_AnchorMax: {x: 0.57843757, y: 0.5656142}
-  m_AnchoredPosition: {x: -0.44010162, y: 0.0000076293945}
+  m_AnchoredPosition: {x: -0.440094, y: 0.0000076293945}
   m_SizeDelta: {x: -0.36999893, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &911045530
@@ -5074,6 +5102,7 @@ GameObject:
   - component: {fileID: 1862492665}
   - component: {fileID: 1862492667}
   - component: {fileID: 1862492666}
+  - component: {fileID: 1862492668}
   m_Layer: 5
   m_Name: Discord Icon
   m_TagString: Untagged
@@ -5138,6 +5167,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1862492664}
   m_CullTransparentMesh: 1
+--- !u!114 &1862492668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1862492664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19695d80116315745836d5bfb8046303, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  urlToRedirect: https://discord.gg/M4Vct7gbhV
 --- !u!1 &1950013268
 GameObject:
   m_ObjectHideFlags: 0
