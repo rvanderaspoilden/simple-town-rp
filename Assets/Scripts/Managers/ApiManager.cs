@@ -180,8 +180,12 @@ namespace Sim {
             StartCoroutine(this.RetrieveCharactersCoroutine());
         }
 
-        public UnityWebRequest RetrieveCharacterRequest(string userId) {
+        public UnityWebRequest RetrieveCharacterByUserIdRequest(string userId) {
             return UnityWebRequest.Get($"{this.uri}/characters/by-user-id/{userId}");
+        }
+        
+        public UnityWebRequest RetrieveCharacterByIdRequest(string id) {
+            return UnityWebRequest.Get($"{this.uri}/characters/{id}");
         }
 
         private IEnumerator RetrieveCharactersCoroutine(Action<CharacterData> action = null) {

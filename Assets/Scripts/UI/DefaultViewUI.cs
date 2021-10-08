@@ -12,6 +12,9 @@ namespace Sim {
 
         [SerializeField]
         private TextMeshProUGUI locationText;
+
+        [SerializeField]
+        private TextMeshProUGUI tenantText;
         
         [SerializeField]
         private RectTransform phone;
@@ -36,10 +39,17 @@ namespace Sim {
             this.HidePropsContentUI();
             this.HideElevatorUI();
             this.SetLocationText("Salmon Hotel");
+            this.SetTenantText(string.Empty);
         }
 
         public void SetLocationText(string value) {
             foreach (TextMeshProUGUI tmpPro in this.locationText.GetComponentsInChildren<TextMeshProUGUI>()) {
+                tmpPro.text = value;
+            }
+        }
+        
+        public void SetTenantText(string value) {
+            foreach (TextMeshProUGUI tmpPro in this.tenantText.GetComponentsInChildren<TextMeshProUGUI>()) {
                 tmpPro.text = value;
             }
         }
