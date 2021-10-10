@@ -412,7 +412,7 @@ public class SimpleTownNetwork : NetworkManager {
 
     [Server]
     private IEnumerator SetupCharacterCoroutine(NetworkConnection conn, string userId) {
-        UnityWebRequest characterRequest = ApiManager.Instance.RetrieveCharacterRequest(userId);
+        UnityWebRequest characterRequest = ApiManager.Instance.RetrieveCharacterByUserIdRequest(userId);
 
         yield return characterRequest.SendWebRequest();
 

@@ -6,6 +6,9 @@ public class GeographicArea : MonoBehaviour {
     private string locationText;
 
     [SerializeField]
+    private GeographicType type;
+
+    [SerializeField]
     private int priorityOrder = 1;
     
     public string LocationText {
@@ -14,4 +17,11 @@ public class GeographicArea : MonoBehaviour {
     }
 
     public int PriorityOrder => priorityOrder;
+
+    public GeographicType Type => type;
+}
+
+public enum GeographicType {
+    DEFAULT,
+    APARTMENT
 }

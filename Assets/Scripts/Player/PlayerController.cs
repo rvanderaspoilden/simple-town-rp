@@ -158,19 +158,17 @@ namespace Sim {
             this.isTalking = newValue;
             this.bubbleUI.SetVoiceBubbleVisibility(this.isTalking);
         }
-
-        public void ResetGeographicArea() {
-            this.currentGeographicArea.Clear();
-            
-            if (DefaultViewUI.Instance) {
-                DefaultViewUI.Instance.SetLocationText(this.currentGeographicArea.Count > 0 ? this.currentGeographicArea.Last().LocationText : string.Empty);
-            }
-        }
-
+        
         public void PlayStepSound() {
             this.audioSource.volume = 0.005f;
             this.audioSource.pitch = Random.Range(1f, 1.2f);
             this.audioSource.PlayOneShot(this.walkStepSound);
+        }
+
+        public void ResetGeographicArea() {
+            this.currentGeographicArea.Clear();
+            
+            this.RefreshDefaultView();
         }
 
         private void SetGeographicArea(GeographicArea geographicArea) {
@@ -178,24 +176,35 @@ namespace Sim {
 
             this.currentGeographicArea = new HashSet<GeographicArea>(this.currentGeographicArea.OrderBy(x => x.PriorityOrder).ToList());
 
-            if (DefaultViewUI.Instance) {
-                DefaultViewUI.Instance.SetLocationText(this.currentGeographicArea.Count > 0 ? this.currentGeographicArea.Last().LocationText : string.Empty);
-            }
+            this.RefreshDefaultView();
         }
 
         private void RemoveGeographicArea(GeographicArea geographicArea) {
             this.currentGeographicArea.Remove(geographicArea);
 
-            if (DefaultViewUI.Instance) {
-                DefaultViewUI.Instance.SetLocationText(this.currentGeographicArea.Count > 0 ? this.currentGeographicArea.Last().LocationText : string.Empty);
+            this.RefreshDefaultView();
+        }
+
+        private void RefreshDefaultView() {
+            if (!DefaultViewUI.Instance) return;
+            
+            GeographicArea current = CurrentGeographicArea;
+
+            if (current) {
+                DefaultViewUI.Instance.SetLocationText(current.LocationText);
+
+                if (current.Type == GeographicType.APARTMENT) {
+                    DefaultViewUI.Instance.SetTenantText($"Locataire: {current.GetComponentInParent<ApartmentController>().Tenant.Identity.FullName}");
+                } else {
+                    DefaultViewUI.Instance.SetTenantText(string.Empty);
+                }
+            } else {
+                DefaultViewUI.Instance.SetLocationText(string.Empty);
+                DefaultViewUI.Instance.SetTenantText(string.Empty);
             }
         }
 
-        public GeographicArea CurrentGeographicArea {
-            get {
-                return currentGeographicArea.LastOrDefault();
-            }
-        }
+        public GeographicArea CurrentGeographicArea => currentGeographicArea.LastOrDefault();
 
         public string RawCharacterData {
             get => rawCharacterData;

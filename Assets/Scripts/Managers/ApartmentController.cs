@@ -70,7 +70,7 @@ namespace Sim {
 
         [SyncVar]
         [SerializeField]
-        private string tenantId;
+        private CharacterData tenant;
 
         [SyncVar(hook = nameof(OnSetPresetName))]
         [SerializeField]
@@ -264,8 +264,19 @@ namespace Sim {
 
             if (homeResponse?.Id != null) {
                 this.homeData = homeResponse;
-                this.tenantId = this.homeData.Tenant;
                 this.presetName = this.homeData.Preset;
+                
+                UnityWebRequest tenantRequest = ApiManager.Instance.RetrieveCharacterByIdRequest(this.HomeData.Tenant);
+
+                yield return tenantRequest.SendWebRequest();
+
+                CharacterResponse characterResponse = JsonUtility.FromJson<CharacterResponse>(tenantRequest.downloadHandler.text);
+
+                if (characterResponse?.Characters?.Length > 0) {
+                    this.tenant = characterResponse.Characters[0];
+                } else {
+                    Debug.LogError($"[ApartmentController] [RetrieveData] Cannot retrieve tenant data with [tenantId={this.HomeData.Tenant}, homeId={this.HomeData.Id}]");
+                }
 
                 if (this.presetName == "ahmed") {
                     this.currentConfiguration = this.ahmedConfiguration;
@@ -425,8 +436,10 @@ namespace Sim {
             set => homeData = value;
         }
 
+        public CharacterData Tenant => tenant;
+
         public bool IsTenant(CharacterData character) {
-            return character.Id == this.tenantId;
+            return character.Id == this.tenant.Id;
         }
         
         #region Wall Visibility Management
