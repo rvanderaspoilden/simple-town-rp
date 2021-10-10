@@ -312,7 +312,8 @@ GameObject:
   - component: {fileID: 5314398912769170892}
   - component: {fileID: 1681115416556156327}
   - component: {fileID: 564229097387979695}
-  m_Layer: 0
+  - component: {fileID: 3813395169985285803}
+  m_Layer: 18
   m_Name: Hall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -394,6 +395,20 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &3813395169985285803
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 725708121865022999}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 4
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -81778725167520415, guid: a3e5ad15c9d15854a9d372de9582b95f, type: 3}
 --- !u!1 &1643195609780728255
 GameObject:
   m_ObjectHideFlags: 0
@@ -1119,6 +1134,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   locationText: SALMON HOTEL, HALL
+  type: 0
   priorityOrder: 1
 --- !u!1 &3415500615168483940
 GameObject:
