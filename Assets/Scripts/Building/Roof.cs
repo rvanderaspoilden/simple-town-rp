@@ -7,14 +7,16 @@ public class Roof : MonoBehaviour {
     [SerializeField]
     private List<MeshRenderer> renderersToHide;
 
+    [SerializeField]
+    private GameObject preventClickChild;
+
     private bool playerInside;
 
     private bool cameraInside;
 
-    private static readonly int Surface = Shader.PropertyToID("_Surface");
-
     private void Awake() {
         this.renderersToHide.ForEach(x => x.material = new Material(x.material));
+        this.preventClickChild.SetActive(true);
     }
 
     private void OnTriggerStay(Collider other) {
@@ -43,9 +45,11 @@ public class Roof : MonoBehaviour {
 
     private void Show() {
         this.renderersToHide.ForEach(x =>  x.enabled = true);
+        this.preventClickChild.SetActive(true);
     }
 
     private void Hide() {
         this.renderersToHide.ForEach(x => x.enabled = false);
+        this.preventClickChild.SetActive(false);
     }
 }

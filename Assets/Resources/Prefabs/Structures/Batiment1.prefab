@@ -561,7 +561,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 5
-  parentId: 0
   seatPositions:
   - {fileID: 3193422301316326737}
   couchPositions: []
@@ -1211,6 +1210,7 @@ Transform:
   - {fileID: 7612008463993447802}
   - {fileID: 1809818670642971594}
   - {fileID: 3415059792404134121}
+  - {fileID: 7934460451382560583}
   m_Father: {fileID: 1560863211719967565}
   m_RootOrder: 59
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1231,6 +1231,7 @@ MonoBehaviour:
   - {fileID: 728983523940142619}
   - {fileID: 7466380317082648113}
   - {fileID: 1850187598260317064}
+  preventClickChild: {fileID: 1033306600873564347}
 --- !u!65 &2744478674338392222
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3234,6 +3235,50 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &1033306600873564347
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7934460451382560583}
+  - component: {fileID: 2617098532523958221}
+  m_Layer: 18
+  m_Name: Block Raycast
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7934460451382560583
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1033306600873564347}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 4315831312858327030}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &2617098532523958221
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1033306600873564347}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 13.980559, y: 13.291974, z: 15.911492}
+  m_Center: {x: 0.4686637, y: 0.005363941, z: 0.014464855}
 --- !u!1 &1082850762699634871
 GameObject:
   m_ObjectHideFlags: 0
@@ -3572,7 +3617,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: d0ad8a2bf2f681244a539a9ec8859089, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!114 &8092405915763614768
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5385,7 +5429,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 46dd11351526e0f439672eea5db95e31, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!82 &2585958146562711649
 AudioSource:
   m_ObjectHideFlags: 0
@@ -5962,7 +6005,6 @@ MonoBehaviour:
   hallPrefab: {fileID: 5496279082967967630, guid: 525f620fbb753f9448971022e0afe439,
     type: 3}
   nbDoorByFloor: 6
-  hallSpacingY: 100
   mainElevator: {fileID: 6278538446722121626}
 --- !u!1 &2225513234351035952
 GameObject:
@@ -6675,7 +6717,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 1
-  parentId: 0
   seatPositions:
   - {fileID: 965118541861227858}
   couchPositions: []
@@ -6935,7 +6976,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 1
-  parentId: 0
   seatPositions:
   - {fileID: 907856424304234350}
   couchPositions: []
@@ -7471,7 +7511,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: f1448cb703fab4248b9167d8541833cb, type: 2}
   defaultPresetId: -1
-  parentId: 0
   seatPositions:
   - {fileID: 2499453751956510645}
   couchPositions: []
@@ -7867,7 +7906,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 5
-  parentId: 0
   seatPositions:
   - {fileID: 676677508460303830}
   couchPositions: []
@@ -8113,7 +8151,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: f1448cb703fab4248b9167d8541833cb, type: 2}
   defaultPresetId: 2
-  parentId: 0
   seatPositions:
   - {fileID: 7419465078925996905}
   couchPositions: []
@@ -9356,6 +9393,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   locationText: SALMON HOTEL
+  type: 0
   priorityOrder: 2
 --- !u!65 &8623096676586607952
 BoxCollider:
@@ -9530,7 +9568,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 4
-  parentId: 0
   seatPositions:
   - {fileID: 2030941360219448877}
   couchPositions: []
@@ -9790,7 +9827,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 3
-  parentId: 0
   seatPositions:
   - {fileID: 2294316129795596378}
   couchPositions: []
@@ -10286,7 +10322,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 1
-  parentId: 0
   seatPositions:
   - {fileID: 549863592918537337}
   couchPositions: []
@@ -10492,7 +10527,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 3afead4291805004ab6504500dcef744, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!114 &6473437100014882300
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11030,7 +11064,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 2
-  parentId: 0
   seatPositions:
   - {fileID: 1691303284644388198}
   couchPositions: []
@@ -11525,7 +11558,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 33e9bf5f394199e49a4e59b3ff9ef4a3, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!114 &4669623815933098082
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11842,7 +11874,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: a21fd06878382e04f8d11893703996a2, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!54 &3462635346579465724
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -12477,7 +12508,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 1
-  parentId: 0
   seatPositions:
   - {fileID: 7896710445435898665}
   couchPositions: []
@@ -14573,7 +14603,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 583cfb8a18523174aba1465c66226cba, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!114 &295201012149250792
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14833,7 +14862,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 583cfb8a18523174aba1465c66226cba, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!114 &295201011691495030
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15093,7 +15121,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 583cfb8a18523174aba1465c66226cba, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!114 &295201011554826541
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15353,7 +15380,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 583cfb8a18523174aba1465c66226cba, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!114 &295201012781833914
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15810,7 +15836,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 3276b1d5deedc8f4481218a5076cc007, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!82 &3589915816420839812
 AudioSource:
   m_ObjectHideFlags: 0
@@ -16233,7 +16258,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 46dd11351526e0f439672eea5db95e31, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!82 &8115190500336937992
 AudioSource:
   m_ObjectHideFlags: 0
@@ -16490,7 +16514,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 3
-  parentId: 0
   seatPositions:
   - {fileID: 7059641212197549112}
   couchPositions: []
@@ -16780,7 +16803,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 1
-  parentId: 0
   seatPositions:
   - {fileID: 6996839969890425356}
   couchPositions: []
@@ -17458,7 +17480,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 1
-  parentId: 0
   seatPositions:
   - {fileID: 7131555865684240128}
   couchPositions: []
@@ -18558,7 +18579,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 5
-  parentId: 0
   seatPositions:
   - {fileID: 9134173880774677254}
   couchPositions: []
@@ -20003,7 +20023,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 4
-  parentId: 0
   seatPositions:
   - {fileID: 8354819811890261794}
   couchPositions: []
@@ -20299,7 +20318,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 22b589c06dbc5f7469047e998901b98a, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!82 &4505405764619840738
 AudioSource:
   m_ObjectHideFlags: 0
@@ -22552,7 +22570,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 3
-  parentId: 0
   seatPositions:
   - {fileID: 5367895280813148458}
   couchPositions: []
@@ -23294,7 +23311,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 1
-  parentId: 0
   seatPositions:
   - {fileID: 4898062456913031333}
   couchPositions: []
@@ -24585,7 +24601,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 3
-  parentId: 0
   seatPositions:
   - {fileID: 6798561310400730011}
   couchPositions: []
@@ -25007,7 +25022,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 4
-  parentId: 0
   seatPositions:
   - {fileID: 6508969534960910255}
   couchPositions: []
@@ -25307,7 +25321,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: ef9881e59425baa42b6d1ba3fa89becb, type: 2}
   defaultPresetId: -1
-  parentId: 0
   spawnTransform: {fileID: 1011067090938992561}
 --- !u!114 &6009983493427944300
 MonoBehaviour:
@@ -25791,7 +25804,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 46dd11351526e0f439672eea5db95e31, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!82 &5007258332506054062
 AudioSource:
   m_ObjectHideFlags: 0
@@ -26189,7 +26201,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: cc4259d45f688204985634fa943feeba, type: 2}
   defaultPresetId: 2
-  parentId: 0
   seatPositions:
   - {fileID: 5929017967949991156}
   couchPositions: []
