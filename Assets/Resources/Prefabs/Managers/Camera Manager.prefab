@@ -95,7 +95,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1683741971749886202}
-  m_LocalRotation: {x: 0.000000016146815, y: 0.8662876, z: -0.4995457, w: 0.000000028001013}
+  m_LocalRotation: {x: -0.000000054732446, y: 0.8662876, z: -0.4995457, w: -0.00000009491432}
   m_LocalPosition: {x: 0.00000035762787, y: 8, z: 4.63}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -1200,7 +1200,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   layerMaskInFreeMode:
     serializedVersion: 2
-    m_Bits: 34560
+    m_Bits: 825088
 --- !u!114 &8619417789000670540
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1217,7 +1217,8 @@ MonoBehaviour:
   propsStepSize: 0.02
   magneticRange: 0.2
   magneticPropsMargin: 0.02
-  magnetic: 1
+  magnetismActivated: 0
+  instantMagnetismActivated: 0
 --- !u!114 &2049593766679326412
 MonoBehaviour:
   m_ObjectHideFlags: 0

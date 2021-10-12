@@ -274,6 +274,7 @@ public class SimpleTownNetwork : NetworkManager {
         NetworkServer.RegisterHandler<CreateCharacterMessage>(OnCreateCharacter);
         NetworkServer.RegisterHandler<CreateDeliveryRequest>(OnBuySomething);
         NetworkServer.RegisterHandler<TeleportMessage>(OnPlayerTeleportTo);
+        NetworkServer.RegisterHandler<SpawnItemMessage>(OnSpawnItem);
 
         StartCoroutine(this.RetrieveCityData());
     }
@@ -299,6 +300,7 @@ public class SimpleTownNetwork : NetworkManager {
         NetworkServer.UnregisterHandler<CreateCharacterMessage>();
         NetworkServer.UnregisterHandler<CreateDeliveryRequest>();
         NetworkServer.UnregisterHandler<TeleportMessage>();
+        NetworkServer.UnregisterHandler<SpawnItemMessage>();
 
         this.UpdateTimestamp();
     }
@@ -352,6 +354,22 @@ public class SimpleTownNetwork : NetworkManager {
     private void OnPlayerTeleportTo(NetworkConnection conn, TeleportMessage request) {
         Debug.Log($"Player {conn.identity.gameObject.name} want to teleport");
         conn.Send(request);
+    }
+
+    [ServerCallback]
+    private void OnSpawnItem(NetworkConnection conn, SpawnItemMessage request) {
+        ItemConfig itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == request.itemId);
+
+        if (!itemConfig) {
+            Debug.LogError($"[SimpleTownNetwork] [SpawnItem] Item [id={request.itemId}] not found in database");
+            return;
+        }
+
+        GameObject item = Instantiate(itemConfig.Prefab.gameObject, request.position, Quaternion.identity);
+        
+        NetworkServer.Spawn(item, conn.identity.gameObject);
+        
+        Debug.Log($"[SimpleTownNetwork] [SpawnItem] Player {conn.identity.gameObject.name} spawned an item [id={request.itemId}]");
     }
 
     private IEnumerator BuyCoroutine(NetworkConnection conn, CreateDeliveryRequest body) {

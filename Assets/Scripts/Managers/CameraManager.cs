@@ -114,6 +114,7 @@ namespace Sim {
 
             if ((leftMouseClick || rightMouseClick || leftMousePressed) && Physics.Raycast(ray.origin, ray.direction, out hit, 100, this.layerMaskInFreeMode)) {
                 Props propsToInteract = hit.collider.GetComponentInParent<Props>();
+                Item itemToInteract = hit.collider.GetComponentInParent<Item>();
                 PlayerController player = hit.collider.GetComponent<PlayerController>();
 
                 if (propsToInteract && !leftMousePressed) {
@@ -141,6 +142,19 @@ namespace Sim {
                         }
                     } else {
                         PlayerController.Local.SetTarget(hit.point, propsToInteract);
+                    }
+                } else if (itemToInteract && rightMouseClick) {
+                    bool canInteract = PlayerController.Local.CanInteractWith(itemToInteract, hit.point);
+                    Action[] actions = itemToInteract.GetActions();
+                    
+                    if (canInteract) {
+                        if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
+                            PlayerController.Local.Idle();
+                        } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
+                            PlayerController.Local.LookAt(itemToInteract.transform);
+                        }
+
+                        HUDManager.Instance.ShowContextMenu(actions, itemToInteract.transform, leftMouseClick);
                     }
                 } else if (!propsToInteract && leftMousePressed && hit.collider.gameObject.layer.Equals(LayerMask.NameToLayer("Ground"))) {
                     PlayerController.Local.MoveTo(hit.point);
