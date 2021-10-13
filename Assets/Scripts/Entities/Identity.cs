@@ -4,18 +4,14 @@ using UnityEngine;
 
 namespace Sim.Entities {
     [Serializable]
-    public class Identity {
-        [SerializeField]
-        private string firstname;
+    public struct Identity {
+        public string firstname;
 
-        [SerializeField]
-        private string lastname;
+        public string lastname;
 
-        [SerializeField]
-        private string originCountry;
+        public string originCountry;
 
-        [SerializeField]
-        private JobEnum job;
+        public JobEnum job;
 
         public string Firstname {
             get => firstname;

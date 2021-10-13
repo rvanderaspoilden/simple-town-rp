@@ -1,3 +1,4 @@
+using System;
 using Sim.Scriptables;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,6 +21,10 @@ namespace Sim.UI {
 
         private void OnEnable() {
             this.button.onClick.AddListener(() => OnClick?.Invoke(this));
+        }
+
+        private void OnDisable() {
+            this.button.onClick.RemoveAllListeners();
         }
 
         public void Setup(MoodConfig config) {
