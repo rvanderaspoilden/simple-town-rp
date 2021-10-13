@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Mirror;
+using Sim;
 using Sim.Enums;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
@@ -50,7 +51,10 @@ public class Item : NetworkEntity {
         return this.actions;
     }
 
+    public ItemConfig Configuration => configuration;
+
     protected virtual void Pick() {
-        throw new NotImplementedException();
+        Debug.Log("Pick item");
+        PlayerController.Local.PlayerHands.EquipItem(this);
     }
 }

@@ -72,6 +72,8 @@ namespace Sim {
 
         private PlayerAnimator animator;
 
+        private PlayerHands playerHands;
+
         private new Rigidbody rigidbody;
 
         private HashSet<GeographicArea> currentGeographicArea = new HashSet<GeographicArea>();
@@ -102,6 +104,7 @@ namespace Sim {
             this.navMeshAgent = GetComponent<NavMeshAgent>();
             this.rigidbody = GetComponent<Rigidbody>();
             this.animator = GetComponent<PlayerAnimator>();
+            this.playerHands = GetComponent<PlayerHands>();
             this.Collider = GetComponent<Collider>();
             this.characterStyleSetup = GetComponent<CharacterStyleSetup>();
         }
@@ -205,6 +208,8 @@ namespace Sim {
         }
 
         public GeographicArea CurrentGeographicArea => currentGeographicArea.LastOrDefault();
+
+        public PlayerHands PlayerHands => playerHands;
 
         public string RawCharacterData {
             get => rawCharacterData;

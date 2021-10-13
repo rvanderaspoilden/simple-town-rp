@@ -788,6 +788,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 6366147269219765943}
+  - {fileID: 2344508820881145707}
   m_Father: {fileID: 787881932030180793}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1043,6 +1044,36 @@ Transform:
   m_Father: {fileID: 1915128509133729818}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1555226030446287160
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2569061278075988576}
+  m_Layer: 0
+  m_Name: Handle Position
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2569061278075988576
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1555226030446287160}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0.7071068, w: 0}
+  m_LocalPosition: {x: -0.0045, y: 0.0781, z: 0.0289}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 8304677637253078482}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: -90, y: 180, z: 0}
 --- !u!1 &1611710046507947980
 GameObject:
   m_ObjectHideFlags: 0
@@ -1102,6 +1133,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4254647806010541053}
+  - {fileID: 2569061278075988576}
   m_Father: {fileID: 5740683191993841384}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3707,6 +3739,36 @@ Transform:
   m_Father: {fileID: 7407949692077767933}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6154217183150855868
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2344508820881145707}
+  m_Layer: 0
+  m_Name: Handle Position
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2344508820881145707
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6154217183150855868}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0.7071068, w: 0}
+  m_LocalPosition: {x: -0.0045, y: 0.0781, z: 0.0289}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 3515600822745495513}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: -90, y: 180, z: 0}
 --- !u!1 &6263433049681158588
 GameObject:
   m_ObjectHideFlags: 0
@@ -4487,6 +4549,7 @@ GameObject:
   - component: {fileID: 2909947703642090243}
   - component: {fileID: 3646872895336478616}
   - component: {fileID: 9194595495767131240}
+  - component: {fileID: 7595391278461783989}
   m_Layer: 8
   m_Name: Character
   m_TagString: Player
@@ -4584,6 +4647,23 @@ MonoBehaviour:
       skinColorPercent: 0
       gender: 0
     mood: 0
+  characterHome:
+    _id: 
+    address:
+      homeType: 0
+      doorNumber: 0
+      street: 
+    owner: 
+    type: 0
+    tenant: 
+    purchasePrice: 0
+    rentPrice: 0
+    preset: 
+    sceneData:
+      walls: []
+      grounds: []
+      buckets: []
+      props: []
 --- !u!114 &7147682903337299061
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4917,6 +4997,24 @@ MonoBehaviour:
   - {fileID: 4025102697196347987}
   - {fileID: 6537419222483000656}
   - {fileID: 4579716760638892010}
+--- !u!114 &7595391278461783989
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6953365128800779919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d192c8e00ddc9542a5c0c058e7b52e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  leftHandTransform: {fileID: 2569061278075988576}
+  rightHandTransform: {fileID: 2344508820881145707}
+  leftHandItem: {fileID: 0}
+  rightHandItem: {fileID: 0}
 --- !u!1 &6974000221088511038
 GameObject:
   m_ObjectHideFlags: 0

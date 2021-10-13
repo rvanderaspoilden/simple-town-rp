@@ -22,6 +22,7 @@ namespace AI.States {
 
         public void OnExit() {
             HUDManager.Instance.CloseContextMenu();
+            HUDManager.Instance.CloseInventory();
         }
     }
 }

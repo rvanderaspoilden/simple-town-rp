@@ -11,7 +11,10 @@ public class ItemConfig : ScriptableObject {
     private string label;
 
     [SerializeField]
-    private PickableType type;
+    private ItemType type;
+
+    [SerializeField]
+    private ItemHandleType handleType;
 
     [SerializeField]
     private List<Action> actions;
@@ -19,13 +22,25 @@ public class ItemConfig : ScriptableObject {
     [SerializeField]
     private Item prefab;
 
+    [SerializeField]
+    private Texture2D cursor;
+
+    [SerializeField]
+    private Sprite icon;
+
     public int ID => id;
 
     public string Label => label;
 
-    public PickableType Type => type;
+    public ItemType Type => type;
+
+    public ItemHandleType HandleType => handleType;
 
     public List<Action> Actions => actions;
 
     public Item Prefab => prefab;
+
+    public Texture2D Cursor => cursor;
+
+    public Sprite Icon => icon;
 }
