@@ -12,6 +12,9 @@ namespace Sim {
         private RadialMenuUI radialMenuUI;
 
         [SerializeField]
+        private InventoryUI inventoryUI;
+
+        [SerializeField]
         private DefaultViewUI defaultViewUI;
 
         [SerializeField]
@@ -42,6 +45,7 @@ namespace Sim {
         void Start() {
             this.DisplayPanel(PanelTypeEnum.NONE);
             this.CloseContextMenu();
+            this.CloseInventory();
         }
 
         public void PlaySound(AudioClip sound, float volume) {
@@ -85,6 +89,14 @@ namespace Sim {
 
         public void CloseContextMenu() {
             this.radialMenuUI.Close();
+        }
+
+        public void ShowInventory() {
+            this.inventoryUI.gameObject.SetActive(true);
+        }
+
+        public void CloseInventory() {
+            this.inventoryUI.gameObject.SetActive(false);
         }
     }
 }
