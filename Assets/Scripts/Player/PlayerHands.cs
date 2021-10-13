@@ -1,4 +1,5 @@
 using Mirror;
+using Sim;
 using UnityEngine;
 
 public class PlayerHands : NetworkBehaviour {
@@ -38,6 +39,8 @@ public class PlayerHands : NetworkBehaviour {
         currentItemTransform.rotation = handTransform.rotation;
         currentItemTransform.position = handTransform.position;
         currentItemTransform.SetParent(handTransform);
+
+        item.CmdSetOwner();
     }
 
     public void UnEquipHand(HandEnum handEnum) {

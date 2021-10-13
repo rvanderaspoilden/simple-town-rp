@@ -12,7 +12,9 @@
         OPEN,
         TELEPORT,
         UNPACKAGE,
-        PICK
+        PICK,
+        EAT,
+        DROP
     }
 
 }

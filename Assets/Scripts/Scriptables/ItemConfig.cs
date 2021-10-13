@@ -17,7 +17,10 @@ public class ItemConfig : ScriptableObject {
     private ItemHandleType handleType;
 
     [SerializeField]
-    private List<Action> actions;
+    private List<Action> unEquippedActions;
+
+    [SerializeField]
+    private List<Action> equippedActions;
 
     [SerializeField]
     private Item prefab;
@@ -36,7 +39,9 @@ public class ItemConfig : ScriptableObject {
 
     public ItemHandleType HandleType => handleType;
 
-    public List<Action> Actions => actions;
+    public List<Action> UnEquippedActions => unEquippedActions;
+
+    public List<Action> EquippedActions => equippedActions;
 
     public Item Prefab => prefab;
 

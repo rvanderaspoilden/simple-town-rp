@@ -143,7 +143,7 @@ namespace Sim {
                     } else {
                         PlayerController.Local.SetTarget(hit.point, propsToInteract);
                     }
-                } else if (itemToInteract && rightMouseClick) {
+                } else if (itemToInteract && !itemToInteract.HasOwner() && rightMouseClick) {
                     bool canInteract = PlayerController.Local.CanInteractWith(itemToInteract, hit.point);
                     Action[] actions = itemToInteract.GetActions();
                     

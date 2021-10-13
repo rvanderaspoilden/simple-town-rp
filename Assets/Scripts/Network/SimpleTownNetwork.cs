@@ -367,7 +367,7 @@ public class SimpleTownNetwork : NetworkManager {
 
         GameObject item = Instantiate(itemConfig.Prefab.gameObject, request.position, Quaternion.identity);
         
-        NetworkServer.Spawn(item, conn.identity.gameObject);
+        NetworkServer.Spawn(item);
         
         Debug.Log($"[SimpleTownNetwork] [SpawnItem] Player {conn.identity.gameObject.name} spawned an item [id={request.itemId}]");
     }
