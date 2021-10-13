@@ -194,7 +194,7 @@ namespace Sim {
                 DefaultViewUI.Instance.SetLocationText(current.LocationText);
 
                 if (current.Type == GeographicType.APARTMENT) {
-                    DefaultViewUI.Instance.SetTenantText($"Locataire: {current.GetComponentInParent<ApartmentController>().Tenant.Identity.FullName}");
+                    DefaultViewUI.Instance.SetTenantText($"Locataire: {current.GetComponentInParent<ApartmentController>().TenantIdentity.FullName}");
                 } else {
                     DefaultViewUI.Instance.SetTenantText(string.Empty);
                 }
