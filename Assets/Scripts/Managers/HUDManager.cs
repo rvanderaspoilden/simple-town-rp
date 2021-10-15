@@ -95,6 +95,8 @@ namespace Sim {
             this.inventoryUI.gameObject.SetActive(true);
         }
 
+        public InventoryUI InventoryUI => inventoryUI;
+
         public void CloseInventory() {
             this.inventoryUI.gameObject.SetActive(false);
         }

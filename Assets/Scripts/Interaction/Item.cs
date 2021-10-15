@@ -16,16 +16,29 @@ public class Item : NetworkEntity {
 
     [SyncVar]
     private string owner;
-    
+
+    private void Awake() {
+        this._actions = Array.Empty<Action>();
+    }
+
     protected virtual void Start() {
-        this.SetupActions(this.configuration.UnEquippedActions);
+        this.SetAsUnEquipped();
     }
     
     protected virtual void OnDestroy() {
         this.UnSubscribeActions(this._actions);
     }
+
+    public void SetAsEquipped() {
+        this.SetupActions(this.configuration.EquippedActions);
+    }
+
+    public void SetAsUnEquipped() {
+        this.SetupActions(this.configuration.UnEquippedActions);
+    }
     
     private void SetupActions(List<Action> actions) {
+        this.UnSubscribeActions(this._actions);
         this._actions = actions.Select(Instantiate).ToArray();
         SubscribeActions(this._actions);
     }
@@ -48,6 +61,10 @@ public class Item : NetworkEntity {
         switch (action.Type) {
             case ActionTypeEnum.PICK:
                 this.Pick();
+                break;
+            
+            case ActionTypeEnum.DROP:
+                this.Drop();
                 break;
         }
     }
@@ -74,14 +91,18 @@ public class Item : NetworkEntity {
         this.owner = sender.identity.GetComponent<PlayerController>().CharacterData.Id;
         this.netIdentity.AssignClientAuthority(sender);
     }
+    
+    [Command(requiresAuthority = false)]
+    public void CmdRemoveOwner(NetworkConnectionToClient sender = null) {
+        this.owner = string.Empty;
+        this.netIdentity.RemoveClientAuthority();
+    }
 
     protected virtual void Pick() {
         PlayerController.Local.PlayerHands.EquipItem(this);
     }
 
     protected virtual void Drop() {
-        this.owner = string.Empty;
-        this.transform.parent = null;
-        this.transform.rotation = Quaternion.identity;
+        PlayerController.Local.PlayerHands.UnEquipItem(this);
     }
 }

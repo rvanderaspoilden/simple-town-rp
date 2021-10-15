@@ -41,10 +41,28 @@ public class PlayerHands : NetworkBehaviour {
         currentItemTransform.SetParent(handTransform);
 
         item.CmdSetOwner();
+        item.SetAsEquipped();
     }
 
     public void UnEquipHand(HandEnum handEnum) {
         // TODO
+    }
+    
+    public void UnEquipItem(Item item) {
+        if (this.leftHandItem == item) {
+            this.leftHandItem = null;
+        } else if (this.rightHandItem == item) {
+            this.rightHandItem = null;
+        } else {
+            return;
+        }
+        
+        item.transform.parent = null;
+        item.transform.rotation = Quaternion.identity;
+        item.SetAsUnEquipped();
+        item.CmdRemoveOwner();
+        HUDManager.Instance.InventoryUI.CloseLeftActionMenu();
+        HUDManager.Instance.InventoryUI.UpdateUI();
     }
 
     public bool CanHandleItem(Item item, HandEnum hand) {
