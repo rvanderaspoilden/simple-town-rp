@@ -37,6 +37,9 @@ namespace Sim {
         private AudioClip walkStepSound;
 
         [SerializeField]
+        private AudioClip eatSound;
+
+        [SerializeField]
         private AudioSource audioSource;
 
         [SerializeField]
@@ -168,6 +171,34 @@ namespace Sim {
             this.audioSource.PlayOneShot(this.walkStepSound);
         }
 
+        public void Eat(Consumable consumable) {
+            this.CmdEat(consumable.netId);
+        }
+
+        [Command]
+        public void CmdEat(uint itemNetId) {
+            if (!NetworkIdentity.spawned.ContainsKey(itemNetId)) {
+                Debug.LogError($"[PlayerController] [CmdEat] Cannot found netId [id={itemNetId}]");
+            }
+
+            Consumable consumable = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Consumable>();
+            
+            // TODO: add values
+
+            NetworkServer.Destroy(consumable.gameObject);
+            
+            this.RpcEat();
+        }
+
+        [ClientRpc]
+        public void RpcEat() {
+            if (isLocalPlayer) {
+                HUDManager.Instance.InventoryUI.Invoke(nameof(InventoryUI.UpdateUI), .1f);
+            }
+            
+            this.audioSource.PlayOneShot(this.eatSound);
+        }
+        
         public void ResetGeographicArea() {
             this.currentGeographicArea.Clear();
 
@@ -363,8 +394,7 @@ namespace Sim {
             propsObject.SetActive(false);
 
             NetworkServer.Destroy(propsObject);
-
-
+            
             StartCoroutine(propsObject.GetComponentInParent<ApartmentController>().Save());
         }
 

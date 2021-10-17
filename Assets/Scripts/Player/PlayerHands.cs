@@ -1,3 +1,4 @@
+using System;
 using Mirror;
 using Sim;
 using UnityEngine;
@@ -17,37 +18,46 @@ public class PlayerHands : NetworkBehaviour {
     [SerializeField]
     private Item rightHandItem;
 
+    private void Update() {
+        if (leftHandItem && leftHandItem.hasAuthority) {
+            leftHandItem.transform.position = this.leftHandTransform.position;
+            leftHandItem.transform.rotation = this.leftHandTransform.rotation;
+        } 
+        
+        if (rightHandItem && rightHandItem.hasAuthority) {
+            rightHandItem.transform.position = this.rightHandTransform.position;
+            rightHandItem.transform.rotation = this.rightHandTransform.rotation;
+        }
+    }
+
     public void EquipItem(Item item, HandEnum hand) {
         // TODO
     }
-    
+
     public void EquipItem(Item item) {
-        Transform currentItemTransform = item.transform;
         Transform handTransform = null;
-        
+
         if (CanHandleItem(item, HandEnum.LEFT_HAND)) {
             this.leftHandItem = item;
-            handTransform = GetHandTransform(HandEnum.LEFT_HAND);
         } else if (CanHandleItem(item, HandEnum.RIGHT_HAND)) {
             this.rightHandItem = item;
-            handTransform = GetHandTransform(HandEnum.RIGHT_HAND);
         } else {
             Debug.LogError("[PlayerHands] [EquipItem] Cannot equip item");
-            return;
         }
+    }
 
-        currentItemTransform.rotation = handTransform.rotation;
-        currentItemTransform.position = handTransform.position;
-        currentItemTransform.SetParent(handTransform);
-
-        item.CmdSetOwner();
-        item.SetAsEquipped();
+    public void TryEquipItem(Item item) {
+        if (CanHandleItem(item)) {
+            item.CmdSetOwner();
+        } else {
+            Debug.Log("[TryEquipItem] Cannot equip item");
+        }
     }
 
     public void UnEquipHand(HandEnum handEnum) {
         // TODO
     }
-    
+
     public void UnEquipItem(Item item) {
         if (this.leftHandItem == item) {
             this.leftHandItem = null;
@@ -56,13 +66,8 @@ public class PlayerHands : NetworkBehaviour {
         } else {
             return;
         }
-        
-        item.transform.parent = null;
-        item.transform.rotation = Quaternion.identity;
-        item.SetAsUnEquipped();
+
         item.CmdRemoveOwner();
-        HUDManager.Instance.InventoryUI.CloseLeftActionMenu();
-        HUDManager.Instance.InventoryUI.UpdateUI();
     }
 
     public bool CanHandleItem(Item item, HandEnum hand) {

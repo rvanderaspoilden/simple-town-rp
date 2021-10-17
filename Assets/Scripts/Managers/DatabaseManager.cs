@@ -70,6 +70,10 @@ namespace Sim {
             return ShopCategoryConfigs.Find(config => config.PropsType == propsType);
         }
 
+        public static List<ConsumableConfig> GetConsumableItems() {
+            return (List<ConsumableConfig>)ItemConfigs.Where(x => x.Type == ItemType.CONSUMABLE);
+        }
+
         public Material GetTransparentMaterial() {
             return this.transparentMaterial;
         }

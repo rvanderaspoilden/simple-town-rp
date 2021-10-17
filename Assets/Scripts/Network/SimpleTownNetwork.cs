@@ -1,14 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Mirror;
 using Sim;
 using Sim.Building;
 using Sim.Entities;
-using Sim.Interactables;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
@@ -286,6 +283,7 @@ public class SimpleTownNetwork : NetworkManager {
         NetworkClient.RegisterHandler<TeleportMessage>(OnTeleportPlayer);
         NetworkClient.RegisterHandler<ShopResponseMessage>(OnShopResponse);
         NetworkClient.RegisterHandler<UpdateCityDataMessage>(OnCityDataUpdatedResponse);
+        NetworkClient.RegisterHandler<NotificationMessage>(OnNotificationReceived);
     }
 
     /// <summary>
@@ -312,6 +310,7 @@ public class SimpleTownNetwork : NetworkManager {
         NetworkClient.UnregisterHandler<TeleportMessage>();
         NetworkClient.UnregisterHandler<ShopResponseMessage>();
         NetworkClient.UnregisterHandler<UpdateCityDataMessage>();
+        NetworkClient.UnregisterHandler<NotificationMessage>();
 
         SceneManager.LoadScene("Main Menu");
     }
@@ -398,6 +397,17 @@ public class SimpleTownNetwork : NetworkManager {
     public void OnShopResponse(ShopResponseMessage message) {
         Debug.Log($"Client: shopResponse success is : {message.isSuccess}");
         ShopUI.Instance.OnBuyResponse(message.isSuccess);
+    }
+    
+    [ClientCallback]
+    private void OnNotificationReceived(NotificationMessage message) {
+        Debug.Log($"[OnNotificationReceived] [code={message.code}]");
+
+        switch (message.code) {
+            case NotificationCode.ITEM_DESTROYED:
+                HUDManager.Instance.InventoryUI.UpdateUI();
+                break;
+        }
     }
 
     [ClientCallback]

@@ -9,11 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9e3d6287acd3cc540a2488c818a01378, type: 3}
-  m_Name: Burger Configuration
+  m_Script: {fileID: 11500000, guid: 788cbc81d26a08c4e89be9dbf15b1a31, type: 3}
+  m_Name: Hamburger
   m_EditorClassIdentifier: 
   id: 1
-  label: Burger
+  label: Hamburger
   type: 0
   handleType: 0
   unEquippedActions:
@@ -21,6 +21,12 @@ MonoBehaviour:
   equippedActions:
   - {fileID: 11400000, guid: 2f10a3a3697d3b246b4b6e399c322d10, type: 2}
   - {fileID: 11400000, guid: 875ebf10bf5a7c24084772ff5e3be913, type: 2}
-  prefab: {fileID: 1949374269351912048, guid: b0d71e2978fc56a4e8a0f5b4de728ff1, type: 3}
-  cursor: {fileID: 2800000, guid: e4eb3547be035d8408366b41fd723efa, type: 3}
+  prefab: {fileID: -7505432810750241747, guid: b0d71e2978fc56a4e8a0f5b4de728ff1, type: 3}
+  cursor: {fileID: 2800000, guid: 5b706fae7d2c36844a29d5d563286f59, type: 3}
   icon: {fileID: 21300000, guid: 3051fdb2b9157394cbee3b14b0f1e138, type: 3}
+  consumableType: 0
+  impacts:
+  - vitalNecessityType: 0
+    value: 60
+  - vitalNecessityType: 1
+    value: -20

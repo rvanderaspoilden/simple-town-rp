@@ -1,8 +1,5 @@
-using System.Collections.Generic;
 using System.Linq;
-using DG.Tweening;
 using Sim;
-using Sim.Interactables;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,7 +16,11 @@ public class InventoryUI : MonoBehaviour {
 
     [SerializeField]
     private InventoryActionMenu rightHandActionMenu;
-    
+
+    [Header("Only for debug")]
+    [SerializeField]
+    private InventoryActionMenu currentActionMenu;
+
     private void OnEnable() {
         this.UpdateUI();
     }
@@ -31,13 +32,29 @@ public class InventoryUI : MonoBehaviour {
     }
 
     public void DisplayLeftActionMenu() {
+        this.CloseCurrentActionMenu();
+
         if (PlayerController.Local.PlayerHands.LeftHandItem == null) return;
 
         this.leftHandActionMenu.Setup(PlayerController.Local.PlayerHands.LeftHandItem.GetActions().ToList());
+
+        this.currentActionMenu = this.leftHandActionMenu;
     }
 
-    public void CloseLeftActionMenu() {
-        this.leftHandActionMenu.Hide();
+    public void DisplayRightActionMenu() {
+        this.CloseCurrentActionMenu();
+
+        if (PlayerController.Local.PlayerHands.RightHandItem == null) return;
+
+        this.rightHandActionMenu.Setup(PlayerController.Local.PlayerHands.RightHandItem.GetActions().ToList());
+
+        this.currentActionMenu = this.rightHandActionMenu;
+    }
+
+    public void CloseCurrentActionMenu(bool instantly = false) {
+        if (!this.currentActionMenu) return;
+
+        this.currentActionMenu.Hide(instantly);
     }
 
     public void UpdateUI() {
@@ -54,5 +71,7 @@ public class InventoryUI : MonoBehaviour {
         } else {
             this.rightHandItemIcon.gameObject.SetActive(false);
         }
+
+        this.CloseCurrentActionMenu(true);
     }
 }

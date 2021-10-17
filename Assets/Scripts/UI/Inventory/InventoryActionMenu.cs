@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using Sim.Interactables;
@@ -22,7 +21,7 @@ public class InventoryActionMenu : MonoBehaviour {
         this.inventoryActionButtons = new List<InventoryActionButton>();
         this._canvasGroup = GetComponent<CanvasGroup>();
 
-        this._canvasGroup.alpha = 0;
+        this.Hide(true);
     }
 
     public void Setup(List<Action> actions) {
@@ -39,8 +38,12 @@ public class InventoryActionMenu : MonoBehaviour {
         this._canvasGroup.DOFade(1, .3f);
     }
 
-    public void Hide() {
-        this._canvasGroup.DOFade(0, .3f);
+    public void Hide(bool instantly = false) {
+        if (instantly) {
+            this._canvasGroup.alpha = 0;
+        } else {
+            this._canvasGroup.DOFade(0, .3f);
+        }
     }
     
     private void ClearButtons() {
