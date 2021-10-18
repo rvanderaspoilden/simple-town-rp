@@ -77,6 +77,8 @@ namespace Sim {
 
         private PlayerHands playerHands;
 
+        private PlayerHealth playerHealth;
+
         private new Rigidbody rigidbody;
 
         private HashSet<GeographicArea> currentGeographicArea = new HashSet<GeographicArea>();
@@ -108,6 +110,7 @@ namespace Sim {
             this.rigidbody = GetComponent<Rigidbody>();
             this.animator = GetComponent<PlayerAnimator>();
             this.playerHands = GetComponent<PlayerHands>();
+            this.playerHealth = GetComponent<PlayerHealth>();
             this.Collider = GetComponent<Collider>();
             this.characterStyleSetup = GetComponent<CharacterStyleSetup>();
         }
@@ -139,6 +142,7 @@ namespace Sim {
             HUDManager.Instance.DisplayPanel(PanelTypeEnum.DEFAULT);
             CharacterInfoPanelUI.Instance.Setup(this.characterData);
             CharacterInfoPanelUI.Instance.Setup(this.characterHome);
+            CharacterInfoPanelUI.Instance.UpdateHealthUI(this.playerHealth.Health);
         }
 
         public override void OnStopClient() {
@@ -183,7 +187,9 @@ namespace Sim {
 
             Consumable consumable = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Consumable>();
             
-            // TODO: add values
+            foreach (HealthValue healthValue in ((ConsumableConfig)consumable.Configuration).Impacts) {
+                this.playerHealth.ApplyModification(healthValue.VitalNecessityType, healthValue.Value);
+            }
 
             NetworkServer.Destroy(consumable.gameObject);
             
@@ -242,9 +248,11 @@ namespace Sim {
 
         public PlayerHands PlayerHands => playerHands;
 
-        public string RawCharacterData {
-            get => rawCharacterData;
-            set => rawCharacterData = value;
+        [Server]
+        public void SetRawCharacterData(string data) {
+            this.rawCharacterData = data;
+            this.characterData = JsonUtility.FromJson<CharacterData>(this.rawCharacterData);
+            this.playerHealth.Init(this.characterData.Health);
         }
 
         public void ParseCharacterData(string old, string newValue) {

@@ -450,7 +450,7 @@ public class SimpleTownNetwork : NetworkManager {
             GameObject go = Instantiate(this.playerPrefab, startPositions[0].transform.position, Quaternion.identity);
 
             PlayerController player = go.GetComponent<PlayerController>();
-            player.RawCharacterData = JsonUtility.ToJson(characterResponse.Characters[0]);
+            player.SetRawCharacterData(JsonUtility.ToJson(characterResponse.Characters[0]));
 
             go.name = $"Player [conn={conn.connectionId}] [{characterResponse.Characters[0].Identity.FullName}]";
 

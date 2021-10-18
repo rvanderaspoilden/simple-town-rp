@@ -16,5 +16,6 @@ public class HealthValue {
 
 public enum VitalNecessityType {
     HUNGRY,
-    THIRST
+    THIRST,
+    TIREDNESS
 }

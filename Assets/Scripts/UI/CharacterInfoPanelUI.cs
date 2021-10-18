@@ -57,17 +57,18 @@ namespace Sim.UI {
             this.SetText(this.nameText, characterData.Identity.FullName);
             this.SetText(this.jobText, "CHÔMEUR");
             this.SetText(this.moneyText, characterData.Money.ToString());
-
-            this.SetFillBarAmount(this.thirstBar, characterData.Health.Thirst / CommonConstants.MAX_BAR_AMOUNT);
-            this.SetFillBarAmount(this.hungryBar, characterData.Health.Hungry / CommonConstants.MAX_BAR_AMOUNT);
-            this.SetFillBarAmount(this.sleepBar, characterData.Health.Sleep / CommonConstants.MAX_BAR_AMOUNT);
-
             this.SetMood(DatabaseManager.GetMoodConfigByEnum(characterData.Mood));
         }
-
+        
         public void Setup(Home home) {
             this.addressHotelText.text = home.Address.street;
-            this.addressDoorText.text = $"Étage {Mathf.CeilToInt(home.Address.doorNumber / (float)6)}, Appt {home.Address.doorNumber}";
+            this.addressDoorText.text = $"Étage {Mathf.CeilToInt(home.Address.doorNumber / (float) 6)}, Appt {home.Address.doorNumber}";
+        }
+
+        public void UpdateHealthUI(Health health) {
+            this.SetFillBarAmount(this.thirstBar, health.Thirst / CommonConstants.MAX_BAR_AMOUNT);
+            this.SetFillBarAmount(this.hungryBar, health.Hungry / CommonConstants.MAX_BAR_AMOUNT);
+            this.SetFillBarAmount(this.sleepBar, health.Sleep / CommonConstants.MAX_BAR_AMOUNT);
         }
 
         private void SetText(TextMeshProUGUI tmpPro, string value) {

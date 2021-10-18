@@ -27,7 +27,7 @@ namespace Sim {
         private Coroutine authenticationCoroutine;
 
         public delegate void SucceededResponse();
-        
+
         public delegate void HomeCreationSuceededResponse(Home home);
 
         public delegate void CharacterDataResponse(CharacterData characterData);
@@ -54,7 +54,7 @@ namespace Sim {
         public static event HomeCreationSuceededResponse OnApartmentAssigned;
 
         public static event FailedResponse OnApartmentAssignmentFailed;
-        
+
 
         public static ApiManager Instance;
 
@@ -101,7 +101,7 @@ namespace Sim {
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
             request.SetRequestHeader("Content-type", "application/json");
             request.SetRequestHeader("Accept", "application/json");
-            
+
             return request;
         }
 
@@ -131,7 +131,7 @@ namespace Sim {
                 OnApartmentAssignmentFailed?.Invoke(ExtractErrorMessage(request));
             }
         }
-        
+
         public UnityWebRequest CreateUserRequest(CreateUserRequest data) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(data));
 
@@ -183,7 +183,7 @@ namespace Sim {
         public UnityWebRequest RetrieveCharacterByUserIdRequest(string userId) {
             return UnityWebRequest.Get($"{this.uri}/characters/by-user-id/{userId}");
         }
-        
+
         public UnityWebRequest RetrieveCharacterByIdRequest(string id) {
             return UnityWebRequest.Get($"{this.uri}/characters/{id}");
         }
@@ -209,7 +209,7 @@ namespace Sim {
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
             return request;
         }
-        
+
         public UnityWebRequest CreateDeliveryRequest(CreateDeliveryRequest body) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
 
@@ -221,7 +221,7 @@ namespace Sim {
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
             request.SetRequestHeader("Content-type", "application/json");
             request.SetRequestHeader("Accept", "application/json");
-            
+
             return request;
         }
 
@@ -231,11 +231,11 @@ namespace Sim {
 
             return request;
         }
-        
+
         public UnityWebRequest RetrieveCityRequest(string cityName) {
             return UnityWebRequest.Get($"{this.uri}/city/by-name/{cityName}");
         }
-        
+
         public UnityWebRequest UpdateCityTimestampRequest(CityUpdateTimestampRequest body) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
 
@@ -245,6 +245,19 @@ namespace Sim {
             };
 
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
+
+        public UnityWebRequest UpdateCharacterHealthRequest(string characterId, Health health) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(health));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/update-health", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
             request.SetRequestHeader("Content-type", "application/json");
 
             return request;

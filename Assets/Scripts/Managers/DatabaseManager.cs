@@ -22,6 +22,7 @@ namespace Sim {
         public static List<MoodConfig> MoodConfigs;
         public static List<ShopCategoryConfig> ShopCategoryConfigs;
         public static List<ItemConfig> ItemConfigs;
+        public static GameConfiguration GameConfiguration;
 
         public static DatabaseManager Instance;
 
@@ -46,6 +47,9 @@ namespace Sim {
             
             ItemConfigs = Resources.LoadAll<ItemConfig>("Configurations/Items").ToList();
             Debug.Log("Item Configs loaded : " + ItemConfigs.Count);
+            
+            GameConfiguration = Resources.Load<GameConfiguration>("Configurations/Game Configuration");
+            Debug.Log($"Game configuration loaded : {GameConfiguration.TimeMultiplier}");
 
             RegisterPrefabs();
 
