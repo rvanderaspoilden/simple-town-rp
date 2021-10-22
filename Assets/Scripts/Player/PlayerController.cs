@@ -64,6 +64,10 @@ namespace Sim {
         [SerializeField]
         private Home characterHome;
 
+        [SyncVar]
+        [SerializeField]
+        private bool died;
+
         [SyncVar(hook = nameof(ParseCharacterData))]
         private string rawCharacterData;
 
@@ -92,6 +96,8 @@ namespace Sim {
         private CharacterLookAt lookAtState;
 
         private CharacterInteract characterInteractState;
+
+        private CharacterDie dieState;
 
         private CharacterStyleSetup characterStyleSetup;
 
@@ -136,6 +142,13 @@ namespace Sim {
 
         public override void OnStartLocalPlayer() {
             this.InitStateMachine();
+
+            if (died) {
+                this.stateMachine.SetState(dieState);
+            } else {
+                this.stateMachine.SetState(idleState);
+            }
+
             CameraManager.Instance.SetCameraTarget(this.GetHeadTargetForCamera());
             this.navMeshAgent.updateRotation = false;
             Local = this;
@@ -186,13 +199,13 @@ namespace Sim {
             }
 
             Consumable consumable = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Consumable>();
-            
-            foreach (HealthValue healthValue in ((ConsumableConfig)consumable.Configuration).Impacts) {
+
+            foreach (HealthValue healthValue in ((ConsumableConfig) consumable.Configuration).Impacts) {
                 this.playerHealth.ApplyModification(healthValue.VitalNecessityType, healthValue.Value);
             }
 
             NetworkServer.Destroy(consumable.gameObject);
-            
+
             this.RpcEat();
         }
 
@@ -201,10 +214,10 @@ namespace Sim {
             if (isLocalPlayer) {
                 HUDManager.Instance.InventoryUI.Invoke(nameof(InventoryUI.UpdateUI), .1f);
             }
-            
+
             this.audioSource.PlayOneShot(this.eatSound);
         }
-        
+
         public void ResetGeographicArea() {
             this.currentGeographicArea.Clear();
 
@@ -297,11 +310,10 @@ namespace Sim {
             this.moveState = new CharacterMove(this);
             this.lookAtState = new CharacterLookAt(this);
             this.characterInteractState = new CharacterInteract(this);
+            this.dieState = new CharacterDie(this);
 
             this.stateMachine.AddTransition(moveState, idleState, HasReachedTargetPosition());
             this.stateMachine.AddTransition(lookAtState, idleState, HasLostTarget());
-
-            this.stateMachine.SetState(idleState);
         }
 
         private Func<bool> HasReachedTargetPosition() => () => {
@@ -384,6 +396,45 @@ namespace Sim {
             this.stateMachine.SetState(lookAtState);
         }
 
+        public void Die() {
+            this.stateMachine.SetState(dieState);
+        }
+
+        [Server]
+        public void Kill() {
+            this.died = true;
+            this.TargetKill(this.netIdentity.connectionToClient);
+            Invoke(nameof(Revive), 4f);
+        }
+
+        [Server]
+        public void Revive() {
+            BuildingBehavior buildingBehavior = FindObjectsOfType<BuildingBehavior>().FirstOrDefault(x => x.Match(this.characterHome.Address));
+
+            if (buildingBehavior) {
+                buildingBehavior.TeleportToApartment(this.characterHome.Address.doorNumber, this.netIdentity.connectionToClient);
+                this.playerHealth.ResetAll();
+                this.died = false;
+                this.TargetRevive(this.netIdentity.connectionToClient);
+            } else {
+                Debug.LogError($"[PlayerController] [Revive] Cannot find building with street name {this.characterHome.Address.street}");
+            }
+        }
+
+        [TargetRpc]
+        public void TargetRevive(NetworkConnection conn) {
+            Debug.Log("I'm now alive");
+            this.Idle();
+            
+            // TODO: add information message
+        }
+        
+        [TargetRpc]
+        public void TargetKill(NetworkConnection conn) {
+            Debug.Log("You are died");
+            this.Die();
+        }
+
         [Client]
         public void Sell(Props props) {
             CmdSell(props.netId);
@@ -402,7 +453,7 @@ namespace Sim {
             propsObject.SetActive(false);
 
             NetworkServer.Destroy(propsObject);
-            
+
             StartCoroutine(propsObject.GetComponentInParent<ApartmentController>().Save());
         }
 
@@ -469,6 +520,8 @@ namespace Sim {
 
         public Collider Collider { get; private set; }
 
+        public bool Died => died;
+
         #endregion
 
         #region Utility
@@ -531,7 +584,7 @@ namespace Sim {
 
             Vector3 dir = hitPoint - this.GetHeadTargetForCamera().position;
             RaycastHit hit;
-            
+
             if (Physics.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
                 Item hitItem = hit.collider.GetComponentInParent<Item>();
 

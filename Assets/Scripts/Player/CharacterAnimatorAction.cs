@@ -3,7 +3,7 @@ namespace Sim {
         NONE = 0,
         SIT = 1,
         SLEEP = 2,
-        HELLO = 3,
+        DIE = 3,
         SEARCH = 4,
         ATTACK = 5
     }

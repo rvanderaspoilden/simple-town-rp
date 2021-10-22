@@ -64,7 +64,7 @@ namespace Sim {
         }
 
         void Update() {
-            if (PlayerController.Local == null) return;
+            if (PlayerController.Local == null || PlayerController.Local.Died) return;
 
             if (this.currentMode == CameraModeEnum.FREE) {
                 this.ManageInteraction();
@@ -146,7 +146,7 @@ namespace Sim {
                 } else if (itemToInteract && !itemToInteract.HasOwner() && rightMouseClick) {
                     bool canInteract = PlayerController.Local.CanInteractWith(itemToInteract, hit.point);
                     Action[] actions = itemToInteract.GetActions();
-                    
+
                     if (canInteract) {
                         if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
                             PlayerController.Local.Idle();

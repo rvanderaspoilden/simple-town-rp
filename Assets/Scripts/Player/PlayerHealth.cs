@@ -21,7 +21,7 @@ public class PlayerHealth : NetworkBehaviour {
     private float tiredness;
 
     private double _lastTime;
-    
+
     private readonly float VITAL_NECESSITY_MIN_VALUE = 0;
     private readonly float VITAL_NECESSITY_MAX_VALUE = 100;
 
@@ -40,10 +40,17 @@ public class PlayerHealth : NetworkBehaviour {
         this.thirst = health.Thirst;
         this.hungry = health.Hungry;
         this.tiredness = health.Sleep;
+
+        this.CheckDeath();
     }
 
     private void Update() {
         if (!isServer) return;
+
+        if (this._playerController.Died) {
+            this._lastTime = Time.time;
+            return;
+        }
 
         if ((Time.time - this._lastTime) > DatabaseManager.GameConfiguration.HealthServerCheckInterval) {
             this._lastTime = Time.time;
@@ -62,9 +69,19 @@ public class PlayerHealth : NetworkBehaviour {
 
     [Server]
     private void DecreaseVitalNecessities() {
-        this.hungry = this.GetDecreasedValue(this.hungry, DatabaseManager.GameConfiguration.HungryDurationInDays);
-        this.thirst = this.GetDecreasedValue(this.thirst, DatabaseManager.GameConfiguration.ThirstDurationInDays);
-        this.tiredness = this.GetDecreasedValue(this.tiredness, DatabaseManager.GameConfiguration.TirednessDurationInDays);
+        if (this.hungry > 0) {
+            this.hungry = this.GetDecreasedValue(this.hungry, DatabaseManager.GameConfiguration.HungryDurationInDays);
+        }
+
+        if (this.thirst > 0) {
+            this.thirst = this.GetDecreasedValue(this.thirst, DatabaseManager.GameConfiguration.ThirstDurationInDays);
+        }
+
+        if (this.tiredness > 0) {
+            this.tiredness = this.GetDecreasedValue(this.tiredness, DatabaseManager.GameConfiguration.TirednessDurationInDays);
+        }
+
+        this.CheckDeath();
 
         StartCoroutine(this.UpdateDatabase());
     }
@@ -85,6 +102,12 @@ public class PlayerHealth : NetworkBehaviour {
         return preview > min ? preview : min;
     }
 
+    private void CheckDeath() {
+        if (this.hungry == 0 || this.thirst == 0 || this.tiredness == 0) {
+            this._playerController.Kill();
+        }
+    }
+
     [Server]
     public void ApplyModification(VitalNecessityType vitalNecessityType, float value) {
         switch (vitalNecessityType) {
@@ -100,6 +123,15 @@ public class PlayerHealth : NetworkBehaviour {
                 this.tiredness = this.GetAppliedValue(this.tiredness, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
                 break;
         }
+
+        StartCoroutine(this.UpdateDatabase());
+    }
+
+    [Server]
+    public void ResetAll() {
+        this.thirst = VITAL_NECESSITY_MAX_VALUE;
+        this.hungry = VITAL_NECESSITY_MAX_VALUE;
+        this.tiredness = VITAL_NECESSITY_MAX_VALUE;
 
         StartCoroutine(this.UpdateDatabase());
     }
