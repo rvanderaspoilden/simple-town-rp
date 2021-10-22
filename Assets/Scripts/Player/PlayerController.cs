@@ -424,9 +424,8 @@ namespace Sim {
         [TargetRpc]
         public void TargetRevive(NetworkConnection conn) {
             Debug.Log("I'm now alive");
-            this.Idle();
-            
-            // TODO: add information message
+            Invoke(nameof(Idle), 1f);
+            NotificationUI.Instance.Show("Vous êtes tombé inconscient.\n Faites attention à votre santé !\n ps: On vous a volé...");
         }
         
         [TargetRpc]
