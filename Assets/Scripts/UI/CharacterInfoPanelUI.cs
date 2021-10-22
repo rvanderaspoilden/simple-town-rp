@@ -86,13 +86,16 @@ namespace Sim.UI {
         public void Setup(CharacterData characterData) {
             this.SetText(this.nameText, characterData.Identity.FullName);
             this.SetText(this.jobText, "CHÔMEUR");
-            this.SetText(this.moneyText, characterData.Money.ToString());
             this.SetMood(DatabaseManager.GetMoodConfigByEnum(characterData.Mood));
         }
 
         public void Setup(Home home) {
             this.addressHotelText.text = home.Address.street;
             this.addressDoorText.text = $"Étage {Mathf.CeilToInt(home.Address.doorNumber / (float) 6)}, Appt {home.Address.doorNumber}";
+        }
+
+        public void UpdateMoney(int money) {
+            this.SetText(this.moneyText, money.ToString());
         }
 
         public void UpdateHealthUI(Health health) {

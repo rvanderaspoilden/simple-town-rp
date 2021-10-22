@@ -68,6 +68,10 @@ namespace Sim {
         [SerializeField]
         private bool died;
 
+        [SyncVar(hook = nameof(OnMoneyUpdated))]
+        [SerializeField]
+        private int money;
+
         [SyncVar(hook = nameof(ParseCharacterData))]
         private string rawCharacterData;
 
@@ -138,6 +142,8 @@ namespace Sim {
                 this.rigidbody.useGravity = false;
                 Destroy(GetComponent<AudioListener>());
             }
+
+            this.money = this.characterData.Money;
         }
 
         public override void OnStartLocalPlayer() {
@@ -156,6 +162,7 @@ namespace Sim {
             CharacterInfoPanelUI.Instance.Setup(this.characterData);
             CharacterInfoPanelUI.Instance.Setup(this.characterHome);
             CharacterInfoPanelUI.Instance.UpdateHealthUI(this.playerHealth.Health);
+            CharacterInfoPanelUI.Instance.UpdateMoney(this.money);
         }
 
         public override void OnStopClient() {
@@ -415,6 +422,7 @@ namespace Sim {
                 buildingBehavior.TeleportToApartment(this.characterHome.Address.doorNumber, this.netIdentity.connectionToClient);
                 this.playerHealth.ResetAll();
                 this.died = false;
+                this.TakeMoney(50);
                 this.TargetRevive(this.netIdentity.connectionToClient);
             } else {
                 Debug.LogError($"[PlayerController] [Revive] Cannot find building with street name {this.characterHome.Address.street}");
@@ -427,7 +435,7 @@ namespace Sim {
             Invoke(nameof(Idle), 1f);
             NotificationUI.Instance.Show("Vous êtes tombé inconscient.\n Faites attention à votre santé !\n ps: On vous a volé...");
         }
-        
+
         [TargetRpc]
         public void TargetKill(NetworkConnection conn) {
             Debug.Log("You are died");
@@ -454,6 +462,18 @@ namespace Sim {
             NetworkServer.Destroy(propsObject);
 
             StartCoroutine(propsObject.GetComponentInParent<ApartmentController>().Save());
+        }
+
+        [Server]
+        public void TakeMoney(int amount) {
+            this.money = (this.money - amount > 0) ? (this.money - amount) : 0;
+        }
+
+        [ClientCallback]
+        public void OnMoneyUpdated(int old, int newAmount) {
+            if (!CharacterInfoPanelUI.Instance) return;
+
+            CharacterInfoPanelUI.Instance.UpdateMoney(this.money);
         }
 
         public IState CurrentState() {
