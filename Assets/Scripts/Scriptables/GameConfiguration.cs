@@ -6,23 +6,29 @@ public class GameConfiguration : ScriptableObject {
     [SerializeField]
     private double timeMultiplier;
 
-    [Tooltip("Number of real seconds needed before dying of hungry")]
+    [Tooltip("Interval in real seconds for server which check health")]
     [SerializeField]
-    private float hungryDurationInSeconds;
+    private int healthServerCheckInterval;
 
-    [Tooltip("Number of real seconds needed before dying of thirst")]
+    [Tooltip("Number of in game days needed before dying of hungry")]
     [SerializeField]
-    private float thirstDurationInSeconds;
+    private float hungryDurationInDays;
 
-    [Tooltip("Number of real seconds needed before dying of tiredness")]
+    [Tooltip("Number of in game days needed before dying of thirst")]
     [SerializeField]
-    private float tirednessDurationInSeconds;
+    private float thirstDurationInDays;
+
+    [Tooltip("Number of in game days needed before dying of tiredness")]
+    [SerializeField]
+    private float tirednessDurationInDays;
 
     public double TimeMultiplier => timeMultiplier;
 
-    public float HungryDurationInSeconds => hungryDurationInSeconds;
+    public int HealthServerCheckInterval => healthServerCheckInterval;
 
-    public float ThirstDurationInSeconds => thirstDurationInSeconds;
+    public float HungryDurationInDays => hungryDurationInDays;
 
-    public float TirednessDurationInSeconds => tirednessDurationInSeconds;
+    public float ThirstDurationInDays => thirstDurationInDays;
+
+    public float TirednessDurationInDays => tirednessDurationInDays;
 }

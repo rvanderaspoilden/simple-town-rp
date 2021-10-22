@@ -2317,7 +2317,7 @@ GameObject:
   - component: {fileID: 1371726459}
   - component: {fileID: 1371726458}
   m_Layer: 0
-  m_Name: Sleep
+  m_Name: Tiredness
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3402,6 +3402,10 @@ MonoBehaviour:
   addressDoorText: {fileID: 7527435393231518072}
   jobText: {fileID: 1792946788}
   moneyText: {fileID: 158496196}
+  thirstBackgroundBar: {fileID: 321652850}
+  hungryBackgroundBar: {fileID: 38278793}
+  tirednessBackgroundBar: {fileID: 1797447408}
+  backgroundBarColorAlert: {r: 0.6415094, g: 0, b: 0, a: 0.69803923}
   thirstBar: {fileID: 768397095}
   hungryBar: {fileID: 1039856100}
   sleepBar: {fileID: 385150362}

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Game Configuration
   m_EditorClassIdentifier: 
   timeMultiplier: 7.5
-  hungryDurationInSeconds: 10800
-  thirstDurationInSeconds: 21600
-  tirednessDurationInSeconds: 21600
+  healthServerCheckInterval: 8
+  hungryDurationInDays: 0.0052083335
+  thirstDurationInDays: 0.03125001
+  tirednessDurationInDays: 0.010416666

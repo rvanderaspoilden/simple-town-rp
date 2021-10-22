@@ -20,7 +20,10 @@ public class PlayerHealth : NetworkBehaviour {
     [SerializeField]
     private float tiredness;
 
-    private double lastTime;
+    private double _lastTime;
+    
+    private readonly float VITAL_NECESSITY_MIN_VALUE = 0;
+    private readonly float VITAL_NECESSITY_MAX_VALUE = 100;
 
     private PlayerController _playerController;
 
@@ -29,7 +32,7 @@ public class PlayerHealth : NetworkBehaviour {
     }
 
     public override void OnStartServer() {
-        this.lastTime = Time.time;
+        this._lastTime = Time.time;
     }
 
     [Server]
@@ -42,9 +45,9 @@ public class PlayerHealth : NetworkBehaviour {
     private void Update() {
         if (!isServer) return;
 
-        if ((Time.time - this.lastTime) > 8f) {
-            this.lastTime = Time.time;
-            this.DecreaseHungry();   
+        if ((Time.time - this._lastTime) > DatabaseManager.GameConfiguration.HealthServerCheckInterval) {
+            this._lastTime = Time.time;
+            this.DecreaseVitalNecessities();
         }
     }
 
@@ -58,47 +61,43 @@ public class PlayerHealth : NetworkBehaviour {
     public Health Health => new Health() { Hungry = this.hungry, Sleep = this.tiredness, Thirst = this.thirst };
 
     [Server]
-    private void DecreaseHungry() {
-        float preview = this.hungry - 0.07f;
-        this.hungry = preview > 0 ? preview : 0;
+    private void DecreaseVitalNecessities() {
+        this.hungry = this.GetDecreasedValue(this.hungry, DatabaseManager.GameConfiguration.HungryDurationInDays);
+        this.thirst = this.GetDecreasedValue(this.thirst, DatabaseManager.GameConfiguration.ThirstDurationInDays);
+        this.tiredness = this.GetDecreasedValue(this.tiredness, DatabaseManager.GameConfiguration.TirednessDurationInDays);
 
         StartCoroutine(this.UpdateDatabase());
+    }
+
+    private float GetDecreasedValue(float initialValue, float referenceDuration) {
+        double valueToDecrease = (DatabaseManager.GameConfiguration.HealthServerCheckInterval * 100) / TimeManager.ConvertInGameDaysToRealSeconds(referenceDuration);
+        float preview = initialValue - (float) valueToDecrease;
+        return preview > 0 ? preview : 0;
+    }
+
+    private float GetAppliedValue(float initialValue, float valueToAdd, float min, float max) {
+        float preview = initialValue + valueToAdd;
+
+        if (valueToAdd > 0) { // Case of additive value
+            return preview < max ? preview : max;
+        }
+
+        return preview > min ? preview : min;
     }
 
     [Server]
     public void ApplyModification(VitalNecessityType vitalNecessityType, float value) {
         switch (vitalNecessityType) {
             case VitalNecessityType.HUNGRY:
-                float hungryPreview = this.hungry + value;
-
-                if (value > 0) {
-                    this.hungry = hungryPreview < 100 ? hungryPreview : 100;
-                } else {
-                    this.hungry = hungryPreview > 0 ? hungryPreview : 0;
-                }
-
+                this.hungry = this.GetAppliedValue(this.hungry, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
                 break;
 
             case VitalNecessityType.THIRST:
-                float thirstPreview = this.thirst + value;
-
-                if (value > 0) {
-                    this.thirst = thirstPreview < 100 ? thirstPreview : 100;
-                } else {
-                    this.thirst = thirstPreview > 0 ? thirstPreview : 0;
-                }
-
+                this.thirst = this.GetAppliedValue(this.thirst, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
                 break;
-            
+
             case VitalNecessityType.TIREDNESS:
-                float tirednessPreview = this.tiredness + value;
-
-                if (value > 0) {
-                    this.tiredness = tirednessPreview < 100 ? tirednessPreview : 100;
-                } else {
-                    this.tiredness = tirednessPreview > 0 ? tirednessPreview : 0;
-                }
-
+                this.tiredness = this.GetAppliedValue(this.tiredness, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
                 break;
         }
 
