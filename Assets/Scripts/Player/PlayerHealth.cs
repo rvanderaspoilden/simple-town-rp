@@ -69,21 +69,23 @@ public class PlayerHealth : NetworkBehaviour {
 
     [Server]
     private void DecreaseVitalNecessities() {
+        Health health = Health;
+        
         if (this.hungry > 0) {
-            this.hungry = this.GetDecreasedValue(this.hungry, DatabaseManager.GameConfiguration.HungryDurationInDays);
+            health.Hungry = this.GetDecreasedValue(this.hungry, DatabaseManager.GameConfiguration.HungryDurationInDays);
         }
 
         if (this.thirst > 0) {
-            this.thirst = this.GetDecreasedValue(this.thirst, DatabaseManager.GameConfiguration.ThirstDurationInDays);
+            health.Thirst = this.GetDecreasedValue(this.thirst, DatabaseManager.GameConfiguration.ThirstDurationInDays);
         }
 
         if (this.tiredness > 0) {
-            this.tiredness = this.GetDecreasedValue(this.tiredness, DatabaseManager.GameConfiguration.TirednessDurationInDays);
+            health.Sleep = this.GetDecreasedValue(this.tiredness, DatabaseManager.GameConfiguration.TirednessDurationInDays);
         }
 
         this.CheckDeath();
 
-        StartCoroutine(this.UpdateDatabase());
+        StartCoroutine(this.SaveHealth(health));
     }
 
     private float GetDecreasedValue(float initialValue, float referenceDuration) {
@@ -110,38 +112,46 @@ public class PlayerHealth : NetworkBehaviour {
 
     [Server]
     public void ApplyModification(VitalNecessityType vitalNecessityType, float value) {
+        Health health = Health;
+        
         switch (vitalNecessityType) {
             case VitalNecessityType.HUNGRY:
-                this.hungry = this.GetAppliedValue(this.hungry, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
+                health.Hungry = this.GetAppliedValue(this.hungry, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
                 break;
 
             case VitalNecessityType.THIRST:
-                this.thirst = this.GetAppliedValue(this.thirst, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
+                health.Thirst = this.GetAppliedValue(this.thirst, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
                 break;
 
             case VitalNecessityType.TIREDNESS:
-                this.tiredness = this.GetAppliedValue(this.tiredness, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
+                health.Sleep = this.GetAppliedValue(this.tiredness, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
                 break;
         }
 
-        StartCoroutine(this.UpdateDatabase());
+        StartCoroutine(this.SaveHealth(health));
     }
 
     [Server]
     public void ResetAll() {
-        this.thirst = VITAL_NECESSITY_MAX_VALUE;
-        this.hungry = VITAL_NECESSITY_MAX_VALUE;
-        this.tiredness = VITAL_NECESSITY_MAX_VALUE;
-
-        StartCoroutine(this.UpdateDatabase());
+        Health health = new Health() {
+            Thirst = VITAL_NECESSITY_MAX_VALUE,
+            Hungry = VITAL_NECESSITY_MAX_VALUE,
+            Sleep = VITAL_NECESSITY_MAX_VALUE,
+        };
+        
+        StartCoroutine(this.SaveHealth(health));
     }
 
-    private IEnumerator UpdateDatabase() {
-        UnityWebRequest request = ApiManager.Instance.UpdateCharacterHealthRequest(this._playerController.CharacterData.Id, Health);
+    private IEnumerator SaveHealth(Health health) {
+        UnityWebRequest request = ApiManager.Instance.UpdateCharacterHealthRequest(this._playerController.CharacterData.Id, health);
 
         yield return request.SendWebRequest();
 
-        if (request.responseCode != 200) {
+        if (request.responseCode == 200) {
+            this.thirst = health.Thirst;
+            this.hungry = health.Hungry;
+            this.tiredness = health.Sleep;
+        } else {
             Debug.LogError("[PlayerHealth] Cannot save health in database");
         }
     }

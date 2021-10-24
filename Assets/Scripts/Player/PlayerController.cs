@@ -67,11 +67,7 @@ namespace Sim {
         [SyncVar]
         [SerializeField]
         private bool died;
-
-        [SyncVar(hook = nameof(OnMoneyUpdated))]
-        [SerializeField]
-        private int money;
-
+        
         [SyncVar(hook = nameof(ParseCharacterData))]
         private string rawCharacterData;
 
@@ -86,6 +82,8 @@ namespace Sim {
         private PlayerHands playerHands;
 
         private PlayerHealth playerHealth;
+
+        private PlayerBankAccount playerBankAccount;
 
         private new Rigidbody rigidbody;
 
@@ -121,6 +119,7 @@ namespace Sim {
             this.animator = GetComponent<PlayerAnimator>();
             this.playerHands = GetComponent<PlayerHands>();
             this.playerHealth = GetComponent<PlayerHealth>();
+            this.playerBankAccount = GetComponent<PlayerBankAccount>();
             this.Collider = GetComponent<Collider>();
             this.characterStyleSetup = GetComponent<CharacterStyleSetup>();
         }
@@ -142,8 +141,6 @@ namespace Sim {
                 this.rigidbody.useGravity = false;
                 Destroy(GetComponent<AudioListener>());
             }
-
-            this.money = this.characterData.Money;
         }
 
         public override void OnStartLocalPlayer() {
@@ -162,7 +159,7 @@ namespace Sim {
             CharacterInfoPanelUI.Instance.Setup(this.characterData);
             CharacterInfoPanelUI.Instance.Setup(this.characterHome);
             CharacterInfoPanelUI.Instance.UpdateHealthUI(this.playerHealth.Health);
-            CharacterInfoPanelUI.Instance.UpdateMoney(this.money);
+            CharacterInfoPanelUI.Instance.UpdateMoney(this.playerBankAccount.Money);
         }
 
         public override void OnStopClient() {
@@ -273,6 +270,7 @@ namespace Sim {
             this.rawCharacterData = data;
             this.characterData = JsonUtility.FromJson<CharacterData>(this.rawCharacterData);
             this.playerHealth.Init(this.characterData.Health);
+            this.playerBankAccount.Init(this.characterData.Money);
         }
 
         public void ParseCharacterData(string old, string newValue) {
@@ -422,7 +420,7 @@ namespace Sim {
                 buildingBehavior.TeleportToApartment(this.characterHome.Address.doorNumber, this.netIdentity.connectionToClient);
                 this.playerHealth.ResetAll();
                 this.died = false;
-                this.TakeMoney(50);
+                this.playerBankAccount.TakeMoney(50);
                 this.TargetRevive(this.netIdentity.connectionToClient);
             } else {
                 Debug.LogError($"[PlayerController] [Revive] Cannot find building with street name {this.characterHome.Address.street}");
@@ -462,18 +460,6 @@ namespace Sim {
             NetworkServer.Destroy(propsObject);
 
             StartCoroutine(propsObject.GetComponentInParent<ApartmentController>().Save());
-        }
-
-        [Server]
-        public void TakeMoney(int amount) {
-            this.money = (this.money - amount > 0) ? (this.money - amount) : 0;
-        }
-
-        [ClientCallback]
-        public void OnMoneyUpdated(int old, int newAmount) {
-            if (!CharacterInfoPanelUI.Instance) return;
-
-            CharacterInfoPanelUI.Instance.UpdateMoney(this.money);
         }
 
         public IState CurrentState() {

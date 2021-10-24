@@ -6,7 +6,6 @@ using System.Text;
 using Sim.Entities;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.TestTools;
 
 namespace Sim {
     public class ApiManager : MonoBehaviour {
@@ -256,6 +255,19 @@ namespace Sim {
             UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/update-health", "PUT") {
                 uploadHandler = new UploadHandlerRaw(encodedPayload),
                 downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
+
+        public UnityWebRequest UpdateCharacterMoneyRequest(string characterId, CharacterUpdateMoneyRequest moneyRequest) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(moneyRequest));
+            
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/update-money", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer(),
             };
 
             request.SetRequestHeader("Content-type", "application/json");
