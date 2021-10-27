@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 788cbc81d26a08c4e89be9dbf15b1a31, type: 3}
+  m_Name: Hot Dog
+  m_EditorClassIdentifier: 
+  id: 3
+  label: Hot Dog
+  type: 0
+  handleType: 0
+  unEquippedActions:
+  - {fileID: 11400000, guid: fa73a1da35281ac4794f59016aab77cd, type: 2}
+  equippedActions:
+  - {fileID: 11400000, guid: 2f10a3a3697d3b246b4b6e399c322d10, type: 2}
+  - {fileID: 11400000, guid: 875ebf10bf5a7c24084772ff5e3be913, type: 2}
+  prefab: {fileID: 2191734528981667566, guid: 7d3bf299fb6039d4b915e8f097a625dd, type: 3}
+  cursor: {fileID: 2800000, guid: 5b706fae7d2c36844a29d5d563286f59, type: 3}
+  icon: {fileID: 21300000, guid: b7484b84640117243af8074e20249847, type: 3}
+  consumableType: 0
+  impacts:
+  - vitalNecessityType: 0
+    value: 60
+  - vitalNecessityType: 1
+    value: -20

@@ -225,7 +225,7 @@ namespace Sim {
 
         public bool InstantMagnetismActivated => instantMagnetismActivated;
 
-        private void Cancel() {
+        public void Cancel() {
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
             this.apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);

@@ -67,7 +67,7 @@ namespace Sim {
         [SyncVar]
         [SerializeField]
         private bool died;
-        
+
         [SyncVar(hook = nameof(ParseCharacterData))]
         private string rawCharacterData;
 
@@ -168,7 +168,7 @@ namespace Sim {
             }
         }
 
-        private void OnTriggerEnter(Collider other) {
+        private void OnTriggerStay(Collider other) {
             if (isLocalPlayer && other.CompareTag("Geographic Area")) {
                 SetGeographicArea(other.GetComponent<GeographicArea>());
             }
@@ -192,12 +192,12 @@ namespace Sim {
             this.audioSource.PlayOneShot(this.walkStepSound);
         }
 
-        public void Eat(Consumable consumable) {
-            this.CmdEat(consumable.netId);
+        public void Consume(Consumable consumable) {
+            this.CmdConsume(consumable.netId);
         }
 
         [Command]
-        public void CmdEat(uint itemNetId) {
+        public void CmdConsume(uint itemNetId) {
             if (!NetworkIdentity.spawned.ContainsKey(itemNetId)) {
                 Debug.LogError($"[PlayerController] [CmdEat] Cannot found netId [id={itemNetId}]");
             }
@@ -210,11 +210,11 @@ namespace Sim {
 
             NetworkServer.Destroy(consumable.gameObject);
 
-            this.RpcEat();
+            this.RpcConsume();
         }
 
         [ClientRpc]
-        public void RpcEat() {
+        public void RpcConsume() {
             if (isLocalPlayer) {
                 HUDManager.Instance.InventoryUI.Invoke(nameof(InventoryUI.UpdateUI), .1f);
             }
@@ -229,6 +229,8 @@ namespace Sim {
         }
 
         private void SetGeographicArea(GeographicArea geographicArea) {
+            if (this.currentGeographicArea.Contains(geographicArea)) return;
+
             this.currentGeographicArea.Add(geographicArea);
 
             this.currentGeographicArea = new HashSet<GeographicArea>(this.currentGeographicArea.OrderBy(x => x.PriorityOrder).ToList());
@@ -372,6 +374,8 @@ namespace Sim {
         public void MoveTo(Vector3 targetPoint) {
             this.stateMachine.SetState(moveState);
             this.navMeshAgent.SetDestination(targetPoint);
+
+            HUDManager.Instance.CloseInventory();
         }
 
         public void LookAt(Transform target) {

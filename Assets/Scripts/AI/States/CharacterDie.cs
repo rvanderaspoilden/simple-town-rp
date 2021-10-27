@@ -1,4 +1,5 @@
 using Sim;
+using Sim.Enums;
 
 namespace AI.States {
     public class CharacterDie : IState {
@@ -12,9 +13,13 @@ namespace AI.States {
             this.player.Animator.SetAction(CharacterAnimatorAction.DIE);
 
             this.player.SetHeadTargetPosition(this.player.SitHeadPosition);
-            
+
             HUDManager.Instance.CloseContextMenu();
             HUDManager.Instance.CloseInventory();
+
+            if (BuildManager.Instance.GetMode() != BuildModeEnum.NONE) {
+                BuildManager.Instance.Cancel();
+            }
         }
 
         public void Tick() { }

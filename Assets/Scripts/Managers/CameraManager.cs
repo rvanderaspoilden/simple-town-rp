@@ -160,7 +160,7 @@ namespace Sim {
                     PlayerController.Local.MoveTo(hit.point);
                 } else if (rightMouseClick && player) {
                     if (player == PlayerController.Local) {
-                        HUDManager.Instance.ShowInventory();
+                        HUDManager.Instance.ToggleInventory();
                     } else {
                         if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
                             PlayerController.Local.Idle();

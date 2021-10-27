@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 788cbc81d26a08c4e89be9dbf15b1a31, type: 3}
+  m_Name: Soda Can
+  m_EditorClassIdentifier: 
+  id: 2
+  label: Soda
+  type: 0
+  handleType: 0
+  unEquippedActions:
+  - {fileID: 11400000, guid: fa73a1da35281ac4794f59016aab77cd, type: 2}
+  equippedActions:
+  - {fileID: 11400000, guid: 081b75df514449a43ac126d86c1473bd, type: 2}
+  - {fileID: 11400000, guid: 875ebf10bf5a7c24084772ff5e3be913, type: 2}
+  prefab: {fileID: 2794358905927882689, guid: 3e0028af99582804ab29bb69a927c7d5, type: 3}
+  cursor: {fileID: 2800000, guid: 5b706fae7d2c36844a29d5d563286f59, type: 3}
+  icon: {fileID: 21300000, guid: 5764d7144a31d1242bc7f7c039f64401, type: 3}
+  consumableType: 1
+  impacts:
+  - vitalNecessityType: 1
+    value: 40

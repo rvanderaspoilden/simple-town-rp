@@ -14,7 +14,8 @@
         UNPACKAGE,
         PICK,
         EAT,
-        DROP
+        DROP,
+        DRINK
     }
 
 }
