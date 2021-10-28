@@ -46,6 +46,10 @@ public class Dispenser : Props {
     public void TargetItemBought(NetworkConnection conn, uint itemNetId) {
         if (NetworkIdentity.spawned.ContainsKey(itemNetId)) {
             PlayerController.Local.PlayerHands.TryEquipItem(NetworkIdentity.spawned[itemNetId].GetComponent<Item>());
+            
+            if (PlayerController.Local.PlayerHands.HasOnlyOneFreeHand()) {
+                this.StopInteraction();
+            }
         } else {
             Debug.LogError("[TargetItemBought] Cannot find spawned item");
         }
@@ -54,6 +58,16 @@ public class Dispenser : Props {
     public void OpenDispenser() {
         PlayerController.Local.Interact(this);
         DefaultViewUI.Instance.ShowPropsContentUI(this);
+    }
+
+    public override Action[] GetActions(bool withPriority = false) {
+        foreach (var action in this.actions) {
+            if (action.Type == ActionTypeEnum.USE) {
+                action.IsForbidden = !PlayerController.Local.PlayerHands.HasFreeHand();
+            }
+        }
+
+        return this.actions;
     }
 
     public override void StopInteraction() {

@@ -18,9 +18,9 @@ namespace Sim.Building {
         [SerializeField]
         protected int defaultPresetId = -1;
 
-        private Action[] actions;
+        protected Action[] actions;
 
-        private Action[] unbuiltActions;
+        protected Action[] unbuiltActions;
 
         [SyncVar(hook = nameof(SetIsBuilt))]
         private bool built;

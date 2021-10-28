@@ -22,8 +22,8 @@ public class PlayerHands : NetworkBehaviour {
         if (leftHandItem && leftHandItem.hasAuthority) {
             leftHandItem.transform.position = this.leftHandTransform.position;
             leftHandItem.transform.rotation = this.leftHandTransform.rotation;
-        } 
-        
+        }
+
         if (rightHandItem && rightHandItem.hasAuthority) {
             rightHandItem.transform.position = this.rightHandTransform.position;
             rightHandItem.transform.rotation = this.rightHandTransform.rotation;
@@ -46,12 +46,14 @@ public class PlayerHands : NetworkBehaviour {
         }
     }
 
-    public void TryEquipItem(Item item) {
+    public bool TryEquipItem(Item item) {
         if (CanHandleItem(item)) {
             item.CmdSetOwner();
-        } else {
-            Debug.Log("[TryEquipItem] Cannot equip item");
+            return true;
         }
+
+        Debug.Log("[TryEquipItem] Cannot equip item");
+        return false;
     }
 
     public void UnEquipHand(HandEnum handEnum) {
@@ -80,6 +82,14 @@ public class PlayerHands : NetworkBehaviour {
         }
 
         return this.GetHandItem(HandEnum.LEFT_HAND) == null || this.GetHandItem(HandEnum.RIGHT_HAND) == null;
+    }
+
+    public bool HasOnlyOneFreeHand() {
+        return LeftHandItem == null ^ RightHandItem == null;
+    }
+    
+    public bool HasFreeHand() {
+        return LeftHandItem == null || RightHandItem == null;
     }
 
     private Item GetHandItem(HandEnum hand) {

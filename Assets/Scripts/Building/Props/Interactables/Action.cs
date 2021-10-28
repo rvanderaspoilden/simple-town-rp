@@ -16,6 +16,8 @@ namespace Sim.Interactables {
         [SerializeField]
         private bool needPermission;
 
+        private bool _forbidden;
+
         public delegate void ActionEvent(Action action);
 
         public event ActionEvent OnExecute;
@@ -27,6 +29,11 @@ namespace Sim.Interactables {
         public Sprite Icon => icon;
 
         public bool NeedPermission => needPermission;
+
+        public bool IsForbidden {
+            get => _forbidden;
+            set => _forbidden = value;
+        }
 
         public void Execute() {
             OnExecute?.Invoke(this);
