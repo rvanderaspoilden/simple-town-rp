@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e258941a2d3a8c3408ce590c53e78a28, type: 3}
+  m_Name: Drink Dispenser
+  m_EditorClassIdentifier: 
+  id: 64
+  displayName: Distributeur de boisson
+  sprite: {fileID: 21300000, guid: a53ea1fd7171cbb439be2746de62bd4a, type: 3}
+  propsType: 0
+  buyable: 0
+  price: 0
+  prefab: {fileID: 1958516831948359056, guid: 7adc0940cc3f8924ea2f58a3c837bbe5, type: 3}
+  packageConfig: {fileID: 0}
+  surfaceToPose: 0
+  posableOnProps: 0
+  hasPosableSurface: 0
+  connectedToWall: 0
+  toBuild: 0
+  rangeToInteract: 1
+  actions:
+  - {fileID: 11400000, guid: b9dab5efe24ed7e478a5549ec5c52858, type: 2}
+  unbuiltActions: []
+  cursor: {fileID: 2800000, guid: 5ebd2cb74cea3b644a5834d4596e3665, type: 3}
+  presets: []
+  buildSound: {fileID: 0}
+  itemsToSell:
+  - item: {fileID: 11400000, guid: efce2a51cd3b7d345a7d2eac4a233b08, type: 2}
+    price: 4
+  - item: {fileID: 11400000, guid: 2b6f56311abcbdf46955b18d7fabb744, type: 2}
+    price: 2

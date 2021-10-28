@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Sim.Building;
+using Sim.Entities;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -21,12 +24,10 @@ namespace Sim.UI {
         [SerializeField]
         private int cursorIdx;
 
+        [SerializeField]
+        private Props linkedProps;
+
         private bool isHover;
-
-        public delegate void SelectEvent(int itemIdx);
-
-        public static event SelectEvent OnSelect;
-
 
         public void OnPointerEnter(PointerEventData eventData) {
             this.isHover = true;
@@ -48,14 +49,27 @@ namespace Sim.UI {
             }
         }
 
-        public void Setup(string[] newItems) {
-            this.items = newItems;
-
+        public void Setup(Props props) {
+            this.linkedProps = props;
+            this.propsImage.sprite = props.GetConfiguration().Sprite;
+            
+            if (this.linkedProps.GetType() == typeof(Dispenser)) {
+                this.items = ((DispenserConfiguration) this.linkedProps.GetConfiguration()).ItemsToSell.Select(x => x.item.Label).ToArray();
+            } else if (this.linkedProps.GetType() == typeof(DeliveryBox)) {
+                this.items = ((DeliveryBox) this.linkedProps).Deliveries.Select(x => x.DisplayName()).ToArray();
+            }
+            
             this.SetCursorIdx(0);
         }
 
         public void Select() {
-            OnSelect?.Invoke(this.cursorIdx);
+            if (this.linkedProps.GetType() == typeof(Dispenser)) {
+                ItemConfig itemConfig = ((DispenserConfiguration) this.linkedProps.GetConfiguration()).ItemsToSell[this.cursorIdx].item;
+                ((Dispenser)this.linkedProps).BuyItem(itemConfig);
+            } else if (this.linkedProps.GetType() == typeof(DeliveryBox)) {
+                Delivery delivery = ((DeliveryBox) this.linkedProps).Deliveries[this.cursorIdx];
+                ((DeliveryBox)this.linkedProps).OpenDelivery(delivery);
+            }
         }
 
         public void IncrementCursorIdx(int valueToIncrement) {

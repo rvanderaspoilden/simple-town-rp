@@ -1,12 +1,13 @@
+using System;
 using System.Collections;
 using System.Linq;
 using Mirror;
 using Sim.Entities;
 using Sim.Enums;
-using Sim.Interactables;
 using Sim.UI;
 using UnityEngine;
 using UnityEngine.Networking;
+using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     public class DeliveryBox : Props {
@@ -31,18 +32,6 @@ namespace Sim.Building {
 
         public static event UnPackageEvent UnPackage;
 
-        public override void OnStartClient() {
-            base.OnStartClient();
-            
-            PropsContentUI.OnSelect += OnSelectDelivery;
-        }
-
-        public override void OnStopClient() {
-            base.OnStopClient();
-            
-            PropsContentUI.OnSelect -= OnSelectDelivery;
-        }
-
         public override void OnStartServer() {
             base.OnStartServer();
             this.CheckDeliveries();
@@ -63,7 +52,7 @@ namespace Sim.Building {
                 this.deliveries = deliveryResponse.Deliveries.ToArray();
                 this.deliveryCount = (uint)this.deliveries.Length;
             } else {
-                this.Deliveries = new Delivery[0];
+                this.Deliveries = Array.Empty<Delivery>();
                 this.deliveryCount = 0;
             }
         }
@@ -94,14 +83,14 @@ namespace Sim.Building {
         public void TargetOpenDeliveryBox(NetworkConnection target, Delivery[] data) {
             this.Deliveries = data;
             PlayerController.Local.Interact(this);
-            DefaultViewUI.Instance.ShowPropsContentUI(deliveries.Select(x => x.DisplayName()).ToArray());
+            DefaultViewUI.Instance.ShowPropsContentUI(this);
         }
 
         public override void StopInteraction() {
             DefaultViewUI.Instance.HidePropsContentUI();
         }
 
-        private void OnSelectDelivery(int idx) {
+        public void OpenDelivery(Delivery delivery) {
             if (!this.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
                 return;
             }
@@ -109,7 +98,7 @@ namespace Sim.Building {
             if (this.deliveries == null || this.deliveries.Length == 0) {
                 PlayerController.Local.Idle();
             } else {
-                UnPackage?.Invoke(this.deliveries[idx]);
+                UnPackage?.Invoke(delivery);
             }
         }
 

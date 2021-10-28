@@ -15,7 +15,8 @@
         PICK,
         EAT,
         DROP,
-        DRINK
+        DRINK,
+        USE
     }
 
 }

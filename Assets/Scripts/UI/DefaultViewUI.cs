@@ -1,4 +1,5 @@
 ﻿using System;
+using Sim.Building;
 using Sim.Interactables;
 using Sim.UI;
 using TMPro;
@@ -74,15 +75,11 @@ namespace Sim {
             this.elevatorUI.gameObject.SetActive(false);
         }
 
-        public void ShowPropsContentUI(string[] items) {
-            this.propsContentUI.Setup(items);
+        public void ShowPropsContentUI(Props props) {
+            this.propsContentUI.Setup(props);
             this.propsContentUI.gameObject.SetActive(true);
         }
         
-        public void RefreshPropsContentUI(string[] items) {
-            this.propsContentUI.Setup(items);
-        }
-
         public void HidePropsContentUI() {
             this.propsContentUI.gameObject.SetActive(false);
         }

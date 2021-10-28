@@ -9,11 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0e2fea8d0c9e50b45a11dc3c2db9720d, type: 3}
-  m_Name: Game Configuration
+  m_Script: {fileID: 11500000, guid: 351fc396b69ebdf4fabf43ea447c6c21, type: 3}
+  m_Name: USE
   m_EditorClassIdentifier: 
-  timeMultiplier: 7.5
-  healthServerCheckInterval: 8
-  hungryDurationInDays: 0.05
-  thirstDurationInDays: 0.05
-  tirednessDurationInDays: 0.05
+  type: 15
+  label: Utiliser
+  icon: {fileID: 21300000, guid: 26550167232df1a4c91ffd038bfe8f03, type: 3}
+  needPermission: 0
