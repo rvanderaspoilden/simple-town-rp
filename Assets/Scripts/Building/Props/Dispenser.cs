@@ -39,11 +39,13 @@ public class Dispenser : Props {
 
     [ClientRpc]
     public void RpcItemBought() {
-        this.audioSource.PlayOneShot(this.useSound);
+        this.audioSource.PlayOneShot(this.useSound, .3f);
     }
 
     [TargetRpc]
     public void TargetItemBought(NetworkConnection conn, uint itemNetId) {
+        NotificationManager.Instance.AddNotification("Vous avez acheté un item", NotificationType.BANK);
+        
         if (NetworkIdentity.spawned.ContainsKey(itemNetId)) {
             PlayerController.Local.PlayerHands.TryEquipItem(NetworkIdentity.spawned[itemNetId].GetComponent<Item>());
             

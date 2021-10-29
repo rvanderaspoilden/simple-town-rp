@@ -23,6 +23,7 @@ namespace Sim {
         public static List<ShopCategoryConfig> ShopCategoryConfigs;
         public static List<ItemConfig> ItemConfigs;
         public static GameConfiguration GameConfiguration;
+        public static List<NotificationTemplateConfig> NotificationTemplateConfigs;
 
         public static DatabaseManager Instance;
 
@@ -41,6 +42,9 @@ namespace Sim {
 
             MoodConfigs = Resources.LoadAll<MoodConfig>("Configurations/Moods").ToList();
             Debug.Log("Mood Configs loaded : " + MoodConfigs.Count);
+            
+            NotificationTemplateConfigs = Resources.LoadAll<NotificationTemplateConfig>("Configurations/Notifications").ToList();
+            Debug.Log("Notification Template Configs loaded : " + NotificationTemplateConfigs.Count);
             
             ShopCategoryConfigs = Resources.LoadAll<ShopCategoryConfig>("Configurations/Shop/Categories").ToList();
             Debug.Log("Shop Category Configs loaded : " + ShopCategoryConfigs.Count);

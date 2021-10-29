@@ -1,40 +1,61 @@
+using System.Numerics;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+using Vector3 = UnityEngine.Vector3;
 
 public class NotificationUI : MonoBehaviour {
+    [Header("Settings")]
+    [SerializeField]
+    private TextMeshProUGUI messageTxt;
+
+    [SerializeField]
+    private TextMeshProUGUI titleTxt;
+
+    [SerializeField]
+    private Image icon;
+
     private CanvasGroup _canvasGroup;
 
-    private TextMeshProUGUI _messageTxt;
+    private RectTransform _rectTransform;
 
-    public static NotificationUI Instance;
+    private bool _hiding;
 
     private void Awake() {
-        if (Instance != null && Instance != this) {
-            Destroy(this.gameObject);
-        } else {
-            Instance = this;
-            this._canvasGroup = GetComponent<CanvasGroup>();
-            this._messageTxt = GetComponentInChildren<TextMeshProUGUI>();
-            this.Hide(true);
-        }
-    }
+        this._canvasGroup = GetComponent<CanvasGroup>();
+        this._canvasGroup.alpha = 0;
 
-    public void Show(string message) {
-        this._messageTxt.text = message;
-        this._canvasGroup.DOFade(1, .3f).SetEase(Ease.OutBounce);
-        this._canvasGroup.interactable = true;
-        this._canvasGroup.blocksRaycasts = true;
-    }
-
-    public void Hide(bool instantly) {
-        if (instantly) {
-            this._canvasGroup.alpha = 0;
-        } else {
-            this._canvasGroup.DOFade(0, .3f);
-        }
+        this._rectTransform = GetComponent<RectTransform>();
         
-        this._canvasGroup.interactable = false;
-        this._canvasGroup.blocksRaycasts = false;
+        this.transform.localScale = Vector3.zero;
+    }
+
+    public void Setup(string message, NotificationTemplateConfig templateConfig) {
+        this.titleTxt.text = templateConfig.Title;
+        this.messageTxt.text = message;
+        this.icon.sprite = templateConfig.Icon;
+
+        this._canvasGroup.DOFade(1, .3f);
+        this.transform.DOScale(Vector3.one, 1f).SetEase(Ease.OutBounce);
+
+        Invoke(nameof(Hide), 10);
+    }
+
+    public void Hide() {
+        if(this._hiding) return;
+        
+        this._hiding = true;
+        
+        this._canvasGroup.DOFade(0, .3f);
+        
+        this.transform.DOMoveX(this.transform.position.x + this._rectTransform.sizeDelta.x, .5f).OnComplete(() => {
+            if (this.transform.parent.childCount > this.transform.GetSiblingIndex() + 1) {
+                Transform nextChild = this.transform.parent.GetChild(this.transform.GetSiblingIndex() + 1);
+                nextChild.DOMoveY(nextChild.position.y - nextChild.GetComponent<RectTransform>().sizeDelta.y, .3f).OnComplete(() => Destroy(this.gameObject));
+            } else {
+                Destroy(this.gameObject);
+            }
+        });
     }
 }

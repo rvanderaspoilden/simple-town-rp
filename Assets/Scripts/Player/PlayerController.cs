@@ -433,7 +433,7 @@ namespace Sim {
         public void TargetRevive(NetworkConnection conn) {
             Debug.Log("I'm now alive");
             Invoke(nameof(Idle), 1f);
-            NotificationUI.Instance.Show("Vous êtes tombé inconscient.\n Faites attention à votre santé !\n ps: On vous a volé...");
+            NotificationManager.Instance.AddNotification("20 BC vous ont été volé lors de votre évanouissement. Les voleurs sont partout, faites attention à votre argent.", NotificationType.BANK);
         }
 
         [TargetRpc]
