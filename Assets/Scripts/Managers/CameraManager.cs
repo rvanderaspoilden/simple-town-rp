@@ -159,17 +159,17 @@ namespace Sim {
                 } else if (!propsToInteract && leftMousePressed && hit.collider.gameObject.layer.Equals(LayerMask.NameToLayer("Ground"))) {
                     PlayerController.Local.MoveTo(hit.point);
                 } else if (rightMouseClick && player) {
-                    if (player == PlayerController.Local) {
-                        HUDManager.Instance.ToggleInventory();
-                    } else {
-                        if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
-                            PlayerController.Local.Idle();
-                        }
+                    if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
+                        PlayerController.Local.CurrentState().GetType() == typeof(CharacterInteract)) {
+                        PlayerController.Local.Idle();
+                    }
 
-                        if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
-                            PlayerController.Local.LookAt(player.transform);
-                            HUDManager.Instance.ShowContextMenu(player.Actions, player.transform);
-                        }
+                    if (player == PlayerController.Local) {
+                        HUDManager.Instance.CloseContextMenu();
+                        HUDManager.Instance.ToggleInventory();
+                    } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
+                        PlayerController.Local.LookAt(player.transform);
+                        HUDManager.Instance.ShowContextMenu(player.Actions, player.transform);
                     }
                 }
             }

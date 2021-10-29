@@ -204,9 +204,7 @@ namespace Sim {
 
             Consumable consumable = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Consumable>();
 
-            foreach (HealthValue healthValue in ((ConsumableConfig) consumable.Configuration).Impacts) {
-                this.playerHealth.ApplyModification(healthValue.VitalNecessityType, healthValue.Value);
-            }
+            this.playerHealth.ApplyModifications(((ConsumableConfig) consumable.Configuration).Impacts);
 
             NetworkServer.Destroy(consumable.gameObject);
 

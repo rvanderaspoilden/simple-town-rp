@@ -53,7 +53,6 @@ public class PlayerHealth : NetworkBehaviour {
         }
 
         if ((Time.time - this._lastTime) > DatabaseManager.GameConfiguration.HealthServerCheckInterval) {
-            this._lastTime = Time.time;
             this.DecreaseVitalNecessities();
         }
     }
@@ -86,10 +85,12 @@ public class PlayerHealth : NetworkBehaviour {
         this.CheckDeath();
 
         StartCoroutine(this.SaveHealth(health));
+        
+        this._lastTime = Time.time;
     }
 
     private float GetDecreasedValue(float initialValue, float referenceDuration) {
-        double valueToDecrease = (DatabaseManager.GameConfiguration.HealthServerCheckInterval * 100) / TimeManager.ConvertInGameDaysToRealSeconds(referenceDuration);
+        double valueToDecrease = ((Time.time - this._lastTime) * 100) / TimeManager.ConvertInGameDaysToRealSeconds(referenceDuration);
         float preview = initialValue - (float) valueToDecrease;
         return preview > 0 ? preview : 0;
     }
@@ -111,24 +112,31 @@ public class PlayerHealth : NetworkBehaviour {
     }
 
     [Server]
-    public void ApplyModification(VitalNecessityType vitalNecessityType, float value) {
+    public void ApplyModifications(HealthValue[] impacts) {
         Health health = Health;
         
-        switch (vitalNecessityType) {
-            case VitalNecessityType.HUNGRY:
-                health.Hungry = this.GetAppliedValue(this.hungry, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
-                break;
+        foreach (var healthValue in impacts) {
+            switch (healthValue.VitalNecessityType) {
+                case VitalNecessityType.HUNGRY:
+                    health.Hungry = this.GetDecreasedValue(this.hungry, DatabaseManager.GameConfiguration.HungryDurationInDays);
+                    health.Hungry = this.GetAppliedValue(health.Hungry, healthValue.Value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
+                    break;
 
-            case VitalNecessityType.THIRST:
-                health.Thirst = this.GetAppliedValue(this.thirst, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
-                break;
+                case VitalNecessityType.THIRST:
+                    health.Thirst = this.GetDecreasedValue(this.thirst, DatabaseManager.GameConfiguration.ThirstDurationInDays);
+                    health.Thirst = this.GetAppliedValue(this.thirst, healthValue.Value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
+                    break;
 
-            case VitalNecessityType.TIREDNESS:
-                health.Sleep = this.GetAppliedValue(this.tiredness, value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
-                break;
+                case VitalNecessityType.TIREDNESS:
+                    health.Sleep = this.GetDecreasedValue(this.tiredness, DatabaseManager.GameConfiguration.TirednessDurationInDays);
+                    health.Sleep = this.GetAppliedValue(this.tiredness, healthValue.Value, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
+                    break;
+            }   
         }
 
         StartCoroutine(this.SaveHealth(health));
+
+        this._lastTime = Time.time;
     }
 
     [Server]
