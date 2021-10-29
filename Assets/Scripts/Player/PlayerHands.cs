@@ -37,12 +37,14 @@ public class PlayerHands : NetworkBehaviour {
     public void EquipItem(Item item) {
         Transform handTransform = null;
 
-        if (CanHandleItem(item, HandEnum.LEFT_HAND)) {
-            this.leftHandItem = item;
-        } else if (CanHandleItem(item, HandEnum.RIGHT_HAND)) {
+        if (item.Configuration.HandleType == ItemHandleType.TWO_HAND) {
             this.rightHandItem = item;
         } else {
-            Debug.LogError("[PlayerHands] [EquipItem] Cannot equip item");
+            if (CanHandleItem(item, HandEnum.LEFT_HAND)) {
+                this.leftHandItem = item;
+            } else if (CanHandleItem(item, HandEnum.RIGHT_HAND)) {
+                this.rightHandItem = item;
+            }
         }
     }
 
@@ -81,15 +83,15 @@ public class PlayerHands : NetworkBehaviour {
             return this.GetHandItem(HandEnum.LEFT_HAND) == null && this.GetHandItem(HandEnum.RIGHT_HAND) == null;
         }
 
-        return this.GetHandItem(HandEnum.LEFT_HAND) == null || this.GetHandItem(HandEnum.RIGHT_HAND) == null;
+        return HasFreeHand();
     }
 
     public bool HasOnlyOneFreeHand() {
         return LeftHandItem == null ^ RightHandItem == null;
     }
-    
+
     public bool HasFreeHand() {
-        return LeftHandItem == null || RightHandItem == null;
+        return RightHandItem == null || (LeftHandItem == null && (RightHandItem == null || RightHandItem.Configuration.HandleType == ItemHandleType.ONE_HAND));
     }
 
     private Item GetHandItem(HandEnum hand) {

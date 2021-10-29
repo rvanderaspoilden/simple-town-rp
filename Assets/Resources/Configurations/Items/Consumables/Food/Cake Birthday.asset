@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 788cbc81d26a08c4e89be9dbf15b1a31, type: 3}
+  m_Name: Cake Birthday
+  m_EditorClassIdentifier: 
+  id: 5
+  label: Gateaux d'anniversaire
+  type: 0
+  handleType: 1
+  unEquippedActions:
+  - {fileID: 11400000, guid: fa73a1da35281ac4794f59016aab77cd, type: 2}
+  equippedActions:
+  - {fileID: 11400000, guid: 2f10a3a3697d3b246b4b6e399c322d10, type: 2}
+  - {fileID: 11400000, guid: 875ebf10bf5a7c24084772ff5e3be913, type: 2}
+  prefab: {fileID: 953058892469756262, guid: 15a5892c099f39f46998f5cceffccd78, type: 3}
+  cursor: {fileID: 2800000, guid: 5b706fae7d2c36844a29d5d563286f59, type: 3}
+  icon: {fileID: 21300000, guid: 451baca4ea15e754580fad7ffcb9a58c, type: 3}
+  consumableType: 0
+  impacts:
+  - vitalNecessityType: 0
+    value: 60
+  - vitalNecessityType: 1
+    value: -5

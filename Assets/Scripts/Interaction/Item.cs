@@ -79,6 +79,12 @@ public class Item : NetworkEntity {
     }
 
     public virtual Action[] GetActions() {
+        foreach (var action in this._actions) {
+            if (action.Type == ActionTypeEnum.PICK) {
+                action.IsForbidden = !PlayerController.Local.PlayerHands.CanHandleItem(this);
+            }
+        }
+
         return this._actions;
     }
 
