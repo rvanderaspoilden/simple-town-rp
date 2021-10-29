@@ -54,7 +54,7 @@ namespace Sim.UI {
             this.propsImage.sprite = props.GetConfiguration().Sprite;
             
             if (this.linkedProps.GetType() == typeof(Dispenser)) {
-                this.items = ((DispenserConfiguration) this.linkedProps.GetConfiguration()).ItemsToSell.Select(x => x.item.Label).ToArray();
+                this.items = ((DispenserConfiguration) this.linkedProps.GetConfiguration()).ItemsToSell.Select(x => x.DisplayWithPrice()).ToArray();
             } else if (this.linkedProps.GetType() == typeof(DeliveryBox)) {
                 this.items = ((DeliveryBox) this.linkedProps).Deliveries.Select(x => x.DisplayName()).ToArray();
             }
