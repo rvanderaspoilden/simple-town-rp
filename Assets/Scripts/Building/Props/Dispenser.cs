@@ -44,7 +44,7 @@ public class Dispenser : Props {
 
     [TargetRpc]
     public void TargetItemBought(NetworkConnection conn, uint itemNetId) {
-        NotificationManager.Instance.AddNotification("Vous avez acheté un item", NotificationType.BANK);
+        NotificationManager.Instance.AddNotification("Vous avez acheté un item \n gros bg \n WAAAAAAAAW", NotificationType.BANK);
         
         if (NetworkIdentity.spawned.ContainsKey(itemNetId)) {
             PlayerController.Local.PlayerHands.TryEquipItem(NetworkIdentity.spawned[itemNetId].GetComponent<Item>());

@@ -126,6 +126,7 @@ namespace Sim {
 
         private void OpenPhone() {
             if (!this.phoneOpened) {
+                NotificationManager.Instance.DeleteAllNotification();
                 HUDManager.Instance.PlaySound(this.unlockSound, .5f);
                 this.rectTransform.DOAnchorPosY(this.openedAnchorY, this.openAnimationDuration).SetEase(Ease.Flash).OnComplete(() => this.phoneOpened = true);
                 this.lockScreenCanvasGroup.DOComplete();
