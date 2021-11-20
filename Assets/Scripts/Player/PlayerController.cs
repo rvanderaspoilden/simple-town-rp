@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AI;
@@ -12,6 +13,8 @@ using Sim.Scriptables;
 using Sim.UI;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 using Action = Sim.Interactables.Action;
 using Random = UnityEngine.Random;
 

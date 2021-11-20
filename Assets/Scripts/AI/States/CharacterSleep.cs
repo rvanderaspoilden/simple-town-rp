@@ -31,11 +31,15 @@ namespace AI.States {
             this.player.Animator.SetAction(CharacterAnimatorAction.SLEEP);
 
             this.player.SetHeadTargetPosition(this.player.SitHeadPosition);
+            
+            DefaultViewUI.Instance.OpenSubGamePanel();
         }
 
         public void Tick() { }
 
         public void OnExit() {
+            DefaultViewUI.Instance.CloseSubGamePanel();
+            
             this.player.Animator.SetAction(CharacterAnimatorAction.NONE);
             this.player.SetHeadTargetPosition(this.player.IdleHeadPosition);
 

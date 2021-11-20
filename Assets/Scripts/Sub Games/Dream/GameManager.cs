@@ -6,7 +6,7 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace Sub_Games.Dream {
-    public class GameManager : MonoBehaviour {
+    public class GameManager : AbstractSubGameManager {
         [Header("Settings")]
         [SerializeField]
         private Collider2D startJumpCollider;
@@ -43,13 +43,22 @@ namespace Sub_Games.Dream {
             }
         }
 
-        private void Start() {
+        public override void StartGame() {
+            base.StartGame();
             StartCoroutine(this.WaveCoroutine());
         }
 
+        private void Update() {
+            if (Input.GetKeyDown(KeyCode.S)) {
+                this.StartGame();
+            }
+        }
+
         private IEnumerator WaveCoroutine() {
+            this._gameStarted = true;
+
             while (true) {
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 3; i++) {
                     Transform spawner = this.spawners[Random.Range(0, this.spawners.Count)];
                     Instantiate(this.sheepPrefab, spawner.position, Quaternion.identity);
                 }
@@ -73,6 +82,10 @@ namespace Sub_Games.Dream {
             this.CheckState();
         }
 
-        private void CheckState() { }
+        private void CheckState() {
+            if (failCount >= 3) {
+                this.StopGame();
+            }
+        }
     }
 }

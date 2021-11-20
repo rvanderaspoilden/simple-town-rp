@@ -30,6 +30,9 @@ namespace Sim {
         [SerializeField]
         private AdminPanelManager adminPanelManager;
 
+        [SerializeField]
+        private SubGamePanelUI subGamePanelUI;
+
         public static DefaultViewUI Instance;
 
         private void Awake() {
@@ -86,6 +89,14 @@ namespace Sim {
 
         public void ToggleAdminPanel() {
             this.adminPanelManager.gameObject.SetActive(!this.adminPanelManager.gameObject.activeSelf);
+        }
+
+        public void OpenSubGamePanel() {
+            this.subGamePanelUI.Init(SubGameType.DREAM);
+        }
+        
+        public void CloseSubGamePanel() {
+            this.subGamePanelUI.Close();
         }
     }
 }

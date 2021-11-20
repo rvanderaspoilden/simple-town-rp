@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1590273466036559727}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_11
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -40,7 +40,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3228031654991987100}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_10
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -71,7 +71,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7927143636261624870}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -104,7 +104,7 @@ GameObject:
   - component: {fileID: 2955289259885770906}
   - component: {fileID: 2622350994271190772}
   - component: {fileID: 405978064092197250}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_ar_F
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -175,7 +175,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
+  m_MaskInteraction: 1
   m_SpriteSortPoint: 0
 --- !u!114 &405978064092197250
 MonoBehaviour:
@@ -184,7 +184,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 594327803733870792}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57c008f954fe54a8bb972de1018a2cb8, type: 3}
   m_Name: 
@@ -207,7 +207,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9001456667338893354}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_12
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -238,7 +238,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2388996150233525490}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_15
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -268,7 +268,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1746225539211122424}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -299,7 +299,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8567988915179799495}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -332,7 +332,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 103923187194349683}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_13
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -366,7 +366,7 @@ GameObject:
   - component: {fileID: 5316028379428558280}
   - component: {fileID: 5011119073222422018}
   - component: {fileID: 2061384894919504571}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Tete
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -437,7 +437,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
+  m_MaskInteraction: 1
   m_SpriteSortPoint: 0
 --- !u!114 &2061384894919504571
 MonoBehaviour:
@@ -446,7 +446,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2729368871775253066}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57c008f954fe54a8bb972de1018a2cb8, type: 3}
   m_Name: 
@@ -471,7 +471,7 @@ GameObject:
   - component: {fileID: 6612072271884430063}
   - component: {fileID: 3325562661194866640}
   - component: {fileID: 5033897132018885694}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Tronc
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -542,7 +542,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
+  m_MaskInteraction: 1
   m_SpriteSortPoint: 0
 --- !u!114 &5033897132018885694
 MonoBehaviour:
@@ -551,7 +551,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3075921555137207901}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57c008f954fe54a8bb972de1018a2cb8, type: 3}
   m_Name: 
@@ -580,7 +580,8 @@ GameObject:
   - component: {fileID: 5578997574665284762}
   - component: {fileID: 5578997574665284761}
   - component: {fileID: 5578997574665284760}
-  m_Layer: 0
+  - component: {fileID: 1011315959676494245}
+  m_Layer: 20
   m_Name: Sheep
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -711,7 +712,104 @@ MonoBehaviour:
   moveSpeedMin: 10
   moveSpeedMax: 25
   fallSpeed: 70
+  jumpSound: {fileID: 8300000, guid: 5a63a26e91aa9d54392d4b2817ad87eb, type: 3}
   moveSpeed: 0
+--- !u!82 &1011315959676494245
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3322780902444405217}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &3541715543928786973
 GameObject:
   m_ObjectHideFlags: 0
@@ -721,7 +819,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6093798595448637404}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -754,7 +852,7 @@ GameObject:
   - component: {fileID: 385915583278156040}
   - component: {fileID: 6130675970158706453}
   - component: {fileID: 1300154201279303724}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_ar_B
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -825,7 +923,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
+  m_MaskInteraction: 1
   m_SpriteSortPoint: 0
 --- !u!114 &1300154201279303724
 MonoBehaviour:
@@ -834,7 +932,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3680013029954602871}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57c008f954fe54a8bb972de1018a2cb8, type: 3}
   m_Name: 
@@ -857,7 +955,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2360142121440517604}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -890,7 +988,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 209264812633569188}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_9
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -923,7 +1021,7 @@ GameObject:
   - component: {fileID: 2171004498435001418}
   - component: {fileID: 2813851733351752214}
   - component: {fileID: 407547112349669674}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Oreille_G
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -993,7 +1091,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
+  m_MaskInteraction: 1
   m_SpriteSortPoint: 0
 --- !u!114 &407547112349669674
 MonoBehaviour:
@@ -1002,7 +1100,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4856926277978416956}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57c008f954fe54a8bb972de1018a2cb8, type: 3}
   m_Name: 
@@ -1024,7 +1122,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1768900144577173174}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1057,7 +1155,7 @@ GameObject:
   - component: {fileID: 5934852304747167290}
   - component: {fileID: 3418987918559888336}
   - component: {fileID: 3808060614833761056}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_av_F
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1128,7 +1226,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
+  m_MaskInteraction: 1
   m_SpriteSortPoint: 0
 --- !u!114 &3808060614833761056
 MonoBehaviour:
@@ -1137,7 +1235,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5087232886734584727}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57c008f954fe54a8bb972de1018a2cb8, type: 3}
   m_Name: 
@@ -1160,7 +1258,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7825695274229933640}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1193,7 +1291,7 @@ GameObject:
   - component: {fileID: 1093200293073463958}
   - component: {fileID: 701135807534354827}
   - component: {fileID: 6454656450617666282}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Tete_smile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1264,7 +1362,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
+  m_MaskInteraction: 1
   m_SpriteSortPoint: 0
 --- !u!114 &6454656450617666282
 MonoBehaviour:
@@ -1273,7 +1371,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6029385341167578168}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57c008f954fe54a8bb972de1018a2cb8, type: 3}
   m_Name: 
@@ -1296,7 +1394,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4855369054364379089}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1327,7 +1425,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7165357969405931754}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_av_FTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1357,7 +1455,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7165357969472413759}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_av_BTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1388,7 +1486,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7165357969935736803}
   - component: {fileID: 7165357969935736802}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_ar_BSolver
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1451,7 +1549,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7165357970004101901}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_ar_FSolver_Target
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1482,7 +1580,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7165357970391835566}
   - component: {fileID: 7165357970391835553}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_ar_FSolver
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1545,7 +1643,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7165357970587080407}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_av_FSolver_Target
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1576,7 +1674,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7165357970897791099}
   - component: {fileID: 7165357970897791098}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_av_FSolver
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1630,7 +1728,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7165357970996012876}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_ar_BSolver_Target
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1660,7 +1758,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7165357971080310390}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_ar_BTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1690,7 +1788,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7165357971089380682}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_ar_FTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1721,7 +1819,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7165357971211450311}
   - component: {fileID: 7165357971211450310}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_av_BSolver
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1775,7 +1873,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7165357971360587061}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_av_BSolver_Target
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1807,7 +1905,7 @@ GameObject:
   - component: {fileID: 6366609998659431063}
   - component: {fileID: 3291196165305562952}
   - component: {fileID: 2559187439329264965}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Pate_av_B
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1878,7 +1976,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
+  m_MaskInteraction: 1
   m_SpriteSortPoint: 0
 --- !u!114 &2559187439329264965
 MonoBehaviour:
@@ -1887,7 +1985,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7176877525236029473}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57c008f954fe54a8bb972de1018a2cb8, type: 3}
   m_Name: 
@@ -1910,7 +2008,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8477473221891690297}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: bone_14
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1942,7 +2040,7 @@ GameObject:
   - component: {fileID: 3669235493794962341}
   - component: {fileID: 2770695511164282668}
   - component: {fileID: 2450871230487883404}
-  m_Layer: 0
+  m_Layer: 20
   m_Name: Oreille_D
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2013,7 +2111,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
+  m_MaskInteraction: 1
   m_SpriteSortPoint: 0
 --- !u!114 &2450871230487883404
 MonoBehaviour:
@@ -2022,7 +2120,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7726840917059665383}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57c008f954fe54a8bb972de1018a2cb8, type: 3}
   m_Name: 

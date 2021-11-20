@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Sub_Games.Dream {
     public class SheepController : MonoBehaviour {
@@ -12,6 +14,9 @@ namespace Sub_Games.Dream {
         [SerializeField]
         private float fallSpeed;
 
+        [SerializeField]
+        private AudioClip jumpSound;
+
         [Header("Only for debug")]
         [SerializeField]
         private float moveSpeed;
@@ -22,11 +27,13 @@ namespace Sub_Games.Dream {
         private bool _died;
 
         private Animator _animator;
+        private AudioSource _audioSource;
         private static readonly int Jumping = Animator.StringToHash("Jumping");
         private static readonly int Fail = Animator.StringToHash("Fail");
 
         private void Awake() {
             this._animator = GetComponent<Animator>();
+            this._audioSource = GetComponent<AudioSource>();
             this.moveSpeed = Random.Range(this.moveSpeedMin, this.moveSpeedMax);
         }
 
@@ -54,15 +61,23 @@ namespace Sub_Games.Dream {
             } else if (other == GameManager.Instance.StopJumpCollider) {
                 this._jumping = false;
                 this._animator.SetBool(Jumping, false);
-                GameManager.Instance.AddPoint();
+                Destroy(this.gameObject, 3f);
+            }
+        }
+
+        private void OnTriggerExit2D(Collider2D other) {
+            if(other == GameManager.Instance.StartJumpCollider){
+                this._inArea = false;
             }
         }
 
         private void OnMouseDown() {
-            if (!_inArea) return;
+            if (!_inArea || this._jumping) return;
 
             this._animator.SetBool(Jumping, true);
             this._jumping = true;
+            this._audioSource.PlayOneShot(this.jumpSound);
+            GameManager.Instance.AddPoint();
         }
     }
 }

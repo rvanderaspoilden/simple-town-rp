@@ -5,6 +5,7 @@ using Sim.Enums;
 using Sim.Interactables;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 namespace Sim {
@@ -58,6 +59,10 @@ namespace Sim {
         }
 
         public Camera Camera => camera;
+
+        public UniversalAdditionalCameraData GetCameraData() {
+            return this.camera.GetUniversalAdditionalCameraData();
+        }
 
         public void SetCameraTarget(Transform target) {
             this.tpsCamera.SetCameraTarget(target);
