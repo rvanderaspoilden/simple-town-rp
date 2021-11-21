@@ -21,6 +21,10 @@ public abstract class AbstractSubGameManager : MonoBehaviour {
         this.onGameStopped = onStop;
     }
 
+    private void OnDestroy() {
+        StopAllCoroutines();
+    }
+
     public virtual void StopGame() {
         this.onGameStopped?.Invoke();
     }
@@ -28,7 +32,7 @@ public abstract class AbstractSubGameManager : MonoBehaviour {
     public void SetCameraRenderType(CameraRenderType renderType) {
         this.Camera.GetUniversalAdditionalCameraData().renderType = renderType;
     }
-    
+
     public Camera Camera => camera;
 
     public bool IsGameStarted => _gameStarted;

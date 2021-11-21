@@ -1,9 +1,5 @@
-using System;
-using Sim;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class SubGamePanelUI : MonoBehaviour {
@@ -13,33 +9,31 @@ public class SubGamePanelUI : MonoBehaviour {
 
     private CanvasGroup _canvasGroup;
 
-    private AbstractSubGameManager _currentSubGame;
-    
+    public static SubGamePanelUI Instance;
+
     private void Awake() {
-        this._canvasGroup = GetComponent<CanvasGroup>();
-        this.startBtn.gameObject.SetActive(false);
-        this.Close();
+        if (Instance != null && Instance != this) {
+            Destroy(this.gameObject);
+        } else {
+            Instance = this;
+            this._canvasGroup = GetComponent<CanvasGroup>();
+            this.Close();
+        }
     }
 
-    public void Init(SubGameType subGameType) {
+    public void Open(SubGameConfiguration subGameConfiguration) {
         this._canvasGroup.alpha = 1;
         this._canvasGroup.interactable = true;
         this._canvasGroup.blocksRaycasts = true;
-        
-        switch (subGameType) {
+
+        this.startBtn.onClick.RemoveAllListeners();
+
+        switch (subGameConfiguration.SubGameType) {
             case SubGameType.DREAM:
                 this.startBtn.GetComponentInChildren<TextMeshProUGUI>().text = "Rêver";
                 this.startBtn.gameObject.SetActive(true);
                 this.startBtn.onClick.AddListener(() => {
-                    AsyncOperation operation = SceneManager.LoadSceneAsync("Dream", LoadSceneMode.Additive);
-                    operation.completed += (asyncOperation) => {
-                        this._currentSubGame = FindObjectOfType<AbstractSubGameManager>();
-                        this._currentSubGame.SetCameraRenderType(CameraRenderType.Overlay);
-                        CameraManager.Instance.GetCameraData().cameraStack.Add(this._currentSubGame.Camera);
-                        this._currentSubGame.Init(OnGameStarted(), OnGameStopped());
-                        this._currentSubGame.StartGame();
-                    };
-                    
+                    SubGameController.Instance.LaunchSubGame(subGameConfiguration, true);
                     this.startBtn.gameObject.SetActive(false);
                 });
                 break;
@@ -51,14 +45,4 @@ public class SubGamePanelUI : MonoBehaviour {
         this._canvasGroup.interactable = false;
         this._canvasGroup.blocksRaycasts = false;
     }
-
-    private Action OnGameStarted() => () => {
-        Debug.Log("Started");
-    };
-
-    private Action OnGameStopped() => () => {
-        Debug.Log("Stopped");
-        this.Close();
-        SceneManager.UnloadSceneAsync("Dream");
-    };
 }

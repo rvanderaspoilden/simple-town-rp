@@ -1,3 +1,4 @@
+using System.Linq;
 using DG.Tweening;
 using Sim;
 using Sim.Building;
@@ -32,13 +33,13 @@ namespace AI.States {
 
             this.player.SetHeadTargetPosition(this.player.SitHeadPosition);
             
-            DefaultViewUI.Instance.OpenSubGamePanel();
+            SubGameController.Instance.LaunchSubGame(DatabaseManager.SubGameConfigurations.First(x => x.SubGameType == SubGameType.DREAM));
         }
 
         public void Tick() { }
 
         public void OnExit() {
-            DefaultViewUI.Instance.CloseSubGamePanel();
+            SubGameController.Instance.StopSubGame();
             
             this.player.Animator.SetAction(CharacterAnimatorAction.NONE);
             this.player.SetHeadTargetPosition(this.player.IdleHeadPosition);

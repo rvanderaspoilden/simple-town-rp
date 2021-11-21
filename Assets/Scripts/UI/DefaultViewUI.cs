@@ -90,14 +90,6 @@ namespace Sim {
         public void ToggleAdminPanel() {
             this.adminPanelManager.gameObject.SetActive(!this.adminPanelManager.gameObject.activeSelf);
         }
-
-        public void OpenSubGamePanel() {
-            this.subGamePanelUI.Init(SubGameType.DREAM);
-        }
-        
-        public void CloseSubGamePanel() {
-            this.subGamePanelUI.Close();
-        }
     }
 }
 

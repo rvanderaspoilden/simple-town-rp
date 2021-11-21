@@ -41,7 +41,7 @@ namespace Sub_Games.Dream {
         void Update() {
             if (_falling) {
                 this.transform.Translate(Vector3.down * Time.deltaTime * this.fallSpeed);
-            } else if(!_died){
+            } else {
                 this.transform.Translate(Vector3.right * Time.deltaTime * this.moveSpeed);
             }
         }
@@ -54,7 +54,7 @@ namespace Sub_Games.Dream {
             if (other.CompareTag("Fall Point") && !_jumping) {
                 this._died = true;
                 this._animator.SetTrigger(Fail);
-                GameManager.Instance.AddError();
+                GameManager.Instance.Invoke(nameof(GameManager.AddError), 3f);
                 Destroy(this.gameObject, 3f);
             } else if(other == GameManager.Instance.StartJumpCollider){
                 this._inArea = true;

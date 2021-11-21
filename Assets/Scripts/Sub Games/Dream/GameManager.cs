@@ -1,9 +1,7 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace Sub_Games.Dream {
     public class GameManager : AbstractSubGameManager {
@@ -26,6 +24,9 @@ namespace Sub_Games.Dream {
         [SerializeField]
         private float waveInterval;
 
+        [SerializeField]
+        private Transform sheepContainer;
+
         [Header("Debug")]
         [SerializeField]
         private int sheepCount;
@@ -42,7 +43,7 @@ namespace Sub_Games.Dream {
                 Instance = this;
             }
         }
-
+        
         public override void StartGame() {
             base.StartGame();
             StartCoroutine(this.WaveCoroutine());
@@ -60,7 +61,8 @@ namespace Sub_Games.Dream {
             while (true) {
                 for (int i = 0; i < 3; i++) {
                     Transform spawner = this.spawners[Random.Range(0, this.spawners.Count)];
-                    Instantiate(this.sheepPrefab, spawner.position, Quaternion.identity);
+                    SheepController sheep = Instantiate(this.sheepPrefab, spawner.position, Quaternion.identity);
+                    sheep.transform.parent = this.sheepContainer;
                 }
 
                 yield return new WaitForSeconds(this.waveInterval);
