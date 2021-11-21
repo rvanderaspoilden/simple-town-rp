@@ -60,9 +60,11 @@ namespace Sub_Games.Dream {
 
             while (true) {
                 for (int i = 0; i < 3; i++) {
-                    Transform spawner = this.spawners[Random.Range(0, this.spawners.Count)];
+                    int spawnerIdx = Random.Range(0, this.spawners.Count);
+                    Transform spawner = this.spawners[spawnerIdx];
                     SheepController sheep = Instantiate(this.sheepPrefab, spawner.position, Quaternion.identity);
                     sheep.transform.parent = this.sheepContainer;
+                    sheep.SpriteRenderer.sortingOrder = spawnerIdx;
                 }
 
                 yield return new WaitForSeconds(this.waveInterval);

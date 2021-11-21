@@ -28,12 +28,14 @@ namespace Sub_Games.Dream {
 
         private Animator _animator;
         private AudioSource _audioSource;
+        private SpriteRenderer _spriteRenderer;
         private static readonly int Jumping = Animator.StringToHash("Jumping");
         private static readonly int Fail = Animator.StringToHash("Fail");
 
         private void Awake() {
             this._animator = GetComponent<Animator>();
             this._audioSource = GetComponent<AudioSource>();
+            this._spriteRenderer = GetComponent<SpriteRenderer>();
             this.moveSpeed = Random.Range(this.moveSpeedMin, this.moveSpeedMax);
         }
 
@@ -41,7 +43,7 @@ namespace Sub_Games.Dream {
         void Update() {
             if (_falling) {
                 this.transform.Translate(Vector3.down * Time.deltaTime * this.fallSpeed);
-            } else {
+            } else if(!_died){
                 this.transform.Translate(Vector3.right * Time.deltaTime * this.moveSpeed);
             }
         }
@@ -49,6 +51,8 @@ namespace Sub_Games.Dream {
         public void StartFalling() {
             this._falling = true;
         }
+
+        public SpriteRenderer SpriteRenderer => _spriteRenderer;
 
         private void OnTriggerEnter2D(Collider2D other) {
             if (other.CompareTag("Fall Point") && !_jumping) {
