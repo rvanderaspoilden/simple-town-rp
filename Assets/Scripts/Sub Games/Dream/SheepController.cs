@@ -26,6 +26,8 @@ namespace Sub_Games.Dream {
         private bool _falling;
         private bool _died;
 
+        private GenericPool<SheepController> _linkedPool;
+
         private Animator _animator;
         private AudioSource _audioSource;
         private SpriteRenderer _spriteRenderer;
@@ -36,7 +38,6 @@ namespace Sub_Games.Dream {
             this._animator = GetComponent<Animator>();
             this._audioSource = GetComponent<AudioSource>();
             this._spriteRenderer = GetComponent<SpriteRenderer>();
-            this.moveSpeed = Random.Range(this.moveSpeedMin, this.moveSpeedMax);
         }
 
         // Update is called once per frame
@@ -52,6 +53,27 @@ namespace Sub_Games.Dream {
             this._falling = true;
         }
 
+        public void LinkPool(GenericPool<SheepController> pool) {
+            this._linkedPool = pool;
+        }
+
+        public void ResetState() {
+            this._died = false;
+            this._falling = false;
+            this._jumping = false;
+            this._inArea = false;
+            this._animator.SetBool(Jumping, false);
+            this.Freeze();
+        }
+
+        public void RandomizeSpeed() {
+            this.moveSpeed = Random.Range(this.moveSpeedMin, this.moveSpeedMax);
+        }
+
+        public void Freeze() {
+            this.moveSpeed = 0;
+        }
+
         public SpriteRenderer SpriteRenderer => _spriteRenderer;
 
         private void OnTriggerEnter2D(Collider2D other) {
@@ -59,13 +81,13 @@ namespace Sub_Games.Dream {
                 this._died = true;
                 this._animator.SetTrigger(Fail);
                 GameManager.Instance.Invoke(nameof(GameManager.AddError), 3f);
-                Destroy(this.gameObject, 3f);
             } else if(other == GameManager.Instance.StartJumpCollider){
                 this._inArea = true;
             } else if (other == GameManager.Instance.StopJumpCollider) {
                 this._jumping = false;
                 this._animator.SetBool(Jumping, false);
-                Destroy(this.gameObject, 3f);
+            } else if (GameManager.Instance.DestroyColliders.Contains(other)) {
+                this._linkedPool.Release(this);
             }
         }
 

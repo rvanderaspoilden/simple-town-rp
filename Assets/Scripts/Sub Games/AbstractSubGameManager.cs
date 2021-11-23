@@ -8,6 +8,7 @@ public abstract class AbstractSubGameManager : MonoBehaviour {
     private Camera camera;
 
     protected bool _gameStarted;
+    protected bool _gameStopped;
 
     private Action onGameStopped;
     private Action onGameStarted;
@@ -26,6 +27,7 @@ public abstract class AbstractSubGameManager : MonoBehaviour {
     }
 
     public virtual void StopGame() {
+        this._gameStopped = true;
         this.onGameStopped?.Invoke();
     }
 
