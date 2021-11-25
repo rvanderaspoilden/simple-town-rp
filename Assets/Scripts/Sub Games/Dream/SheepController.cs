@@ -92,8 +92,10 @@ namespace Sub_Games.Dream {
         }
 
         private void OnTriggerExit2D(Collider2D other) {
+            Debug.Log(other.name);
             if(other == GameManager.Instance.StartJumpCollider){
                 this._inArea = false;
+                Debug.Log("Not in area");
             }
         }
 

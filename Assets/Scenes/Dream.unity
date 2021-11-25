@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.12731713, g: 0.13414736, b: 0.12107852, a: 1}
+  m_IndirectSpecularColor: {r: 0.12731749, g: 0.13414757, b: 0.1210787, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -302,10 +302,10 @@ MonoBehaviour:
   - {fileID: 1501033431}
   - {fileID: 1965116640}
   - {fileID: 728582719}
-  waveInterval: 10
   sheepContainer: {fileID: 2079177402}
   sheepCount: 0
   failCount: 0
+  _waveSheeps: []
 --- !u!4 &242201206
 Transform:
   m_ObjectHideFlags: 0
@@ -735,6 +735,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 0
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
@@ -1250,7 +1251,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 5.018265, y: -10.03653}
+  m_Offset: {x: 7.6894083, y: -10.03653}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -1261,7 +1262,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 11.284344, y: 47.837128}
+  m_Size: {x: 0.48093987, y: 47.837128}
   m_EdgeRadius: 0
 --- !u!4 &1639810993
 Transform:
@@ -1271,7 +1272,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1639810991}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -9.564074, y: 6.9059067, z: 11.403333}
+  m_LocalPosition: {x: -15.71, y: 5.66, z: 11.403333}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 2122777816}
