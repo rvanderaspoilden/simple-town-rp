@@ -10,6 +10,7 @@ namespace AI.States {
 
         public CharacterInteract(PlayerController player) {
             this.player = player;
+            this.player.PlayerState = PlayerState.INTERACTING;
         }
 
         public Props InteractedProps {

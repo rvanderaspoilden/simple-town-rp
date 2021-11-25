@@ -10,6 +10,7 @@ namespace AI.States {
         }
 
         public void OnEnter() {
+            this.player.PlayerState = PlayerState.MOVING;
         }
 
         public void Tick() {

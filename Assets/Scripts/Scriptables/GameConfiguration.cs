@@ -21,6 +21,10 @@ public class GameConfiguration : ScriptableObject {
     [Tooltip("Number of in game days needed before dying of tiredness")]
     [SerializeField]
     private float tirednessDurationInDays;
+    
+    [Tooltip("Number of real minutes needed before dying of tiredness")]
+    [SerializeField]
+    private float tirednessRecoveryDuration;
 
     public double TimeMultiplier => timeMultiplier;
 
@@ -31,4 +35,6 @@ public class GameConfiguration : ScriptableObject {
     public float ThirstDurationInDays => thirstDurationInDays;
 
     public float TirednessDurationInDays => tirednessDurationInDays;
+
+    public float TirednessRecoveryDuration => tirednessRecoveryDuration;
 }

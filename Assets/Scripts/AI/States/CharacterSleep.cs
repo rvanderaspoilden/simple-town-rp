@@ -21,6 +21,7 @@ namespace AI.States {
         public void OnEnter() {
             this.player.NavMeshAgent.enabled = false;
             this.player.Collider.enabled = false;
+            this.player.PlayerState = PlayerState.SLEEPING;
 
             Transform characterTransform = this.player.transform;
             

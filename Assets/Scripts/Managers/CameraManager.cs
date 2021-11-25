@@ -69,7 +69,7 @@ namespace Sim {
         }
 
         void Update() {
-            if (PlayerController.Local == null || PlayerController.Local.Died) return;
+            if (PlayerController.Local == null || PlayerController.Local.PlayerState == PlayerState.DIED) return;
 
             if (this.currentMode == CameraModeEnum.FREE) {
                 this.ManageInteraction();

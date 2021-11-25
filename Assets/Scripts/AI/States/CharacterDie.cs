@@ -10,6 +10,8 @@ namespace AI.States {
         }
 
         public void OnEnter() {
+            this.player.PlayerState = PlayerState.DIED;
+
             this.player.Animator.SetAction(CharacterAnimatorAction.DIE);
 
             this.player.SetHeadTargetPosition(this.player.SitHeadPosition);

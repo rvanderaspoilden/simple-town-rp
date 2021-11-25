@@ -9,6 +9,8 @@ namespace AI.States {
         }
 
         public void OnEnter() {
+            this.player.PlayerState = PlayerState.IDLE;
+
             if (this.player.PropsTarget && this.player.CanInteractWith(this.player.PropsTarget)) {
                 this.player.LookAt(this.player.PropsTarget.transform);
                 HUDManager.Instance.ShowContextMenu(this.player.PropsTarget.GetActions(this.player.ShowRadialMenuWithPriority), this.player.PropsTarget.transform, this.player.ShowRadialMenuWithPriority);

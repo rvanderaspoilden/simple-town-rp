@@ -67,10 +67,6 @@ namespace Sim {
         [SerializeField]
         private Home characterHome;
 
-        [SyncVar]
-        [SerializeField]
-        private bool died;
-
         [SyncVar(hook = nameof(ParseCharacterData))]
         private string rawCharacterData;
 
@@ -79,6 +75,9 @@ namespace Sim {
 
         [SyncVar(hook = nameof(OnTalkingStateChanged))]
         private bool isTalking;
+
+        [SyncVar]
+        private PlayerState _playerState;
 
         private PlayerAnimator animator;
 
@@ -149,7 +148,7 @@ namespace Sim {
         public override void OnStartLocalPlayer() {
             this.InitStateMachine();
 
-            if (died) {
+            if (this._playerState == PlayerState.DIED) {
                 this.stateMachine.SetState(dieState);
             } else {
                 this.stateMachine.SetState(idleState);
@@ -169,6 +168,11 @@ namespace Sim {
             if (isLocalPlayer) {
                 this.UnSubscribeActions(this.actions);
             }
+        }
+
+        public PlayerState PlayerState {
+            get => _playerState;
+            set => _playerState = value;
         }
 
         private void OnTriggerStay(Collider other) {
@@ -412,7 +416,6 @@ namespace Sim {
 
         [Server]
         public void Kill() {
-            this.died = true;
             this.TargetKill(this.netIdentity.connectionToClient);
             Invoke(nameof(Revive), 4f);
         }
@@ -424,7 +427,6 @@ namespace Sim {
             if (buildingBehavior) {
                 buildingBehavior.TeleportToApartment(this.characterHome.Address.doorNumber, this.netIdentity.connectionToClient);
                 this.playerHealth.ResetAll();
-                this.died = false;
                 this.playerBankAccount.TakeMoney(50);
                 this.TargetRevive(this.netIdentity.connectionToClient);
             } else {
@@ -529,8 +531,6 @@ namespace Sim {
         public Props GetInteractedProps() => this.characterInteractState.InteractedProps;
 
         public Collider Collider { get; private set; }
-
-        public bool Died => died;
 
         #endregion
 

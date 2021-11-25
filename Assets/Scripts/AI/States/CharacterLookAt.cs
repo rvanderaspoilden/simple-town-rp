@@ -8,6 +8,7 @@ namespace AI.States {
 
         public CharacterLookAt(PlayerController player) {
             this.player = player;
+            this.player.PlayerState = PlayerState.LOOKING;
         }
 
         public Transform Target {

@@ -47,8 +47,13 @@ public class PlayerHealth : NetworkBehaviour {
     private void Update() {
         if (!isServer) return;
 
-        if (this._playerController.Died) {
+        if (this._playerController.PlayerState == PlayerState.DIED) {
             this._lastTime = Time.time;
+            return;
+        }
+
+        if (this._playerController.PlayerState == PlayerState.SLEEPING) {
+            this.ManageVitalNecessitiesWhenSleeping();
             return;
         }
 
@@ -88,11 +93,34 @@ public class PlayerHealth : NetworkBehaviour {
         
         this._lastTime = Time.time;
     }
+    
+    [Server]
+    private void ManageVitalNecessitiesWhenSleeping() {
+        if (this.hungry > 0) {
+            this.hungry = this.GetDecreasedValue(this.hungry, DatabaseManager.GameConfiguration.HungryDurationInDays * 2);
+        }
+
+        if (this.thirst > 0) {
+            this.thirst = this.GetDecreasedValue(this.thirst, DatabaseManager.GameConfiguration.ThirstDurationInDays * 2);
+        }
+
+        if (this.tiredness < 100) {
+            this.tiredness = this.GetIncreasedValue(this.tiredness, DatabaseManager.GameConfiguration.TirednessRecoveryDuration);
+        }
+        
+        this._lastTime = Time.time;
+    }
 
     private float GetDecreasedValue(float initialValue, float referenceDuration) {
         double valueToDecrease = ((Time.time - this._lastTime) * 100) / TimeManager.ConvertInGameDaysToRealSeconds(referenceDuration);
         float preview = initialValue - (float) valueToDecrease;
-        return preview > 0 ? preview : 0;
+        return preview > VITAL_NECESSITY_MIN_VALUE ? preview : VITAL_NECESSITY_MIN_VALUE;
+    }
+    
+    private float GetIncreasedValue(float initialValue, float referenceDuration) {
+        double valueToIncrease = ((Time.time - this._lastTime) * 100) / referenceDuration;
+        float preview = initialValue + (float) valueToIncrease;
+        return preview < VITAL_NECESSITY_MAX_VALUE ? preview : VITAL_NECESSITY_MAX_VALUE;
     }
 
     private float GetAppliedValue(float initialValue, float valueToAdd, float min, float max) {
