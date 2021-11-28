@@ -15,19 +15,9 @@ namespace Sim {
         private float fadeOutDuration;
 
         [SerializeField]
-        private float maxLoaderOpacity;
+        private Image logoImg;
 
-        [SerializeField]
-        private float maxFrontOpacity;
-
-        [SerializeField]
-        private Image backgroundImg;
-
-        [SerializeField]
-        private Image frontImg;
-
-        [SerializeField]
-        private Image loaderImg;
+        private CanvasGroup _canvasGroup;
 
         public delegate void StateChanged(bool isActive);
 
@@ -40,26 +30,23 @@ namespace Sim {
                 Destroy(this.gameObject);
             } else {
                 Instance = this;
+                this._canvasGroup = GetComponent<CanvasGroup>();
+                this.Hide(true);
+                DontDestroyOnLoad(this.gameObject);
             }
-
-            this.frontImg.color = new Color(1, 1, 1, 0);
-            this.backgroundImg.color = new Color(1, 1, 1, 0);
-            this.loaderImg.color = new Color(1, 1, 1, 0);
-
-            DontDestroyOnLoad(this.gameObject);
         }
 
         public void Show(bool instant = false, Action action = null) {
-            this.backgroundImg.DOColor(new Color(1, 1, 1, 1), instant ? 0 : this.fadeInDuration).OnComplete(() => action?.Invoke());
-            this.frontImg.DOColor(new Color(1, 1, 1, this.maxFrontOpacity), instant ? 0 : this.fadeInDuration);
-            this.loaderImg.DOColor(new Color(1, 1, 1, this.maxLoaderOpacity), instant ? 0 : this.fadeInDuration);
+            this._canvasGroup.interactable = true;
+            this._canvasGroup.blocksRaycasts = true;
+            this._canvasGroup.DOFade(1, instant ? 0 : this.fadeInDuration).OnComplete(() => action?.Invoke());
             OnStateChanged?.Invoke(true);
         }
 
-        public void Hide() {
-            this.backgroundImg.DOColor(new Color(1, 1, 1, 0), this.fadeOutDuration).OnComplete(() => OnStateChanged?.Invoke(false));
-            this.frontImg.DOColor(new Color(1, 1, 1, 0), this.fadeOutDuration);
-            this.loaderImg.DOColor(new Color(1, 1, 1, 0), this.fadeOutDuration);
+        public void Hide(bool instant = false) {
+            this._canvasGroup.interactable = true;
+            this._canvasGroup.blocksRaycasts = false;
+            this._canvasGroup.DOFade(0, instant ? 0 : this.fadeOutDuration).OnComplete(() => OnStateChanged?.Invoke(false));
         }
     }
 }
