@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: Fridge2
+  m_EditorClassIdentifier: 
+  id: 66
+  displayName: "R\xE9frig\xE9rateur"
+  sprite: {fileID: 0}
+  propsType: 6
+  buyable: 1
+  price: 0
+  prefab: {fileID: -7827543385035098070, guid: 5ad1b3a74b207ce4289fa7325841dfed, type: 3}
+  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  surfaceToPose: 0
+  posableOnProps: 0
+  hasPosableSurface: 0
+  connectedToWall: 0
+  toBuild: 1
+  rangeToInteract: 1.5
+  actions:
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
+  - {fileID: 11400000, guid: eb2c51e8927332c40abe1682f0e39009, type: 2}
+  unbuiltActions:
+  - {fileID: 11400000, guid: 3e1f7b140e8e1c5419783ee5a990b41d, type: 2}
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
+  cursor: {fileID: 2800000, guid: bb735f5ed12e4d1439f78a761cf355c1, type: 3}
+  presets: []
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
