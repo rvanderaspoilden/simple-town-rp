@@ -99,7 +99,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: bb7c9280e8d9fe74b9c67dc56b2b13af, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!65 &4421387068743569510
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -111,7 +110,7 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.59, y: 2.0846043, z: 0.63}
+  m_Size: {x: 0.59, y: 2.0846043, z: 0.59}
   m_Center: {x: 0, y: 1.0425878, z: 0.02013576}
 --- !u!208 &4421387068743569515
 NavMeshObstacle:

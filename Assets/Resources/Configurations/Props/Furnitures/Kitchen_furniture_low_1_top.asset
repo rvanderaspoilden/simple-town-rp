@@ -1,0 +1,108 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: Kitchen_furniture_low_1_top
+  m_EditorClassIdentifier: 
+  id: 71
+  displayName: Meuble de cuisine haut 1
+  sprite: {fileID: 0}
+  propsType: 0
+  buyable: 1
+  price: 0
+  prefab: {fileID: 3864918365865051382, guid: 3113b0163a8ef4a42a34536025c2dd2b, type: 3}
+  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  surfaceToPose: 0
+  posableOnProps: 0
+  hasPosableSurface: 1
+  connectedToWall: 0
+  toBuild: 1
+  rangeToInteract: 1.5
+  actions:
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
+  unbuiltActions:
+  - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
+  - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}
+  - {fileID: 11400000, guid: 3e1f7b140e8e1c5419783ee5a990b41d, type: 2}
+  cursor: {fileID: 2800000, guid: 5ebd2cb74cea3b644a5834d4596e3665, type: 3}
+  presets:
+  - id: 0
+    label: white and wood
+    primary:
+      enabled: 1
+      color: {r: 0.9811321, g: 0.9811321, b: 0.9811321, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.745283, g: 0.6615341, b: 0.4745906, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      material: {fileID: 0}
+  - id: 1
+    label: Black and wood
+    primary:
+      enabled: 1
+      color: {r: 0.066037714, g: 0.066037714, b: 0.066037714, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.5849056, g: 0.4257364, b: 0.31176573, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 1
+      color: {r: 0.06666667, g: 0.06666667, b: 0.06666667, a: 1}
+      material: {fileID: 0}
+  - id: 2
+    label: Black and white
+    primary:
+      enabled: 1
+      color: {r: 0.10092557, g: 0.1057403, b: 0.11320752, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.9056604, g: 0.9056604, b: 0.9056604, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 1
+      color: {r: 0.10196079, g: 0.10588236, b: 0.1137255, a: 1}
+      material: {fileID: 0}
+  - id: 3
+    label: blue and black
+    primary:
+      enabled: 1
+      color: {r: 0.1721698, g: 0.39509428, b: 0.5, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 0.74509805, g: 0.6627451, b: 0.47450984, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 1
+      color: {r: 0.17254902, g: 0.39607847, b: 0.5019608, a: 1}
+      material: {fileID: 0}
+  - id: 4
+    label: creamy
+    primary:
+      enabled: 1
+      color: {r: 1, g: 0.7725491, b: 0.5764706, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 1, g: 0.7725491, b: 0.5764706, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 1
+      color: {r: 1, g: 0.7725491, b: 0.5764706, a: 1}
+      material: {fileID: 0}
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}

@@ -99,7 +99,7 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.6011909, y: 1.8, z: 0.60000014}
+  m_Size: {x: 0.59, y: 1.8, z: 0.59}
   m_Center: {x: -0.0005953909, y: 0.9, z: 0}
 --- !u!208 &2760128852887837127
 NavMeshObstacle:
@@ -149,7 +149,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: 9cd0335e2126ba045a8f9aeae5f93ec2, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!114 &-2247946768396636399
 MonoBehaviour:
   m_ObjectHideFlags: 0
