@@ -124,7 +124,6 @@ MonoBehaviour:
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: d35c64d30ca587f43aa4818c4afdcf20, type: 2}
   defaultPresetId: -1
-  parentId: 0
 --- !u!65 &3541074618040244336
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -136,7 +135,7 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 0.59, y: 0.8241275, z: 0.63}
+  m_Size: {x: 0.59, y: 0.8241275, z: 0.59}
   m_Center: {x: 0, y: 0.41182408, z: 0.02013576}
 --- !u!54 &3541074618040244364
 Rigidbody:
