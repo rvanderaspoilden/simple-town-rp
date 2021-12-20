@@ -7,16 +7,16 @@ using Sim.Enums;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
 
-[RequireComponent(typeof(NetworkTransform))]
-public class Item : NetworkEntity {
+public class Item : NetworkBehaviour {
     [Header("Settings")]
     [SerializeField]
     protected ItemConfig configuration;
 
-    private Action[] _actions;
+    [SerializeField]
+    [SyncVar(hook = nameof(IsEquippedStateChanged))]
+    private bool isEquipped;
 
-    [SyncVar]
-    private string owner;
+    private Action[] _actions;
 
     private void Awake() {
         this._actions = Array.Empty<Action>();
@@ -30,12 +30,25 @@ public class Item : NetworkEntity {
         this.UnSubscribeActions(this._actions);
     }
 
-    public void SetAsEquipped() {
+    private void SetAsEquipped() {
         this.SetupActions(this.configuration.EquippedActions);
     }
 
-    public void SetAsUnEquipped() {
+    private void SetAsUnEquipped() {
         this.SetupActions(this.configuration.UnEquippedActions);
+    }
+    
+    public void IsEquippedStateChanged(bool old, bool newValue) {
+        if (newValue) {
+            this.SetAsEquipped();
+        } else {
+            this.SetAsUnEquipped();
+        }
+    }
+
+    [Server]
+    public void ChangeIsEquippedState(bool value) {
+        this.isEquipped = value;
     }
 
     private void SetupActions(List<Action> actions) {
@@ -90,60 +103,10 @@ public class Item : NetworkEntity {
 
     public ItemConfig Configuration => configuration;
 
-    public string Owner => owner;
-
-    public bool HasOwner() {
-        return this.owner?.Length > 0;
-    }
-
-    [Command(requiresAuthority = false)]
-    public void CmdSetOwner(NetworkConnectionToClient sender = null) {
-        if (sender == null) {
-            Debug.Log("[Item] [CmdSetOwner] Cannot set owner because sender is null");
-            return;
-        }
-
-        this.owner = sender.identity.GetComponent<PlayerController>().CharacterData.Id;
-        this.netIdentity.AssignClientAuthority(sender);
-        this.RpcSetOwner(sender);
-    }
-
-    [TargetRpc]
-    public void RpcSetOwner(NetworkConnection conn) {
-        this.SetAsEquipped();
-        PlayerController.Local.PlayerHands.EquipItem(this);
-        Debug.Log("I'm now the owner of this item");
-    }
-
-    [Command(requiresAuthority = false)]
-    public void CmdRemoveOwner(NetworkConnectionToClient sender = null) {
-        this.owner = string.Empty;
-        this.netIdentity.RemoveClientAuthority();
-        this.RpcRemoveOwner(sender);
-
-        this.transform.rotation = Quaternion.identity;
-
-        RaycastHit hit;
-
-        if (Physics.Raycast(this.transform.position, Vector3.down, out hit, 10)) {
-            this.transform.position = hit.point;
-        }
-    }
-
-    [TargetRpc]
-    public void RpcRemoveOwner(NetworkConnection conn) {
-        this.SetAsUnEquipped();
-        HUDManager.Instance.InventoryUI.CloseCurrentActionMenu();
-        HUDManager.Instance.InventoryUI.UpdateUI();
-        Debug.Log("I'm no longer the owner of this item");
-    }
-
-    [Client]
     protected virtual void Pick() {
         PlayerController.Local.PlayerHands.TryEquipItem(this);
     }
 
-    [Client]
     protected virtual void Drop() {
         PlayerController.Local.PlayerHands.UnEquipItem(this);
     }

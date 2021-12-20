@@ -200,20 +200,14 @@ namespace Sim {
         }
 
         public void Consume(Consumable consumable) {
-            this.CmdConsume(consumable.netId);
+            this.CmdConsume(consumable.Configuration.ID);
         }
 
         [Command]
-        public void CmdConsume(uint itemNetId) {
-            if (!NetworkIdentity.spawned.ContainsKey(itemNetId)) {
-                Debug.LogError($"[PlayerController] [CmdEat] Cannot found netId [id={itemNetId}]");
-            }
+        public void CmdConsume(int itemId) {
+            ItemConfig config = DatabaseManager.ItemConfigs.Find(x => x.ID == itemId);
 
-            Consumable consumable = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Consumable>();
-
-            this.playerHealth.ApplyModifications(((ConsumableConfig) consumable.Configuration).Impacts);
-
-            NetworkServer.Destroy(consumable.gameObject);
+            this.playerHealth.ApplyModifications(((ConsumableConfig) config).Impacts);
 
             this.RpcConsume();
         }
@@ -223,7 +217,7 @@ namespace Sim {
             if (isLocalPlayer) {
                 HUDManager.Instance.InventoryUI.Invoke(nameof(InventoryUI.UpdateUI), .1f);
             }
-
+            
             this.audioSource.PlayOneShot(this.eatSound);
         }
 
@@ -280,6 +274,12 @@ namespace Sim {
             this.playerBankAccount.Init(this.characterData.Money);
         }
 
+        [Server]
+        public void SetRawCharacterHome(string data) {
+            this.rawCharacterHome = data;
+            this.characterHome = JsonUtility.FromJson<Home>(this.rawCharacterHome);
+        }
+
         public void ParseCharacterData(string old, string newValue) {
             this.characterData = JsonUtility.FromJson<CharacterData>(newValue);
             this.characterStyleSetup.ApplyStyle(this.CharacterData.Style);
@@ -292,6 +292,7 @@ namespace Sim {
 
         public void ParseCharacterHome(string old, string newValue) {
             this.characterHome = JsonUtility.FromJson<Home>(newValue);
+            Debug.Log("TOTO");
         }
 
         private void Update() {

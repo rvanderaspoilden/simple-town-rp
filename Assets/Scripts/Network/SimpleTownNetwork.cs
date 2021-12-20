@@ -464,7 +464,7 @@ public class SimpleTownNetwork : NetworkManager {
                 HomeResponse homeResponse = JsonUtility.FromJson<HomeResponse>(homeRequest.downloadHandler.text);
 
                 if (homeResponse.Homes.Length > 0) {
-                    player.RawCharacterHome = JsonUtility.ToJson(homeResponse.Homes[0]);
+                    player.SetRawCharacterHome(JsonUtility.ToJson(homeResponse.Homes[0]));
 
                     Address address = homeResponse.Homes[0].Address;
 

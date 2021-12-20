@@ -36,5 +36,9 @@ public class GenericPool<T> where T : MonoBehaviour {
         this.activeElements.Remove(element);
     }
 
-    public void Dispose() { }
+    public void Dispose() {
+        for (int i = 0; i < this.activeElements.Count; i++) {
+            this.Release(this.activeElements[i]);
+        }
+    }
 }
