@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Sim;
 using UnityEngine;
@@ -25,7 +24,7 @@ public class InventoryUI : MonoBehaviour {
 
     [SerializeField]
     private DraggableItem draggableItemPrefab;
-    
+
     [SerializeField]
     private InventoryActionMenu leftHandActionMenu;
 
@@ -41,18 +40,22 @@ public class InventoryUI : MonoBehaviour {
     private void Awake() {
         this._draggableItemPool = new GenericPool<DraggableItem>(OnCreateDraggableItem, OnGetDraggableItem, OnReleaseDraggableItem);
     }
-    
+
     private void OnEnable() {
         this.UpdateUI();
 
-        DraggableItem.OnClick += OnItemClicked;
+        DraggableItem.OnLeftClick += OnItemLeftClicked;
+        DraggableItem.OnRightClick += OnItemRightClicked;
+        DraggableItem.OnStartDrag += OnItemStartDrag;
         ItemSlot.OnItemMove += OnItemMoved;
     }
 
     private void OnDisable() {
         this._draggableItemPool.Dispose();
-        
-        DraggableItem.OnClick -= OnItemClicked;
+
+        DraggableItem.OnLeftClick -= OnItemLeftClicked;
+        DraggableItem.OnRightClick -= OnItemRightClicked;
+        DraggableItem.OnStartDrag -= OnItemStartDrag;
         ItemSlot.OnItemMove -= OnItemMoved;
     }
 
@@ -62,16 +65,36 @@ public class InventoryUI : MonoBehaviour {
         }
     }
 
-    private void OnItemClicked(DraggableItem draggableItem) {
+    private void OnItemLeftClicked(DraggableItem draggableItem) {
         this.CloseCurrentActionMenu();
+    }
+    
+    private void OnItemStartDrag(DraggableItem draggableItem) {
+        this.CloseCurrentActionMenu();
+    }
+
+    private void OnItemRightClicked(DraggableItem draggableItem) {
+        if (draggableItem.ItemSlot == this.leftHandSlot) {
+            if (currentActionMenu == this.leftHandActionMenu) {
+                this.CloseCurrentActionMenu();
+            } else {
+                this.DisplayLeftActionMenu();
+            }
+        } else if (draggableItem.ItemSlot == this.rightHandSlot) {
+            if (currentActionMenu == this.rightHandActionMenu) {
+                this.CloseCurrentActionMenu();
+            } else {
+                this.DisplayRightActionMenu();
+            }
+        }
     }
 
     private void OnItemMoved(ItemSlot originSlot, ItemSlot targetSlot) {
         if ((originSlot == this.leftHandSlot && targetSlot == this.rightHandSlot) || (originSlot == this.rightHandSlot && targetSlot == this.leftHandSlot)) {
             PlayerController.Local.PlayerHands.Swap();
-        } 
+        }
     }
-    
+
     public void DisplayLeftActionMenu() {
         this.CloseCurrentActionMenu();
 
@@ -96,10 +119,11 @@ public class InventoryUI : MonoBehaviour {
         if (!this.currentActionMenu) return;
 
         this.currentActionMenu.Hide(instantly);
+        this.currentActionMenu = null;
     }
 
     public void UpdateUI() {
-        if (PlayerController.Local.PlayerHands.RightHandItem && 
+        if (PlayerController.Local.PlayerHands.RightHandItem &&
             PlayerController.Local.PlayerHands.RightHandItem.Configuration.HandleType == ItemHandleType.TWO_HAND) {
             this.leftHandSlot.gameObject.SetActive(false);
             this.rightHandSlot.gameObject.SetActive(false);
@@ -117,25 +141,25 @@ public class InventoryUI : MonoBehaviour {
                 DraggableItem draggableItem = this._draggableItemPool.Get();
                 draggableItem.SetConfiguration(PlayerController.Local.PlayerHands.LeftHandItem.Configuration);
                 this.leftHandSlot.SetItem(draggableItem);
-            } 
+            }
 
             if (PlayerController.Local.PlayerHands.RightHandItem) {
                 DraggableItem draggableItem = this._draggableItemPool.Get();
                 draggableItem.SetConfiguration(PlayerController.Local.PlayerHands.RightHandItem.Configuration);
                 this.rightHandSlot.SetItem(draggableItem);
-            } 
+            }
         }
 
         this.CloseCurrentActionMenu(true);
     }
-    
+
     #region Pool Management
 
     private DraggableItem OnCreateDraggableItem() {
         DraggableItem draggableItem = Instantiate(this.draggableItemPrefab, this.poolContainer);
         return draggableItem;
-    } 
-    
+    }
+
     private void OnGetDraggableItem(DraggableItem draggableItem) {
         draggableItem.gameObject.SetActive(true);
     }
@@ -146,5 +170,4 @@ public class InventoryUI : MonoBehaviour {
     }
 
     #endregion
-
 }

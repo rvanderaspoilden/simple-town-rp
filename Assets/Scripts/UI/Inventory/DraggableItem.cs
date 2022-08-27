@@ -1,20 +1,22 @@
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IEndDragHandler, IDragHandler {
-    
     private Canvas canvas;
     private Image _image;
     private RectTransform _rectTransform;
     private CanvasGroup _canvasGroup;
     private ItemSlot _itemSlot;
     private ItemConfig _itemConfig;
-    
-    public delegate void Clicked(DraggableItem item);
 
-    public static event Clicked OnClick;
+    public delegate void Draggable(DraggableItem item);
+
+    public static event Draggable OnLeftClick;
+
+    public static event Draggable OnRightClick;
+    
+    public static event Draggable OnStartDrag;
 
     private void Awake() {
         this._rectTransform = GetComponent<RectTransform>();
@@ -34,6 +36,7 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         this._canvasGroup.blocksRaycasts = false;
         this.transform.parent = this.canvas.transform;
         this.transform.SetAsLastSibling();
+        OnStartDrag?.Invoke(this);
     }
 
     public void OnDrag(PointerEventData eventData) {
@@ -41,7 +44,15 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     }
 
     public void OnPointerClick(PointerEventData eventData) {
-        OnClick?.Invoke(this);
+        switch (eventData.button) {
+            case PointerEventData.InputButton.Left:
+                OnLeftClick?.Invoke(this);
+                break;
+
+            case PointerEventData.InputButton.Right:
+                OnRightClick?.Invoke(this);
+                break;
+        }
     }
 
     public void OnEndDrag(PointerEventData eventData) {
