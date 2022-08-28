@@ -2,6 +2,11 @@ using System.Collections;
 using Mirror;
 using UnityEngine;
 
+/**
+ * This class is used to manage hands
+ *
+ * Equipment system
+ */
 public class PlayerHands : NetworkBehaviour {
     [Header("Settings")]
     [SerializeField]
@@ -19,16 +24,12 @@ public class PlayerHands : NetworkBehaviour {
 
     [SyncVar(hook = nameof(OnLeftItemChanged))]
     [SerializeField]
-    private uint leftHandItemId;
+    private uint leftHandItemNetId;
 
     [SyncVar(hook = nameof(OnRightItemChanged))]
     [SerializeField]
-    private uint rightHandItemId;
+    private uint rightHandItemNetId;
 
-
-    public void EquipItem(Item item, HandEnum hand) {
-        // TODO
-    }
 
     public void Swap() {
         Debug.Log("SWAP");
@@ -37,11 +38,7 @@ public class PlayerHands : NetworkBehaviour {
 
     [Command]
     public void CmdSwap() {
-        (this.leftHandItemId, this.rightHandItemId) = (this.rightHandItemId, this.leftHandItemId);
-    }
-
-    public void EquipItem(Item item) {
-        CmdEquipItem(item.netId);
+        (this.leftHandItemNetId, this.rightHandItemNetId) = (this.rightHandItemNetId, this.leftHandItemNetId);
     }
 
     [Command]
@@ -51,17 +48,17 @@ public class PlayerHands : NetworkBehaviour {
         ItemConfig config = item.Configuration;
 
         if (config.HandleType == ItemHandleType.TWO_HAND) {
-            this.rightHandItemId = itemNetId;
+            this.rightHandItemNetId = itemNetId;
+            item.Bind(this.netId, HandEnum.RIGHT_HAND);
         } else {
             if (CanHandleItem(config.HandleType, HandEnum.LEFT_HAND)) {
-                this.leftHandItemId = itemNetId;
+                this.leftHandItemNetId = itemNetId;
+                item.Bind(this.netId, HandEnum.LEFT_HAND);
             } else if (CanHandleItem(config.HandleType, HandEnum.RIGHT_HAND)) {
-                this.rightHandItemId = itemNetId;
+                this.rightHandItemNetId = itemNetId;
+                item.Bind(this.netId, HandEnum.RIGHT_HAND);
             }
         }
-
-        item.netIdentity.AssignClientAuthority(this.connectionToClient);
-        item.ChangeIsEquippedState(true);
     }
 
     private void OnLeftItemChanged(uint oldValue, uint newValue) {
@@ -77,12 +74,10 @@ public class PlayerHands : NetworkBehaviour {
     }
 
     private IEnumerator CheckHand(HandEnum hand) {
-        uint handItemNetId = this.rightHandItemId;
-        Transform handTransform = this.rightHandTransform;
+        uint handItemNetId = this.rightHandItemNetId;
 
         if (hand == HandEnum.LEFT_HAND) {
-            handItemNetId = this.leftHandItemId;
-            handTransform = this.leftHandTransform;
+            handItemNetId = this.leftHandItemNetId;
         }
 
         float time = Time.time;
@@ -93,65 +88,57 @@ public class PlayerHands : NetworkBehaviour {
 
         if (Time.time > time + 10f || handItemNetId == 0) {
             Debug.Log($"[OnLeftItemChanged] [TIMEOUT] item not found with netId {handItemNetId}");
-            
+
             if (hand == HandEnum.LEFT_HAND) {
                 this.leftHandItem = null;
             } else {
                 this.rightHandItem = null;
             }
-            
+
             yield break;
         }
 
         if (hand == HandEnum.LEFT_HAND) {
             this.leftHandItem = NetworkIdentity.spawned[handItemNetId].gameObject.GetComponent<Item>();
-            this.SetItemParent(leftHandItem, handTransform);
         } else {
             this.rightHandItem = NetworkIdentity.spawned[handItemNetId].gameObject.GetComponent<Item>();
-            this.SetItemParent(rightHandItem, handTransform);
         }
     }
 
-    private void SetItemParent(Item item, Transform parent) {
-        var itemTransform = item.transform;
-        itemTransform.position = parent.position;
-        itemTransform.rotation = parent.rotation;
-        itemTransform.parent = parent;
-    }
+    public void TryEquipItem(Item item) {
+        if (!CanHandleItem(item)) return;
 
-    public bool TryEquipItem(Item item) {
-        if (CanHandleItem(item)) {
-            this.EquipItem(item);
-            return true;
-        }
-
-        Debug.Log("[TryEquipItem] Cannot equip item");
-        return false;
-    }
-
-    public void UnEquipHand(HandEnum handEnum) {
-        // TODO
+        this.CmdEquipItem(item.netId);
     }
 
     public void UnEquipItem(Item item) {
-        if (this.leftHandItem == item) {
-            this.leftHandItem = null;
-        } else if (this.rightHandItem == item) {
-            this.rightHandItem = null;
+        this.CmdUnEquipItem(item.netId);
+    }
+
+    [Command]
+    public void CmdUnEquipItem(uint itemNetId) {
+        Item item = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Item>();
+
+        if (this.leftHandItemNetId == itemNetId) {
+            this.leftHandItemNetId = 0;
+        } else if (this.rightHandItemNetId == itemNetId) {
+            this.rightHandItemNetId = 0;
         }
+
+        item.UnBind();
     }
 
     public bool CanHandleItem(Item item, HandEnum hand) {
-        return item.Configuration.HandleType == ItemHandleType.ONE_HAND && this.GetHandItem(hand) == null;
+        return item.Configuration.HandleType == ItemHandleType.ONE_HAND && this.GetHandItemNetId(hand) == 0;
     }
 
     public bool CanHandleItem(ItemHandleType itemHandleType, HandEnum hand) {
-        return itemHandleType == ItemHandleType.ONE_HAND && this.GetHandItem(hand) == null;
+        return itemHandleType == ItemHandleType.ONE_HAND && this.GetHandItemNetId(hand) == 0;
     }
 
     public bool CanHandleItem(Item item) {
         if (item.Configuration.HandleType == ItemHandleType.TWO_HAND) {
-            return this.GetHandItem(HandEnum.LEFT_HAND) == null && this.GetHandItem(HandEnum.RIGHT_HAND) == null;
+            return this.GetHandItemNetId(HandEnum.LEFT_HAND) == 0 && this.GetHandItemNetId(HandEnum.RIGHT_HAND) == 0;
         }
 
         return HasFreeHand();
@@ -162,14 +149,18 @@ public class PlayerHands : NetworkBehaviour {
     }
 
     public bool HasFreeHand() {
-        return RightHandItem == null || (LeftHandItem == null && (RightHandItem == null || RightHandItem.Configuration.HandleType == ItemHandleType.ONE_HAND));
+        return rightHandItemNetId == 0 || (leftHandItemNetId == 0 && (rightHandItemNetId == 0 || RightHandItem.Configuration.HandleType == ItemHandleType.ONE_HAND));
     }
 
     private Item GetHandItem(HandEnum hand) {
         return hand == HandEnum.LEFT_HAND ? this.leftHandItem : this.rightHandItem;
     }
+    
+    private uint GetHandItemNetId(HandEnum hand) {
+        return hand == HandEnum.LEFT_HAND ? this.leftHandItemNetId : this.rightHandItemNetId;
+    }
 
-    private Transform GetHandTransform(HandEnum hand) {
+    public Transform GetHandTransform(HandEnum hand) {
         return hand == HandEnum.LEFT_HAND ? this.leftHandTransform : this.rightHandTransform;
     }
 

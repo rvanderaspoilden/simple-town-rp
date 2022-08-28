@@ -4,6 +4,7 @@ using System.Linq;
 using Mirror;
 using Sim;
 using Sim.Enums;
+using Sim.Utils;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
 
@@ -12,9 +13,16 @@ public class Item : NetworkBehaviour {
     [SerializeField]
     protected ItemConfig configuration;
 
+    [Header("Debug")]
     [SerializeField]
-    [SyncVar(hook = nameof(IsEquippedStateChanged))]
-    private bool isEquipped;
+    [SyncVar]
+    private uint playerNetIdBind;
+
+    [SerializeField]
+    [SyncVar]
+    private HandEnum handBind;
+
+    private PlayerController playerBind;
 
     private Action[] _actions;
 
@@ -22,33 +30,59 @@ public class Item : NetworkBehaviour {
         this._actions = Array.Empty<Action>();
     }
 
-    protected virtual void Start() {
-        this.SetAsUnEquipped();
+    public override void OnStartClient() {
+        if (playerNetIdBind != 0) {
+            this.Equip(this.playerNetIdBind, this.handBind);
+        } else {
+            this.SetupActions(this.configuration.UnEquippedActions);
+        }
     }
 
     protected virtual void OnDestroy() {
         this.UnSubscribeActions(this._actions);
     }
 
-    private void SetAsEquipped() {
+    [Server]
+    public void Bind(uint playerNetId, HandEnum hand) {
+        this.playerNetIdBind = playerNetId;
+        this.handBind = hand;
+        this.Equip(playerNetId, hand);
+        this.RpcBind(this.playerNetIdBind, this.handBind);
+    }
+
+    [ClientRpc]
+    public void RpcBind(uint playerNetId, HandEnum hand) {
+        this.Equip(playerNetId, hand);
+    }
+
+    private void Equip(uint playerNetId, HandEnum hand) {
+        this.playerBind = NetworkUtils.FindObject(playerNetId).GetComponent<PlayerController>();
+        
+        Transform handTransform = this.playerBind.PlayerHands.GetHandTransform(hand);
+        var itemTransform = transform;
+        itemTransform.position = handTransform.position;
+        itemTransform.rotation = handTransform.rotation;
+        itemTransform.parent = handTransform;
+        
         this.SetupActions(this.configuration.EquippedActions);
     }
 
-    private void SetAsUnEquipped() {
-        this.SetupActions(this.configuration.UnEquippedActions);
-    }
-    
-    public void IsEquippedStateChanged(bool old, bool newValue) {
-        if (newValue) {
-            this.SetAsEquipped();
-        } else {
-            this.SetAsUnEquipped();
-        }
+    [Server]
+    public void UnBind() {
+        this.playerNetIdBind = 0;
+        this.UnEquip();
+        this.RpcUnBind();
     }
 
-    [Server]
-    public void ChangeIsEquippedState(bool value) {
-        this.isEquipped = value;
+    [ClientRpc]
+    public void RpcUnBind() {
+        this.UnEquip();
+        this.SetupActions(this.configuration.UnEquippedActions);
+    }
+
+    public void UnEquip() {
+        this.playerBind = null;
+        this.transform.parent = null;
     }
 
     private void SetupActions(List<Action> actions) {
