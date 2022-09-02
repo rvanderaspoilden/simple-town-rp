@@ -57,13 +57,13 @@ public class Item : NetworkBehaviour {
 
     private void Equip(uint playerNetId, HandEnum hand) {
         this.playerBind = NetworkUtils.FindObject(playerNetId).GetComponent<PlayerController>();
-        
+
         Transform handTransform = this.playerBind.PlayerHands.GetHandTransform(hand);
         var itemTransform = transform;
         itemTransform.position = handTransform.position;
         itemTransform.rotation = handTransform.rotation;
         itemTransform.parent = handTransform;
-        
+
         this.SetupActions(this.configuration.EquippedActions);
     }
 
@@ -83,6 +83,11 @@ public class Item : NetworkBehaviour {
     public void UnEquip() {
         this.playerBind = null;
         this.transform.parent = null;
+        this.transform.rotation = Quaternion.identity;
+
+        if (Physics.Raycast(this.transform.position, Vector3.down, out var hit, 10, (1 << 9))) {
+            this.transform.position = hit.point;
+        }
     }
 
     private void SetupActions(List<Action> actions) {

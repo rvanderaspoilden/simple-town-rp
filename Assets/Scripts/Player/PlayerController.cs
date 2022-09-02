@@ -11,6 +11,7 @@ using Sim.Entities;
 using Sim.Enums;
 using Sim.Scriptables;
 using Sim.UI;
+using Sim.Utils;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Rendering.Universal;
@@ -200,16 +201,18 @@ namespace Sim {
         }
 
         public void Consume(Consumable consumable) {
-            this.CmdConsume(consumable.Configuration.ID);
+            this.CmdConsume(consumable.netId);
         }
 
         [Command]
-        public void CmdConsume(int itemId) {
-            ItemConfig config = DatabaseManager.ItemConfigs.Find(x => x.ID == itemId);
+        public void CmdConsume(uint itemNetId) {
+            Item item = NetworkUtils.FindObject(itemNetId).GetComponent<Item>();
 
-            this.playerHealth.ApplyModifications(((ConsumableConfig) config).Impacts);
+            this.playerHealth.ApplyModifications(((ConsumableConfig) item.Configuration).Impacts);
 
             this.RpcConsume();
+            
+            NetworkServer.Destroy(item.gameObject);
         }
 
         [ClientRpc]

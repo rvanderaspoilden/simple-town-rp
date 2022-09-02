@@ -1,5 +1,6 @@
 using System.Collections;
 using Mirror;
+using Sim;
 using UnityEngine;
 
 /**
@@ -103,6 +104,8 @@ public class PlayerHands : NetworkBehaviour {
         } else {
             this.rightHandItem = NetworkIdentity.spawned[handItemNetId].gameObject.GetComponent<Item>();
         }
+        
+        HUDManager.Instance.InventoryUI.UpdateUI();
     }
 
     public void TryEquipItem(Item item) {
