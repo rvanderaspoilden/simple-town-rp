@@ -1,6 +1,5 @@
 using System.Collections;
 using Mirror;
-using Sim;
 using UnityEngine;
 
 /**
@@ -31,6 +30,9 @@ public class PlayerHands : NetworkBehaviour {
     [SerializeField]
     private uint rightHandItemNetId;
 
+    public delegate void HandChanged();
+
+    public static event HandChanged OnHandChanged;
 
     public void Swap() {
         Debug.Log("SWAP");
@@ -39,7 +41,20 @@ public class PlayerHands : NetworkBehaviour {
 
     [Command]
     public void CmdSwap() {
+        Debug.Log("CmdSwap");
+        uint currentLeftHandItemNetId = this.leftHandItemNetId;
+        uint currentRightHandItemNetId = this.rightHandItemNetId;
+
+        if (currentLeftHandItemNetId > 0 && this.leftHandItem) {
+            this.leftHandItem.Bind(this.netId, HandEnum.RIGHT_HAND);
+        }
+
+        if (currentRightHandItemNetId > 0 && this.rightHandItem) {
+            this.rightHandItem.Bind(this.netId, HandEnum.LEFT_HAND);
+        }
+
         (this.leftHandItemNetId, this.rightHandItemNetId) = (this.rightHandItemNetId, this.leftHandItemNetId);
+        (this.leftHandItem, this.rightHandItem) = (this.rightHandItem, this.leftHandItem);
     }
 
     [Command]
@@ -50,13 +65,16 @@ public class PlayerHands : NetworkBehaviour {
 
         if (config.HandleType == ItemHandleType.TWO_HAND) {
             this.rightHandItemNetId = itemNetId;
+            this.rightHandItem = item;
             item.Bind(this.netId, HandEnum.RIGHT_HAND);
         } else {
             if (CanHandleItem(config.HandleType, HandEnum.LEFT_HAND)) {
                 this.leftHandItemNetId = itemNetId;
+                this.leftHandItem = item;
                 item.Bind(this.netId, HandEnum.LEFT_HAND);
             } else if (CanHandleItem(config.HandleType, HandEnum.RIGHT_HAND)) {
                 this.rightHandItemNetId = itemNetId;
+                this.rightHandItem = item;
                 item.Bind(this.netId, HandEnum.RIGHT_HAND);
             }
         }
@@ -65,47 +83,52 @@ public class PlayerHands : NetworkBehaviour {
     private void OnLeftItemChanged(uint oldValue, uint newValue) {
         Debug.Log($"Left Item changed with ID : {newValue}");
 
-        StartCoroutine(this.CheckHand(HandEnum.LEFT_HAND));
+        StartCoroutine(this.CheckHand(HandEnum.LEFT_HAND, oldValue, newValue));
     }
 
     private void OnRightItemChanged(uint oldValue, uint newValue) {
         Debug.Log($"Right Item changed with ID : {newValue}");
 
-        StartCoroutine(this.CheckHand(HandEnum.RIGHT_HAND));
+        StartCoroutine(this.CheckHand(HandEnum.RIGHT_HAND, oldValue, newValue));
     }
 
-    private IEnumerator CheckHand(HandEnum hand) {
-        uint handItemNetId = this.rightHandItemNetId;
-
-        if (hand == HandEnum.LEFT_HAND) {
-            handItemNetId = this.leftHandItemNetId;
-        }
-
-        float time = Time.time;
-
-        while (handItemNetId != 0 && !NetworkIdentity.spawned.ContainsKey(handItemNetId) && Time.time < time + 10f) {
-            yield return new WaitForSeconds(.1f);
-        }
-
-        if (Time.time > time + 10f || handItemNetId == 0) {
-            Debug.Log($"[OnLeftItemChanged] [TIMEOUT] item not found with netId {handItemNetId}");
-
-            if (hand == HandEnum.LEFT_HAND) {
-                this.leftHandItem = null;
-            } else {
+    private IEnumerator CheckHand(HandEnum hand, uint oldItemNetId, uint newItemNetId) {
+        if (newItemNetId == 0) {
+            if (hand == HandEnum.RIGHT_HAND) {
                 this.rightHandItem = null;
+            } else {
+                this.leftHandItem = null;
+            }
+
+            // Release case
+            if (oldItemNetId != 0) {
+                if (isLocalPlayer) {
+                    OnHandChanged?.Invoke();
+                }
             }
 
             yield break;
         }
 
-        if (hand == HandEnum.LEFT_HAND) {
-            this.leftHandItem = NetworkIdentity.spawned[handItemNetId].gameObject.GetComponent<Item>();
-        } else {
-            this.rightHandItem = NetworkIdentity.spawned[handItemNetId].gameObject.GetComponent<Item>();
+        float time = Time.time;
+
+        while (!NetworkIdentity.spawned.ContainsKey(newItemNetId) && Time.time < time + 10f) {
+            yield return new WaitForSeconds(.1f);
         }
-        
-        HUDManager.Instance.InventoryUI.UpdateUI();
+
+        if (Time.time > time + 10f) {
+            Debug.Log($"[OnLeftItemChanged] [TIMEOUT] item not found with netId {newItemNetId}");
+        }
+
+        if (hand == HandEnum.LEFT_HAND) {
+            this.leftHandItem = NetworkIdentity.spawned[newItemNetId].gameObject.GetComponent<Item>();
+        } else {
+            this.rightHandItem = NetworkIdentity.spawned[newItemNetId].gameObject.GetComponent<Item>();
+        }
+
+        if (isLocalPlayer) {
+            OnHandChanged?.Invoke();
+        }
     }
 
     public void TryEquipItem(Item item) {
@@ -129,6 +152,19 @@ public class PlayerHands : NetworkBehaviour {
         }
 
         item.UnBind();
+    }
+
+    [Server]
+    public void UnEquipAndDestroy(uint itemNetId) {
+        Item item = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Item>();
+
+        if (this.leftHandItemNetId == itemNetId) {
+            this.leftHandItemNetId = 0;
+        } else if (this.rightHandItemNetId == itemNetId) {
+            this.rightHandItemNetId = 0;
+        }
+
+        NetworkServer.Destroy(item.gameObject);
     }
 
     public bool CanHandleItem(Item item, HandEnum hand) {
@@ -158,7 +194,7 @@ public class PlayerHands : NetworkBehaviour {
     private Item GetHandItem(HandEnum hand) {
         return hand == HandEnum.LEFT_HAND ? this.leftHandItem : this.rightHandItem;
     }
-    
+
     private uint GetHandItemNetId(HandEnum hand) {
         return hand == HandEnum.LEFT_HAND ? this.leftHandItemNetId : this.rightHandItemNetId;
     }

@@ -25,7 +25,7 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler {
                 this.SetItem(draggableItem);
                 OnItemMove?.Invoke(originSlot, this);
             } else if (!this._item) {
-                // EMPTY SLOT
+                // EMPTY SLOT 
                 draggableItem.ItemSlot.Clear();
                 this.SetItem(draggableItem);
                 OnItemMove?.Invoke(originSlot, this);
@@ -39,6 +39,8 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler {
         this._item.SetAnchoredPosition(Vector2.zero);
         this._item.ItemSlot = this;
     }
+
+    public DraggableItem Item => _item;
 
     public void Clear() {
         this._item = null;

@@ -47,6 +47,7 @@ public class Item : NetworkBehaviour {
         this.playerNetIdBind = playerNetId;
         this.handBind = hand;
         this.Equip(playerNetId, hand);
+        Debug.Log("[Item][Bind] call RPCBind");
         this.RpcBind(this.playerNetIdBind, this.handBind);
     }
 

@@ -48,6 +48,7 @@ public class InventoryUI : MonoBehaviour {
         DraggableItem.OnRightClick += OnItemRightClicked;
         DraggableItem.OnStartDrag += OnItemStartDrag;
         ItemSlot.OnItemMove += OnItemMoved;
+        PlayerHands.OnHandChanged += OnPlayerHandChanged;
     }
 
     private void OnDisable() {
@@ -57,6 +58,7 @@ public class InventoryUI : MonoBehaviour {
         DraggableItem.OnRightClick -= OnItemRightClicked;
         DraggableItem.OnStartDrag -= OnItemStartDrag;
         ItemSlot.OnItemMove -= OnItemMoved;
+        PlayerHands.OnHandChanged -= OnPlayerHandChanged;
     }
 
     private void Update() {
@@ -65,10 +67,16 @@ public class InventoryUI : MonoBehaviour {
         }
     }
 
+    private void OnPlayerHandChanged() {
+        Debug.Log("[InventoryUI] [OnPlayerChanged]");
+        this.CloseCurrentActionMenu();
+        HUDManager.Instance.InventoryUI.Invoke(nameof(UpdateUI), .1f);
+    }
+
     private void OnItemLeftClicked(DraggableItem draggableItem) {
         this.CloseCurrentActionMenu();
     }
-    
+
     private void OnItemStartDrag(DraggableItem draggableItem) {
         this.CloseCurrentActionMenu();
     }
@@ -123,6 +131,11 @@ public class InventoryUI : MonoBehaviour {
     }
 
     public void UpdateUI() {
+        this._draggableItemPool.Dispose();
+        this.leftHandSlot.Clear();
+        this.rightHandSlot.Clear();
+        this.bothHandSlot.Clear();
+
         if (PlayerController.Local.PlayerHands.RightHandItem &&
             PlayerController.Local.PlayerHands.RightHandItem.Configuration.HandleType == ItemHandleType.TWO_HAND) {
             this.leftHandSlot.gameObject.SetActive(false);
@@ -147,6 +160,9 @@ public class InventoryUI : MonoBehaviour {
                 DraggableItem draggableItem = this._draggableItemPool.Get();
                 draggableItem.SetConfiguration(PlayerController.Local.PlayerHands.RightHandItem.Configuration);
                 this.rightHandSlot.SetItem(draggableItem);
+            } else if (this.rightHandSlot.Item) {
+                this._draggableItemPool.Release(this.rightHandSlot.Item);
+                this.rightHandSlot.Clear();
             }
         }
 
