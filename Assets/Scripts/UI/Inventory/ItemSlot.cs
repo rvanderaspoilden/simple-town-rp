@@ -37,6 +37,7 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler {
         this._item = item;
         this._item.transform.parent = this.transform;
         this._item.SetAnchoredPosition(Vector2.zero);
+        this._item.SetPadding(10, 10, 10, 10);
         this._item.ItemSlot = this;
     }
 

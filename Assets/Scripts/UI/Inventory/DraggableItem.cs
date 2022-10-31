@@ -77,6 +77,11 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         this._rectTransform.anchoredPosition = pos;
     }
 
+    public void SetPadding(float top, float right, float bottom, float left) {
+        this._rectTransform.offsetMin = new Vector2(left, bottom);
+        this._rectTransform.offsetMax = new Vector2(-right, -top);
+    }
+
     private bool IsOutOfSlot(PointerEventData eventData) {
         return this._itemSlot && (!eventData.pointerCurrentRaycast.isValid || eventData.pointerCurrentRaycast.gameObject.GetComponent<ItemSlot>() == null);
     }

@@ -41,7 +41,6 @@ public class PlayerHands : NetworkBehaviour {
 
     [Command]
     public void CmdSwap() {
-        Debug.Log("CmdSwap");
         uint currentLeftHandItemNetId = this.leftHandItemNetId;
         uint currentRightHandItemNetId = this.rightHandItemNetId;
 
