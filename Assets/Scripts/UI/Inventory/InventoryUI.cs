@@ -1,27 +1,29 @@
 using System.Linq;
 using Sim;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class InventoryUI : MonoBehaviour {
     [Header("Settings")]
     [SerializeField]
-    private CanvasGroup leftHandCell;
+    private ItemSlot leftHandSlot;
 
     [SerializeField]
-    private CanvasGroup rightHandCell;
+    private ItemSlot rightHandSlot;
 
     [SerializeField]
-    private CanvasGroup bothHandCell;
-    
-    [SerializeField]
-    private Image leftHandItemIcon;
+    private ItemSlot bothHandSlot;
 
     [SerializeField]
-    private Image rightHandItemIcon;
+    private ItemSlot leftPocketSlot;
 
     [SerializeField]
-    private Image bothHandItemIcon;
+    private ItemSlot rightPocketSlot;
+
+    [SerializeField]
+    private Transform poolContainer;
+
+    [SerializeField]
+    private DraggableItem draggableItemPrefab;
 
     [SerializeField]
     private InventoryActionMenu leftHandActionMenu;
@@ -33,13 +35,71 @@ public class InventoryUI : MonoBehaviour {
     [SerializeField]
     private InventoryActionMenu currentActionMenu;
 
+    private GenericPool<DraggableItem> _draggableItemPool;
+
+    private void Awake() {
+        this._draggableItemPool = new GenericPool<DraggableItem>(OnCreateDraggableItem, OnGetDraggableItem, OnReleaseDraggableItem);
+    }
+
     private void OnEnable() {
         this.UpdateUI();
+
+        DraggableItem.OnLeftClick += OnItemLeftClicked;
+        DraggableItem.OnRightClick += OnItemRightClicked;
+        DraggableItem.OnStartDrag += OnItemStartDrag;
+        ItemSlot.OnItemMove += OnItemMoved;
+        PlayerHands.OnHandChanged += OnPlayerHandChanged;
+    }
+
+    private void OnDisable() {
+        this._draggableItemPool.Dispose();
+
+        DraggableItem.OnLeftClick -= OnItemLeftClicked;
+        DraggableItem.OnRightClick -= OnItemRightClicked;
+        DraggableItem.OnStartDrag -= OnItemStartDrag;
+        ItemSlot.OnItemMove -= OnItemMoved;
+        PlayerHands.OnHandChanged -= OnPlayerHandChanged;
     }
 
     private void Update() {
         if (Input.GetKeyDown(KeyCode.Escape)) {
             HUDManager.Instance.CloseInventory();
+        }
+    }
+
+    private void OnPlayerHandChanged() {
+        Debug.Log("[InventoryUI] [OnPlayerChanged]");
+        this.CloseCurrentActionMenu();
+        HUDManager.Instance.InventoryUI.Invoke(nameof(UpdateUI), .1f);
+    }
+
+    private void OnItemLeftClicked(DraggableItem draggableItem) {
+        this.CloseCurrentActionMenu();
+    }
+
+    private void OnItemStartDrag(DraggableItem draggableItem) {
+        this.CloseCurrentActionMenu();
+    }
+
+    private void OnItemRightClicked(DraggableItem draggableItem) {
+        if (draggableItem.ItemSlot == this.leftHandSlot) {
+            if (currentActionMenu == this.leftHandActionMenu) {
+                this.CloseCurrentActionMenu();
+            } else {
+                this.DisplayLeftActionMenu();
+            }
+        } else if (draggableItem.ItemSlot == this.rightHandSlot) {
+            if (currentActionMenu == this.rightHandActionMenu) {
+                this.CloseCurrentActionMenu();
+            } else {
+                this.DisplayRightActionMenu();
+            }
+        }
+    }
+
+    private void OnItemMoved(ItemSlot originSlot, ItemSlot targetSlot) {
+        if ((originSlot == this.leftHandSlot && targetSlot == this.rightHandSlot) || (originSlot == this.rightHandSlot && targetSlot == this.leftHandSlot)) {
+            PlayerController.Local.PlayerHands.Swap();
         }
     }
 
@@ -67,49 +127,63 @@ public class InventoryUI : MonoBehaviour {
         if (!this.currentActionMenu) return;
 
         this.currentActionMenu.Hide(instantly);
+        this.currentActionMenu = null;
     }
 
     public void UpdateUI() {
-        if (PlayerController.Local.PlayerHands.RightHandItem && 
+        this._draggableItemPool.Dispose();
+        this.leftHandSlot.Clear();
+        this.rightHandSlot.Clear();
+        this.bothHandSlot.Clear();
+
+        if (PlayerController.Local.PlayerHands.RightHandItem &&
             PlayerController.Local.PlayerHands.RightHandItem.Configuration.HandleType == ItemHandleType.TWO_HAND) {
-            this.leftHandCell.alpha = 0;
-            this.leftHandCell.interactable = false;
-            this.leftHandCell.blocksRaycasts = false;
-            
-            this.rightHandCell.alpha = 0;
-            this.rightHandCell.interactable = false;
-            this.rightHandCell.blocksRaycasts = false;
-            
-            this.bothHandCell.alpha = 1;
-            this.bothHandCell.interactable = true;
-            this.bothHandCell.blocksRaycasts = true;
-            
-            this.bothHandItemIcon.sprite = PlayerController.Local.PlayerHands.RightHandItem.Configuration.Icon;
-            this.bothHandItemIcon.gameObject.SetActive(true);
+            this.leftHandSlot.gameObject.SetActive(false);
+            this.rightHandSlot.gameObject.SetActive(false);
+            this.bothHandSlot.gameObject.SetActive(true);
+
+            DraggableItem draggableItem = this._draggableItemPool.Get();
+            draggableItem.SetConfiguration(PlayerController.Local.PlayerHands.RightHandItem.Configuration);
+            this.bothHandSlot.SetItem(draggableItem);
         } else {
-            this.leftHandCell.alpha = 1;
-            this.leftHandCell.interactable = true;
-            this.leftHandCell.blocksRaycasts = true;
-            
-            this.rightHandCell.alpha = 1;
-            this.rightHandCell.interactable = true;
-            this.rightHandCell.blocksRaycasts = true;
-            
+            this.leftHandSlot.gameObject.SetActive(true);
+            this.rightHandSlot.gameObject.SetActive(true);
+            this.bothHandSlot.gameObject.SetActive(false);
+
             if (PlayerController.Local.PlayerHands.LeftHandItem) {
-                this.leftHandItemIcon.sprite = PlayerController.Local.PlayerHands.LeftHandItem.Configuration.Icon;
-                this.leftHandItemIcon.gameObject.SetActive(true);
-            } else {
-                this.leftHandItemIcon.gameObject.SetActive(false);
+                DraggableItem draggableItem = this._draggableItemPool.Get();
+                draggableItem.SetConfiguration(PlayerController.Local.PlayerHands.LeftHandItem.Configuration);
+                this.leftHandSlot.SetItem(draggableItem);
             }
 
             if (PlayerController.Local.PlayerHands.RightHandItem) {
-                this.rightHandItemIcon.sprite = PlayerController.Local.PlayerHands.RightHandItem.Configuration.Icon;
-                this.rightHandItemIcon.gameObject.SetActive(true);
-            } else {
-                this.rightHandItemIcon.gameObject.SetActive(false);
+                DraggableItem draggableItem = this._draggableItemPool.Get();
+                draggableItem.SetConfiguration(PlayerController.Local.PlayerHands.RightHandItem.Configuration);
+                this.rightHandSlot.SetItem(draggableItem);
+            } else if (this.rightHandSlot.Item) {
+                this._draggableItemPool.Release(this.rightHandSlot.Item);
+                this.rightHandSlot.Clear();
             }
         }
 
         this.CloseCurrentActionMenu(true);
     }
+
+    #region Pool Management
+
+    private DraggableItem OnCreateDraggableItem() {
+        DraggableItem draggableItem = Instantiate(this.draggableItemPrefab, this.poolContainer);
+        return draggableItem;
+    }
+
+    private void OnGetDraggableItem(DraggableItem draggableItem) {
+        draggableItem.gameObject.SetActive(true);
+    }
+
+    private void OnReleaseDraggableItem(DraggableItem draggableItem) {
+        draggableItem.transform.parent = this.poolContainer;
+        draggableItem.gameObject.SetActive(false);
+    }
+
+    #endregion
 }

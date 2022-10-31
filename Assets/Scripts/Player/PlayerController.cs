@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AI;
@@ -11,10 +10,9 @@ using Sim.Entities;
 using Sim.Enums;
 using Sim.Scriptables;
 using Sim.UI;
+using Sim.Utils;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.Rendering.Universal;
-using UnityEngine.SceneManagement;
 using Action = Sim.Interactables.Action;
 using Random = UnityEngine.Random;
 
@@ -205,16 +203,11 @@ namespace Sim {
 
         [Command]
         public void CmdConsume(uint itemNetId) {
-            if (!NetworkIdentity.spawned.ContainsKey(itemNetId)) {
-                Debug.LogError($"[PlayerController] [CmdEat] Cannot found netId [id={itemNetId}]");
-            }
+            Item item = NetworkUtils.FindObject(itemNetId).GetComponent<Item>();
 
-            Consumable consumable = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Consumable>();
-
-            this.playerHealth.ApplyModifications(((ConsumableConfig) consumable.Configuration).Impacts);
-
-            NetworkServer.Destroy(consumable.gameObject);
-
+            this.playerHealth.ApplyModifications(((ConsumableConfig) item.Configuration).Impacts);
+            this.playerHands.UnEquipAndDestroy(itemNetId);
+            
             this.RpcConsume();
         }
 
@@ -223,7 +216,7 @@ namespace Sim {
             if (isLocalPlayer) {
                 HUDManager.Instance.InventoryUI.Invoke(nameof(InventoryUI.UpdateUI), .1f);
             }
-
+            
             this.audioSource.PlayOneShot(this.eatSound);
         }
 
@@ -280,6 +273,12 @@ namespace Sim {
             this.playerBankAccount.Init(this.characterData.Money);
         }
 
+        [Server]
+        public void SetRawCharacterHome(string data) {
+            this.rawCharacterHome = data;
+            this.characterHome = JsonUtility.FromJson<Home>(this.rawCharacterHome);
+        }
+
         public void ParseCharacterData(string old, string newValue) {
             this.characterData = JsonUtility.FromJson<CharacterData>(newValue);
             this.characterStyleSetup.ApplyStyle(this.CharacterData.Style);
@@ -292,6 +291,7 @@ namespace Sim {
 
         public void ParseCharacterHome(string old, string newValue) {
             this.characterHome = JsonUtility.FromJson<Home>(newValue);
+            Debug.Log("TOTO");
         }
 
         private void Update() {

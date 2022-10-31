@@ -532,9 +532,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7937726870866646819}
   - component: {fileID: 7305867896933322136}
-  - component: {fileID: 8190099895031332405}
   - component: {fileID: 5412029220760352276}
-  - component: {fileID: 5244378991320475155}
   - component: {fileID: 953058892469756262}
   m_Layer: 19
   m_Name: Cake Birthday
@@ -576,22 +574,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 0.67, y: 0.38961092, z: 0.67}
   m_Center: {x: 0, y: 0.18893082, z: -0.00000009934107}
---- !u!54 &8190099895031332405
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7305867896933322137}
-  serializedVersion: 2
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_UseGravity: 0
-  m_IsKinematic: 1
-  m_Interpolate: 0
-  m_Constraints: 112
-  m_CollisionDetection: 0
 --- !u!114 &5412029220760352276
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -609,27 +591,6 @@ MonoBehaviour:
   visible: 0
   m_AssetId: 
   hasSpawned: 0
---- !u!114 &5244378991320475155
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7305867896933322137}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncMode: 0
-  syncInterval: 0.1
-  clientAuthority: 1
-  localPositionSensitivity: 0.01
-  localRotationSensitivity: 0.01
-  localScaleSensitivity: 0.01
-  compressRotation: 1
-  interpolateScale: 0
-  syncScale: 0
 --- !u!114 &953058892469756262
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -645,3 +606,5 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   configuration: {fileID: 11400000, guid: f87a69d22cb44a849b0e1d1de1c0e45b, type: 2}
+  playerNetIdBind: 0
+  handBind: 0

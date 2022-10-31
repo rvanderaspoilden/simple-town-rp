@@ -1,10 +1,8 @@
-using System.Linq;
 using Mirror;
 using Sim;
 using Sim.Building;
 using Sim.Enums;
 using Sim.Interactables;
-using Sim.UI;
 using UnityEngine;
 
 public class Dispenser : Props {
@@ -29,8 +27,8 @@ public class Dispenser : Props {
 
             Item item = Instantiate(itemPrice.item.Prefab, sender.identity.gameObject.transform.position, Quaternion.identity);
             NetworkServer.Spawn(item.gameObject, sender);
-            
-            this.TargetItemBought(sender, item.netId);
+
+            this.TargetItemBought(sender, item.Configuration.ID);
             this.RpcItemBought();
         } else {
             Debug.Log("[Dispenser] Player has not enough money to buy item");
@@ -43,17 +41,14 @@ public class Dispenser : Props {
     }
 
     [TargetRpc]
-    public void TargetItemBought(NetworkConnection conn, uint itemNetId) {
-        NotificationManager.Instance.AddNotification("Vous avez acheté un item \n gros bg \n WAAAAAAAAW", NotificationType.BANK);
-        
-        if (NetworkIdentity.spawned.ContainsKey(itemNetId)) {
-            PlayerController.Local.PlayerHands.TryEquipItem(NetworkIdentity.spawned[itemNetId].GetComponent<Item>());
-            
-            if (PlayerController.Local.PlayerHands.HasOnlyOneFreeHand()) {
-                this.StopInteraction();
-            }
-        } else {
-            Debug.LogError("[TargetItemBought] Cannot find spawned item");
+    public void TargetItemBought(NetworkConnection conn, int itemId) {
+        NotificationManager.Instance.AddNotification("Vous avez acheté un item", NotificationType.BANK);
+
+        // TODO: check this
+        //PlayerController.Local.PlayerHands.TryEquipItem(NetworkIdentity.spawned[itemNetId].GetComponent<Item>());
+
+        if (PlayerController.Local.PlayerHands.HasOnlyOneFreeHand()) {
+            this.StopInteraction();
         }
     }
 

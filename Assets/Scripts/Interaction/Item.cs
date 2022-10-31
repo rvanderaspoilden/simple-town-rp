@@ -4,38 +4,91 @@ using System.Linq;
 using Mirror;
 using Sim;
 using Sim.Enums;
+using Sim.Utils;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
 
-[RequireComponent(typeof(NetworkTransform))]
-public class Item : NetworkEntity {
+public class Item : NetworkBehaviour {
     [Header("Settings")]
     [SerializeField]
     protected ItemConfig configuration;
 
-    private Action[] _actions;
-
+    [Header("Debug")]
+    [SerializeField]
     [SyncVar]
-    private string owner;
+    private uint playerNetIdBind;
+
+    [SerializeField]
+    [SyncVar]
+    private HandEnum handBind;
+
+    private PlayerController playerBind;
+
+    private Action[] _actions;
 
     private void Awake() {
         this._actions = Array.Empty<Action>();
     }
 
-    protected virtual void Start() {
-        this.SetAsUnEquipped();
+    public override void OnStartClient() {
+        if (playerNetIdBind != 0) {
+            this.Equip(this.playerNetIdBind, this.handBind);
+        } else {
+            this.SetupActions(this.configuration.UnEquippedActions);
+        }
     }
 
     protected virtual void OnDestroy() {
         this.UnSubscribeActions(this._actions);
     }
 
-    public void SetAsEquipped() {
+    [Server]
+    public void Bind(uint playerNetId, HandEnum hand) {
+        this.playerNetIdBind = playerNetId;
+        this.handBind = hand;
+        this.Equip(playerNetId, hand);
+        this.RpcBind(this.playerNetIdBind, this.handBind);
+        Debug.Log("[Item][Bind] call RPCBind");
+    }
+
+    [ClientRpc]
+    public void RpcBind(uint playerNetId, HandEnum hand) {
+        this.Equip(playerNetId, hand);
+    }
+
+    private void Equip(uint playerNetId, HandEnum hand) {
+        this.playerBind = NetworkUtils.FindObject(playerNetId).GetComponent<PlayerController>();
+
+        Transform handTransform = this.playerBind.PlayerHands.GetHandTransform(hand);
+        var itemTransform = transform;
+        itemTransform.position = handTransform.position;
+        itemTransform.rotation = handTransform.rotation;
+        itemTransform.parent = handTransform;
+
         this.SetupActions(this.configuration.EquippedActions);
     }
 
-    public void SetAsUnEquipped() {
+    [Server]
+    public void UnBind() {
+        this.playerNetIdBind = 0;
+        this.UnEquip();
+        this.RpcUnBind();
+    }
+
+    [ClientRpc]
+    public void RpcUnBind() {
+        this.UnEquip();
         this.SetupActions(this.configuration.UnEquippedActions);
+    }
+
+    public void UnEquip() {
+        this.playerBind = null;
+        this.transform.parent = null;
+        this.transform.rotation = Quaternion.identity;
+
+        if (Physics.Raycast(this.transform.position, Vector3.down, out var hit, 10, (1 << 9))) {
+            this.transform.position = hit.point;
+        }
     }
 
     private void SetupActions(List<Action> actions) {
@@ -90,60 +143,10 @@ public class Item : NetworkEntity {
 
     public ItemConfig Configuration => configuration;
 
-    public string Owner => owner;
-
-    public bool HasOwner() {
-        return this.owner?.Length > 0;
-    }
-
-    [Command(requiresAuthority = false)]
-    public void CmdSetOwner(NetworkConnectionToClient sender = null) {
-        if (sender == null) {
-            Debug.Log("[Item] [CmdSetOwner] Cannot set owner because sender is null");
-            return;
-        }
-
-        this.owner = sender.identity.GetComponent<PlayerController>().CharacterData.Id;
-        this.netIdentity.AssignClientAuthority(sender);
-        this.RpcSetOwner(sender);
-    }
-
-    [TargetRpc]
-    public void RpcSetOwner(NetworkConnection conn) {
-        this.SetAsEquipped();
-        PlayerController.Local.PlayerHands.EquipItem(this);
-        Debug.Log("I'm now the owner of this item");
-    }
-
-    [Command(requiresAuthority = false)]
-    public void CmdRemoveOwner(NetworkConnectionToClient sender = null) {
-        this.owner = string.Empty;
-        this.netIdentity.RemoveClientAuthority();
-        this.RpcRemoveOwner(sender);
-
-        this.transform.rotation = Quaternion.identity;
-
-        RaycastHit hit;
-
-        if (Physics.Raycast(this.transform.position, Vector3.down, out hit, 10)) {
-            this.transform.position = hit.point;
-        }
-    }
-
-    [TargetRpc]
-    public void RpcRemoveOwner(NetworkConnection conn) {
-        this.SetAsUnEquipped();
-        HUDManager.Instance.InventoryUI.CloseCurrentActionMenu();
-        HUDManager.Instance.InventoryUI.UpdateUI();
-        Debug.Log("I'm no longer the owner of this item");
-    }
-
-    [Client]
     protected virtual void Pick() {
         PlayerController.Local.PlayerHands.TryEquipItem(this);
     }
 
-    [Client]
     protected virtual void Drop() {
         PlayerController.Local.PlayerHands.UnEquipItem(this);
     }
