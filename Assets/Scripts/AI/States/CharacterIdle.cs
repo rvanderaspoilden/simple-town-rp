@@ -1,4 +1,6 @@
 using Sim;
+using Sim.Utils;
+using UnityEngine;
 
 namespace AI.States {
     public class CharacterIdle : IState {
@@ -11,11 +13,17 @@ namespace AI.States {
         public void OnEnter() {
             this.player.PlayerState = PlayerState.IDLE;
 
-            if (this.player.PropsTarget && this.player.CanInteractWith(this.player.PropsTarget)) {
-                this.player.LookAt(this.player.PropsTarget.transform);
-                HUDManager.Instance.ShowContextMenu(this.player.PropsTarget.GetActions(this.player.ShowRadialMenuWithPriority), this.player.PropsTarget.transform, this.player.ShowRadialMenuWithPriority);
-                this.player.PropsTarget = null;
-            }
+            if (this.player.InteractableTarget == null ||
+                !this.player.CanInteractWith(this.player.InteractableTarget, this.player.InteractableTarget.transform.position)) return;
+            
+            Transform interactableTransform = this.player.InteractableTarget.transform;
+            this.player.LookAt(interactableTransform);
+            HUDManager.Instance.ShowContextMenu(
+                this.player.InteractableTarget.GetActions(this.player.ShowRadialMenuWithPriority),
+                interactableTransform,
+                this.player.ShowRadialMenuWithPriority
+            );
+            this.player.InteractableTarget = null;
         }
 
         public void Tick() {

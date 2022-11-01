@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Linq;
 using DG.Tweening;
+using Interaction;
 using Mirror;
 using Sim.Enums;
 using Sim.Scriptables;
@@ -10,7 +11,7 @@ using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
     [RequireComponent(typeof(PropsRenderer))]
-    public class Props : NetworkEntity {
+    public class Props : NetworkEntity, IInteractable {
         [Header("Props settings")]
         [SerializeField]
         protected PropsConfig configuration;
@@ -131,6 +132,10 @@ namespace Sim.Building {
         public void ConfigureActions() {
             this.SetupActions();
             this.SetupUnbuiltActions();
+        }
+
+        public float GetRange() {
+            return this.configuration.GetRangeToInteract();
         }
 
         public bool IsInteractable() {

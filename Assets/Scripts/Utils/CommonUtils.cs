@@ -1,4 +1,5 @@
 ﻿using System;
+using Interaction;
 using Sim.Building;
 using Sim.Enums;
 using Sim.Scriptables;
@@ -71,6 +72,25 @@ namespace Sim.Utils {
             }
 
             throw new Exception($"No scene name associated to roomTypeEnum => {roomType}");
+        }
+        
+        public static bool CanInteractWith(this PlayerController player, IInteractable interactable, Vector3 originPoint) {
+            float maxRange = interactable.GetRange();
+            Vector3 origin = Vector3.Scale(originPoint, new Vector3(1, 0, 1));
+            Vector3 target = Vector3.Scale(player.transform.position, new Vector3(1, 0, 1));
+
+            if (interactable.GetActions()?.Length <= 0 || Mathf.Abs(Vector3.Distance(origin, target)) > maxRange) {
+                return false;
+            }
+
+            Vector3 dir = originPoint - player.GetHeadTargetForCamera().position;
+            RaycastHit hit;
+            
+            if (Physics.Raycast(player.GetHeadTargetForCamera().position, dir, out hit)) {
+                return interactable.Equals(hit.collider.GetComponentInParent<IInteractable>());
+            }
+
+            return false;
         }
     }
 }

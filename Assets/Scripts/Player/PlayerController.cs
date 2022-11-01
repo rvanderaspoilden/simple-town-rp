@@ -4,6 +4,7 @@ using System.Linq;
 using AI;
 using AI.States;
 using DG.Tweening;
+using Interaction;
 using Mirror;
 using Sim.Building;
 using Sim.Entities;
@@ -54,7 +55,7 @@ namespace Sim {
         private StateType state;
 
         [SerializeField]
-        private Props propsTarget;
+        private IInteractable interactableTarget;
 
         [SerializeField]
         private bool showRadialMenuWithPriority;
@@ -329,9 +330,9 @@ namespace Sim {
         }
 
         private Func<bool> HasReachedTargetPosition() => () => {
-            return (this.propsTarget &&
+            return (this.interactableTarget != null &&
                     this.navMeshAgent.remainingDistance > this.navMeshAgent.stoppingDistance &&
-                    this.CanInteractWith(this.propsTarget)) ||
+                    this.CanInteractWith(this.interactableTarget, this.interactableTarget.transform.position)) ||
                    (!this.navMeshAgent.hasPath && MarkerController.Instance.IsActive());
         };
 
@@ -370,8 +371,8 @@ namespace Sim {
             }
         }
 
-        public void SetTarget(Vector3 targetPoint, Props props, bool showPriorityActions = false) {
-            this.propsTarget = props;
+        public void SetTarget(Vector3 targetPoint, IInteractable interactable, bool showPriorityActions = false) {
+            this.interactableTarget = interactable;
             this.showRadialMenuWithPriority = showPriorityActions;
             MoveTo(targetPoint);
         }
@@ -480,6 +481,10 @@ namespace Sim {
         public Transform GetHeadTargetForCamera() {
             return this.headTargetForCamera;
         }
+        
+        public void SetHeadTargetPosition(Vector3 localPosition) {
+            this.headTargetForCamera.localPosition = localPosition;
+        }
 
         public void SetState(StateType stateType) {
             Debug.Log($"Player state changed from {this.state} to {stateType}");
@@ -518,9 +523,9 @@ namespace Sim {
             }
         }
 
-        public Props PropsTarget {
-            get => propsTarget;
-            set => propsTarget = value;
+        public IInteractable InteractableTarget {
+            get => interactableTarget;
+            set => interactableTarget = value;
         }
 
         public bool ShowRadialMenuWithPriority {
@@ -531,82 +536,6 @@ namespace Sim {
         public Props GetInteractedProps() => this.characterInteractState.InteractedProps;
 
         public Collider Collider { get; private set; }
-
-        #endregion
-
-        #region Utility
-
-        public bool CanInteractWith(Props propsToInteract) {
-            float maxRange = propsToInteract.GetConfiguration().GetRangeToInteract();
-            Vector3 origin = Vector3.Scale(propsToInteract.transform.position, new Vector3(1, 0, 1));
-            Vector3 target = Vector3.Scale(this.transform.position, new Vector3(1, 0, 1));
-
-            if (propsToInteract.GetActions()?.Length <= 0 || Mathf.Abs(Vector3.Distance(origin, target)) > maxRange) {
-                return false;
-            }
-
-            Vector3 dir = propsToInteract.transform.position - this.GetHeadTargetForCamera().position;
-            RaycastHit hit;
-            if (Physics.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
-                Props hitProps = hit.collider.GetComponentInParent<Props>();
-
-                if ((hitProps && hitProps.GetType() == typeof(Wall)) || !hitProps) {
-                    return false;
-                }
-
-                return hitProps.Equals(propsToInteract);
-            }
-
-            return false;
-        }
-
-        public bool CanInteractWith(Props propsToInteract, Vector3 hitPoint) {
-            float maxRange = propsToInteract.GetConfiguration().GetRangeToInteract();
-            Vector3 origin = Vector3.Scale(hitPoint, new Vector3(1, 0, 1));
-            Vector3 target = Vector3.Scale(this.transform.position, new Vector3(1, 0, 1));
-
-            if (Mathf.Abs(Vector3.Distance(origin, target)) > maxRange) {
-                return false;
-            }
-
-            Vector3 dir = hitPoint - this.GetHeadTargetForCamera().position;
-            RaycastHit hit;
-            if (Physics.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
-                Props hitProps = hit.collider.GetComponentInParent<Props>();
-
-                if ((hitProps && hitProps.GetType() == typeof(Wall)) || !hitProps) {
-                    return false;
-                }
-
-                return hitProps.Equals(propsToInteract);
-            }
-
-            return false;
-        }
-
-        public bool CanInteractWith(Item itemToInteract, Vector3 hitPoint) {
-            Vector3 origin = Vector3.Scale(hitPoint, new Vector3(1, 0, 1));
-            Vector3 target = Vector3.Scale(this.transform.position, new Vector3(1, 0, 1));
-
-            if (Mathf.Abs(Vector3.Distance(origin, target)) > 1f) {
-                return false;
-            }
-
-            Vector3 dir = hitPoint - this.GetHeadTargetForCamera().position;
-            RaycastHit hit;
-
-            if (Physics.Raycast(this.GetHeadTargetForCamera().position, dir, out hit)) {
-                Item hitItem = hit.collider.GetComponentInParent<Item>();
-
-                return hitItem && hitItem.Equals(itemToInteract);
-            }
-
-            return false;
-        }
-
-        public void SetHeadTargetPosition(Vector3 localPosition) {
-            this.headTargetForCamera.localPosition = localPosition;
-        }
 
         #endregion
     }

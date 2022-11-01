@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Interaction;
 using Mirror;
 using Sim;
 using Sim.Enums;
@@ -8,7 +9,7 @@ using Sim.Utils;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
 
-public class Item : NetworkBehaviour {
+public class Item : NetworkBehaviour, IInteractable {
     [Header("Settings")]
     [SerializeField]
     protected ItemConfig configuration;
@@ -130,17 +131,7 @@ public class Item : NetworkBehaviour {
     protected virtual void Execute(Action action) {
         throw new NotImplementedException();
     }
-
-    public virtual Action[] GetActions() {
-        foreach (var action in this._actions) {
-            if (action.Type == ActionTypeEnum.PICK) {
-                action.IsForbidden = !PlayerController.Local.PlayerHands.CanHandleItem(this);
-            }
-        }
-
-        return this._actions;
-    }
-
+    
     public ItemConfig Configuration => configuration;
 
     protected virtual void Pick() {
@@ -149,5 +140,23 @@ public class Item : NetworkBehaviour {
 
     protected virtual void Drop() {
         PlayerController.Local.PlayerHands.UnEquipItem(this);
+    }
+
+    public float GetRange() {
+        return 1f;
+    }
+
+    public bool IsInteractable() {
+        return true;
+    }
+
+    public virtual Action[] GetActions(bool withPriority = false) {
+        foreach (var action in this._actions) {
+            if (action.Type == ActionTypeEnum.PICK) {
+                action.IsForbidden = !PlayerController.Local.PlayerHands.CanHandleItem(this);
+            }
+        }
+
+        return this._actions;
     }
 }

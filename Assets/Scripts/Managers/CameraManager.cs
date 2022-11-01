@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using AI.States;
-using Sim.Building;
+﻿using AI.States;
+using Interaction;
 using Sim.Enums;
 using Sim.Interactables;
+using Sim.Utils;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.SceneManagement;
 
 namespace Sim {
     public class CameraManager : MonoBehaviour {
@@ -118,18 +117,17 @@ namespace Sim {
             Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
 
             if ((leftMouseClick || rightMouseClick || leftMousePressed) && Physics.Raycast(ray.origin, ray.direction, out hit, 100, this.layerMaskInFreeMode)) {
-                Props propsToInteract = hit.collider.GetComponentInParent<Props>();
-                Item itemToInteract = hit.collider.GetComponentInParent<Item>();
+                IInteractable interactable = hit.collider.GetComponentInParent<IInteractable>();
                 PlayerController player = hit.collider.GetComponent<PlayerController>();
 
-                if (propsToInteract && !leftMousePressed) {
-                    if (propsToInteract.IsInteractable()) {
-                        bool canInteract = PlayerController.Local.CanInteractWith(propsToInteract, hit.point);
-                        Action[] actions = propsToInteract.GetActions();
+                if (interactable != null && !leftMousePressed) {
+                    if (interactable.IsInteractable()) {
+                        bool canInteract = PlayerController.Local.CanInteractWith(interactable, hit.point);
+                        Action[] actions = interactable.GetActions();
 
                         if (leftMouseClick && (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
                                                PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle))) {
-                            actions = propsToInteract.GetActions(true);
+                            actions = interactable.GetActions(true);
 
                             canInteract = canInteract || (actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK));
                         }
@@ -138,30 +136,17 @@ namespace Sim {
                             if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
                                 PlayerController.Local.Idle();
                             } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
-                                PlayerController.Local.LookAt(propsToInteract.transform);
+                                PlayerController.Local.LookAt(interactable.transform);
                             }
 
-                            HUDManager.Instance.ShowContextMenu(actions, propsToInteract.transform, leftMouseClick);
+                            HUDManager.Instance.ShowContextMenu(actions, interactable.transform, leftMouseClick);
                         } else {
-                            PlayerController.Local.SetTarget(hit.point, propsToInteract, leftMouseClick);
+                            PlayerController.Local.SetTarget(hit.point, interactable, leftMouseClick);
                         }
                     } else {
-                        PlayerController.Local.SetTarget(hit.point, propsToInteract);
+                        PlayerController.Local.SetTarget(hit.point, interactable);
                     }
-                } else if (itemToInteract && rightMouseClick) {
-                    bool canInteract = PlayerController.Local.CanInteractWith(itemToInteract, hit.point);
-                    Action[] actions = itemToInteract.GetActions();
-
-                    if (canInteract) {
-                        if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
-                            PlayerController.Local.Idle();
-                        } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
-                            PlayerController.Local.LookAt(itemToInteract.transform);
-                        }
-
-                        HUDManager.Instance.ShowContextMenu(actions, itemToInteract.transform, leftMouseClick);
-                    }
-                } else if (!propsToInteract && leftMousePressed && hit.collider.gameObject.layer.Equals(LayerMask.NameToLayer("Ground"))) {
+                } else if (interactable == null && leftMousePressed && hit.collider.gameObject.layer.Equals(LayerMask.NameToLayer("Ground"))) {
                     PlayerController.Local.MoveTo(hit.point);
                 } else if (rightMouseClick && player) {
                     if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
