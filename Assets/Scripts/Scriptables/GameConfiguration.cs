@@ -22,7 +22,7 @@ public class GameConfiguration : ScriptableObject {
     [SerializeField]
     private float tirednessDurationInDays;
     
-    [Tooltip("Number of real minutes needed before dying of tiredness")]
+    [Tooltip("Number of real minutes needed to restore full energy")]
     [SerializeField]
     private float tirednessRecoveryDuration;
 

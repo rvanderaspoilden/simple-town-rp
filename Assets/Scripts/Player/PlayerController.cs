@@ -417,6 +417,7 @@ namespace Sim {
 
         [Server]
         public void Kill() {
+            this.Die();
             this.TargetKill(this.netIdentity.connectionToClient);
             Invoke(nameof(Revive), 4f);
         }

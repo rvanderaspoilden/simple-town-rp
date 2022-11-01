@@ -148,6 +148,10 @@ namespace Sim.Building {
 
             this.charactersAssociatedToCouchIdx.Add(couchIdx, sender.connectionId);
 
+            PlayerController player = NetworkIdentity.spawned[sender.identity.netId].gameObject.GetComponent<PlayerController>();
+
+            player.PlayerState = PlayerState.SLEEPING;
+            
             TargetSleep(sender.identity.connectionToClient, couchIdx);
         }
 
@@ -166,7 +170,13 @@ namespace Sim.Building {
 
             int couchIdx = GetKeyFromValue(this.charactersAssociatedToCouchIdx, sender.connectionId);
 
-            if (couchIdx != -1) this.charactersAssociatedToCouchIdx.Remove(couchIdx);
+            if (couchIdx != -1) {
+                this.charactersAssociatedToCouchIdx.Remove(couchIdx);
+                
+                PlayerController player = NetworkIdentity.spawned[sender.identity.netId].gameObject.GetComponent<PlayerController>();
+
+                player.PlayerState = PlayerState.IDLE;
+            }
         }
 
         [Server]
