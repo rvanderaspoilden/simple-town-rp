@@ -112,7 +112,7 @@ namespace Sim {
         }
 
         private void OnValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation) {
-            uint deliveryBoxNetId = PlayerController.Local.GetInteractedProps().netId;
+            uint deliveryBoxNetId = ((Props)PlayerController.Local.GetInteractedObject()).netId;
 
             if (deliveryBoxNetId > 0) {
                 this.CmdValidatePropCreation(deliveryBoxNetId, this.currentDelivery, propsConfig.GetId(), presetId, position, rotation);

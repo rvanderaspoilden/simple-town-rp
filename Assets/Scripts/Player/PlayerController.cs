@@ -393,8 +393,8 @@ namespace Sim {
             this.stateMachine.SetState(this.idleState);
         }
 
-        public void Interact(Props propsToInteract) {
-            this.characterInteractState.InteractedProps = propsToInteract;
+        public void Interact(IInteractable interactable) {
+            this.characterInteractState.Interactable = interactable;
             this.stateMachine.SetState(this.characterInteractState);
         }
 
@@ -534,7 +534,7 @@ namespace Sim {
             set => showRadialMenuWithPriority = value;
         }
 
-        public Props GetInteractedProps() => this.characterInteractState.InteractedProps;
+        public IInteractable GetInteractedObject() => this.characterInteractState.Interactable;
 
         public Collider Collider { get; private set; }
 

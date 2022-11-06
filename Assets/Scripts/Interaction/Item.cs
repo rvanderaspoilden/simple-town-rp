@@ -159,4 +159,6 @@ public class Item : NetworkBehaviour, IInteractable {
 
         return this._actions;
     }
+
+    public virtual void StopInteraction() { }
 }

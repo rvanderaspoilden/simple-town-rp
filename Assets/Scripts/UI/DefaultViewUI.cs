@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Linq;
+using Mirror;
+using Network.Messages;
 using Sim.Building;
 using Sim.Interactables;
 using Sim.UI;
 using TMPro;
+using UI.Build_Panel;
 using UnityEngine;
+using Action = System.Action;
 
 namespace Sim {
     public class DefaultViewUI : MonoBehaviour {
@@ -33,6 +38,9 @@ namespace Sim {
         [SerializeField]
         private SubGamePanelUI subGamePanelUI;
 
+        [SerializeField]
+        private BuildPanelUI buildPanelUI;
+        
         public static DefaultViewUI Instance;
 
         private void Awake() {
@@ -45,6 +53,7 @@ namespace Sim {
 
         private void Start() {
             this.adminPanelManager.gameObject.SetActive(false);
+            this.DisplayBuildPanel(false);
             this.HidePropsContentUI();
             this.HideElevatorUI();
             this.SetLocationText("Salmon Hotel");
@@ -85,6 +94,14 @@ namespace Sim {
         
         public void HidePropsContentUI() {
             this.propsContentUI.gameObject.SetActive(false);
+        }
+
+        public void DisplayBuildPanel(bool isActive, BuildAreaConfig config = null, Action<CreateBuildingMessage> onCreate = null, Action onCancel = null) {
+            this.buildPanelUI.gameObject.SetActive(isActive);
+
+            if (isActive && config) {
+                this.buildPanelUI.Setup(config.Buildings.First(), onCreate, onCancel);
+            }
         }
 
         public void ToggleAdminPanel() {

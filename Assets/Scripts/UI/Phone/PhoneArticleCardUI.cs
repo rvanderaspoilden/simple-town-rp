@@ -76,7 +76,7 @@ public class PhoneArticleCardUI : PhoneCardUI {
         this.selectedPreset = preset;
 
         foreach (var keyValuePair in this.colorButtonOfPresetId) {
-            keyValuePair.Value.SetSelector(keyValuePair.Key == this.selectedPreset.ID);
+            keyValuePair.Value.SetSelectorActive(keyValuePair.Key == this.selectedPreset.ID);
         }
     }
 

@@ -4,6 +4,7 @@ using Sim.Building;
 using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Sim.Utils {
     public static class CommonUtils {
@@ -91,6 +92,12 @@ namespace Sim.Utils {
             }
 
             return false;
+        }
+
+        public static void ClearChildren(Transform transform) {
+            foreach (Transform child in transform) {
+                Object.Destroy(child.gameObject);
+            }
         }
     }
 }

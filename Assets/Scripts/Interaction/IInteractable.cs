@@ -9,6 +9,7 @@ namespace Interaction {
 
         public Action[] GetActions(bool withPriority = false);
 
+        public void StopInteraction();
         public Transform transform { get; }
     }
 }

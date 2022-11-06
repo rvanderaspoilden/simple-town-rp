@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Interaction;
 using Mirror;
+using Network.Messages;
+using Sim;
 using Sim.Enums;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
@@ -18,6 +20,7 @@ public class BuildArea : NetworkBehaviour, IInteractable {
     }
 
     public override void OnStartClient() {
+        Debug.Log("Setup actions");
         this.SetupActions(this.config.Actions);
     }
 
@@ -57,7 +60,17 @@ public class BuildArea : NetworkBehaviour, IInteractable {
         }
     }
 
-    private void Build() { }
+    private void Build() {
+        PlayerController.Local.Interact(this);
+        DefaultViewUI.Instance.DisplayBuildPanel(true, config, (request) => {
+            this.CmdBuild(request);
+        }, () => { PlayerController.Local.Idle(); });
+    }
+
+    [Command(requiresAuthority = false)]
+    private void CmdBuild(CreateBuildingMessage request, NetworkConnectionToClient sender = null) {
+        
+    }
 
     protected virtual void Execute(Action action) {
         throw new NotImplementedException();
@@ -72,6 +85,10 @@ public class BuildArea : NetworkBehaviour, IInteractable {
     }
 
     public Action[] GetActions(bool withPriority = false) {
-        return this.config.Actions.ToArray();
+        return this._actions.ToArray();
+    }
+
+    public void StopInteraction() {
+        DefaultViewUI.Instance.DisplayBuildPanel(false);
     }
 }
