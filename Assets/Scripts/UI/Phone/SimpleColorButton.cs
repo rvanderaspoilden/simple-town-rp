@@ -22,4 +22,6 @@ public class SimpleColorButton : ColorButton {
 
         this.primaryImg.color = color;
     }
+
+    public Color Color => _color;
 }

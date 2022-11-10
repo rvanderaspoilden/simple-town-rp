@@ -80,7 +80,7 @@ namespace Sim.Utils {
             Vector3 origin = Vector3.Scale(originPoint, new Vector3(1, 0, 1));
             Vector3 target = Vector3.Scale(player.transform.position, new Vector3(1, 0, 1));
 
-            if (interactable.GetActions()?.Length <= 0 || Mathf.Abs(Vector3.Distance(origin, target)) > maxRange) {
+            if (!interactable.IsInteractable() || interactable.GetActions()?.Length <= 0 || Mathf.Abs(Vector3.Distance(origin, target)) > maxRange) {
                 return false;
             }
 

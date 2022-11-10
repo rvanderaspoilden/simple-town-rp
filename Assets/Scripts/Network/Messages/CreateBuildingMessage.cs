@@ -6,9 +6,12 @@ namespace Network.Messages {
     [Serializable]
     public struct CreateBuildingMessage : NetworkMessage {
         public int buildingId;
-        public Color mainColor;
-        public Color firstStoreColor;
-        public Color secondStoreColor;
-        public Color barColor;
+        public CustomizedMaterialPart[] customizedMaterialParts;
+    }
+
+    [Serializable]
+    public struct CustomizedMaterialPart {
+        public int id;
+        public Color color;
     }
 }

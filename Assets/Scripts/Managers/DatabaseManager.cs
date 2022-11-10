@@ -25,7 +25,7 @@ namespace Sim {
         public static GameConfiguration GameConfiguration;
         public static List<NotificationTemplateConfig> NotificationTemplateConfigs;
         public static List<SubGameConfiguration> SubGameConfigurations;
-        public static List<BuildAreaConfig> BuildAreaConfigurations;
+        public static List<BuildingConfig> BuildingConfigurations;
 
         public static DatabaseManager Instance;
 
@@ -60,8 +60,8 @@ namespace Sim {
             GameConfiguration = Resources.Load<GameConfiguration>("Configurations/Game Configuration");
             Debug.Log($"Game configuration loaded : 1");
             
-            BuildAreaConfigurations = Resources.LoadAll<BuildAreaConfig>("Configurations/Build Areas").ToList();
-            Debug.Log($"Build Area configurations loaded : {BuildAreaConfigurations.Count}");
+            BuildingConfigurations = Resources.LoadAll<BuildingConfig>("Configurations/Buildings").ToList();
+            Debug.Log($"Building configurations loaded : {BuildingConfigurations.Count}");
 
             RegisterPrefabs();
 
@@ -77,7 +77,7 @@ namespace Sim {
                 NetworkManager.singleton.spawnPrefabs.Add(config.Prefab.gameObject);
             }
             
-            foreach (BuildAreaConfig config in BuildAreaConfigurations) {
+            foreach (BuildingConfig config in BuildingConfigurations) {
                 NetworkManager.singleton.spawnPrefabs.Add(config.Prefab.gameObject);
             }
         }
