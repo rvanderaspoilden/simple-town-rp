@@ -10,10 +10,13 @@ using UnityEngine.UI;
 namespace UI.Build_Panel {
     public class BuildPanelUI : MonoBehaviour {
         [SerializeField]
-        private Transform customizableSectionsContainer;
+        private Transform fieldsContainer;
 
         [SerializeField]
         private UI_CustomizableSection customizableSectionPrefab;
+
+        [SerializeField]
+        private UI_TextField textFieldPrefab;
 
         [SerializeField]
         private Button confirmButton;
@@ -23,6 +26,8 @@ namespace UI.Build_Panel {
         private Action<CreateBuildingMessage> onCreate;
 
         private Action OnCancel;
+
+        private string _name;
 
         private Dictionary<int, CustomizedMaterialPart> _customizedMaterialPartsById = new Dictionary<int, CustomizedMaterialPart>();
 
@@ -35,9 +40,12 @@ namespace UI.Build_Panel {
             this.onCreate = _onCreate;
             this.OnCancel = _onCancel;
 
+            CommonUtils.ClearChildren(this.fieldsContainer);
+
+            UI_TextField buildingNameField = Instantiate(this.textFieldPrefab, this.fieldsContainer);
+            buildingNameField.Setup("Choisir un nom", (value) => { this._name = value; });
+
             if (config.IsCustomizable) {
-                CommonUtils.ClearChildren(this.customizableSectionsContainer);
-                
                 foreach (CustomizableMaterialPart customizableMaterialPart in config.CustomizableMaterialParts) {
                     this.InstantiateCustomizableSection(customizableMaterialPart);
                 }
@@ -47,7 +55,7 @@ namespace UI.Build_Panel {
         }
 
         private void InstantiateCustomizableSection(CustomizableMaterialPart customizableMaterialPart) {
-            UI_CustomizableSection section = Instantiate(this.customizableSectionPrefab, this.customizableSectionsContainer);
+            UI_CustomizableSection section = Instantiate(this.customizableSectionPrefab, this.fieldsContainer);
             section.Setup(customizableMaterialPart, customizableMaterialPart.availableColors[0], (value) => {
                 if (this._customizedMaterialPartsById.ContainsKey(value.id)) {
                     this._customizedMaterialPartsById[value.id] = value;
