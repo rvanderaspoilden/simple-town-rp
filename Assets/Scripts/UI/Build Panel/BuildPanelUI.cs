@@ -27,7 +27,7 @@ namespace UI.Build_Panel {
 
         private Action OnCancel;
 
-        private string _name;
+        private string _companyName;
 
         private Dictionary<int, CustomizedMaterialPart> _customizedMaterialPartsById = new Dictionary<int, CustomizedMaterialPart>();
 
@@ -43,7 +43,7 @@ namespace UI.Build_Panel {
             CommonUtils.ClearChildren(this.fieldsContainer);
 
             UI_TextField buildingNameField = Instantiate(this.textFieldPrefab, this.fieldsContainer);
-            buildingNameField.Setup("Choisir un nom", (value) => { this._name = value; });
+            buildingNameField.Setup("Choisir un nom", (value) => { this._companyName = value; });
 
             if (config.IsCustomizable) {
                 foreach (CustomizableMaterialPart customizableMaterialPart in config.CustomizableMaterialParts) {
@@ -70,6 +70,7 @@ namespace UI.Build_Panel {
         public void Create() {
             this.onCreate?.Invoke(new CreateBuildingMessage() {
                 buildingId = this._config.ID,
+                companyName = this._companyName,
                 customizedMaterialParts = this._customizedMaterialPartsById.Values.ToArray()
             });
         }

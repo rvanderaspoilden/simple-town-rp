@@ -6,6 +6,7 @@ namespace Network.Messages {
     [Serializable]
     public struct CreateBuildingMessage : NetworkMessage {
         public int buildingId;
+        public string companyName;
         public CustomizedMaterialPart[] customizedMaterialParts;
     }
 
