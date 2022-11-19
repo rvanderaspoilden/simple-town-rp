@@ -58,12 +58,6 @@ namespace Sub_Games.Dream {
             StartCoroutine(this.WaveCoroutine());
         }
 
-        private void Update() {
-            if (Input.GetKeyDown(KeyCode.S)) {
-                this.StartGame();
-            }
-        }
-
         #region Pool Functions
 
         private SheepController CreateNewSheep() {
