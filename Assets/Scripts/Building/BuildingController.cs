@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Sim.Building {
     public class BuildingController : NetworkBehaviour {
         [SerializeField]
-        private BuildingConfig config;
+        protected BuildingConfig config;
 
         [SerializeField]
         private Renderer[] customizableRenderers;
@@ -16,8 +16,8 @@ namespace Sim.Building {
 
         [SerializeField]
         [ReadOnly]
-        [SyncVar(hook = nameof(OnCustomizableMaterialPartsChanged))]
-        private CreateBuildingMessage _customizedData;
+        [SyncVar(hook = nameof(OnBuildingDataChanged))]
+        protected CreateBuildingMessage _buildingData;
 
         private void Awake() {
             // Create copy of each materials
@@ -31,7 +31,7 @@ namespace Sim.Building {
 
         [Server]
         public void SetCustomizedMaterialParts(CustomizedMaterialPart[] value) {
-            this._customizedData = new CreateBuildingMessage() { customizedMaterialParts = value };
+            this._buildingData = new CreateBuildingMessage() { customizedMaterialParts = value };
         }
 
         private void DuplicateMaterials() {
@@ -47,8 +47,8 @@ namespace Sim.Building {
             this.AttachedArea.ResetState();
         }
 
-        private void OnCustomizableMaterialPartsChanged(CreateBuildingMessage _, CreateBuildingMessage value) {
-            Debug.Log("[BuildingController][Hook] Customize");
+        protected virtual void OnBuildingDataChanged(CreateBuildingMessage _, CreateBuildingMessage value) {
+            Debug.Log("[BuildingController][Hook] Building Data changed");
             this.Customize(value.customizedMaterialParts);
         }
 

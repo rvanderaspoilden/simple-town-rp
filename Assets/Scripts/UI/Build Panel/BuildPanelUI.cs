@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Enums;
 using Network.Messages;
 using Sim.Scriptables;
 using Sim.Utils;
@@ -17,6 +18,9 @@ namespace UI.Build_Panel {
 
         [SerializeField]
         private UI_TextField textFieldPrefab;
+
+        [SerializeField]
+        private UI_DropdownField dropDownFieldPrefab;
 
         [SerializeField]
         private Button confirmButton;
@@ -45,12 +49,20 @@ namespace UI.Build_Panel {
             UI_TextField buildingNameField = Instantiate(this.textFieldPrefab, this.fieldsContainer);
             buildingNameField.Setup("Choisir un nom", (value) => { this._companyName = value; });
 
+            /*if (config.GetType() == typeof(B_FoodContainerConfig)) {
+                string[] containerTypes = Enum.GetNames(typeof(B_FoodContainerType));
+                UI_DropdownField containerTypeField = Instantiate(this.dropDownFieldPrefab, this.fieldsContainer);
+                containerTypeField.Setup("Choisir un type de stand", containerTypes, containerTypes[0], (value) => {
+                    Debug.Log(value);
+                });
+            }*/
+
             if (config.IsCustomizable) {
                 foreach (CustomizableMaterialPart customizableMaterialPart in config.CustomizableMaterialParts) {
                     this.InstantiateCustomizableSection(customizableMaterialPart);
                 }
             }
-
+            
             this.CheckCreateConstraints();
         }
 

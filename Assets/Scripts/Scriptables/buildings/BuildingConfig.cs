@@ -11,6 +11,9 @@ namespace Sim.Scriptables {
         private string label;
 
         [SerializeField]
+        private Sprite picture;
+
+        [SerializeField]
         private float cost;
 
         [SerializeField]
@@ -26,6 +29,8 @@ namespace Sim.Scriptables {
         public int ID => id;
 
         public string Label => label;
+
+        public Sprite Picture => picture;
 
         public float Cost => cost;
 

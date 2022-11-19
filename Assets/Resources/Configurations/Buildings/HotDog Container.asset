@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9713684d29464d2081c8b72116e4a4d2, type: 3}
-  m_Name: Food Container
+  m_Name: HotDog Container
   m_EditorClassIdentifier: 
   id: 1
-  label: Food Container
+  label: Stand de Hot Dog
+  picture: {fileID: 0}
   cost: 0
-  prefab: {fileID: 4326012025413539094, guid: 90ba6f6cbd99b6743868df7576fef0c6, type: 3}
+  prefab: {fileID: 67822994978256718, guid: a877acac687076840a65671ea07a28e6, type: 3}
   customizable: 1
   customizableMaterialParts:
   - id: 0
@@ -40,3 +41,4 @@ MonoBehaviour:
     availableColors:
     - {r: 1, g: 1, b: 1, a: 1}
     - {r: 1, g: 0.3254717, b: 0.3254717, a: 1}
+  containerType: 1

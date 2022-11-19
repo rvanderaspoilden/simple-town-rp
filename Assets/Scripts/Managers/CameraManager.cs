@@ -13,8 +13,17 @@ namespace Sim {
         [SerializeField]
         private LayerMask layerMaskInFreeMode;
 
-        private BuildCamera buildCamera;
+        [SerializeField]
+        private LayerMask defaultCullingMask;
+        
+        [SerializeField]
+        private LayerMask fpsCullingMask;
+        
+        [SerializeField]
+        private GameObject fpsCamera;
 
+        private BuildCamera buildCamera;
+        
         private ThirdPersonCamera tpsCamera;
 
         private float lastCameraPosition;
@@ -45,6 +54,7 @@ namespace Sim {
 
             this.buildCamera.enabled = false;
             this.tpsCamera.enabled = false;
+            this.fpsCamera.SetActive(false);
 
             DontDestroyOnLoad(this.gameObject);
         }
@@ -89,15 +99,26 @@ namespace Sim {
             }
         }
 
-        private void SetCurrentMode(CameraModeEnum mode) {
+        public void SetFpsCamera(Transform point) {
+            this.fpsCamera.transform.position = point.position;
+            this.fpsCamera.transform.rotation = point.rotation;
+            this.SetCurrentMode(CameraModeEnum.FPS);
+        }
+
+        public void SetCurrentMode(CameraModeEnum mode) {
             this.currentMode = mode;
             this.buildCamera.enabled = mode == CameraModeEnum.BUILD;
             this.tpsCamera.enabled = mode == CameraModeEnum.FREE;
+            this.fpsCamera.SetActive(mode == CameraModeEnum.FPS);
 
             if (this.currentMode == CameraModeEnum.BUILD) {
                 this.buildCamera.Setup(this.tpsCamera.GetVirtualCamera());
-            } else {
+                this.camera.cullingMask = this.defaultCullingMask;
+            } else if (this.currentMode == CameraModeEnum.FREE) {
                 this.tpsCamera.Setup(this.buildCamera.GetVirtualCamera());
+                this.camera.cullingMask = this.defaultCullingMask;
+            } else {
+                this.camera.cullingMask = this.fpsCullingMask;
             }
         }
 

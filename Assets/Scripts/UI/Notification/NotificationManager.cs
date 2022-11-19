@@ -32,12 +32,6 @@ public class NotificationManager : MonoBehaviour {
         }
     }
 
-    private void Update() {
-        if (Input.GetKeyDown(KeyCode.A)) {
-            this.AddNotification("Test", NotificationType.BANK);
-        }
-    }
-
     public void AddNotification(string message, NotificationType type) {
         if (this.notificationContainer.childCount >= 5) {
             Destroy(this.notificationContainer.GetChild(0).gameObject);

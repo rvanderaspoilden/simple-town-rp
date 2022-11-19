@@ -5,6 +5,7 @@ using UnityEngine;
 namespace Sim.Enums {
     public enum CameraModeEnum {
         FREE,
-        BUILD
+        BUILD,
+        FPS
     }
 }
