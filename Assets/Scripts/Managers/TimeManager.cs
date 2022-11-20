@@ -21,15 +21,15 @@ public class TimeManager : MonoBehaviour {
     public static double ConvertInGameDaysToRealSeconds(float days) {
         return ((60 * 60 * 24) * days) / _timeMultiplier;
     }
-    
+
     public static double ConvertInGameHourToRealSeconds(float hours) {
         return (60 * 60 * hours) / _timeMultiplier;
     }
-    
+
     public static double ConvertInGameMinuteToRealSeconds(float minutes) {
         return (60 * minutes) / _timeMultiplier;
     }
-    
+
     public static double ConvertRealMinuteToInGameSeconds(float minutes) {
         return (60 * minutes) * _timeMultiplier;
     }

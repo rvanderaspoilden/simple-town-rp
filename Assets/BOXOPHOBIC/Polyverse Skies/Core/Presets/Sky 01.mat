@@ -173,14 +173,17 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
+    - _BackgroundCat: 1
     - _BackgroundExposure: 1
     - _BackgroundMode: 0
+    - _Banner: 1
     - _BuiltInFog: 1
     - _BumpScale: 1
     - _CloudHeight: -0.185
     - _Clouds: 1
     - _CloudsCat: 1
     - _CloudsHeight: 0.15
+    - _CloudsIntensity: 1
     - _CloudsLitbySun: 0
     - _CloudsRotation: 0
     - _CloudsRotationSpeed: 1
@@ -198,6 +201,7 @@ Material:
     - _EnableClouds: 1
     - _EnableCloudsRotation: 1
     - _EnableDirectionLight: 0
+    - _EnableFogMessage: 0
     - _EnableMoon: 0
     - _EnablePattern: 1
     - _EnablePatternOverlay: 1
@@ -249,12 +253,16 @@ Material:
     - _RotationSpeed: 0.5
     - _SkyPatternContrast: 0.99
     - _SkyPatternOverlay: 1
+    - _SkyboxCat: 1
+    - _SkyboxOffset: 0
+    - _SkyboxRotation: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _StarFlikerSpeed: 0.05
     - _Stars: 1
     - _StarsAmount: 3
+    - _StarsBottomMask: 1
     - _StarsCat: 1
     - _StarsFlikerContrast: 1
     - _StarsHeightMask: 0.1
@@ -310,7 +318,9 @@ Material:
     - _MoonColor: {r: 1, g: 1, b: 1, a: 1}
     - _Sky: {r: 0.6691177, g: 0.29519898, b: 0.29519898, a: 0}
     - _SkyColor: {r: 0, g: 0.08650014, b: 0.53676474, a: 1}
+    - _SkyboxRotationAxis: {r: 0, g: 1, b: 0, a: 0}
     - _Skycol: {r: 0.27941146, g: 0.64219046, b: 1, a: 0}
+    - _StarsRotationAxis: {r: 0, g: 1, b: 0, a: 0}
     - _SunColor: {r: 0.5514706, g: 0.8515212, b: 1, a: 1}
     - _Tint: {r: 1, g: 1, b: 1, a: 0}
     - _Vector1: {r: 0, g: 1, b: 1, a: 0}

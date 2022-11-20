@@ -11,10 +11,21 @@ namespace Boxophobic.StyledGUI
         public string category;
         public float top;
         public float down;
+        public string colapsable;
+        public string conditions = "";
 
         public StyledCategoryDrawer(string category)
         {
             this.category = category;
+            this.colapsable = "false";
+            this.top = 10;
+            this.down = 10;
+        }
+
+        public StyledCategoryDrawer(string category, string colapsable)
+        {
+            this.category = category;
+            this.colapsable = colapsable;
             this.top = 10;
             this.down = 10;
         }
@@ -22,31 +33,92 @@ namespace Boxophobic.StyledGUI
         public StyledCategoryDrawer(string category, float top, float down)
         {
             this.category = category;
+            this.colapsable = "false";
             this.top = top;
             this.down = down;
         }
 
-        public override void OnGUI(Rect position, MaterialProperty prop, String label, MaterialEditor materiaEditor)
+        public StyledCategoryDrawer(string category, string colapsable, float top, float down)
         {
-            if (prop.floatValue < 0)
+            this.category = category;
+            this.colapsable = colapsable;
+            this.top = top;
+            this.down = down;
+        }
+
+        public StyledCategoryDrawer(string category, string colapsable, string conditions, float top, float down)
+        {
+            this.category = category;
+            this.colapsable = colapsable;
+            this.conditions = conditions;
+            this.top = top;
+            this.down = down;
+        }
+
+        public override void OnGUI(Rect position, MaterialProperty prop, String label, MaterialEditor materialEditor)
+        {
+            GUI.enabled = true;
+            EditorGUI.indentLevel = 0;
+
+            if (conditions == "")
             {
-                GUI.enabled = true;
-                EditorGUI.indentLevel = 0;
+                DrawInspector(prop);
             }
             else
             {
-                GUI.enabled = true;
-                EditorGUI.indentLevel = 0;
+                Material material = materialEditor.target as Material;
 
-                GUILayout.Space(top);
-                StyledGUI.DrawInspectorCategory(category);
-                GUILayout.Space(down);
+                bool showInspector = false;
+
+                string[] split = conditions.Split(char.Parse(" "));
+
+                for (int i = 0; i < split.Length; i++)
+                {
+                    if (material.HasProperty(split[i]))
+                    {
+                        showInspector = true;
+                        break;
+                    }
+                }
+
+                if (showInspector)
+                {
+                    DrawInspector(prop);
+                }
             }
         }
 
         public override float GetPropertyHeight(MaterialProperty prop, string label, MaterialEditor editor)
         {
             return -2;
+        }
+
+        void DrawInspector(MaterialProperty prop)
+        {
+            bool isColapsable = false;
+
+            if (colapsable == "true")
+            {
+                isColapsable = true;
+            }
+
+            bool isEnabled = true;
+
+            if (prop.floatValue < 0.5f)
+            {
+                isEnabled = false;
+            }
+
+            isEnabled = StyledGUI.DrawInspectorCategory(category, isEnabled, top, down, isColapsable);
+
+            if (isEnabled)
+            {
+                prop.floatValue = 1;
+            }
+            else
+            {
+                prop.floatValue = 0;
+            }
         }
     }
 }

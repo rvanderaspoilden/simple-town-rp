@@ -5,7 +5,7 @@ using UnityEngine;
 using Boxophobic.StyledGUI;
 using System.IO;
 
-namespace PolyverseSkies
+namespace PolyverseSkiesAsset
 {
     public enum CubemapType
     {
@@ -24,10 +24,11 @@ namespace PolyverseSkies
         _2048 = 2048,
     }
 
+    [HelpURL("https://docs.google.com/document/d/1z7A_xKNa2mXhvTRJqyu-ZQsAtbV32tEZQbO1OmPS_-s/edit#heading=h.8h46nz99pbdp")]
     [ExecuteInEditMode]
     public class PolyverseSkiesGenerator : StyledMonoBehaviour
     {
-        [StyledBanner(0.968f, 0.572f, 0.890f, "Cubemap Generator", "", "https://docs.google.com/document/d/1z7A_xKNa2mXhvTRJqyu-ZQsAtbV32tEZQbO1OmPS_-s/edit#heading=h.8h46nz99pbdp")]
+        [StyledBanner(0.968f, 0.572f, 0.890f, "Cubemap Generator")]
         public bool styledBanner;
 
         [StyledMessage("Info", "The cubemap generator will render the scene skybox to a static cubemap that can be used with a simple cubemap skybox shader! The generated cubemap will be saved to the Assets folder.")]

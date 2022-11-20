@@ -8,56 +8,70 @@ namespace Boxophobic.StyledGUI
 {
     public partial class StyledGUI
     {
-        public static void DrawWindowBanner(Color bannerColor, string bannerText, string helpURL)
+        public static void DrawWindowBanner(Color color, string title)
         {
             GUILayout.Space(15);
 
-            var bannerFullRect = GUILayoutUtility.GetRect(0, 0, 36, 0);
-            var bannerBeginRect = new Rect(bannerFullRect.position.x + 20, bannerFullRect.position.y, 20, 36);
-            var bannerMiddleRect = new Rect(bannerFullRect.position.x + 36, bannerFullRect.position.y, bannerFullRect.xMax - 70, 36);
-            var bannerEndRect = new Rect(bannerFullRect.xMax - 36, bannerFullRect.position.y, 20, 36);
-            var iconRect = new Rect(bannerFullRect.xMax - 51, bannerFullRect.position.y + 5, 30, 26);
+            var fullRect = GUILayoutUtility.GetRect(0, 0, 36, 0);
+            var fillRect = new Rect(1, fullRect.position.y, fullRect.xMax - 2, 36);
+            var lineRect = new Rect(1, fullRect.position.y, fullRect.xMax - 2, 1);
 
+            if (EditorGUIUtility.isProSkin)
+            {
+                color = new Color(color.r, color.g, color.b, 1f);
+            }
+            else
+            {
+                color = CONSTANT.ColorLightGray;
+            }
+
+            EditorGUI.DrawRect(fillRect, color);
+            EditorGUI.DrawRect(lineRect, CONSTANT.LineColor);
+
+            Color guiColor = CONSTANT.ColorDarkGray;
+
+            GUI.Label(fullRect, "<size=16><color=#" + ColorUtility.ToHtmlStringRGB(guiColor) + ">" + title + "</color></size>", CONSTANT.TitleStyle);
+
+            GUILayout.Space(15);
+        }
+
+        public static void DrawWindowBanner(string title)
+        {
+            GUILayout.Space(15);
+
+            var fullRect = GUILayoutUtility.GetRect(0, 0, 36, 0);
+            var fillRect = new Rect(2, fullRect.position.y, fullRect.xMax - 4, 36);
+
+            Color color;
             Color guiColor;
 
             if (EditorGUIUtility.isProSkin)
             {
-                bannerColor = new Color(bannerColor.r, bannerColor.g, bannerColor.b, 1f);
-            }
-            else
-            {
-                bannerColor = CONSTANT.ColorLightGray;
-            }
-
-            if (bannerColor.r + bannerColor.g + bannerColor.b <= 1.5)
-            {
+                color = CONSTANT.ColorDarkGray;
                 guiColor = CONSTANT.ColorLightGray;
             }
             else
             {
+                color = CONSTANT.ColorLightGray;
                 guiColor = CONSTANT.ColorDarkGray;
             }
 
-            GUI.color = bannerColor;
+            EditorGUI.DrawRect(fillRect, color);
 
-            GUI.DrawTexture(bannerBeginRect, CONSTANT.BannerImageBegin, ScaleMode.StretchToFill, true);
-            GUI.DrawTexture(bannerMiddleRect, CONSTANT.BannerImageMiddle, ScaleMode.StretchToFill, true);
-            GUI.DrawTexture(bannerEndRect, CONSTANT.BannerImageEnd, ScaleMode.StretchToFill, true);
+            GUI.Label(fullRect, "<size=16><color=#" + ColorUtility.ToHtmlStringRGB(guiColor) + ">" + title + "</color></size>", CONSTANT.TitleStyle);
 
-            GUI.color = guiColor;
-
-#if UNITY_2019_3_OR_NEWER
-            GUI.Label(bannerFullRect, "<size=16><color=#" + ColorUtility.ToHtmlStringRGB(guiColor) + ">" + bannerText + "</color></size>", CONSTANT.TitleStyle);
-#else
-            GUI.Label(bannerFullRect, "<size=14><color=#" + ColorUtility.ToHtmlStringRGB(guiColor) + "><b>" + bannerText + "</b></color></size>", CONSTANT.TitleStyle);
-#endif
-            if (GUI.Button(iconRect, CONSTANT.IconHelp, new GUIStyle { alignment = TextAnchor.MiddleCenter }))
-            {
-                Application.OpenURL(helpURL);
-            }
-
-            GUI.color = Color.white;
             GUILayout.Space(15);
+        }
+
+        // Legacy
+        public static void DrawWindowBanner(Color color, string title, string help)
+        {
+            DrawWindowBanner(color, title);
+        }
+
+        public static void DrawWindowBanner(string title, string help)
+        {
+            DrawWindowBanner(title);
         }
     }
 }

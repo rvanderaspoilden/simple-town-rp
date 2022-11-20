@@ -10,11 +10,39 @@ namespace Boxophobic.StyledGUI
     {
         public static void DrawWindowCategory(string bannerText)
         {
-            var categoryFullRect = GUILayoutUtility.GetRect(0, 0, 18, 0);
-            var categoryBeginRect = new Rect(categoryFullRect.position.x + 4, categoryFullRect.position.y, 10, 18);
-            var categoryMiddleRect = new Rect(categoryFullRect.position.x + 10, categoryFullRect.position.y, categoryFullRect.xMax - 20, 18);
-            var categoryEndRect = new Rect(categoryFullRect.xMax - 14, categoryFullRect.position.y, 10, 18);
-            var titleRect = new Rect(categoryFullRect.position.x, categoryFullRect.position.y, categoryFullRect.width, 18);
+            var fullRect = GUILayoutUtility.GetRect(0, 0, 18, 0);
+            var fillRect = new Rect(0, fullRect.y, fullRect.xMax + 10, 18);
+            var lineRect = new Rect(0, fullRect.y, fullRect.xMax + 10, 1);
+            var titleRect = new Rect(fullRect.position.x + 4, fullRect.position.y, fullRect.width, 18);
+
+            EditorGUI.DrawRect(fillRect, CONSTANT.CategoryColor);
+            EditorGUI.DrawRect(lineRect, CONSTANT.LineColor);
+
+            GUI.Label(titleRect, bannerText, CONSTANT.HeaderStyle);
+        }
+
+        public static bool DrawWindowCategory(string bannerText, bool enabled, float top, float down, bool colapsable)
+        {
+            if (colapsable)
+            {
+                if (enabled)
+                {
+                    GUILayout.Space(top);
+                }
+                else
+                {
+                    GUILayout.Space(0);
+                }
+            }
+            else
+            {
+                GUILayout.Space(top);
+            }
+
+            var fullRect = GUILayoutUtility.GetRect(0, 0, 18, 0);
+            var fillRect = new Rect(0, fullRect.y, fullRect.xMax + 10, 18);
+            var lineRect = new Rect(0, fullRect.y, fullRect.xMax + 10, 1);
+            var titleRect = new Rect(fullRect.position.x + 4, fullRect.position.y, fullRect.width, 18);
 
             if (EditorGUIUtility.isProSkin)
             {
@@ -25,12 +53,36 @@ namespace Boxophobic.StyledGUI
                 GUI.color = CONSTANT.ColorLightGray;
             }
 
-            GUI.DrawTexture(categoryBeginRect, CONSTANT.CategoryImageBegin, ScaleMode.StretchToFill, true);
-            GUI.DrawTexture(categoryMiddleRect, CONSTANT.CategoryImageMiddle, ScaleMode.StretchToFill, true);
-            GUI.DrawTexture(categoryEndRect, CONSTANT.CategoryImageEnd, ScaleMode.StretchToFill, true);
+            if (colapsable)
+            {
+                if (GUI.Button(fullRect, "", GUIStyle.none))
+                {
+                    enabled = !enabled;
+                }
+            }
 
-            GUI.color = Color.white;
-            GUI.Label(titleRect, bannerText, CONSTANT.BoldTextStyle);
+            EditorGUI.DrawRect(fillRect, CONSTANT.CategoryColor);
+            EditorGUI.DrawRect(lineRect, CONSTANT.LineColor);
+
+            GUI.Label(titleRect, bannerText, CONSTANT.HeaderStyle);
+
+            if (colapsable)
+            {
+                if (enabled)
+                {
+                    GUILayout.Space(down);
+                }
+                else
+                {
+                    GUILayout.Space(0);
+                }
+            }
+            else
+            {
+                GUILayout.Space(down);
+            }
+
+            return enabled;
         }
     }
 }

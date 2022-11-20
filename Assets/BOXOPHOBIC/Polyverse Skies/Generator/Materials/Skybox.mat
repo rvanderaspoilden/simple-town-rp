@@ -10,10 +10,10 @@ Material:
   m_Name: Skybox
   m_Shader: {fileID: 4800000, guid: 6fc9318f5193c094c98c0d450cd61e3b, type: 3}
   m_ShaderKeywords: _BACKGROUNDMODE_COLORS _BUILTINFOG_ON _CLOUDS_ON _ENABLECLOUDSROTATION_ON
-    _ENABLECLOUDS_ON _ENABLEMOON_ON _ENABLEPATTERN_ON _ENABLESKYPATTERNOVERLAY_ON
-    _ENABLESTARSSUNMASK_ON _ENABLESUNMASK_ON _ENABLESUNMOONMASK_ON _ENABLESUNMOON_ON
-    _ENABLESUN_ON _ENABLETWINKLING_ON _PATTERNOVERLAY_ON _STARS_ON _SUNORMOON_ON
-    _USECUBEMAP_ON _USEENVIRONMENTGRADIENT_ON _USESKYPATTERNOVERLAY_ON _USETEXTURE_ON
+    _ENABLECLOUDS_ON _ENABLEPATTERN_ON _ENABLESKYPATTERNOVERLAY_ON _ENABLESTARSSUNMASK_ON
+    _ENABLESUNMASK_ON _ENABLESUNMOONMASK_ON _ENABLESUNMOON_ON _ENABLETWINKLING_ON
+    _PATTERNOVERLAY_ON _STARS_ON _SUNORMOON_ON _USECUBEMAP_ON _USEENVIRONMENTGRADIENT_ON
+    _USESKYPATTERNOVERLAY_ON _USETEXTURE_ON
   m_LightmapFlags: 0
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -52,13 +52,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _BackgroundCat: 1
     - _BackgroundExposure: 1
     - _BackgroundMode: 0
-    - _Banner: 1
     - _CloudsCat: 1
-    - _CloudsHeight: 0.144
-    - _CloudsIntensity: 1
+    - _CloudsHeight: 0
     - _CloudsLitbySun: 0
     - _CloudsRotation: 360
     - _CloudsRotationSpeed: 0.5
@@ -66,13 +63,12 @@ Material:
     - _EnableBuiltinFog: 0
     - _EnableClouds: 1
     - _EnableCloudsRotation: 1
-    - _EnableFogMessage: 0
-    - _EnableMoon: 1
+    - _EnableMoon: 0
     - _EnablePatternOverlay: 0
     - _EnableStars: 0
     - _EnableStarsRotation: 0
     - _EnableStarsTwinkling: 0
-    - _EnableSun: 1
+    - _EnableSun: 0
     - _EquatorHeight: 0.756
     - _EquatorSmoothness: 0.5
     - _FogCat: 1
@@ -84,12 +80,9 @@ Material:
     - _MoonSize: 0.5
     - _PatternCat: 1
     - _PatternContrast: 0.5
-    - _SkyboxCat: 1
-    - _SkyboxRotation: 0
-    - _StarsBottomMask: 2
     - _StarsCat: 1
     - _StarsHeightMask: 0
-    - _StarsIntensity: 2.47
+    - _StarsIntensity: 2
     - _StarsLayer: 2
     - _StarsRotation: 360
     - _StarsRotationSpeed: 0.5
@@ -108,8 +101,5 @@ Material:
     - _EquatorColor: {r: 0.9150943, g: 0.71856743, b: 0.35826805, a: 1}
     - _GroundColor: {r: 0.49803913, g: 0.49699998, b: 0, a: 1}
     - _MoonColor: {r: 1, g: 1, b: 1, a: 1}
-    - _SkyColor: {r: 0.0141509175, g: 0.49956906, b: 1, a: 1}
-    - _SkyboxRotationAxis: {r: 0, g: 1, b: 0, a: 0}
-    - _StarsRotationAxis: {r: 0, g: 1, b: 0, a: 0}
+    - _SkyColor: {r: 0.11294055, g: 0.49477538, b: 0.8867924, a: 1}
     - _SunColor: {r: 1, g: 1, b: 1, a: 1}
-  m_BuildTextureStacks: []
