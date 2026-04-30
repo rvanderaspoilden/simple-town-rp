@@ -8,16 +8,16 @@ namespace Dissonance.Audio.Playback
     /// <summary>
     ///     Represents a decoder pipeline for a single playback session.
     /// </summary>
-    public struct SpeechSession
+    public readonly struct SpeechSession
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof(SpeechSession).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(SpeechSession));
 
         private static readonly float[] DesyncFixBuffer = new float[1024];
         private const float MinimumDelayFactor = 1.5f;
         private const float MaximumDelay = 0.750f;
         private static readonly int FixedDelayToleranceTicks = (int)TimeSpan.FromMilliseconds(33).Ticks;
-        private static readonly float InitialBufferDelay = 0.1f;
+        private const float InitialBufferDelay = 0.1f;
 
         private readonly float _minimumDelay;
 
@@ -27,17 +27,14 @@ namespace Dissonance.Audio.Playback
         private readonly DateTime _creationTime;
         private readonly IJitterEstimator _jitter;
 
-        public int BufferCount { get { return _pipeline.BufferCount; } }
-        public SessionContext Context { get { return _context; } }
-        public PlaybackOptions PlaybackOptions { get { return _pipeline.PlaybackOptions; } }
-        [NotNull] public WaveFormat OutputWaveFormat { get { return _pipeline.OutputFormat; } }
-        internal float PacketLoss { get { return _pipeline.PacketLoss; } }
-        internal IRemoteChannelProvider Channels { get { return _channels; } }
+        public int BufferCount => _pipeline.BufferCount;
+        public SessionContext Context => _context;
+        public PlaybackOptions PlaybackOptions => _pipeline.PlaybackOptions;
+        [NotNull] public WaveFormat OutputWaveFormat => _pipeline.OutputFormat;
+        internal float PacketLoss => _pipeline.PacketLoss;
+        internal IRemoteChannelProvider Channels => _channels;
 
-        public DateTime TargetActivationTime
-        {
-            get { return _creationTime + Delay; }
-        }
+        public DateTime TargetActivationTime => _creationTime + Delay;
 
         public TimeSpan Delay
         {
@@ -54,10 +51,8 @@ namespace Dissonance.Audio.Playback
             }
         }
 
-        public SyncState SyncState
-        {
-            get { return _pipeline.SyncState; }
-        }
+        public SyncState SyncState => _pipeline.SyncState;
+
         #endregion
 
         private SpeechSession(SessionContext context, IJitterEstimator jitter, IDecoderPipeline pipeline, IRemoteChannelProvider channels, DateTime now)
@@ -140,6 +135,15 @@ namespace Dissonance.Audio.Playback
         public bool Read(ArraySegment<float> samples)
         {
             return _pipeline.Read(samples);
+        }
+
+        /// <summary>
+        /// Override automatic output sample rate determination and set it to a fixed value
+        /// </summary>
+        /// <param name="rate"></param>
+        public void SetOutputSampleRate(int? rate)
+        {
+            _pipeline.SetOutputSampleRate(rate);
         }
     }
 }

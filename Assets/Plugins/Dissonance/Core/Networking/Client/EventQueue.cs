@@ -8,6 +8,7 @@ using JetBrains.Annotations;
 namespace Dissonance.Networking.Client
 {
     internal class EventQueue
+        : IVoiceEventQueue
     {
         #region helper types
         private enum EventType
@@ -29,18 +30,7 @@ namespace Dissonance.Networking.Client
         {
             public readonly EventType Type;
 
-            private string _playerName;
-            public string PlayerName
-            {
-                get
-                {
-                    return _playerName;
-                }
-                set
-                {
-                    _playerName = value;
-                }
-            }
+            public string PlayerName { get; set; }
 
             private CodecSettings _codecSettings;
             public CodecSettings CodecSettings
@@ -112,12 +102,12 @@ namespace Dissonance.Networking.Client
             {
                 Type = type;
 
-                _playerName = null;
+                PlayerName = null;
                 _room = null;
                 _allRooms = null;
-                _codecSettings = default(CodecSettings);
-                _voicePacket = default(VoicePacket);
-                _textMessage = default(TextMessage);
+                _codecSettings = default;
+                _voicePacket = default;
+                _textMessage = default;
             }
 
             public NetworkEvent(VoicePacket voice)
@@ -159,7 +149,7 @@ namespace Dissonance.Networking.Client
         #endregion
 
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Network, typeof(EventQueue).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Network, nameof(EventQueue));
 
         private readonly ReadonlyLockedValue<List<NetworkEvent>> _queuedEvents = new ReadonlyLockedValue<List<NetworkEvent>>(new List<NetworkEvent>());
 
@@ -186,11 +176,8 @@ namespace Dissonance.Networking.Client
 
         public EventQueue([NotNull] ReadonlyLockedValue<Pool<byte[]>> byteArrayPool, [NotNull] IRecycler<List<RemoteChannel>> channelsListPool)
         {
-            if (byteArrayPool == null) throw new ArgumentNullException("byteArrayPool");
-            if (channelsListPool == null) throw new ArgumentNullException("channelsListPool");
-
-            _byteArrayPool = byteArrayPool;
-            _channelsListPool = channelsListPool;
+            _byteArrayPool = byteArrayPool ?? throw new ArgumentNullException(nameof(byteArrayPool));
+            _channelsListPool = channelsListPool ?? throw new ArgumentNullException(nameof(channelsListPool));
         }
 
         /// <summary>
@@ -306,8 +293,7 @@ namespace Dissonance.Networking.Client
         {
             try
             {
-                if (handler != null)
-                    handler(arg);
+                handler?.Invoke(arg);
             }
             catch (Exception e)
             {
@@ -322,8 +308,7 @@ namespace Dissonance.Networking.Client
         {
             try
             {
-                if (handler != null)
-                    handler(arg1, arg2);
+                handler?.Invoke(arg1, arg2);
             }
             catch (Exception e)
             {
@@ -343,8 +328,7 @@ namespace Dissonance.Networking.Client
 
         public void EnqueuePlayerLeft(string playerName)
         {
-            if (OnEnqueuePlayerLeft != null)
-                OnEnqueuePlayerLeft(playerName);
+            OnEnqueuePlayerLeft?.Invoke(playerName);
 
             using (var events = _queuedEvents.Lock())
                 events.Value.Add(new NetworkEvent(EventType.PlayerLeft) { PlayerName = playerName });
@@ -395,5 +379,32 @@ namespace Dissonance.Networking.Client
             using (var locker = _byteArrayPool.Lock())
                 return locker.Value.Get();
         }
+    }
+
+    internal interface IVoiceEventQueue
+    {
+        /// <summary>
+        /// Indicates that a player stopped speaking
+        /// </summary>
+        /// <param name="name"></param>
+        void EnqueueStoppedSpeaking(string name);
+
+        /// <summary>
+        /// Indicates that a player started speaking
+        /// </summary>
+        /// <param name="name"></param>
+        void EnqueueStartedSpeaking(string name);
+
+        /// <summary>
+        /// A single packet of voice data
+        /// </summary>
+        /// <param name="voicePacket"></param>
+        void EnqueueVoiceData(VoicePacket voicePacket);
+
+        /// <summary>
+        /// Get a byte array which can be used to construct an event and will be recycled when the event has been sent
+        /// </summary>
+        /// <returns></returns>
+        byte[] GetEventBuffer();
     }
 }

@@ -1,11 +1,14 @@
 ﻿using Dissonance.Audio.Playback;
+using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
 
 namespace Dissonance.Editor
 {
     [CustomEditor(typeof(SamplePlaybackComponent))]
-    public class SamplePlaybackComponentEditor : UnityEditor.Editor
+    [UsedImplicitly]
+    public class SamplePlaybackComponentEditor
+        : UnityEditor.Editor
     {
         private Texture2D _logo;
 
@@ -26,21 +29,21 @@ namespace Dissonance.Editor
         {
             GUILayout.Label(_logo);
 
-            var component = (SamplePlaybackComponent) target;
-            var maybeSession = component.Session;
-
             if (Application.isPlaying)
             {
+                var component = (SamplePlaybackComponent)target;
+                var maybeSession = component.Session;
                 if (maybeSession != null)
                 {
                     var session = maybeSession.Value;
                     var sync = session.SyncState;
 
-                    EditorGUILayout.LabelField(string.Format("Buffered Packets: {0}", session.BufferCount));
-                    EditorGUILayout.LabelField(string.Format("Playback Position: {0:0.00}s", sync.ActualPlaybackPosition.TotalSeconds));
-                    EditorGUILayout.LabelField(string.Format("Ideal Position: {0:0.00}s", sync.IdealPlaybackPosition.TotalSeconds));
-                    EditorGUILayout.LabelField(string.Format("Desync: {0:000}ms", sync.Desync.TotalMilliseconds));
-                    EditorGUILayout.LabelField(string.Format("Compensated Playback Speed: {0:P1}", sync.CompensatedPlaybackSpeed));
+                    EditorGUILayout.LabelField($"Buffered Packets: {session.BufferCount}");
+
+                    EditorGUILayout.LabelField($"Playback Position: {sync.ActualPlaybackPosition.TotalSeconds:0.00}s");
+                    EditorGUILayout.LabelField($"Ideal Position: {sync.IdealPlaybackPosition.TotalSeconds:0.00}s");
+                    EditorGUILayout.LabelField($"Desync: {sync.Desync.TotalMilliseconds:0.0}ms");
+                    EditorGUILayout.LabelField($"Compensated Playback Speed: {sync.CompensatedPlaybackSpeed:P1}");
 
                     _rateGraph.AddKey(_nextRateGraphKey++, sync.CompensatedPlaybackSpeed);
                     while (_rateGraph.length > 200)
@@ -49,7 +52,7 @@ namespace Dissonance.Editor
                 }
                 else
                 {
-                    EditorGUILayout.LabelField("No Active Session");
+                    EditorGUILayout.LabelField("Not Speaking");
 
                     // Clear the data from the buffer graph
                     while (_rateGraph.length > 0)

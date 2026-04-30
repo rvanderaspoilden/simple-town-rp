@@ -18,7 +18,7 @@ public class NetworkEntity : NetworkBehaviour
     private IEnumerator AssignParentCoroutine() {
         int retryCounter = 0;
 
-        while (retryCounter < 10 && !NetworkIdentity.spawned.ContainsKey(this.parentId)) {
+        while (retryCounter < 10 && !NetworkClient.spawned.ContainsKey(this.parentId)) {
             retryCounter++;
             yield return new WaitForSeconds(.3f);
         }
@@ -31,8 +31,8 @@ public class NetworkEntity : NetworkBehaviour
         Vector3 position = curTransform.position;
         Quaternion rotation = curTransform.rotation;
 
-        if (NetworkIdentity.spawned.ContainsKey(this.parentId)) {
-            curTransform.SetParent(NetworkIdentity.spawned[this.parentId].transform);
+        if (NetworkClient.spawned.ContainsKey(this.parentId)) {
+            curTransform.SetParent(NetworkClient.spawned[this.parentId].transform);
             curTransform.localPosition = position;
             curTransform.localRotation = rotation;
         } else {

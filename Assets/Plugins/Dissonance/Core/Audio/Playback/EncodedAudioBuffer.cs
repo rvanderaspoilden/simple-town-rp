@@ -13,7 +13,7 @@ namespace Dissonance.Audio.Playback
     /// </summary>
     internal class EncodedAudioBuffer
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof (EncodedAudioBuffer).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(EncodedAudioBuffer));
         
         private readonly MinHeap<VoicePacket> _heap;
         private readonly Action<VoicePacket> _droppedFrameHandler;
@@ -21,21 +21,18 @@ namespace Dissonance.Audio.Playback
         private volatile bool _complete;
         private int _count;
 
-        public int Count
-        {
-            get { return _count; }
-        }
+        private int _noNextPacketCounter;
+
+        public int Count => _count;
 
         public uint SequenceNumber { get; private set; }
 
         private readonly PacketLossCalculator _loss = new PacketLossCalculator(128);
-        public float PacketLoss { get { return _loss.PacketLoss; } }
+        public float PacketLoss => _loss.PacketLoss;
 
         public EncodedAudioBuffer([NotNull] Action<VoicePacket> droppedFrameHandler)
         {
-            if (droppedFrameHandler == null) throw new ArgumentNullException("droppedFrameHandler");
-
-            _droppedFrameHandler = droppedFrameHandler;
+            _droppedFrameHandler = droppedFrameHandler ?? throw new ArgumentNullException(nameof(droppedFrameHandler));
             _heap = new MinHeap<VoicePacket>(32, new VoicePacketComparer()) { AllowHeapResize = true };
             SequenceNumber = 0;
             _complete = false;
@@ -78,26 +75,42 @@ namespace Dissonance.Audio.Playback
                 Log.Trace("Discarding late encoded audio frame from buffer ({0} packets late)", difference);
 
                 if (difference > 30)
-                    Log.Warn(Log.PossibleBugMessage(string.Format("Received a very late packet ({0} packets late)", difference), "30EF1B03-7BBC-49D3-A23E-6E84781FF29F"));
+                    Log.Warn("Received a very late packet ({0} packets late). This may indicate severe network congestion or a very poor frame rate. (30EF1B03-7BBC-49D3-A23E-6E84781FF29F)", difference);
 
                 _droppedFrameHandler(dropped);
             }
 
-            if (_heap.Count > 0 && _heap.Minimum.SequenceNumber == expected)
+            if (_heap.Count == 0)
             {
-                // the next frame is the one we are looking for
-                frame = _heap.RemoveMin();
-                Interlocked.Decrement(ref _count);
+                lostPacket = true;
+                frame = null;
+                _noNextPacketCounter++;
+
+                if (_noNextPacketCounter > 8)
+                {
+                    _noNextPacketCounter = 0;
+                    Log.Debug("Buffer running dry! Offsetting sequence number back by 3");
+                    SequenceNumber -= 3;
+                }
+            }
+            else if (_heap.Minimum.SequenceNumber == expected)
+            {
                 lostPacket = false;
+                frame = _heap.RemoveMin();
+                _noNextPacketCounter = 0;
+
+                Interlocked.Decrement(ref _count);
                 Log.Trace("Retrieved frame {0} from buffer ({1} items remain in buffer)", frame.Value.SequenceNumber, _heap.Count);
             }
             else
             {
-                //We don't have the _next_ frame yet.
-                // - If we have the next next frame, return that with the packet lost flag set
-                // - Otherwise return null frame, with packet lost flag set
                 lostPacket = true;
-                if (_heap.Count > 0 && _heap.Minimum.SequenceNumber == expected + 1)
+                _noNextPacketCounter = 0;
+
+                // We don't have the _next_ frame yet.
+                //  - If we have the next next frame (can be used for FEC)
+                //  - Otherwise return null frame
+                if (_heap.Minimum.SequenceNumber == expected + 1)
                     frame = _heap.Minimum;
                 else
                     frame = null;
@@ -121,6 +134,7 @@ namespace Dissonance.Audio.Playback
             _loss.Clear();
             _complete = false;
             SequenceNumber = 0;
+            _noNextPacketCounter = 0;
         }
 
         private bool IsComplete()

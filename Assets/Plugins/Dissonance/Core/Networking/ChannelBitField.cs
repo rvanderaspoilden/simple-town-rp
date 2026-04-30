@@ -2,7 +2,7 @@
 
 namespace Dissonance.Networking
 {
-    internal struct ChannelBitField
+    internal readonly struct ChannelBitField
     {
         #region mask constants
         private const ushort TypeMask = 0x0001;         //00000000 00000001
@@ -20,37 +20,27 @@ namespace Dissonance.Networking
         #endregion
 
         #region fields and properties
-        private readonly ushort _bitfield;
-        public ushort Bitfield
-        {
-            get { return _bitfield; }
-        }
+        public ushort Bitfield { get; }
 
         public ChannelType Type
         {
             get
             {
-                if ((_bitfield & TypeMask) == TypeMask)
+                if ((Bitfield & TypeMask) == TypeMask)
                     return ChannelType.Room;
                 return ChannelType.Player;
             }
         }
 
-        public bool IsClosing
-        {
-            get { return (_bitfield & ClosureMask) == ClosureMask; }
-        }
+        public bool IsClosing => (Bitfield & ClosureMask) == ClosureMask;
 
-        public bool IsPositional
-        {
-            get { return (_bitfield & PositionalMask) == PositionalMask; }
-        }
+        public bool IsPositional => (Bitfield & PositionalMask) == PositionalMask;
 
         public ChannelPriority Priority
         {
             get
             {
-                var val = (_bitfield & PriorityMask) >> PriorityOffset;
+                var val = (Bitfield & PriorityMask) >> PriorityOffset;
                 switch (val)
                 {
                     default: return ChannelPriority.Default;
@@ -66,46 +56,44 @@ namespace Dissonance.Networking
             get
             {
                 //Get a byte value for the amplitude (0-255)
-                var v = (_bitfield & AmplitudeMask) >> AmplitudeOffset;
+                var v = (Bitfield & AmplitudeMask) >> AmplitudeOffset;
 
                 //move into floating point 0-2 range
                 return v / 255f * 2;
             }
         }
 
-        public int SessionId
-        {
-            get { return (_bitfield & SessionIdMask) >> SessionIdOffset; }
-        }
+        public int SessionId => (Bitfield & SessionIdMask) >> SessionIdOffset;
+
         #endregion
 
         public ChannelBitField(ushort bitfield)
         {
-            _bitfield = bitfield;
+            Bitfield = bitfield;
         }
 
         public ChannelBitField(ChannelType type, int sessionId, ChannelPriority priority, float amplitudeMult, bool positional, bool closing)
             : this()
         {
-            _bitfield = 0;
+            Bitfield = 0;
 
             //Pack the single bit values by setting their flags
             if (type == ChannelType.Room)
-                _bitfield |= TypeMask;
+                Bitfield |= TypeMask;
             if (positional)
-                _bitfield |= PositionalMask;
+                Bitfield |= PositionalMask;
             if (closing)
-                _bitfield |= ClosureMask;
+                Bitfield |= ClosureMask;
 
             //Pack 2 bits of priority
-            _bitfield |= PackPriority(priority);
+            Bitfield |= PackPriority(priority);
             
             //Pack 2 bits of session ID by wrapping it as a 2 bit number and then shifting bits into position
-            _bitfield |= (ushort)((sessionId % 4) << SessionIdOffset);
+            Bitfield |= (ushort)((sessionId % 4) << SessionIdOffset);
 
             //Pack amplitude multiplier by converting range limited float (0 to 2) to byte and shifting byte into position
             var ampByte = (byte)Math.Round(Math.Min(2, Math.Max(0, amplitudeMult)) / 2 * byte.MaxValue);
-            _bitfield |= (ushort)(ampByte << AmplitudeOffset);
+            Bitfield |= (ushort)(ampByte << AmplitudeOffset);
         }
 
         private static ushort PackPriority(ChannelPriority priority)

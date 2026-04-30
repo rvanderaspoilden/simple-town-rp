@@ -11,7 +11,7 @@ namespace Dissonance.Audio.Capture
         : IMicrophoneSubscriber, IDisposable
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Recording, typeof(EncoderPipeline).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Recording, nameof(EncoderPipeline));
 
         private readonly byte[] _encodedBytes;
         private readonly float[] _plainSamples;
@@ -29,13 +29,13 @@ namespace Dissonance.Audio.Capture
         /// <summary>
         /// Indicates if the encoder has encoded the last packet
         /// </summary>
-        public bool Stopped { get { return _stopped; } }
+        public bool Stopped => _stopped;
 
         private volatile bool _stopping;
         /// <summary>
         /// Indicates if the encoder is waiting to send one final packet
         /// </summary>
-        public bool Stopping { get { return _stopping; } }
+        public bool Stopping => _stopping;
 
         private volatile bool _disposed;
 
@@ -48,12 +48,11 @@ namespace Dissonance.Audio.Capture
         #region constructor
         public EncoderPipeline([NotNull] WaveFormat inputFormat, [NotNull] IVoiceEncoder encoder, [NotNull] ICommsNetwork net)
         {
-            if (inputFormat == null) throw new ArgumentNullException("inputFormat");
-            if (encoder == null) throw new ArgumentNullException("encoder");
-            if (net == null) throw new ArgumentNullException("net");
+            if (encoder == null) throw new ArgumentNullException(nameof(encoder));
 
-            _net = net;
-            _inputFormat = inputFormat;
+            _net = net ?? throw new ArgumentNullException(nameof(net));
+            _inputFormat = inputFormat ?? throw new ArgumentNullException(nameof(inputFormat));
+
             _encoder = new ReadonlyLockedValue<IVoiceEncoder>(encoder);
 
             //Create buffers to store the encoder input (1 frame of floats) and output (twice equivalent amount of bytes)
@@ -74,9 +73,9 @@ namespace Dissonance.Audio.Capture
         public void ReceiveMicrophoneData(ArraySegment<float> inputSamples, [NotNull] WaveFormat format)
         {
             if (format == null)
-                throw new ArgumentNullException("format");
+                throw new ArgumentNullException(nameof(format));
             if (!format.Equals(_inputFormat))
-                throw new ArgumentException(string.Format("Samples expected in format {0}, but supplied with format {1}", _inputFormat, format), "format");
+                throw new ArgumentException($"Samples expected in format {_inputFormat}, but supplied with format {format}", nameof(format));
 
             using (var encoderLock = _encoder.Lock())
             {

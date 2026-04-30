@@ -13,8 +13,7 @@ namespace Dissonance.Audio.Playback
 
         [NotNull] private static ConcurrentPool<DecoderPipeline> GetPool(FrameFormat format)
         {
-            ConcurrentPool<DecoderPipeline> pool;
-            if (!Pools.TryGetValue(format, out pool))
+            if (!Pools.TryGetValue(format, out var pool))
             {
                 pool = new ConcurrentPool<DecoderPipeline>(3, () => {
                     var decoder = DecoderFactory.Create(format);
@@ -36,7 +35,7 @@ namespace Dissonance.Audio.Playback
         [NotNull] internal static DecoderPipeline GetDecoderPipeline(FrameFormat format, [NotNull] IVolumeProvider volume)
         {
             if (volume == null)
-                throw new ArgumentNullException("volume");
+                throw new ArgumentNullException(nameof(volume));
 
             var pool = GetPool(format);
             var pipeline = pool.Get();

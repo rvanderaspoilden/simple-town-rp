@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections.Generic;
+using System.Globalization;
 using Dissonance.Audio.Capture;
 using JetBrains.Annotations;
 using UnityEditor;
@@ -26,27 +27,26 @@ namespace Dissonance.Editor
 
             GUILayout.Label(_logo);
             EditorGUILayout.HelpBox("This filter captures data to drive acoustic echo cancellation. All audio which passes through this filter will be played through your " +
-                                    "speakers, the filter will watch you microphone for this audio coming back as an echo and remove it", MessageType.Info);
+                                    "speakers. When the audio enters your microphone (as echo) it will be removed.", MessageType.Info);
 
             if (Application.isPlaying)
             {
                 var state = WebRtcPreprocessingPipeline.GetAecFilterState();
                 switch (state)
                 {
-                    case WebRtcPreprocessingPipeline.WebRtcPreprocessor.FilterState.FilterNoInstance:
+                    case AudioPluginDissonanceNative.FilterState.FilterNoInstance:
                         EditorGUILayout.HelpBox("AEC filter is running, but it is not associated with a microphone preprocessor - Microphone not running?", MessageType.Info);
                         break;
 
-                    case WebRtcPreprocessingPipeline.WebRtcPreprocessor.FilterState.FilterNoSamplesSubmitted:
+                    case AudioPluginDissonanceNative.FilterState.FilterNoSamplesSubmitted:
                         EditorGUILayout.HelpBox("AEC filter is running, but no samples were submitted in the last frame - Could indicate audio thread starvation", MessageType.Warning);
                         break;
 
-                    case WebRtcPreprocessingPipeline.WebRtcPreprocessor.FilterState.FilterNotRunning:
+                    case AudioPluginDissonanceNative.FilterState.FilterNotRunning:
                         EditorGUILayout.HelpBox("AEC filter is not running - Audio device not initialized?", MessageType.Warning);
                         break;
 
-                    case WebRtcPreprocessingPipeline.WebRtcPreprocessor.FilterState.FilterOk:
-                        EditorGUILayout.HelpBox("AEC filter is running.", MessageType.Info);
+                    case AudioPluginDissonanceNative.FilterState.FilterOk:
                         break;
 
                     default:
@@ -63,39 +63,78 @@ namespace Dissonance.Editor
                 if (plugin.GetFloatBuffer("AecMetrics", out data, 10))
                 {
                     EditorGUILayout.LabelField(
-                        "Delay Median (samples)",
-                        data[0].ToString(CultureInfo.InvariantCulture)
+                        new GUIContent("Delay Median (samples)"),
+                        FormatNumber(data[0])
                     );
 
                     EditorGUILayout.LabelField(
-                        "Delay Deviation",
-                        data[1].ToString(CultureInfo.InvariantCulture)
+                        new GUIContent("Delay Deviation"),
+                        FormatNumber(data[1])
                     );
 
                     EditorGUILayout.LabelField(
-                        "Fraction Poor Delays",
-                        (data[2] * 100).ToString(CultureInfo.InvariantCulture) + "%"
+                        new GUIContent("Fraction Poor Delays"),
+                        FormatPercentage(data[2])
                     );
 
                     EditorGUILayout.LabelField(
-                        "Echo Return Loss",
-                        data[3].ToString(CultureInfo.InvariantCulture)
+                        new GUIContent("Echo Return Loss"),
+                        FormatNumber(data[3])
                     );
 
                     EditorGUILayout.LabelField(
-                        "Echo Return Loss Enhancement",
-                        data[6].ToString(CultureInfo.InvariantCulture)
+                        new GUIContent("Echo Return Loss Enhancement"),
+                        FormatNumber(data[6])
                     );
 
                     EditorGUILayout.LabelField(
-                        "Residual Echo Likelihood",
-                        (data[9] * 100).ToString("0.0", CultureInfo.InvariantCulture) + "%"
+                        new GUIContent("Residual Echo Likelihood"),
+                        FormatPercentage(data[9])
                     );
+
+                    ShowHints(data);
                 }
 #endif
             }
 
             return false;
+        }
+
+        private void ShowHints([NotNull] IReadOnlyList<float> data)
+        {
+            var delayHigh = data[0] > 250;
+            var delayDevHigh = data[0] > 0 && data[1] > 0 && data[1] > (data[0] * 0.25f);
+            var poorDelaysHigh = data[2] > 0 && data[2] > 0.25f;
+            var erlHigh = data[3] > 40;
+            var erlLow = data[3] > 0 && data[3] < 6;
+
+            if (delayHigh)
+                EditorGUILayout.HelpBox("`Delay Median (samples)` is very high. This may indicate a very high latency audio system (e.g. bluetooth headphone/microphone) which will prevent AEC from working.", MessageType.Warning);
+
+            if (delayDevHigh || poorDelaysHigh)
+                EditorGUILayout.HelpBox("`Delay Deviation` or `Fraction Poor Delays` is very high. This may indicate an overworked CPU (low FPS).", MessageType.Warning);
+
+            if (erlHigh)
+                EditorGUILayout.HelpBox("`Echo Return Loss` is very high. This may indicate that there is not much feedback or no audio is playing.", MessageType.Warning);
+
+            if (erlLow)
+                EditorGUILayout.HelpBox("`Echo Return Loss` is very low. This indicates that there is a lot of feedback.", MessageType.Warning);
+        }
+
+        [NotNull] private static GUIContent FormatNumber(float value)
+        {
+            if (value < 0)
+                return new GUIContent("Initialising...");
+            else
+                return new GUIContent(value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        [NotNull] private static GUIContent FormatPercentage(float value)
+        {
+            if (value < 0)
+                return new GUIContent("Initialising...");
+            else
+                return new GUIContent((value * 100).ToString("0.0", CultureInfo.InvariantCulture) + "%");
         }
 
         [NotNull] public override string Name

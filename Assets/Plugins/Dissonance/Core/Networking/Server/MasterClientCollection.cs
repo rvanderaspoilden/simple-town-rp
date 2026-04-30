@@ -18,7 +18,6 @@ namespace Dissonance.Networking.Server
         private readonly List<TPeer> _tmpConnectionBuffer = new List<TPeer>();
         private readonly List<ClientInfo<TPeer>> _tmpClientBuffer = new List<ClientInfo<TPeer>>();
         private readonly List<ClientInfo<TPeer>> _tmpClientBufferHandshake = new List<ClientInfo<TPeer>>();
-        private readonly Dictionary<string, List<ClientInfo<TPeer>>> _tmpClientByRoomsBufferHandshake = new Dictionary<string, List<ClientInfo<TPeer>>>();
         #endregion
 
         #region constructor
@@ -51,9 +50,7 @@ namespace Dissonance.Networking.Server
         public void ProcessHandshakeRequest(TPeer source, ref PacketReader reader)
         {
             //Parse packet
-            string name;
-            CodecSettings codecSettings;
-            reader.ReadHandshakeRequest(out name, out codecSettings);
+            reader.ReadHandshakeRequest(out var name, out var codecSettings);
 
             // Validate that we have a player name, and ignore if not
             if (name == null)
@@ -62,43 +59,53 @@ namespace Dissonance.Networking.Server
                 return;
             }
 
-            // Check if this client is already in the session but with a different connection to the current one.
-            // We'll assume name collisions never happen, so this is probably a client reconnecting before the server has cleaned up after a very recent disconnection
-            ClientInfo<TPeer> currentInfoByName;
-            ClientInfo<TPeer> currentInfoByConn;
-            if (TryGetClientInfoByName(name, out currentInfoByName) | TryFindClientByConnection(source, out currentInfoByConn))
+            // It's possible that the client is already in the session. Get the information for this client in two different ways: by name and by connection.
+            // - If they are the same then this client has sent another handshake request even though it is already in the session. Re-Initialise it.
+            // - If they are different then this client lost connection to the network session and has reconnected. Re-Initialise it.
+            if (TryGetClientInfoByName(name, out var currentInfoByName) | TryFindClientByConnection(source, out var currentInfoByConn))
             {
-                //We got the client by name and by current connection. If they are different then the client is in the session with a different connection
-                if (!EqualityComparer<ClientInfo<TPeer>>.Default.Equals(currentInfoByName, currentInfoByConn))
+                if (EqualityComparer<ClientInfo<TPeer>>.Default.Equals(currentInfoByName, currentInfoByConn))
                 {
-                    //Remove clients who were already connected
+                    // ClientInfo is the same! Client resent it's handshake request without losing connection.
+                    Log.Debug("Client '{0}' handshake received but client is already connected! Disconnecting client '{1}', connecting '{2}'",
+                        name,
+                        currentInfoByConn,
+                        source
+                    );
+
+                    // Remove the client from the collection so that it will be re-initialised.
                     if (currentInfoByConn != null && currentInfoByConn.IsConnected)
                         RemoveClient(currentInfoByConn);
-                    if (currentInfoByName != null && currentInfoByName.IsConnected)
-                        RemoveClient(currentInfoByName);
-
-                    Log.Debug("Client '{0}' handshake received but client is already connected! Disconnecting client '{1}' & '{2}', connecting '{3}'",
+                }
+                else
+                {
+                    // ClientInfo is different! Client lost connection and reconnected.
+                    Log.Debug("Client '{0}' handshake received but client is already connected with a different connection! Disconnecting client '{1}' & '{2}', connecting '{3}'",
                         name,
                         currentInfoByConn,
                         currentInfoByName,
                         source
                     );
+
+                    // Remove both clients from the collection so that it will be re-initialised.
+                    if (currentInfoByConn != null && currentInfoByConn.IsConnected)
+                        RemoveClient(currentInfoByConn);
+                    if (currentInfoByName != null && currentInfoByName.IsConnected)
+                        RemoveClient(currentInfoByName);
                 }
             }
 
-            //Get or register the ID for this client
+            // Get or register the ID for this client
             var id = PlayerIds.GetId(name) ?? PlayerIds.Register(name);
             var info = GetOrCreateClientInfo(id, name, codecSettings, source);
 
-            // Send the handshake response - but with _no_ clients in the list, as if the session has no one in it. The handshake packet previously listed everyone in the session and what rooms they're in. However,
-            // this could cause the packet to become very large and eventually it would overflow a buffers. Rather than expand all the buffers (which could break network integrations) we're not going to send any of
-            // that data in the handshake (as if it's an empty session) and then we'll immediately send all the client data in separate packets.
+            // Send the handshake response telling the client it's assigned ID and the session ID
             var writer = new PacketWriter(_tmpSendBuffer);
-            _tmpClientBufferHandshake.Clear();
-            writer.WriteHandshakeResponse(_server.SessionId, info.PlayerId, _tmpClientBufferHandshake, _tmpClientByRoomsBufferHandshake);
+            writer.WriteHandshakeResponse(_server.SessionId, info.PlayerId);
             _server.SendReliable(source, writer.Written);
 
-            //Send individual client state messages for all clients in the session
+            // Send individual client state messages for all clients in the session
+            _tmpClientBufferHandshake.Clear();
             GetClients(_tmpClientBufferHandshake);
             for (var i = 0; i < _tmpClientBufferHandshake.Count; i++)
                 SendFakeClientState(source, _tmpClientBufferHandshake[i]);
@@ -152,8 +159,7 @@ namespace Dissonance.Networking.Server
 
         public void RemoveClient(TPeer connection)
         {
-            ClientInfo<TPeer> info;
-            if (TryFindClientByConnection(connection, out info))
+            if (TryFindClientByConnection(connection, out var info))
                 RemoveClient(info);
         }
     }

@@ -37,8 +37,8 @@ namespace Dissonance.Threading
 
             [CanBeNull] public T Value
             {
-                get { return _parent._value; }
-                set { _parent._value = value; }
+                get => _parent._value;
+                set => _parent._value = value;
             }
 
             public Unlocker(LockedValue<T> parent)
@@ -84,10 +84,7 @@ namespace Dissonance.Threading
         {
             private readonly ReadonlyLockedValue<T> _parent;
 
-            public T Value
-            {
-                get { return _parent._value; }
-            }
+            public T Value => _parent._value;
 
             public Unlocker(ReadonlyLockedValue<T> parent)
             {

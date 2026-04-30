@@ -8,7 +8,7 @@ namespace Dissonance.Audio.Playback
     internal class SynchronizerSampleSource
         : ISampleSource, IRateProvider
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof(SynchronizerSampleSource).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(SynchronizerSampleSource));
         private static readonly float[] DesyncFixBuffer = new float[1024];
 
         private readonly ISampleSource _upstream;
@@ -19,47 +19,31 @@ namespace Dissonance.Audio.Playback
 
         private TimeSpan _aheadWarningLastSent = TimeSpan.MinValue;
 
-        public TimeSpan IdealPlaybackPosition
-        {
-            get
-            {
-                return _timer.Elapsed;
-            }
-        }
+        public TimeSpan IdealPlaybackPosition => _timer.Elapsed;
 
         private long _totalSamplesRead;
-        public TimeSpan PlaybackPosition
-        {
-            get
-            {
-                return TimeSpan.FromSeconds(_totalSamplesRead / (double)WaveFormat.SampleRate);
-            }
-        }
+        public TimeSpan PlaybackPosition => TimeSpan.FromSeconds(_totalSamplesRead / (double)WaveFormat.SampleRate);
 
         private DesyncCalculator _desync;
-        
-        public TimeSpan Desync
-        {
-            get { return TimeSpan.FromMilliseconds(_desync.DesyncMilliseconds); }
-        }
 
-        public WaveFormat WaveFormat
-        {
-            get { return _upstream.WaveFormat; }
-        }
+        public TimeSpan Desync => TimeSpan.FromMilliseconds(_desync.DesyncMilliseconds);
 
+        public WaveFormat WaveFormat => _upstream.WaveFormat;
+
+        private string _metricPlaybackRate;
+
+        private float _playbackRate;
         public float PlaybackRate
         {
-            get; private set;
-        }
-
-        public SyncState State
-        {
-            get
+            get => _playbackRate;
+            private set
             {
-                return new SyncState(PlaybackPosition, IdealPlaybackPosition, Desync, PlaybackRate, _enabled);
+                Metrics.Sample(_metricPlaybackRate, value);
+                _playbackRate = value;
             }
         }
+
+        public SyncState State => new SyncState(PlaybackPosition, IdealPlaybackPosition, Desync, PlaybackRate, _enabled);
 
         public SynchronizerSampleSource(ISampleSource upstream, TimeSpan resetDesyncTime)
         {
@@ -74,9 +58,11 @@ namespace Dissonance.Audio.Playback
             _desync = new DesyncCalculator();
             PlaybackRate = 1;
             _totalSamplesRead = 0;
-            _aheadWarningLastSent = TimeSpan.FromSeconds(0);
+            _aheadWarningLastSent = TimeSpan.Zero;
 
             _upstream.Prepare(context);
+
+            _metricPlaybackRate = Metrics.MetricName("PreprocessorInputBufferSampleCount", context.PlayerName);
         }
 
         public void Enable()
@@ -108,11 +94,11 @@ namespace Dissonance.Audio.Playback
                 _timer.Start();
             }
 
-            // We always read the amount of requested data, update the count of total data read now
-            _totalSamplesRead += samples.Count;
-
             // Calculate how out of sync playback is (based on actual samples read vs time passed)
             _desync.Update(IdealPlaybackPosition, PlaybackPosition);
+
+            // We always read the amount of requested data, update the count of total data read now
+            _totalSamplesRead += samples.Count;
 
             // If playback rate is too fast, slow down immediately (to prevent exhausting the buffer). If playback speed is too slow, ramp up over the next few frames.
             var corrected = _desync.CorrectedPlaybackSpeed;
@@ -121,9 +107,7 @@ namespace Dissonance.Audio.Playback
                          : Mathf.LerpUnclamped(PlaybackRate, _desync.CorrectedPlaybackSpeed, 0.25f);
 
             // Skip audio if necessary to resync the audio stream
-            int skippedSamples;
-            int skippedMilliseconds;
-            var complete = Skip(_desync.DesyncMilliseconds, out skippedSamples, out skippedMilliseconds);
+            var complete = Skip(_desync.DesyncMilliseconds, out var skippedSamples, out var skippedMilliseconds);
             if (skippedSamples > 0)
             {
                 _totalSamplesRead += skippedSamples;
@@ -149,7 +133,9 @@ namespace Dissonance.Audio.Playback
             {
                 Log.Warn("Playback desync ({0}ms) beyond recoverable threshold; resetting stream to current time", desyncMilliseconds);
 
-                deltaSamples = desyncMilliseconds * WaveFormat.SampleRate / 1000;
+                var deltaSamplesLong = ((long)desyncMilliseconds * WaveFormat.SampleRate) / 1000;
+
+                deltaSamples = (int)Math.Clamp(deltaSamplesLong, int.MinValue, int.MaxValue);
                 deltaDesyncMilliseconds = -desyncMilliseconds;
 
                 // Configure playback rate to normal speed before discarding the data to ensure we discard exactly as much data as we expect

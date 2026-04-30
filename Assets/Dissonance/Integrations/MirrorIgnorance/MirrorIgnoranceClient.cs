@@ -17,7 +17,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
             : base(network)
         {
             if (network == null)
-                throw new ArgumentNullException("network");
+                throw new ArgumentNullException(nameof(network));
 
             _network = network;
         }
@@ -52,7 +52,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
         #endregion
 
         #region send/receive
-        private void OnMessageReceived(NetworkConnection source, DissonanceNetworkMessage msg)
+        private void OnMessageReceived(DissonanceNetworkMessage msg)
         {
             using (msg)
                 NetworkReceivedPacket(msg.Data);

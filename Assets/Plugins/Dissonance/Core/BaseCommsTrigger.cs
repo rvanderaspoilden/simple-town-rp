@@ -22,17 +22,7 @@ namespace Dissonance
         public abstract bool UseColliderTrigger { get; set; }
 
         /// <summary>
-        /// Get or set if this comms trigger should use a unity collider trigger volume.
-        /// </summary>
-        [Obsolete("Replaced with UseColliderTrigger")]
-        public bool UseTrigger
-        {
-            get { return UseColliderTrigger; }
-            set { UseColliderTrigger = value; }
-        }
-
-        /// <summary>
-        /// Get or set if this comms trigger can currently be activated.
+        /// Get if this comms trigger can currently be activated.
         /// Override to serialise the value and to implement custom logic to disable the trigger.
         /// </summary>
         public abstract bool CanTrigger { get; }
@@ -41,10 +31,7 @@ namespace Dissonance
         /// <summary>
         /// Get a value indicating if the collider is currently triggered (i.e. a valid entity is inside the collider volume)
         /// </summary>
-        public bool IsColliderTriggered
-        {
-            get { return UseColliderTrigger && _entitiesInCollider.Count > 0; }
-        }
+        public bool IsColliderTriggered => UseColliderTrigger && _entitiesInCollider.Count > 0;
 
         private readonly List<GameObject> _entitiesInCollider = new List<GameObject>(64);
 
@@ -55,15 +42,15 @@ namespace Dissonance
         /// <summary>
         /// Get the set of tokens this trigger requires (trigger will only function if the local player knows at least one of the tokens)
         /// </summary>
-        public IEnumerable<string> Tokens { get { return _tokens; } }
+        public IEnumerable<string> Tokens => _tokens;
 
         private DissonanceComms _comms;
         /// <summary>
         /// Get the DissonanceComms component this trigger is controlling
         /// </summary>
-        protected DissonanceComms Comms
+        protected internal DissonanceComms Comms
         {
-            get { return _comms; }
+            get => _comms;
             private set
             {
                 if (_comms != null)
@@ -94,15 +81,20 @@ namespace Dissonance
             _tokens.TokenAdded += TokensModified;
             _tokens.TokenRemoved += TokensModified;
             _cachedTokenActivation = null;
+
+            if (!Comms)
+                Comms = FindLocalVoiceComm();
         }
 
         [UsedImplicitly] protected virtual void Start()
         {
+            if (!Comms)
+                Comms = FindLocalVoiceComm();
         }
 
         [UsedImplicitly] protected virtual void OnEnable()
         {
-            if (Comms == null)
+            if (!Comms)
                 Comms = FindLocalVoiceComm();
         }
 
@@ -208,9 +200,28 @@ namespace Dissonance
 
         }
 
+        [UsedImplicitly] private void OnTriggerEnter2D([NotNull] Collider2D other)
+        {
+            if (other == null) throw new ArgumentNullException(nameof(other));
+
+            if (ColliderTriggerFilter2D(other) && !_entitiesInCollider.Contains(other.gameObject))
+            {   
+                _entitiesInCollider.Add(other.gameObject);
+                Log.Debug("Collider2D entered ({0})", _entitiesInCollider.Count);
+            }
+        }
+
+        [UsedImplicitly] private void OnTriggerExit2D([NotNull] Collider2D other)
+        {
+            if (other == null) throw new ArgumentNullException(nameof(other));
+
+            if (_entitiesInCollider.Remove(other.gameObject))
+                Log.Debug("Collider2D exited ({0})", _entitiesInCollider.Count);
+        }
+
         [UsedImplicitly] private void OnTriggerEnter([NotNull] Collider other)
         {
-            if (other == null) throw new ArgumentNullException("other");
+            if (other == null) throw new ArgumentNullException(nameof(other));
 
             if (ColliderTriggerFilter(other) && !_entitiesInCollider.Contains(other.gameObject))
             {   
@@ -221,7 +232,7 @@ namespace Dissonance
 
         [UsedImplicitly] private void OnTriggerExit([NotNull] Collider other)
         {
-            if (other == null) throw new ArgumentNullException("other");
+            if (other == null) throw new ArgumentNullException(nameof(other));
 
             if (_entitiesInCollider.Remove(other.gameObject))
                 Log.Debug("Collider exited ({0})", _entitiesInCollider.Count);
@@ -235,7 +246,21 @@ namespace Dissonance
         /// <returns>true if this entity should affect the trigger, otherwise false</returns>
         protected virtual bool ColliderTriggerFilter([NotNull] Collider other)
         {
-            if (other == null) throw new ArgumentNullException("other");
+            if (other == null) throw new ArgumentNullException(nameof(other));
+
+            var player = other.GetComponent<IDissonancePlayer>();
+            return player != null && player.Type == NetworkPlayerType.Local;
+        }
+
+        /// <summary>
+        /// When something affects the trigger (enter or exit) it will only affect the trigger state of this component if this filter returns true.
+        /// May be overriden to filter which entities should trigger. Default behaviour returns true if the entity is the local dissonance player, otherwise false
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns>true if this entity should affect the trigger, otherwise false</returns>
+        protected virtual bool ColliderTriggerFilter2D([NotNull] Collider2D other)
+        {
+            if (other == null) throw new ArgumentNullException(nameof(other));
 
             var player = other.GetComponent<IDissonancePlayer>();
             return player != null && player.Type == NetworkPlayerType.Local;
@@ -244,14 +269,7 @@ namespace Dissonance
 
         [CanBeNull] private DissonanceComms FindLocalVoiceComm()
         {
-            //Assume it's attached as a sibling component and get it directly. this is fairly cheap (although obviously not going to work in a lot of cases).
-            var comm = GetComponent<DissonanceComms>();
-
-            //If we didn't manage to get it, find it instead (a much more expensive operation).
-            if (comm == null)
-                comm = FindObjectOfType<DissonanceComms>();
-
-            return comm;
+            return DissonanceComms.GetSingleton();
         }
 
         protected bool CheckVoiceComm()

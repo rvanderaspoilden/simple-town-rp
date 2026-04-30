@@ -16,7 +16,7 @@ namespace Dissonance.Networking
         public void Update(int bytes, DateTime? now = null)
         {
             //Check bytes is in valid range
-            if (bytes < 0) throw new ArgumentOutOfRangeException("bytes");
+            if (bytes < 0) throw new ArgumentOutOfRangeException(nameof(bytes));
             var uBytes = (uint)bytes;
 
             //If it eventually overflows the total byte/packet count we'll get wrong stats, but at least it won't crash
@@ -66,7 +66,7 @@ namespace Dissonance.Networking
 
         [NotNull] public static string Format(ulong packets, ulong bytes, ulong bytesPerSecond)
         {
-            return string.Format("{0} in {1:N0}pkts at {2}/s", FormatByteString(bytes), packets, FormatByteString(bytesPerSecond));
+            return $"{FormatByteString(bytes)} in {packets:N0}pkts at {FormatByteString(bytesPerSecond)}/s";
         }
 
         [NotNull] private static string FormatByteString(decimal bytes)
@@ -95,7 +95,7 @@ namespace Dissonance.Networking
             else
                 suffix = "B";
 
-            return string.Format("{0:0.0}{1}", bytes, suffix);
+            return $"{bytes:0.0}{suffix}";
         }
     }
 }

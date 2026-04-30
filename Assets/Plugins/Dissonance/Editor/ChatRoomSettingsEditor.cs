@@ -26,6 +26,7 @@ namespace Dissonance.Editor
             var settings = (ChatRoomSettings)target;
 
             GUILayout.Label(_logo);
+            EditorGUILayout.HelpBox("Add room names to this list to make it appear in the inspector for VoiceBroadcastTrigger and VoiceReceiptTrigger components.", MessageType.Info);
 
             using (var changed = new EditorGUI.ChangeCheckScope())
             {
@@ -77,7 +78,7 @@ namespace Dissonance.Editor
             var collisions = settings
                 .Names
                 .Where(n => !duplicates.Contains(n))
-                .Select(n => new {Name = n, Id = n.ToRoomId()})
+                .Select(n => new { Name = n, Id = new RoomName(n, true).ToRoomId() })
                 .GroupBy(x => x.Id)
                 .Where(g => g.Count() > 1)
                 .ToList();

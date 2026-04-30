@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using UnityEditor;
 using UnityEngine;
 
@@ -67,6 +68,10 @@ namespace Dissonance.Editor
             // Draw peak amplitude indicator
             var x = rect.width * _peak / _maxVolume;
             EditorGUI.DrawRect(new Rect(rect.xMin + x - 1, rect.yMin, 2, rect.height), Color.red);
+
+            // Draw dbfs
+            var dbfs = Helpers.ToDecibels(_maxVolume);
+            EditorGUI.LabelField(new Rect(rect.xMax - 72, rect.yMin, 72, rect.height), string.Format("{0:0.0} dBFS", dbfs));
         }
     }
 }

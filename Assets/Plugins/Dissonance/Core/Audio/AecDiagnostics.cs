@@ -7,7 +7,15 @@ namespace Dissonance.Audio
 {
     public static class AecDiagnostics
     {
-        [DllImport("AudioPluginDissonance", CallingConvention=CallingConvention.Cdecl)]
+#if UNITY_IOS && !UNITY_EDITOR
+        private const string ImportString = "__Internal";
+        private const CallingConvention Convention = default(CallingConvention);
+#else
+        private const string ImportString = "AudioPluginDissonance";
+        private const CallingConvention Convention = CallingConvention.Cdecl;
+#endif
+
+        [DllImport(ImportString, CallingConvention=Convention)]
         private static extern void Dissonance_GetAecMetrics(IntPtr buffer, int length);
 
         /// <summary>
@@ -24,6 +32,7 @@ namespace Dissonance.Audio
         /// correct AEC setup: https://placeholder-software.co.uk/dissonance/docs/Tutorials/Acoustic-Echo-Cancellation.html
         /// </summary>
         /// <param name="temp"></param>
+        /// <remarks>This does NOT return useful data for most fields for the AECM (mobile AEC). Only `ResidualEchoLikelihood` will be filled in.</remarks>
         /// <returns></returns>
         public static AecStats GetStats([CanBeNull] ref float[] temp)
         {
@@ -116,7 +125,7 @@ namespace Dissonance.Audio
 
         public enum AecState
         {
-            // ReSharper disable UnusedMember.Local
+            // ReSharper disable UnusedMember.Global (Justification: these values are returned from the native audio preproessor)
 
             /// <summary>
             /// Output filter is not yet running (no audio output).
@@ -138,7 +147,8 @@ namespace Dissonance.Audio
             /// Output filter is running correctly.
             /// </summary>
             FilterOk
-            // ReSharper restore UnusedMember.Local
+
+            // ReSharper restore UnusedMember.Global
         }
     }
 }

@@ -16,12 +16,15 @@ namespace Dissonance.Demo
         // ReSharper disable once UnassignedField.Global (Justification: Assigned by Unity)
         public Color Color;
 
-        void Awake()
+        private void Awake()
         {
-            _visualisations = new GameObject("Trigger Visualisations");
-            _visualisations.transform.parent = gameObject.transform;
-            _visualisations.transform.localPosition = Vector3.zero;
-            _visualisations.transform.localRotation = Quaternion.identity;
+            _visualisations = new GameObject("Trigger Visualisations") {
+                transform = {
+                    parent = gameObject.transform,
+                    localPosition = Vector3.zero,
+                    localRotation = Quaternion.identity,
+                },
+            };
 
             _fillMaterial = Instantiate(Resources.Load<Material>("TriggerMaterial")) as Material;
             _outlineMaterial = Instantiate(Resources.Load<Material>("TriggerEdgeMaterial")) as Material;
@@ -37,15 +40,15 @@ namespace Dissonance.Demo
                 CreateBox(box);
         }
 
-        void Update()
+        private void Update()
         {
             if (_triggers.Any(t => t.CanTrigger))
             {
                 _visualisations.SetActive(true);
 
                 _alpha = _triggers.Any(t => t.IsColliderTriggered)
-                       ? Mathf.Clamp01(_alpha + Time.deltaTime * 4)
-                       : Mathf.Clamp01(_alpha - Time.deltaTime * 4);
+                       ? Mathf.Clamp01(_alpha + Time.unscaledDeltaTime * 4)
+                       : Mathf.Clamp01(_alpha - Time.unscaledDeltaTime * 4);
 
                 var fillAlpha = Mathf.Lerp(0.7f, 1, _alpha);
                 var fillColor = Color.Lerp(new Color(), Color, fillAlpha);
@@ -61,10 +64,13 @@ namespace Dissonance.Demo
 
         private void CreateCircle(SphereCollider sphere)
         {
-            var go = new GameObject("sphere collider");
-            go.transform.parent = _visualisations.transform;
-            go.transform.localPosition = Vector3.zero;
-            go.transform.localRotation = Quaternion.identity;
+            var go = new GameObject("sphere collider") {
+                transform = {
+                    parent = _visualisations.transform,
+                    localPosition = Vector3.zero,
+                    localRotation = Quaternion.identity,
+                },
+            };
 
             var meshRenderer = go.AddComponent<MeshRenderer>();
             var meshFilter = go.AddComponent<MeshFilter>();
@@ -124,10 +130,13 @@ namespace Dissonance.Demo
 
         private void CreateBox([NotNull] BoxCollider box)
         {
-            var go = new GameObject("box collider");
-            go.transform.parent = _visualisations.transform;
-            go.transform.localPosition = Vector3.zero;
-            go.transform.localRotation = Quaternion.identity;
+            var go = new GameObject("box collider") {
+                transform = {
+                    parent = _visualisations.transform,
+                    localPosition = Vector3.zero,
+                    localRotation = Quaternion.identity,
+                },
+            };
 
             var meshRenderer = go.AddComponent<MeshRenderer>();
             var meshFilter = go.AddComponent<MeshFilter>();

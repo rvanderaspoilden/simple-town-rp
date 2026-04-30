@@ -22,7 +22,8 @@ namespace Dissonance.Demo
 
         public void Start ()
         {
-            Comms = Comms ?? FindObjectOfType<DissonanceComms>();
+            if (!Comms)
+                Comms = DissonanceComms.GetSingleton();
 
             _input = GetComponentsInChildren<InputField>().Single(a => a.name == "ChatInput");
             _input.gameObject.SetActive(false);
@@ -42,7 +43,7 @@ namespace Dissonance.Demo
 
                 //Display in the local log
                 if (_log != null)
-                    _log.AddMessage(string.Format("Me ({0}): {1}", _targetChannel, message), Color.gray);
+                    _log.AddMessage($"Me ({_targetChannel}): {message}", Color.gray);
             }
 
             //Clear the UI

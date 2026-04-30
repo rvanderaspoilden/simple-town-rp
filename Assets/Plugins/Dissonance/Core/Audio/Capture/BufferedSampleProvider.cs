@@ -10,28 +10,18 @@ namespace Dissonance.Audio.Capture
     internal class BufferedSampleProvider
         : ISampleProvider
     {
-        public int Count
-        {
-            get { return _samples.EstimatedUnreadCount; }
-        }
+        public int Count => _samples.EstimatedUnreadCount;
 
-        public int Capacity
-        {
-            get { return _samples.Capacity; }
-        }
+        public int Capacity => _samples.Capacity;
 
-        private readonly WaveFormat _format;
         /// <inheritdoc />
-        public WaveFormat WaveFormat
-        {
-            get { return _format; }
-        }
+        public WaveFormat WaveFormat { get; }
 
         private readonly TransferBuffer<float> _samples;
 
         public BufferedSampleProvider(WaveFormat format, int bufferSize)
         {
-            _format = format;
+            WaveFormat = format;
             _samples = new TransferBuffer<float>(bufferSize);
         }
 
@@ -51,7 +41,7 @@ namespace Dissonance.Audio.Capture
         public int Write(ArraySegment<float> data)
         {
             if (data.Array == null)
-                throw new ArgumentNullException("data");
+                throw new ArgumentNullException(nameof(data));
 
             return _samples.WriteSome(data);
         }

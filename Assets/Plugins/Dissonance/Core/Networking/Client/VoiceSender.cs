@@ -9,6 +9,16 @@ namespace Dissonance.Networking.Client
         where TPeer : struct
     {
         #region fields and properties
+        /// <summary>
+        /// If voice is sent to a room with this ID it is guaranteed to be sent to the server
+        /// </summary>
+        public const string SpecialAlwaysSendId = "FEE5233F-185F-4C73-AC6F-EE325998D526";
+
+        /// <summary>
+        /// Send to this client info if "always send" data is included
+        /// </summary>
+        private readonly ClientInfo<TPeer?> SpecialAlwaysSendClientInfo;
+
         private static readonly Log Log = Logs.Create(LogCategory.Network, typeof(VoiceSender<TPeer>).Name);
 
         private readonly ISendQueue<TPeer> _sender;
@@ -28,12 +38,14 @@ namespace Dissonance.Networking.Client
 
         private readonly HashSet<ClientInfo<TPeer?>> _tmpDestsSet = new HashSet<ClientInfo<TPeer?>>();
         private readonly List<ClientInfo<TPeer?>> _tmpDestsList = new List<ClientInfo<TPeer?>>();
+        private readonly List<ClientInfo<TPeer?>> _tmpRoomClientsList = new List<ClientInfo<TPeer?>>();
 
         //Track some state for error logging. We only log that packets were lost due to no ID if:
         // - The VoiceSender previously had an ID, but not any more (indicated by the hadId flag)
         // - A large number of packets have been sent (every 50th packet over 99), indicated by the `noIdSendCount` counter
         private bool _hadId;
         private int _noIdSendCount;
+
         #endregion
 
         #region constructor
@@ -45,19 +57,12 @@ namespace Dissonance.Networking.Client
             [NotNull] PlayerChannels playerChannels,
             [NotNull] RoomChannels roomChannels)
         {
-            if (sender == null) throw new ArgumentNullException("sender");
-            if (session == null) throw new ArgumentNullException("session");
-            if (peers == null) throw new ArgumentNullException("peers");
-            if (events == null) throw new ArgumentNullException("events");
-            if (playerChannels == null) throw new ArgumentNullException("playerChannels");
-            if (roomChannels == null) throw new ArgumentNullException("roomChannels");
-
-            _sender = sender;
-            _session = session;
-            _peers = peers;
-            _playerChannels = playerChannels;
-            _roomChannels = roomChannels;
-            _events = events;
+            _sender = sender ?? throw new ArgumentNullException(nameof(sender));
+            _session = session ?? throw new ArgumentNullException(nameof(session));
+            _peers = peers ?? throw new ArgumentNullException(nameof(peers));
+            _playerChannels = playerChannels ?? throw new ArgumentNullException(nameof(playerChannels));
+            _roomChannels = roomChannels ?? throw new ArgumentNullException(nameof(roomChannels));
+            _events = events ?? throw new ArgumentNullException(nameof(events));
 
             //Subscribe to future channel open and close events for both channel types
             _playerChannels.OpenedChannel += OpenPlayerChannel;
@@ -69,11 +74,14 @@ namespace Dissonance.Networking.Client
             foreach (var playerChannel in playerChannels)
                 OpenPlayerChannel(playerChannel.Value.TargetId, playerChannel.Value.Properties);
             foreach (var roomChannel in roomChannels)
-                OpenRoomChannel(roomChannel.Value.TargetId, roomChannel.Value.Properties);
+                OpenRoomChannel(new RoomName(roomChannel.Value.TargetId, true), roomChannel.Value.Properties);
 
             //We need to watch for player join/leave events to properly handle player channel management
             _events.PlayerJoined += OnPlayerJoined;
             _events.PlayerLeft += OnPlayerLeft;
+
+            // Create a fake player info to use for "always send" room
+            SpecialAlwaysSendClientInfo = new ClientInfo<TPeer?>(SpecialAlwaysSendId, ushort.MaxValue, default, default);
         }
         #endregion
 
@@ -101,7 +109,7 @@ namespace Dissonance.Networking.Client
         #region sending channel management
         private void OnPlayerJoined([NotNull] string name, CodecSettings codecSettings)
         {
-            if (name == null) throw new ArgumentNullException("name");
+            if (name == null) throw new ArgumentNullException(nameof(name));
 
             //Find any pending channels which address this new player by name and open them now we know who they are
             for (var i = _pendingPlayerChannels.Count - 1; i >= 0; i--)
@@ -117,7 +125,7 @@ namespace Dissonance.Networking.Client
 
         private void OnPlayerLeft([NotNull] string name)
         {
-            if (name == null) throw new ArgumentNullException("name");
+            if (name == null) throw new ArgumentNullException(nameof(name));
 
             using (var unlocker = _openChannels.Lock())
             using (var delta = _deltas.Lock())
@@ -157,12 +165,11 @@ namespace Dissonance.Networking.Client
 
         private void OpenPlayerChannel([NotNull] string player, [NotNull] ChannelProperties config)
         {
-            if (player == null) throw new ArgumentNullException("player");
-            if (config == null) throw new ArgumentNullException("config");
+            if (player == null) throw new ArgumentNullException(nameof(player));
+            if (config == null) throw new ArgumentNullException(nameof(config));
 
             //If we don't know who this player is yet save the channel open event and process it later
-            ClientInfo<TPeer?> info;
-            if (!_peers.TryGetClientInfoByName(player, out info))
+            if (!_peers.TryGetClientInfoByName(player, out var info))
             {
                 _pendingPlayerChannels.Add(new KeyValuePair<string, ChannelProperties>(player, config));
                 return;
@@ -174,8 +181,8 @@ namespace Dissonance.Networking.Client
 
         private void ClosePlayerChannel([NotNull] string player, [NotNull] ChannelProperties config)
         {
-            if (player == null) throw new ArgumentNullException("player");
-            if (config == null) throw new ArgumentNullException("config");
+            if (player == null) throw new ArgumentNullException(nameof(player));
+            if (config == null) throw new ArgumentNullException(nameof(config));
 
             //Remove from the set of unlinked player channels
             for (var i = _pendingPlayerChannels.Count - 1; i >= 0; i--)
@@ -183,36 +190,33 @@ namespace Dissonance.Networking.Client
                     _pendingPlayerChannels.RemoveAt(i);
 
             //Try to find the player - we may not find them (they may not have even joined the session yet)
-            ClientInfo<TPeer?> info;
-            if (!_peers.TryGetClientInfoByName(player, out info))
+            if (!_peers.TryGetClientInfoByName(player, out var info))
                 return;
 
             using (var delta = _deltas.Lock())
                 delta.Value.Add(new ChannelDelta(false, ChannelType.Player, config, info.PlayerId, info.PlayerName));
         }
 
-        private void OpenRoomChannel([NotNull] string room, [NotNull] ChannelProperties config)
+        private void OpenRoomChannel(RoomName room, [NotNull] ChannelProperties config)
         {
-            if (room == null) throw new ArgumentNullException("room");
-            if (config == null) throw new ArgumentNullException("config");
+            if (config == null) throw new ArgumentNullException(nameof(config));
 
             using (var delta = _deltas.Lock())
-                delta.Value.Add(new ChannelDelta(true, ChannelType.Room, config, room.ToRoomId(), room));
+                delta.Value.Add(new ChannelDelta(true, ChannelType.Room, config, room.ToRoomId(), room.Name));
         }
 
-        private void CloseRoomChannel([NotNull] string room, [NotNull] ChannelProperties config)
+        private void CloseRoomChannel(RoomName room, [NotNull] ChannelProperties config)
         {
-            if (room == null) throw new ArgumentNullException("room");
-            if (config == null) throw new ArgumentNullException("config");
+            if (config == null) throw new ArgumentNullException(nameof(config));
 
             using (var delta = _deltas.Lock())
-                delta.Value.Add(new ChannelDelta(false, ChannelType.Room, config, room.ToRoomId(), room));
+                delta.Value.Add(new ChannelDelta(false, ChannelType.Room, config, room.ToRoomId(), room.Name));
         }
 
         private void OpenChannel(ChannelType type, [NotNull] ChannelProperties config, ushort recipient, [NotNull] string name)
         {
-            if (name == null) throw new ArgumentNullException("name");
-            if (config == null) throw new ArgumentNullException("config");
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            if (config == null) throw new ArgumentNullException(nameof(config));
 
             using (var unlocker = _openChannels.Lock())
             {
@@ -241,7 +245,7 @@ namespace Dissonance.Networking.Client
 
         private void CloseChannel(ChannelType type, [NotNull] ChannelProperties properties, ushort id)
         {
-            if (properties == null) throw new ArgumentNullException("properties");
+            if (properties == null) throw new ArgumentNullException(nameof(properties));
 
             using (var unlocker = _openChannels.Lock())
             {
@@ -273,7 +277,7 @@ namespace Dissonance.Networking.Client
 
         public void Send(ArraySegment<byte> encodedAudio)
         {
-            if (encodedAudio.Array == null) throw new ArgumentNullException("encodedAudio");
+            if (encodedAudio.Array == null) throw new ArgumentNullException(nameof(encodedAudio));
 
             //Sanity check (cannot send before assigned an ID)
             if (!_session.LocalId.HasValue)
@@ -357,8 +361,7 @@ namespace Dissonance.Networking.Client
 
                 if (chan.Type == ChannelType.Player)
                 {
-                    ClientInfo<TPeer?> info;
-                    if (_peers.TryGetClientInfoById(chan.Recipient, out info)) {
+                    if (_peers.TryGetClientInfoById(chan.Recipient, out var info)) {
                         if (_tmpDestsSet.Add(info))
                             _tmpDestsList.Add(info);
                     }
@@ -367,21 +370,28 @@ namespace Dissonance.Networking.Client
                 }
                 else if (chan.Type == ChannelType.Room)
                 {
-                    List<ClientInfo<TPeer?>> roomClients;
-                    if (_peers.TryGetClientsInRoom(chan.Recipient, out roomClients))
+                    _tmpRoomClientsList.Clear();
+                    if (_peers.TryGetClientsInRoom(chan.Recipient, _tmpRoomClientsList))
                     {
-                        for (var r = 0; r < roomClients.Count; r++)
+                        for (var r = 0; r < _tmpRoomClientsList.Count; r++)
                         {
-                            var c = roomClients[r];
+                            var c = _tmpRoomClientsList[r];
                             if (_tmpDestsSet.Add(c))
                                 _tmpDestsList.Add(c);
                         }
+                    }
+
+                    // If this channel is the special channel ID which always sends to the server (even if no one is listening) add the fake client info to send to
+                    else if (chan.Name == SpecialAlwaysSendId)
+                    {
+                        if (_tmpDestsSet.Add(SpecialAlwaysSendClientInfo))
+                            _tmpDestsList.Add(SpecialAlwaysSendClientInfo);
                     }
                 }
                 else
                 {
                     //ncrunch: no coverage start (Sanity check, should never happen)
-                    throw Log.CreatePossibleBugException(string.Format("Attempted to send to a channel with an unknown type '{0}'", chan.Type), "CF735F3F-F954-4F05-9C5D-5153AB1E30E7");
+                    throw Log.CreatePossibleBugException($"Attempted to send to a channel with an unknown type '{chan.Type}'", "CF735F3F-F954-4F05-9C5D-5153AB1E30E7");
                     //ncrunch: no coverage end
                 }
             }
@@ -431,6 +441,8 @@ namespace Dissonance.Networking.Client
             return true;
         }
 
+        // ReSharper disable once UnusedParameter.Local Justification: the "openChannels" parameter is never used, but it is still important! Accepting is as a parameter
+        //                                                             means that the lock must be held when this method is called.
         private void ApplyChannelDelta(ChannelDelta d, ReadonlyLockedValue<List<OpenChannel>>.Unlocker openChannels)
         {
             if (d.Open)
@@ -439,7 +451,7 @@ namespace Dissonance.Networking.Client
                 CloseChannel(d.Type, d.Properties, d.RecipientId);
         }
 
-        private struct ChannelDelta
+        private readonly struct ChannelDelta
         {
             public readonly bool Open;
 

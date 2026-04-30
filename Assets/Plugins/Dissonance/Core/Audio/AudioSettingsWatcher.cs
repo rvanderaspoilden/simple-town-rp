@@ -4,11 +4,7 @@ namespace Dissonance.Audio
 {
     internal class AudioSettingsWatcher
     {
-        private static readonly AudioSettingsWatcher Singleton = new AudioSettingsWatcher();
-        public static AudioSettingsWatcher Instance
-        {
-            get { return Singleton; }
-        }
+        public static AudioSettingsWatcher Instance { get; } = new AudioSettingsWatcher();
 
         private readonly object _lock = new object();
 

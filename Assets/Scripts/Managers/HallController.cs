@@ -183,9 +183,8 @@ public class HallController : NetworkBehaviour {
     }
     
     [Server]
-    private void RemoveDisconnectedPlayer(int connId) {
-        this.playersInside = new HashSet<NetworkConnection>(this.playersInside.Where(x => x != null && x.connectionId != connId).ToList());
-        
+    private void RemoveDisconnectedPlayer(NetworkConnectionToClient conn) {
+        this.playersInside.Remove(conn);
         this.associatedBuilding.TryToCleanHall(this);
     }
 }

@@ -36,13 +36,7 @@ namespace Dissonance.Editor
         private DissonanceComms FindComms()
         {
             if (!_comms)
-            {
-                var tgt = (MonoBehaviour)target;
-                _comms = tgt.GetComponent<DissonanceComms>();
-            }
-
-            if (!_comms)
-                _comms = FindObjectOfType<DissonanceComms>();
+                _comms = DissonanceComms.GetSingleton();
 
             return _comms;
         }
@@ -51,17 +45,16 @@ namespace Dissonance.Editor
         {
             GUILayout.Label(_logo);
 
-            var capture = (T)target;
-            DrawAmplitudeGui(capture);
+            DrawAmplitudeGui();
         }
 
-        private void DrawAmplitudeGui([NotNull] T capture)
+        private void DrawAmplitudeGui()
         {
             var comms = FindComms();
             if (Application.isPlaying && comms != null)
             {
                 var player = comms.FindPlayer(comms.LocalPlayerName);
-                _micMeter.DrawInspectorGui(player == null ? 0 : player.Amplitude, player == null);
+                _micMeter.DrawInspectorGui(player?.Amplitude ?? 0, player == null);
             }
         }
 
@@ -78,13 +71,22 @@ namespace Dissonance.Editor
             using (new EditorGUILayout.HorizontalScope())
             {
                 //Allow the user to type an arbitrary input string
-                inputString = EditorGUILayout.DelayedTextField("Microphone Device Name", comms.MicrophoneName ?? "None (Default)");
+                inputString = EditorGUILayout.DelayedTextField("Microphone Device Name", comms.MicrophoneName ?? "(Use System Default)");
             }
 
-            //Show device list
-            var devices = new List<string> { "None (Default)" };
-            devices.AddRange(Microphone.devices);
+            // Use the device list from the capture instance if possible. Otherwise use default Unity device list
+            var devices = new List<string>();
+            if (capture is IMicrophoneDeviceList dl)
+            {
+                dl.GetDevices(devices);
+            }
+            else
+            {
+                devices.AddRange(Microphone.devices);
+            }
+            devices.Insert(0, "(Use System Default)");
 
+            // Show buttons, one for each devices
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 EditorGUILayout.LabelField("Input Devices", EditorStyles.boldLabel);
@@ -97,7 +99,7 @@ namespace Dissonance.Editor
             //If the name is any of these special strings, default it back to null
             var nulls = new[] {
                 "null", "(null)",
-                "default", "(default)", "none default", "none (default)",
+                "default", "(default)", "none default", "none (default)", "(use system default)",
                 "none", "(none)"
             };
             if (string.IsNullOrEmpty(inputString) || nulls.Contains(inputString, StringComparer.InvariantCultureIgnoreCase))

@@ -2,37 +2,22 @@
 
 namespace Dissonance
 {
-    public struct CodecSettings
+    public readonly struct CodecSettings
     {
-        private readonly Codec _codec;
-        private readonly uint _frameSize;
-        private readonly int _sampleRate;
+        public Codec Codec { get; }
+        public uint FrameSize { get; }
+        public int SampleRate { get; }
 
         public CodecSettings(Codec codec, uint frameSize, int sampleRate)
         {
-            _codec = codec;
-            _frameSize = frameSize;
-            _sampleRate = sampleRate;
-        }
-
-        public Codec Codec
-        {
-            get { return _codec; }
-        }
-
-        public uint FrameSize
-        {
-            get { return _frameSize; }
-        }
-
-        public int SampleRate
-        {
-            get { return _sampleRate; }
+            Codec = codec;
+            FrameSize = frameSize;
+            SampleRate = sampleRate;
         }
 
         public override string ToString()
         {
-            return string.Format("Codec: {0}, FrameSize: {1}, SampleRate: {2:##.##}kHz", Codec, FrameSize, SampleRate / 1000f);
+            return $"Codec: {Codec}, FrameSize: {FrameSize}, SampleRate: {SampleRate / 1000f:##.##}kHz";
         }
     }
 }

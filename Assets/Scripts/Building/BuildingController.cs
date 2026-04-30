@@ -15,7 +15,7 @@ namespace Sim.Building {
         private BuildArea _attachedArea;
 
         [SerializeField]
-        [ReadOnly]
+        [Sirenix.OdinInspector.ReadOnly]
         [SyncVar(hook = nameof(OnBuildingDataChanged))]
         protected CreateBuildingMessage _buildingData;
 

@@ -456,11 +456,11 @@ namespace Sim {
 
         [Command]
         public void CmdSell(uint propsNetId) {
-            if (!NetworkIdentity.spawned.ContainsKey(propsNetId)) {
+            if (!NetworkServer.spawned.ContainsKey(propsNetId)) {
                 Debug.LogError($"Server: Try to sell {propsNetId} but it not exist");
             }
 
-            GameObject propsObject = NetworkIdentity.spawned[propsNetId].gameObject;
+            GameObject propsObject = NetworkServer.spawned[propsNetId].gameObject;
 
             Debug.Log($"Server: player {netId} sold {propsObject.name}");
 

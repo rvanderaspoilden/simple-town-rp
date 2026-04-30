@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Dissonance.Datastructures;
 using Dissonance.Networking;
 using Dissonance.Extensions;
 using JetBrains.Annotations;
@@ -14,9 +13,9 @@ namespace Dissonance.Integrations.MirrorIgnorance
         : BaseCommsNetwork<MirrorIgnoranceServer, MirrorIgnoranceClient, MirrorConn, Unit, Unit>
     {
         internal const byte ReliableSequencedChannel = Channels.Reliable;
-        internal const byte UnreliableChannel = Channels.Reliable;
+        internal const byte UnreliableChannel = Channels.Unreliable;
 
-        private readonly ConcurrentPool<byte[]> _loopbackBuffers = new ConcurrentPool<byte[]>(8, () => new byte[1024]);
+        private readonly Dissonance.Datastructures.ConcurrentPool<byte[]> _loopbackBuffers = new Dissonance.Datastructures.ConcurrentPool<byte[]>(8, () => new byte[1024]);
         private readonly List<ArraySegment<byte>> _loopbackQueue = new List<ArraySegment<byte>>();
 
         protected override MirrorIgnoranceServer CreateServer(Unit details)
@@ -37,7 +36,8 @@ namespace Dissonance.Integrations.MirrorIgnorance
                 // - Network explicitly claims it is active
                 // - Server or client explicitly claim they are active
                 // - Also if the client is active only say we're active once the client is non-null, has a non-null connection and is "ready"
-                var networkActive = NetworkManager.singleton != null
+                var singleton = NetworkManager.singleton;
+                var networkActive = !ReferenceEquals(singleton, null)
                                  && NetworkManager.singleton.isNetworkActive
                                  && (NetworkServer.active || NetworkClient.active)
                                  && (!NetworkClient.active || (NetworkClient.connection != null && NetworkClient.connection.isReady));
@@ -70,8 +70,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
                 //Send looped back packets
                 for (var i = 0; i < _loopbackQueue.Count; i++)
                 {
-                    if (Client != null)
-                        Client.NetworkReceivedPacket(_loopbackQueue[i]);
+                    Client?.NetworkReceivedPacket(_loopbackQueue[i]);
 
                     // Recycle the packet into the pool of byte buffers
                     // ReSharper disable once AssignNullToNotNullAttribute (Justification: ArraySegment array is not null)
@@ -114,7 +113,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
             {
                 // Don't immediately deliver the packet, add it to a queue and deliver it next frame. This prevents the local client from executing "within" ...
                 // ...the local server which can cause confusing stack traces.
-                _loopbackQueue.Add(packet.CopyTo(_loopbackBuffers.Get()));
+                _loopbackQueue.Add(packet.CopyToSegment(_loopbackBuffers.Get()));
             }
 
             return true;
@@ -141,7 +140,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
             return true;
         }
 
-        internal static void NullMessageReceivedHandler(NetworkConnection source, DissonanceNetworkMessage msg)
+        internal static void NullMessageReceivedHandler(DissonanceNetworkMessage msg)
         {
             if (Logs.GetLogLevel(LogCategory.Network) <= LogLevel.Trace)
                 Debug.Log("Discarding Dissonance network message");
@@ -150,7 +149,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
         }
     }
 
-    public struct MirrorConn
+    public readonly struct MirrorConn
         : IEquatable<MirrorConn>
     {
         public readonly NetworkConnection Connection;
@@ -197,11 +196,11 @@ namespace Dissonance.Integrations.MirrorIgnorance
     internal static class DissonanceNetworkMessageExtensions
     {
         internal const int BufferLength = 1024;
-        internal static readonly ConcurrentPool<byte[]> SerializationBuffers = new ConcurrentPool<byte[]>(8, () => new byte[BufferLength]);
+        internal static readonly Datastructures.ConcurrentPool<byte[]> SerializationBuffers = new Datastructures.ConcurrentPool<byte[]>(8, () => new byte[BufferLength]);
 
         public static void Serialize([NotNull] this NetworkWriter writer, DissonanceNetworkMessage value)
         {
-            writer.WriteUInt16((ushort)value.Data.Count);
+            writer.WriteUShort((ushort)value.Data.Count);
             writer.WriteBytes(value.Data.Array, value.Data.Offset, value.Data.Count);
 
             //Recyle array now that it has been serialized
@@ -213,7 +212,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
         {
             var arr = SerializationBuffers.Get();
 
-            var length = reader.ReadUInt16();
+            var length = reader.ReadUShort();
             for (var i = 0; i < length; i++)
                 arr[i] = reader.ReadByte();
 
@@ -229,7 +228,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
         public DissonanceNetworkMessage(ArraySegment<byte> packet)
         {
             //We are not allowed to keep a reference to `packet` beyond this point, immediately copy it into a temporary buffer
-            Data = packet.CopyTo(DissonanceNetworkMessageExtensions.SerializationBuffers.Get());
+            Data = packet.CopyToSegment(DissonanceNetworkMessageExtensions.SerializationBuffers.Get());
         }
 
         public void Dispose()

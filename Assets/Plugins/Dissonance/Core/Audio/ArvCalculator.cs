@@ -11,16 +11,13 @@ namespace Dissonance.Audio
             ARV = 0;
         }
 
-        public void Update(ArraySegment<float> samples)
+        public void Update(ReadOnlySpan<float> samples)
         {
-            if (samples.Array == null)
-                throw new ArgumentNullException("samples");
-
             float sum = 0;
-            for (var i = 0; i < samples.Count; i++)
-                sum += Math.Abs(samples.Array[samples.Offset + i]);
+            for (var i = 0; i < samples.Length; i++)
+                sum += Math.Abs(samples[i]);
 
-            ARV = sum / samples.Count;
+            ARV = sum / Math.Max(1, samples.Length);
         }
     }
 }

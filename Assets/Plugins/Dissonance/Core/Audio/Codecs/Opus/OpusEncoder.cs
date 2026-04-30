@@ -5,7 +5,7 @@ namespace Dissonance.Audio.Codecs.Opus
     internal class OpusEncoder
         : IVoiceEncoder
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof(OpusEncoder).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(OpusEncoder));
 
         private readonly OpusNative.OpusEncoder _encoder;
 
@@ -22,21 +22,14 @@ namespace Dissonance.Audio.Codecs.Opus
         };
 
         public const int FixedSampleRate = 48000;
-        public int SampleRate
-        {
-            get { return FixedSampleRate; }
-        }
+        public int SampleRate => FixedSampleRate;
 
         public float PacketLoss
         {
-            set { _encoder.PacketLoss = value; }
+            set => _encoder.PacketLoss = value;
         }
 
-        private readonly int _frameSize;
-        public int FrameSize
-        {
-            get { return _frameSize; }
-        }
+        public int FrameSize { get; }
 
         public OpusEncoder(AudioQuality quality, FrameSize frameSize, bool fec = true)
         {
@@ -46,7 +39,7 @@ namespace Dissonance.Audio.Codecs.Opus
                 Bitrate = GetTargetBitrate(quality)
             };
 
-            _frameSize = GetFrameSize(frameSize);
+            FrameSize = GetFrameSize(frameSize);
         }
 
         private static int GetTargetBitrate(AudioQuality quality)
@@ -61,7 +54,7 @@ namespace Dissonance.Audio.Codecs.Opus
                 case AudioQuality.High:
                     return 24000;
                 default:
-                    throw new ArgumentOutOfRangeException("quality", quality, null);
+                    throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
             }
         }
 
@@ -83,14 +76,14 @@ namespace Dissonance.Audio.Codecs.Opus
                 case Dissonance.FrameSize.Large:
                     return PermittedFrameSizesSamples[5]; // 60ms
                 default:
-                    throw new ArgumentOutOfRangeException("size", size, null);
+                    throw new ArgumentOutOfRangeException(nameof(size), size, null);
             }
         }
 
         public ArraySegment<byte> Encode(ArraySegment<float> samples, ArraySegment<byte> encodedBuffer)
         {
             if (Array.IndexOf(PermittedFrameSizesSamples, samples.Count) == -1)
-                throw new ArgumentException(Log.PossibleBugMessage(string.Format("Incorrect frame size '{0}'", samples.Count), "6AFD9ADF-1D15-4197-99E9-5A19ECB8CD20"), "samples");
+                throw new ArgumentException(Log.PossibleBugMessage($"Incorrect frame size '{samples.Count}'", "6AFD9ADF-1D15-4197-99E9-5A19ECB8CD20"), nameof(samples));
 
             var encodedByteCount = _encoder.EncodeFloats(samples, encodedBuffer);
 

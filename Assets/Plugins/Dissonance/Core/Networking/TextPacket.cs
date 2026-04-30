@@ -2,7 +2,7 @@
 
 namespace Dissonance.Networking
 {
-    internal struct TextPacket
+    internal readonly struct TextPacket
     {
         public readonly ushort Sender;
         public readonly ChannelType RecipientType;

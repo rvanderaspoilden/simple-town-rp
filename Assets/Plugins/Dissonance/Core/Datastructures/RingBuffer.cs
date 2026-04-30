@@ -17,10 +17,7 @@
         /// <summary>
         /// The size of this ring buffer
         /// </summary>
-        public int Capacity
-        {
-            get { return _items.Length; }
-        }
+        public int Capacity => _items.Length;
 
         private int _end;
         #endregion

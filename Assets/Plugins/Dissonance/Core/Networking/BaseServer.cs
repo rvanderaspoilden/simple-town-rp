@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using Dissonance.Networking.Server;
+using Dissonance.Networking.Server.Admin;
 using JetBrains.Annotations;
 
 namespace Dissonance.Networking
 {
     public abstract class BaseServer<TServer, TClient, TPeer>
         : IServer<TPeer>
-        where TPeer : struct
+        where TPeer : struct, IEquatable<TPeer>
         where TServer : BaseServer<TServer, TClient, TPeer>
         where TClient : BaseClient<TServer, TClient, TPeer>
     {
@@ -17,17 +18,21 @@ namespace Dissonance.Networking
         private bool _disconnected;
         private bool _error;
 
-        internal TrafficCounter RecvHandshakeRequest { get; private set; }
-        internal TrafficCounter RecvClientState { get; private set; }
-        internal TrafficCounter RecvPacketRelay { get; private set; }
-        internal TrafficCounter RecvDeltaChannelState { get; private set; }
-        internal TrafficCounter SentTraffic { get; private set; }
+        internal TrafficCounter RecvHandshakeRequest { get; }
+        internal TrafficCounter RecvClientState { get; }
+        internal TrafficCounter RecvPacketRelay { get; }
+        internal TrafficCounter RecvDeltaChannelState { get; }
+        internal TrafficCounter SentTraffic { get; }
 
         private readonly ServerRelay<TPeer> _relay;
         private readonly BroadcastingClientCollection<TPeer> _clients;
 
-        private readonly uint _sessionId;
-        public uint SessionId { get { return _sessionId; } }
+        public uint SessionId { get; }
+
+#if !DARK_RIFT_SERVER
+        private readonly ServerAdmin<TServer, TClient, TPeer> serverAdmin;
+        [NotNull] public IServerAdmin ServerAdmin => serverAdmin;
+#endif
         #endregion
 
         #region constructors
@@ -42,16 +47,22 @@ namespace Dissonance.Networking
             RecvDeltaChannelState = new TrafficCounter();
 
             var rand = new Random();
-            while (_sessionId == 0)
-                _sessionId = unchecked((uint)rand.Next());
+            while (SessionId == 0)
+                SessionId = unchecked((uint)rand.Next());
 
             _clients = new BroadcastingClientCollection<TPeer>(this);
             _relay = new ServerRelay<TPeer>(this, _clients);
 
-            // Before 6.4.3 this message was:
-            //   `Constructing host. SessionId:{0}`
-            // Changed for clarity.
-            Log.Info("Created server with SessionId:{0}", _sessionId);
+#if !DARK_RIFT_SERVER
+            serverAdmin = new ServerAdmin<TServer, TClient, TPeer>((TServer)this);
+            _clients.OnClientJoined += serverAdmin.InvokeOnClientJoined;
+            _clients.OnClientLeft += serverAdmin.InvokeOnClientLeft;
+            _clients.OnClientEnteredRoomEvent += serverAdmin.InvokeOnClientEnteredRoom;
+            _clients.OnClientExitedRoomEvent += serverAdmin.InvokeOnClientExitedRoom;
+            _relay.OnRelayingPacket += serverAdmin.InvokeOnRelayingPacket;
+#endif
+
+            Log.Info("Created server with SessionId:{0}", SessionId);
         }
         #endregion
 
@@ -91,6 +102,8 @@ namespace Dissonance.Networking
         /// <param name="connection"></param>
         protected void ClientDisconnected(TPeer connection)
         {
+            Log.CheckMainThreadAndThrow();
+
             Log.Debug("Received disconnection event for peer '{0}'", connection);
 
             _clients.RemoveClient(connection);
@@ -151,7 +164,7 @@ namespace Dissonance.Networking
         /// <param name="packet"></param>
         public virtual void SendUnreliable([NotNull] List<TPeer> connections, ArraySegment<byte> packet)
         {
-            if (connections == null) throw new ArgumentNullException("connections");
+            if (connections == null) throw new ArgumentNullException(nameof(connections));
 
             SentTraffic.Update(packet.Count * connections.Count);
 
@@ -167,7 +180,7 @@ namespace Dissonance.Networking
         /// <param name="packet"></param>
         public virtual void SendReliable([NotNull] List<TPeer> connections, ArraySegment<byte> packet)
         {
-            if (connections == null) throw new ArgumentNullException("connections");
+            if (connections == null) throw new ArgumentNullException(nameof(connections));
 
             SentTraffic.Update(packet.Count * connections.Count);
 
@@ -207,6 +220,8 @@ namespace Dissonance.Networking
         /// <param name="data">Packet received</param>
         public void NetworkReceivedPacket(TPeer source, ArraySegment<byte> data)
         {
+            Log.CheckMainThreadAndThrow();
+
             if (_disconnected)
             {
                 Log.Warn("Received a packet with a disconnected server, dropping packet");
@@ -215,8 +230,7 @@ namespace Dissonance.Networking
 
             var reader = new PacketReader(data);
 
-            MessageTypes header;
-            if (!reader.ReadPacketHeader(out header))
+            if (!reader.ReadPacketHeader(out var header))
             {
                 Log.Warn("Discarding packet - incorrect magic number.");
                 return;
@@ -242,7 +256,7 @@ namespace Dissonance.Networking
                     if (CheckSessionId(ref reader, source))
                     {
                         RecvPacketRelay.Update(data.Count);
-                        _relay.ProcessPacketRelay(ref reader, header == MessageTypes.ServerRelayReliable);
+                        _relay.ProcessPacketRelay(ref reader, header == MessageTypes.ServerRelayReliable, source);
                     }
                     break;
 
@@ -272,13 +286,13 @@ namespace Dissonance.Networking
         private bool CheckSessionId(ref PacketReader reader, TPeer source)
         {
             var session = reader.ReadUInt32();
-            if (session != _sessionId)
+            if (session != SessionId)
             {
-                Log.Warn("Received a packet with incorrect session ID. Expected {0}, got {1}. Resetting client.", _sessionId, session);
+                Log.Warn("Received a packet with incorrect session ID. Expected {0}, got {1}. Resetting client.", SessionId, session);
 
                 //Send back a packet forcing this client to disconnect. The client may reconnect, in which case it will re-run the entire handshake and acquire the correct session ID.
                 var writer = new PacketWriter(new byte[7]);
-                writer.WriteErrorWrongSession(_sessionId);
+                writer.WriteErrorWrongSession(SessionId);
                 SendUnreliable(source, writer.Written);
 
                 return false;

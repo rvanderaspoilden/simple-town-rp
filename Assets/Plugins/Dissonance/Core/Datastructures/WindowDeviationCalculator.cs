@@ -16,10 +16,8 @@ namespace Dissonance.Datastructures
 
         public float Mean { get; private set; }
 
-        public float Confidence
-        {
-            get { return Count / (float)Capacity; }
-        }
+        public float Confidence => Count / (float)Capacity;
+
         #endregion
 
         #region constructor
@@ -65,6 +63,7 @@ namespace Dissonance.Datastructures
             _sum = 0;
             _sumOfSquares = 0;
             StdDev = 0;
+            Mean = 0;
 
             base.Clear();
         }

@@ -1,6 +1,6 @@
 ﻿namespace Dissonance.Networking.Client
 {
-    internal struct VoicePacketOptions
+    internal readonly struct VoicePacketOptions
     {
         private const byte EXTENDED_RANGE_FLAG = 0x80; //binary: 1000 0000
 
@@ -20,13 +20,10 @@
             get { return (_bitfield & EXTENDED_RANGE_FLAG) != 0; }
         }
 
-        public byte ChannelSession
-        {
-            get { return (byte)(_bitfield & 0x7F); }
-        }
+        public byte ChannelSession => (byte)(_bitfield & 0x7F);
 
         private readonly byte _bitfield;
-        public byte Bitfield { get { return _bitfield; } }
+        public byte Bitfield => _bitfield;
 
         private VoicePacketOptions(byte bitfield)
         {

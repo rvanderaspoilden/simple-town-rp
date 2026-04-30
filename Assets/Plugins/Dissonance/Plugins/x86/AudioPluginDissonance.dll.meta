@@ -5,11 +5,14 @@ PluginImporter:
   serializedVersion: 2
   iconMap: {}
   executionOrder: {}
+  defineConstraints: []
   isPreloaded: 1
   isOverridable: 0
+  isExplicitlyReferenced: 0
+  validateReferences: 1
   platformData:
   - first:
-      '': Any
+      : Any
     second:
       enabled: 0
       settings:
@@ -26,7 +29,7 @@ PluginImporter:
         Exclude WindowsStoreApps: 1
         Exclude iOS: 1
   - first:
-      '': Editor
+      : Editor
     second:
       enabled: 0
       settings:
@@ -131,3 +134,10 @@ PluginImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 70078
+  packageName: Dissonance Voice Chat
+  packageVersion: 9.0.9
+  assetPath: Assets/Plugins/Dissonance/Plugins/x86/AudioPluginDissonance.dll
+  uploadId: 907122

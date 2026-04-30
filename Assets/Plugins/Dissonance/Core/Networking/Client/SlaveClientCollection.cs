@@ -16,7 +16,6 @@ namespace Dissonance.Networking.Client
         private readonly string _playerName;
         private readonly CodecSettings _codecSettings;
 
-        public event Action<ClientInfo<TPeer?>> OnClientJoined;
         public event Action<ClientInfo<TPeer?>> OnClientIntroducedP2P;
 
         private readonly List<KeyValuePair<ushort, TPeer>> _pendingIntroductions = new List<KeyValuePair<ushort, TPeer>>();
@@ -25,17 +24,12 @@ namespace Dissonance.Networking.Client
         #region constructors
         public SlaveClientCollection([NotNull] ISendQueue<TPeer> sender, [NotNull] ISession session, [NotNull] EventQueue events, [NotNull] Rooms localRooms, [NotNull] string playerName, CodecSettings codecSettings)
         {
-            if (session == null) throw new ArgumentNullException("session");
-            if (sender == null) throw new ArgumentNullException("sender");
-            if (events == null) throw new ArgumentNullException("events");
-            if (localRooms == null) throw new ArgumentNullException("localRooms");
-            if (playerName == null) throw new ArgumentNullException("playerName");
+            _session = session ?? throw new ArgumentNullException(nameof(session));
+            _sender = sender ?? throw new ArgumentNullException(nameof(sender));
+            _events = events ?? throw new ArgumentNullException(nameof(events));
+            _localRooms = localRooms ?? throw new ArgumentNullException(nameof(localRooms));
+            _playerName = playerName ?? throw new ArgumentNullException(nameof(playerName));
 
-            _session = session;
-            _sender = sender;
-            _events = events;
-            _localRooms = localRooms;
-            _playerName = playerName;
             _codecSettings = codecSettings;
         }
         #endregion
@@ -65,10 +59,6 @@ namespace Dissonance.Networking.Client
                 }
             }
 
-            //Raise event
-            if (OnClientJoined != null)
-                OnClientJoined(client);
-
             base.OnAddedClient(client);
         }
 
@@ -96,11 +86,9 @@ namespace Dissonance.Networking.Client
         #region packet receiving
         public void ProcessRemoveClient(ref PacketReader reader)
         {
-            ushort id;
-            reader.ReadRemoveClient(out id);
+            reader.ReadRemoveClient(out var id);
 
-            ClientInfo<TPeer?> info;
-            if (TryGetClientInfoById(id, out info))
+            if (TryGetClientInfoById(id, out var info))
                 RemoveClient(info);
         }
 
@@ -135,8 +123,7 @@ namespace Dissonance.Networking.Client
             {
                 foreach (var client in item.Value)
                 {
-                    ClientInfo<TPeer?> info;
-                    if (!TryGetClientInfoById(client, out info))
+                    if (!TryGetClientInfoById(client, out var info))
                         Log.Warn("Attempted to add an unknown client '{0}' into room '{1}'", client, item.Key);
                     else
                         JoinRoom(item.Key, info);
@@ -215,8 +202,7 @@ namespace Dissonance.Networking.Client
 
         private bool TryIntroduceP2P(ushort id, TPeer connection)
         {
-            ClientInfo<TPeer?> info;
-            if (TryGetClientInfoById(id, out info))
+            if (TryGetClientInfoById(id, out var info))
             {
                 Log.Debug("IntroduceP2P Success for '{0}' at '{1}'", id, connection);
 

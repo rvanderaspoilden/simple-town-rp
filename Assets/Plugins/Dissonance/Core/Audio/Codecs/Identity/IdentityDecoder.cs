@@ -6,15 +6,11 @@ namespace Dissonance.Audio.Codecs.Identity
     internal class IdentityDecoder
         : IVoiceDecoder
     {
-        private readonly WaveFormat _format;
-        public WaveFormat Format
-        {
-            get { return _format; }
-        }
+        public WaveFormat Format { get; }
 
         public IdentityDecoder(WaveFormat format)
         {
-            _format = format;
+            Format = format;
         }
 
         public void Reset()
@@ -33,11 +29,11 @@ namespace Dissonance.Audio.Codecs.Identity
 
             var inputArray = input.Encoded.Value.Array;
             if (inputArray == null)
-                throw new ArgumentNullException("input");
+                throw new ArgumentNullException(nameof(input));
 
             var outputArray = output.Array;
             if (outputArray == null)
-                throw new ArgumentNullException("output");
+                throw new ArgumentNullException(nameof(output));
 
             var bytes = input.Encoded.Value.Count;
             if (bytes > output.Count * sizeof(float))

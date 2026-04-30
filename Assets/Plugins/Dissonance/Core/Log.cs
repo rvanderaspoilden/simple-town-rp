@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Dissonance.Config;
 using Dissonance.Datastructures;
@@ -42,7 +43,7 @@ namespace Dissonance
         }
 
         #region multithreading
-        private struct LogMessage
+        private readonly struct LogMessage
         {
             private readonly LogLevel _level;
             private readonly string _message;
@@ -53,6 +54,7 @@ namespace Dissonance
                 _level = level;
             }
 
+            // ReSharper disable Unity.PerformanceAnalysis
             public void Log()
             {
                 switch (_level)
@@ -79,11 +81,9 @@ namespace Dissonance
 
         internal static void WriteMultithreadedLogs()
         {
-            if (_main == null)
-                _main = Thread.CurrentThread;
+            _main ??= Thread.CurrentThread;
 
-            LogMessage msg;
-            while (LogsFromOtherThreads.Read(out msg))
+            while (LogsFromOtherThreads.Read(out var msg))
                 msg.Log();
         }
 
@@ -94,13 +94,18 @@ namespace Dissonance
 #else
             var msg = new LogMessage(message, level);
 
-            if (_main == null || _main == Thread.CurrentThread)
+            if (IsMainThread())
                 msg.Log();
             else
                 LogsFromOtherThreads.TryWrite(msg);
 #endif
         }
         #endregion
+
+        public static bool IsMainThread()
+        {
+            return _main == null || _main == Thread.CurrentThread;
+        }
     }
 
     public class Log
@@ -119,30 +124,15 @@ namespace Dissonance
             _traceFormat = "TRACE " + _basicFormat;
         }
 
-        public bool IsTrace
-        {
-            get { return ShouldLog(LogLevel.Trace); }
-        }
+        public bool IsTrace => ShouldLog(LogLevel.Trace);
 
-        public bool IsDebug
-        {
-            get { return ShouldLog(LogLevel.Debug); }
-        }
+        public bool IsDebug => ShouldLog(LogLevel.Debug);
 
-        public bool IsInfo
-        {
-            get { return ShouldLog(LogLevel.Info); }
-        }
+        public bool IsInfo => ShouldLog(LogLevel.Info);
 
-        public bool IsWarn
-        {
-            get { return ShouldLog(LogLevel.Warn); }
-        }
+        public bool IsWarn => ShouldLog(LogLevel.Warn);
 
-        public bool IsError
-        {
-            get { return ShouldLog(LogLevel.Error); }
-        }
+        public bool IsError => ShouldLog(LogLevel.Error);
 
         [DebuggerHidden]
         private bool ShouldLog(LogLevel level)
@@ -175,7 +165,7 @@ namespace Dissonance
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException("level", level, null);
+                    throw new ArgumentOutOfRangeException(nameof(level), level, null);
             }
 
             Logs.SendLogMessage(string.Format(format, DateTime.UtcNow, message), level);
@@ -442,9 +432,23 @@ namespace Dissonance
         {
             WriteLogFormat(LogLevel.Error, format, p0, p1, p2);
         }
-#endregion
+        #endregion
 
         #region throw
+        [DebuggerHidden]
+        public static void CheckMainThreadAndThrow([CanBeNull] string likelyCause = null, [CallerMemberName] string method = "")
+        {
+            if (Logs.IsMainThread())
+                return;
+
+            var message = $"Error: Method `{method}` can only be called from the main thread";
+
+            if (likelyCause != null)
+                message += $". This is likely caused by \"{likelyCause}\"";
+
+            throw new DissonanceException(message);
+        }
+
         [DebuggerHidden, NotNull]
         public DissonanceException CreateUserErrorException(string problem, string likelyCause, string documentationLink, string guid)
         {
@@ -498,7 +502,7 @@ namespace Dissonance
         public Exception CreatePossibleBugException<T>([NotNull] Func<string, T> factory, string problem, string guid) where T : Exception
         {
             if (factory == null)
-                throw new ArgumentNullException("factory");
+                throw new ArgumentNullException(nameof(factory));
 
             return factory(PossibleBugMessage(problem, guid));
         }
@@ -567,6 +571,40 @@ namespace Dissonance
                 Error(PossibleBugMessage(string.Format(format, arg0), guid));
 
             return !assertion;
+        }
+
+        /// <summary>
+        /// Check an assertion and return if the assertion failed. Log an error (probablebug) message if it fails
+        /// </summary>
+        /// <param name="assertion"></param>
+        /// <param name="guid"></param>
+        /// <param name="format"></param>
+        /// <param name="arg0"></param>
+        /// <param name="arg1"></param>
+        /// <returns></returns>
+        [ContractAnnotation("assertion:true => false; assertion:false => true")]
+        public bool AssertAndLogError<TA, TB>(bool assertion, string guid, string format, TA arg0, TB arg1)
+        {
+            if (!assertion)
+                Error(PossibleBugMessage(string.Format(format, arg0, arg1), guid));
+
+            return !assertion;
+        }
+
+        /// <summary>
+        /// Check an assertion and return if the assertion failed. throw an exception (usererror) if it fails
+        /// </summary>
+        /// <param name="assertion"></param>
+        /// <param name="likelyCause"></param>
+        /// <param name="documentationLink"></param>
+        /// <param name="guid"></param>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        [ContractAnnotation("assertion:false => halt")]
+        public void AssertAndThrowUserError(bool assertion, string msg, string likelyCause, string documentationLink, string guid)
+        {
+            if (!assertion)
+                throw CreateUserErrorException(msg, likelyCause, documentationLink, guid);
         }
 
         /// <summary>

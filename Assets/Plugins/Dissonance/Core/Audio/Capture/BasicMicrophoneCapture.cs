@@ -18,7 +18,7 @@ namespace Dissonance.Audio.Capture
         : MonoBehaviour, IMicrophoneCapture, IMicrophoneDeviceList
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Recording, typeof(BasicMicrophoneCapture).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Recording, nameof(BasicMicrophoneCapture));
 
         private byte _maxReadBufferPower;
         private readonly POTBuffer _readBuffer = new POTBuffer(10);
@@ -32,23 +32,26 @@ namespace Dissonance.Audio.Capture
         private bool _started;
         private string _micName;
 
-        private bool _audioDeviceChanged;
+        private volatile bool _audioDeviceChanged;
 
         private AudioFileWriter _microphoneDiagnosticOutput;
 
         private readonly List<IMicrophoneSubscriber> _subscribers = new List<IMicrophoneSubscriber>();
 
+        public string Device => _micName;
+
         public TimeSpan Latency { get; private set; }
 
-        public bool IsRecording
-        {
-            get { return _clip != null; }
-        }
+        public bool IsRecording => _clip != null;
+
         #endregion
 
         #region start capture
         public virtual WaveFormat StartCapture(string inputMicName)
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
+            _micName = null;
+
             try
             {
 #if !NCRUNCH
@@ -73,9 +76,7 @@ namespace Dissonance.Audio.Capture
                 {
                     //Get device capabilities and choose a sample rate as close to 48000 as possible.
                     //If min and max are both zero that indicates we can use any sample rate
-                    int minFreq;
-                    int maxFreq;
-                    Microphone.GetDeviceCaps(_micName, out minFreq, out maxFreq);
+                    Microphone.GetDeviceCaps(_micName, out var minFreq, out var maxFreq);
                     sampleRate = minFreq == 0 && maxFreq == 0 ? 48000 : Mathf.Clamp(48000, minFreq, maxFreq);
                     Log.Debug("GetDeviceCaps name=`{0}` min=`{1}` max=`{2}`", _micName, minFreq, maxFreq);
                 }
@@ -102,6 +103,7 @@ namespace Dissonance.Audio.Capture
                     if (_clip == null)
                     {
                         Log.Error("Failed to start microphone capture");
+                        _micName = null;
                         return null;
                     }
                 }
@@ -119,9 +121,10 @@ namespace Dissonance.Audio.Capture
                 // Create/resize the audio buffers to contain 20ms frames of data. Any frame size will work (the pipeline will buffer/split them as necessary) but 20ms is
                 // optimal because that's native frame size the preprocessor works at so it has to do no extra work to assemble the frames at it's desired size.
                 var frameSize = (int)(0.02 * _clip.frequency);
-                if (_rawMicSamples == null || _rawMicSamples.WaveFormat != _format || _rawMicSamples.Capacity != frameSize || _rawMicFrames.FrameSize != frameSize)
+                var rawMicSamplesSize = frameSize * 4;
+                if (_rawMicSamples == null || _rawMicSamples.WaveFormat != _format || _rawMicSamples.Capacity != rawMicSamplesSize || _rawMicFrames == null || _rawMicFrames.FrameSize != frameSize)
                 {
-                    _rawMicSamples = new BufferedSampleProvider(_format, frameSize * 4);
+                    _rawMicSamples = new BufferedSampleProvider(_format, rawMicSamplesSize);
                     _rawMicFrames = new SampleToFrameProvider(_rawMicSamples, (uint)frameSize);
                 }
 
@@ -146,10 +149,15 @@ namespace Dissonance.Audio.Capture
                 Profiler.EndSample();
 #endif
             }
+#else
+            // Always fail to init the mic on WebGL
+            return null;
+#endif
         }
 
         [CanBeNull] private static string ChooseMicName([CanBeNull] string micName)
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             if (string.IsNullOrEmpty(micName))
                 return null;
 
@@ -160,12 +168,18 @@ namespace Dissonance.Audio.Capture
             }
 
             return micName;
+#else
+            // Always fail to choose a mic on WebGL
+            return null;
+#endif
         }
-        #endregion
+#endregion
 
         #region stop capture
         private void OnDestroy()
         {
+            AudioSettings.OnAudioConfigurationChanged -= OnAudioDeviceChanged;
+
             if (_clip != null)
             {
                 Destroy(_clip);
@@ -175,6 +189,7 @@ namespace Dissonance.Audio.Capture
 
         public virtual void StopCapture()
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             Log.AssertAndThrowPossibleBug(_clip != null, "CDDAE69D-44DC-487F-9B69-4703B779400E", "Attempted to stop microphone capture, but it is already stopped");
 
             //Stop diagnostic output
@@ -205,12 +220,14 @@ namespace Dissonance.Audio.Capture
             //Stop watching for device changes
             AudioSettings.OnAudioConfigurationChanged -= OnAudioDeviceChanged;
             _audioDeviceChanged = false;
+#endif
         }
         #endregion
 
         private void OnAudioDeviceChanged(bool deviceWasChanged)
         {
-            _audioDeviceChanged |= deviceWasChanged;
+            if (deviceWasChanged)
+                _audioDeviceChanged = true;
         }
 
         #region audio pumping
@@ -225,6 +242,7 @@ namespace Dissonance.Audio.Capture
 
         public bool UpdateSubscribers()
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             //Don't deliver any audio at all until microphone has initialised (i.e. delivered at least one sample)
             if (!_started)
             {
@@ -277,12 +295,14 @@ namespace Dissonance.Audio.Capture
                     _microphoneDiagnosticOutput = null;
                 }
             }
+#endif
 
             return false;
         }
 
         private void DrainMicSamples()
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             // How many samples has the mic moved since the last time we read from it?
             var writeHead = Microphone.GetPosition(_micName);
             var samplesToRead = (uint)((_clip.samples + writeHead - _readHead) % _clip.samples);
@@ -335,6 +355,7 @@ namespace Dissonance.Audio.Capture
             {
                 _readBuffer.Free();
             }
+#endif
         }
 
         /// <summary>
@@ -344,7 +365,7 @@ namespace Dissonance.Audio.Capture
         private void ConsumeSamples(ArraySegment<float> samples)
         {
             if (samples.Array == null)
-                throw new ArgumentNullException("samples");
+                throw new ArgumentNullException(nameof(samples));
 
             while (samples.Count > 0)
             {
@@ -366,7 +387,7 @@ namespace Dissonance.Audio.Capture
         private void SendFrame()
         {
             //Drain as many frames as possible
-            while (_rawMicSamples.Count > _rawMicFrames.FrameSize)
+            while (_rawMicSamples.Count >= _rawMicFrames.FrameSize)
             {
                 //Try to get a frame
                 var segment = new ArraySegment<float>(_frame);
@@ -379,7 +400,7 @@ namespace Dissonance.Audio.Capture
                 {
                     if (_microphoneDiagnosticOutput == null)
                     {
-                        var filename = string.Format("Dissonance_Diagnostics/MicrophoneRawAudio_{0}", DateTime.UtcNow.ToFileTime());
+                        var filename = $"Dissonance_Diagnostics/MicrophoneRawAudio_{DateTime.UtcNow.ToFileTime()}";
                         _microphoneDiagnosticOutput = new AudioFileWriter(filename, _format);
                     }
                 }
@@ -406,14 +427,14 @@ namespace Dissonance.Audio.Capture
         #region subscribers
         public void Subscribe(IMicrophoneSubscriber listener)
         {
-            if (listener == null) throw new ArgumentNullException("listener");
+            if (listener == null) throw new ArgumentNullException(nameof(listener));
 
             _subscribers.Add(listener);
         }
 
         public bool Unsubscribe(IMicrophoneSubscriber listener)
         {
-            if (listener == null) throw new ArgumentNullException("listener");
+            if (listener == null) throw new ArgumentNullException(nameof(listener));
 
             return _subscribers.Remove(listener);
         }
@@ -421,7 +442,9 @@ namespace Dissonance.Audio.Capture
 
         public void GetDevices([NotNull] List<string> output)
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             output.AddRange(Microphone.devices);
+#endif
         }
     }
 }

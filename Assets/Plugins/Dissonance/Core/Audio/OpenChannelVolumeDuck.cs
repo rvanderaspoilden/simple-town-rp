@@ -1,7 +1,6 @@
 ﻿using System;
 using Dissonance.Audio.Playback;
 using Dissonance.Config;
-using UnityEngine;
 
 namespace Dissonance.Audio
 {
@@ -19,10 +18,8 @@ namespace Dissonance.Audio
         private readonly PlayerChannels _players;
 
         private Fader _fader;
-        public float TargetVolume
-        {
-            get { return _fader.Volume; }
-        }
+        public float TargetVolume => _fader.Volume;
+
         #endregion
 
         public OpenChannelVolumeDuck(RoomChannels rooms, PlayerChannels players)

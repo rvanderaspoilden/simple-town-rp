@@ -16,10 +16,7 @@ namespace Dissonance.Audio.Capture
             set { }
         }
 
-        protected override bool VadIsSpeechDetected
-        {
-            get { return true; }
-        }
+        protected override bool VadIsSpeechDetected => true;
 
         protected override void PreprocessAudioFrame(float[] frame)
         {

@@ -8,19 +8,28 @@ using UnityEngine;
 
 namespace Dissonance.Editor
 {
-    [CustomEditor(typeof (VoiceReceiptTrigger))]
+    [CustomEditor(typeof(VoiceReceiptTrigger), editorForChildClasses: true)]
     public class VoiceReceiptTriggerEditor
         : UnityEditor.Editor
     {
         private Texture2D _logo;
-        private ChatRoomSettings _roomSettings;
 
         private readonly TokenControl _tokenEditor = new TokenControl("This receipt trigger will only receive voice if the local player has at least one of these access tokens");
+
+        private SerializedProperty _roomExpanded;
+        private SerializedProperty _tokensExpanded;
+        private SerializedProperty _colliderExpanded;
 
         public void Awake()
         {
             _logo = Resources.Load<Texture2D>("dissonance_logo");
-            _roomSettings = ChatRoomSettings.Load();
+        }
+
+        public void OnEnable()
+        {
+            _roomExpanded = serializedObject.FindProperty("_roomExpanded");
+            _tokensExpanded = serializedObject.FindProperty("_tokensExpanded");
+            _colliderExpanded = serializedObject.FindProperty("_colliderExpanded");
         }
 
         public override void OnInspectorGUI()
@@ -30,25 +39,21 @@ namespace Dissonance.Editor
                 GUILayout.Label(_logo);
 
                 var receiver = (VoiceReceiptTrigger)target;
-
-                RoomsGui(receiver);
-                EditorGUILayout.Space();
-
-                _tokenEditor.DrawInspectorGui(receiver, receiver);
-                EditorGUILayout.Space();
-
-                TriggerActivationGui(receiver);
+                GuiHelpers.FoldoutBoxGroup(_roomExpanded, "Room", RoomsGui, receiver);
+                GuiHelpers.FoldoutBoxGroup(_tokensExpanded, "Access Tokens", _tokenEditor.DrawInspectorGui, receiver);
+                GuiHelpers.FoldoutBoxGroup(_colliderExpanded, "Collider Activation", TriggerActivationGui, receiver);
 
                 Undo.FlushUndoRecordObjects();
-
                 if (changed.changed)
                     EditorUtility.SetDirty(target);
+                serializedObject.ApplyModifiedPropertiesWithoutUndo();
             }
         }
 
-        private void RoomsGui([NotNull] VoiceReceiptTrigger trigger)
+        internal static void RoomsGui<T>([NotNull] T trigger)
+            where T : MonoBehaviour, IVoiceReceiptTrigger
         {
-            var roomNames = _roomSettings.Names;
+            var roomNames = ChatRoomSettings.Load().Names;
 
             var haveRooms = roomNames.Count > 0;
             if (haveRooms)
@@ -93,26 +98,26 @@ namespace Dissonance.Editor
                 EditorGUILayout.HelpBox("No rooms are defined. Click 'Create New Rooms' to configure chat rooms.", MessageType.Warning);
         }
 
-        private static void TriggerActivationGui([NotNull] VoiceReceiptTrigger trigger)
+        internal static void TriggerActivationGui([NotNull] BaseCommsTrigger trigger)
         {
-            using (var scope = new EditorGUILayout.ToggleGroupScope("Trigger Activation", trigger.UseColliderTrigger))
+            trigger.ChangeWithUndo(
+                "Changed Dissonance Collider Activation",
+                EditorGUILayout.Toggle(new GUIContent("Collider Activation", "Only allows speech when the user is inside a collider"), trigger.UseColliderTrigger),
+                trigger.UseColliderTrigger,
+                u => trigger.UseColliderTrigger = u
+            );
+
+            EditorGUILayout.HelpBox(
+                "Use collider activation to only receive when the player is inside a collider.",
+                MessageType.Info
+            );
+
+            if (trigger.UseColliderTrigger)
             {
-                trigger.ChangeWithUndo(
-                    "Changed Dissonance Trigger Activation",
-                    scope.enabled,
-                    trigger.UseColliderTrigger,
-                    a => trigger.UseColliderTrigger = a
-                );
-
-                EditorGUILayout.HelpBox(
-                    "Use trigger activation to only receive when the player is inside a trigger volume.",
-                    MessageType.Info);
-
-                if (trigger.UseColliderTrigger)
-                {
-                    if (!trigger.gameObject.GetComponents<Collider>().Any(c => c.isTrigger))
-                        EditorGUILayout.HelpBox("Cannot find any collider triggers attached to this entity.", MessageType.Warning);
-                }
+                var triggers2D = trigger.gameObject.GetComponents<Collider2D>().Any(c => c.isTrigger);
+                var triggers3D = trigger.gameObject.GetComponents<Collider>().Any(c => c.isTrigger);
+                if (!triggers2D && !triggers3D)
+                    EditorGUILayout.HelpBox("Cannot find any collider components with 'isTrigger = true' attached to this GameObject.", MessageType.Warning);
             }
         }
     }

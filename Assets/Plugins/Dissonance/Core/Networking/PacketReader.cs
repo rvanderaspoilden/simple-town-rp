@@ -10,35 +10,29 @@ namespace Dissonance.Networking
 {
     internal struct PacketReader
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Network, typeof(PacketReader).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Network, nameof(PacketReader));
 
         #region fields and properties
         private readonly ArraySegment<byte> _array;
         private int _count;
 
-        public ArraySegment<byte> Read
-        {
-            // ReSharper disable once AssignNullToNotNullAttribute (Justification: Array segment Array property cannot be null, unless this is a default instance in which case something else is horribly wrong)
-            get { return new ArraySegment<byte>(_array.Array, _array.Offset, _count); }
-        }
+        // ReSharper disable once AssignNullToNotNullAttribute (Justification: Array segment Array property cannot be null, unless
+        //                                                                     this is a default instance in which case something
+        //                                                                     else is horribly wrong)
+        public readonly ArraySegment<byte> Read => new ArraySegment<byte>(_array.Array, _array.Offset, _count);
 
-        public ArraySegment<byte> Unread
-        {
-            // ReSharper disable once AssignNullToNotNullAttribute (Justification: Array segment Array property cannot be null)
-            get { return new ArraySegment<byte>(_array.Array, _array.Offset + _count, _array.Count - _count); }
-        }
+        // ReSharper disable once AssignNullToNotNullAttribute (Justification: Array segment Array property cannot be null)
+        public readonly ArraySegment<byte> Unread => new ArraySegment<byte>(_array.Array, _array.Offset + _count, _array.Count - _count);
 
-        public ArraySegment<byte> All
-        {
-            get { return _array; }
-        }
+        public readonly ArraySegment<byte> All => _array;
+
         #endregion
 
         #region constructor
         public PacketReader(ArraySegment<byte> array)
         {
             if (array.Array == null)
-                throw new ArgumentNullException("array");
+                throw new ArgumentNullException(nameof(array));
 
             _array = array;
             _count = 0;
@@ -54,7 +48,7 @@ namespace Dissonance.Networking
         private void Check(int count, string type)
         {
             if (_array.Count - count - _count < 0)
-                throw Log.CreatePossibleBugException(string.Format("Insufficient space in packet reader to read {0}", type), "4AFBC61A-77D4-43B8-878F-796F0D921184");
+                throw Log.CreatePossibleBugException($"Insufficient space in packet reader to read {type}", "4AFBC61A-77D4-43B8-878F-796F0D921184");
         }
 
         /// <summary>
@@ -190,7 +184,7 @@ namespace Dissonance.Networking
             if (magic)
                 messageType = (MessageTypes)ReadByte();
             else
-                messageType = default(MessageTypes);
+                messageType = default;
 
             return magic;
         }
@@ -214,8 +208,8 @@ namespace Dissonance.Networking
         /// <param name="outputRoomsToPeerId"></param>
         public void ReadHandshakeResponseBody([NotNull] List<ClientInfo> clients, [NotNull] Dictionary<string, List<ushort>> outputRoomsToPeerId)
         {
-            if (clients == null) throw new ArgumentNullException("clients");
-            if (outputRoomsToPeerId == null) throw new ArgumentNullException("outputRoomsToPeerId");
+            if (clients == null) throw new ArgumentNullException(nameof(clients));
+            if (outputRoomsToPeerId == null) throw new ArgumentNullException(nameof(outputRoomsToPeerId));
 
             // Read client list
             var clientCount = ReadUInt16();
@@ -233,7 +227,7 @@ namespace Dissonance.Networking
             {
                 var name = ReadString();
                 if (!Log.AssertAndLogWarn(name != null, "Read a null room name in handshake packet (potentially corrupt packet)"))
-                    roomNamesById[name.ToRoomId()] = name;
+                    roomNamesById[new RoomName(name, true).ToRoomId()] = name;
             }
 
             //Clear all the lists
@@ -249,12 +243,10 @@ namespace Dissonance.Networking
                 var peerCount = ReadByte();
 
                 //Find room name
-                string room;
-                Log.AssertAndThrowPossibleBug(roomNamesById.TryGetValue(channel, out room), "C8E9EBED-2A46-4207-A050-0ABFE00BA9E8", "Could not find room name in handshake for ID:{0}", channel);
+                Log.AssertAndThrowPossibleBug(roomNamesById.TryGetValue(channel, out var room), "C8E9EBED-2A46-4207-A050-0ABFE00BA9E8", "Could not find room name in handshake for ID:{0}", channel);
                 
                 //Get or create a list for this channel
-                List<ushort> peers;
-                if (!outputRoomsToPeerId.TryGetValue(room, out peers))
+                if (!outputRoomsToPeerId.TryGetValue(room, out var peers))
                 {
                     peers = new List<ushort>();
                     outputRoomsToPeerId[room] = peers;
@@ -288,9 +280,21 @@ namespace Dissonance.Networking
         public void ReadClientStateRooms([NotNull] List<string> rooms)
         {
             if (rooms == null)
-                throw new ArgumentNullException("rooms");
+                throw new ArgumentNullException(nameof(rooms));
 
             rooms.Clear();
+
+            switch (Unread.Count)
+            {
+                // If the packet is too short to read anything assume this is an empty state
+                case 0:
+                    return;
+
+                // This is invalid, but we don't want to throw here so just print a warning about it.
+                case 1:
+                    Log.Warn("`ReadClientStateRooms` encountered packet with 1 byte (invalid encoding)");
+                    return;
+            }
 
             var count = ReadUInt16();
             for (var i = 0; i < count; i++)

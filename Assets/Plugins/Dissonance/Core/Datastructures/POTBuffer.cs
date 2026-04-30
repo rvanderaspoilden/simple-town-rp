@@ -19,10 +19,7 @@ namespace Dissonance.Datastructures
         /// <summary>
         /// Power of two of the largest buffer. i.e. 2^Pow2 == Largest Buffer Size
         /// </summary>
-        public uint Pow2
-        {
-            get { return (uint)_buffers.Count; }
-        }
+        public uint Pow2 => (uint)_buffers.Count;
 
         /// <summary>
         /// Current allocated size of the buffer
@@ -53,7 +50,7 @@ namespace Dissonance.Datastructures
         public void Alloc(uint count)
         {
             if (count > MaxCount)
-                throw new ArgumentOutOfRangeException("count", "count is larger than buffer capacity");
+                throw new ArgumentOutOfRangeException(nameof(count), "count is larger than buffer capacity");
 
             Count = count;
         }
@@ -88,9 +85,9 @@ namespace Dissonance.Datastructures
         [NotNull] public float[] GetBuffer(ref uint count, bool zeroed = false)
         {
             if (count > Count)
-                throw new ArgumentOutOfRangeException("count", "count must be <= the total allocated size (set with Alloc(count))");
+                throw new ArgumentOutOfRangeException(nameof(count), "count must be <= the total allocated size (set with Alloc(count))");
             if (count == 0)
-                throw new ArgumentOutOfRangeException("count", "count must be > 0");
+                throw new ArgumentOutOfRangeException(nameof(count), "count must be > 0");
 
             //Find the largest array which fits within the requested amount
             for (var i = _buffers.Count - 1; i >= 0; i--)

@@ -13,7 +13,7 @@ namespace Dissonance.Config
     {
         private const string SettingsFileResourceName = "ChatRoomSettings";
         public static readonly string SettingsFilePath = Path.Combine(DissonanceRootPath.BaseResourcePath, SettingsFileResourceName + ".asset");
-        private static readonly List<string> DefaultRooms = new List<string> { "Global", "Red Team", "Blue Team", "Room A", "Room B" };
+        private static readonly List<string> DefaultRooms = new List<string> { "Global", "Red Team", "Blue Team", "Room A", "Room B", "Proximity" };
 
         // ReSharper disable once FieldCanBeMadeReadOnly.Global (Justification: Confuses unity serialization)
         [SerializeField] internal List<string> Names;
@@ -44,13 +44,12 @@ namespace Dissonance.Config
             {
                 var d = new Dictionary<ushort, string>();
                 for (var i = 0; i < Names.Count; i++)
-                    d[Names[i].ToRoomId()] = Names[i];
+                    d[new RoomName(Names[i]).ToRoomId()] = Names[i];
 
                 _nameLookup = d;
             }
 
-            string value;
-            if (!_nameLookup.TryGetValue(id, out value))
+            if (!_nameLookup.TryGetValue(id, out var value))
                 return null;
             else
                 return value;

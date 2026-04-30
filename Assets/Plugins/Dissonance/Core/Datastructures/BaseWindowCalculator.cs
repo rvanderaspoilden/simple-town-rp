@@ -6,15 +6,10 @@
         #region fields and properties
         private readonly RingBuffer<T> _buffer;
 
-        protected int Count
-        {
-            get { return _buffer.Count; }
-        }
+        protected int Count => _buffer.Count;
 
-        protected int Capacity
-        {
-            get { return _buffer.Capacity; }
-        }
+        protected int Capacity => _buffer.Capacity;
+
         #endregion
 
         #region constructor

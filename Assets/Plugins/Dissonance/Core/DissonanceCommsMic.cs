@@ -12,7 +12,7 @@ namespace Dissonance
         /// </summary>
         [CanBeNull] public string MicrophoneName
         {
-            get { return _micName; }
+            get => _micName;
             set
             {
                 if (_micName == value)
@@ -26,10 +26,7 @@ namespace Dissonance
         /// <summary>
         /// Get the microphone capture object. Will be null if Dissonance has not yet started.
         /// </summary>
-        [CanBeNull] public IMicrophoneCapture MicrophoneCapture
-        {
-            get { return _capture.Microphone; }
-        }
+        [CanBeNull] public IMicrophoneCapture MicrophoneCapture => _capture.Microphone;
 
         /// <summary>
         /// Get a list of valid microphone devices that can be used.
@@ -37,6 +34,7 @@ namespace Dissonance
         /// <param name="output"></param>
         public void GetMicrophoneDevices(List<string> output)
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             // Try to get the mic component from the capture pipeline if it has already been started
             // If that finds nothing, try to get the component directly
             var mic = _capture.Microphone;
@@ -46,13 +44,14 @@ namespace Dissonance
             // Convert the mic into a device list. If that fails try to get a device list directly.
             var list = mic as IMicrophoneDeviceList;
             if (list == null)
-                list = GetComponent<IMicrophoneDeviceList>();
+                TryGetComponent(out list);
 
             // If the list is null just fall back to using the Unity method
             if (list != null)
                 list.GetDevices(output);
             else
                 output.AddRange(UnityEngine.Microphone.devices);
+#endif
         }
 
         /// <summary>
@@ -61,8 +60,7 @@ namespace Dissonance
         /// <remarks>This will destroy and recreate the microphone, preprocessor and encoder.</remarks>
         public void ResetMicrophoneCapture()
         {
-            if (_capture != null)
-                _capture.ForceReset();
+            _capture?.ForceReset();
         }
 
         /// <summary>

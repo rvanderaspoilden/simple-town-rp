@@ -13,13 +13,12 @@ namespace Dissonance.Networking.Client
     internal class PeerVoiceReceiver
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Network, typeof(PeerVoiceReceiver).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Network, nameof(PeerVoiceReceiver));
 
-        private readonly string _name;
-        public string Name { get { return _name; } }
+        public string Name { get; }
 
-        private readonly EventQueue _events;
-        private readonly Rooms _localListeningRooms;
+        private readonly IVoiceEventQueue _events;
+        private readonly IRooms _localListeningRooms;
         private readonly ConcurrentPool<List<RemoteChannel>> _channelListPool;
 
         private readonly ushort _localId;
@@ -36,12 +35,17 @@ namespace Dissonance.Networking.Client
         private readonly Dictionary<int, int> _expectedPerChannelSessions = new Dictionary<int, int>();
 
         private readonly List<int> _tmpCompositeIdBuffer = new List<int>();
+
+        /// <summary>
+        /// If true then _all_ voice packet from this peer will be received, even if they are to a room not being listened to, or direct to another player.
+        /// </summary>
+        public bool ReceiveAllVoicePackets { get; set; }
         #endregion
 
         #region constructor
-        public PeerVoiceReceiver(string remoteName, ushort localId, string localName, EventQueue events, Rooms listeningRooms, ConcurrentPool<List<RemoteChannel>> channelListPool)
+        public PeerVoiceReceiver(string remoteName, ushort localId, string localName, IVoiceEventQueue events, IRooms listeningRooms, ConcurrentPool<List<RemoteChannel>> channelListPool)
         {
-            _name = remoteName;
+            Name = remoteName;
             _localId = localId;
             _localName = localName;
             _events = events;
@@ -54,17 +58,32 @@ namespace Dissonance.Networking.Client
         /// Stop speaking if we've gone for too long without any packets from this peer
         /// </summary>
         /// <param name="utcNow"></param>
-        /// <param name="timeout"></param>
-        public void CheckTimeout(DateTime utcNow, TimeSpan timeout)
+        /// <param name="activeTimeout">How much "dead air" will be tolerated during a session before the session is timed out</param>
+        /// <param name="inactiveTimeout">How many seconds of no sessions at all until the receiver is set back to it's initial state</param>
+        public void CheckTimeout(DateTime utcNow, TimeSpan activeTimeout, TimeSpan inactiveTimeout)
         {
-            //Early exit if we're not receiving (in which case we can't possibly timeout)
-            if (!Open)
-                return;
-
-            if ((utcNow - _lastReceiptTime) > timeout)
+            if (Open)
             {
-                Log.Debug("Client '{0}' timed out active speech session", Name);
-                StopSpeaking();
+                if ((utcNow - _lastReceiptTime) > activeTimeout)
+                {
+                    // There is an active speech session, but no packets have been received for a while.
+                    // Terminate the session, if more packets arrive later the session will be restarted.
+                    Log.Debug("Client '{0}' timed out active speech session", Name);
+                    StopSpeaking();
+                }
+            }
+            else
+            {
+                if ((utcNow - _lastReceiptTime) > inactiveTimeout)
+                {
+                    // There is not active speech session and no packets have been received for a while. Set the receiver
+                    // back to an "uninitialised" state.
+                    if (_receivedInitialPacket)
+                    {
+                        Log.Debug("Client '{0}' set back to initial receiver state", Name);
+                        _receivedInitialPacket = false;
+                    }
+                }
             }
         }
 
@@ -95,9 +114,7 @@ namespace Dissonance.Networking.Client
         public void ReceivePacket(ref PacketReader reader, DateTime utcNow)
         {
             //Read second part of the header from the packet
-            VoicePacketOptions metadata;
-            ushort sequenceNumber, numChannels;
-            reader.ReadVoicePacketHeader2(out metadata, out sequenceNumber, out numChannels);
+            reader.ReadVoicePacketHeader2(out var metadata, out var sequenceNumber, out var numChannels);
 
             // if this receiver has never received a packet before then just take whatever session this packet contains as the current session
             // this ensures that late joining peers cannot miss packets due to their channel session being initialised to zero
@@ -113,17 +130,15 @@ namespace Dissonance.Networking.Client
             }
 
             //Read the list of channels this voice data is being broadcast on and accumulate info about the channels we're listening on
-            bool allClosing, forceReset;
-            ChannelsMetadata playbackSettings;
             var channels = _channelListPool.Get();
-            ReadChannels(ref reader, numChannels, out allClosing, out forceReset, out playbackSettings, channels);
+            ReadChannels(ref reader, numChannels, out var allClosing, out var forceReset, out var playbackSettings, channels);
 
             //Update the statistics for the channel this data is coming in over and then if it's successful Send voice data onwards
             if (UpdateSpeakerState(allClosing, forceReset, metadata.ChannelSession, sequenceNumber, utcNow))
             {
                 //Copy voice data into another buffer (we can't keep hold of this one, it will be recycled after we finish processing this packet)
                 var buffer = _events.GetEventBuffer();
-                var frame = reader.ReadByteSegment().CopyTo(buffer);
+                var frame = reader.ReadByteSegment().CopyToSegment(buffer);
 
                 //Send the event (buffer will be recycled after the event has been dispatched)
                 _events.EnqueueVoiceData(new VoicePacket(
@@ -163,9 +178,7 @@ namespace Dissonance.Networking.Client
             for (var i = 0; i < numChannels; i++)
             {
                 //Parse a channel of information from the header
-                ChannelBitField channel;
-                ushort channelRecipient;
-                reader.ReadVoicePacketChannel(out channel, out channelRecipient);
+                reader.ReadVoicePacketChannel(out var channel, out var channelRecipient);
 
                 //Skip onwards if we don't care about this channel
                 var c = IsChannelToLocalPlayer(channel, channelRecipient);
@@ -209,8 +222,7 @@ namespace Dissonance.Networking.Client
             var none = false;
 
             //Check if the session ID is either not in the dict, or it's different
-            int previousSession;
-            if (!_expectedPerChannelSessions.TryGetValue(compositeId, out previousSession))
+            if (!_expectedPerChannelSessions.TryGetValue(compositeId, out var previousSession))
                 none = true;
             else if (previousSession != expectedValue)
                 diff = true;
@@ -235,6 +247,10 @@ namespace Dissonance.Networking.Client
 
             if (channel.Type == ChannelType.Player)
             {
+                // Check if we should accept all packets, regardless of who they're for.
+                if (ReceiveAllVoicePackets)
+                    return new RemoteChannel(_localName, ChannelType.Player, options);
+
                 //If the channel is not to the local player we don't care about it
                 if (recipient != _localId)
                     return null;
@@ -245,6 +261,12 @@ namespace Dissonance.Networking.Client
             {
                 //This only returns the name for rooms we're currently listening to
                 var roomName = _localListeningRooms.Name(recipient);
+
+                // Check if we should accept all packets, regardless of which room they're for.
+                if (ReceiveAllVoicePackets)
+                    return new RemoteChannel(roomName ?? "Unknown Room Name", ChannelType.Room, options);
+
+                // If the name is null then we're not interested in this room, drop the packet
                 if (roomName == null)
                     return null;
 
@@ -253,7 +275,7 @@ namespace Dissonance.Networking.Client
             else
             {
                 //ncrunch: no coverage start (Justification: Impossible branch)
-                throw Log.CreatePossibleBugException(string.Format("Unknown ChannelType variant '{0}'", channel.Type), "1884B2CF-35AA-46BD-93C7-80F14D8D25D8");
+                throw Log.CreatePossibleBugException($"Unknown ChannelType variant '{channel.Type}'", "1884B2CF-35AA-46BD-93C7-80F14D8D25D8");
                 //ncrunch: no coverage end
             }
         }
@@ -270,7 +292,7 @@ namespace Dissonance.Networking.Client
             var count = keys.Count;
 
             //Sort the list so it's quicker to search
-            keys.Sort();
+            keys.Sort(Comparer<int>.Default);
 
             //Manually enumerating to prevent foreach loop allocating an enumerator (longstanding Mono/Unity performance problem)
             using (var e = _expectedPerChannelSessions.GetEnumerator())
@@ -364,7 +386,7 @@ namespace Dissonance.Networking.Client
             return delta < 0;
         }
 
-        private struct ChannelsMetadata
+        private readonly struct ChannelsMetadata
         {
             public readonly bool IsPositional;
             public readonly float AmplitudeMultiplier;

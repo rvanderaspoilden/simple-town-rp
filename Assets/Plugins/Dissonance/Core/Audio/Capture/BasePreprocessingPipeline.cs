@@ -14,13 +14,10 @@ namespace Dissonance.Audio.Capture
         : IPreprocessingPipeline
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Recording, typeof(BasePreprocessingPipeline).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Recording, nameof(BasePreprocessingPipeline));
 
-        private ArvCalculator _arv = new ArvCalculator();
-        public float Amplitude
-        {
-            get { return _arv.ARV; }
-        }
+        private ArvCalculator _arv;
+        public float Amplitude => _arv.ARV;
 
         private int _droppedSamples;
 
@@ -32,16 +29,11 @@ namespace Dissonance.Audio.Capture
 
         private AudioFileWriter _diagnosticOutputRecorder;
 
-        private readonly int _outputFrameSize;
-        public int OutputFrameSize
-        {
-            get { return _outputFrameSize; }
-        }
+        public int OutputFrameSize { get; }
 
         public abstract bool IsOutputMuted { set; }
 
-        private readonly WaveFormat _outputFormat;
-        [NotNull] public WaveFormat OutputFormat { get { return _outputFormat; } }
+        [NotNull] public WaveFormat OutputFormat { get; }
 
         private bool _resetApplied;
         private int _resetRequested;
@@ -62,18 +54,22 @@ namespace Dissonance.Audio.Capture
         /// <inheritdoc />
         public TimeSpan UpstreamLatency
         {
-            get { return TimeSpan.FromMilliseconds(_upstreamLatencyMs); }
-            set { _upstreamLatencyMs = (int)value.TotalMilliseconds; }
+            get => TimeSpan.FromMilliseconds(_upstreamLatencyMs);
+            set => _upstreamLatencyMs = (int)value.TotalMilliseconds;
         }
 
         private readonly int _estimatedPreprocessorLatencyMs;
+
+        private readonly string _metricInputBufferSize;
+        private readonly string _metricInputBufferLostSamples;
+        private readonly string _metricPreprocessorTime;
+        private readonly string _metricInjectedCatchupSamples;
+
         /// <summary>
         /// Latency (in milliseconds) from audio arriving at the microphone to it being preprocessed
         /// </summary>
-        protected int PreprocessorLatencyMs
-        {
-            get { return _upstreamLatencyMs + _estimatedPreprocessorLatencyMs; }
-        }
+        protected int PreprocessorLatencyMs => _upstreamLatencyMs + _estimatedPreprocessorLatencyMs;
+
         #endregion
 
         /// <summary>
@@ -86,17 +82,17 @@ namespace Dissonance.Audio.Capture
         /// <param name="outputSampleRate"></param>
         protected BasePreprocessingPipeline([NotNull] WaveFormat inputFormat, int intermediateFrameSize, int intermediateSampleRate, int outputFrameSize, int outputSampleRate)
         {
-            if (inputFormat == null) throw new ArgumentNullException("inputFormat");
-            if (intermediateFrameSize < 0) throw new ArgumentOutOfRangeException("intermediateFrameSize", "Intermediate frame size cannot be less than zero");
-            if (intermediateSampleRate < 0) throw new ArgumentOutOfRangeException("intermediateSampleRate", "Intermediate sample rate cannot be less than zero");
-            if (outputFrameSize < 0) throw new ArgumentOutOfRangeException("outputFrameSize", "Output frame size cannot be less than zero");
-            if (outputSampleRate < 0) throw new ArgumentOutOfRangeException("outputSampleRate", "Output sample rate cannot be less than zero");
+            if (inputFormat == null) throw new ArgumentNullException(nameof(inputFormat));
+            if (intermediateFrameSize < 0) throw new ArgumentOutOfRangeException(nameof(intermediateFrameSize), "Intermediate frame size cannot be less than zero");
+            if (intermediateSampleRate < 0) throw new ArgumentOutOfRangeException(nameof(intermediateSampleRate), "Intermediate sample rate cannot be less than zero");
+            if (outputFrameSize < 0) throw new ArgumentOutOfRangeException(nameof(outputFrameSize), "Output frame size cannot be less than zero");
+            if (outputSampleRate < 0) throw new ArgumentOutOfRangeException(nameof(outputSampleRate), "Output sample rate cannot be less than zero");
 
-            _outputFrameSize = outputFrameSize;
-            _outputFormat = new WaveFormat(outputSampleRate, 1);
+            OutputFrameSize = outputFrameSize;
+            OutputFormat = new WaveFormat(outputSampleRate, 1);
 
             //Create resampler to resample input to intermediate rate
-            _resamplerInput = new BufferedSampleProvider(inputFormat, intermediateFrameSize * 16);
+            _resamplerInput = new BufferedSampleProvider(inputFormat, intermediateFrameSize * 32);
             _resampler = new Resampler(_resamplerInput, 48000);
             _resampledOutput = new SampleToFrameProvider(_resampler, (uint)OutputFrameSize);
             _intermediateFrame = new float[intermediateFrameSize];
@@ -108,6 +104,11 @@ namespace Dissonance.Audio.Capture
             // We don't want to overestimate the latency. It's hard to come up with a reasonable number for this because if the input frames are >= the...
             // ...intermediate frames there will actually be no buffering delay in the preprocessor (it'll pick up a complete frame and process it right away).
             _estimatedPreprocessorLatencyMs = 0;
+
+            _metricInputBufferSize = Metrics.MetricName("PreprocessorInputBufferSampleCount");
+            _metricInputBufferLostSamples = Metrics.MetricName("PreprocessorInputBufferLostSampleCount");
+            _metricPreprocessorTime = Metrics.MetricName("PreprocessorProcessingTime");
+            _metricInjectedCatchupSamples = Metrics.MetricName("PreprocessorInjectedCatchupSampleCount");
         }
 
         public virtual void Dispose()
@@ -168,26 +169,30 @@ namespace Dissonance.Audio.Capture
 
         void IMicrophoneSubscriber.ReceiveMicrophoneData(ArraySegment<float> data, [NotNull] WaveFormat format)
         {
-            if (data.Array == null) throw new ArgumentNullException("data");
+            if (data.Array == null) throw new ArgumentNullException(nameof(data));
 
             // ReSharper disable once InconsistentlySynchronizedField (Justification: `_resamplerInput` is itself thread safe, so using it with synchronisation is unnecessary)
-            if (!format.Equals(_resamplerInput.WaveFormat)) throw new ArgumentException("Incorrect format supplied to preprocessor", "format");
+            if (!format.Equals(_resamplerInput.WaveFormat)) throw new ArgumentException("Incorrect format supplied to preprocessor", nameof(format));
 
             lock (_inputWriteLock)
             {
                 // Write as much data into the buffer as possible
                 var written = _resamplerInput.Write(data);
+                Metrics.Sample(_metricInputBufferSize, _resamplerInput.Count);
 
                 // If not everything was written it means the input buffer is full! The only thing to do is throw
                 // away the excess audio and to keep track of exactly how much was lost. The lost samples will be injected
                 // as silence, to keep everything in sync.
+                var lost = 0;
                 if (written < data.Count)
                 {
-                    var lost = data.Count - written;
+                    lost = data.Count - written;
 
                     Interlocked.Add(ref _droppedSamples, lost);
                     Log.Warn("Lost {0} samples in the preprocessor (buffer full), injecting silence to compensate", lost);
                 }
+
+                Metrics.Sample(_metricInputBufferLostSamples, lost);
             }
 
             //Wake up the processing thread
@@ -249,7 +254,7 @@ namespace Dissonance.Audio.Capture
                     var preSpeech = VadIsSpeechDetected;
                     while (_resampledOutput.Read(new ArraySegment<float>(_intermediateFrame, 0, _intermediateFrame.Length)))
                     {
-                        _arv.Update(new ArraySegment<float>(_intermediateFrame));
+                        BeforePreprocessAudioFrame(_intermediateFrame);
                         PreprocessAudioFrame(_intermediateFrame);
                         frameCount++;
                     }
@@ -268,12 +273,16 @@ namespace Dissonance.Audio.Capture
                     if (missedSamples > 0)
                     {
                         //Inject silent frames directly into the preprocessor
+                        var injected = 0;
                         Array.Clear(_intermediateFrame, 0, _intermediateFrame.Length);
                         while (missedSamples >= _intermediateFrame.Length)
                         {
+                            BeforePreprocessAudioFrame(_intermediateFrame);
                             PreprocessAudioFrame(_intermediateFrame);
                             missedSamples -= _intermediateFrame.Length;
+                            injected += _intermediateFrame.Length;
                         }
+                        Metrics.Sample(_metricInjectedCatchupSamples, injected);
 
                         //Add the remaining samples back onto the missed counter (in case we didn't lose exactly one frame)
                         if (missedSamples > 0)
@@ -285,6 +294,9 @@ namespace Dissonance.Audio.Capture
                     var elapsed = endTime - startTime;
                     if (endTime > startTime && elapsed > (50 + frameCount * 5))
                         Log.Warn("Preprocessor running slow! Iteration took:{0}ms for {1} frames", elapsed, frameCount);
+
+                    if (endTime > startTime)
+                        Metrics.Sample(_metricPreprocessorTime, elapsed);
                 }
             }
             //ncrunch: no coverage start (Justification: this should never happen, it's just a log in case of sanity failure
@@ -300,6 +312,14 @@ namespace Dissonance.Audio.Capture
         }
 
         /// <summary>
+        /// Called immediately before `PreprocessAudioFrame`
+        /// </summary>
+        /// <param name="frame"></param>
+        protected virtual void BeforePreprocessAudioFrame([NotNull] float[] frame)
+        {
+        }
+
+        /// <summary>
         /// Process a frame of audio. Audio passed to this method arrives in frames of intermediate size/rate (passed into the constructor).
         /// Frames of output size/rate must be passed to SendSamplesToSubscribers.
         /// </summary>
@@ -309,13 +329,16 @@ namespace Dissonance.Audio.Capture
         #region mic subscriptions
         protected void SendSamplesToSubscribers([NotNull] float[] buffer)
         {
+            // Calculate volume (average rectified value) of signal after preprocessing
+            _arv.Update(new ArraySegment<float>(buffer));
+
             //Write processed audio to file (for diagnostic purposes)
             //ncrunch: no coverage start (Justification: don't want to have to write to disk in a test)
             if (DebugSettings.Instance.EnableRecordingDiagnostics && DebugSettings.Instance.RecordPreprocessorOutput)
             {
                 if (_diagnosticOutputRecorder == null)
                 {
-                    var filename = string.Format("Dissonance_Diagnostics/PreprocessorOutputAudio_{0}", DateTime.UtcNow.ToFileTime());
+                    var filename = $"Dissonance_Diagnostics/PreprocessorOutputAudio_{DateTime.UtcNow.ToFileTime()}";
                     _diagnosticOutputRecorder = new AudioFileWriter(filename, OutputFormat);
                 }
 
@@ -362,7 +385,7 @@ namespace Dissonance.Audio.Capture
 
         public virtual void Subscribe([NotNull] IMicrophoneSubscriber listener)
         {
-            if (listener == null) throw new ArgumentNullException("listener");
+            if (listener == null) throw new ArgumentNullException(nameof(listener));
 
             using (var subscriptions = _micSubscriptions.Lock())
             {
@@ -373,7 +396,7 @@ namespace Dissonance.Audio.Capture
 
         public virtual bool Unsubscribe([NotNull] IMicrophoneSubscriber listener)
         {
-            if (listener == null) throw new ArgumentNullException("listener");
+            if (listener == null) throw new ArgumentNullException(nameof(listener));
 
             using (var subscriptions = _micSubscriptions.Lock())
             {
@@ -432,7 +455,7 @@ namespace Dissonance.Audio.Capture
 
         public virtual void Subscribe([NotNull] IVoiceActivationListener listener)
         {
-            if (listener == null) throw new ArgumentNullException("listener");
+            if (listener == null) throw new ArgumentNullException(nameof(listener));
 
             using (var subs = _vadSubscriptions.Lock())
             {
@@ -446,7 +469,7 @@ namespace Dissonance.Audio.Capture
 
         public virtual bool Unsubscribe([NotNull] IVoiceActivationListener listener)
         {
-            if (listener == null) throw new ArgumentNullException("listener");
+            if (listener == null) throw new ArgumentNullException(nameof(listener));
 
             using (var subs = _vadSubscriptions.Lock())
             {

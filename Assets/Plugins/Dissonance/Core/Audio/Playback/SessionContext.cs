@@ -4,7 +4,7 @@ using JetBrains.Annotations;
 
 namespace Dissonance.Audio.Playback
 {
-    public struct SessionContext
+    public readonly struct SessionContext
         : IEquatable<SessionContext>
     {
         /// <summary>
@@ -19,10 +19,7 @@ namespace Dissonance.Audio.Playback
 
         public SessionContext([NotNull] string playerName, uint id)
         {
-            if (playerName == null)
-                throw new ArgumentNullException("playerName", "Cannot create a session context with a null player name");
-
-            PlayerName = playerName;
+            PlayerName = playerName ?? throw new ArgumentNullException(nameof(playerName), "Cannot create a session context with a null player name");
             Id = id;
         }
 
@@ -36,7 +33,7 @@ namespace Dissonance.Audio.Playback
         {
             if (ReferenceEquals(null, obj))
                 return false;
-            return obj is SessionContext && Equals((SessionContext)obj);
+            return obj is SessionContext context && Equals(context);
         }
 
         public override int GetHashCode()

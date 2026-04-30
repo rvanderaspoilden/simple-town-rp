@@ -17,6 +17,13 @@ namespace Dissonance.Networking.Server
 
         private readonly List<TPeer> _tmpPeerBuffer = new List<TPeer>();
         private readonly List<ushort> _tmpIdBuffer = new List<ushort>();
+
+        /// <summary>
+        /// Invoked when a packet is being relayed.
+        /// - First parameter is the payload being relayed.
+        /// - Second parameter is the source
+        /// </summary>
+        public event Action<ArraySegment<byte>, TPeer> OnRelayingPacket;
         #endregion
 
         #region constructor
@@ -27,19 +34,17 @@ namespace Dissonance.Networking.Server
         }
         #endregion
 
-        public void ProcessPacketRelay(ref PacketReader reader, bool reliable)
+        public void ProcessPacketRelay(ref PacketReader reader, bool reliable, TPeer source)
         {
             //Read out the destination list and the slice of the packet which is the data to relay
             _tmpIdBuffer.Clear();
-            ArraySegment<byte> data;
-            reader.ReadRelay(_tmpIdBuffer, out data);
+            reader.ReadRelay(_tmpIdBuffer, out var data);
 
             //Parse header of body to check validity
             var bodyReader = new PacketReader(data);
 
             //Drop if the magic is wrong
-            MessageTypes relayedPacketType;
-            if (!bodyReader.ReadPacketHeader(out relayedPacketType))
+            if (!bodyReader.ReadPacketHeader(out var relayedPacketType))
             {
                 Log.Error("Dropping relayed packet - magic number is incorrect");
                 return;
@@ -56,16 +61,25 @@ namespace Dissonance.Networking.Server
             _tmpPeerBuffer.Clear();
             for (var i = 0; i < _tmpIdBuffer.Count; i++)
             {
-                ClientInfo<TPeer> clientInfo;
-                if (!_peers.TryGetClientInfoById(_tmpIdBuffer[i], out clientInfo))
-                    Log.Warn("Attempted to relay packet to unknown/disconnected peer ({0})", _tmpIdBuffer[i]);
+                var id = _tmpIdBuffer[i];
+
+                if (!_peers.TryGetClientInfoById(id, out var clientInfo))
+                {
+                    // Do not warn for this ID, it is used for the "SpecialAlwaysSend" Room which sends voice to the
+                    // server (using this ID) even if no one is listening.
+                    if (id != ushort.MaxValue)
+                        Log.Warn("Attempted to relay packet to unknown/disconnected peer ({0})", id);
+                }
                 else
                     _tmpPeerBuffer.Add(clientInfo.Connection);
             }
 
             //Move the slice back to the zero position before sending
             // ReSharper disable once AssignNullToNotNullAttribute (Justification: Array segment cannot be null)
-            data = data.CopyTo(data.Array);
+            data = data.CopyToSegment(data.Array);
+
+            // Invoke event with relayed data payload
+            OnRelayingPacket?.Invoke(data, source);
 
             //Send the packet on to the relayed recipients
             if (reliable)

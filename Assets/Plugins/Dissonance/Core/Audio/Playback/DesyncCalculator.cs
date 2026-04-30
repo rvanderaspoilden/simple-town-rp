@@ -9,10 +9,7 @@ namespace Dissonance.Audio.Playback
         private const float MaximumPlaybackAdjustment = 0.15f;
 
         internal int DesyncMilliseconds { get; private set; }
-        internal float CorrectedPlaybackSpeed
-        {
-            get { return CalculateCorrectionFactor(DesyncMilliseconds); }
-        }
+        internal float CorrectedPlaybackSpeed => CalculateCorrectionFactor(DesyncMilliseconds);
 
         internal void Update(TimeSpan ideal, TimeSpan actual)
         {

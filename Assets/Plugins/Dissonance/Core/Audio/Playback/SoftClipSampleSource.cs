@@ -11,17 +11,13 @@ namespace Dissonance.Audio.Playback
         private readonly ISampleSource _upstream;
         private readonly OpusNative.OpusSoftClip _clipper;
 
-        public WaveFormat WaveFormat
-        {
-            get { return _upstream.WaveFormat; }
-        }
+        public WaveFormat WaveFormat => _upstream.WaveFormat;
 
         public SoftClipSampleSource([NotNull] ISampleSource upstream)
         {
-            if (upstream == null) throw new ArgumentNullException("upstream");
+            _upstream = upstream ?? throw new ArgumentNullException(nameof(upstream));
 
-            _upstream = upstream;
-            _clipper = new OpusNative.OpusSoftClip(upstream.WaveFormat.Channels);
+            _clipper = new OpusNative.OpusSoftClip();
         }
 
         public void Prepare(SessionContext context)

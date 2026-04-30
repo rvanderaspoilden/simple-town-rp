@@ -34,8 +34,7 @@ namespace Dissonance.Datastructures
         {
             using (_getter.Lock())
             {
-                T item;
-                if (_items.Read(out item) && !ReferenceEquals(item, null))
+                if (_items.Read(out var item) && !ReferenceEquals(item, null))
                     return item;
                 else
                     return _factory();
@@ -49,7 +48,7 @@ namespace Dissonance.Datastructures
         public void Put([NotNull] T item)
         {
             if (item == null)
-                throw new ArgumentNullException("item");
+                throw new ArgumentNullException(nameof(item));
 
             using (_putter.Lock())
             {

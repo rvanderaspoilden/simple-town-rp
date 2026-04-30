@@ -48,11 +48,11 @@ namespace Sim.Building {
 
             return actions.Where(x => {
                 if (x.Type.Equals(ActionTypeEnum.SIT)) {
-                    return this.GetKeyFromValue(this.charactersAssociatedToSeatIdx, PlayerController.Local.connectionToServer.connectionId) == -1 && GetAvailableSeatIdx() != -1;
+                    return this.GetKeyFromValue(this.charactersAssociatedToSeatIdx, (int)PlayerController.Local.netId) == -1 && GetAvailableSeatIdx() != -1;
                 }
 
                 if (x.Type.Equals(ActionTypeEnum.COUCH)) {
-                    return this.GetKeyFromValue(this.charactersAssociatedToCouchIdx, PlayerController.Local.connectionToServer.connectionId) == -1 && GetAvailableCouchIdx() != -1;
+                    return this.GetKeyFromValue(this.charactersAssociatedToCouchIdx, (int)PlayerController.Local.netId) == -1 && GetAvailableCouchIdx() != -1;
                 }
 
                 if (x.Type.Equals(ActionTypeEnum.SELL) || x.Type.Equals(ActionTypeEnum.MOVE)) {
@@ -88,7 +88,7 @@ namespace Sim.Building {
                 return;
             }
 
-            this.charactersAssociatedToSeatIdx.Add(seatIdx, sender.connectionId);
+            this.charactersAssociatedToSeatIdx.Add(seatIdx, (int)sender.identity.netId);
 
             TargetSit(sender.identity.connectionToClient, seatIdx);
         }
@@ -106,7 +106,7 @@ namespace Sim.Building {
         public void CmdRevokeSeat(NetworkConnectionToClient sender = null) {
             if (sender == null) return;
 
-            int seatIdx = GetKeyFromValue(this.charactersAssociatedToSeatIdx, sender.connectionId);
+            int seatIdx = GetKeyFromValue(this.charactersAssociatedToSeatIdx, (int)sender.identity.netId);
 
             if (seatIdx != -1) this.charactersAssociatedToSeatIdx.Remove(seatIdx);
         }
@@ -146,9 +146,9 @@ namespace Sim.Building {
                 return;
             }
 
-            this.charactersAssociatedToCouchIdx.Add(couchIdx, sender.connectionId);
+            this.charactersAssociatedToCouchIdx.Add(couchIdx, (int)sender.identity.netId);
 
-            PlayerController player = NetworkIdentity.spawned[sender.identity.netId].gameObject.GetComponent<PlayerController>();
+            PlayerController player = NetworkServer.spawned[sender.identity.netId].gameObject.GetComponent<PlayerController>();
 
             player.PlayerState = PlayerState.SLEEPING;
             
@@ -168,25 +168,26 @@ namespace Sim.Building {
         public void CmdRevokeCouch(NetworkConnectionToClient sender = null) {
             if (sender == null) return;
 
-            int couchIdx = GetKeyFromValue(this.charactersAssociatedToCouchIdx, sender.connectionId);
+            int couchIdx = GetKeyFromValue(this.charactersAssociatedToCouchIdx, (int)sender.identity.netId);
 
             if (couchIdx != -1) {
                 this.charactersAssociatedToCouchIdx.Remove(couchIdx);
-                
-                PlayerController player = NetworkIdentity.spawned[sender.identity.netId].gameObject.GetComponent<PlayerController>();
+
+                PlayerController player = NetworkServer.spawned[sender.identity.netId].gameObject.GetComponent<PlayerController>();
 
                 player.PlayerState = PlayerState.IDLE;
             }
         }
 
         [Server]
-        private void RemoveDisconnectedPlayer(int connId) {
-            int couchIdx = GetKeyFromValue(this.charactersAssociatedToCouchIdx, connId);
+        private void RemoveDisconnectedPlayer(NetworkConnectionToClient conn) {
+            if (conn.identity == null) return;
+            int playerNetId = (int)conn.identity.netId;
 
+            int couchIdx = GetKeyFromValue(this.charactersAssociatedToCouchIdx, playerNetId);
             if (couchIdx != -1) this.charactersAssociatedToCouchIdx.Remove(couchIdx);
-            
-            int seatIdx = GetKeyFromValue(this.charactersAssociatedToSeatIdx, connId);
 
+            int seatIdx = GetKeyFromValue(this.charactersAssociatedToSeatIdx, playerNetId);
             if (seatIdx != -1) this.charactersAssociatedToSeatIdx.Remove(seatIdx);
         }
     }

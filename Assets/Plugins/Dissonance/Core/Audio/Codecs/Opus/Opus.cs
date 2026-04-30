@@ -8,7 +8,7 @@ namespace Dissonance.Audio.Codecs.Opus
 {
     internal static class BandwidthExtensions
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(BandwidthExtensions).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(BandwidthExtensions));
 
         public static int SampleRate(this OpusNative.Bandwidth bandwidth)
         {
@@ -25,14 +25,19 @@ namespace Dissonance.Audio.Codecs.Opus
                 case OpusNative.Bandwidth.Fullband:
                     return 48000;
                 default:
-                    throw new ArgumentOutOfRangeException("bandwidth", Log.PossibleBugMessage(string.Format("{0} is not a valid value", bandwidth), "B534C9B2-6A9B-455E-875E-A01D93B278C8"));
+                    throw new ArgumentOutOfRangeException(nameof(bandwidth), Log.PossibleBugMessage($"{bandwidth} is not a valid value", "B534C9B2-6A9B-455E-875E-A01D93B278C8"));
             }
         }
     }
 
     internal class OpusNative
     {
-#if UNITY_IOS && !UNITY_EDITOR
+        // Note: This file includes mentions of `UNITY_VISIONOS`. Dissonance **does not** currently officially suppor
+        // VisionOS and these changes have not been tested by us! These changes have been reported to work by a community member.
+        //
+        // If you want to use VisionOS you will need to request access (martin@placeholder-software.co.uk) to the native source
+        // code to build plugins suitable for VisionOS.
+#if (UNITY_VISIONOS || UNITY_IOS) && !UNITY_EDITOR
         private const string ImportString = "__Internal";
         private const CallingConvention Convention = CallingConvention.Cdecl;
 #else
@@ -45,7 +50,7 @@ namespace Dissonance.Audio.Codecs.Opus
         /// </summary>
         private static partial class OpusNativeMethods
         {
-#if UNITY_IOS && !UNITY_EDITOR
+#if (UNITY_VISIONOS || UNITY_IOS) && !UNITY_EDITOR
             [DllImport("__Internal", CallingConvention = CallingConvention.Cdecl)]
 #else
             [DllImport(ImportString, EntryPoint = "opus_get_version_string", CallingConvention = CallingConvention.Cdecl)]
@@ -290,7 +295,7 @@ namespace Dissonance.Audio.Codecs.Opus
         /// </summary>
         public sealed class OpusEncoder : IDisposable
         {
-            private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof(OpusEncoder).Name);
+            private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(OpusEncoder));
 
 #region fields and properties
             private readonly LockedValue<IntPtr> _encoder;
@@ -302,8 +307,7 @@ namespace Dissonance.Audio.Codecs.Opus
             {
                 get
                 {
-                    int bitrate;
-                    OpusCtlOut(Ctl.GetBitrateRequest, out bitrate);
+                    OpusCtlOut(Ctl.GetBitrateRequest, out var bitrate);
                     return bitrate;
                 }
                 set
@@ -319,8 +323,7 @@ namespace Dissonance.Audio.Codecs.Opus
             {
                 get
                 {
-                    int fec;
-                    OpusCtlOut(Ctl.GetInbandFECRequest, out fec);
+                    OpusCtlOut(Ctl.GetInbandFECRequest, out var fec);
                     return fec > 0;
                 }
                 set
@@ -338,14 +341,13 @@ namespace Dissonance.Audio.Codecs.Opus
             {
                 get
                 {
-                    int lossrate;
-                    OpusCtlOut(Ctl.GetPacketLossPercRequest, out lossrate);
+                    OpusCtlOut(Ctl.GetPacketLossPercRequest, out var lossrate);
                     return lossrate / 100f;
                 }
                 set
                 {
                     if (value < 0 || value > 1)
-                        throw new ArgumentOutOfRangeException("value", Log.PossibleBugMessage(string.Format("Packet loss percentage must be 0 <= {0} <= 1", value), "CFDF590D-C61A-4BB4-BB2D-1FAC1E59C114"));
+                        throw new ArgumentOutOfRangeException(nameof(value), Log.PossibleBugMessage($"Packet loss percentage must be 0 <= {value} <= 1", "CFDF590D-C61A-4BB4-BB2D-1FAC1E59C114"));
 
                     //Don't do anything if the value hasn't changed
                     var newValue = (int)(value * 100);
@@ -368,14 +370,13 @@ namespace Dissonance.Audio.Codecs.Opus
             public OpusEncoder(int srcSamplingRate, int srcChannelCount)
             {
                 if (srcSamplingRate != 8000 && srcSamplingRate != 12000 && srcSamplingRate != 16000 && srcSamplingRate != 24000 && srcSamplingRate != 48000)
-                    throw new ArgumentOutOfRangeException("srcSamplingRate", Log.PossibleBugMessage("sample rate must be one of the valid values", "3F2C6D2D-338E-495E-8970-42A3C98243A5"));
+                    throw new ArgumentOutOfRangeException(nameof(srcSamplingRate), Log.PossibleBugMessage("sample rate must be one of the valid values", "3F2C6D2D-338E-495E-8970-42A3C98243A5"));
                 if (srcChannelCount != 1 && srcChannelCount != 2)
-                    throw new ArgumentOutOfRangeException("srcChannelCount", Log.PossibleBugMessage("channel count must be 1 or 2", "8FE1EC0F-09E0-4CE6-AFD7-04199202D45D"));
+                    throw new ArgumentOutOfRangeException(nameof(srcChannelCount), Log.PossibleBugMessage("channel count must be 1 or 2", "8FE1EC0F-09E0-4CE6-AFD7-04199202D45D"));
 
-                int error;
-                var encoder = OpusNativeMethods.opus_encoder_create(srcSamplingRate, srcChannelCount, (int)Application.Voip, out error);
+                var encoder = OpusNativeMethods.opus_encoder_create(srcSamplingRate, srcChannelCount, (int)Application.Voip, out var error);
                 if ((OpusErrors)error != OpusErrors.Ok)
-                    throw new OpusException(Log.PossibleBugMessage(string.Format("Exception occured while creating encoder: {0}", (OpusErrors)error), "D77ECA73-413F-40D1-8427-CFD8A59CD5F6"));
+                    throw new OpusException(Log.PossibleBugMessage($"Exception occured while creating encoder: {(OpusErrors)error}", "D77ECA73-413F-40D1-8427-CFD8A59CD5F6"));
                 _encoder = new LockedValue<IntPtr>(encoder);
             }
 #endregion
@@ -387,10 +388,10 @@ namespace Dissonance.Audio.Codecs.Opus
             public int EncodeFloats(ArraySegment<float> sourcePcm, ArraySegment<byte> dstEncoded)
             {
                 if (sourcePcm.Array == null)
-                    throw new ArgumentNullException("sourcePcm", Log.PossibleBugMessage("source pcm must not be null", "58AE3110-8F9A-4C36-9520-B7F3383096EC"));
+                    throw new ArgumentNullException(nameof(sourcePcm), Log.PossibleBugMessage("source pcm must not be null", "58AE3110-8F9A-4C36-9520-B7F3383096EC"));
 
                 if (dstEncoded.Array == null)
-                    throw new ArgumentNullException("dstEncoded", Log.PossibleBugMessage("destination must not be null", "36C327BB-A128-400D-AFB3-FF760A1562C1"));
+                    throw new ArgumentNullException(nameof(dstEncoded), Log.PossibleBugMessage("destination must not be null", "36C327BB-A128-400D-AFB3-FF760A1562C1"));
 
                 int encodedLen;
                 using (var encoder = _encoder.Lock())
@@ -406,7 +407,7 @@ namespace Dissonance.Audio.Codecs.Opus
                 }
 
                 if (encodedLen < 0)
-                    throw new OpusException(Log.PossibleBugMessage(string.Format("Encoding failed: {0}", (OpusErrors)encodedLen), "9C923F57-146B-47CB-8EEE-5BF129FA3124"));
+                    throw new OpusException(Log.PossibleBugMessage($"Encoding failed: {(OpusErrors)encodedLen}", "9C923F57-146B-47CB-8EEE-5BF129FA3124"));
 
                 return encodedLen;
             }
@@ -436,7 +437,7 @@ namespace Dissonance.Audio.Codecs.Opus
                 }
 
                 if (ret < 0)
-                    throw new Exception(Log.PossibleBugMessage(string.Format("Encoder error (Ctl {0}): {1}", ctl, (OpusErrors)ret), "4AAA9AA6-8429-4346-B939-D113206FFBA8"));
+                    throw new Exception(Log.PossibleBugMessage($"Encoder error (Ctl {ctl}): {(OpusErrors)ret}", "4AAA9AA6-8429-4346-B939-D113206FFBA8"));
 
                 return ret;
             }
@@ -453,12 +454,12 @@ namespace Dissonance.Audio.Codecs.Opus
                 }
 
                 if (ret < 0)
-                    throw new Exception(Log.PossibleBugMessage(string.Format("Encoder error (Ctl {0}): {1}", ctl, (OpusErrors)ret), "4AAA9AA6-8429-4346-B939-D113206FFBA8"));
+                    throw new Exception(Log.PossibleBugMessage($"Encoder error (Ctl {ctl}): {(OpusErrors)ret}", "4AAA9AA6-8429-4346-B939-D113206FFBA8"));
 
                 return ret;
             }
 
-#region disposal
+            #region disposal
             ~OpusEncoder()
             {
                 Dispose();
@@ -484,7 +485,7 @@ namespace Dissonance.Audio.Codecs.Opus
 
                 _disposed = true;
             }
-#endregion
+            #endregion
         }
 
         /// <summary>
@@ -492,7 +493,7 @@ namespace Dissonance.Audio.Codecs.Opus
         /// </summary>
         public sealed class OpusDecoder : IDisposable
         {
-            private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(OpusDecoder).Name);
+            private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(OpusDecoder));
 
 #region field and properties
             private readonly LockedValue<IntPtr> _decoder;
@@ -507,14 +508,13 @@ namespace Dissonance.Audio.Codecs.Opus
             public OpusDecoder(int outputSampleRate, int outputChannelCount)
             {
                 if (outputSampleRate != 8000 && outputSampleRate != 12000 && outputSampleRate != 16000 && outputSampleRate != 24000 && outputSampleRate != 48000)
-                    throw new ArgumentOutOfRangeException("outputSampleRate", Log.PossibleBugMessage("sample rate must be one of the valid values", "548757DF-DC64-40C9-BEAD-9826B8245A7D"));
+                    throw new ArgumentOutOfRangeException(nameof(outputSampleRate), Log.PossibleBugMessage("sample rate must be one of the valid values", "548757DF-DC64-40C9-BEAD-9826B8245A7D"));
                 if (outputChannelCount != 1 && outputChannelCount != 2)
-                    throw new ArgumentOutOfRangeException("outputChannelCount", Log.PossibleBugMessage("channel count must be 1 or 2", "BA56610F-1FA3-4D68-9507-7B0DFA0E28AB"));
+                    throw new ArgumentOutOfRangeException(nameof(outputChannelCount), Log.PossibleBugMessage("channel count must be 1 or 2", "BA56610F-1FA3-4D68-9507-7B0DFA0E28AB"));
 
-                int error;
-                _decoder = new LockedValue<IntPtr>(OpusNativeMethods.opus_decoder_create(outputSampleRate, outputChannelCount, out error));
+                _decoder = new LockedValue<IntPtr>(OpusNativeMethods.opus_decoder_create(outputSampleRate, outputChannelCount, out var error));
                 if ((OpusErrors)error != OpusErrors.Ok)
-                    throw new OpusException(Log.PossibleBugMessage(string.Format("Exception occured while creating decoder: {0}", (OpusErrors)error), "6E09F275-99A1-4CD6-A36A-FA093B146B29"));
+                    throw new OpusException(Log.PossibleBugMessage($"Exception occured while creating decoder: {(OpusErrors)error}", "6E09F275-99A1-4CD6-A36A-FA093B146B29"));
             }
 #endregion
 
@@ -611,12 +611,12 @@ namespace Dissonance.Audio.Codecs.Opus
                         {
                             var arr = srcEncodedBuffer.Encoded.Value;
                             // ReSharper disable once AssignNullToNotNullAttribute (Justification Array of the segment isn't null here)
-                            throw new OpusException(Log.PossibleBugMessage(string.Format("Decoding failed: InvalidPacket. '{0}'", Convert.ToBase64String(arr.Array, arr.Offset, arr.Count)), "EF4BC24C-491E-45D9-974C-FE5CB61BD54E"));
+                            throw new OpusException(Log.PossibleBugMessage($"Decoding failed: InvalidPacket. '{Convert.ToBase64String(arr.Array, arr.Offset, arr.Count)}'", "EF4BC24C-491E-45D9-974C-FE5CB61BD54E"));
                         }
                     }
                     else
                     {
-                        throw new OpusException(Log.PossibleBugMessage(string.Format("Decoding failed: {0} ", (OpusErrors)length), "A9C8EF2C-7830-4D8E-9D6E-EF0B9827E0A8"));
+                        throw new OpusException(Log.PossibleBugMessage($"Decoding failed: {(OpusErrors)length} ", "A9C8EF2C-7830-4D8E-9D6E-EF0B9827E0A8"));
                     }
                 }
                 return length;
@@ -643,7 +643,7 @@ namespace Dissonance.Audio.Codecs.Opus
             public OpusSoftClip(int channels = 1)
             {
                 if (channels <= 0)
-                    throw new ArgumentOutOfRangeException("channels", "Channels must be > 0");
+                    throw new ArgumentOutOfRangeException(nameof(channels), "Channels must be > 0");
 
                 //Try to access opus, if it fails to load the DLL then disable the soft clipper
                 try

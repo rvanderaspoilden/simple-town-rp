@@ -1,0 +1,857 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="05909381-6a7c-4de6-9b2c-6ff86c693776" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Assets/AnotherColorPicker/Sprites/Arrows.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/AnotherColorPicker/Sprites/Arrows.png.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/BOXOPHOBIC/Polyverse Skies/Core/Editor/PolyverseSkiesShaderGUI.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/BOXOPHOBIC/Polyverse Skies/Core/Editor/PolyverseSkiesShaderGUI.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Bitgem/StylisedWater/URP/Materials/example-water-01.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Bitgem/StylisedWater/URP/Materials/example-water-01.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Core/Jetbrains.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Core/Jetbrains.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Demo.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Demo.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Demo.unity.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Demo.unity.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Game World.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Game World.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Game World.unity.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Game World.unity.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Player Prefab.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Player Prefab.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Player Prefab.prefab.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorance Player Prefab.prefab.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorancePlayerController.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/MirrorIgnorancePlayerController.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/README.txt.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Demo/README.txt.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/DissonanceSetup.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/DissonanceSetup.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/DissonanceSetup.prefab.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/DissonanceSetup.prefab.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Editor/MirrorIgnoranceCommsNetworkEditor.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Editor/MirrorIgnoranceCommsNetworkEditor.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Editor/MirrorIgnorancePlayerEditor.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/Editor/MirrorIgnorancePlayerEditor.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceClient.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceClient.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceClient.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceClient.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceCommsNetwork.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceCommsNetwork.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceCommsNetwork.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceCommsNetwork.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnorancePlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnorancePlayer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnorancePlayer.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnorancePlayer.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceServer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceServer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceServer.cs.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/MirrorIgnoranceServer.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/README.txt.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Integrations/MirrorIgnorance/README.txt.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Offline Documentation~.zip.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Offline Documentation~.zip.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Readme.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Readme.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/Readme.txt.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/Readme.txt.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/changelog.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/changelog.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Dissonance/changelog.txt.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Dissonance/changelog.txt.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/NavMeshComponents/Editor/NavMeshComponentsGUIUtility.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/NavMeshComponents/Editor/NavMeshComponentsGUIUtility.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/NavMeshComponents/Scripts/NavMeshSurface.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/NavMeshComponents/Scripts/NavMeshSurface.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/AssemblyAttributes.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/AssemblyAttributes.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/AecDiagnostics.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/AecDiagnostics.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/ArvCalculator.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/ArvCalculator.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/AudioFileWriter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/AudioFileWriter.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/AudioSettingsWatcher.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/AudioSettingsWatcher.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/AecSuppressionLevels.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/AecSuppressionLevels.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/AecmRoutingMode.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/AecmRoutingMode.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/BasePreprocessingPipeline.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/BasePreprocessingPipeline.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/BasicMicrophoneCapture.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/BasicMicrophoneCapture.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/BufferedSampleProvider.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/BufferedSampleProvider.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/CapturePipelineManager.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/CapturePipelineManager.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/EmptyPreprocessingPipeline.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/EmptyPreprocessingPipeline.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/EncoderPipeline.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/EncoderPipeline.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IAmplitudeProvider.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IAmplitudeProvider.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IChannelPriorityManager.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IChannelPriorityManager.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IFrameProvider.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IFrameProvider.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IMicrophoneCapture.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IMicrophoneCapture.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IMicrophoneDeviceList.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IMicrophoneDeviceList.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IMicrophoneHandler.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IMicrophoneHandler.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IMicrophoneProvider.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IMicrophoneProvider.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IMicrophoneSubscriber.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IMicrophoneSubscriber.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IPreprocessingPipeline.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/IPreprocessingPipeline.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/MicrophoneCapture.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/MicrophoneCapture.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/NoiseSuppressionLevels.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/NoiseSuppressionLevels.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/PreprocessingPipeline.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/PreprocessingPipeline.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/Resampler.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/Resampler.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/SampleToFrameProvider.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/SampleToFrameProvider.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/SineSampleProvider.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/SineSampleProvider.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/SpeexDspNative.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/SpeexDspNative.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/VadSensitivityLevels.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/VadSensitivityLevels.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/WebRtcPreprocessingPipeline.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Capture/WebRtcPreprocessingPipeline.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Codec.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Codec.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/EncodedBuffer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/EncodedBuffer.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/IVoiceDecoder.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/IVoiceDecoder.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/IVoiceEncoder.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/IVoiceEncoder.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Identity.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Identity/IdentityDecoder.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Identity/IdentityDecoder.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Identity/IdentityEncoder.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Identity/IdentityEncoder.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Opus.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Opus/Opus.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Opus/Opus.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Opus/OpusDecoder.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Opus/OpusDecoder.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Opus/OpusEncoder.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Opus/OpusEncoder.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Silence.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Silence/SilenceDecoder.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Codecs/Silence/SilenceDecoder.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Fader.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Fader.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/FormatConverter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/FormatConverter.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/OpenChannelVolumeDuck.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/OpenChannelVolumeDuck.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/BufferedDecoder.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/BufferedDecoder.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/DecoderFactory.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/DecoderFactory.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/DecoderPipeline.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/DecoderPipeline.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/DecoderPipelinePool.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/DecoderPipelinePool.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/DesyncCalculator.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/DesyncCalculator.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/EncodedAudio.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/EncodedAudio.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/EncodedAudioBuffer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/EncodedAudioBuffer.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/FrameFormat.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/FrameFormat.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/FrameToSampleConverter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/FrameToSampleConverter.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IDecoderPipeline.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IDecoderPipeline.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IFrameSource.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IFrameSource.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IPriorityManager.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IPriorityManager.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IRateProvider.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IRateProvider.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IRemoteChannelProvider.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IRemoteChannelProvider.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/ISampleSource.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/ISampleSource.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IVoicePlayback.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/IVoicePlayback.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/PlaybackOptions.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/PlaybackOptions.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/Resampler.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/Resampler.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SamplePlaybackComponent.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SamplePlaybackComponent.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SessionContext.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SessionContext.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SoftClipSampleSource.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SoftClipSampleSource.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SpeechSession.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SpeechSession.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SpeechSessionStream.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SpeechSessionStream.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SynchronizerSampleSource.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/SynchronizerSampleSource.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/VoicePlayback.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/VoicePlayback.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/VolumeRampedFrameSource.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Audio/Playback/VolumeRampedFrameSource.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/AudioQuality.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/AudioQuality.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/BaseCommsTrigger.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/BaseCommsTrigger.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/ChannelPriority.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/ChannelPriority.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/ChannelProperties.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/ChannelProperties.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/Channels.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/Channels.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/IChannel.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/IChannel.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/PlayerChannel.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/PlayerChannel.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/PlayerChannels.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/PlayerChannels.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/RemoteChannel.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/RemoteChannel.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/RoomChannel.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/RoomChannel.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/RoomChannels.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channel/RoomChannels.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/ChannelType.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/ChannelType.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channels.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Channels.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/CodecSettings.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/CodecSettings.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/CodecSettingsLoader.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/CodecSettingsLoader.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/CommActivationMode.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/CommActivationMode.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/CommTriggerTarget.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/CommTriggerTarget.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Config.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Config/ChatRoomSettings.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Config/ChatRoomSettings.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Config/DebugSettings.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Config/DebugSettings.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Config/Preferences.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Config/Preferences.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Config/VoiceSettings.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Config/VoiceSettings.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/BaseWindowCalculator.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/BaseWindowCalculator.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/ConcurrentPool.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/ConcurrentPool.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/POTBuffer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/POTBuffer.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/PacketLossCalculator.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/PacketLossCalculator.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/Pool.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/Pool.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/RingBuffer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/RingBuffer.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/TransferBuffer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/TransferBuffer.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/Unions.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/Unions.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/WindowDeviationCalculator.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Datastructures/WindowDeviationCalculator.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/DissonanceCommsImpl.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/DissonanceCommsImpl.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/DissonanceCommsMic.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/DissonanceCommsMic.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/DissonanceException.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/DissonanceException.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions/ArraySegmentExtensions.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions/ArraySegmentExtensions.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions/IEnumerableExtensions.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions/IEnumerableExtensions.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions/Int32Extensions.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions/Int32Extensions.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions/StringExtensions.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions/StringExtensions.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions/UShortExtensions.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Extensions/UShortExtensions.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/FrameSize.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/FrameSize.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/FrameSkipDetector.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/FrameSkipDetector.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/HandyCollections.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/HandyCollections/Heap.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/HandyCollections/Heap/IMinHeap.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/HandyCollections/Heap/IMinHeap.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/HandyCollections/Heap/MinHeap.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/HandyCollections/Heap/MinHeap.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/IDissonancePlayer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/IDissonancePlayer.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/ILossEstimator.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/ILossEstimator.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Jetbrains.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Jetbrains.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Log.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Log.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/LogCategory.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/LogCategory.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/LogLevel.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/LogLevel.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Metrics.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Metrics.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/NAudio.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/NAudio/ISampleProvider.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/NAudio/ISampleProvider.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/NAudio/WaveFileWriter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/NAudio/WaveFileWriter.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/NAudio/WaveFormat.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/NAudio/WaveFormat.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/NAudio/WdlResampler.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/NAudio/WdlResampler.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/BaseClient.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/BaseClient.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/BaseClientCollection.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/BaseClientCollection.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/BaseCommsNetwork.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/BaseCommsNetwork.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/BaseServer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/BaseServer.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ChannelBitField.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ChannelBitField.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/ChannelCollection.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/ChannelCollection.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/ClientStatus.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/ClientStatus.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/CommsProcessor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/CommsProcessor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/ConnectionNegotiator.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/ConnectionNegotiator.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/EventQueue.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/EventQueue.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/IClient.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/IClient.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/OpenChannel.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/OpenChannel.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/PacketDelaySimulator.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/PacketDelaySimulator.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/PacketRouter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/PacketRouter.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/PeerCollection.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/PeerCollection.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/PeerVoiceReceiver.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/PeerVoiceReceiver.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/RoomMembershipManager.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/RoomMembershipManager.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/SendQueue.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/SendQueue.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/SlaveClientCollection.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/SlaveClientCollection.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/TextReceiver.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/TextReceiver.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/TextSender.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/TextSender.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/VoicePacketOptions.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/VoicePacketOptions.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/VoiceReceiver.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/VoiceReceiver.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/VoiceSender.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Client/VoiceSender.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ClientIdCollection.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ClientIdCollection.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ClientInfo.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ClientInfo.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ICommsNetwork.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ICommsNetwork.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ICommsNetworkState.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ICommsNetworkState.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/MessageTypes.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/MessageTypes.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/PacketReader.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/PacketReader.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/PacketWriter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/PacketWriter.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ReceivingState.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/ReceivingState.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/RoomClientsCollection.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/RoomClientsCollection.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/RoutingTable.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/RoutingTable.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/Admin.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/ClientCollection.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/ClientCollection.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/IServer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/IServer.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/MasterClientCollection.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/MasterClientCollection.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/PacketRouter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/PacketRouter.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/ServerRelay.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/ServerRelay.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/ServerState.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/Server/ServerState.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/TextPacket.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/TextPacket.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/TrafficCounter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Networking/TrafficCounter.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/PacketLossMonitor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/PacketLossMonitor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/PlaybackPool.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/PlaybackPool.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/PlayerCollection.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/PlayerCollection.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/PlayerTrackerManager.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/PlayerTrackerManager.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/RoomIdConversion.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/RoomIdConversion.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Rooms.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Rooms.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/SemanticVersion.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/SemanticVersion.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/TextChat.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/TextChat.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Threading.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Threading/DThread.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Threading/DThread.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Threading/LockedValue.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Threading/LockedValue.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Threading/SpinLock.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Threading/SpinLock.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/TokenSet.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/TokenSet.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Unit.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/Unit.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VAD.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VAD/IVoiceActivationListener.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VAD/IVoiceActivationListener.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VAD/IVoiceDetector.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VAD/IVoiceDetector.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VAD/VadDebugUI.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VAD/VadDebugUI.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VAD/WebRtcVoiceDetector.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VAD/WebRtcVoiceDetector.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VoicePlayerState.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VoicePlayerState.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VolumeFaderSettings.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Core/VolumeFaderSettings.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Body.prefab" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Body.prefab.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/ChatInputController.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/ChatInputController.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/ChatLogController.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/ChatLogController.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/DemoWorld.prefab" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/DemoWorld.prefab.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/GroundMaterial.mat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/GroundMaterial.mat.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Logo.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Logo.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/PlayerMaterial.mat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/PlayerMaterial.mat.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/ChatBox.prefab" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/ChatBox.prefab.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/IndicatorBallMaterial.mat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/IndicatorBallMaterial.mat.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/LogTextPrototype.prefab" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/LogTextPrototype.prefab.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/Plane.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/Plane.png.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/SpeechIndicator.prefab" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/SpeechIndicator.prefab.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/TriggerEdgeMaterial.mat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/TriggerEdgeMaterial.mat.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/TriggerMaterial.mat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Resources/TriggerMaterial.mat.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/SpeakerIndicator.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/SpeakerIndicator.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/ToggleInvertMute.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/ToggleInvertMute.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/TriggerVisualizer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/TriggerVisualizer.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Visor.prefab" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/Visor.prefab.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/VisorMaterial.mat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Demo/VisorMaterial.mat.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/DissonanceComms.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/DissonanceComms.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/DissonanceVersion.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/DissonanceVersion.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/DissonanceVoip.asmdef" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/DissonanceVoip.asmdef.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/BaseDissonnanceCommsNetworkEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/BaseDissonnanceCommsNetworkEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/BaseIMicrophoneCaptureEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/BaseIMicrophoneCaptureEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/BasicMicrophoneCaptureEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/BasicMicrophoneCaptureEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/ChatRoomSettingsEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/ChatRoomSettingsEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/DebugSettingsEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/DebugSettingsEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/DissonanceAecFilterInspector.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/DissonanceAecFilterInspector.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/DissonanceCommsEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/DissonanceCommsEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/DissonancePlayerEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/DissonancePlayerEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/DissonanceVoipEditor.asmdef" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/DissonanceVoipEditor.asmdef.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/SamplePlaybackComponentEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/SamplePlaybackComponentEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/TokenControl.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/TokenControl.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/UndoHelper.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/UndoHelper.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/VUMeter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/VUMeter.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/VoiceBroadcastTriggerEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/VoiceBroadcastTriggerEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/VoicePlaybackEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/VoicePlaybackEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/VoiceReceiptTriggerEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/VoiceReceiptTriggerEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/VoiceSettingsEditor.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/VoiceSettingsEditor.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Welcome.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Welcome/IntegrationMetadata.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Welcome/IntegrationMetadata.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Welcome/WelcomeLauncher.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Welcome/WelcomeLauncher.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Welcome/WelcomeWindow.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Welcome/WelcomeWindow.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/BaseDissonanceEditorWindow.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/BaseDissonanceEditorWindow.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/EditorMetadata.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/EditorMetadata.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/MenuSetup.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/MenuSetup.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/SemanticVersion.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/SemanticVersion.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Startup.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Startup.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Update.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Update/UpdateLauncher.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Update/UpdateLauncher.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Update/UpdateWindow.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Update/UpdateWindow.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Welcome.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Welcome/IntegrationMetadata.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Welcome/IntegrationMetadata.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Welcome/WelcomeLauncher.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Welcome/WelcomeLauncher.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Welcome/WelcomeState.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Welcome/WelcomeState.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Welcome/WelcomeWindow.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Editor/Windows/Welcome/WelcomeWindow.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/ARM64.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/ARM64/libAudioPluginDissonance.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/ARM64/libAudioPluginDissonance.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/ARM64/libopus.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/ARM64/libopus.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/armeabi-v7a.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/armeabi-v7a/libAudioPluginDissonance.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/armeabi-v7a/libAudioPluginDissonance.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/armeabi-v7a/libopus.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/armeabi-v7a/libopus.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/x86.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/x86/libAudioPluginDissonance.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/x86/libAudioPluginDissonance.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/x86/libopus.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Android/libs/x86/libopus.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Magic Leap.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Magic Leap/libAudioPluginDissonance.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/Magic Leap/libAudioPluginDissonance.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/ARM.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/ARM/AudioPluginDissonance.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/ARM/AudioPluginDissonance.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/ARM/opus.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/ARM/opus.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/ARM64.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/ARM64/AudioPluginDissonance.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/ARM64/AudioPluginDissonance.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/ARM64/opus.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/ARM64/opus.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/x86.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/x86/AudioPluginDissonance.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/x86/AudioPluginDissonance.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/x86/opus.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/x86/opus.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/x86_64.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/x86_64/AudioPluginDissonance.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/x86_64/AudioPluginDissonance.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/x86_64/opus.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/UWP/x86_64/opus.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/iOS.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/iOS/libAudioPluginDissonance.a" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/iOS/libAudioPluginDissonance.a.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/iOS/libopus.a" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/iOS/libopus.a.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/macOS.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/macOS/AudioPluginDissonance.bundle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/macOS/AudioPluginDissonance.bundle.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/macOS/opus.bundle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/macOS/opus.bundle.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86/AudioPluginDissonance.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86/AudioPluginDissonance.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86/libAudioPluginDissonance.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86/libAudioPluginDissonance.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86/libopus.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86/libopus.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86/opus.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86/opus.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86_64.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86_64/AudioPluginDissonance.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86_64/AudioPluginDissonance.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86_64/libAudioPluginDissonance.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86_64/libAudioPluginDissonance.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86_64/libopus.so" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86_64/libopus.so.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86_64/opus.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Plugins/x86_64/opus.dll.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/.WelcomeState.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/ChatRoomSettings.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/ChatRoomSettings.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/DebugSettings.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/DebugSettings.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/DissonanceRootPath.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/DissonanceRootPath.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/Dissonance_Large_Icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/Dissonance_Large_Icon.png.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/PlaybackPrefab.prefab" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/PlaybackPrefab.prefab.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/SpatializedPlaybackPrefab.prefab" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/SpatializedPlaybackPrefab.prefab.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/VoiceSettings.asset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/VoiceSettings.asset.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/dissonance_logo.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/Resources/dissonance_logo.png.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/VoiceBroadcastTrigger.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/VoiceBroadcastTrigger.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/VoiceReceiptTrigger.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Dissonance/VoiceReceiptTrigger.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Sirenix/Assemblies/Sirenix.OdinInspector.Editor.dll" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Plugins/Sirenix/Assemblies/Sirenix.OdinInspector.Editor.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Sirenix/Demos/Custom Attribute Processors.unitypackage.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Sirenix/Demos/Custom Drawers.unitypackage.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Sirenix/Demos/Editor Windows.unitypackage.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Plugins/Sirenix/Demos/Sample - RPG Editor.unitypackage.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/DOTweenSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/DOTweenSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Black.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Black.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Christmas_tree/Balls2noel.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Christmas_tree/Balls2noel.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Christmas_tree/Gift.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Christmas_tree/Gift.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Christmas_tree/Star.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Christmas_tree/Star.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Christmas_tree/Tree.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Christmas_tree/Tree.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Color.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Color.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Door/Door_exit.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Door/Door_exit.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Door/Door_interior.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Door/Door_interior.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Door/Door_wood.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Door/Door_wood.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/ErrorBuild.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/ErrorBuild.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Fish.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Fish.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Fridge.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Fridge.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Furniture_1_Door.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Furniture_1_Door.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Grass.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Grass.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Grillage.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Grillage.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Carpet.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Carpet.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Carpet1x1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Carpet1x1.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Concrete1x1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Concrete1x1.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Floor-tile.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Floor-tile.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Floor_tile_2.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Floor_tile_2.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Floor_tile_3.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Floor_tile_3.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Floor_tile_4.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Floor_tile_4.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Parquet2.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/Parquet2.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/parquet.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Ground/parquet.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Gutter_round.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Gutter_round.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Image.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Image.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Light/White Light.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Light/White Light.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/MainMenuDecor.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/MainMenuDecor.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/NotBuilt.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/NotBuilt.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Particle/Particle.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Particle/Particle.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Personnage/Default_Cloth.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Personnage/Default_Cloth.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Personnage/Pant.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Personnage/Pant.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Personnage/Skin.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Personnage/Skin.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Personnage/Top.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Personnage/Top.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Personnage/eye_mouth.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Personnage/eye_mouth.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/A changer.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/A changer.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Affiches/Affiche_1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Affiches/Affiche_1.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Affiches/Affiche_2.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Affiches/Affiche_2.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Ap_panel.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Ap_panel.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Bed/Bed_duvet.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Bed/Bed_duvet.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Bed/Bed_duvet_cover.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Bed/Bed_duvet_cover.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Bed/Bed_feets.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Bed/Bed_feets.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Bed/Bed_mattress.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Bed/Bed_mattress.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Bed/Bed_pillow.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Bed/Bed_pillow.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Coffee_table.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Coffee_table.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Color_props.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Color_props.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Container.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Container.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Cooking_plate.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Cooking_plate.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Desk_admin.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Desk_admin.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Dispenser_drink.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Dispenser_drink.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Dispenser_food.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Dispenser_food.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Elevator.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Elevator.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Furnace.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Furnace.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Furnitur_drawer.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Furnitur_drawer.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Furniture_door.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Furniture_door.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Furnitures_1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Furnitures_1.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Hood.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Hood.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Household.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Household.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Kitchen/Emissive.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Kitchen/Emissive.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Kitchen/Kitchen_electronics.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Kitchen/Kitchen_electronics.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Kitchen/Kitchen_furnitures.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Kitchen/Kitchen_furnitures.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Kitchen/Kitchen_trash_furnace.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Kitchen/Kitchen_trash_furnace.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Laundry.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Laundry.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Batiment1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Batiment1.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Food_hall.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Food_hall.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Grille_residence.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Grille_residence.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Hall_residence.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Hall_residence.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Road_props 1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Road_props 1.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Road_props.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Map/Road_props.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Metal.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Metal.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Package.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Package.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Plastic_Black.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Plastic_Black.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Plastic_White.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Plastic_White.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Pontoon.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Pontoon.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Screen.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Screen.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Set_bathroom.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Set_bathroom.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Shelf.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Shelf.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Sofa1/Fabric.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Sofa1/Fabric.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Sofa1/feet.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Sofa1/feet.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Table_4p.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Table_4p.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Wall_shower.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Wall_shower.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Water_pillow.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Water_pillow.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Window.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Window.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Working_props.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/Working_props.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/books/Blue.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/books/Blue.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/books/Green.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/books/Green.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/books/Red.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/books/Red.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/electricity.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/electricity.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/music_radio/Music_radio.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/music_radio/Music_radio.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/music_radio/face.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/music_radio/face.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/props_ext.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/props_ext.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/washing_machine/Hublot.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/washing_machine/Hublot.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Props/washing_machine/Structure_WM.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Props/washing_machine/Structure_WM.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Reflection_window.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Reflection_window.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Struture.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Struture.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Sub Game/Background/Dream Background.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Sub Game/Background/Dream Background.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Terrain/Leaves.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Terrain/Leaves.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Terrain/New Material 1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Terrain/New Material 1.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Terrain/New Material.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Terrain/New Material.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Terrain/Road.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Terrain/Road.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Terrain/Trunk.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Terrain/Trunk.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Transparent orange.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Transparent orange.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Transparent.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Transparent.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/UnderConstruction.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/UnderConstruction.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Batiment2.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Batiment2.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Shop2.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Shop2.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/SimpleColor.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/SimpleColor.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wall_Empty.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wall_Empty.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_Black_band.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_Black_band.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_Geometry1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_Geometry1.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_Geometry2.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_Geometry2.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_Leaves.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_Leaves.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_Leaves_2.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_Leaves_2.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_baker.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_baker.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_black_point.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_black_point.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_eyes.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_eyes.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_little_trees.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_little_trees.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_losanges.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_losanges.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_losanges_small.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_losanges_small.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_retro.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/WP_retro.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/Wallpaper_baroc1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wallpapers/Wallpaper_baroc1.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Warehouse.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Warehouse.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wood.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wall Materials/Wood.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/White.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/White.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/Wood.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/Wood.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/grillage 1.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/grillage 1.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/lattes.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/lattes.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Materials/sea.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Materials/sea.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Sprites/Communication/_ubble_chat.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Sprites/Communication/_ubble_chat.png.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Sprites/Dreams/Leap Sheep/Sheep_V2.psb.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Sprites/Dreams/Leap Sheep/Sheep_V2.psb.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Sprites/Dreams/Leap Sheep/Sheep_sprite.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Sprites/Dreams/Leap Sheep/Sheep_sprite.png.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Sprites/Dreams/Leap Sheep/background.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Sprites/Dreams/Leap Sheep/background.png.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Sprites/Loader/_oading.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Sprites/Loader/_oading.png.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Sprites/Main Menu/Circle Button.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Sprites/Main Menu/Circle Button.png.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Sprites/Smartphone/Applications/Shop/Circle.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Sprites/Smartphone/Applications/Shop/Circle.png.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/Sprites/Smartphone/Applications/Shop/sent.png.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/Sprites/Smartphone/Applications/Shop/sent.png.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Settings/ForwardRenderer.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/ForwardRenderer.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Settings/UniversalRP-HighQuality.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/UniversalRP-HighQuality.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Settings/UniversalRP-LowQuality.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/UniversalRP-LowQuality.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Settings/UniversalRP-MediumQuality.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Settings/UniversalRP-MediumQuality.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/TextMesh Pro.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/TextMesh Pro.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Packages/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/manifest.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Packages/packages-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/packages-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/GraphicsSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/GraphicsSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectVersion.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectVersion.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/URPProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/URPProjectSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UserSettings/EditorUserSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/UserSettings/EditorUserSettings.asset" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 2,
+  "fromUser": false
+}]]></component>
+  <component name="ProjectId" id="3D22SwtKJ2UZEVatUO4zwcrIyvb" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "cidr.known.project.marker": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "develop",
+    "ignore.virus.scanning.warn.message": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="05909381-6a7c-4de6-9b2c-6ff86c693776" name="Changes" comment="" />
+      <created>1777465847409</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1777465847409</updated>
+      <workItem from="1777465851086" duration="48000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
+  <component name="UnityProjectDiscoverer">
+    <option name="unityProjectFolder" value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.OperationCanceledException" breakIfHandledByOtherCode="false" displayValue="System.OperationCanceledException" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.Threading.Tasks.TaskCanceledException" breakIfHandledByOtherCode="false" displayValue="System.Threading.Tasks.TaskCanceledException" />
+          <option name="timeStamp" value="2" />
+        </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.Threading.ThreadAbortException" breakIfHandledByOtherCode="false" displayValue="System.Threading.ThreadAbortException" />
+          <option name="timeStamp" value="3" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

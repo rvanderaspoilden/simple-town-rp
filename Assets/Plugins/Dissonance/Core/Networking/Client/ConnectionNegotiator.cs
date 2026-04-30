@@ -28,11 +28,12 @@ namespace Dissonance.Networking.Client
         private bool _running;
 
         private int _connectionStateValue = (int)ConnectionState.None;
-        public ConnectionState State { get { return (ConnectionState)_connectionStateValue; } }
+        public ConnectionState State => (ConnectionState)_connectionStateValue;
 
         public uint SessionId { get; private set; }
         public ushort? LocalId { get; private set; }
-        public string LocalName { get { return _playerName; } }
+        public string LocalName => _playerName;
+
         #endregion
 
         public ConnectionNegotiator([NotNull] ISendQueue<TPeer> sender, string playerName, CodecSettings codecSettings)
@@ -44,9 +45,7 @@ namespace Dissonance.Networking.Client
 
         public void ReceiveHandshakeResponseHeader(ref PacketReader reader)
         {
-            uint session;
-            ushort myId;
-            reader.ReadHandshakeResponseHeader(out session, out myId);
+            reader.ReadHandshakeResponseHeader(out var session, out var myId);
 
             //Save local client info as assigned by the server
             SessionId = session;

@@ -10,9 +10,15 @@ namespace Dissonance
     // ReSharper disable once InheritdocConsiderUsage
     [HelpURL("https://placeholder-software.co.uk/dissonance/docs/Reference/Components/Voice-Receipt-Trigger/")]
     public class VoiceReceiptTrigger
-        : BaseCommsTrigger
+        : BaseCommsTrigger, IVoiceReceiptTrigger
     {
         #region fields and properties
+#pragma warning disable CS0414
+        [SerializeField] private bool _roomExpanded = true;
+        [SerializeField] private bool _tokensExpanded = false;
+        [SerializeField] private bool _colliderExpanded = false;
+#pragma warning restore CS0414
+
         private RoomMembership? _membership;
 
         [SerializeField]private string _roomName;
@@ -21,7 +27,7 @@ namespace Dissonance
         /// </summary>
         public string RoomName
         {
-            get { return _roomName; }
+            get => _roomName;
             set
             {
                 if (_roomName != value)
@@ -42,8 +48,8 @@ namespace Dissonance
         /// </summary>
         public override bool UseColliderTrigger
         {
-            get { return _useTrigger; }
-            set { _useTrigger = value; }
+            get => _useTrigger;
+            set => _useTrigger = value;
         }
 
         /// <inheritdoc />
@@ -106,7 +112,7 @@ namespace Dissonance
         private void JoinRoom()
         {
             if (!_membership.HasValue)
-                _membership = Comms.Rooms.Join(RoomName);
+                _membership = Comms.Rooms.Join(new RoomName(RoomName));
         }
 
         private void LeaveRoom()

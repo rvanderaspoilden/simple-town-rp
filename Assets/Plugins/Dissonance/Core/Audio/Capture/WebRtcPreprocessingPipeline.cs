@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using Dissonance.Config;
 using NAudio.Wave;
 using Dissonance.Threading;
 using JetBrains.Annotations;
+using UnityEngine;
 
 namespace Dissonance.Audio.Capture
 {
@@ -13,25 +13,20 @@ namespace Dissonance.Audio.Capture
         : BasePreprocessingPipeline
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Recording, typeof(WebRtcPreprocessingPipeline).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Recording, nameof(WebRtcPreprocessingPipeline));
 
         private bool _isVadDetectingSpeech;
-        protected override bool VadIsSpeechDetected
-        {
-            get { return _isVadDetectingSpeech; }
-        }
+        protected override bool VadIsSpeechDetected => _isVadDetectingSpeech;
 
         private readonly bool _isMobilePlatform;
 
         private WebRtcPreprocessor _preprocessor;
+        private RnnoisePreprocessor _rnnoise;
 
         private bool _isOutputMuted;
         public override bool IsOutputMuted
         {
-            set
-            {
-                _isOutputMuted = value;
-            }
+            set => _isOutputMuted = value;
         }
         #endregion
 
@@ -46,6 +41,7 @@ namespace Dissonance.Audio.Capture
         protected override void ThreadStart()
         {
             _preprocessor = new WebRtcPreprocessor(_isMobilePlatform);
+            _rnnoise = new RnnoisePreprocessor();
 
             base.ThreadStart();
         }
@@ -54,14 +50,14 @@ namespace Dissonance.Audio.Capture
         {
             base.Dispose();
 
-            if (_preprocessor != null)
-                _preprocessor.Dispose();
+            _preprocessor?.Dispose();
+            _rnnoise?.Dispose();
         }
 
         protected override void ApplyReset()
         {
-            if (_preprocessor != null)
-                _preprocessor.Reset();
+            _preprocessor?.Reset();
+            _rnnoise?.Reset();
 
             base.ApplyReset();
         }
@@ -74,117 +70,31 @@ namespace Dissonance.Audio.Capture
             var playbackLatencyMs = (int)(1000 * ((float)config.dspBufferSize / config.sampleRate));
             var latencyMs = captureLatencyMs + playbackLatencyMs;
 
-            _isVadDetectingSpeech = _preprocessor.Process(WebRtcPreprocessor.SampleRates.SampleRate48KHz, frame, frame, latencyMs, _isOutputMuted);
+            // Process through rnnoise to remove background sounds
+            _rnnoise.Process(AudioPluginDissonanceNative.SampleRates.SampleRate48KHz, frame, frame);
+
+            // Process through webrtc to do the rest of the audio processing
+            _isVadDetectingSpeech = _preprocessor.Process(AudioPluginDissonanceNative.SampleRates.SampleRate48KHz, frame, frame, latencyMs, _isOutputMuted);
 
             SendSamplesToSubscribers(frame);
         }
 
-        internal static WebRtcPreprocessor.FilterState GetAecFilterState()
+        internal static AudioPluginDissonanceNative.FilterState GetAecFilterState()
         {
-            return (WebRtcPreprocessor.FilterState)WebRtcPreprocessor.Dissonance_GetFilterState();
+            return (AudioPluginDissonanceNative.FilterState)AudioPluginDissonanceNative.Dissonance_GetFilterState();
+        }
+
+        internal int GetBackgroundNoiseRemovalGains(float[] output)
+        {
+            var r = _rnnoise;
+            if (r != null)
+                return r.GetGains(output);
+            return 0;
         }
 
         internal sealed class WebRtcPreprocessor
             : IDisposable
         {
-            #region native methods
-
-#if UNITY_IOS && !UNITY_EDITOR
-            private const string ImportString = "__Internal";
-            private const CallingConvention Convention = default(CallingConvention);
-#else
-            private const string ImportString = "AudioPluginDissonance";
-            private const CallingConvention Convention = CallingConvention.Cdecl;
-#endif
-
-            [DllImport(ImportString, CallingConvention = Convention)]
-            private static extern IntPtr Dissonance_CreatePreprocessor(
-                NoiseSuppressionLevels nsLevel,
-                AecSuppressionLevels aecLevel, bool aecDelayAgnostic, bool aecExtended, bool aecRefined,
-                AecmRoutingMode aecmRoutingMode, bool aecmComfortNoise
-            );
-
-            [DllImport(ImportString, CallingConvention = Convention)]
-            private static extern void Dissonance_DestroyPreprocessor(IntPtr handle);
-
-            [DllImport(ImportString, CallingConvention = Convention)]
-            private static extern void Dissonance_ConfigureNoiseSuppression(IntPtr handle, NoiseSuppressionLevels nsLevel);
-
-            [DllImport(ImportString, CallingConvention = Convention)]
-            private static extern void Dissonance_ConfigureVadSensitivity(IntPtr handle, VadSensitivityLevels nsLevel);
-
-            [DllImport(ImportString, CallingConvention = Convention)]
-            private static extern void Dissonance_ConfigureAecSuppression(IntPtr handle, AecSuppressionLevels aecLevel, AecmRoutingMode aecmRouting);
-
-            [DllImport(ImportString, CallingConvention = Convention)]
-            private static extern bool Dissonance_GetVadSpeechState(IntPtr handle);
-
-            [DllImport(ImportString, CallingConvention = Convention)]
-            private static extern ProcessorErrors Dissonance_PreprocessCaptureFrame(IntPtr handle, int sampleRate, float[] input, float[] output, int streamDelay);
-
-            [DllImport(ImportString, CallingConvention = Convention)]
-            private static extern bool Dissonance_PreprocessorExchangeInstance(IntPtr previous, IntPtr replacement);
-
-            [DllImport(ImportString, CallingConvention = Convention)]
-            internal static extern int Dissonance_GetFilterState();
-
-            [DllImport(ImportString, CallingConvention = Convention)]
-            private static extern void Dissonance_GetAecMetrics(IntPtr floatBuffer, int bufferLength);
-
-#if (UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_EDITOR_LINUX || UNITY_STANDALONE_LINUX || UNITY_ANDROID || UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_WSA)
-            [DllImport(ImportString, CallingConvention = Convention)]
-            private static extern void Dissonance_SetAgcIsOutputMutedState(IntPtr handle, bool isMuted);
-#else
-            private static bool _setAgcMutedStatePlatformWarningSent;
-            private static void Dissonance_SetAgcIsOutputMutedState(IntPtr handle, bool isMuted)
-            {
-                if (!_setAgcMutedStatePlatformWarningSent)
-                    Log.Debug("`Dissonance_SetAgcIsOutputMutedState` is not available on this platform");
-                _setAgcMutedStatePlatformWarningSent = true;
-            }
-#endif
-
-            public enum SampleRates
-            {
-                // ReSharper disable UnusedMember.Local
-                SampleRate8KHz = 8000,
-                SampleRate16KHz = 16000,
-                SampleRate32KHz = 32000,
-                SampleRate48KHz = 48000,
-                // ReSharper restore UnusedMember.Local
-            }
-
-            private enum ProcessorErrors
-            {
-                // ReSharper disable UnusedMember.Local
-                Ok,
-
-                Unspecified = -1,
-                CreationFailed = -2,
-                UnsupportedComponent = -3,
-                UnsupportedFunction = -4,
-                NullPointer = -5,
-                BadParameter = -6,
-                BadSampleRate = -7,
-                BadDataLength = -8,
-                BadNumberChannels = -9,
-                FileError = -10,
-                StreamParameterNotSet = -11,
-                NotEnabled = -12,
-                // ReSharper restore UnusedMember.Local
-            }
-
-            internal enum FilterState
-            {
-                // ReSharper disable UnusedMember.Local
-                FilterNotRunning,
-                FilterNoInstance,
-                FilterNoSamplesSubmitted,
-                FilterOk
-                // ReSharper restore UnusedMember.Local
-            }
-            #endregion
-
             #region properties and fields
             private readonly LockedValue<IntPtr> _handle;
 
@@ -202,13 +112,13 @@ namespace Dissonance.Audio.Capture
                     {
                         //Lumin (magic leap) has built in noise suppression applied to the mic signal before we even get it. This disables the Dissonance Noise suppressor.
                         #if PLATFORM_LUMIN && !UNITY_EDITOR
-                        _nsLevel = NoiseSuppressionLevels.Disabled;
-                        Log.Debug("`NoiseSuppressionLevel` was set to `{0}` but PLATFORM_LUMIN is defined, overriding to `Disabled`");
+                            _nsLevel = NoiseSuppressionLevels.Disabled;
+                            Log.Debug("`NoiseSuppressionLevel` was set to `{0}` but PLATFORM_LUMIN is defined, overriding to `Disabled`");
+                        #else
+                            _nsLevel = value;
+                            if (handle.Value != IntPtr.Zero)
+                                AudioPluginDissonanceNative.Dissonance_ConfigureNoiseSuppression(handle.Value, _nsLevel);
                         #endif
-
-                        _nsLevel = value;
-                        if (handle.Value != IntPtr.Zero)
-                            Dissonance_ConfigureNoiseSuppression(handle.Value, _nsLevel);
                     }
                 }
             }
@@ -216,14 +126,14 @@ namespace Dissonance.Audio.Capture
             private VadSensitivityLevels _vadlevel;
             private VadSensitivityLevels VadSensitivityLevel
             {
-                get { return _vadlevel; }
+                get => _vadlevel;
                 set
                 {
                     using (var handle = _handle.Lock())
                     {
                         _vadlevel = value;
                         if (handle.Value != IntPtr.Zero)
-                            Dissonance_ConfigureVadSensitivity(handle.Value, _vadlevel);
+                            AudioPluginDissonanceNative.Dissonance_ConfigureVadSensitivity(handle.Value, _vadlevel);
                     }
                 }
             }
@@ -236,19 +146,19 @@ namespace Dissonance.Audio.Capture
                 {
                     using (var handle = _handle.Lock())
                     {
-                        //Lumin (magic leap) has built in AEC applied to the mic signal before we even get it. This disables the Dissonance AEC. Technically this is the desktop AEC so it shouldn't even be running
-                        //on the magic leap anyway.
+                        // Lumin (magic leap) has built in AEC applied to the mic signal before we even get it. This disables the Dissonance AEC.
+                        // Technically this is the desktop AEC so it shouldn't even be running on the magic leap anyway.
                         #if PLATFORM_LUMIN && !UNITY_EDITOR
-                        value = AecSuppressionLevels.Disabled;
-                        Log.Debug("`AecSuppressionLevel` was set to `{0}` but PLATFORM_LUMIN is defined, overriding to `Disabled`");
+                            value = AecSuppressionLevels.Disabled;
+                            Log.Debug("`AecSuppressionLevel` was set to `{0}` but PLATFORM_LUMIN is defined, overriding to `Disabled`");
+                        #else
+                            _aecLevel = value;
+                            if (!_useMobileAec)
+                            {
+                                if (handle.Value != IntPtr.Zero)
+                                    AudioPluginDissonanceNative.Dissonance_ConfigureAecSuppression(handle.Value, _aecLevel, AecmRoutingMode.Disabled);
+                            }
                         #endif
-
-                        _aecLevel = value;
-                        if (!_useMobileAec)
-                        {
-                            if (handle.Value != IntPtr.Zero)
-                                Dissonance_ConfigureAecSuppression(handle.Value, _aecLevel, AecmRoutingMode.Disabled);
-                        }
                     }
                 }
             }
@@ -263,16 +173,16 @@ namespace Dissonance.Audio.Capture
                     {
                         //Lumin (magic leap) has built in AEC applied to the mic signal before we even get it. This disables the Dissonance AECM.
                         #if PLATFORM_LUMIN && !UNITY_EDITOR
-                        value = AecmRoutingMode.Disabled;
-                        Log.Debug("`AecmSuppressionLevel` was set to `{0}` but PLATFORM_LUMIN is defined, overriding to `Disabled`");
+                            value = AecmRoutingMode.Disabled;
+                            Log.Debug("`AecmSuppressionLevel` was set to `{0}` but PLATFORM_LUMIN is defined, overriding to `Disabled`");
+                        #else
+                            _aecmLevel = value;
+                            if (_useMobileAec)
+                            {
+                                if (handle.Value != IntPtr.Zero)
+                                    AudioPluginDissonanceNative.Dissonance_ConfigureAecSuppression(handle.Value, AecSuppressionLevels.Disabled, _aecmLevel);
+                            }
                         #endif
-
-                        _aecmLevel = value;
-                        if (_useMobileAec)
-                        {
-                            if (handle.Value != IntPtr.Zero)
-                                Dissonance_ConfigureAecSuppression(handle.Value, AecSuppressionLevels.Disabled, _aecmLevel);
-                        }
                     }
                 }
             }
@@ -286,23 +196,24 @@ namespace Dissonance.Audio.Capture
                 NoiseSuppressionLevel = VoiceSettings.Instance.DenoiseAmount;
                 AecSuppressionLevel = VoiceSettings.Instance.AecSuppressionAmount;
                 AecmSuppressionLevel = VoiceSettings.Instance.AecmRoutingMode;
+                VadSensitivityLevel = VoiceSettings.Instance.VadSensitivity;
             }
 
-            public bool Process(SampleRates inputSampleRate, float[] input, float[] output, int estimatedStreamDelay, bool isOutputMuted)
+            public bool Process(AudioPluginDissonanceNative.SampleRates inputSampleRate, float[] input, float[] output, int estimatedStreamDelay, bool isOutputMuted)
             {
                 using (var handle = _handle.Lock())
                 {
                     if (handle.Value == IntPtr.Zero)
                         throw Log.CreatePossibleBugException("Attempted  to access a null WebRtc Preprocessor encoder", "5C97EF6A-353B-4B96-871F-1073746B5708");
 
-                    Dissonance_SetAgcIsOutputMutedState(handle.Value, isOutputMuted);
+                    AudioPluginDissonanceNative.Dissonance_SetAgcIsOutputMutedState(handle.Value, isOutputMuted);
                     Log.Trace("Set IsOutputMuted to `{0}`", isOutputMuted);
 
-                    var result = Dissonance_PreprocessCaptureFrame(handle.Value, (int)inputSampleRate, input, output, estimatedStreamDelay);
-                    if (result != ProcessorErrors.Ok)
-                        throw Log.CreatePossibleBugException(string.Format("Preprocessor error: '{0}'", result), "0A89A5E7-F527-4856-BA01-5A19578C6D88");
+                    var result = AudioPluginDissonanceNative.Dissonance_PreprocessCaptureFrame(handle.Value, (int)inputSampleRate, input, output, estimatedStreamDelay);
+                    if (result != AudioPluginDissonanceNative.ProcessorErrors.Ok)
+                        throw Log.CreatePossibleBugException($"Preprocessor error: '{result}'", "0A89A5E7-F527-4856-BA01-5A19578C6D88");
 
-                    return Dissonance_GetVadSpeechState(handle.Value);
+                    return AudioPluginDissonanceNative.Dissonance_GetVadSpeechState(handle.Value);
                 }
             }
 
@@ -318,7 +229,7 @@ namespace Dissonance.Audio.Capture
                         ClearFilterPreprocessor();
 
                         //Destroy it
-                        Dissonance_DestroyPreprocessor(handle.Value);
+                        AudioPluginDissonanceNative.Dissonance_DestroyPreprocessor(handle.Value);
                         handle.Value = IntPtr.Zero;
                     }
 
@@ -353,7 +264,7 @@ namespace Dissonance.Audio.Capture
                     instance.AecmComfortNoise
                 );
 
-                return Dissonance_CreatePreprocessor(
+                var handle = AudioPluginDissonanceNative.Dissonance_CreatePreprocessor(
                     NoiseSuppressionLevel,
                     pcLevel,
                     instance.AecDelayAgnostic,
@@ -362,6 +273,10 @@ namespace Dissonance.Audio.Capture
                     mobLevel,
                     instance.AecmComfortNoise
                 );
+
+                AudioPluginDissonanceNative.Dissonance_ConfigureVadSensitivity(handle, instance.VadSensitivity);
+
+                return handle;
             }
 
             private void SetFilterPreprocessor(IntPtr preprocessor)
@@ -373,18 +288,18 @@ namespace Dissonance.Audio.Capture
 
                     Log.Debug("Exchanging preprocessor instance in playback filter...");
 
-                    if (!Dissonance_PreprocessorExchangeInstance(IntPtr.Zero, handle.Value))
+                    if (!AudioPluginDissonanceNative.Dissonance_PreprocessorExchangeInstance(IntPtr.Zero, handle.Value))
                         throw Log.CreatePossibleBugException("Cannot associate preprocessor with Playback filter - one already exists", "D5862DD2-B44E-4605-8D1C-29DD2C72A70C");
 
                     Log.Debug("...Exchanged preprocessor instance in playback filter");
 
-                    var state = (FilterState)Dissonance_GetFilterState();
-                    if (state == FilterState.FilterNotRunning)
+                    var state = (AudioPluginDissonanceNative.FilterState)AudioPluginDissonanceNative.Dissonance_GetFilterState();
+                    if (state == AudioPluginDissonanceNative.FilterState.FilterNotRunning)
                         Log.Debug("Associated preprocessor with playback filter - but filter is not running");
 
-                    Bind(s => s.DenoiseAmount, "DenoiseAmount", v => NoiseSuppressionLevel = (NoiseSuppressionLevels)v);
-                    Bind(s => s.AecSuppressionAmount, "AecSuppressionAmount", v => AecSuppressionLevel = (AecSuppressionLevels)v);
-                    Bind(s => s.AecmRoutingMode, "AecmRoutingMode", v => AecmSuppressionLevel = (AecmRoutingMode)v);
+                    Bind(s => s.DenoiseAmount, "DenoiseAmount", v => NoiseSuppressionLevel = v);
+                    Bind(s => s.AecSuppressionAmount, "AecSuppressionAmount", v => AecSuppressionLevel = v);
+                    Bind(s => s.AecmRoutingMode, "AecmRoutingMode", v => AecmSuppressionLevel = v);
                     Bind(s => s.VadSensitivity, "VadSensitivity", v => VadSensitivityLevel = v);
                 }
             }
@@ -417,7 +332,7 @@ namespace Dissonance.Audio.Capture
                     Log.Debug("Clearing preprocessor instance in playback filter...");
 
                     //Clear binding in native code
-                    if (!Dissonance_PreprocessorExchangeInstance(handle.Value, IntPtr.Zero))
+                    if (!AudioPluginDissonanceNative.Dissonance_PreprocessorExchangeInstance(handle.Value, IntPtr.Zero))
                     {
                         if (throwOnError)
                             throw Log.CreatePossibleBugException("Cannot clear preprocessor from Playback filter. Editor restart required!", "6323106A-04BD-4217-9ECA-6FD49BF04FF0");
@@ -447,7 +362,7 @@ namespace Dissonance.Audio.Capture
                     {
                         ClearFilterPreprocessor(throwOnError: false);
 
-                        Dissonance_DestroyPreprocessor(handle.Value);
+                        AudioPluginDissonanceNative.Dissonance_DestroyPreprocessor(handle.Value);
                         handle.Value = IntPtr.Zero;
                     }
                 }
@@ -460,6 +375,165 @@ namespace Dissonance.Audio.Capture
             }
 
             ~WebRtcPreprocessor()
+            {
+                ReleaseUnmanagedResources();
+            }
+            #endregion
+        }
+
+        internal sealed class RnnoisePreprocessor
+            : IDisposable
+        {
+            private bool _enabled;
+            private bool Enabled
+            {
+                get { return _enabled; }
+                set
+                {
+                    if (_enabled == value)
+                        return;
+
+                    using (var handle = _handle.Lock())
+                    {
+                        if (value)
+                        {
+                            if (handle.Value == IntPtr.Zero)
+                                handle.Value = AudioPluginDissonanceNative.Dissonance_CreateRnnoiseState();
+                        }
+                        else
+                        {
+                            if (handle.Value != IntPtr.Zero)
+                            {
+                                AudioPluginDissonanceNative.Dissonance_DestroyRnnoiseState(handle.Value);
+                                handle.Value = IntPtr.Zero;
+                            }
+                        }
+
+                        //Lumin (magic leap) has built in noise suppression applied to the mic signal before we even get it. This disables the Dissonance Noise suppressor.
+                        #if PLATFORM_LUMIN && !UNITY_EDITOR
+                            _enabled = false;
+                            Log.Debug("`Background Sound Suppression` was set to `{0}` but PLATFORM_LUMIN is defined, overriding to `false`");
+                        #else
+                            _enabled = value;
+                        #endif
+                    }
+                }
+            }
+
+            private float _removalAmount;
+
+            private readonly LockedValue<IntPtr> _handle;
+            private readonly List<PropertyChangedEventHandler> _subscribed = new List<PropertyChangedEventHandler>();
+
+            public RnnoisePreprocessor()
+            {
+                _handle = new LockedValue<IntPtr>(IntPtr.Zero);
+
+                Bind(v => v.BackgroundSoundRemovalEnabled, "BackgroundSoundRemovalEnabled", a => Enabled = a);
+                Bind(v => v.BackgroundSoundRemovalAmount, "BackgroundSoundRemovalAmount", a => _removalAmount = a);
+            }
+
+            private void Bind<T>(Func<VoiceSettings, T> getValue, string propertyName, Action<T> setValue)
+            {
+                var settings = VoiceSettings.Instance;
+
+                //Bind for value changes in the future
+                PropertyChangedEventHandler subbed;
+                settings.PropertyChanged += subbed = (sender, args) => {
+                    if (args.PropertyName == propertyName)
+                        setValue(getValue(settings));
+                };
+
+                //Save this subscription so we can *unsub* later
+                _subscribed.Add(subbed);
+
+                //Invoke immediately to pull the current value
+                subbed.Invoke(settings, new PropertyChangedEventArgs(propertyName));
+            }
+
+            public void Reset()
+            {
+                using (var handle = _handle.Lock())
+                {
+                    Log.Debug("Resetting RnnoisePreprocessor");
+
+                    if (handle.Value != IntPtr.Zero)
+                    {
+                        //Destroy it
+                        AudioPluginDissonanceNative.Dissonance_DestroyRnnoiseState(handle.Value);
+                        handle.Value = IntPtr.Zero;
+                    }
+
+                    //Create a new one
+                    handle.Value = AudioPluginDissonanceNative.Dissonance_CreateRnnoiseState();
+                }
+            }
+
+            public void Process(AudioPluginDissonanceNative.SampleRates inputSampleRate, float[] input, float[] output)
+            {
+                if (Enabled)
+                {
+                    using (var handle = _handle.Lock())
+                    {
+                        if (handle.Value == IntPtr.Zero)
+                            throw Log.CreatePossibleBugException("Attempted to access a null WebRtc Rnnoise", "1014ecad-f1cf-4377-a2cd-31e46df55b08");
+
+                        // Convert removal amount from [0->1] into a decibel value [0, -80]. Then convert that into
+                        // a gain to pass to rnnoise.
+                        // This means the user is effectively working in decibels when they interact with the UI and
+                        // the slider will have a more linear sounding effect.
+                        var db = Mathf.Lerp(0, -80, _removalAmount);
+                        var gain = (float)Math.Pow(10, db / 20);
+                        AudioPluginDissonanceNative.Dissonance_SetMinBandGain(handle.Value, gain);
+
+                        if (!AudioPluginDissonanceNative.Dissonance_RnnoiseProcessFrame(handle.Value, input.Length, (int)inputSampleRate, input, output))
+                            Log.Warn("Dissonance_RnnoiseProcessFrame returned false");
+                    }
+                }
+                else
+                {
+                    if (input != output)
+                        Array.Copy(input, output, input.Length);
+                }
+            }
+
+            public int GetGains(float[] output)
+            {
+                using (var handle = _handle.Lock())
+                {
+                    if (handle.Value == IntPtr.Zero)
+                        return 0;
+
+                    return AudioPluginDissonanceNative.Dissonance_RnnoiseGetGains(handle.Value, output, output.Length);
+                }
+            }
+
+            #region dispose
+            private void ReleaseUnmanagedResources()
+            {
+                using (var handle = _handle.Lock())
+                {
+                    if (handle.Value != IntPtr.Zero)
+                    {
+                        AudioPluginDissonanceNative.Dissonance_DestroyRnnoiseState(handle.Value);
+                        handle.Value = IntPtr.Zero;
+                    }
+                }
+            }
+
+            public void Dispose()
+            {
+                //Clear event handlers from voice settings
+                var settings = VoiceSettings.Instance;
+                for (var i = 0; i < _subscribed.Count; i++)
+                    settings.PropertyChanged -= _subscribed[i];
+                _subscribed.Clear();
+
+                ReleaseUnmanagedResources();
+                GC.SuppressFinalize(this);
+            }
+
+            ~RnnoisePreprocessor()
             {
                 ReleaseUnmanagedResources();
             }

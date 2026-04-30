@@ -6,29 +6,21 @@ namespace Dissonance.Audio.Capture
     internal class SineSampleProvider
         : ISampleProvider
     {
-        private readonly WaveFormat _format;
-        private readonly float _frequency;
         private readonly double _step;
 
         private const double TwoPi = Math.PI * 2;
 
-        public float Frequency
-        {
-            get { return _frequency; }
-        }
+        public float Frequency { get; }
 
-        public WaveFormat WaveFormat
-        {
-            get { return _format; }
-        }
+        public WaveFormat WaveFormat { get; }
 
         private double _index;
 
         public SineSampleProvider(WaveFormat format, float frequency)
         {
-            _format = format;
-            _frequency = frequency;
-            _step = TwoPi * _frequency / _format.SampleRate;
+            WaveFormat = format;
+            Frequency = frequency;
+            _step = TwoPi * Frequency / WaveFormat.SampleRate;
         }
 
         public int Read(float[] buffer, int offset, int count)

@@ -9,17 +9,17 @@ namespace Dissonance
     /// A channel sending voice data to a room. Dispose this struct to close the channel.
     /// </summary>
     /// ReSharper disable once InheritdocConsiderUsage
-    public struct RoomChannel
-        : IChannel<string>, IEquatable<RoomChannel>
+    public readonly struct RoomChannel
+        : IChannel<RoomName>, IEquatable<RoomChannel>
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(RoomChannel).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(RoomChannel));
 
         private readonly ushort _subscriptionId;
-        private readonly string _roomId;
+        private readonly RoomName _roomId;
         private readonly ChannelProperties _properties;
         private readonly RoomChannels _channels;
 
-        internal RoomChannel(ushort subscriptionId, string roomId, RoomChannels channels, ChannelProperties properties)
+        internal RoomChannel(ushort subscriptionId, RoomName roomId, RoomChannels channels, ChannelProperties properties)
         {
             _subscriptionId = subscriptionId;
             _roomId = roomId;
@@ -28,38 +28,25 @@ namespace Dissonance
         }
 
         /// <inheritdoc />
-        public ushort SubscriptionId
-        {
-            get { return _subscriptionId; }
-        }
+        public ushort SubscriptionId => _subscriptionId;
 
         /// <summary>
         /// The name of the room this channel is sending voice data to
         /// </summary>
         /// ReSharper disable once InheritdocConsiderUsage
-        [NotNull] public string TargetId
-        {
-            get { return _roomId; }
-        }
+        [NotNull] public string TargetId => _roomId.Name;
+
+        RoomName IChannel<RoomName>.TargetId => _roomId;
 
         /// <inheritdoc />
-        ChannelProperties IChannel<string>.Properties
-        {
-            get { return _properties; }
-        }
+        ChannelProperties IChannel<RoomName>.Properties => _properties;
 
-        [NotNull] internal ChannelProperties Properties
-        {
-            get { return _properties; }
-        }
+        [NotNull] internal ChannelProperties Properties => _properties;
 
         /// <summary>
         /// Get a value indicating if this channel has been closed
         /// </summary>
-        public bool IsOpen
-        {
-            get { return _channels.Contains(this); }
-        }
+        public bool IsOpen => _channels.Contains(this);
 
         /// <summary>
         /// Gets or sets a value indicating if this channel should be played on other clients with 3D positional audio.
@@ -143,14 +130,14 @@ namespace Dissonance
         {
             if (ReferenceEquals(null, obj))
                 return false;
-            return obj is RoomChannel && Equals((RoomChannel)obj);
+            return obj is RoomChannel channel && Equals(channel);
         }
 
         public override int GetHashCode()
         {
             unchecked
             {
-                return (_subscriptionId.GetHashCode() * 397) ^ _roomId.GetFnvHashCode();
+                return (_subscriptionId.GetHashCode() * 397) ^ _roomId.Name.GetFnvHashCode();
             }
         }
     }

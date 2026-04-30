@@ -17,15 +17,9 @@ namespace Dissonance.Datastructures
         
         private readonly Stack<T> _items;
 
-        public int Count
-        {
-            get { return _items.Count; }
-        }
+        public int Count => _items.Count;
 
-        public int Capacity
-        {
-            get { return _maxSize; }
-        }
+        public int Capacity => _maxSize;
 
         public Pool(int maxSize, Func<T> factory)
         {
@@ -54,7 +48,7 @@ namespace Dissonance.Datastructures
         public bool Put([NotNull] T item)
         {
             if (item == null)
-                throw new ArgumentNullException("item");
+                throw new ArgumentNullException(nameof(item));
 
             if (_items.Count < _maxSize)
             {

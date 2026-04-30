@@ -11,11 +11,7 @@ namespace Dissonance.Audio.Capture
     internal class Resampler
         : ISampleProvider
     {
-        private readonly WaveFormat _format;
-        public WaveFormat WaveFormat
-        {
-            get { return _format; }
-        }
+        public WaveFormat WaveFormat { get; }
 
         [CanBeNull] private readonly WdlResampler _resampler;
         private readonly ISampleProvider _source;
@@ -23,7 +19,7 @@ namespace Dissonance.Audio.Capture
         public Resampler([NotNull] ISampleProvider source, int newSampleRate)
         {
             _source = source;
-            _format = new WaveFormat(newSampleRate, source.WaveFormat.Channels);
+            WaveFormat = new WaveFormat(newSampleRate, source.WaveFormat.Channels);
 
             if (source.WaveFormat.SampleRate != newSampleRate)
             {
@@ -47,10 +43,8 @@ namespace Dissonance.Audio.Capture
 
             var channels = _source.WaveFormat.Channels;
 
-            float[] inBuffer;
-            int inBufferOffset;
             var framesRequested = count / channels;
-            var inNeeded = _resampler.ResamplePrepare(framesRequested, channels, out inBuffer, out inBufferOffset);
+            var inNeeded = _resampler.ResamplePrepare(framesRequested, channels, out var inBuffer, out var inBufferOffset);
             var inAvailable = _source.Read(inBuffer, inBufferOffset, inNeeded * channels) / channels;
 
             //Resampler does not handle zero samples well! If we read nothing, return nothing
@@ -63,8 +57,7 @@ namespace Dissonance.Audio.Capture
 
         public void Reset()
         {
-            if (_resampler != null)
-                _resampler.Reset();
+            _resampler?.Reset();
         }
     }
 }

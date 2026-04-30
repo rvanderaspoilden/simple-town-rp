@@ -10,10 +10,7 @@ namespace Dissonance
 
         internal TextChat([NotNull] Func<ICommsNetwork> getNetwork)
         {
-            if (getNetwork == null)
-                throw new ArgumentNullException("getNetwork");
-
-            _getNetwork = getNetwork;
+            _getNetwork = getNetwork ?? throw new ArgumentNullException(nameof(getNetwork));
         }
 
         /// <summary>
@@ -24,13 +21,12 @@ namespace Dissonance
         public void Send([NotNull] string roomName, [NotNull] string message)
         {
             if (roomName == null)
-                throw new ArgumentNullException("roomName", "Cannot send a text message to a null room");
+                throw new ArgumentNullException(nameof(roomName), "Cannot send a text message to a null room");
             if (message == null)
-                throw new ArgumentNullException("message", "Cannot send null text message");
+                throw new ArgumentNullException(nameof(message), "Cannot send null text message");
 
             var net = _getNetwork();
-            if (net != null)
-                net.SendText(message, ChannelType.Room, roomName);
+            net?.SendText(message, ChannelType.Room, roomName);
         }
 
         /// <summary>
@@ -41,13 +37,12 @@ namespace Dissonance
         public void Whisper([NotNull] string playerName, [NotNull] string message)
         {
             if (playerName == null)
-                throw new ArgumentNullException("playerName", "Cannot send a text message to a null playerName");
+                throw new ArgumentNullException(nameof(playerName), "Cannot send a text message to a null playerName");
             if (message == null)
-                throw new ArgumentNullException("message", "Cannot send null text message");
+                throw new ArgumentNullException(nameof(message), "Cannot send null text message");
 
             var net = _getNetwork();
-            if (net != null)
-                net.SendText(message, ChannelType.Player, playerName);
+            net?.SendText(message, ChannelType.Player, playerName);
         }
 
         /// <summary>
@@ -58,8 +53,7 @@ namespace Dissonance
 
         internal void OnMessageReceived(TextMessage obj)
         {
-            var handler = MessageReceived;
-            if (handler != null) handler(obj);
+            MessageReceived?.Invoke(obj);
         }
     }
 }

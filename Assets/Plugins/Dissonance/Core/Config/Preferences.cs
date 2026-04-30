@@ -39,10 +39,9 @@ namespace Dissonance.Config
         public static void Set<T>(string key, ref T field, T value, Action<string, T> save, Log log, IEqualityComparer<T> equality = null, bool setAtRuntime = true)
         {
             if (!setAtRuntime && Application.isPlaying)
-                throw log.CreatePossibleBugException(string.Format("Attempted to set pref '{0}' but this cannot be set at runtime", key), "28579FE7-72D7-4516-BF04-BE96B11BB0C7");
+                throw log.CreatePossibleBugException($"Attempted to set pref '{key}' but this cannot be set at runtime", "28579FE7-72D7-4516-BF04-BE96B11BB0C7");
 
-            if (equality == null)
-                equality = EqualityComparer<T>.Default;
+            equality ??= EqualityComparer<T>.Default;
 
             //No need to do anything if the value is unchanged
             if (equality.Equals(field, value))

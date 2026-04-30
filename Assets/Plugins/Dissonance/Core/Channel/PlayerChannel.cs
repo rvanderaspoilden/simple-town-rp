@@ -8,7 +8,7 @@ namespace Dissonance
     /// A channel sending voice data to a player. Dispose this struct to close the channel.
     /// </summary>
     /// ReSharper disable once InheritdocConsiderUsage
-    public struct PlayerChannel
+    public readonly struct PlayerChannel
         : IChannel<string>, IEquatable<PlayerChannel>
     {
         private readonly ushort _subscriptionId;
@@ -25,38 +25,23 @@ namespace Dissonance
         }
 
         /// <inheritdoc />
-        public ushort SubscriptionId
-        {
-            get { return _subscriptionId; }
-        }
+        public ushort SubscriptionId => _subscriptionId;
 
         /// <summary>
         /// The name of the player this channel is sending voice data to
         /// </summary>
         /// ReSharper disable once InheritdocConsiderUsage
-        [NotNull] public string TargetId
-        {
-            get { return _playerId; }
-        }
+        [NotNull] public string TargetId => _playerId;
 
         /// <inheritdoc />
-        ChannelProperties IChannel<string>.Properties
-        {
-            get { return _properties; }
-        }
+        ChannelProperties IChannel<string>.Properties => _properties;
 
-        [NotNull] internal ChannelProperties Properties
-        {
-            get { return _properties; }
-        }
+        [NotNull] internal ChannelProperties Properties => _properties;
 
         /// <summary>
         /// Get a value indicating if this channel has been closed
         /// </summary>
-        public bool IsOpen
-        {
-            get { return _channels.Contains(this); }
-        }
+        public bool IsOpen => _channels.Contains(this);
 
         /// <summary>
         /// Gets or sets a value indicating if this channel should be played on other clients with 3D positional audio.
@@ -136,9 +121,10 @@ namespace Dissonance
         {
             if (ReferenceEquals(null, obj))
                 return false;
-            return obj is PlayerChannel && Equals((PlayerChannel)obj);
+            return obj is PlayerChannel channel && Equals(channel);
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             unchecked

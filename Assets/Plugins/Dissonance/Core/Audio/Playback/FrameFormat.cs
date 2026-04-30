@@ -4,7 +4,7 @@ using NAudio.Wave;
 
 namespace Dissonance.Audio.Playback
 {
-    internal struct FrameFormat
+    internal readonly struct FrameFormat
         : IEquatable<FrameFormat>
     {
         public readonly Codec Codec;
@@ -24,13 +24,13 @@ namespace Dissonance.Audio.Playback
 
             unchecked
             {
-                hash += ((int)Codec) + 17;
+                hash += (int)Codec + 17;
                 hash *= 101117;
 
-                hash += (WaveFormat.GetHashCode());
+                hash += WaveFormat.GetHashCode();
                 hash *= 101117;
 
-                hash += ((int)FrameSize);
+                hash += (int)FrameSize;
                 hash *= 101117;
             }
 
@@ -55,7 +55,7 @@ namespace Dissonance.Audio.Playback
         {
             if (ReferenceEquals(null, obj))
                 return false;
-            return obj is FrameFormat && Equals((FrameFormat)obj);
+            return obj is FrameFormat format && Equals(format);
         }
     }
 }

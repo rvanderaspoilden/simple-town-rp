@@ -16,10 +16,7 @@ namespace Dissonance.Demo
         private IDissonancePlayer _player;
         private VoicePlayerState _state;
 
-        private bool IsSpeaking
-        {
-            get { return _player.Type == NetworkPlayerType.Remote && _state != null && _state.IsSpeaking; }
-        }
+        private bool IsSpeaking => _player.Type == NetworkPlayerType.Remote && _state != null && _state.IsSpeaking;
 
         private void OnEnable()
         {
@@ -52,7 +49,7 @@ namespace Dissonance.Demo
             //The loop is necessary in case Dissonance is still initializing this player into the network session
             while (_state == null)
             {
-                _state = FindObjectOfType<DissonanceComms>().FindPlayer(_player.PlayerId);
+                _state = DissonanceComms.GetSingleton()?.FindPlayer(_player.PlayerId);
                 yield return null;
             }
         }
@@ -62,13 +59,13 @@ namespace Dissonance.Demo
             if (IsSpeaking)
             {
                 //Calculate intensity of speech - do the pow to visually boost the scale at lower intensities
-                _intensity = Mathf.Max(Mathf.Clamp(Mathf.Pow(_state.Amplitude, 0.175f), 0.25f, 1), _intensity - Time.deltaTime);
+                _intensity = Mathf.Max(Mathf.Clamp(Mathf.Pow(_state.Amplitude, 0.175f), 0.25f, 1), _intensity - Time.unscaledDeltaTime);
                 _indicator.SetActive(true);
             }
             else
             {
                 //Fade out intensity when player is not talking
-                _intensity -= Time.deltaTime * 2;
+                _intensity -= Time.unscaledDeltaTime * 2;
 
                 if (_intensity <= 0)
                     _indicator.SetActive(false);

@@ -22,15 +22,9 @@ namespace Dissonance.Audio.Playback
             _volumeProvider = volumeProvider;
         }
 
-        public uint FrameSize
-        {
-            get { return _source.FrameSize; }
-        }
+        public uint FrameSize => _source.FrameSize;
 
-        public WaveFormat WaveFormat
-        {
-            get { return _source.WaveFormat; }
-        }
+        public WaveFormat WaveFormat => _source.WaveFormat;
 
         public void Prepare(SessionContext context)
         {
@@ -57,7 +51,7 @@ namespace Dissonance.Audio.Playback
         private static void ApplyFlatAttenuation(ArraySegment<float> frame, float volume)
         {
             if (frame.Array == null)
-                throw new ArgumentNullException("frame");
+                throw new ArgumentNullException(nameof(frame));
 
             //Early exit in the (very common) case that volume is exactly 1
             // ReSharper disable once CompareOfFloatsByEqualityOperator (Justification: exact float equality is what we want)
@@ -73,14 +67,14 @@ namespace Dissonance.Audio.Playback
             }
 
             //Apply the attenuation to the entire frame
-            for (int i = 0; i < frame.Count; i++)
+            for (var i = 0; i < frame.Count; i++)
                 frame.Array[frame.Offset + i] *= volume;
         }
 
         private static void ApplyRampedAttenuation(ArraySegment<float> frame, float start, float end)
         {
             if (frame.Array == null)
-                throw new ArgumentNullException("frame");
+                throw new ArgumentNullException(nameof(frame));
 
             var step = (end - start) / frame.Count;
             var mul = start;
@@ -101,7 +95,7 @@ namespace Dissonance.Audio.Playback
         }
     }
 
-    internal interface IVolumeProvider
+    public interface IVolumeProvider
     {
         float TargetVolume { get; }
     }

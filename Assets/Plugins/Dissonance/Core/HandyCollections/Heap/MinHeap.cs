@@ -21,24 +21,18 @@ namespace HandyCollections.Heap
         /// <summary>
         /// Get the number of items in this heap
         /// </summary>
-        public int Count
-        {
-            get { return _heap.Count; }
-        }
+        public int Count => _heap.Count;
 
         /// <summary>
         /// Get the minimum value in this heap
         /// </summary>
-        public T Minimum
-        {
-            get { return _heap[0]; }
-        }
+        public T Minimum => _heap[0];
 
         private bool _allowResize = true;
         public bool AllowHeapResize
         {
-            get { return _allowResize; }
-            set { _allowResize = value; }
+            get => _allowResize;
+            set => _allowResize = value;
         }
         #endregion
 
@@ -184,7 +178,7 @@ namespace HandyCollections.Heap
         public T RemoveAt(int index)
         {
             if (index < 0 || index > _heap.Count)
-                throw new ArgumentOutOfRangeException("index");
+                throw new ArgumentOutOfRangeException(nameof(index));
 
             var removed = _heap[index];
 
@@ -274,9 +268,7 @@ namespace HandyCollections.Heap
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Swap(int a, int b)
         {
-            var temp = _heap[a];
-            _heap[a] = _heap[b];
-            _heap[b] = temp;
+            (_heap[a], _heap[b]) = (_heap[b], _heap[a]);
         }
 
         //[MethodImpl(MethodImplOptions.AggressiveInlining)]

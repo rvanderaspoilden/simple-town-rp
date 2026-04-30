@@ -13,7 +13,7 @@ namespace Dissonance.Audio.Playback
         : IDecoderPipeline, IVolumeProvider, IRemoteChannelProvider, IRateProvider
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof (DecoderPipeline).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(DecoderPipeline));
 
         private readonly Action<DecoderPipeline> _completionHandler;
         private readonly TransferBuffer<VoicePacket> _inputBuffer;
@@ -21,6 +21,7 @@ namespace Dissonance.Audio.Playback
         private readonly ConcurrentPool<List<RemoteChannel>> _channelListPool;
         private readonly BufferedDecoder _source;
         private readonly SynchronizerSampleSource _synchronizer;
+        private readonly Resampler _resampler;
         private readonly ISampleSource _output;
 
         private volatile bool _prepared;
@@ -31,54 +32,36 @@ namespace Dissonance.Audio.Playback
         private DateTime? _firstFrameArrival;
         private uint _firstFrameSeq;
 
-        public int BufferCount
-        {
-            get { return _source.BufferCount + _inputBuffer.EstimatedUnreadCount; }
-        }
+        public int BufferCount => _source.BufferCount + _inputBuffer.EstimatedUnreadCount;
 
-        public TimeSpan BufferTime
-        {
-            get { return TimeSpan.FromTicks(BufferCount * _frameDuration.Ticks); }
-        }
+        public TimeSpan BufferTime => TimeSpan.FromTicks(BufferCount * _frameDuration.Ticks);
 
-        public float PacketLoss { get { return _source.PacketLoss; } }
+        public float PacketLoss => _source.PacketLoss;
 
-        public PlaybackOptions PlaybackOptions { get { return _source.LatestPlaybackOptions; } }
+        public PlaybackOptions PlaybackOptions => _source.LatestPlaybackOptions;
 
-        public WaveFormat OutputFormat { get { return _output.WaveFormat; } }
+        public WaveFormat OutputFormat => _output.WaveFormat;
 
-        public TimeSpan InputFrameTime
-        {
-            get { return _frameDuration; }
-        }
+        public TimeSpan InputFrameTime => _frameDuration;
 
-        float IRateProvider.PlaybackRate
-        {
-            get { return _synchronizer.PlaybackRate; }
-        }
+        float IRateProvider.PlaybackRate => _synchronizer.PlaybackRate;
 
-        public SyncState SyncState
-        {
-            get { return _synchronizer.State; }
-        }
+        public SyncState SyncState => _synchronizer.State;
 
-        private readonly string _id;
-        public string ID
-        {
-            get { return _id; }
-        }
+        public string ID { get; }
+
         #endregion
 
         #region constructor
         public DecoderPipeline([NotNull] IVoiceDecoder decoder, uint inputFrameSize, [NotNull] Action<DecoderPipeline> completionHandler, string id, bool softClip = true)
         {
-            if (decoder == null) throw new ArgumentNullException("decoder");
-            if (completionHandler == null) throw new ArgumentNullException("completionHandler");
+            if (decoder == null) throw new ArgumentNullException(nameof(decoder));
+            if (completionHandler == null) throw new ArgumentNullException(nameof(completionHandler));
 
-            _id = id;
+            ID = id;
 
             _completionHandler = completionHandler;
-            _inputBuffer = new TransferBuffer<VoicePacket>(32);
+            _inputBuffer = new TransferBuffer<VoicePacket>(128);
 
             // we need buffers to hold the encoded frames, but we have no idea how large an encoded frame is! These buffers are large enough...
             // ...to hold a frame with no compression whatsoever, so they should be large enough to hold the frame when it's opus compressed.
@@ -103,10 +86,10 @@ namespace Dissonance.Audio.Playback
             _synchronizer = new SynchronizerSampleSource(samples, TimeSpan.FromSeconds(1));
 
             // Resample the data to the output rate
-            var resampled = new Resampler(_synchronizer, this);
+            _resampler = new Resampler(_synchronizer, this);
 
             // Chain a soft clip stage if necessary
-            _output = softClip ? (ISampleSource)new SoftClipSampleSource(resampled) : resampled;
+            _output = softClip ? (ISampleSource)new SoftClipSampleSource(_resampler) : _resampler;
         }
         #endregion
 
@@ -136,6 +119,11 @@ namespace Dissonance.Audio.Playback
         public void EnableDynamicSync()
         {
             _synchronizer.Enable();
+        }
+
+        public void SetOutputSampleRate(int? rate)
+        {
+            _resampler.SetOutputRate(rate);
         }
 
         public bool Read(ArraySegment<float> samples)
@@ -169,7 +157,7 @@ namespace Dissonance.Audio.Playback
                 channelsCopy.AddRange(packet.Channels);
             }
 
-            var frameCopy = packet.EncodedAudioFrame.CopyTo(_bytePool.Get());
+            var frameCopy = packet.EncodedAudioFrame.CopyToSegment(_bytePool.Get());
 
             var packetCopy = new VoicePacket(
                 packet.SenderPlayerId,
@@ -232,8 +220,7 @@ namespace Dissonance.Audio.Playback
         public void FlushTransferBuffer()
         {
             // empty the transfer buffer into the decoder buffer
-            VoicePacket frame;
-            while (_inputBuffer.Read(out frame))
+            while (_inputBuffer.Read(out var frame))
                 _source.Push(frame);
 
             // set the complete flag after flushing the transfer buffer
@@ -247,10 +234,8 @@ namespace Dissonance.Audio.Playback
         #region IVolumeProvider implementation
         public IVolumeProvider VolumeProvider { get; set; }
 
-        float IVolumeProvider.TargetVolume
-        {
-            get { return (VolumeProvider == null ? 1 : VolumeProvider.TargetVolume) * PlaybackOptions.AmplitudeMultiplier; }
-        }
+        float IVolumeProvider.TargetVolume => (VolumeProvider?.TargetVolume ?? 1) * PlaybackOptions.AmplitudeMultiplier;
+
         #endregion
 
         public void GetRemoteChannels(List<RemoteChannel> output)

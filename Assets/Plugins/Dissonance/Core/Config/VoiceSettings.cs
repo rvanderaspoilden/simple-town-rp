@@ -15,7 +15,7 @@ namespace Dissonance.Config
         INotifyPropertyChanged
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Recording, typeof(VoiceSettings).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Recording, nameof(VoiceSettings));
 
         // ReSharper disable InconsistentNaming
         private const string PersistName_Quality = "Dissonance_Audio_Quality";
@@ -25,6 +25,9 @@ namespace Dissonance.Config
         private const string PersistName_DenoiseAmount = "Dissonance_Audio_Denoise_Amount";
         private const string PersistName_PttDuckAmount = "Dissonance_Audio_Duck_Amount";
         private const string PersistName_VadSensitivity = "Dissonance_Audio_Vad_Sensitivity";
+
+        private const string PersistName_BgDenoiseEnabled = "Dissonance_Audio_BgDenoise_Enabled";
+        private const string PersistName_BgDenoiseWetmix = "Dissonance_Audio_BgDenoise_Amount";
 
         private const string PersistName_AecSuppressionAmount = "Dissonance_Audio_Aec_Suppression_Amount";
         private const string PersistName_AecDelayAgnostic = "Dissonance_Audio_Aec_Delay_Agnostic";
@@ -41,33 +44,33 @@ namespace Dissonance.Config
         [SerializeField]private AudioQuality _quality;
         public AudioQuality Quality
         {
-            get { return _quality; }
+            get => _quality;
             set
             {
                 Preferences.Set(PersistName_Quality, ref _quality, value, (key, q) => PlayerPrefs.SetInt(key, (int)q), Log);
-                OnPropertyChanged("Quality");
+                OnPropertyChanged(nameof(Quality));
             }
         }
 
         [SerializeField]private FrameSize _frameSize;
         public FrameSize FrameSize
         {
-            get { return _frameSize; }
+            get => _frameSize;
             set
             {
                 Preferences.Set(PersistName_FrameSize, ref _frameSize, value, (key, f) => PlayerPrefs.SetInt(key, (int)f), Log);
-                OnPropertyChanged("FrameSize");
+                OnPropertyChanged(nameof(FrameSize));
             }
         }
 
         [SerializeField]private int _forwardErrorCorrection;
         public bool ForwardErrorCorrection
         {
-            get { return Convert.ToBoolean(_forwardErrorCorrection); }
+            get => Convert.ToBoolean(_forwardErrorCorrection);
             set
             {
                 Preferences.Set(PersistName_Fec, ref _forwardErrorCorrection, Convert.ToInt32(value), PlayerPrefs.SetInt, Log);
-                OnPropertyChanged("ForwardErrorCorrection");
+                OnPropertyChanged(nameof(ForwardErrorCorrection));
             }
         }
         #endregion
@@ -76,88 +79,110 @@ namespace Dissonance.Config
         [SerializeField]private int _denoiseAmount;
         public NoiseSuppressionLevels DenoiseAmount
         {
-            get { return (NoiseSuppressionLevels)_denoiseAmount; }
+            get => (NoiseSuppressionLevels)_denoiseAmount;
             set
             {
                 Preferences.Set(PersistName_DenoiseAmount, ref _denoiseAmount, (int)value, PlayerPrefs.SetInt, Log);
-                OnPropertyChanged("DenoiseAmount");
+                OnPropertyChanged(nameof(DenoiseAmount));
+            }
+        }
+
+        [SerializeField]private int _bgSoundRemovalEnabled;
+        public bool BackgroundSoundRemovalEnabled
+        {
+            get => Convert.ToBoolean(_bgSoundRemovalEnabled);
+            set
+            {
+                Preferences.Set(PersistName_BgDenoiseEnabled, ref _bgSoundRemovalEnabled, Convert.ToInt32(value), PlayerPrefs.SetInt, Log);
+                OnPropertyChanged(nameof(BackgroundSoundRemovalEnabled));
+            }
+        }
+
+        [SerializeField]private float _bgSoundRemovalAmount;
+        public float BackgroundSoundRemovalAmount
+        {
+            get => _bgSoundRemovalAmount;
+            set
+            {
+                Preferences.Set(PersistName_BgDenoiseWetmix, ref _bgSoundRemovalAmount, Mathf.Clamp01(value), PlayerPrefs.SetFloat, Log);
+                OnPropertyChanged(nameof(BackgroundSoundRemovalAmount));
             }
         }
 
         [SerializeField]private int _vadSensitivity;
         public VadSensitivityLevels VadSensitivity
         {
-            get { return (VadSensitivityLevels)_vadSensitivity; }
+            get => (VadSensitivityLevels)_vadSensitivity;
             set
             {
                 Preferences.Set(PersistName_VadSensitivity, ref _vadSensitivity, (int)value, PlayerPrefs.SetInt, Log);
-                OnPropertyChanged("VadSensitivity");
+                OnPropertyChanged(nameof(VadSensitivity));
             }
         }
 
         [SerializeField] private int _aecAmount;
         public AecSuppressionLevels AecSuppressionAmount
         {
-            get { return (AecSuppressionLevels)_aecAmount; }
+            get => (AecSuppressionLevels)_aecAmount;
             set
             {
                 Preferences.Set(PersistName_AecSuppressionAmount, ref _aecAmount, (int)value, PlayerPrefs.SetInt, Log);
-                OnPropertyChanged("AecSuppressionAmount");
+                OnPropertyChanged(nameof(AecSuppressionAmount));
             }
         }
 
         [SerializeField] private int _aecDelayAgnostic;
         public bool AecDelayAgnostic
         {
-            get { return Convert.ToBoolean(_aecDelayAgnostic); }
+            get => Convert.ToBoolean(_aecDelayAgnostic);
             set
             {
                 Preferences.Set(PersistName_AecDelayAgnostic, ref _aecDelayAgnostic, Convert.ToInt32(value), PlayerPrefs.SetInt, Log);
-                OnPropertyChanged("AecDelayAgnostic");
+                OnPropertyChanged(nameof(AecDelayAgnostic));
             }
         }
 
         [SerializeField] private int _aecExtendedFilter;
         public bool AecExtendedFilter
         {
-            get { return Convert.ToBoolean(_aecExtendedFilter); }
+            get => Convert.ToBoolean(_aecExtendedFilter);
             set
             {
                 Preferences.Set(PersistName_AecExtendedFilter, ref _aecExtendedFilter, Convert.ToInt32(value), PlayerPrefs.SetInt, Log);
-                OnPropertyChanged("AecExtendedFilter");
+                OnPropertyChanged(nameof(AecExtendedFilter));
             }
         }
 
         [SerializeField] private int _aecRefinedAdaptiveFilter;
         public bool AecRefinedAdaptiveFilter
         {
-            get { return Convert.ToBoolean(_aecRefinedAdaptiveFilter); }
+            get => Convert.ToBoolean(_aecRefinedAdaptiveFilter);
             set
             {
                 Preferences.Set(PersistName_AecRefinedAdaptiveFilter, ref _aecRefinedAdaptiveFilter, Convert.ToInt32(value), PlayerPrefs.SetInt, Log);
-                OnPropertyChanged("AecRefinedAdaptiveFilter");
+                OnPropertyChanged(nameof(AecRefinedAdaptiveFilter));
             }
         }
 
         [SerializeField] private int _aecmRoutingMode;
         public AecmRoutingMode AecmRoutingMode
         {
-            get { return (AecmRoutingMode)_aecmRoutingMode; }
+            get => (AecmRoutingMode)_aecmRoutingMode;
             set
             {
                 Preferences.Set(PersistName_AecmRoutingMode, ref _aecmRoutingMode, (int)value, PlayerPrefs.SetInt, Log);
-                OnPropertyChanged("AecmRoutingMode");
+                OnPropertyChanged(nameof(AecmRoutingMode));
             }
         }
 
         [SerializeField] private int _aecmComfortNoise;
         public bool AecmComfortNoise
         {
-            get { return Convert.ToBoolean(_aecmComfortNoise); }
+            get => Convert.ToBoolean(_aecmComfortNoise);
             set
             {
                 Preferences.Set(PersistName_AecmComfortNoise, ref _aecmComfortNoise, Convert.ToInt32(value), PlayerPrefs.SetInt, Log);
-                OnPropertyChanged("AecmComfortNoise");
+                OnPropertyChanged(nameof(AecmComfortNoise));
             }
         }
         #endregion
@@ -165,11 +190,11 @@ namespace Dissonance.Config
         [SerializeField] private float _voiceDuckLevel;
         public float VoiceDuckLevel
         {
-            get { return _voiceDuckLevel; }
+            get => _voiceDuckLevel;
             set
             {
                 Preferences.Set(PersistName_PttDuckAmount, ref _voiceDuckLevel, value, PlayerPrefs.SetFloat, Log);
-                OnPropertyChanged("VoiceDuckLevel");
+                OnPropertyChanged(nameof(VoiceDuckLevel));
             }
         }
 
@@ -178,9 +203,7 @@ namespace Dissonance.Config
         [NotifyPropertyChangedInvocator]
         private void OnPropertyChanged(string propertyName)
         {
-            var handler = PropertyChanged;
-            if (handler != null)
-                handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         private static VoiceSettings _instance;
@@ -212,6 +235,9 @@ namespace Dissonance.Config
             _denoiseAmount = (int)NoiseSuppressionLevels.High;
             _vadSensitivity = (int)VadSensitivityLevels.MediumSensitivity;
 
+            _bgSoundRemovalEnabled = Convert.ToInt32(false);
+            _bgSoundRemovalAmount = 0.65f;
+
             _aecAmount = (int)AecSuppressionLevels.Disabled;
             _aecDelayAgnostic = Convert.ToInt32(true);
             _aecExtendedFilter = Convert.ToInt32(true);
@@ -220,7 +246,7 @@ namespace Dissonance.Config
             _aecmRoutingMode = (int)AecmRoutingMode.Disabled;
             _aecmComfortNoise = Convert.ToInt32(true);
 
-            _voiceDuckLevel = 0.75f;
+            _voiceDuckLevel = 0.5f;
         }
 
         /// <summary>
@@ -235,6 +261,9 @@ namespace Dissonance.Config
 
             PlayerPrefs.DeleteKey(PersistName_DenoiseAmount);
             PlayerPrefs.DeleteKey(PersistName_VadSensitivity);
+
+            PlayerPrefs.DeleteKey(PersistName_BgDenoiseEnabled);
+            PlayerPrefs.DeleteKey(PersistName_BgDenoiseWetmix);
 
             PlayerPrefs.DeleteKey(PersistName_AecSuppressionAmount);
             PlayerPrefs.DeleteKey(PersistName_AecDelayAgnostic);
@@ -276,6 +305,9 @@ namespace Dissonance.Config
             Preferences.Get(PersistName_DenoiseAmount, ref settings._denoiseAmount, PlayerPrefs.GetInt, Log);
             Preferences.Get(PersistName_VadSensitivity, ref settings._vadSensitivity, PlayerPrefs.GetInt, Log);
 
+            Preferences.Get(PersistName_BgDenoiseEnabled, ref settings._bgSoundRemovalEnabled, PlayerPrefs.GetInt, Log);
+            Preferences.Get(PersistName_BgDenoiseWetmix, ref settings._bgSoundRemovalAmount, PlayerPrefs.GetFloat, Log);
+
             Preferences.Get(PersistName_AecSuppressionAmount, ref settings._aecAmount, PlayerPrefs.GetInt, Log);
             Preferences.Get(PersistName_AecDelayAgnostic, ref settings._aecDelayAgnostic, PlayerPrefs.GetInt, Log);
             Preferences.Get(PersistName_AecExtendedFilter, ref settings._aecExtendedFilter, PlayerPrefs.GetInt, Log);
@@ -292,7 +324,17 @@ namespace Dissonance.Config
 
         public override string ToString()
         {
-            return string.Format("Quality: {0}, FrameSize: {1}, FEC: {2}, DenoiseAmount: {3}, VoiceDuckLevel: {4} VAD: {5}", Quality, FrameSize, ForwardErrorCorrection, DenoiseAmount, VoiceDuckLevel, VadSensitivity);
+            return string.Format(
+                "Quality: {0}, FrameSize: {1}, FEC: {2}, DenoiseAmount: {3}, RNN: {4} ({5:0.0#}) VoiceDuckLevel: {6} VAD: {7}",
+                Quality,
+                FrameSize,
+                ForwardErrorCorrection,
+                DenoiseAmount,
+                BackgroundSoundRemovalEnabled,
+                BackgroundSoundRemovalAmount,
+                VoiceDuckLevel,
+                VadSensitivity
+            );
         }
     }
 }

@@ -9,14 +9,13 @@ using UnityEngine;
 
 namespace Dissonance.Editor
 {
-    [CustomEditor(typeof(VoiceBroadcastTrigger))]
+    [CustomEditor(typeof(VoiceBroadcastTrigger), editorForChildClasses: true)]
     public class VoiceBroadcastTriggerEditor
         : UnityEditor.Editor
     {
         private Texture2D _logo;
-        private ChatRoomSettings _roomSettings;
 
-        private readonly TokenControl _tokenEditor = new TokenControl("This broadcast trigger will only send voice if the local player has at least one of these access tokens", false);
+        private readonly TokenControl _tokenEditor = new TokenControl("This broadcast trigger will only send voice if the local player has at least one of these access tokens");
 
         private SerializedProperty _channelTypeExpanded;
         private SerializedProperty _metadataExpanded;
@@ -27,7 +26,6 @@ namespace Dissonance.Editor
         public void Awake()
         {
             _logo = Resources.Load<Texture2D>("dissonance_logo");
-            _roomSettings = ChatRoomSettings.Load();
         }
 
         private void OnEnable()
@@ -39,6 +37,11 @@ namespace Dissonance.Editor
             _ampExpanded = serializedObject.FindProperty("_ampExpanded");
         }
 
+        public override bool RequiresConstantRepaint()
+        {
+            return Application.isPlaying;
+        }
+
         public override void OnInspectorGUI()
         {
             using (var changed = new EditorGUI.ChangeCheckScope())
@@ -47,11 +50,11 @@ namespace Dissonance.Editor
 
                 var transmitter = (VoiceBroadcastTrigger)target;
 
-                FoldoutBoxGroup(_channelTypeExpanded, "Channel Type", ChannelTypeGui, transmitter);
-                FoldoutBoxGroup(_metadataExpanded, "Channel Metadata", MetadataGui, transmitter);
-                FoldoutBoxGroup(_activationModeExpanded, "Activation Mode", ActivationModeGui, transmitter);
-                FoldoutBoxGroup(_tokensExpanded, "Access Tokens", TokenGui, transmitter);
-                FoldoutBoxGroup(_ampExpanded, "Amplitude Faders", VolumeGui, transmitter);
+                GuiHelpers.FoldoutBoxGroup(_channelTypeExpanded, "Channel Type", ChannelTypeGui, transmitter);
+                GuiHelpers.FoldoutBoxGroup(_metadataExpanded, "Channel Metadata", MetadataGui, transmitter);
+                GuiHelpers.FoldoutBoxGroup(_activationModeExpanded, "Activation Mode", ActivationGui, transmitter);
+                GuiHelpers.FoldoutBoxGroup(_tokensExpanded, "Access Tokens", _tokenEditor.DrawInspectorGui, transmitter);
+                GuiHelpers.FoldoutBoxGroup(_ampExpanded, "Amplitude Faders", VolumeGui, transmitter);
 
                 Undo.FlushUndoRecordObjects();
 
@@ -61,15 +64,7 @@ namespace Dissonance.Editor
             }
         }
 
-        private static void FoldoutBoxGroup([NotNull] SerializedProperty expanded, string title, Action<VoiceBroadcastTrigger> gui, VoiceBroadcastTrigger trigger)
-        {
-            expanded.boolValue = EditorGUILayout.Foldout(expanded.boolValue, title);
-            if (expanded.boolValue)
-                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-                    gui(trigger);
-        }
-
-        private void ChannelTypeGui([NotNull] VoiceBroadcastTrigger transmitter)
+        private static void ChannelTypeGui([NotNull] VoiceBroadcastTrigger transmitter)
         {
             transmitter.ChangeWithUndo(
                 "Changed Dissonance Channel Type",
@@ -86,54 +81,11 @@ namespace Dissonance.Editor
                     transmitter.PlayerId,
                     a => transmitter.PlayerId = a
                 );
-
-                EditorGUILayout.HelpBox("Player mode sends voice data to the specified player.", MessageType.None);
             }
 
             if (transmitter.ChannelType == CommTriggerTarget.Room)
             {
-                var roomNames = _roomSettings.Names;
-
-                var haveRooms = roomNames.Count > 0;
-                if (haveRooms)
-                {
-                    var roomList = new List<string>(roomNames);
-                    var roomIndex = roomList.IndexOf(transmitter.RoomName);
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        // Detect if the room name is not null, and is also not in the list. This implies the room has been deleted from the room list.
-                        // If this is the case insert it into our temporary copy of the room names list
-                        if (roomIndex == -1 && !string.IsNullOrEmpty(transmitter.RoomName))
-                        {
-                            roomList.Insert(0, transmitter.RoomName);
-                            roomIndex = 0;
-                        }
-
-                        transmitter.ChangeWithUndo(
-                            "Changed Dissonance Transmitter Room",
-                            EditorGUILayout.Popup(new GUIContent("Chat Room", "The room to send voice to"), roomIndex, roomList.Select(a => new GUIContent(a)).ToArray()),
-                            roomIndex,
-                            a => transmitter.RoomName = roomList[a]
-                        );
-
-                        if (GUILayout.Button("Config Rooms"))
-                            ChatRoomSettingsEditor.GoToSettings();
-                    }
-
-                    if (string.IsNullOrEmpty(transmitter.RoomName))
-                        EditorGUILayout.HelpBox("No chat room selected", MessageType.Error);
-                }
-                else
-                {
-                    if (GUILayout.Button("Create New Rooms"))
-                        ChatRoomSettingsEditor.GoToSettings();
-                }
-
-                EditorGUILayout.HelpBox("Room mode sends voice data to all players in the specified room.", MessageType.None);
-
-                if (!haveRooms)
-                    EditorGUILayout.HelpBox("No rooms are defined. Click 'Create New Rooms' to configure chat rooms.", MessageType.Warning);
+                RoomTypeGui(transmitter);
             }
 
             if (transmitter.ChannelType == CommTriggerTarget.Self)
@@ -183,6 +135,51 @@ namespace Dissonance.Editor
             }
         }
 
+        internal static void RoomTypeGui<T>(T transmitter)
+            where T : MonoBehaviour, IVoiceBroadcastTrigger
+        {
+            var roomNames = ChatRoomSettings.Load().Names;
+
+            var haveRooms = roomNames.Count > 0;
+            if (haveRooms)
+            {
+                var roomList = new List<string>(roomNames);
+                var roomIndex = roomList.IndexOf(transmitter.RoomName);
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    // Detect if the room name is not null, and is also not in the list. This implies the room has been deleted from the room list.
+                    // If this is the case insert it into our temporary copy of the room names list
+                    if (roomIndex == -1 && !string.IsNullOrEmpty(transmitter.RoomName))
+                    {
+                        roomList.Insert(0, transmitter.RoomName);
+                        roomIndex = 0;
+                    }
+
+                    transmitter.ChangeWithUndo(
+                        "Changed Dissonance Transmitter Room",
+                        EditorGUILayout.Popup(new GUIContent("Chat Room", "The room to send voice to"), roomIndex, roomList.Select(a => new GUIContent(a)).ToArray()),
+                        roomIndex,
+                        a => transmitter.RoomName = roomList[a]
+                    );
+
+                    if (GUILayout.Button("Config Rooms"))
+                        ChatRoomSettingsEditor.GoToSettings();
+                }
+
+                if (string.IsNullOrEmpty(transmitter.RoomName))
+                    EditorGUILayout.HelpBox("No chat room selected", MessageType.Error);
+            }
+            else
+            {
+                if (GUILayout.Button("Create New Rooms"))
+                    ChatRoomSettingsEditor.GoToSettings();
+            }
+
+            if (!haveRooms)
+                EditorGUILayout.HelpBox("No rooms are defined. Click 'Create New Rooms' to configure chat rooms.", MessageType.Warning);
+        }
+
         private static void MetadataGui([NotNull] VoiceBroadcastTrigger transmitter)
         {
             transmitter.ChangeWithUndo(
@@ -216,7 +213,7 @@ namespace Dissonance.Editor
             }
         }
 
-        private static void ActivationModeGui([NotNull] VoiceBroadcastTrigger transmitter)
+        private static void ActivationGui([NotNull] VoiceBroadcastTrigger transmitter)
         {
             transmitter.ChangeWithUndo(
                 "Changed Dissonance Broadcast Trigger Mute",
@@ -225,11 +222,18 @@ namespace Dissonance.Editor
                 a => transmitter.IsMuted = a
             );
 
+            ActivationModeGui(transmitter);
+            VolumeTriggerActivationGui(transmitter);
+        }
+
+        internal static void ActivationModeGui<T>(T transmitter)
+            where T : MonoBehaviour, IVoiceBroadcastTrigger
+        {
             transmitter.ChangeWithUndo(
                 "Changed Dissonance Activation Mode",
                 (CommActivationMode)EditorGUILayout.EnumPopup(new GUIContent("Activation Mode", "How the user should indicate an intention to speak"), transmitter.Mode),
                 transmitter.Mode,
-                a => transmitter.Mode = a
+                m => transmitter.Mode = m
             );
 
             if (transmitter.Mode == CommActivationMode.None)
@@ -249,56 +253,51 @@ namespace Dissonance.Editor
                     a => transmitter.InputName = a
                 );
 
-                EditorGUILayout.HelpBox(
-                    "Define an input axis in Unity's input manager if you have not already.",
-                    MessageType.Info
-                );
-            }
-
-            VolumeTriggerActivationGui(transmitter);
-        }
-
-        private static void VolumeTriggerActivationGui([NotNull] VoiceBroadcastTrigger transmitter)
-        {
-            using (var toggle = new EditorGUILayout.ToggleGroupScope(new GUIContent("Collider Volume Activation", "Only allows speech when the user is inside a collider"), transmitter.UseColliderTrigger))
-            {
-                transmitter.ChangeWithUndo(
-                    "Changed Dissonance Trigger Activation",
-                    toggle.enabled,
-                    transmitter.UseColliderTrigger,
-                    a => transmitter.UseColliderTrigger = a
-                );
-
-                if (transmitter.UseColliderTrigger)
+                // For some reason `Input.GetAxis` breaks the UI layout in Unity 6, even when it's wrapped in the try/catch!
+                // Workaround that by always displaying a tip, instead of contextually displaying an error.
+#if UNITY_6000_0_OR_NEWER
+                EditorGUILayout.HelpBox($"Ensure axis '{transmitter.InputName}' exists in the Input Manager (Edit > Project Settings > Input Manager)", MessageType.Info);
+#else
+                try
                 {
-                    if (!transmitter.gameObject.GetComponents<Collider>().Any(c => c.isTrigger))
-                        EditorGUILayout.HelpBox("Cannot find any collider triggers attached to this entity.", MessageType.Warning);
+                    Input.GetAxis(transmitter.InputName);
                 }
-            }
-
-            if (!transmitter.UseColliderTrigger)
-            {
-                EditorGUILayout.HelpBox(
-                    "Use trigger activation to only broadcast when the player is inside a trigger volume.",
-                    MessageType.Info
-                );
+                catch
+                {
+                    EditorGUILayout.HelpBox($"Input axis '{transmitter.InputName}' does not exist. Create it in the Input Manager (Edit > Project Settings > Input Manager)", MessageType.Error);
+                }
+#endif
             }
         }
 
-        private void TokenGui([NotNull] VoiceBroadcastTrigger transmitter)
+        internal static void VolumeTriggerActivationGui(BaseCommsTrigger trigger)
         {
-            _tokenEditor.DrawInspectorGui(transmitter, transmitter);
+            trigger.ChangeWithUndo(
+                "Changed Dissonance Collider Activation",
+                EditorGUILayout.Toggle(new GUIContent("Collider Activation", "Only allows speech when the user is inside a collider"), trigger.UseColliderTrigger),
+                trigger.UseColliderTrigger,
+                u => trigger.UseColliderTrigger = u
+            );
+
+            if (trigger.UseColliderTrigger)
+            {
+                var triggers2D = trigger.gameObject.GetComponents<Collider2D>().Any(c => c.isTrigger);
+                var triggers3D = trigger.gameObject.GetComponents<Collider>().Any(c => c.isTrigger);
+                if (!triggers2D && !triggers3D)
+                    EditorGUILayout.HelpBox("Cannot find any collider components with 'isTrigger = true' attached to this GameObject.", MessageType.Warning);
+            }
         }
 
         private static void VolumeGui([NotNull] VoiceBroadcastTrigger transmitter)
         {
             if (EditorApplication.isPlaying)
             {
-                EditorGUILayout.Slider("Current Attenuation", transmitter.CurrentFaderVolume, 0, Math.Max(1, transmitter.CurrentFaderVolume));
+                var currentDb = Helpers.ToDecibels(transmitter.CurrentFaderVolume);
+                EditorGUILayout.Slider("Current Gain (dB)", currentDb, Helpers.MinDecibels, Math.Max(10, currentDb));
                 EditorGUILayout.Space();
             }
 
-            EditorGUILayout.LabelField(new GUIContent(string.Format("{0} Fade", transmitter.Mode), string.Format("Fade when {0} mode changes", transmitter.Mode)));
+            EditorGUILayout.LabelField(new GUIContent($"{transmitter.Mode} Fade", $"Fade when {transmitter.Mode} mode changes"));
             SingleFaderGui(transmitter, transmitter.ActivationFader);
 
             EditorGUILayout.Space();
@@ -313,8 +312,9 @@ namespace Dissonance.Editor
         private static void SingleFaderGui([NotNull] VoiceBroadcastTrigger transmitter, [NotNull] VolumeFaderSettings settings)
         {
             transmitter.ChangeWithUndo(
-                "Changed Dissonance Trigger Volume",
-                EditorGUILayout.Slider(new GUIContent("Channel Volume", "Volume multiplier for voice sent from this trigger"), settings.Volume, 0, 2),
+                "Changed Dissonance Collider Trigger Volume",
+                Helpers.FromDecibels(EditorGUILayout.Slider(new GUIContent("Channel Volume (dB)", "Amplification for voice sent from this trigger"), Helpers.ToDecibels(settings.Volume), Helpers.MinDecibels, 10)),
+                //EditorGUILayout.Slider(new GUIContent("Channel Volume (VMUL)", "Volume multiplier for voice sent from this trigger"), settings.Volume, 0, 4),
                 settings.Volume,
                 a => settings.Volume = a
             );

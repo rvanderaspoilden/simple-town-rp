@@ -59,8 +59,8 @@ namespace Sim.Building {
             }
 
             if (isClient) {
-                this.apartmentController = NetworkIdentity.spawned.ContainsKey(ParentId)
-                    ? NetworkIdentity.spawned[ParentId].GetComponent<ApartmentController>()
+                this.apartmentController = NetworkClient.spawned.ContainsKey(ParentId)
+                    ? NetworkClient.spawned[ParentId].GetComponent<ApartmentController>()
                     : null;
             }
         }
@@ -75,8 +75,8 @@ namespace Sim.Building {
             Vector3 position = curTransform.position;
             Quaternion rotation = curTransform.rotation;
 
-            this.apartmentController = NetworkIdentity.spawned.ContainsKey(ParentId)
-                ? NetworkIdentity.spawned[ParentId].GetComponent<ApartmentController>()
+            this.apartmentController = NetworkClient.spawned.ContainsKey(ParentId)
+                ? NetworkClient.spawned[ParentId].GetComponent<ApartmentController>()
                 : null;
 
             if (this.apartmentController) {

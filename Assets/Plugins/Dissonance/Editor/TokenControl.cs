@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,19 +10,20 @@ namespace Dissonance.Editor
 
         private string _proposedToken = "New Token";
 
-        public TokenControl(string hint, bool foldout = true)
+        public TokenControl(string hint)
         {
             _hint = hint;
         }
 
-        public void DrawInspectorGui(Object parent, [NotNull] IAccessTokenCollection receiver)
+        public void DrawInspectorGui<T>(T target)
+            where T : Object, IAccessTokenCollection
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 EditorGUILayout.HelpBox(_hint, MessageType.Info);
 
                 var tokensToRemove = new List<string>();
-                foreach (var token in receiver.Tokens)
+                foreach (var token in target.Tokens)
                 {
                     using (new EditorGUILayout.HorizontalScope())
                     {
@@ -38,8 +38,8 @@ namespace Dissonance.Editor
 
                 foreach (var token in tokensToRemove)
                 {
-                    Undo.RecordObject(parent, "Removed Dissonance Access Token");
-                    receiver.RemoveToken(token);
+                    Undo.RecordObject(target, "Removed Dissonance Access Token");
+                    target.RemoveToken(token);
                 }
 
                 using (new EditorGUILayout.HorizontalScope())
@@ -47,9 +47,9 @@ namespace Dissonance.Editor
                     _proposedToken = EditorGUILayout.TextField(_proposedToken);
                     if (GUILayout.Button("Add Token"))
                     {
-                        Undo.RecordObject(parent, "Added Dissonance Access Token");
+                        Undo.RecordObject(target, "Added Dissonance Access Token");
 
-                        receiver.AddToken(_proposedToken);
+                        target.AddToken(_proposedToken);
                         _proposedToken = "New Token";
                     }
                 }

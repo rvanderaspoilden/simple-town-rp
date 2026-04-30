@@ -31,11 +31,8 @@ namespace Dissonance.Networking.Client
         #region constructor
         public SendQueue([NotNull] IClient<TPeer> client, [NotNull] ReadonlyLockedValue<Pool<byte[]>> bytePool)
         {
-            if (client == null) throw new ArgumentNullException("client");
-            if (bytePool == null) throw new ArgumentNullException("bytePool");
-
-            _client = client;
-            _sendBufferPool = bytePool;
+            _client = client ?? throw new ArgumentNullException(nameof(client));
+            _sendBufferPool = bytePool ?? throw new ArgumentNullException(nameof(bytePool));
         }
         #endregion
 
@@ -89,7 +86,7 @@ namespace Dissonance.Networking.Client
                 q.Clear();
             }
 
-            //P2P reliable traffic
+            //P2P unreliable traffic
             using (var locker = _unreliableP2PQueue.Lock())
             {
                 var q = locker.Value;
@@ -145,7 +142,7 @@ namespace Dissonance.Networking.Client
         #region Enqueue
         public void EnqueueReliable(ArraySegment<byte> packet)
         {
-            if (packet.Array == null) throw new ArgumentNullException("packet");
+            if (packet.Array == null) throw new ArgumentNullException(nameof(packet));
 
             using (var locker = _serverReliableQueue.Lock())
                 locker.Value.Add(packet);
@@ -153,7 +150,7 @@ namespace Dissonance.Networking.Client
 
         public void EnqeueUnreliable(ArraySegment<byte> packet)
         {
-            if (packet.Array == null) throw new ArgumentNullException("packet");
+            if (packet.Array == null) throw new ArgumentNullException(nameof(packet));
 
             using (var locker = _serverUnreliableQueue.Lock())
                 locker.Value.Add(packet);
@@ -161,8 +158,8 @@ namespace Dissonance.Networking.Client
 
         public void EnqueueReliableP2P(ushort localId, IList<ClientInfo<TPeer?>> destinations, ArraySegment<byte> packet)
         {
-            if (destinations == null) throw new ArgumentNullException("destinations");
-            if (packet.Array == null) throw new ArgumentNullException("packet");
+            if (destinations == null) throw new ArgumentNullException(nameof(destinations));
+            if (packet.Array == null) throw new ArgumentNullException(nameof(packet));
 
             using (var locker = _reliableP2PQueue.Lock())
             {
@@ -177,8 +174,8 @@ namespace Dissonance.Networking.Client
 
         public void EnqueueUnreliableP2P(ushort localId, IList<ClientInfo<TPeer?>> destinations, ArraySegment<byte> packet)
         {
-            if (destinations == null) throw new ArgumentNullException("destinations");
-            if (packet.Array == null) throw new ArgumentNullException("packet");
+            if (destinations == null) throw new ArgumentNullException(nameof(destinations));
+            if (packet.Array == null) throw new ArgumentNullException(nameof(packet));
 
             using (var locker = _unreliableP2PQueue.Lock())
             {
@@ -199,7 +196,7 @@ namespace Dissonance.Networking.Client
 
         public void RecycleSendBuffer([NotNull] byte[] buffer)
         {
-            if (buffer == null) throw new ArgumentNullException("buffer");
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
 
             using (var locker = _sendBufferPool.Lock())
                 locker.Value.Put(buffer);
@@ -207,9 +204,9 @@ namespace Dissonance.Networking.Client
 
         private void EnqueueP2P(ushort localId, [NotNull] ICollection<ClientInfo<TPeer?>> destinations, [NotNull] ICollection<KeyValuePair<List<ClientInfo<TPeer?>>, ArraySegment<byte>>> queue, ArraySegment<byte> packet)
         {
-            if (packet.Array == null) throw new ArgumentNullException("packet");
-            if (destinations == null) throw new ArgumentNullException("destinations");
-            if (queue == null) throw new ArgumentNullException("queue");
+            if (packet.Array == null) throw new ArgumentNullException(nameof(packet));
+            if (destinations == null) throw new ArgumentNullException(nameof(destinations));
+            if (queue == null) throw new ArgumentNullException(nameof(queue));
 
             //early exit
             if (destinations.Count == 0)

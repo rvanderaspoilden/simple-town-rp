@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Dissonance.Networking.Client;
 using Dissonance.Networking.Server;
+using Dissonance.Networking.Server.Admin;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -58,10 +59,7 @@ namespace Dissonance.Networking
             }
 
             /// <inheritdoc />
-            public ConnectionStatus Status
-            {
-                get { return ConnectionStatus.Disconnected; }
-            }
+            public ConnectionStatus Status => ConnectionStatus.Disconnected;
 
             /// <inheritdoc />
             public void Enter()
@@ -170,7 +168,7 @@ namespace Dissonance.Networking
                         else
                         {
                             //While the client is running without any errors reduce the reconnection interval linearly.
-                            _reconnectionAttemptInterval = Math.Max(0, _reconnectionAttemptInterval - Time.deltaTime);
+                            _reconnectionAttemptInterval = Math.Max(0, _reconnectionAttemptInterval - Time.unscaledDeltaTime);
                         }
 
                     }
@@ -245,14 +243,11 @@ namespace Dissonance.Networking
 
         public bool IsInitialized { get; private set; }
 
-        public ConnectionStatus Status
-        {
-            get { return _state.Status; }
-        }
+        public ConnectionStatus Status => _state.Status;
 
         public NetworkMode Mode
         {
-            get { return _mode; }
+            get => _mode;
             private set
             {
                 if (_mode != value)
@@ -260,6 +255,21 @@ namespace Dissonance.Networking
                     _mode = value;
                     OnModeChanged(value);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Get the server moderation API. Returns null if this is not the server instance.
+        /// </summary>
+        [CanBeNull] public IServerAdmin ServerAdmin
+        {
+            get
+            {
+                var s = Server;
+                if (s == null)
+                    return null;
+
+                return s.ServerAdmin;
             }
         }
         #endregion
@@ -296,19 +306,10 @@ namespace Dissonance.Networking
 
         void ICommsNetwork.Initialize([NotNull] string playerName, [NotNull] Rooms rooms, [NotNull] PlayerChannels playerChannels, [NotNull] RoomChannels roomChannels, CodecSettings codecSettings)
         {
-            if (playerName == null)
-                throw new ArgumentNullException("playerName");
-            if (rooms == null)
-                throw new ArgumentNullException("rooms");
-            if (playerChannels == null)
-                throw new ArgumentNullException("playerChannels");
-            if (roomChannels == null)
-                throw new ArgumentNullException("roomChannels");
-
-            PlayerName = playerName;
-            Rooms = rooms;
-            PlayerChannels = playerChannels;
-            RoomChannels = roomChannels;
+            PlayerName = playerName ?? throw new ArgumentNullException(nameof(playerName));
+            Rooms = rooms ?? throw new ArgumentNullException(nameof(rooms));
+            PlayerChannels = playerChannels ?? throw new ArgumentNullException(nameof(playerChannels));
+            RoomChannels = roomChannels ?? throw new ArgumentNullException(nameof(roomChannels));
             CodecSettings = codecSettings;
 
             Profiler.BeginSample("virtual void Initialize");
@@ -366,7 +367,7 @@ namespace Dissonance.Networking
         /// <param name="clientParameters"></param>
         protected void RunAsClient(TClientParam clientParameters)
         {
-            _nextStates.Enqueue(new Session(this, NetworkMode.Client, default(TServerParam), clientParameters));
+            _nextStates.Enqueue(new Session(this, NetworkMode.Client, default, clientParameters));
         }
 
         /// <summary>
@@ -375,7 +376,7 @@ namespace Dissonance.Networking
         /// <param name="serverParameters"></param>
         protected void RunAsDedicatedServer(TServerParam serverParameters)
         {
-            _nextStates.Enqueue(new Session(this, NetworkMode.DedicatedServer, serverParameters, default(TClientParam)));
+            _nextStates.Enqueue(new Session(this, NetworkMode.DedicatedServer, serverParameters, default));
         }
         #endregion
 
@@ -481,69 +482,58 @@ namespace Dissonance.Networking
 
         public void SendVoice(ArraySegment<byte> data)
         {
-            if (Client != null)
-                Client.SendVoiceData(data);
+            Client?.SendVoiceData(data);
         }
 
         public void SendText(string data, ChannelType recipientType, string recipientId)
         {
-            if (Client != null)
-                Client.SendTextData(data, recipientType, recipientId);
+            Client?.SendTextData(data, recipientType, recipientId);
         }
 
         #region event invokers
         private void OnPlayerJoined(string obj, CodecSettings codecSettings)
         {
-            var handler = PlayerJoined;
-            if (handler != null) handler(obj, codecSettings);
+            PlayerJoined?.Invoke(obj, codecSettings);
         }
 
         private void OnPlayerLeft(string obj)
         {
-            var handler = PlayerLeft;
-            if (handler != null) handler(obj);
+            PlayerLeft?.Invoke(obj);
         }
 
         private void OnPlayerEnteredRoom(RoomEvent evt)
         {
-            var handler = PlayerEnteredRoom;
-            if (handler != null) handler(evt);
+            PlayerEnteredRoom?.Invoke(evt);
         }
 
         private void OnPlayerExitedRoom(RoomEvent evt)
         {
-            var handler = PlayerExitedRoom;
-            if (handler != null) handler(evt);
+            PlayerExitedRoom?.Invoke(evt);
         }
 
         private void OnVoicePacketReceived(VoicePacket obj)
         {
-            var handler = VoicePacketReceived;
-            if (handler != null) handler(obj);
+            VoicePacketReceived?.Invoke(obj);
         }
 
         private void OnTextPacketReceived(TextMessage obj)
         {
-            var handler = TextPacketReceived;
-            if (handler != null) handler(obj);
+            TextPacketReceived?.Invoke(obj);
         }
 
         private void OnPlayerStartedSpeaking(string obj)
         {
-            var handler = PlayerStartedSpeaking;
-            if (handler != null) handler(obj);
+            PlayerStartedSpeaking?.Invoke(obj);
         }
 
         private void OnPlayerStoppedSpeaking(string obj)
         {
-            var handler = PlayerStoppedSpeaking;
-            if (handler != null) handler(obj);
+            PlayerStoppedSpeaking?.Invoke(obj);
         }
 
         private void OnModeChanged(NetworkMode obj)
         {
-            var handler = ModeChanged;
-            if (handler != null) handler(obj);
+            ModeChanged?.Invoke(obj);
         }
         #endregion
 
@@ -553,7 +543,7 @@ namespace Dissonance.Networking
         public void OnInspectorGui()
         {
 #if UNITY_EDITOR
-            string mode = "None";
+            var mode = "None";
             if (Mode == NetworkMode.Host)
                 mode = "Server & Client";
             else if (Mode == NetworkMode.Client)
@@ -586,9 +576,8 @@ namespace Dissonance.Networking
                         EditorGUILayout.LabelField("Voice Data", Client.RecvVoiceData.ToString());
                         EditorGUILayout.LabelField("Text Data", Client.RecvTextData.ToString());
 
-                        uint totalPackets, totalBytes, totalBytesPerSecond;
                         TrafficCounter.Combine(
-                            out totalPackets, out totalBytes, out totalBytesPerSecond,
+                            out var totalPackets, out var totalBytes, out var totalBytesPerSecond,
                             Client.RecvHandshakeResponse,
                             Client.RecvHandshakeP2P,
                             Client.RecvClientState,
@@ -616,8 +605,10 @@ namespace Dissonance.Networking
                         EditorGUILayout.LabelField("P2P Relay", Server.RecvPacketRelay.ToString());
                         EditorGUILayout.LabelField("Delta Channel State", Server.RecvDeltaChannelState.ToString());
 
-                        uint totalPackets, totalBytes, totalBytesPerSecond;
-                        TrafficCounter.Combine(out totalPackets, out totalBytes, out totalBytesPerSecond, Server.RecvHandshakeRequest, Server.RecvClientState, Server.RecvPacketRelay, Server.RecvDeltaChannelState);
+                        TrafficCounter.Combine(
+                            out var totalPackets, out var totalBytes, out var totalBytesPerSecond,
+                            Server.RecvHandshakeRequest, Server.RecvClientState, Server.RecvPacketRelay, Server.RecvDeltaChannelState
+                        );
                         EditorGUILayout.LabelField("TOTAL", TrafficCounter.Format(totalPackets, totalBytes, totalBytesPerSecond));
                     }
                     finally

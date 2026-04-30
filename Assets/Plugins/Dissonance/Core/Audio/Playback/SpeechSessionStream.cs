@@ -21,12 +21,15 @@ namespace Dissonance.Audio.Playback
         : IJitterEstimator
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof (SpeechSessionStream).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(SpeechSessionStream));
 
         private string _metricArrivalDelay;
-        
+        private string _metricBufferSize;
+
         private readonly Queue<SpeechSession> _awaitingActivation;
         private readonly IVolumeProvider _volumeProvider;
+
+        private int? _outputRate;
 
         /// <summary>
         /// The time when the current head of the queue was first attempted to be dequeued
@@ -39,12 +42,13 @@ namespace Dissonance.Audio.Playback
         private string _playerName;
         public string PlayerName
         {
-            get { return _playerName; }
+            get => _playerName;
             set
             {
                 if (_playerName != value)
                 {
                     _metricArrivalDelay = Metrics.MetricName("PacketArrivalDelay", _playerName);
+                    _metricBufferSize = Metrics.MetricName("PlaybackEnqueueBufferSize", _playerName);
 
                     _playerName = value;
                     _arrivalJitterMeter.Clear();
@@ -53,21 +57,19 @@ namespace Dissonance.Audio.Playback
         }
 
         private readonly WindowDeviationCalculator _arrivalJitterMeter = new WindowDeviationCalculator(128);
-        float IJitterEstimator.Jitter
-        {
-            get { return _arrivalJitterMeter.StdDev; }
-        }
-
-        float IJitterEstimator.Confidence
-        {
-            get { return _arrivalJitterMeter.Confidence; }
-        }
+        float IJitterEstimator.Jitter => _arrivalJitterMeter.StdDev;
+        float IJitterEstimator.Confidence => _arrivalJitterMeter.Confidence;
         #endregion
 
         public SpeechSessionStream(IVolumeProvider volumeProvider)
         {
             _volumeProvider = volumeProvider;
             _awaitingActivation = new Queue<SpeechSession>();
+        }
+
+        public void SetFixedOutputRate(int? rate)
+        {
+            _outputRate = rate;
         }
 
         /// <summary>
@@ -107,6 +109,7 @@ namespace Dissonance.Audio.Playback
                 var next = _awaitingActivation.Peek();
                 if (next.TargetActivationTime < rNow)
                 {
+                    next.SetOutputSampleRate(_outputRate);
                     next.Prepare(_queueHeadFirstDequeueAttempt.Value);
 
                     _awaitingActivation.Dequeue();
@@ -127,16 +130,17 @@ namespace Dissonance.Audio.Playback
         public void ReceiveFrame(VoicePacket packet, DateTime? now = null)
         {
             if (packet.SenderPlayerId != PlayerName)
-                throw Log.CreatePossibleBugException(string.Format("Attempted to deliver voice from player {0} to playback queue for player {1}", packet.SenderPlayerId, PlayerName), "F55DB7D5-621B-4F5B-8C19-700B1FBC9871");
+                throw Log.CreatePossibleBugException($"Attempted to deliver voice from player {packet.SenderPlayerId} to playback queue for player {PlayerName}", "F55DB7D5-621B-4F5B-8C19-700B1FBC9871");
 
             if (_active == null)
             {
-                Log.Warn(Log.PossibleBugMessage(string.Format("Attempted to deliver voice from player {0} with no active session", packet.SenderPlayerId), "1BD954EC-B455-421F-9D6E-2E3D087BC0A9"));
+                Log.Warn(Log.PossibleBugMessage($"Attempted to deliver voice from player {packet.SenderPlayerId} with no active session", "1BD954EC-B455-421F-9D6E-2E3D087BC0A9"));
                 return;
             }
 
             var delay = _active.Push(packet, now ?? DateTime.UtcNow);
             Metrics.Sample(_metricArrivalDelay, delay);
+            Metrics.Sample(_metricBufferSize, _active.BufferCount);
 
             _arrivalJitterMeter.Update(delay);
         }
@@ -147,8 +151,7 @@ namespace Dissonance.Audio.Playback
         public void ForceReset()
         {
             // Reset the "active" session (the one at the _back_ of the queue with new packets being added to it)
-            if (_active != null)
-                _active.Reset();
+            _active?.Reset();
 
             // Dequeue all pending sessions except the active one
             // This discards all the pipelines when in theory they could be recycled. However, since this is a hard reset we

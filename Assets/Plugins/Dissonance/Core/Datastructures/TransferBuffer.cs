@@ -19,15 +19,9 @@ namespace Dissonance.Datastructures
         /// <summary>
         /// Get an estimate of the amount of data in the buffer. This is only an estimate because of data races with other threads
         /// </summary>
-        public int EstimatedUnreadCount
-        {
-            get { return _unread; }
-        }
+        public int EstimatedUnreadCount => _unread;
 
-        public int Capacity
-        {
-            get { return _buffer.Length; }
-        }
+        public int Capacity => _buffer.Length;
 
         public TransferBuffer(int capacity = 4096)
         {
@@ -44,7 +38,7 @@ namespace Dissonance.Datastructures
         {
             _singleWriteItem[0] = item;
             var success = TryWriteAll(new ArraySegment<T>(_singleWriteItem));
-            _singleWriteItem[0] = default(T);
+            _singleWriteItem[0] = default;
             return success;
         }
 
@@ -119,8 +113,8 @@ namespace Dissonance.Datastructures
         public bool Read([CanBeNull] out T item)
         {
             var success = Read(_singleReadItem);
-            item = success ? _singleReadItem[0] : default(T);
-            _singleReadItem[0] = default(T);
+            item = success ? _singleReadItem[0] : default;
+            _singleReadItem[0] = default;
             return success;
         }
 
@@ -132,7 +126,7 @@ namespace Dissonance.Datastructures
         public bool Read([NotNull] T[] data, int readCount)
         {
             if (readCount > data.Length)
-                throw new ArgumentException("Requested read amount is > size of supplied output buffer", "readCount");
+                throw new ArgumentException("Requested read amount is > size of supplied output buffer", nameof(readCount));
 
             return Read(new ArraySegment<T>(data, 0, readCount));
         }

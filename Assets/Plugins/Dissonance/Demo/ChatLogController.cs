@@ -25,7 +25,8 @@ namespace Dissonance.Demo
 
         public void Start ()
         {
-            Comms = Comms ?? FindObjectOfType<DissonanceComms>();
+            if (!Comms)
+                Comms = DissonanceComms.GetSingleton();
 
             _textPrototype = Resources.Load<GameObject>("LogTextPrototype");
             _canvas = GetComponent<CanvasGroup>();
@@ -137,10 +138,9 @@ namespace Dissonance.Demo
         {
             private readonly Text _txt;
 
-            private readonly RectTransform _transform;
-            [NotNull] public RectTransform Transform { get { return _transform; } }
+            [NotNull] public RectTransform Transform { get; }
 
-            [NotNull] public GameObject Object { get { return _txt.gameObject; } }
+            [NotNull] public GameObject Object => _txt.gameObject;
 
             private float _transitionProgress;
             public bool IsTransitioningOut { get; private set; }
@@ -149,7 +149,7 @@ namespace Dissonance.Demo
             public ChatLogEntry([NotNull] Text txt)
             {
                 _txt = txt;
-                _transform = txt.rectTransform;
+                Transform = txt.rectTransform;
             }
 
             public void FadeOut()
@@ -163,7 +163,7 @@ namespace Dissonance.Demo
                 {
                     var baseColor = _txt.color;
 
-                    _transitionProgress = Mathf.Clamp(_transitionProgress + Time.deltaTime, 0, 1);
+                    _transitionProgress = Mathf.Clamp(_transitionProgress + Time.unscaledDeltaTime, 0, 1);
                     _txt.color = Color.Lerp(
                         new Color(baseColor.r, baseColor.g, baseColor.b, 1),
                         new Color(baseColor.r, baseColor.g, baseColor.b, 0),

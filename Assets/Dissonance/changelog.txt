@@ -1,5 +1,213 @@
 # Release Notes
 
+## v9.0.9 (2026-04-27)
+
+**Features**
+- Updated to Unity 6000.0.23
+- Added audio cloning support (copying voice from one AudioSource to another)
+
+**Fixes**
+- Fixed build failure on VisionOS
+- Reduced latency by ~20ms in BasicMicrophoneCapture (in one specific edge case)
+- Fixed measurement bias in audio synchronizer
+- In FMOD playback integration: setting channel priority to max to prevent desync issue
+
+## v9.0.8 (2025-10-27)
+
+**Features**
+ - Added support for Android 16KB page size
+ - Added a delay after the end of speech before stopping playback, this allows SFX such as reverb to continue playing for a while
+
+**Fixes**
+ - Fixed performance issue when FMODVoicePlayback inspector is open
+ - Fixed warnings about FindObjectsOfType in Unity 6
+ - Mitigation for maliciously crafted packets causing users to disconnect from voice session
+
+## v9.0.7 (2025-01-06)
+
+**Bug Fixes**
+
+- Fixed inspector layout breaking in certain circumstances on Unity 6
+
+## v9.0.6 (2024-10-21)
+
+**Features**
+
+- Added DissonanceComms.GetSingleton() method
+
+## v9.0.5 (2024-07-29)
+
+v9.0.4
+
+**Features**
+ - Extra validation on GetSpeakingChannels parameters.
+ - ToString implementation for RoomName struct.
+ - Packet relaying can now relay to an unlimited number of destinations, no longer capped at 255.
+
+**Fixes**
+ - Using Marshal.SizeOf<T> instead of Marshal.SizeOf(typeof(T)), this works better with AOT compilation.
+ - Fixed missing method definition in DarkRift2 server script.
+ - Fixed allocation in PeerVoiceReceiver call to Sort.
+ - Fixed issue with invalid GCHandle in FMOD Voice Playback.
+ - Fixed issue with possible null-reference exception in FMOD Voice Playback.
+ - Fixed issue with possible null-reference exception in Unity Voice Playback.
+ - Fixed VoiceProximityBroadcastTrigger and VoiceProximityReceiptTrigger using incorrect room name after name is changed.
+
+## v9.0.4 (2023-11-21)
+
+**Fixes**
+ - Fixed audio playback never properly resuming after an application was suspended and resumed (e.g. on mobile platforms when the app is backgrounded).
+
+## v9.0.3 (2023-09-08)
+
+**Features**
+ - Added a static GetDevices method to FMODMicrophoneInput which can be used as a replacement for Microphone.devices.
+ - Added IAudioOutputSubscriber which provides direct access to the audio stream just before playback.
+ - Modified VoicePlayerState.Amplitude for the local player to measure amplitude _after_ audio preprocessing has been applied.
+ - large number of syntax changes, to modernise C# language usage.
+
+**Fixes**
+ - Various fixes related to pausing the application.
+  - Disconnecting from the network session and rejoining when resuming.
+  - Forcing a complete reset of the playback system.
+  - Resetting jitter/packet loss measurements.
+ - Fixed spelling of SubcribeToVoiceActivation method.
+ - Stripped symbols from 'opus.a' for iOS (reduces chance of conflicts with other assets).
+
+## v9.0.2 (2023-05-30)
+
+**Features**
+ - Added server side packet loss statistics.
+ - Added additional realtime metrics which can be used to diagnose the cause of lag in voice.
+ - Added a special 'always send' room (id:FEE5233F-185F-4C73-AC6F-EE325998D526) which always sends to the server even if no one is listening.
+
+**Fixes**
+ - Fixed VoiceBroadcastTrigger transmission mode not applying when disabled and re-enabled.
+ - Not checking if 'Run In Background' is enabled when running on an Android device (not supported by Unity).
+ - Very small reduction in allocation during Dissonance initialisation.
+
+## v9.0.1 (2023-01-26)
+
+**Features**
+ - Marked DarkRift2 server plugins as 'threadsafe'.
+
+**Bugfixes**
+ - Fixed VoiceProximityBroadcastTrigger entering a broken state when disabled, preventing it from being enabled again.
+ - Fixed server side 'Hash collision between room' warning messages.
+
+## v9.0.0 (2022-12-05)
+
+**Features**
+ - Introduced a new sync system which temporarily pauses playback when extreme packet loss is detected. This causes a brief interruption to audio playback but gives more time for packets to arrive.
+
+**Bugfixes**
+ - Fixed (Use System Default) option disappearing when using certain microphone backends (e.g. FMOD)
+ - Fixed the new 'Grid Proximity Chat' system from triggering lots of false positive 'hash collision' warnings.
+
+## v8.3.1 (2022-10-28)
+
+**Features**
+ - Added support for Android on the x86_64 architecture
+
+**Bugfixes**
+ - Fixed a potential application crash when plugging in a microphone on MacOS
+ - Fixed Voice Activity Detector always returning true on MacOS
+
+## v8.3.0 (2022-09-22)
+
+**Features**
+ - Added a new voice proximity system which scales to an unlimited number of users by approximating proximity using spatial-hashing.
+ - More informative error message when a hash collision occurs in the network system.
+ - Increased the size of the preprocessor input buffer, slightly improving how Dissonance handles terrible frame times (less than 6 fps).
+ - Added an option to the server admin system to intercept all voice packets passing through the server.
+
+**Bugfixes**
+ - Improved handling for the playback object being destroyed by something other than Dissonance.
+
+## v8.2.1 (2022-07-23)
+
+**Bugfixes**
+ - Hotfix for issue [#256](https://github.com/Placeholder-Software/Dissonance/issues/256)
+
+## v8.2.0 (2022-07-21)
+
+**Features**
+ - New BaseMicrophoneSubscriber base class to make subscribing to the raw microphone audio stream easier.
+ - Experimental support for **Magic Leap 2**.
+ - Experimental support for Apple M1 processors.
+ - Added support for RNNoise (Background Sound Removal) audio preprocessor for MacOS (disabled by default).
+ - Improved RNNoise (Background Sound Removal) audio quality, removing a slight echo effect.
+ - Added new OfflineCommsNetwork which enables Dissonance when not connected to any network session. For example for tweaking voice settings in a settings menu.
+
+**Bugfixes**
+ - Fixed FMOD Microphone Input polling the incorrect device, resulting in no audio recorded in some circumstances.
+
+## v8.1.0 (2022-04-29)
+
+**Features**
+ - New FMOD Recording Integration - significantly reduce audio recording latency!
+ - New FMOD Playback Integration - bypass the Unity audio engine and play voice through FMOD!
+ - Marked custom inspector as child inspectors so that scripts derived from Dissonance scripts will have the correct inspector.
+
+**Bugfixes**
+ - Fixed VoicePlayback editor not saving changes in some circumstances.
+ - Fixed VoiceBroadcastTrigger collider fader to apply properly when exiting the collider volume.
+
+## v8.0.4 (2022-01-05)
+
+**bugfixes**
+ - Fixed possible exception in audio debugger on some platforms caused by missing permissions.
+ - Replaced a confusing log message about 'active sessions'.
+ - Slightly reduced overhead of AudioClip generation.
+
+## v8.0.3 (2021-10-27)
+
+**bugfixes**
+ - Fixed a Unity linker bug which caused logging to fail in some locales (e.g. Thailand/Argentina)
+ - Fixed the voice receiver discarding voice packets in certain very rare circumstances in very long lived sessions with many rooms.
+ - Fixed MacOS Unity Editor attempting to access RNNoise if targeting non-MacOS platforms.
+ - Removed Lumin from the list of supported RNNoise platforms (RNNoise can conflict with the built in audio processing on Magic Leap).
+
+## v8.0.2 (2021-08-26)
+
+**features**
+ - Added a low pass filter to the default playback prefab to attenuate sounds above the range of normal human speech.
+
+**bugfixes**
+ - Renamed CopyTo extension method to CopyToSegment to prevent a naming collision with a new method added in Unity 2021.
+ - Fixed Dissonance_SetAgcIsOutputMutedState being private on some platforms, causing build errors.
+
+## v8.0.1 (2021-06-07)
+
+**features**
+ - Added support for [RNNoise](https://jmvalin.ca/demo/rnnoise/) to the audio preprocessor (disabled by default). RNNoise uses machine learning to detect and remove annoying background sounds from speech.
+ - Improved the inspector for the AEC filter to give some tips on specific failure cases.
+ - Using the Desktop AEC for the Oculus Quest instead of the mobiles AEC. This significantly improves quality of AEC.
+ - No longer setting spatialBlend=1 when creating Dissonance playback sources. This allows custom playback prefabs to set a custom spatial blend amount.
+
+**bugfixes**
+ - Using the correct microphone device list provider in the mic capture inspector instead of always using the default Unity Microphone.devices.
+
+## v8.0.0 (2021-04-22)
+
+**features**
+ - Added a property to get the active microphone device.
+ - Showing decibels (dBFS) instead of vmul on VoiceBroadcastTrigger faders.
+ - Showing decibels (dBFS) on the mic input and audio playback components.
+ - Changed 'Audio Duck Attenuation' slider to show decibels instead of vmul.
+ - Modified handling of reconnecting clients to reset their state even if not strictly necessary. This allows clients which encounter network issues to to disconnect and instantly reconnect and flush the network server state.
+ - Improved AEC filter inspector to clarify the meaning of some of the measured statistics.
+ - Added support for 2D collider trigger to VoiceBroadcastTrigger and VoiceReceiptTrigger.
+ - Added a **prototype** server side API allowing dedicated servers to collect information about which players are talking/listening to which channels.
+
+**bugfixes**
+ - Changed all Dissonance AudioSource components to maximum priority. This makes it very unlikely that voices will disappear due to virtualisation.
+ - Fixed AEC filter not loading correctly on Linux.
+ - Fixed PhotonPlayer causing an ArgumentNullException in some circumstances.
+ - Fixed VoiceBroadcastTrigger fader volume being ignored (it was always 1.0).
+ - Using unscaledDeltaTime instead of deltaTime.
+ - Fixed AecDiagnostics script failing on iOS.
+
 ## v7.3.0 (2021-03-08)
 
 **features**

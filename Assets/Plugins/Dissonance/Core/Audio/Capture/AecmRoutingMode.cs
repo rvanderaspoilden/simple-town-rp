@@ -7,10 +7,12 @@
 
         Disabled = -1,
 
+        // ReSharper disable UnusedMember.Global (Justification: these values are returned from the native audio preproessor)
         QuietEarpieceOrHeadset = 0,
         Earpiece = 1,
         LoudEarpiece = 2,
         Speakerphone = 3,
         LoudSpeakerphone = 4
+        // ReSharper restore UnusedMember.Global
     }
 }

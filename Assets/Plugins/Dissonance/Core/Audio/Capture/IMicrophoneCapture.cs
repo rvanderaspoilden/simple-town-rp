@@ -15,6 +15,11 @@ namespace Dissonance.Audio.Capture
         bool IsRecording { get; }
 
         /// <summary>
+        /// The device which is currently being used to record audio. Null if not recording.
+        /// </summary>
+        [CanBeNull] string Device { get; }
+
+        /// <summary>
         /// Total latency from audio arriving at the microphone to being delivered to mic subscribers
         /// </summary>
         TimeSpan Latency { get; }

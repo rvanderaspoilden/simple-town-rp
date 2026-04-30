@@ -9,16 +9,14 @@ namespace Dissonance.Networking
         : IReadonlyClientIdCollection
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Network, typeof(ClientIdCollection).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Network, nameof(ClientIdCollection));
 
         private readonly List<string> _items;
         private readonly List<ushort> _freeIds;
         private readonly IEnumerable<KeyValuePair<ushort, string>> _alive;
 
-        [NotNull] public IEnumerable<KeyValuePair<ushort, string>> Items
-        {
-            get { return _alive; }
-        }
+        [NotNull] public IEnumerable<KeyValuePair<ushort, string>> Items => _alive;
+
         #endregion
 
         public ClientIdCollection()
@@ -82,7 +80,7 @@ namespace Dissonance.Networking
         {
             var found = _items.IndexOf(name);
             if (found != -1)
-                throw new InvalidOperationException(string.Format("Name is already in table with ID '{0}'", found));
+                throw new InvalidOperationException($"Name is already in table with ID '{found}'");
 
             if (_freeIds.Count > 0)
             {
@@ -145,7 +143,7 @@ namespace Dissonance.Networking
         public void Load([NotNull] List<ClientInfo> clients)
         {
             if (clients == null)
-                throw new ArgumentNullException("clients");
+                throw new ArgumentNullException(nameof(clients));
 
             Clear();
 

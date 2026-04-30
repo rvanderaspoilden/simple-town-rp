@@ -19,6 +19,11 @@ namespace Dissonance.Networking
         private readonly Dictionary<string, ClientInfo<TPeer>> _clientsByName = new Dictionary<string, ClientInfo<TPeer>>();
 
         private readonly List<string> _tmpRoomList = new List<string>();
+
+        public event Action<ClientInfo<TPeer>> OnClientJoined;
+        public event Action<ClientInfo<TPeer>> OnClientLeft;
+        public event Action<ClientInfo<TPeer>, string> OnClientEnteredRoomEvent;
+        public event Action<ClientInfo<TPeer>, string> OnClientExitedRoomEvent;
         #endregion
 
         protected BaseClientCollection()
@@ -49,18 +54,19 @@ namespace Dissonance.Networking
         #region add/remove clients
         protected virtual void OnAddedClient([NotNull] ClientInfo<TPeer> client)
         {
+            OnClientJoined?.Invoke(client);
         }
 
         protected virtual void OnRemovedClient([NotNull] ClientInfo<TPeer> client)
         {
+            OnClientLeft?.Invoke(client);
         }
 
         [NotNull] protected ClientInfo<TPeer> GetOrCreateClientInfo(ushort id, [NotNull] string name, CodecSettings codecSettings, [CanBeNull] TPeer connection)
         {
-            if (name == null) throw new ArgumentNullException("name");
+            if (name == null) throw new ArgumentNullException(nameof(name));
 
-            ClientInfo<TPeer> info;
-            if (TryGetClientInfoById(id, out info))
+            if (TryGetClientInfoById(id, out var info))
                 return info;
 
             info = new ClientInfo<TPeer>(name, id, codecSettings, connection);
@@ -96,11 +102,13 @@ namespace Dissonance.Networking
         #endregion
 
         #region query
+        [ContractAnnotation("=> true, info:notnull; => false, info:null")]
         public bool TryGetClientInfoById(ushort player, out ClientInfo<TPeer> info)
         {
             return _clientsByPlayerId.TryGetValue(player, out info);
         }
 
+        [ContractAnnotation("=> true, info:notnull; => false, info:null")]
         public bool TryGetClientInfoByName([CanBeNull] string name, out ClientInfo<TPeer> info)
         {
             if (name == null)
@@ -112,15 +120,15 @@ namespace Dissonance.Networking
 
             return _clientsByName.TryGetValue(name, out info);
         }
-
-        public bool TryGetClientsInRoom(string room, out List<ClientInfo<TPeer>> clients)
+        
+        public bool TryGetClientsInRoom(string room, List<ClientInfo<TPeer>> output)
         {
-            return ClientsInRooms.TryGetClientsInRoom(room, out clients);
+            return ClientsInRooms.TryGetClientsInRoom(room, output);
         }
-
-        public bool TryGetClientsInRoom(ushort roomId, out List<ClientInfo<TPeer>> clients)
+        
+        public bool TryGetClientsInRoom(ushort roomId, List<ClientInfo<TPeer>> output)
         {
-            return ClientsInRooms.TryGetClientsInRoom(roomId, out clients);
+            return ClientsInRooms.TryGetClientsInRoom(roomId, output);
         }
 
         protected void GetClients(List<ClientInfo<TPeer>> output)
@@ -161,16 +169,18 @@ namespace Dissonance.Networking
 
         protected virtual void OnClientEnteredRoom([NotNull] ClientInfo<TPeer> client, string room)
         {
+            OnClientEnteredRoomEvent?.Invoke(client, room);
         }
 
         protected virtual void OnClientExitedRoom([NotNull] ClientInfo<TPeer> client, string room)
         {
+            OnClientExitedRoomEvent?.Invoke(client, room);
         }
 
         protected void JoinRoom([NotNull] string room, [NotNull] ClientInfo<TPeer> client)
         {
-            if (room == null) throw new ArgumentNullException("room");
-            if (client == null) throw new ArgumentNullException("client");
+            if (room == null) throw new ArgumentNullException(nameof(room));
+            if (client == null) throw new ArgumentNullException(nameof(client));
 
             //Add this client to the list of clients in the room
             ClientsInRooms.Add(room, client);
@@ -182,8 +192,8 @@ namespace Dissonance.Networking
 
         private void LeaveRoom([NotNull] string room, [NotNull] ClientInfo<TPeer> client)
         {
-            if (room == null) throw new ArgumentNullException("room");
-            if (client == null) throw new ArgumentNullException("client");
+            if (room == null) throw new ArgumentNullException(nameof(room));
+            if (client == null) throw new ArgumentNullException(nameof(client));
 
             //Remove client from the list of clients in this room
             ClientsInRooms.Remove(room, client);
@@ -221,13 +231,9 @@ namespace Dissonance.Networking
 
         public virtual void ProcessDeltaChannelState(ref PacketReader reader)
         {
-            bool joined;
-            ushort peer;
-            string room;
-            reader.ReadDeltaChannelState(out joined, out peer, out room);
+            reader.ReadDeltaChannelState(out var joined, out var peer, out var room);
 
-            ClientInfo<TPeer> info;
-            if (!TryGetClientInfoById(peer, out info))
+            if (!TryGetClientInfoById(peer, out var info))
             {
                 Log.Warn("Received a DeltaChannelState for an unknown peer");
                 return;
@@ -248,11 +254,9 @@ namespace Dissonance.Networking
 
         [ContractAnnotation("=> true, info:notnull; => false, info:null")]
         bool TryGetClientInfoByName([NotNull] string clientName, out ClientInfo<TPeer> info);
-
-        [ContractAnnotation("=> true, clients:notnull; => false, clients:null")]
-        bool TryGetClientsInRoom([NotNull] string room, out List<ClientInfo<TPeer>> clients);
-
-        [ContractAnnotation("=> true, clients:notnull; => false, clients:null")]
-        bool TryGetClientsInRoom(ushort roomId, out List<ClientInfo<TPeer>> clients);
+        
+        bool TryGetClientsInRoom([NotNull] string room, List<ClientInfo<TPeer>> output);
+        
+        bool TryGetClientsInRoom(ushort roomId, List<ClientInfo<TPeer>> output);
     }
 }

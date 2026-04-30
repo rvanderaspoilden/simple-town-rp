@@ -23,10 +23,7 @@ namespace Dissonance
         /// <summary>
         /// Number of tokens currently in the set
         /// </summary>
-        public int Count
-        {
-            get { return _tokens.Count; }
-        }
+        public int Count => _tokens.Count;
 
         public event Action<string> TokenRemoved;
         public event Action<string> TokenAdded;
@@ -48,7 +45,7 @@ namespace Dissonance
         public bool AddToken([NotNull] string token)
         {
             if (token == null)
-                throw new ArgumentNullException("token", "Cannot add a null token");
+                throw new ArgumentNullException(nameof(token), "Cannot add a null token");
 
             //Check if the collection already contains this token
             var index = Find(token);
@@ -60,9 +57,7 @@ namespace Dissonance
             _tokens.Insert(~index, token);
 
             //Raise event indicating a token was added
-            var act = TokenAdded;
-            if (act != null)
-                act(token);
+            TokenAdded?.Invoke(token);
 
             return true;
         }
@@ -70,7 +65,7 @@ namespace Dissonance
         public bool RemoveToken([NotNull] string token)
         {
             if (token == null)
-                throw new ArgumentNullException("token", "Cannot remove a null token");
+                throw new ArgumentNullException(nameof(token), "Cannot remove a null token");
 
             var index = Find(token);
             if (index < 0)
@@ -79,9 +74,7 @@ namespace Dissonance
             _tokens.RemoveAt(index);
 
             //Raise event indicating a token was removed
-            var act = TokenRemoved;
-            if (act != null)
-                act(token);
+            TokenRemoved?.Invoke(token);
 
             return true;
         }
@@ -89,7 +82,7 @@ namespace Dissonance
         public bool IntersectsWith([NotNull] TokenSet other)
         {
             if (other == null)
-                throw new ArgumentNullException("other", "Cannot intersect with null");
+                throw new ArgumentNullException(nameof(other), "Cannot intersect with null");
 
             var i = 0;
             var j = 0;

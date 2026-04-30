@@ -12,7 +12,7 @@ namespace Dissonance.Extensions
         /// <returns></returns>
         public static int GetFnvHashCode([CanBeNull] this string str)
         {
-            if (ReferenceEquals(str, null))
+            if (str is null)
                 return 0;
 
             unchecked
@@ -28,11 +28,11 @@ namespace Dissonance.Extensions
                     var b1 = (byte)(c >> 8);
                     var b2 = (byte)c;
 
-                    hash = hash ^ b1;
-                    hash = hash * 16777619;
+                    hash ^= b1;
+                    hash *= 16777619;
 
-                    hash = hash ^ b2;
-                    hash = hash * 16777619;
+                    hash ^= b2;
+                    hash *= 16777619;
                 }
 
                 return (int)hash;

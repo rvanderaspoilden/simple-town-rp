@@ -9,34 +9,47 @@ namespace Dissonance.Audio
     internal class AudioFileWriter
         : IDisposable
     {
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(AudioFileWriter));
+
         private readonly LockedValue<WaveFileWriter> _lock;
+        private readonly bool _error;
 
         public AudioFileWriter(string filename, [NotNull] WaveFormat format)
         {
             if (filename == null)
-                throw new ArgumentNullException("filename");
+                throw new ArgumentNullException(nameof(filename));
             if (format == null)
-                throw new ArgumentNullException("format");
+                throw new ArgumentNullException(nameof(format));
 
             if (string.IsNullOrEmpty(Path.GetExtension(filename)))
                 filename += ".wav";
 
-            var directory = Path.GetDirectoryName(filename);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+            try
+            {
+                var directory = Path.GetDirectoryName(filename);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
 
-            _lock = new LockedValue<WaveFileWriter>(
-                new WaveFileWriter(File.Open(filename, FileMode.CreateNew), format)
-            );
+                _lock = new LockedValue<WaveFileWriter>(
+                    new WaveFileWriter(File.Open(filename, FileMode.CreateNew), format)
+                );
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Attempting to create `AudioFileWriter` failed (audio logging will be disabled). This is often caused by a lack of permission to write to the specified directory.\nException: {ex}");
+                _error = true;
+            }
         }
 
         public void Dispose()
         {
+            if (_error)
+                return;
+
             using (var writer = _lock.Lock())
             {
                 var v = writer.Value;
-                if (v != null)
-                    v.Dispose();
+                v?.Dispose();
 
                 writer.Value = null;
             }
@@ -44,16 +57,21 @@ namespace Dissonance.Audio
 
         public void Flush()
         {
+            if (_error)
+                return;
+
             using (var writer = _lock.Lock())
             {
                 var v = writer.Value;
-                if (v != null)
-                    v.Flush();
+                v?.Flush();
             }
         }
 
         public void WriteSamples(ArraySegment<float> samples)
         {
+            if (_error)
+                return;
+
             using (var writer = _lock.Lock())
             {
                 var v = writer.Value;

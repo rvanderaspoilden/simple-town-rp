@@ -129,9 +129,9 @@ namespace Sim {
         private void OnSetAddress(Address old, Address newValue) {
             this.address = newValue;
 
-            if (NetworkIdentity.spawned.ContainsKey(ParentId)) {
+            if (NetworkClient.spawned.ContainsKey(ParentId)) {
                 this.geographicArea.LocationText =
-                    $"{this.address.street}, Étage {NetworkIdentity.spawned[ParentId].GetComponent<HallController>().FloorNumber}, Porte {this.address.doorNumber}";
+                    $"{this.address.street}, Étage {NetworkClient.spawned[ParentId].GetComponent<HallController>().FloorNumber}, Porte {this.address.doorNumber}";
             }
         }
 
@@ -152,8 +152,8 @@ namespace Sim {
 
             this.currentConfiguration.container.SetActive(true);
 
-            this.coverSettingsByFaces.Callback += OnWallSettingsChanged;
-            this.coverSettingsByGround.Callback += OnGroundSettingsChanged;
+            this.coverSettingsByFaces.OnChange += OnWallSettingsChanged;
+            this.coverSettingsByGround.OnChange += OnGroundSettingsChanged;
 
             for (int i = 0; i < this.grounds.Length; i++) {
                 if (this.coverSettingsByGround.ContainsKey(i)) {
@@ -191,8 +191,8 @@ namespace Sim {
             Transform curTransform = this.transform;
             Vector3 position = curTransform.position;
 
-            if (NetworkIdentity.spawned.ContainsKey(ParentId)) {
-                this.associatedHallController = NetworkIdentity.spawned[ParentId].GetComponent<HallController>();
+            if (NetworkClient.spawned.ContainsKey(ParentId)) {
+                this.associatedHallController = NetworkClient.spawned[ParentId].GetComponent<HallController>();
                 curTransform.SetParent(this.associatedHallController.transform);
                 curTransform.localPosition = position;
 
@@ -205,8 +205,8 @@ namespace Sim {
         public override void OnStopClient() {
             base.OnStopClient();
 
-            this.coverSettingsByFaces.Callback -= OnWallSettingsChanged;
-            this.coverSettingsByGround.Callback -= OnGroundSettingsChanged;
+            this.coverSettingsByFaces.OnChange -= OnWallSettingsChanged;
+            this.coverSettingsByGround.OnChange -= OnGroundSettingsChanged;
         }
 
         private void OnWallSettingsChanged(SyncIDictionary<int, CoverSettings>.Operation operation, int key, CoverSettings item) {

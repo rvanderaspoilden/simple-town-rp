@@ -98,11 +98,11 @@ namespace Sim {
 
         [Command(requiresAuthority = false)]
         public void CmdDestroyProps(uint netId) {
-            if (!NetworkIdentity.spawned.ContainsKey(netId)) {
+            if (!NetworkServer.spawned.ContainsKey(netId)) {
                 Debug.LogError($"Server: Try to destroy {netId} but it not exist");
             }
 
-            GameObject propsObject = NetworkIdentity.spawned[netId].gameObject;
+            GameObject propsObject = NetworkServer.spawned[netId].gameObject;
 
             ApartmentController apartmentController = propsObject.GetComponentInParent<ApartmentController>();
 
@@ -124,12 +124,12 @@ namespace Sim {
         [Command(requiresAuthority = false)]
         public void CmdValidatePropCreation(uint deliveryBoxNetId, Delivery delivery, int propsConfigId, int presetId, Vector3 position, Quaternion rotation,
             NetworkConnectionToClient sender = null) {
-            if (!NetworkIdentity.spawned.ContainsKey(deliveryBoxNetId)) {
+            if (!NetworkServer.spawned.ContainsKey(deliveryBoxNetId)) {
                 Debug.LogError("Server: CmdValidatePropCreation not found deliveryBoxNetId");
                 return;
             }
 
-            DeliveryBox deliveryBox = NetworkIdentity.spawned[deliveryBoxNetId].GetComponent<DeliveryBox>();
+            DeliveryBox deliveryBox = NetworkServer.spawned[deliveryBoxNetId].GetComponent<DeliveryBox>();
             ApartmentController apartmentController = deliveryBox.GetComponentInParent<ApartmentController>();
             PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(propsConfigId);
             Props props = PropsManager.Instance.InstantiateProps(propsConfig, presetId, position, rotation);
@@ -184,12 +184,12 @@ namespace Sim {
 
         [Command(requiresAuthority = false)]
         public void CmdPropEdit(uint propNetId, Vector3 localPosition, Quaternion localRotation, NetworkConnectionToClient sender = null) {
-            if (!NetworkIdentity.spawned.ContainsKey(propNetId)) {
+            if (!NetworkServer.spawned.ContainsKey(propNetId)) {
                 Debug.LogError($"Server: propNetId {propNetId} not found");
                 this.TargetPropEdit(sender, false);
             }
 
-            Props props = NetworkIdentity.spawned[propNetId].GetComponent<Props>();
+            Props props = NetworkServer.spawned[propNetId].GetComponent<Props>();
             props.transform.localPosition = localPosition;
             props.transform.localRotation = localRotation;
 

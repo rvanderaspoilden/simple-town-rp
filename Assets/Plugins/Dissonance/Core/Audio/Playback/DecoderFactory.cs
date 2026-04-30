@@ -10,7 +10,7 @@ namespace Dissonance.Audio.Playback
 {
     internal class DecoderFactory
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof(DecoderFactory).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(DecoderFactory));
 
         [NotNull] public static IVoiceDecoder Create(FrameFormat format)
         {
@@ -27,7 +27,7 @@ namespace Dissonance.Audio.Playback
                     //ncrunch: no coverage end
 
                     default:
-                        throw new ArgumentOutOfRangeException("format", "Unknown codec.");
+                        throw new ArgumentOutOfRangeException(nameof(format), "Unknown codec.");
                 }
             }
             catch (Exception ex)

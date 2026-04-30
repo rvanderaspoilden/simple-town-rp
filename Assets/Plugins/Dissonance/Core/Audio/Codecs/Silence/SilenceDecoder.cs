@@ -10,16 +10,12 @@ namespace Dissonance.Audio.Codecs.Silence
     {
         private readonly int _frameSize;
 
-        private readonly WaveFormat _format;
-        public WaveFormat Format
-        {
-            get { return _format; }
-        }
+        public WaveFormat Format { get; }
 
         public SilenceDecoder(FrameFormat frameFormat)
         {
             _frameSize = (int)frameFormat.FrameSize;
-            _format = frameFormat.WaveFormat;
+            Format = frameFormat.WaveFormat;
         }
 
         public void Dispose()

@@ -12,6 +12,7 @@ namespace Dissonance.Networking.Client
         private readonly IClientCollection<TPeer?> _peers;
 
         private readonly List<ClientInfo<TPeer?>> _tmpDests = new List<ClientInfo<TPeer?>>();
+        private readonly List<ClientInfo<TPeer?>> _tmpClients = new List<ClientInfo<TPeer?>>();
 
         public TextSender(ISendQueue<TPeer> sender, ISession session, IClientCollection<TPeer?> peers)
         {
@@ -31,8 +32,7 @@ namespace Dissonance.Networking.Client
             if (type == ChannelType.Player)
             {
                 //Find destination player
-                ClientInfo<TPeer?> info;
-                if (!_peers.TryGetClientInfoByName(recipient, out info))
+                if (!_peers.TryGetClientInfoByName(recipient, out var info))
                 {
                     Log.Warn("Attempted to send text message to unknown player '{0}'", recipient);
                     return;
@@ -50,17 +50,17 @@ namespace Dissonance.Networking.Client
             }
             else
             {
-                //Find destination players (early exit if no one is in this room)
-                List<ClientInfo<TPeer?>> clients;
-                if (!_peers.TryGetClientsInRoom(recipient, out clients))
+                // Find destination players (early exit if no one is in this room)
+                _tmpClients.Clear();
+                if (!_peers.TryGetClientsInRoom(recipient, _tmpClients))
                     return;
                 
-                //Write packet
+                // Write packet
                 var writer = new PacketWriter(_sender.GetSendBuffer());
-                writer.WriteTextPacket(_session.SessionId, _session.LocalId.Value, type, recipient.ToRoomId(), data);
+                writer.WriteTextPacket(_session.SessionId, _session.LocalId.Value, type, new RoomName(recipient, true).ToRoomId(), data);
 
-                //send it
-                _sender.EnqueueReliableP2P(_session.LocalId.Value, clients, writer.Written);
+                // send it
+                _sender.EnqueueReliableP2P(_session.LocalId.Value, _tmpClients, writer.Written);
             }
         }
     }

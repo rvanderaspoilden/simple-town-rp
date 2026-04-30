@@ -23,7 +23,7 @@ namespace Dissonance
     /// </remarks>
     public static class Metrics
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(Metrics).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(Metrics));
 
         #if DISSONANCE_METRICS_ENABLED
         /// <summary>
@@ -56,19 +56,19 @@ namespace Dissonance
         }
 
         // ReSharper disable once UnusedMember.Local (Justification: It's used when one of the metrics providers is enabled)
-#pragma warning disable IDE0051 // Remove unused private members
+        // ReSharper disable UnusedParameter.Local (Justification: parameters are used if a metrics provider is enabled)
         private static void InternalSampleMetric(string name, double value)
-#pragma warning restore IDE0051 // Remove unused private members
+        // ReSharper restore UnusedParameter.Local
         {
             // This will only ever be called on the main thread!
 
-            #if DISSONANCE_METRICS_LOG_TO_CONSOLE
+#if DISSONANCE_METRICS_LOG_TO_CONSOLE
                 Log.Trace("`{0}`: {1}", name, value);
-            #endif
+#endif
 
-            #if DISSONANCE_METRICS_UNITY_USER_REPORTING
+#if DISSONANCE_METRICS_UNITY_USER_REPORTING
                 Unity.Cloud.UserReporting.Plugin.UnityUserReporting.CurrentClient.SampleMetric(name, value);
-            #endif
+#endif
         }
 
         /// <summary>
@@ -128,11 +128,13 @@ namespace Dissonance
         }
 
         // ReSharper disable once UnusedType.Local (Justification: used if a metrics provider is enabled)
-        private struct MetricEvent
+        private readonly struct MetricEvent
         {
             // ReSharper disable MemberCanBePrivate.Local (Justification: These fields require public if a metrics provider is enabled)
+            // ReSharper disable NotAccessedField.Local (Justification: These appears to not be used if no metrics provider is enabled)
             public readonly string Name;
             public readonly double Value;
+            // ReSharper restore MemberCanBePrivate.Local
             // ReSharper restore MemberCanBePrivate.Local
 
             public MetricEvent(string name, double value)

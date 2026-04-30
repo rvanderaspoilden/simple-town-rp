@@ -58,7 +58,7 @@ public class PlayerHands : NetworkBehaviour {
 
     [Command]
     public void CmdEquipItem(uint itemNetId) {
-        Item item = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Item>();
+        Item item = NetworkServer.spawned[itemNetId].gameObject.GetComponent<Item>();
 
         ItemConfig config = item.Configuration;
 
@@ -111,7 +111,7 @@ public class PlayerHands : NetworkBehaviour {
 
         float time = Time.time;
 
-        while (!NetworkIdentity.spawned.ContainsKey(newItemNetId) && Time.time < time + 10f) {
+        while (!NetworkClient.spawned.ContainsKey(newItemNetId) && Time.time < time + 10f) {
             yield return new WaitForSeconds(.1f);
         }
 
@@ -120,9 +120,9 @@ public class PlayerHands : NetworkBehaviour {
         }
 
         if (hand == HandEnum.LEFT_HAND) {
-            this.leftHandItem = NetworkIdentity.spawned[newItemNetId].gameObject.GetComponent<Item>();
+            this.leftHandItem = NetworkClient.spawned[newItemNetId].gameObject.GetComponent<Item>();
         } else {
-            this.rightHandItem = NetworkIdentity.spawned[newItemNetId].gameObject.GetComponent<Item>();
+            this.rightHandItem = NetworkClient.spawned[newItemNetId].gameObject.GetComponent<Item>();
         }
 
         if (isLocalPlayer) {
@@ -142,7 +142,7 @@ public class PlayerHands : NetworkBehaviour {
 
     [Command]
     public void CmdUnEquipItem(uint itemNetId) {
-        Item item = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Item>();
+        Item item = NetworkServer.spawned[itemNetId].gameObject.GetComponent<Item>();
 
         if (this.leftHandItemNetId == itemNetId) {
             this.leftHandItemNetId = 0;
@@ -155,7 +155,7 @@ public class PlayerHands : NetworkBehaviour {
 
     [Server]
     public void UnEquipAndDestroy(uint itemNetId) {
-        Item item = NetworkIdentity.spawned[itemNetId].gameObject.GetComponent<Item>();
+        Item item = NetworkServer.spawned[itemNetId].gameObject.GetComponent<Item>();
 
         if (this.leftHandItemNetId == itemNetId) {
             this.leftHandItemNetId = 0;

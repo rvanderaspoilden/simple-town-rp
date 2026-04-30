@@ -9,18 +9,14 @@ namespace Dissonance.Networking.Client
         private static readonly Log Log = Logs.Create(LogCategory.Network, typeof(TextReceiver<TPeer>).Name);
 
         private readonly EventQueue _events;
-        private readonly Rooms _rooms;
+        private readonly IRooms _rooms;
         private readonly IClientCollection<TPeer?> _peers;
 
-        public TextReceiver([NotNull] EventQueue events, [NotNull] Rooms rooms, [NotNull] IClientCollection<TPeer?> peers)
+        public TextReceiver([NotNull] EventQueue events, [NotNull] IRooms rooms, [NotNull] IClientCollection<TPeer?> peers)
         {
-            if (events == null) throw new ArgumentNullException("events");
-            if (rooms == null) throw new ArgumentNullException("rooms");
-            if (peers == null) throw new ArgumentNullException("peers");
-
-            _events = events;
-            _rooms = rooms;
-            _peers = peers;
+            _events = events ?? throw new ArgumentNullException(nameof(events));
+            _rooms = rooms ?? throw new ArgumentNullException(nameof(rooms));
+            _peers = peers ?? throw new ArgumentNullException(nameof(peers));
         }
 
         public void ProcessTextMessage(ref PacketReader reader)
@@ -29,8 +25,7 @@ namespace Dissonance.Networking.Client
             var txt = reader.ReadTextPacket();
 
             //Discover who sent this message
-            ClientInfo<TPeer?> info;
-            if (!_peers.TryGetClientInfoById(txt.Sender, out info))
+            if (!_peers.TryGetClientInfoById(txt.Sender, out var info))
             {
                 Log.Debug("Received a text message from unknown player '{0}'", txt.Sender);
                 return;
@@ -57,8 +52,7 @@ namespace Dissonance.Networking.Client
         {
             if (txtRecipientType == ChannelType.Player)
             {
-                ClientInfo<TPeer?> info;
-                if (!_peers.TryGetClientInfoById(txtRecipient, out info))
+                if (!_peers.TryGetClientInfoById(txtRecipient, out var info))
                     return null;
 
                 return info.PlayerName;

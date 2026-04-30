@@ -7,19 +7,14 @@ namespace Dissonance.Audio.Codecs.Opus
     internal class OpusDecoder
         : IVoiceDecoder
     {
-        private readonly WaveFormat _format;
-        public WaveFormat Format
-        {
-            get { return _format; }
-        }
+        public WaveFormat Format { get; }
 
         private OpusNative.OpusDecoder _decoder;
 
         public OpusDecoder([NotNull] WaveFormat format, bool fec = true)
         {
-            if (format == null) throw new ArgumentNullException("format");
+            Format = format ?? throw new ArgumentNullException(nameof(format));
 
-            _format = format;
             _decoder = new OpusNative.OpusDecoder(format.SampleRate, format.Channels) {
                 EnableForwardErrorCorrection = fec,
             };
@@ -27,8 +22,7 @@ namespace Dissonance.Audio.Codecs.Opus
 
         public void Dispose()
         {
-            if (_decoder != null)
-                _decoder.Dispose();
+            _decoder?.Dispose();
             _decoder = null;
         }
 

@@ -13,7 +13,7 @@ namespace Dissonance
     // ReSharper disable once InheritdocConsiderUsage
     [HelpURL("https://placeholder-software.co.uk/dissonance/docs/Reference/Components/Voice-Broadcast-Trigger/")]
     public class VoiceBroadcastTrigger
-        : BaseCommsTrigger, IVoiceActivationListener
+        : BaseCommsTrigger, IVoiceActivationListener, IVoiceBroadcastTrigger
     {
         #region field and properties
         [SerializeField] private bool _channelTypeExpanded;     // <
@@ -29,7 +29,7 @@ namespace Dissonance
         private CommActivationMode? _previousMode;
         private IDissonancePlayer _self;
 
-        private Fader _activationFader = new Fader();
+        private Fader _activationFader;
         // ReSharper disable once FieldCanBeMadeReadOnly.Local (Justification: Confuses unity serialization)
         [SerializeField] private VolumeFaderSettings _activationFaderSettings = new VolumeFaderSettings {
             Volume = 1,
@@ -39,12 +39,9 @@ namespace Dissonance
         /// <summary>
         /// Access volume fader settings which are applied every time the trigger activates with PTT/VAD
         /// </summary>
-        [NotNull] public VolumeFaderSettings ActivationFader
-        {
-            get { return _activationFaderSettings; }
-        }
+        [NotNull] public VolumeFaderSettings ActivationFader => _activationFaderSettings;
 
-        private Fader _triggerFader = new Fader();
+        private Fader _triggerFader;
         // ReSharper disable once FieldCanBeMadeReadOnly.Local (Justification: Confuses unity serialization)
         [SerializeField] private VolumeFaderSettings _triggerFaderSettings = new VolumeFaderSettings {
             Volume = 1,
@@ -54,18 +51,12 @@ namespace Dissonance
         /// <summary>
         /// Access volume fader settings which are applied every time the collider trigger is entered/exited
         /// </summary>
-        [NotNull] public VolumeFaderSettings ColliderTriggerFader
-        {
-            get { return _triggerFaderSettings; }
-        }
+        [NotNull] public VolumeFaderSettings ColliderTriggerFader => _triggerFaderSettings;
 
         /// <summary>
         /// Get the current attenuation applied to this channel by all faders
         /// </summary>
-        public float CurrentFaderVolume
-        {
-            get { return _activationFader.Volume * (UseColliderTrigger ? _triggerFader.Volume : 1); }
-        }
+        public float CurrentFaderVolume => _activationFader.Volume * (UseColliderTrigger ? _triggerFader.Volume : 1);
 
         [SerializeField]private bool _broadcastPosition = true;
         /// <summary>
@@ -73,7 +64,7 @@ namespace Dissonance
         /// </summary>
         public bool BroadcastPosition
         {
-            get { return _broadcastPosition; }
+            get => _broadcastPosition;
             set
             {
                 if (_broadcastPosition != value)
@@ -101,7 +92,7 @@ namespace Dissonance
         /// </summary>
         public CommTriggerTarget ChannelType
         {
-            get { return _channelType; }
+            get => _channelType;
             set
             {
                 if (_channelType != value)
@@ -120,8 +111,8 @@ namespace Dissonance
         /// </summary>
         public string InputName
         {
-            get { return _inputName; }
-            set { _inputName = value; }
+            get => _inputName;
+            set => _inputName = value;
         }
 
         [SerializeField]private CommActivationMode _mode = CommActivationMode.VoiceActivation;
@@ -130,8 +121,8 @@ namespace Dissonance
         /// </summary>
         public CommActivationMode Mode
         {
-            get { return _mode; }
-            set { _mode = value; }
+            get => _mode;
+            set => _mode = value;
         }
 
         [SerializeField]private bool _muted;
@@ -140,7 +131,7 @@ namespace Dissonance
         /// </summary>
         public bool IsMuted
         {
-            get { return _muted; }
+            get => _muted;
             set
             {
                 string target;
@@ -170,7 +161,7 @@ namespace Dissonance
         /// </summary>
         public string PlayerId
         {
-            get { return _playerId; }
+            get => _playerId;
             set
             {
                 if (_playerId != value)
@@ -190,8 +181,8 @@ namespace Dissonance
         /// </summary>
         public override bool UseColliderTrigger
         {
-            get { return _useTrigger; }
-            set { _useTrigger = value; }
+            get => _useTrigger;
+            set => _useTrigger = value;
         }
 
         [SerializeField]private string _roomName;
@@ -200,7 +191,7 @@ namespace Dissonance
         /// </summary>
         public string RoomName
         {
-            get { return _roomName; }
+            get => _roomName;
             set
             {
                 if (_roomName != value)
@@ -220,7 +211,7 @@ namespace Dissonance
         /// </summary>
         public ChannelPriority Priority
         {
-            get { return _priority; }
+            get => _priority;
             set
             {
                 if (_priority != value)
@@ -245,10 +236,7 @@ namespace Dissonance
         /// <summary>
         /// Get if this voice broadcast trigger is currently transmitting voice
         /// </summary>
-        public bool IsTransmitting
-        {
-            get { return _playerChannel != null || _roomChannel != null; }
-        }
+        public bool IsTransmitting => _playerChannel != null || _roomChannel != null;
 
         public override bool CanTrigger
         {
@@ -286,6 +274,12 @@ namespace Dissonance
         {
             CloseChannel();
 
+            // Set mode to null and unsub from VAD events.
+            // Next time Update runs (if this is ever enabled) it will switch mode and re-susbcribe if necessary.
+            _previousMode = null;
+            if (Comms != null)
+                Comms.UnsubscribeFromVoiceActivation(this);
+
             base.OnDisable();
         }
 
@@ -312,38 +306,53 @@ namespace Dissonance
                 SwitchMode();
 
             //Update volume fader and apply to open channel
-            _triggerFader.Update(Time.deltaTime);
-            _activationFader.Update(Time.deltaTime);
+            _triggerFader.Update(Time.unscaledDeltaTime);
+            _activationFader.Update(Time.unscaledDeltaTime);
             SetChannelVolume(CurrentFaderVolume);
 
             //Decide if we need to change state
-            var current = IsTransmitting;
-            var next = ShouldActivate(IsUserActivated());
+            var intent = IsUserActivated();
+            var next = ShouldActivate(intent);
 
-            //Apply state if changed
-            if (current != next)
+            // Change the activation fader based on user intent
+            if (intent)
             {
-                if (current)
-                {
-                    //Begin fade out (if it's not already fading to zero)
-                    if (Math.Abs(_activationFader.EndVolume) > float.Epsilon)
-                        _activationFader.FadeTo(0, (float)_activationFaderSettings.FadeOut.TotalSeconds);
+                // If we're speaking and the activation fader is not going to the max volume yet, start fading in
+                if (Math.Abs(_activationFader.EndVolume - _activationFaderSettings.Volume) > float.Epsilon)
+                    _activationFader.FadeTo(_activationFaderSettings.Volume, (float)_activationFaderSettings.FadeIn.TotalSeconds);
+            }
+            else
+            {
+                // Begin fade out (if it's not already fading to zero)
+                if (Math.Abs(_activationFader.EndVolume) > float.Epsilon)
+                    _activationFader.FadeTo(0, (float)_activationFaderSettings.FadeOut.TotalSeconds);
+            }
 
-                    //Stop transmitting once fade out is complete
-                    if (CurrentFaderVolume <= float.Epsilon)
+            // Apply state if changed
+            if (IsTransmitting != next)
+            {
+                // Check if we need to start or stop transmitting
+                if (!next)
+                {
+                    // We need to stop transmitting, but is that because the intent has changed or something else?
+                    // If the intent is active (user wants to talk) and the collider is triggered then something else
+                    // is blocking speech, slam this connection closed immediately.
+                    if (intent && (IsColliderTriggered || !UseColliderTrigger))
+                    {
                         CloseChannel();
+                    }
+                    else
+                    {
+                        // Stop transmitting once fade out is complete
+                        if (CurrentFaderVolume <= float.Epsilon)
+                            CloseChannel();
+                    }
                 }
                 else
                 {
-                    //Start transmitting
+                    // Start transmitting
                     OpenChannel();
                 }
-            }
-            else if (current)
-            {
-                //If we're speaking and the activation fader is not going to the max volume yet, start fading in
-                if (Math.Abs(_activationFader.EndVolume - _activationFaderSettings.Volume) > float.Epsilon)
-                    _activationFader.FadeTo(1, (float)_activationFaderSettings.FadeIn.TotalSeconds);
             }
         }
 
@@ -372,7 +381,7 @@ namespace Dissonance
             }
 
             if (Mode == CommActivationMode.VoiceActivation)
-                Comms.SubcribeToVoiceActivation(this);
+                Comms.SubscribeToVoiceActivation(this);
 
             _previousMode = Mode;
         }
@@ -469,7 +478,7 @@ namespace Dissonance
 
             if (ChannelType == CommTriggerTarget.Room)
             {
-                _roomChannel = Comms.RoomChannels.Open(RoomName, _broadcastPosition, _priority, CurrentFaderVolume);
+                _roomChannel = Comms.RoomChannels.Open(new RoomName(RoomName), _broadcastPosition, _priority, CurrentFaderVolume);
             }
             else if (ChannelType == CommTriggerTarget.Player)
             {

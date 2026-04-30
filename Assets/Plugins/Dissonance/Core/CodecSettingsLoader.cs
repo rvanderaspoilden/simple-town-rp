@@ -9,7 +9,7 @@ namespace Dissonance
     internal class CodecSettingsLoader
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(CodecSettingsLoader).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(CodecSettingsLoader));
 
         private bool _started;
 
@@ -74,7 +74,7 @@ namespace Dissonance
                 //ncrunch: no coverage end
 
                 default:
-                    throw Log.CreatePossibleBugException(string.Format("Unknown Codec {0}", codec), "6232F4FA-6993-49F9-AA79-2DBCF982FD8C");
+                    throw Log.CreatePossibleBugException($"Unknown Codec {codec}", "6232F4FA-6993-49F9-AA79-2DBCF982FD8C");
             }
         }
 
@@ -94,7 +94,7 @@ namespace Dissonance
                 //ncrunch: no coverage end
 
                 default:
-                    throw Log.CreatePossibleBugException(string.Format("Unknown Codec {0}", _codec), "6232F4FA-6993-49F9-AA79-2DBCF982FD8C");
+                    throw Log.CreatePossibleBugException($"Unknown Codec {_codec}", "6232F4FA-6993-49F9-AA79-2DBCF982FD8C");
             }
         }
 

@@ -14,8 +14,8 @@ namespace Dissonance.Datastructures
 
         public ushort UInt16
         {
-            get { return _ushort; }
-            set { _ushort = value; }
+            get => _ushort;
+            set => _ushort = value;
         }
 
         //public short Int16
@@ -26,10 +26,7 @@ namespace Dissonance.Datastructures
 
         public byte LSB
         {
-            get
-            {
-                return BitConverter.IsLittleEndian ? _byte1 : _byte2;
-            }
+            get => BitConverter.IsLittleEndian ? _byte1 : _byte2;
             set
             {
                 //ncrunch: no coverage start (Justification we can't run as little endian and big endian in the same run)
@@ -43,10 +40,7 @@ namespace Dissonance.Datastructures
 
         public byte MSB
         {
-            get
-            {
-                return BitConverter.IsLittleEndian ? _byte2 : _byte1;
-            }
+            get => BitConverter.IsLittleEndian ? _byte2 : _byte1;
             set
             {
                 //ncrunch: no coverage start (Justification we can't run as little endian and big endian in the same run)
@@ -72,8 +66,8 @@ namespace Dissonance.Datastructures
 
         public uint UInt32
         {
-            get { return _uint; }
-            set { _uint = value; }
+            get => _uint;
+            set => _uint = value;
         }
 
         //public int Int32
@@ -104,7 +98,7 @@ namespace Dissonance.Datastructures
             //ncrunch: no coverage end
         }
 
-        public void GetBytesInNetworkOrder(out byte b1, out byte b2, out byte b3, out byte b4)
+        public readonly void GetBytesInNetworkOrder(out byte b1, out byte b2, out byte b3, out byte b4)
         {
             //ncrunch: no coverage start (Justification we can't run as little endian and big endian in the same run)
             if (BitConverter.IsLittleEndian)

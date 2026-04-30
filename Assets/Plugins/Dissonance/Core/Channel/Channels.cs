@@ -28,15 +28,12 @@ namespace Dissonance
         /// <summary>
         /// Number of currently open channels
         /// </summary>
-        public int Count
-        {
-            get { return _openChannelsBySubId.Count; }
-        }
+        public int Count => _openChannelsBySubId.Count;
 
         internal Channels([NotNull] IChannelPriorityProvider priorityProvider)
         {
             if (priorityProvider == null)
-                throw new ArgumentNullException("priorityProvider");
+                throw new ArgumentNullException(nameof(priorityProvider));
 
             Log = Logs.Create(LogCategory.Core, GetType().Name);
 
@@ -66,8 +63,8 @@ namespace Dissonance
         /// <returns></returns>
         [NotNull] public T Open([NotNull] TId id, bool positional = false, ChannelPriority priority = ChannelPriority.Default, float amplitudeMultiplier = 1)
         {
-            if (EqualityComparer<TId>.Default.Equals(id, default(TId)))
-                throw new ArgumentNullException("id", "Cannot open a channel with a null ID");
+            if (EqualityComparer<TId>.Default.Equals(id, default))
+                throw new ArgumentNullException(nameof(id), "Cannot open a channel with a null ID");
 
             //Sanity check to ensure we don't enter an infinite loop
             if (_openChannelsBySubId.Count >= ushort.MaxValue)
@@ -100,16 +97,15 @@ namespace Dissonance
 
             _openChannelsBySubId.Add(channel.SubscriptionId, channel);
 
-            var handler = OpenedChannel;
-            if (handler != null) handler(channel.TargetId, channel.Properties);
+            OpenedChannel?.Invoke(channel.TargetId, channel.Properties);
 
             return channel;
         }
 
         public bool Close([NotNull] T channel)
         {
-            if (EqualityComparer<T>.Default.Equals(channel, default(T)))
-                throw new ArgumentNullException("channel", "Cannot close a null channel");
+            if (EqualityComparer<T>.Default.Equals(channel, default))
+                throw new ArgumentNullException(nameof(channel), "Cannot close a null channel");
 
             var removed = _openChannelsBySubId.Remove(channel.SubscriptionId);
             if (removed)
@@ -117,8 +113,7 @@ namespace Dissonance
                 channel.Properties.Id = 0;
                 _propertiesPool.Put(channel.Properties);
 
-                var handler = ClosedChannel;
-                if (handler != null) handler(channel.TargetId, channel.Properties);
+                ClosedChannel?.Invoke(channel.TargetId, channel.Properties);
             }
 
             return removed;
@@ -132,14 +127,12 @@ namespace Dissonance
             //Raise event to close channels
             using (var enumerator = _openChannelsBySubId.GetEnumerator())
                 while (enumerator.MoveNext())
-                    if (ClosedChannel != null)
-                        ClosedChannel(enumerator.Current.Value.TargetId, enumerator.Current.Value.Properties);
+                    ClosedChannel?.Invoke(enumerator.Current.Value.TargetId, enumerator.Current.Value.Properties);
 
             //Raise event to open channels
             using (var enumerator = _openChannelsBySubId.GetEnumerator())
                 while (enumerator.MoveNext())
-                    if (OpenedChannel != null)
-                        OpenedChannel(enumerator.Current.Value.TargetId, enumerator.Current.Value.Properties);
+                    OpenedChannel?.Invoke(enumerator.Current.Value.TargetId, enumerator.Current.Value.Properties);
         }
 
         public Dictionary<ushort, T>.Enumerator GetEnumerator()

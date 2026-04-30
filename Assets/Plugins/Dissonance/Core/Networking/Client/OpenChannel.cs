@@ -2,9 +2,9 @@
 
 namespace Dissonance.Networking.Client
 {
-    internal struct OpenChannel
+    internal readonly struct OpenChannel
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Network, typeof(OpenChannel).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Network, nameof(OpenChannel));
 
         private readonly ChannelProperties _config;
 
@@ -19,10 +19,7 @@ namespace Dissonance.Networking.Client
         /// </summary>
         private readonly bool _sent;
 
-        [NotNull] public ChannelProperties Config
-        {
-            get { return _config; }
-        }
+        [NotNull] public ChannelProperties Config => _config;
 
         public ushort Bitfield
         {
@@ -39,45 +36,21 @@ namespace Dissonance.Networking.Client
             }
         }
 
-        public ushort Recipient
-        {
-            get { return _recipient; }
-        }
+        public ushort Recipient => _recipient;
 
-        public ChannelType Type
-        {
-            get { return _type; }
-        }
+        public ChannelType Type => _type;
 
-        public bool IsClosing
-        {
-            get { return _isClosing; }
-        }
+        public bool IsClosing => _isClosing;
 
-        public bool IsPositional
-        {
-            get { return _config.Positional; }
-        }
+        public bool IsPositional => _config.Positional;
 
-        public ChannelPriority Priority
-        {
-            get { return _config.TransmitPriority; }
-        }
+        public ChannelPriority Priority => _config.TransmitPriority;
 
-        public float AmplitudeMultiplier
-        {
-            get { return _config.AmplitudeMultiplier; }
-        }
+        public float AmplitudeMultiplier => _config.AmplitudeMultiplier;
 
-        public ushort SessionId
-        {
-            get { return _sessionId; }
-        }
+        public ushort SessionId => _sessionId;
 
-        [NotNull] public string Name
-        {
-            get { return _name; }
-        }
+        [NotNull] public string Name => _name;
 
         public OpenChannel(ChannelType type, ushort sessionId, ChannelProperties config, bool closing, ushort recipient, string name, bool sent = false)
         {

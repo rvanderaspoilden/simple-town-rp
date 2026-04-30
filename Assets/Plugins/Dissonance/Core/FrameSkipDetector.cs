@@ -20,10 +20,8 @@ namespace Dissonance
         private float _currentBreakerDuration;
         private bool _breakerClosed;
 
-        internal bool IsBreakerClosed
-        {
-            get { return _breakerClosed; }
-        }
+        internal bool IsBreakerClosed => _breakerClosed;
+
         #endregion
 
         /// <summary>

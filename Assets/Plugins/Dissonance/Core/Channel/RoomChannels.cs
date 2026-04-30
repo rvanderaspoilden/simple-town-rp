@@ -8,7 +8,7 @@ namespace Dissonance
     /// </summary>
     /// ReSharper disable once InheritdocConsiderUsage
     public sealed class RoomChannels
-        : Channels<RoomChannel, string>
+        : Channels<RoomChannel, RoomName>
     {
         internal RoomChannels([NotNull] IChannelPriorityProvider priorityProvider)
             : base(priorityProvider)
@@ -17,7 +17,7 @@ namespace Dissonance
             ClosedChannel += (id, _) => Log.Debug("Closed channel to room '{0}'", id);
         }
 
-        protected override RoomChannel CreateChannel(ushort subscriptionId, string channelId, ChannelProperties properties)
+        protected override RoomChannel CreateChannel(ushort subscriptionId, RoomName channelId, ChannelProperties properties)
         {
             return new RoomChannel(subscriptionId, channelId, this, properties);
         }

@@ -14,7 +14,7 @@ namespace Dissonance.Networking
     /// </summary>
     internal struct PacketWriter
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Network, typeof(PacketWriter).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Network, nameof(PacketWriter));
 
         #region fields and properties
         internal const ushort Magic = 0x8bc7;
@@ -25,11 +25,9 @@ namespace Dissonance.Networking
         /// <summary>
         /// A segment of all the bytes which have been written to so far
         /// </summary>
-        public ArraySegment<byte> Written
-        {
-            // ReSharper disable once AssignNullToNotNullAttribute (Justification: Array segment cannot be null)
-            get { return new ArraySegment<byte>(_array.Array, _array.Offset, _count); }
-        }
+        // ReSharper disable once AssignNullToNotNullAttribute
+        public readonly ArraySegment<byte> Written => new ArraySegment<byte>(_array.Array, _array.Offset, _count);
+
         #endregion
 
         #region constructor
@@ -50,7 +48,7 @@ namespace Dissonance.Networking
         public PacketWriter(ArraySegment<byte> array)
         {
             if (array.Array == null)
-                throw new ArgumentNullException("array");
+                throw new ArgumentNullException(nameof(array));
 
             _array = array;
             _count = 0;
@@ -61,7 +59,7 @@ namespace Dissonance.Networking
         private void Check(int count, string type)
         {
             if (_array.Count - count - _count < 0)
-                throw Log.CreatePossibleBugException(string.Format("Insufficient space in packet writer to write {0}", type), "ED58BC0A-CAD2-4AFB-BFDD-B5AF5BF7DDDB");
+                throw Log.CreatePossibleBugException($"Insufficient space in packet writer to write {type}", "ED58BC0A-CAD2-4AFB-BFDD-B5AF5BF7DDDB");
         }
 
         public PacketWriter FastWriteByte(byte b)
@@ -112,8 +110,7 @@ namespace Dissonance.Networking
 
             var un = new Union32 { UInt32 = u };
 
-            byte b1, b2, b3, b4;
-            un.GetBytesInNetworkOrder(out b1, out b2, out b3, out b4);
+            un.GetBytesInNetworkOrder(out var b1, out var b2, out var b3, out var b4);
 
             Write(b1);
             Write(b2);
@@ -176,7 +173,7 @@ namespace Dissonance.Networking
             Write((ushort)data.Count);
 
             // ReSharper disable once AssignNullToNotNullAttribute (Justification: Array segment cannot be null)
-            data.CopyTo(_array.Array, _array.Offset + _count);
+            data.CopyToSegment(_array.Array, _array.Offset + _count);
             _count += data.Count;
 
             return this;
@@ -240,10 +237,40 @@ namespace Dissonance.Networking
         /// Write out a handshake response. Mutate this writer to represent the position after the write.
         /// </summary>
         /// <returns>A copy of this writer (after the write has been applied)</returns>
+        public PacketWriter WriteHandshakeResponse(uint session, ushort clientId)
+        {
+            // The handshake response used to contain information about clients currently in the session. However this could cause the
+            // handshake packet to become too large when many players were in the session and overflow buffers. Instead of expanding
+            // buffers (which could break network integrations) this packet no longer contains that information. The packet format still
+            // _supports_ it (for backwards compatibility) but the headers which specify the count are all set to zero.
+
+            WriteMagic();
+            Write((byte)MessageTypes.HandshakeResponse);
+            Write(session);
+
+            // Assigned ID for this client
+            Write(clientId);
+
+            // Client count (none - see note above)
+            Write((ushort)0);
+
+            // Room Name count list (none - see note above)
+            Write((ushort)0);
+
+            // Channel count (none - see note above)
+            Write((ushort)0);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Write out a handshake response. Mutate this writer to represent the position after the write.
+        /// </summary>
+        /// <returns>A copy of this writer (after the write has been applied)</returns>
         public PacketWriter WriteHandshakeResponse<TPeer>(uint session, ushort clientId, [NotNull] List<ClientInfo<TPeer>> clients, [NotNull] Dictionary<string, List<ClientInfo<TPeer>>> peersByRoom)
         {
-            if (clients == null) throw new ArgumentNullException("clients");
-            if (peersByRoom == null) throw new ArgumentNullException("peersByRoom");
+            if (clients == null) throw new ArgumentNullException(nameof(clients));
+            if (peersByRoom == null) throw new ArgumentNullException(nameof(peersByRoom));
 
             WriteMagic();
             Write((byte)MessageTypes.HandshakeResponse);
@@ -251,7 +278,7 @@ namespace Dissonance.Networking
 
             //Assigned ID for this client
             Write(clientId);
-            
+
             //Write clients
             Write((ushort)clients.Count);
             foreach (var client in clients)
@@ -312,16 +339,16 @@ namespace Dissonance.Networking
         /// <returns>A copy of this writer (after the write has been applied)</returns>
         public PacketWriter WriteClientState(uint session, [NotNull] string name, ushort clientId, CodecSettings codecSettings, [NotNull] Rooms rooms)
         {
-            if (name == null) throw new ArgumentNullException("name", "Attempted to serialize ClientState with a null name");
-            if (rooms == null) throw new ArgumentNullException("rooms");
+            if (name == null) throw new ArgumentNullException(nameof(name), "Attempted to serialize ClientState with a null name");
+            if (rooms == null) throw new ArgumentNullException(nameof(rooms));
 
             return WriteClientState(session, name, clientId, codecSettings, rooms.Memberships);
         }
 
         public PacketWriter WriteClientState(uint session, [NotNull] string name, ushort clientId, CodecSettings codecSettings, [NotNull] ReadOnlyCollection<string> rooms)
         {
-            if (name == null) throw new ArgumentNullException("name", "Attempted to serialize ClientState with a null name");
-            if (rooms == null) throw new ArgumentNullException("rooms");
+            if (name == null) throw new ArgumentNullException(nameof(name), "Attempted to serialize ClientState with a null name");
+            if (rooms == null) throw new ArgumentNullException(nameof(rooms));
 
             WriteMagic();
             Write((byte)MessageTypes.ClientState);
@@ -361,8 +388,8 @@ namespace Dissonance.Networking
         /// <returns>A copy of this writer (after the write has been applied)</returns>
         internal PacketWriter WriteVoiceData(uint session, ushort senderId, ushort sequenceNumber, byte channelSession, [NotNull] IList<OpenChannel> channels, ArraySegment<byte> encodedAudio)
         {
-            if (channels == null) throw new ArgumentNullException("channels");
-            if (encodedAudio.Array == null) throw new ArgumentNullException("encodedAudio");
+            if (channels == null) throw new ArgumentNullException(nameof(channels));
+            if (encodedAudio.Array == null) throw new ArgumentNullException(nameof(encodedAudio));
 
             WriteMagic();
             Write((byte)MessageTypes.VoiceData);
@@ -394,7 +421,7 @@ namespace Dissonance.Networking
         /// <param name="session"></param>
         /// <param name="senderId">Local player ID</param>
         /// <param name="recipient">Type of recipinent</param>
-        /// <param name="target">ID of the recipient (deepnds room or player ID, depends upon recipinent parameter)</param>
+        /// <param name="target">ID of the recipient (room or player ID, depends upon recipient parameter)</param>
         /// <param name="data">Message to send</param>
         /// <returns>A copy of this writer (after the write has been applied)</returns>
         internal PacketWriter WriteTextPacket(uint session, ushort senderId, ChannelType recipient, ushort target, string data)
@@ -422,20 +449,26 @@ namespace Dissonance.Networking
 
         public PacketWriter WriteRelay<TPeer>(uint session, [NotNull] List<ClientInfo<TPeer>> destinations, ArraySegment<byte> segment, bool reliable)
         {
-            if (destinations == null) throw new ArgumentNullException("destinations");
-            if (segment.Array == null) throw new ArgumentNullException("segment");
+            if (destinations == null) throw new ArgumentNullException(nameof(destinations));
+            if (segment.Array == null) throw new ArgumentNullException(nameof(segment));
 
-            //Write header
+            // Write header
             WriteMagic();
             Write((byte)(reliable ? MessageTypes.ServerRelayReliable : MessageTypes.ServerRelayUnreliable));
             Write(session);
 
-            //Write out destination list (remove each peer we send to from the list. Peers we don't know about will remain in the list)
-            Write((byte)destinations.Count);
-            for (var i = 0; i < destinations.Count; i++)
+            // We can only send to 255 destinations in one relay packet
+            var count = (byte)Math.Min(byte.MaxValue, destinations.Count);
+            Write(checked((byte)count));
+
+            // Write out all the destinations
+            for (var i = 0; i < count; i++)
                 Write(destinations[i].PlayerId);
 
-            //Write out the actual data
+            // Remove the destinations we sent from the list
+            destinations.RemoveRange(0, count);
+
+            // Write out the actual data
             Write(segment);
 
             return this;
@@ -443,7 +476,7 @@ namespace Dissonance.Networking
 
         public PacketWriter WriteDeltaChannelState(uint session, bool joined, ushort peer, [NotNull] string name)
         {
-            if (name == null) throw new ArgumentNullException("name");
+            if (name == null) throw new ArgumentNullException(nameof(name));
 
             //Write header
             WriteMagic();

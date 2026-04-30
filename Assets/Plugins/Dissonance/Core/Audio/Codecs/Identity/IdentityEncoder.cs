@@ -5,39 +5,25 @@ namespace Dissonance.Audio.Codecs.Identity
     internal class IdentityEncoder
         : IVoiceEncoder
     {
-        private readonly int _sampleRate;
-        private readonly int _frameSize;
-
         public float PacketLoss
         {
             set { }
         }
 
-        public int FrameSize
-        {
-            get { return _frameSize; }
-        }
+        public int FrameSize { get; }
 
-        public int SampleRate
-        {
-            get { return _sampleRate; }
-        }
+        public int SampleRate { get; }
 
         public IdentityEncoder(int sampleRate, int frameSize)
         {
-            _sampleRate = sampleRate;
-            _frameSize = frameSize;
+            SampleRate = sampleRate;
+            FrameSize = frameSize;
         }
 
         public ArraySegment<byte> Encode(ArraySegment<float> samples, ArraySegment<byte> array)
         {
-            var inputArray = samples.Array;
-            if (inputArray == null)
-                throw new ArgumentNullException("samples");
-
-            var outputArray = array.Array;
-            if (outputArray == null)
-                throw new ArgumentNullException("array");
+            var inputArray = samples.Array ?? throw new ArgumentNullException(nameof(samples));
+            var outputArray = array.Array ?? throw new ArgumentNullException(nameof(array));
 
             var bytes = samples.Count * sizeof(float);
             if (bytes > array.Count)

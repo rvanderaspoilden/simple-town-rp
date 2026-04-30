@@ -11,7 +11,7 @@ namespace Dissonance.Audio.Playback
     internal class Resampler
         : ISampleSource
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof (Resampler).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(Resampler));
 
         private readonly ISampleSource _source;
         private readonly IRateProvider _rate;
@@ -19,13 +19,14 @@ namespace Dissonance.Audio.Playback
         private volatile WaveFormat _outputFormat;
         private readonly WdlResampler _resampler;
 
+        private bool _fixedRateEnabled = false;
+
         public Resampler(ISampleSource source, IRateProvider rate)
         {
             _source = source;
             _rate = rate;
 
             AudioSettings.OnAudioConfigurationChanged += OnAudioConfigurationChanged;
-            OnAudioConfigurationChanged(false);
 
             _resampler = new WdlResampler();
             _resampler.SetMode(true, 2, false);
@@ -33,13 +34,12 @@ namespace Dissonance.Audio.Playback
             _resampler.SetFeedMode(false);
         }
 
-        public WaveFormat WaveFormat
-        {
-            get { return _outputFormat; }
-        }
+        public WaveFormat WaveFormat => _outputFormat;
 
         public void Prepare(SessionContext context)
         {
+            OnAudioConfigurationChanged(false);
+
             _source.Prepare(context);
         }
 
@@ -65,10 +65,8 @@ namespace Dissonance.Audio.Playback
             var channels = inFormat.Channels;
 
             // prepare buffers
-            float[] inBuffer;
-            int inBufferOffset;
             var samplesPerChannelRequested = samples.Count / channels;
-            var samplesPerChannelRequired = _resampler.ResamplePrepare(samplesPerChannelRequested, channels, out inBuffer, out inBufferOffset);
+            var samplesPerChannelRequired = _resampler.ResamplePrepare(samplesPerChannelRequested, channels, out var inBuffer, out var inBufferOffset);
             var sourceBuffer = new ArraySegment<float>(inBuffer, inBufferOffset, samplesPerChannelRequired * channels);
 
             // read source
@@ -83,19 +81,40 @@ namespace Dissonance.Audio.Playback
 
         public void Reset()
         {
-            if (_resampler != null)
-                _resampler.Reset();
+            _resampler?.Reset();
 
             _source.Reset();
         }
 
         private void OnAudioConfigurationChanged(bool deviceWasChanged)
         {
+            if (_fixedRateEnabled)
+                return;
+
 #if NCRUNCH
             _outputFormat = new WaveFormat(44100, _source.WaveFormat.Channels);
 #else
             _outputFormat = new WaveFormat(AudioSettings.outputSampleRate, _source.WaveFormat.Channels);
 #endif
+        }
+
+        /// <summary>
+        /// Override automatic output sample rate determination and set it to a fixed value
+        /// </summary>
+        /// <param name="rate"></param>
+        public void SetOutputRate(int? rate)
+        {
+            if (rate.HasValue)
+            {
+                _fixedRateEnabled = true;
+                if (_outputFormat == null || _outputFormat.SampleRate != rate.Value)
+                    _outputFormat = new WaveFormat(rate.Value, _source.WaveFormat.Channels);
+            }
+            else
+            {
+                _fixedRateEnabled = false;
+                OnAudioConfigurationChanged(false);
+            }
         }
     }
 }

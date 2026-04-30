@@ -16,10 +16,10 @@ namespace Dissonance
         [SerializeField] private string _tag;
         // ReSharper restore InconsistentNaming
 
-        public int Major { get { return _major; } }
-        public int Minor { get { return _minor; } }
-        public int Patch { get { return _patch; } }
-        public string Tag { get { return _tag; } }
+        public int Major => _major;
+        public int Minor => _minor;
+        public int Patch => _patch;
+        public string Tag => _tag;
 
         //ncrunch: no coverage start (blank constructor required for for Unity deserialization)
         public SemanticVersion()
@@ -70,9 +70,9 @@ namespace Dissonance
         public override string ToString()
         {
             if (Tag == null)
-                return string.Format("{0}.{1}.{2}", Major, Minor, Patch);
+                return $"{Major}.{Minor}.{Patch}";
             
-            return string.Format("{0}.{1}.{2}-{3}", Major, Minor, Patch, Tag);
+            return $"{Major}.{Minor}.{Patch}-{Tag}";
         }
 
         public bool Equals(SemanticVersion other)

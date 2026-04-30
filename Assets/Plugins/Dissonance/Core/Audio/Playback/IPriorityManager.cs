@@ -11,7 +11,7 @@
     internal class PriorityManager
         : IPriorityManager
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof(PriorityManager).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(PriorityManager));
 
         private readonly PlayerCollection _players;
 

@@ -42,8 +42,8 @@ namespace Dissonance
         /// </summary>
         internal float AmplitudeMultiplier
         {
-            get { return _amplitudeMultiplier; }
-            set { _amplitudeMultiplier = Math.Min(2, Math.Max(0, value)); }
+            get => _amplitudeMultiplier;
+            set => _amplitudeMultiplier = Math.Min(2, Math.Max(0, value));
         }
 
         internal ChannelProperties(IChannelPriorityProvider defaultPriority)

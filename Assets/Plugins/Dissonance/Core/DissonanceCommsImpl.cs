@@ -19,12 +19,14 @@ namespace Dissonance
         : IPriorityManager, IAccessTokenCollection, IChannelPriorityProvider, IVolumeProvider
     {
         #region fields
-        private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(DissonanceComms).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(DissonanceComms));
 
         [SerializeField, UsedImplicitly] private string _lastPrefabError;
 
+        private static DissonanceComms _singleton;
+
         private bool _started;
-        internal bool IsStarted { get { return _started; } }
+        internal bool IsStarted => _started;
 
         private readonly Rooms _rooms = new Rooms();
         private readonly PlayerChannels _playerChannels;
@@ -77,17 +79,14 @@ namespace Dissonance
         }
 
         #region properties
-        internal float PacketLoss
-        {
-            get { return _capture.PacketLoss; }
-        }
+        internal float PacketLoss => _capture.PacketLoss;
 
         /// <summary>
         /// Get or set the local player name (may only be set before this component starts)
         /// </summary>
         public string LocalPlayerName
         {
-            get { return _localPlayerName; }
+            get => _localPlayerName;
             set
             {
                 if (_localPlayerName == value)
@@ -106,81 +105,57 @@ namespace Dissonance
                 _localPlayerName = value;
 
                 var handler = LocalPlayerNameChanged;
-                if (handler != null) handler(value);
+                handler?.Invoke(value);
             }
         }
 
         /// <summary>
         /// Get a value indicating if Dissonance has successfully connected to a voice network yet
         /// </summary>
-        public bool IsNetworkInitialized
-        {
-            get { return _net != null && _net.Status == ConnectionStatus.Connected; }
-        }
-        
+        public bool IsNetworkInitialized => _net != null && _net.Status == ConnectionStatus.Connected;
+
         /// <summary>
         /// Get an object to control which rooms the local player is listening to
         /// </summary>
-        [NotNull] public Rooms Rooms
-        {
-            get { return _rooms; }
-        }
+        [NotNull] public Rooms Rooms => _rooms;
 
         /// <summary>
         /// Get an object to control channels to other players
         /// </summary>
-        [NotNull] public PlayerChannels PlayerChannels
-        {
-            get { return _playerChannels; }
-        }
+        [NotNull] public PlayerChannels PlayerChannels => _playerChannels;
 
         /// <summary>
         /// Get an object to control channels to rooms (transmitting)
         /// </summary>
-        [NotNull] public RoomChannels RoomChannels
-        {
-            get { return _roomChannels; }
-        }
+        [NotNull] public RoomChannels RoomChannels => _roomChannels;
 
         /// <summary>
         /// Get an object to send and receive text messages
         /// </summary>
-        [NotNull] public TextChat Text
-        {
-            get { return _text; }
-        }
+        [NotNull] public TextChat Text => _text;
 
         /// <summary>
         /// Get a list of states of all players in the Dissonance voice session
         /// </summary>
-        [NotNull] public ReadOnlyCollection<VoicePlayerState> Players
-        {
-            get { return _players.Readonly; }
-        }
+        [NotNull] public ReadOnlyCollection<VoicePlayerState> Players => _players.Readonly;
 
         /// <summary>
         /// Get the priority of the current highest priority speaker
         /// </summary>
-        public ChannelPriority TopPrioritySpeaker
-        {
-            get { return _playbackPriorityManager.TopPriority; }
-        }
+        public ChannelPriority TopPrioritySpeaker => _playbackPriorityManager.TopPriority;
 
         /// <summary>
         /// Get the set of tokens the local player has knowledge of
         /// </summary>
-        [NotNull] public IEnumerable<string> Tokens
-        {
-            get { return _tokens; }
-        }
+        [NotNull] public IEnumerable<string> Tokens => _tokens;
 
         /// <summary>
         /// The default priority to use for this player if a broadcast trigger does not specify a priority
         /// </summary>
         public ChannelPriority PlayerPriority
         {
-            get { return _playerPriority; }
-            set { _playerPriority = value; }
+            get => _playerPriority;
+            set => _playerPriority = value;
         }
 
         /// <summary>
@@ -188,13 +163,13 @@ namespace Dissonance
         /// </summary>
         public GameObject PlaybackPrefab
         {
-            get { return _playbackPrefab2; }
+            get => _playbackPrefab2;
             set
             {
                 if (_started)
                 {
                     throw Log.CreateUserErrorException(
-                        "Cannot set playback prefab when the component has been started",
+                        "Cannot set playback prefab when the DissonanceComms component has been started",
                         "directly setting the 'PlaybackPrefab' property too late",
                         "https://placeholder-software.co.uk/dissonance/docs/Reference/Components/Dissonance-Comms",
                         "A0796DA8-A0BC-49E4-A1B3-F0AA0F51BAA0"
@@ -207,7 +182,7 @@ namespace Dissonance
                     if (value.GetComponent<IVoicePlayback>() == null)
                     {
                         throw Log.CreateUserErrorException(
-                            "Cannot set playback prefab to a prefab without an implemented of IVoicePlayback",
+                            "Cannot set PlaybackPrefab to a prefab without an implementation of IVoicePlayback",
                             "Setting the 'PlaybackPrefab' property to an incorrect prefab",
                             "https://placeholder-software.co.uk/dissonance/docs/Reference/Components/Dissonance-Comms",
                             "543EB2C1-8911-405B-8BEA-5DBC185DF0C3"
@@ -224,7 +199,7 @@ namespace Dissonance
         /// </summary>
         public bool IsMuted
         {
-            get { return _isMuted; }
+            get => _isMuted;
             set
             {
                 if (_isMuted != value)
@@ -249,7 +224,7 @@ namespace Dissonance
         /// </summary>
         public bool IsDeafened
         {
-            get { return _isDeafened; }
+            get => _isDeafened;
             set
             {
                 if (_isDeafened != value)
@@ -272,8 +247,8 @@ namespace Dissonance
             }
             set
             {
-                if (value < 0) throw new ArgumentOutOfRangeException("value", "Value must be greater than or equal to zero");
-                if (value > 1) throw new ArgumentOutOfRangeException("value", "Value must be less than or equal to one");
+                if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
+                if (value > 1) throw new ArgumentOutOfRangeException(nameof(value), "Value must be less than or equal to one");
                 _oneMinusBaseRemoteVoiceVolume = 1 - value;
             }
         }
@@ -286,7 +261,7 @@ namespace Dissonance
         /// </summary>
         private bool MuteAllRemoteVoices
         {
-            get { return _muteAllRemoteVoices; }
+            get => _muteAllRemoteVoices;
             set
             {
                 if (_muteAllRemoteVoices != value)
@@ -297,6 +272,11 @@ namespace Dissonance
             }
         }
         #endregion
+
+        [UsedImplicitly] private void Awake()
+        {
+            _singleton = this;
+        }
 
         [UsedImplicitly] private void Start()
         {
@@ -320,11 +300,11 @@ namespace Dissonance
             Metrics.WriteMultithreadedMetrics();
 
             //Sanity check (can't run without a network object)
-            var net = gameObject.GetComponent<ICommsNetwork>();
-            if (net == null)
+            if (!gameObject.TryGetComponent<ICommsNetwork>(out var net))
                 throw new Exception("Cannot find a voice network component. Please attach a voice network component appropriate to your network system to the DissonanceVoiceComms' entity.");
 
             //Sanity check (can't run without run in background). This value doesn't work on mobile platforms so don't perform this check there
+#if !UNITY_ANDROID && !UNITY_IOS && !UNITY_IPHONE
             if (!Application.isMobilePlatform && !Application.runInBackground)
             {
                 Log.Error(Log.UserErrorMessage(
@@ -334,6 +314,7 @@ namespace Dissonance
                     "98D123BB-CF4F-4B41-8555-41CD01108DA7")
                 );
             }
+#endif
 
             //Load default playback prefab if one has not been set
             if (PlaybackPrefab == null)
@@ -396,11 +377,25 @@ namespace Dissonance
 
         private IMicrophoneCapture GetOrAddMicrophone()
         {
-            var mic = GetComponent<IMicrophoneCapture>();
-            if (mic == null)
+            if (!TryGetComponent<IMicrophoneCapture>(out var mic))
                 mic = gameObject.AddComponent<BasicMicrophoneCapture>();
 
             return mic;
+        }
+
+        /// <summary>
+        /// Get the instance of DissonanceComms in the current scene. This will return null if DissonanceComms does not exist in the scene.
+        /// </summary>
+        /// <returns></returns>
+        [CanBeNull] public static DissonanceComms GetSingleton()
+        {
+            if (!_singleton)
+            {
+                _singleton = null;
+                _singleton = FindAnyObjectByType<DissonanceComms>(FindObjectsInactive.Include);
+            }
+
+            return _singleton;
         }
 
         [UsedImplicitly] private void OnEnable()
@@ -466,9 +461,6 @@ namespace Dissonance
             {
                 Log.Info("OnApplicationPause (Resumed)");
 
-                // Force a capture pipeline reset to resume recording
-                _capture.ForceReset();
-
                 // Start a coroutine to resume now that the pause has ended
                 if (_resumeCo != null)
                     StopCoroutine(_resumeCo);
@@ -478,29 +470,40 @@ namespace Dissonance
 
         private IEnumerator CoResumePlayback()
         {
-            // Many network systems are quite confused by application pauses. Some of them delivering a large number of packets all at once
-            // when the pause ends. Wait for a few frames to give the network system some time to sort itself out.
-            for (var i = 0; i < 30; i++)
-                yield return null;
+            var net = _net as MonoBehaviour;
+            if (net != null)
+            {
+                // Disable Dissonance networking, wait a short while, then re-enable it. This will reset everything
+                // in Dissonance as if it has connected to a new session.
+                net.enabled = false;
+                for (var i = 0; i < 30; i++)
+                    yield return null;
+                net.enabled = true;
+            }
+            else
+            {
+                // Force a capture pipeline reset to resume recording
+                _capture.ForceReset();
 
-            // Force a capture pipeline reset to resume recording
-            _capture.ForceReset();
+                // Many network systems are quite confused by application pauses. Some of them delivering a large number of packets all at once
+                // when the pause ends. Wait for a few frames to give the network system some time to sort itself out.
+                for (var i = 0; i < 30; i++)
+                    yield return null;
+
+                // Flush playback pipelines for all remote speakers, discarding all buffered voice sessions
+                var players = Players;
+                for (var i = 0; i < players.Count; i++)
+                {
+                    var player = players[i];
+                    if (player.IsLocalPlayer)
+                        continue;
+
+                    player.PlaybackInternal?.ForceReset();
+                }
+            }
 
             // Allow remote voices to start playing
             MuteAllRemoteVoices = false;
-
-            // Flush playback pipelines for all remote speakers, discarding all buffered voice sessions
-            var players = Players;
-            for (var i = 0; i < players.Count; i++)
-            {
-                var player = players[i];
-                if (player.IsLocalPlayer)
-                    continue;
-
-                var playback = player.PlaybackInternal;
-                if (playback != null)
-                    playback.ForceReset();
-            }
 
             // Now that this coroutine is done clear the state
             _resumeCo = null;
@@ -520,13 +523,11 @@ namespace Dissonance
             }
             // ReSharper restore HeuristicUnreachableCode
 
-            VoicePlayerState state;
-            if (_players.TryGet(player, out state))
+            if (_players.TryGet(player, out var state))
             {
                 state.InvokeOnStoppedSpeaking();
 
-                if (OnPlayerStoppedSpeaking != null)
-                    OnPlayerStoppedSpeaking(state);
+                OnPlayerStoppedSpeaking?.Invoke(state);
             }
         }
 
@@ -538,13 +539,11 @@ namespace Dissonance
             if (Log.AssertAndLogError(player != null, "CA95E783-CA35-441B-9B8B-FAA0FA0B41E3", "Received a player-started-speaking event for a null player ID"))
                 return;
 
-            VoicePlayerState state;
-            if (_players.TryGet(player, out state))
+            if (_players.TryGet(player, out var state))
             {
                 state.InvokeOnStartedSpeaking();
 
-                if (OnPlayerStartedSpeaking != null)
-                    OnPlayerStartedSpeaking(state);
+                OnPlayerStartedSpeaking?.Invoke(state);
             }
         }
 
@@ -556,22 +555,19 @@ namespace Dissonance
             if (Log.AssertAndLogError(evt.PlayerName != null, "221D74AD-4F5B-4215-9ADE-CC4D5B455327", "Received a remote room event with a null player name"))
                 return;
 
-            VoicePlayerState state;
-            if (_players.TryGet(evt.PlayerName, out state))
+            if (_players.TryGet(evt.PlayerName, out var state))
             {
                 if (evt.Joined)
                 {
                     state.InvokeOnEnteredRoom(evt);
 
-                    if (OnPlayerEnteredRoom != null)
-                        OnPlayerEnteredRoom(state, evt.Room);
+                    OnPlayerEnteredRoom?.Invoke(state, evt.Room);
                 }
                 else
                 {
                     state.InvokeOnExitedRoom(evt);
 
-                    if (OnPlayerExitedRoom != null)
-                        OnPlayerExitedRoom(state, evt.Room);
+                    OnPlayerExitedRoom?.Invoke(state, evt.Room);
                 }
             }
         }
@@ -584,8 +580,7 @@ namespace Dissonance
             if (Log.AssertAndLogError(packet.SenderPlayerId != null, "C0FE4E98-3CC9-466E-AA39-51F0B6D22D09", "Discarding a voice packet with a null player ID"))
                 return;
 
-            VoicePlayerState state;
-            if (_players.TryGet(packet.SenderPlayerId, out state) && state.PlaybackInternal != null)
+            if (_players.TryGet(packet.SenderPlayerId, out var state) && state.PlaybackInternal != null)
                 state.PlaybackInternal.ReceiveAudioPacket(packet);
         }
 
@@ -602,13 +597,12 @@ namespace Dissonance
             {
                 var playback = state.Playback;
                 if (playback != null)
-                    _playbackPool.Put((VoicePlayback)playback);
+                    _playbackPool.Put(playback);
 
                 _playerTrackers.RemovePlayer(state);
 
                 state.InvokeOnLeftSession();
-                if (OnPlayerLeftSession != null)
-                    OnPlayerLeftSession(state);
+                OnPlayerLeftSession?.Invoke(state);
             }
         }
 
@@ -637,10 +631,9 @@ namespace Dissonance
             _playerTrackers.AddPlayer(state);
 
             //Now we've set everything up activate the playback
-            playback.gameObject.SetActive(true);
+            ((MonoBehaviour)playback).gameObject.SetActive(true);
 
-            if (OnPlayerJoinedSession != null)
-                OnPlayerJoinedSession(state);
+            OnPlayerJoinedSession?.Invoke(state);
         }
         #endregion
 
@@ -652,10 +645,9 @@ namespace Dissonance
         [CanBeNull] public VoicePlayerState FindPlayer([NotNull] string playerId)
         {
             if (playerId == null)
-                throw new ArgumentNullException("playerId");
+                throw new ArgumentNullException(nameof(playerId));
 
-            VoicePlayerState state;
-            if (_players.TryGet(playerId, out state))
+            if (_players.TryGet(playerId, out var state))
                 return state;
 
             return null;
@@ -680,20 +672,30 @@ namespace Dissonance
             Profiler.EndSample();
 
             Profiler.BeginSample("Update: Capture", this);
-            _capture.Update(IsMuted, Time.deltaTime);
+            _capture.Update(IsMuted, Time.unscaledDeltaTime);
             Profiler.EndSample();
 
             Profiler.BeginSample("Update: Auto Channel Duck", this);
-            _autoChannelDuck.Update(IsMuted, Time.deltaTime);
+            _autoChannelDuck.Update(IsMuted, Time.unscaledDeltaTime);
             Profiler.EndSample();
         }
 
         [UsedImplicitly] private void OnDestroy()
         {
             _capture.Destroy();
+
+            if (ReferenceEquals(_singleton, this))
+                _singleton = null;
         }
 
         #region VAD
+        // Marked obsolete on 2023-08-10
+        [Obsolete("Use `SubscribeToRecordedAudio` instead")]
+        public void SubcribeToVoiceActivation([NotNull] IVoiceActivationListener listener)
+        {
+            _capture.Subscribe(listener);
+        }
+
         /// <summary>
         ///     Subscribes to automatic voice detection.
         /// </summary>
@@ -701,7 +703,7 @@ namespace Dissonance
         ///     The listener which is to receive notification when the player starts and stops speaking via
         ///     automatic voice detection.
         /// </param>
-        public void SubcribeToVoiceActivation([NotNull] IVoiceActivationListener listener)
+        public void SubscribeToVoiceActivation([NotNull] IVoiceActivationListener listener)
         {
             _capture.Subscribe(listener);
         }
@@ -742,8 +744,8 @@ namespace Dissonance
         /// </summary>
         public event Action<string> TokenAdded
         {
-            add { _tokens.TokenAdded += value; }
-            remove { _tokens.TokenAdded -= value; }
+            add => _tokens.TokenAdded += value;
+            remove => _tokens.TokenAdded -= value;
         }
 
         /// <summary>
@@ -751,8 +753,8 @@ namespace Dissonance
         /// </summary>
         public event Action<string> TokenRemoved
         {
-            add { _tokens.TokenRemoved += value; }
-            remove { _tokens.TokenRemoved -= value; }
+            add => _tokens.TokenRemoved += value;
+            remove => _tokens.TokenRemoved -= value;
         }
 
         /// <summary>
@@ -763,7 +765,7 @@ namespace Dissonance
         public bool AddToken(string token)
         {
             if (token == null)
-                throw new ArgumentNullException("token", "Cannot add a null token");
+                throw new ArgumentNullException(nameof(token), "Cannot add a null token");
 
             return _tokens.AddToken(token);
         }
@@ -776,7 +778,7 @@ namespace Dissonance
         public bool RemoveToken(string token)
         {
             if (token == null)
-                throw new ArgumentNullException("token", "Cannot remove a null token");
+                throw new ArgumentNullException(nameof(token), "Cannot remove a null token");
 
             return _tokens.RemoveToken(token);
         }
@@ -802,24 +804,22 @@ namespace Dissonance
         public bool HasAnyToken([NotNull] TokenSet tokens)
         {
             if (tokens == null)
-                throw new ArgumentNullException("tokens", "Cannot intersect with a null set");
+                throw new ArgumentNullException(nameof(tokens), "Cannot intersect with a null set");
 
             return _tokens.IntersectsWith(tokens);
         }
         #endregion
 
         #region IPriorityManager explicit impl
-        ChannelPriority IPriorityManager.TopPriority
-        {
-            get { return _playbackPriorityManager.TopPriority; }
-        }
+        ChannelPriority IPriorityManager.TopPriority => _playbackPriorityManager.TopPriority;
+
         #endregion
 
         #region  IChannelPriorityProvider explicit impl
         ChannelPriority IChannelPriorityProvider.DefaultChannelPriority
         {
-            get { return _playerPriority; }
-            set { _playerPriority = value; }
+            get => _playerPriority;
+            set => _playerPriority = value;
         }
         #endregion
 
@@ -840,11 +840,11 @@ namespace Dissonance
         /// </summary>
         public static void TestDependencies()
         {
-            //Loading the version string of opus loads the DLL, will throw if it's not there.
+            // Loading the version string of opus loads the DLL, will throw if it's not there.
             OpusNative.OpusVersion();
 
-            //Getting the filter state loads the DLL (and has no side effects, it's just a getter). Will throw if DLL is missing.
-            WebRtcPreprocessingPipeline.WebRtcPreprocessor.Dissonance_GetFilterState();
+            // Getting the filter state loads the DLL (and has no side effects, it's just a getter). Will throw if DLL is missing.
+            AudioPluginDissonanceNative.Dissonance_GetFilterState();
         }
     }
 }

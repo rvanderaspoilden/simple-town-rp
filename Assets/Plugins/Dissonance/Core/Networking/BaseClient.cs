@@ -10,7 +10,7 @@ namespace Dissonance.Networking
 {
     public abstract class BaseClient<TServer, TClient, TPeer>
         : IClient<TPeer>
-        where TPeer : struct
+        where TPeer : struct, IEquatable<TPeer>
         where TServer : BaseServer<TServer, TClient, TPeer>
         where TClient : BaseClient<TServer, TClient, TPeer>
     {
@@ -20,48 +20,48 @@ namespace Dissonance.Networking
         private bool _disconnected;
         private bool _error;
 
-        public bool IsConnected { get { return !_error && !_disconnected && _serverNegotiator.State == ConnectionState.Connected; } }
+        public bool IsConnected => !_error && !_disconnected && _serverNegotiator.State == ConnectionState.Connected;
 
         private readonly EventQueue _events;
         public event Action<string, CodecSettings> PlayerJoined
         {
-            add { _events.PlayerJoined += value; }
-            remove { _events.PlayerJoined -= value; }
+            add => _events.PlayerJoined += value;
+            remove => _events.PlayerJoined -= value;
         }
         public event Action<string> PlayerLeft
         {
-            add { _events.PlayerLeft += value; }
-            remove { _events.PlayerLeft -= value; }
+            add => _events.PlayerLeft += value;
+            remove => _events.PlayerLeft -= value;
         }
         public event Action<RoomEvent> PlayerEnteredRoom
         {
-            add { _events.PlayerEnteredRoom += value; }
-            remove { _events.PlayerEnteredRoom -= value; }
+            add => _events.PlayerEnteredRoom += value;
+            remove => _events.PlayerEnteredRoom -= value;
         }
         public event Action<RoomEvent> PlayerExitedRoom
         {
-            add { _events.PlayerExitedRoom += value; }
-            remove { _events.PlayerExitedRoom -= value; }
+            add => _events.PlayerExitedRoom += value;
+            remove => _events.PlayerExitedRoom -= value;
         }
         public event Action<VoicePacket> VoicePacketReceived
         {
-            add { _events.VoicePacketReceived += value; }
-            remove { _events.VoicePacketReceived -= value; }
+            add => _events.VoicePacketReceived += value;
+            remove => _events.VoicePacketReceived -= value;
         }
         public event Action<TextMessage> TextMessageReceived
         {
-            add { _events.TextMessageReceived += value; }
-            remove { _events.TextMessageReceived -= value; }
+            add => _events.TextMessageReceived += value;
+            remove => _events.TextMessageReceived -= value;
         }
         public event Action<string> PlayerStartedSpeaking
         {
-            add { _events.PlayerStartedSpeaking += value; }
-            remove { _events.PlayerStartedSpeaking -= value; }
+            add => _events.PlayerStartedSpeaking += value;
+            remove => _events.PlayerStartedSpeaking -= value;
         }
         public event Action<string> PlayerStoppedSpeaking
         {
-            add { _events.PlayerStoppedSpeaking += value; }
-            remove { _events.PlayerStoppedSpeaking -= value; }
+            add => _events.PlayerStoppedSpeaking += value;
+            remove => _events.PlayerStoppedSpeaking -= value;
         }
 
         private readonly SlaveClientCollection<TPeer> _peers;
@@ -74,28 +74,21 @@ namespace Dissonance.Networking
         private readonly TextReceiver<TPeer> _textReceiver;
         private readonly TextSender<TPeer> _textSender;
 
-        private readonly TrafficCounter _recvRemoveClient = new TrafficCounter();
-        [NotNull] internal TrafficCounter RecvRemoveClient { get { return _recvRemoveClient; } }
-        private readonly TrafficCounter _recvVoiceData = new TrafficCounter();
-        [NotNull] internal TrafficCounter RecvVoiceData { get { return _recvVoiceData; } }
-        private readonly TrafficCounter _recvTextData = new TrafficCounter();
-        [NotNull] internal TrafficCounter RecvTextData { get { return _recvTextData; } }
-        private readonly TrafficCounter _recvHandshakeResponse = new TrafficCounter();
-        [NotNull] internal TrafficCounter RecvHandshakeResponse { get { return _recvHandshakeResponse; } }
-        private readonly TrafficCounter _recvHandshakeP2P = new TrafficCounter();
-        [NotNull] internal TrafficCounter RecvHandshakeP2P { get { return _recvHandshakeP2P; } }
-        private readonly TrafficCounter _recvClientState = new TrafficCounter();
-        [NotNull] internal TrafficCounter RecvClientState { get { return _recvClientState; } }
-        private readonly TrafficCounter _recvDeltaState = new TrafficCounter();
-        [NotNull] internal TrafficCounter RecvDeltaState { get { return _recvDeltaState; } }
-        private readonly TrafficCounter _sentServer = new TrafficCounter();
-        [NotNull] internal TrafficCounter SentServerTraffic { get { return _sentServer; } }
+        [NotNull] internal TrafficCounter RecvRemoveClient { get; } = new TrafficCounter();
+        [NotNull] internal TrafficCounter RecvVoiceData { get; } = new TrafficCounter();
+        [NotNull] internal TrafficCounter RecvTextData { get; } = new TrafficCounter();
+        [NotNull] internal TrafficCounter RecvHandshakeResponse { get; } = new TrafficCounter();
+        [NotNull] internal TrafficCounter RecvHandshakeP2P { get; } = new TrafficCounter();
+        [NotNull] internal TrafficCounter RecvClientState { get; } = new TrafficCounter();
+        [NotNull] internal TrafficCounter RecvDeltaState { get; } = new TrafficCounter();
+        [NotNull] internal TrafficCounter SentServerTraffic { get; } = new TrafficCounter();
+
         #endregion
 
         #region constructors
         protected BaseClient([NotNull] ICommsNetworkState network)
         {
-            if (network == null) throw new ArgumentNullException("network");
+            if (network == null) throw new ArgumentNullException(nameof(network));
 
             Log = Logs.Create(LogCategory.Network, GetType().Name);
 
@@ -237,6 +230,8 @@ namespace Dissonance.Networking
         #region receive
         public ushort? NetworkReceivedPacket(ArraySegment<byte> data)
         {
+            Log.CheckMainThreadAndThrow();
+
             if (_disconnected)
             {
                 Log.Warn("Received a packet with a disconnected client, dropping packet");
@@ -253,8 +248,7 @@ namespace Dissonance.Networking
         {
             var reader = new PacketReader(data);
 
-            MessageTypes header;
-            if (!reader.ReadPacketHeader(out header))
+            if (!reader.ReadPacketHeader(out var header))
             {
                 Log.Warn("Discarding packet - incorrect magic number.");
                 return null;
@@ -268,7 +262,7 @@ namespace Dissonance.Networking
                     if (CheckSessionId(ref reader, header))
                     {
                         _voiceReceiver.ReceiveVoiceData(ref reader);
-                        _recvVoiceData.Update(reader.Read.Count);
+                        RecvVoiceData.Update(reader.Read.Count);
                     }
                     break;
 
@@ -276,14 +270,14 @@ namespace Dissonance.Networking
                     if (CheckSessionId(ref reader, header))
                     {
                         _textReceiver.ProcessTextMessage(ref reader);
-                        _recvTextData.Update(reader.Read.Count);
+                        RecvTextData.Update(reader.Read.Count);
                     }
                     break;
 
                 case MessageTypes.HandshakeResponse:
                     _serverNegotiator.ReceiveHandshakeResponseHeader(ref reader);
                     _peers.ReceiveHandshakeResponseBody(ref reader);
-                    _recvHandshakeResponse.Update(reader.Read.Count);
+                    RecvHandshakeResponse.Update(reader.Read.Count);
 
                     if (_serverNegotiator.LocalId.HasValue)
                         OnServerAssignedSessionId(_serverNegotiator.SessionId, _serverNegotiator.LocalId.Value);
@@ -294,7 +288,7 @@ namespace Dissonance.Networking
                     if (CheckSessionId(ref reader, header))
                     {
                         _peers.ProcessRemoveClient(ref reader);
-                        _recvRemoveClient.Update(reader.Read.Count);
+                        RecvRemoveClient.Update(reader.Read.Count);
                     }
                     break;
 
@@ -302,7 +296,7 @@ namespace Dissonance.Networking
                     if (CheckSessionId(ref reader, header))
                     {
                         _peers.ProcessClientState(null, ref reader);
-                        _recvClientState.Update(reader.Read.Count);
+                        RecvClientState.Update(reader.Read.Count);
                     }
                     break;
 
@@ -310,7 +304,7 @@ namespace Dissonance.Networking
                     if (CheckSessionId(ref reader, header))
                     {
                         _peers.ProcessDeltaChannelState(ref reader);
-                        _recvDeltaState.Update(reader.Read.Count);
+                        RecvDeltaState.Update(reader.Read.Count);
                     }
                     break;
 
@@ -318,17 +312,16 @@ namespace Dissonance.Networking
                     {
                         var session = reader.ReadUInt32();
                         if (_serverNegotiator.SessionId != session)
-                            FatalError(string.Format("Kicked from session - wrong session ID. Mine:{0} Theirs:{1}", _serverNegotiator.SessionId, session));
+                            FatalError($"Kicked from session - wrong session ID. Mine:{_serverNegotiator.SessionId} Theirs:{session}");
                     }
                     break;
 
                 case MessageTypes.HandshakeP2P:
                     if (CheckSessionId(ref reader, header))
                     {
-                        ushort id;
-                        reader.ReadhandshakeP2P(out id);
+                        reader.ReadhandshakeP2P(out var id);
 
-                        _recvHandshakeP2P.Update(reader.Read.Count);
+                        RecvHandshakeP2P.Update(reader.Read.Count);
 
                         return id;
                     }
@@ -389,24 +382,26 @@ namespace Dissonance.Networking
         /// <param name="packet"></param>
         protected virtual void SendReliableP2P([NotNull] List<ClientInfo<TPeer?>> destinations, ArraySegment<byte> packet)
         {
-            //Since we're calling the base implementation of send P2P we'll just relay this packet by the server
+            // Since we're calling the base implementation of send P2P we'll just relay this packet by the server
 
             // This packet may have been sent P2P, but we still want to update the sent counter
             SentServerTraffic.Update(packet.Count);
 
-            if (destinations.Count > 0)
+            // A single relay packet can only send to a limited number of destinations. Keep sending relay
+            // packets until there are no more destinations left.
+            while (destinations.Count > 0)
             {
-                //Get a buffer to write the relay packet into
+                // Get a buffer to write the relay packet into
                 var buffer = _sendQueue.GetSendBuffer();
                 {
-                    //Write relay packet
+                    // Write relay packet
                     var writer = new PacketWriter(buffer);
                     writer.WriteRelay(_serverNegotiator.SessionId, destinations, packet, true);
 
-                    //Send relay packet
+                    // Send relay packet
                     ((IClient<TPeer>)this).SendReliable(writer.Written);
                 }
-                //Recycle relay buffer
+                // Recycle relay buffer
                 _sendQueue.RecycleSendBuffer(buffer);
             }
         }
@@ -418,24 +413,26 @@ namespace Dissonance.Networking
         /// <param name="packet"></param>
         protected virtual void SendUnreliableP2P([NotNull] List<ClientInfo<TPeer?>> destinations, ArraySegment<byte> packet)
         {
-            //Since we're calling the base implementation of send P2P we'll just relay this packet by the server
+            // Since we're calling the base implementation of send P2P we'll just relay this packet by the server
 
             // This packet may have been sent P2P, but we still want to update the sent counter
             SentServerTraffic.Update(packet.Count);
 
-            if (destinations.Count > 0)
+            // A single relay packet can only send to a limited number of destinations. Keep sending relay
+            // packets until there are no more destinations left.
+            while (destinations.Count > 0)
             {
-                //Get a buffer to write the relay packet into
+                // Get a buffer to write the relay packet into
                 var buffer = _sendQueue.GetSendBuffer();
                 {
                     //Write relay packet
                     var writer = new PacketWriter(buffer);
                     writer.WriteRelay(_serverNegotiator.SessionId, destinations, packet, false);
 
-                    //Send relay packet
+                    // Send relay packet
                     ((IClient<TPeer>)this).SendUnreliable(writer.Written);
                 }
-                //Recycle relay buffer
+                // Recycle relay buffer
                 _sendQueue.RecycleSendBuffer(buffer);
             }
         }
@@ -486,6 +483,8 @@ namespace Dissonance.Networking
         /// <param name="connection"></param>
         protected void ReceiveHandshakeP2P(ushort id, TPeer connection)
         {
+            Log.CheckMainThreadAndThrow();
+
             if (!IsConnected)
             {
                 Log.Error("Attempted to call IntroduceP2P before connected to Dissonance session");

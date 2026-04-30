@@ -7,13 +7,13 @@ using JetBrains.Annotations;
 
 namespace Dissonance.Networking
 {
-    internal struct ClientInfo
+    internal readonly struct ClientInfo
     {
-        public string PlayerName { get; private set; }
-        public ushort PlayerId { get; private set; }
-        public CodecSettings CodecSettings { get; private set; }
+        public string PlayerName { get; }
+        public ushort PlayerId { get; }
+        public CodecSettings CodecSettings { get; }
 
-        public ClientInfo(string playerName, ushort playerId, CodecSettings codecSettings) : this()
+        public ClientInfo(string playerName, ushort playerId, CodecSettings codecSettings)
         {
             PlayerName = playerName;
             PlayerId = playerId;
@@ -30,44 +30,27 @@ namespace Dissonance.Networking
         #region fields and properties
         private static readonly Log Log = Logs.Create(LogCategory.Network, typeof(ClientInfo<TPeer>).Name);
 
-        private readonly string _playerName;
-        private readonly ushort _playerId;
-        private readonly CodecSettings _codecSettings;
-
         private readonly List<string> _rooms = new List<string>();
-        private readonly ReadOnlyCollection<string> _roomsReadonly;
 
         /// <summary>
         /// Name of this client (as specified by the DissonanceComms component for the client)
         /// </summary>
-        [NotNull] public string PlayerName
-        {
-            get { return _playerName; }
-        }
+        [NotNull] public string PlayerName { get; }
 
         /// <summary>
         /// Unique ID of this client
         /// </summary>
-        public ushort PlayerId
-        {
-            get { return _playerId; }
-        }
+        public ushort PlayerId { get; }
 
         /// <summary>
         /// The codec settings being used by the client
         /// </summary>
-        public CodecSettings CodecSettings
-        {
-            get { return _codecSettings; }
-        }
+        public CodecSettings CodecSettings { get; }
 
         /// <summary>
         /// Ordered list of rooms this client is listening to
         /// </summary>
-        [NotNull] internal ReadOnlyCollection<string> Rooms
-        {
-            get { return _roomsReadonly; }
-        }
+        [NotNull] internal ReadOnlyCollection<string> Rooms { get; }
 
         [CanBeNull] public TPeer Connection { get; internal set; }
 
@@ -78,11 +61,11 @@ namespace Dissonance.Networking
 
         public ClientInfo(string playerName, ushort playerId, CodecSettings codecSettings, [CanBeNull] TPeer connection)
         {
-            _roomsReadonly = new ReadOnlyCollection<string>(_rooms);
+            Rooms = new ReadOnlyCollection<string>(_rooms);
 
-            _playerName = playerName;
-            _playerId = playerId;
-            _codecSettings = codecSettings;
+            PlayerName = playerName;
+            PlayerId = playerId;
+            CodecSettings = codecSettings;
             Connection = connection;
 
             IsConnected = true;
@@ -90,7 +73,7 @@ namespace Dissonance.Networking
 
         public override string ToString()
         {
-            return string.Format("Client '{0}'/{1} {2}", PlayerName, PlayerId, Connection);
+            return $"Client '{PlayerName}/{PlayerId}/{Connection}'";
         }
 
         #region equality
@@ -100,7 +83,7 @@ namespace Dissonance.Networking
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            return string.Equals(_playerName, other._playerName) && _playerId == other._playerId;
+            return string.Equals(PlayerName, other.PlayerName) && PlayerId == other.PlayerId;
         }
 
         public override bool Equals(object obj)
@@ -118,7 +101,7 @@ namespace Dissonance.Networking
         {
             unchecked
             {
-                return (_playerName.GetFnvHashCode() * 397) ^ _playerId.GetHashCode();
+                return (PlayerName.GetFnvHashCode() * 397) ^ PlayerId.GetHashCode();
             }
         }
         #endregion
@@ -126,7 +109,7 @@ namespace Dissonance.Networking
         #region room management
         public bool AddRoom([NotNull] string roomName)
         {
-            if (roomName == null) throw new ArgumentNullException("roomName");
+            if (roomName == null) throw new ArgumentNullException(nameof(roomName));
 
             var index = _rooms.BinarySearch(roomName);
             if (index < 0)
@@ -142,7 +125,7 @@ namespace Dissonance.Networking
 
         public bool RemoveRoom([NotNull] string roomName)
         {
-            if (roomName == null) throw new ArgumentNullException("roomName");
+            if (roomName == null) throw new ArgumentNullException(nameof(roomName));
 
             var index = _rooms.BinarySearch(roomName);
             if (index >= 0)

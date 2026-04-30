@@ -13,7 +13,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
         #region fields and properties
         [NotNull] private readonly MirrorIgnoranceCommsNetwork _network;
 
-        private readonly List<NetworkConnection> _addedConnections = new List<NetworkConnection>();
+        private readonly List<NetworkConnectionToClient> _addedConnections = new List<NetworkConnectionToClient>();
         #endregion
 
         #region constructors
@@ -45,7 +45,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
 
             //Add this player to the list of known connections (do not add the local player)
             if (client.PlayerName != _network.PlayerName)
-                _addedConnections.Add(client.Connection.Connection);
+                _addedConnections.Add((NetworkConnectionToClient)client.Connection.Connection);
         }
 
         public override void Disconnect()
@@ -78,7 +78,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
             return base.Update();
         }
 
-        private static bool IsConnected([NotNull] NetworkConnection conn)
+        private static bool IsConnected([NotNull] NetworkConnectionToClient conn)
         {
             return conn.isReady && NetworkServer.connections.ContainsKey(conn.connectionId);
         }
@@ -109,7 +109,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
 
             // We don't consider sending to a disconnected connection a failure.
             // It could easily be caused by a race (i.e. they only just disconnected) and we don't really care if packets to non-clients get lost!
-            if (!IsConnected(connection.Connection))
+            if (!IsConnected((NetworkConnectionToClient)connection.Connection))
                 return true;
 
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse (Justification it shouldn't be null, but sanity check anyway)

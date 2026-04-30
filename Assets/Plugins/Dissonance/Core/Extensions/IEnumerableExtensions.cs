@@ -9,7 +9,7 @@ namespace Dissonance.Extensions
         [NotNull] public static IEnumerable<T> Concat<T>([NotNull] this IEnumerable<T> enumerable, T tail)
         {
             if (enumerable == null)
-                throw new ArgumentNullException("enumerable");
+                throw new ArgumentNullException(nameof(enumerable));
 
             return ConcatUnsafe(enumerable, tail);
         }

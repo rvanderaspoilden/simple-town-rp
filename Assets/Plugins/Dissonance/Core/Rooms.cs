@@ -9,15 +9,15 @@ namespace Dissonance
     /// Collection of rooms the local client is listening to
     /// </summary>
     public sealed class Rooms
+        : IRooms
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(Rooms).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(Rooms));
         private static readonly RoomMembershipComparer Comparer = new RoomMembershipComparer();
 
         private readonly List<RoomMembership> _rooms;
 
         private readonly List<string> _roomNames;
-        private readonly ReadOnlyCollection<string> _roomNamesReadonly;
-        internal ReadOnlyCollection<string> Memberships { get { return _roomNamesReadonly; } }
+        internal ReadOnlyCollection<string> Memberships { get; }
 
         public event Action<string> JoinedRoom;
         public event Action<string> LeftRoom;
@@ -27,21 +27,15 @@ namespace Dissonance
             _rooms = new List<RoomMembership>();
 
             _roomNames = new List<string>();
-            _roomNamesReadonly = new ReadOnlyCollection<string>(_roomNames);
+            Memberships = new ReadOnlyCollection<string>(_roomNames);
         }
 
         /// <summary>
         /// Number of rooms currently being listened to
         /// </summary>
-        public int Count
-        {
-            get { return _rooms.Count; }
-        }
+        public int Count => _rooms.Count;
 
-        internal RoomMembership this[int i]
-        {
-            get { return _rooms[i]; }
-        }
+        internal RoomMembership this[int i] => _rooms[i];
 
         /// <summary>
         /// Checks if the collection contains the given room
@@ -51,21 +45,24 @@ namespace Dissonance
         public bool Contains([NotNull] string roomName)
         {
             if (roomName == null)
-                throw new ArgumentNullException("roomName");
+                throw new ArgumentNullException(nameof(roomName));
 
-            var index = FindById(roomName.ToRoomId());
+            var name = new RoomName(roomName);
+            var index = FindById(name.ToRoomId());
             return index.HasValue && _rooms.Count > 0;
+        }
+
+        public RoomMembership Join(string roomName)
+        {
+            return Join(new RoomName(roomName));
         }
 
         /// <summary>
         ///     Registers the local client as interested in broadcasts directed at the specified room.
         /// </summary>
         /// <param name="roomName">The room name.</param>
-        public RoomMembership Join([NotNull] string roomName)
+        public RoomMembership Join(RoomName roomName)
         {
-            if (roomName == null)
-                throw new ArgumentNullException("roomName", "Cannot join a null room");
-
             var membership = new RoomMembership(roomName, 1);
 
             //Check to see if we already have this membership in the list
@@ -130,8 +127,7 @@ namespace Dissonance
             if (idIndex < 0)
                 _roomNames.Insert(~idIndex, membership.RoomName);
 
-            var handler = JoinedRoom;
-            if (handler != null) handler(membership.RoomName);
+            JoinedRoom?.Invoke(membership.RoomName);
         }
 
         private void OnLeftRoom(RoomMembership membership)
@@ -143,8 +139,7 @@ namespace Dissonance
             if (idIndex >= 0)
                 _roomNames.RemoveAt(idIndex);
 
-            var handler = LeftRoom;
-            if (handler != null) handler(membership.RoomName);
+            LeftRoom?.Invoke(membership.RoomName);
         }
 
         /// <summary>
@@ -152,7 +147,7 @@ namespace Dissonance
         /// </summary>
         /// <param name="roomId"></param>
         /// <returns></returns>
-        [CanBeNull] internal string Name(ushort roomId)
+        internal string Name(ushort roomId)
         {
             if (_rooms.Count == 0)
                 return null;
@@ -165,13 +160,18 @@ namespace Dissonance
             return _rooms[index.Value].RoomName;
         }
 
+        string IRooms.Name(ushort roomId)
+        {
+            return Name(roomId);
+        }
+
         private int? FindById(ushort id)
         {
             var maxIndex = _rooms.Count - 1;
             var minIndex = 0;
             while (maxIndex >= minIndex)
             {
-                var mid = minIndex + ((maxIndex - minIndex) / 2);
+                var mid = minIndex + (maxIndex - minIndex) / 2;
                 var c = id.CompareTo(_rooms[mid].RoomId);
 
                 //Found it!
@@ -190,27 +190,20 @@ namespace Dissonance
 
     public struct RoomMembership
     {
-        private readonly string _name;
-        private readonly ushort _roomId;
+        private readonly RoomName _name;
 
         internal int Count;
 
-        internal RoomMembership([NotNull] string name, int count)
+        internal RoomMembership(RoomName name, int count)
         {
             _name = name;
-            _roomId = name.ToRoomId();
+            RoomId = name.ToRoomId();
             Count = count;
         }
 
-        [NotNull] public string RoomName
-        {
-            get { return _name; }
-        }
+        [NotNull] public string RoomName => _name.Name;
 
-        public ushort RoomId
-        {
-            get { return _roomId; }
-        }
+        public ushort RoomId { get; }
     }
 
     internal class RoomMembershipComparer
@@ -220,5 +213,15 @@ namespace Dissonance
         {
             return x.RoomId.CompareTo(y.RoomId);
         }
+    }
+
+    internal interface IRooms
+    {
+        /// <summary>
+        /// Get the room name for the given ID, or null
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [CanBeNull] string Name(ushort id);
     }
 }

@@ -14,7 +14,7 @@ namespace Dissonance.Audio.Capture
         : IAmplitudeProvider, ILossEstimator
     {
         #region fields and properties
-        private static readonly Log Log = Logs.Create(LogCategory.Recording, typeof(CapturePipelineManager).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Recording, nameof(CapturePipelineManager));
 
         private bool _isMobilePlatform;
 
@@ -45,15 +45,12 @@ namespace Dissonance.Audio.Capture
         private readonly List<IVoiceActivationListener> _activationListeners = new List<IVoiceActivationListener>();
         private readonly List<IMicrophoneSubscriber> _audioListeners = new List<IMicrophoneSubscriber>();
 
-        [CanBeNull] public IMicrophoneCapture Microphone
-        {
-            get { return _microphone; }
-        }
+        [CanBeNull] public IMicrophoneCapture Microphone => _microphone;
 
         private string _micName;
         public string MicrophoneName
         {
-            get { return _micName; }
+            get => _micName;
             set
             {
                 //Early exit if the value isn't actually changing
@@ -76,15 +73,9 @@ namespace Dissonance.Audio.Capture
             }
         }
 
-        public float PacketLoss
-        {
-            get { return _receivingPacketLossMonitor.PacketLoss; }
-        }
+        public float PacketLoss => _receivingPacketLossMonitor.PacketLoss;
 
-        public float Amplitude
-        {
-            get { return _preprocessor == null ? 0 : _preprocessor.Amplitude; }
-        }
+        public float Amplitude => _preprocessor?.Amplitude ?? 0;
 
         private bool _pendingResetRequest;
         #endregion
@@ -92,14 +83,11 @@ namespace Dissonance.Audio.Capture
         #region constructor
         public CapturePipelineManager([NotNull] CodecSettingsLoader codecSettingsLoader, [NotNull] RoomChannels roomChannels, [NotNull] PlayerChannels playerChannels, [NotNull] ReadOnlyCollection<VoicePlayerState> players, int startupDelay = 0)
         {
-            if (codecSettingsLoader == null) throw new ArgumentNullException("codecSettingsLoader");
-            if (roomChannels == null) throw new ArgumentNullException("roomChannels");
-            if (playerChannels == null) throw new ArgumentNullException("playerChannels");
-            if (players == null) throw new ArgumentNullException("players");
+            if (players == null) throw new ArgumentNullException(nameof(players));
 
-            _codecSettingsLoader = codecSettingsLoader;
-            _roomChannels = roomChannels;
-            _playerChannels = playerChannels;
+            _codecSettingsLoader = codecSettingsLoader ?? throw new ArgumentNullException(nameof(codecSettingsLoader));
+            _roomChannels = roomChannels ?? throw new ArgumentNullException(nameof(roomChannels));
+            _playerChannels = playerChannels ?? throw new ArgumentNullException(nameof(playerChannels));
             _receivingPacketLossMonitor = new PacketLossMonitor(players);
             _startupDelay = startupDelay;
         }
@@ -107,11 +95,9 @@ namespace Dissonance.Audio.Capture
 
         public void Start([NotNull] ICommsNetwork network, [NotNull] IMicrophoneCapture microphone)
         {
-            if (network == null) throw new ArgumentNullException("network");
-            if (microphone == null) throw new ArgumentNullException("microphone");
+            _microphone = microphone ?? throw new ArgumentNullException(nameof(microphone));
+            _network = network ?? throw new ArgumentNullException(nameof(network));
 
-            _microphone = microphone;
-            _network = network;
             AudioSettingsWatcher.Instance.Start();
 
             Net_ModeChanged(network.Mode);
@@ -131,19 +117,30 @@ namespace Dissonance.Audio.Capture
         private static bool IsMobilePlatform()
         {
             #if UNITY_EDITOR
-                //Editor is never a mobile platform, obviously.
-                return false;
-            #elif UNITY_ANDROID || UNITY_IOS || UNITY_IPHONE || UNITY_BLACKBERRY || UNITY_WP8 || UNITY_WII || UNITY_TVOS || UNITY_TIZEN || UNITY_WEBGL || PLATFORM_LUMIN
-                //Platforms which we explicitly know are mobile are conditionally compiled to return true
-                // - Wii is included here because it's an old an underpowered platform, so it probably needs to be considered a mobile
-                // - We have no idea what webGL is running on (and the runtime check probably won't help), so we've got assume it's mobile
-                return true;
-            #elif UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_PS4 || UNITY_XBOXONE
-                //Platforms which we explicitly know are desktop (or equivalent in power) are conditionally compiled to return false
+                // Editor is never a mobile platform, obviously.
                 return false;
             #else
-                //We don't know if this is a mobile platform or a desktop platform. Perform a runtime check
-                return UnityEngine.SystemInfo.deviceType == UnityEngine.DeviceType.Handheld;
+                // Override the logic for specific devices
+                switch (SystemInfo.deviceModel)
+                {
+                    // Override Quest 1 and 2 to treat them as desktops. They're
+                    // very powerful devices that can handle the desktop audio processing.
+                    case "Oculus Quest":
+                        return false;
+                }
+
+                #if UNITY_ANDROID || UNITY_IOS || UNITY_IPHONE || UNITY_BLACKBERRY || UNITY_WP8 || UNITY_WII || UNITY_TVOS || UNITY_TIZEN || UNITY_WEBGL || PLATFORM_LUMIN
+                    //Platforms which we explicitly know are mobile are conditionally compiled to return true
+                    // - Wii is included here because it's an old an underpowered platform, so it probably needs to be considered a mobile
+                    // - We have no idea what webGL is running on (and the runtime check probably won't help), so we've got assume it's mobile
+                    return true;
+                #elif UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_PS4 || UNITY_XBOXONE
+                    //Platforms which we explicitly know are desktop (or equivalent in power) are conditionally compiled to return false
+                    return false;
+                #else
+                    //We don't know if this is a mobile platform or a desktop platform. Perform a runtime check
+                    return UnityEngine.SystemInfo.deviceType == UnityEngine.DeviceType.Handheld;
+                #endif
             #endif
         }
 
@@ -167,17 +164,13 @@ namespace Dissonance.Audio.Capture
 
         public void Update(bool muted, float deltaTime)
         {
-            //Delay the initial startup of the capture pipeline. This spreads out the cost of initialising Dissonance over more frames, preventing very large spikes caused by everything being set up at once
-            _startupDelay--;
-            if (_startupDelay > 0)
-                return;
+            _receivingPacketLossMonitor.Update();
 
-			_receivingPacketLossMonitor.Update();
-
-            //Early exit if we don't need to record audio. Either because:
+            // Early exit if we don't need to record audio. Either because:
             // - Netmode doesn't require audio (i.e. dedicated server)
             // - A fatal exception occurred, permanently killing capture
-            if (!_netModeRequiresPipeline || _encounteredFatalException || _cannotStartMic)
+            // - Startup delay is positive (unconditionally force early exit for some number of frames)
+            if (!_netModeRequiresPipeline || _encounteredFatalException || _cannotStartMic || _startupDelay-- > 0)
             {
                 StopTransmissionPipeline();
                 return;
@@ -198,7 +191,7 @@ namespace Dissonance.Audio.Capture
                 {
                     //If warn level logging is turned on show some extra information in the reason (at the cost of a string allocation)
                     if (Log.IsWarn)
-                        reason = string.Format("Detected a frame skip, forcing capture pipeline reset (Delta Time:{0})", deltaTime);
+                        reason = $"Detected a frame skip, forcing capture pipeline reset (Delta Time:{deltaTime})";
                     Log.Warn(reason);
                 }
 
@@ -409,7 +402,7 @@ namespace Dissonance.Audio.Capture
         public void Subscribe([NotNull] IVoiceActivationListener listener)
         {
             if (listener == null)
-                throw new ArgumentNullException("listener", "Cannot subscribe with a null listener");
+                throw new ArgumentNullException(nameof(listener), "Cannot subscribe with a null listener");
 
             _activationListeners.Add(listener);
 
@@ -420,7 +413,7 @@ namespace Dissonance.Audio.Capture
         public void Unsubscribe([NotNull] IVoiceActivationListener listener)
         {
             if (listener == null)
-                throw new ArgumentNullException("listener", "Cannot unsubscribe with a null listener");
+                throw new ArgumentNullException(nameof(listener), "Cannot unsubscribe with a null listener");
 
             _activationListeners.Remove(listener);
 
@@ -433,7 +426,7 @@ namespace Dissonance.Audio.Capture
         public void Subscribe([NotNull] IMicrophoneSubscriber listener)
         {
             if (listener == null)
-                throw new ArgumentNullException("listener", "Cannot subscribe with a null listener");
+                throw new ArgumentNullException(nameof(listener), "Cannot subscribe with a null listener");
 
             _audioListeners.Add(listener);
 
@@ -444,7 +437,7 @@ namespace Dissonance.Audio.Capture
         public void Unsubscribe([NotNull] IMicrophoneSubscriber listener)
         {
             if (listener == null)
-                throw new ArgumentNullException("listener", "Cannot unsubscribe with a null listener");
+                throw new ArgumentNullException(nameof(listener), "Cannot unsubscribe with a null listener");
 
             _audioListeners.Remove(listener);
 
@@ -473,12 +466,15 @@ namespace Dissonance.Audio.Capture
         {
             Log.Warn("Forcing capture pipeline reset");
 
-            //Set a flag to request a reset. Netx time the capture pipeline updates it will check and apply this flag
+            // Set a flag to request a reset. Netx time the capture pipeline updates it will check and apply this flag
             _pendingResetRequest = true;
 
-            //Clear status flags
+            // Clear status flags
             _cannotStartMic = false;
             _encounteredFatalException = false;
+
+            // Delay the reset by a few frames
+            _startupDelay = 10;
         }
     }
 }

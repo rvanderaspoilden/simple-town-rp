@@ -34,7 +34,7 @@ namespace NAudio.Wave
         public WaveFormat(int sampleRate, int channels)
         {
             if (channels > 64)
-                throw new ArgumentOutOfRangeException("channels", "More than 64 channels");
+                throw new ArgumentOutOfRangeException(nameof(channels), "More than 64 channels");
 
             _channels = channels;
             _sampleRate = sampleRate;

@@ -28,6 +28,10 @@ namespace Dissonance.Editor
 
                 GUILayout.Label(_logo);
 
+                GUILayout.Space(8);
+                if (GUILayout.Button("Reset To Defaults"))
+                    settings.Reset();
+
                 DrawQualitySettings(settings);
                 EditorGUILayout.Space();
                 DrawPreprocessorSettings(settings);
@@ -43,7 +47,7 @@ namespace Dissonance.Editor
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                settings.VoiceDuckLevel = EditorGUILayout.Slider("Audio Duck Attenuation", settings.VoiceDuckLevel, 0f, 1f);
+                settings.VoiceDuckLevel = Helpers.FromDecibels(EditorGUILayout.Slider("Audio Duck Attenuation (dB)", Helpers.ToDecibels(settings.VoiceDuckLevel), Helpers.MinDecibels, 0));
                 EditorGUILayout.HelpBox("• How much remote voice volume will be reduced when local speech is being transmitted.\n" +
                                         "• A lower value will attenuate more but risks making remote speakers inaudible.", MessageType.Info);
             }
@@ -54,9 +58,25 @@ namespace Dissonance.Editor
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 settings.DenoiseAmount = (NoiseSuppressionLevels)EditorGUILayout.EnumPopup(new GUIContent("Noise Suppression"), settings.DenoiseAmount);
-                EditorGUILayout.HelpBox("• A higher value will remove more background noise but risks attenuating speech.\n" +
+                EditorGUILayout.HelpBox("• A higher value will remove more background noise (e.g. fans) but risks attenuating speech.\n" +
                                         "• A lower value will remove less noise, but will attenuate speech less.",
                                         MessageType.Info);
+            }
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                settings.BackgroundSoundRemovalEnabled = EditorGUILayout.Toggle(new GUIContent("Background Sound Removal"), settings.BackgroundSoundRemovalEnabled);
+                EditorGUILayout.HelpBox("• Enable machine learning based background sound removal (Rnnoise).\n" +
+                                        "• Removes more non-speech background sounds (e.g. keyboard sounds) than classic noise suppression but risks distorting speech.", MessageType.Info);
+
+                using (new EditorGUI.DisabledGroupScope(!settings.BackgroundSoundRemovalEnabled))
+                {
+                    settings.BackgroundSoundRemovalAmount = EditorGUILayout.Slider("Background Sound Removal Intensity", settings.BackgroundSoundRemovalAmount, 0, 1);
+
+                    EditorGUILayout.HelpBox("• A higher value will remove more background sound but risks distorting speech.\n" +
+                                            "• A lower value will remove less background sound but will distort speech less.",
+                                            MessageType.Info);
+                }
             }
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -128,8 +148,8 @@ namespace Dissonance.Editor
                         EditorGUILayout.HelpBox(string.Format("'{0}' frame size is only suitable for LAN usage due to very high bandwidth overhead!", FrameSize.Tiny), MessageType.Warning);
 
                     EditorGUILayout.HelpBox(
-                        "A smaller frame size will send smaller packets of data more frequently, improving latency at the expense of some network and CPU performance.\n\n" +
-                        "A larger frame size will send larger packets of data less frequently, gaining some network and CPU performance at the expense of latency.",
+                        "• A smaller frame size will send smaller packets of data more frequently, improving latency at the expense of some network and CPU performance.\n" +
+                        "• A larger frame size will send larger packets of data less frequently, gaining some network and CPU performance at the expense of latency.",
                         MessageType.Info
                     );
                 }
@@ -140,8 +160,8 @@ namespace Dissonance.Editor
                     if (!Application.isPlaying)
                         settings.Quality = q;
                     EditorGUILayout.HelpBox(
-                        "A lower quality setting uses less CPU and bandwidth, but sounds worse.\n\n" +
-                        "A higher quality setting uses more CPU and bandwidth, but sounds better.",
+                        "• A lower quality setting uses less CPU and bandwidth, but sounds worse.\n" +
+                        "• A higher quality setting uses more CPU and bandwidth, but sounds better.",
                         MessageType.Info);
                 }
 

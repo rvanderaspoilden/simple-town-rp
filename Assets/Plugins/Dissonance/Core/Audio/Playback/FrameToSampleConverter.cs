@@ -10,7 +10,7 @@ namespace Dissonance.Audio.Playback
     /// </summary>
     internal class FrameToSampleConverter : ISampleSource
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Playback, typeof (FrameToSampleConverter).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Playback, nameof(FrameToSampleConverter));
 
         private readonly IFrameSource _source;
         private readonly float[] _temp;
@@ -21,16 +21,12 @@ namespace Dissonance.Audio.Playback
 
         public FrameToSampleConverter([NotNull] IFrameSource source)
         {
-            if (source == null) throw new ArgumentNullException("source");
+            _source = source ?? throw new ArgumentNullException(nameof(source));
 
-            _source = source;
             _temp = new float[source.FrameSize * source.WaveFormat.Channels];
         }
 
-        public WaveFormat WaveFormat
-        {
-            get { return _source.WaveFormat; }
-        }
+        public WaveFormat WaveFormat => _source.WaveFormat;
 
         public void Prepare(SessionContext context)
         {

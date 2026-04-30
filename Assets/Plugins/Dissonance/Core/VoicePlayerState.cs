@@ -14,9 +14,7 @@ namespace Dissonance
     /// </summary>
     public abstract class VoicePlayerState
     {
-        private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(VoicePlayerState).Name);
-
-        private readonly string _name;
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(VoicePlayerState));
 
         /// <summary>
         /// Event which will be invoked whenever this player starts speaking
@@ -51,7 +49,7 @@ namespace Dissonance
         #region constructor
         internal VoicePlayerState(string name)
         {
-            _name = name;
+            Name = name;
         }
         #endregion
 
@@ -59,10 +57,7 @@ namespace Dissonance
         /// <summary>
         /// Get the name of the player this object represents
         /// </summary>
-        [NotNull] public string Name
-        {
-            get { return _name; }
-        }
+        [NotNull] public string Name { get; }
 
         /// <summary>
         /// Get a value indicating if this player is connected to the session
@@ -102,10 +97,7 @@ namespace Dissonance
         /// <summary>
         /// Get the voice playback instance for this player (may be null if this player has disconnected)
         /// </summary>
-        [CanBeNull] public IVoicePlayback Playback
-        {
-            get { return PlaybackInternal; }
-        }
+        [CanBeNull] public IVoicePlayback Playback => PlaybackInternal;
 
         /// <summary>
         /// Get the voice playback instance for this player (may be null if this player has disconnected)
@@ -131,47 +123,36 @@ namespace Dissonance
         #region event invokers
         internal void InvokeOnStoppedSpeaking()
         {
-            if (PlaybackInternal != null)
-                PlaybackInternal.StopPlayback();
+            PlaybackInternal?.StopPlayback();
 
             var evt = OnStoppedSpeaking;
-            if (evt != null)
-                evt(this);
+            evt?.Invoke(this);
         }
 
         internal void InvokeOnStartedSpeaking()
         {
-            if (PlaybackInternal != null)
-                PlaybackInternal.StartPlayback();
+            PlaybackInternal?.StartPlayback();
 
-            var evt = OnStartedSpeaking;
-            if (evt != null)
-                evt(this);
+            OnStartedSpeaking?.Invoke(this);
         }
 
         internal void InvokeOnLeftSession()
         {
-            var evt = OnLeftSession;
-            if (evt != null)
-                evt(this);
+            OnLeftSession?.Invoke(this);
         }
 
         internal virtual void InvokeOnEnteredRoom(RoomEvent evtData)
         {
             Log.AssertAndThrowPossibleBug(evtData.Joined, "FC760FE7-10D6-4572-B7D6-D33799D93FFD", "Passed leave event to join event handler");
 
-            var evt = OnEnteredRoom;
-            if (evt != null)
-                evt(this, evtData.Room);
+            OnEnteredRoom?.Invoke(this, evtData.Room);
         }
 
         internal virtual void InvokeOnExitedRoom(RoomEvent evtData)
         {
             Log.AssertAndThrowPossibleBug(!evtData.Joined, "359A67D1-DE96-4181-B5FF-D4ED3B8C0DF0", "Passed join event to leave event handler");
 
-            var evt = OnExitedRoom;
-            if (evt != null)
-                evt(this, evtData.Room);
+            OnExitedRoom?.Invoke(this, evtData.Room);
         }
         #endregion
 
@@ -189,7 +170,7 @@ namespace Dissonance
         : VoicePlayerState
     {
         #region fields
-        private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(LocalVoicePlayerState).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(LocalVoicePlayerState));
 
         [NotNull] private readonly IAmplitudeProvider _micAmplitude;
         [NotNull] private readonly Rooms _rooms;
@@ -220,7 +201,7 @@ namespace Dissonance
         #endregion
 
         #region event invokers
-        private void OnChannelOpened(string channel, ChannelProperties properties)
+        private void OnChannelOpened<TId>([NotNull] TId channel, ChannelProperties properties)
         {
             var count = _playerChannels.Count + _roomChannels.Count;
             if (count == 1)
@@ -230,7 +211,7 @@ namespace Dissonance
             }
         }
 
-        private void OnChannelClosed(string channel, ChannelProperties properties)
+        private void OnChannelClosed<TId>([NotNull] TId channel, ChannelProperties properties)
         {
             var count = _playerChannels.Count + _roomChannels.Count;
             if (count == 0)
@@ -252,23 +233,15 @@ namespace Dissonance
         #endregion
 
         #region properties
-        public override bool IsConnected
-        {
-            get { return _network.Status == ConnectionStatus.Connected; }
-        }
+        public override bool IsConnected => _network.Status == ConnectionStatus.Connected;
 
-        internal override IVoicePlaybackInternal PlaybackInternal
-        {
-            get { return null; }
-        }
+        internal override IVoicePlaybackInternal PlaybackInternal => null;
 
         public override bool IsLocallyMuted
         {
-            get
-            {
-                //Local microphone audio is never played through the local speakers - i.e. the local player is always locally muted
-                return true;
-            }
+            //Local microphone audio is never played through the local speakers - i.e. the local player is always locally muted
+            get => true;
+
             set
             {
                 if (!value)
@@ -283,29 +256,17 @@ namespace Dissonance
             }
         }
 
-        public override ReadOnlyCollection<string> Rooms
-        {
-            get { return _rooms.Memberships; }
-        }
+        public override ReadOnlyCollection<string> Rooms => _rooms.Memberships;
 
         public override IDissonancePlayer Tracker { get; internal set; }
 
-        public override float Amplitude
-        {
-            get
-            {
-                return _micAmplitude.Amplitude;
-            }
-        }
+        public override float Amplitude => _micAmplitude.Amplitude;
 
-        public override ChannelPriority? SpeakerPriority
-        {
-            get { return null; }
-        }
+        public override ChannelPriority? SpeakerPriority => null;
 
         public override float Volume
         {
-            get { return 1; }
+            get => 1;
 
             // ReSharper disable once ValueParameterNotUsed (Justification this property isn't supported)
             set
@@ -319,40 +280,52 @@ namespace Dissonance
             }
         }
 
-        public override bool IsSpeaking
-        {
-            get { return _roomChannels.Count > 0 || _playerChannels.Count > 0; }
-        }
+        public override bool IsSpeaking => _roomChannels.Count > 0 || _playerChannels.Count > 0;
 
-        public override float? PacketLoss
-        {
-            get { return _loss.PacketLoss; }
-        }
+        public override float? PacketLoss => _loss.PacketLoss;
 
-        public override bool IsLocalPlayer
-        {
-            get { return true; }
-        }
+        public override bool IsLocalPlayer => true;
+
         #endregion
 
         public override void GetSpeakingChannels(List<RemoteChannel> channels)
         {
+            // Check that the `channels` parameter is not null
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            Log.AssertAndThrowUserError(
+                channels != null,
+                "`channels` parameter is null",
+                "Passing a null object when calling `GetSpeakingChannels`",
+                "https://placeholder-software.co.uk/dissonance/docs/Reference/Other/VoicePlayerState.html#getspeakingchannelschannels-listremotechannel",
+                "6F103E91-E8BD-40B0-8690-CFAE2FB801A5"
+            );
+
             //In both these the enumerator is a struct, so this does not allocate
 
             using (var enumerator = _roomChannels.GetEnumerator())
+            {
                 while (enumerator.MoveNext())
-                    channels.Add(CreateRemoteChannel(enumerator.Current.Value, ChannelType.Room));
+                {
+                    var item = enumerator.Current.Value;
+                    channels.Add(CreateRemoteChannel<RoomChannel, RoomName>(enumerator.Current.Value, item.TargetId, ChannelType.Room));
+                }
+            }
 
             using (var enumerator = _playerChannels.GetEnumerator())
+            {
                 while (enumerator.MoveNext())
-                    channels.Add(CreateRemoteChannel(enumerator.Current.Value, ChannelType.Player));
+                {
+                    var item = enumerator.Current.Value;
+                    channels.Add(CreateRemoteChannel<PlayerChannel, string>(enumerator.Current.Value, item.TargetId, ChannelType.Player));
+                }
+            }
         }
 
-        private static RemoteChannel CreateRemoteChannel<T>([NotNull] T item, ChannelType type)
-            where T : IChannel<string>
+        private static RemoteChannel CreateRemoteChannel<TChannel, TId>([NotNull] TChannel item, string name, ChannelType type)
+            where TChannel : IChannel<TId>
         {
             return new RemoteChannel(
-                item.TargetId,
+                name,
                 type,
                 new PlaybackOptions(item.Properties.Positional, item.Properties.AmplitudeMultiplier, item.Properties.TransmitPriority)
             );
@@ -368,7 +341,7 @@ namespace Dissonance
         : VoicePlayerState
     {
         #region fields
-        private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(RemoteVoicePlayerState).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(RemoteVoicePlayerState));
 
         private readonly IVoicePlaybackInternal _playback;
         private IDissonancePlayer _player;
@@ -391,34 +364,29 @@ namespace Dissonance
         {
             get
             {
-                //We're checking two things here:
+                //We're checking three things here:
+                // 1. We know playback is not null (it's readonly and assigned non-null in the constructor), but Unity may be pretending it's null!
                 // 1. If playback is inactive then this player has disconnected
                 // 2. If playback has a different name it's been reassigned to another player (and this one must have disconnected)
-                return _playback.IsActive && _playback.PlayerName == Name;
+                return ((UnityEngine.Object)_playback) != null && _playback.IsActive && _playback.PlayerName == Name;
             }
         }
 
-        public override bool IsSpeaking
-        {
-            get { return IsConnected && _playback.IsSpeaking; }
-        }
+        public override bool IsSpeaking => IsConnected && _playback.IsSpeaking;
 
-        public override float Amplitude
-        {
-            get { return IsConnected ? _playback.Amplitude : 0; }
-        }
+        public override float Amplitude => IsConnected ? _playback.Amplitude : 0;
 
         public override float Volume
         {
             get
             {
                 var p = PlaybackInternal;
-                return p != null ? p.PlaybackVolume : 0;
+                return p?.PlaybackVolume ?? 0;
             }
             set
             {
                 if (value < 0 || value > 1)
-                    throw new ArgumentOutOfRangeException("value", "Volume must be between 0 and 1");
+                    throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0 and 1");
 
                 var p = PlaybackInternal;
                 if (p != null)
@@ -438,14 +406,11 @@ namespace Dissonance
             }
         }
 
-        internal override IVoicePlaybackInternal PlaybackInternal
-        {
-            get { return IsConnected ? _playback : null; }
-        }
+        internal override IVoicePlaybackInternal PlaybackInternal => IsConnected ? _playback : null;
 
         public override bool IsLocallyMuted
         {
-            get { return IsConnected && _playback.IsMuted; }
+            get => IsConnected && _playback.IsMuted;
             set
             {
                 var p = PlaybackInternal;
@@ -457,14 +422,11 @@ namespace Dissonance
             }
         }
 
-        public override ReadOnlyCollection<string> Rooms
-        {
-            get { return _rooms ?? EmptyRoomsList; }
-        }
+        public override ReadOnlyCollection<string> Rooms => _rooms ?? EmptyRoomsList;
 
         public override IDissonancePlayer Tracker
         {
-            get { return _player; }
+            get => _player;
             internal set
             {
                 _player = value;
@@ -484,21 +446,18 @@ namespace Dissonance
             get
             {
                 var p = Playback;
-                return p != null ? p.PacketLoss : null;
+                return p?.PacketLoss;
             }
         }
 
-        public override bool IsLocalPlayer
-        {
-            get { return false; }
-        }
+        public override bool IsLocalPlayer => false;
 
         internal float? Jitter
         {
             get
             {
                 var p = Playback;
-                return p != null ? (float?)p.Jitter : null;
+                return p?.Jitter;
             }
         }
         #endregion
@@ -512,11 +471,19 @@ namespace Dissonance
 
         public override void GetSpeakingChannels(List<RemoteChannel> channels)
         {
+            // Check that the `channels` parameter is not null
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            Log.AssertAndThrowUserError(
+                channels != null,
+                "`channels` parameter is null",
+                "Passing a null object when calling `GetSpeakingChannels`",
+                "https://placeholder-software.co.uk/dissonance/docs/Reference/Other/VoicePlayerState.html#getspeakingchannelschannels-listremotechannel",
+                "6F103E91-E8BD-40B0-8690-CFAE2FB801A5"
+            );
+
             channels.Clear();
 
-            var p = Playback;
-            if (p != null)
-                ((IRemoteChannelProvider)p).GetRemoteChannels(channels);
+            ((IRemoteChannelProvider)Playback)?.GetRemoteChannels(channels);
         }
 
         #region event invokers

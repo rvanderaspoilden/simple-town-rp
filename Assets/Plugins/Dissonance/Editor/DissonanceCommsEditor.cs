@@ -73,7 +73,7 @@ namespace Dissonance.Editor
                     StatusGui(comm);
                 }
 
-                _tokenEditor.DrawInspectorGui(comm, comm);
+                _tokenEditor.DrawInspectorGui(comm);
 
                 if (GUILayout.Button("Voice Settings"))
                     VoiceSettingsEditor.GoToSettings();
@@ -124,7 +124,7 @@ namespace Dissonance.Editor
                     {
                         //Check that the prefab is valid
                         newPrefab = (GameObject)prefab;
-                        if (newPrefab.GetComponent<VoicePlayback>() == null)
+                        if (newPrefab.GetComponent<IVoicePlaybackInternal>() == null)
                         {
                             newPrefab = null;
                             _lastPrefabError.stringValue = "Playback Prefab must contain a VoicePlayback component";
@@ -181,7 +181,7 @@ namespace Dissonance.Editor
             }
             else
             {
-                var comms = FindObjectsOfType<DissonanceComms>();
+                var comms = FindObjectsByType<DissonanceComms>(FindObjectsInactive.Include, FindObjectsSortMode.None);
                 if (comms.Length > 1)
                 {
                     EditorGUILayout.HelpBox(

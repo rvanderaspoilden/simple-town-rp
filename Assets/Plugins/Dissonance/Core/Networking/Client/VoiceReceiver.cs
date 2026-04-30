@@ -10,7 +10,9 @@ namespace Dissonance.Networking.Client
     {
         #region fields and properties
         private static readonly Log Log = Logs.Create(LogCategory.Network, typeof(VoiceReceiver<TPeer>).Name);
-        private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(1.5);
+
+        private static readonly TimeSpan ActiveTimeout = TimeSpan.FromSeconds(1.5);
+        private static readonly TimeSpan InactiveTimeout = TimeSpan.FromSeconds(15);
 
         private readonly ISession _session;
         private readonly IClientCollection<TPeer?> _clients;
@@ -48,9 +50,9 @@ namespace Dissonance.Networking.Client
                     return;
                 }
 
-            //ncrunch: no coverage start (Justification: Last brace has no coverage due to loop early exit)
+//ncrunch: no coverage start (Justification: Last brace has no coverage due to loop early exit)
             }
-            //ncrunch: no coverage end
+//ncrunch: no coverage end
         }
 
         public void Stop()
@@ -78,11 +80,7 @@ namespace Dissonance.Networking.Client
         private void CheckTimeouts(DateTime utcNow)
         {
             for (var i = _receivers.Count - 1; i >= 0; i--)
-            {
-                var r = _receivers[i];
-                if (r != null)
-                    r.CheckTimeout(utcNow, Timeout);
-            }
+                _receivers[i]?.CheckTimeout(utcNow, ActiveTimeout, InactiveTimeout);
         }
 
         public void ReceiveVoiceData(ref PacketReader reader, DateTime? utcNow = null)
@@ -95,12 +93,10 @@ namespace Dissonance.Networking.Client
             }
 
             //Read first part of the header from voice packet
-            ushort senderId;
-            reader.ReadVoicePacketHeader1(out senderId);
+            reader.ReadVoicePacketHeader1(out var senderId);
 
             //Early exit if sender peer doesn't exist
-            ClientInfo<TPeer?> client;
-            if (!_clients.TryGetClientInfoById(senderId, out client))
+            if (!_clients.TryGetClientInfoById(senderId, out var client))
             {
                 Log.Debug("Received voice packet from unknown/disconnected peer '{0}'", senderId);
                 return;

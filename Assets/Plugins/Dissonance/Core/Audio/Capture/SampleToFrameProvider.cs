@@ -8,16 +8,9 @@ namespace Dissonance.Audio.Capture
         : IFrameProvider
     {
         private readonly ISampleProvider _source;
-        public WaveFormat WaveFormat
-        {
-            get { return _source.WaveFormat; }
-        }
+        public WaveFormat WaveFormat => _source.WaveFormat;
 
-        private readonly uint _frameSize;
-        public uint FrameSize
-        {
-            get { return _frameSize; }
-        }
+        public uint FrameSize { get; }
 
         private int _samplesInFrame;
         private readonly float[] _frame;
@@ -25,21 +18,21 @@ namespace Dissonance.Audio.Capture
         public SampleToFrameProvider(ISampleProvider source, uint frameSize)
         {
             _source = source;
-            _frameSize = frameSize;
+            FrameSize = frameSize;
 
             _frame = new float[frameSize];
         }
 
         public bool Read(ArraySegment<float> outBuffer)
         {
-            if (outBuffer.Count < _frameSize)
-                throw new ArgumentException(string.Format("Supplied buffer is smaller than frame size. {0} < {1}", outBuffer.Count, _frameSize), "outBuffer");
+            if (outBuffer.Count < FrameSize)
+                throw new ArgumentException($"Supplied buffer is smaller than frame size. {outBuffer.Count} < {FrameSize}", nameof(outBuffer));
 
             //Try to read enough samples to fill up the internal frame buffer
-            _samplesInFrame += _source.Read(_frame, _samplesInFrame, checked((int)(_frameSize - _samplesInFrame)));
+            _samplesInFrame += _source.Read(_frame, _samplesInFrame, checked((int)(FrameSize - _samplesInFrame)));
 
             //If we have filled the buffer copy it to the output
-            if (_samplesInFrame == _frameSize)
+            if (_samplesInFrame == FrameSize)
             {
                 outBuffer.CopyFrom(_frame);
                 _samplesInFrame = 0;

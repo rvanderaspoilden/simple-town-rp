@@ -64,7 +64,7 @@ namespace Dissonance
                 return null;
 
             //Sort it so we can find the middle value (i.e. median)
-            _tmpLossValues.Sort();
+            _tmpLossValues.Sort(Comparer<float>.Default);
 
             //Calculate mid index (rounded up, not down, so we bias slightly towards worse values)
             var midIndex = (int) Math.Ceiling((_tmpLossValues.Count - 1) / 2.0f);

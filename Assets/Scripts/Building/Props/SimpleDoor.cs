@@ -112,11 +112,11 @@ namespace Sim.Building {
         }
         
         [Server]
-        private void RemoveDisconnectedPlayer(int connId) {
+        private void RemoveDisconnectedPlayer(NetworkConnectionToClient conn) {
             this.colliderTriggered = this.colliderTriggered.Where(x => {
-                return x != null && (!x.CompareTag("Player") || (x.CompareTag("Player") && x.GetComponent<NetworkIdentity>()?.connectionToClient.connectionId != connId));
+                return x != null && (!x.CompareTag("Player") || (x.CompareTag("Player") && x.GetComponent<NetworkIdentity>()?.connectionToClient != conn));
             }).ToList();
-            
+
             this.CheckState();
         }
     }

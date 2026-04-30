@@ -1,5 +1,4 @@
 using Mirror;
-using Sim;
 using UnityEngine;
 
 namespace Dissonance.Integrations.MirrorIgnorance
@@ -14,7 +13,7 @@ namespace Dissonance.Integrations.MirrorIgnorance
         : NetworkBehaviour, IDissonancePlayer
     {
         private static readonly Log Log = Logs.Create(LogCategory.Network, "Mirror Player Component");
-        
+
         private DissonanceComms _comms;
 
         public bool IsTracking { get; private set; }
@@ -51,14 +50,15 @@ namespace Dissonance.Integrations.MirrorIgnorance
             }
         }
         
-        public void OnDestroy() {
+        public void OnDestroy()
+        {
             if (_comms != null)
                 _comms.LocalPlayerNameChanged -= SetPlayerName;
         }
 
         public void OnEnable()
         {
-            _comms = FindObjectOfType<DissonanceComms>();
+            _comms = DissonanceComms.GetSingleton();
         }
 
         public void OnDisable()
@@ -66,12 +66,12 @@ namespace Dissonance.Integrations.MirrorIgnorance
             if (IsTracking)
                 StopTracking();
         }
-        
+
         public override void OnStartLocalPlayer()
         {
             base.OnStartLocalPlayer();
 
-            var comms = FindObjectOfType<DissonanceComms>();
+            var comms = DissonanceComms.GetSingleton();
             if (comms == null)
             {
                 throw Log.CreateUserErrorException(
@@ -116,11 +116,10 @@ namespace Dissonance.Integrations.MirrorIgnorance
             base.OnStartClient();
 
             //A client is starting. Start tracking if the name has been properly initialised.
-            if (!string.IsNullOrEmpty(PlayerId)) {
+            if (!string.IsNullOrEmpty(PlayerId))
                 StartTracking();
-            }
         }
-        
+
         /// <summary>
         /// Invoking on client will cause it to run on the server
         /// </summary>
@@ -142,9 +141,8 @@ namespace Dissonance.Integrations.MirrorIgnorance
         private void RpcSetPlayerName(string playerName)
         {
             //received a message from server (on all clients). If this is not the local player then apply the change
-            if (!isLocalPlayer) {
+            if (!isLocalPlayer)
                 SetPlayerName(playerName);
-            }
         }
 
         private void StartTracking()

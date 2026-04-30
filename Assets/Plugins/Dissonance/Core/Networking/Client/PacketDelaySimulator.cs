@@ -23,8 +23,7 @@ namespace Dissonance.Networking.Client
                 var reader = new PacketReader(packet);
 
                 //Read the header, if we don't know what this packet is then play it safe and don't lose it
-                MessageTypes header;
-                if (!reader.ReadPacketHeader(out header))
+                if (!reader.ReadPacketHeader(out var header))
                     return false;
 
                 var loss = DebugSettings.Instance.PacketLoss;

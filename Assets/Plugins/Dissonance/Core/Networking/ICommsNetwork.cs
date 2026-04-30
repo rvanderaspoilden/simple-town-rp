@@ -9,7 +9,7 @@ namespace Dissonance.Networking
     /// <summary>
     /// A packet of encoded voice data
     /// </summary>
-    public struct VoicePacket
+    public readonly struct VoicePacket
     {
         /// <summary>
         /// ID of the player who sent this voice packet
@@ -21,19 +21,19 @@ namespace Dissonance.Networking
         /// Indicates if this packet should be played with positional playback
         /// </summary>
         [Obsolete("Use `PlaybackOptions.IsPositional` property")] //Marked obsolete in Dissonance v4.0.0 (2017-11-22)
-        public bool Positional { get { return PlaybackOptions.IsPositional; } }
+        public bool Positional => PlaybackOptions.IsPositional;
 
         /// <summary>
         /// Priority of the voice in this packet
         /// </summary>
         [Obsolete("Use `PlaybackOptions.Priority` property")] //Marked obsolete in Dissonance v4.0.0 (2017-11-22)
-        public ChannelPriority Priority { get { return PlaybackOptions.Priority; } }
+        public ChannelPriority Priority => PlaybackOptions.Priority;
 
         /// <summary>
         /// Volume multiplier to apply to this audio
         /// </summary>
         [Obsolete("Use `PlaybackOptions.AmplitudeMultiplier` property")] //Marked obsolete in Dissonance v4.0.0 (2017-11-22)
-        public float AmplitudeMultiplier { get { return PlaybackOptions.AmplitudeMultiplier; } }
+        public float AmplitudeMultiplier => PlaybackOptions.AmplitudeMultiplier;
         //ncrunch: no coverage end
 
         /// <summary>
@@ -51,11 +51,10 @@ namespace Dissonance.Networking
         /// </summary>
         [CanBeNull] public readonly List<RemoteChannel> Channels;
 
-        private readonly PlaybackOptions _options;
-        public PlaybackOptions PlaybackOptions
-        {
-            get { return _options; }
-        }
+        /// <summary>
+        /// The set of playback options to use to play back the audio in this packet
+        /// </summary>
+        public PlaybackOptions PlaybackOptions { get; }
 
         /// <summary>
         /// Create a new voice packet
@@ -71,7 +70,7 @@ namespace Dissonance.Networking
         /// passed to the decoder pipeline (i.e. you can re-use this array right away)</param>
         public VoicePacket(string senderPlayerId, ChannelPriority priority, float ampMul, bool positional, ArraySegment<byte> encodedAudioFrame, uint sequence, [CanBeNull] List<RemoteChannel> channels = null)
         {
-            _options = new PlaybackOptions(positional, ampMul, priority);
+            PlaybackOptions = new PlaybackOptions(positional, ampMul, priority);
 
             SenderPlayerId = senderPlayerId;
             EncodedAudioFrame = encodedAudioFrame;
@@ -209,7 +208,7 @@ namespace Dissonance.Networking
                 case NetworkMode.Client:
                     return false;
                 default:
-                    throw new ArgumentOutOfRangeException("mode", mode, null);
+                    throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
             }
         }
 
@@ -224,7 +223,7 @@ namespace Dissonance.Networking
                 case NetworkMode.DedicatedServer:
                     return false;
                 default:
-                    throw new ArgumentOutOfRangeException("mode", mode, null);
+                    throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
             }
         }
     }

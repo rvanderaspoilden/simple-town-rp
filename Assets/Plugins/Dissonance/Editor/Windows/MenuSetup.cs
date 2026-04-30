@@ -28,8 +28,7 @@ namespace Dissonance.Editor.Windows
         [MenuItem("Window/Dissonance/Release Notes", priority = 1), UsedImplicitly]
         public static void ReleaseNotes()
         {
-            var query = EditorMetadata.GetQueryString("menu");
-            Application.OpenURL(string.Format("https://placeholder-software.co.uk/dissonance/releases/{0}.html{1}#vn", DissonanceComms.Version, query));
+            Application.OpenURL($"https://placeholder-software.co.uk/dissonance/releases/{DissonanceComms.Version}.html#vn");
         }
 
         [MenuItem("Window/Dissonance/Download Integrations", priority = 2), UsedImplicitly]
@@ -59,7 +58,7 @@ namespace Dissonance.Editor.Windows
         [MenuItem("Window/Dissonance/Rate And Review", priority = 6), UsedImplicitly]
         private static void RateAndReview()
         {
-            Application.OpenURL("http://u3d.as/za2?aid=1100lJDF");
+            Application.OpenURL("http://u3d.as/za2?aid=1100lJDF#reviews");
         }
 
         [MenuItem("Window/Dissonance/Quality Settings", priority = 101), UsedImplicitly]

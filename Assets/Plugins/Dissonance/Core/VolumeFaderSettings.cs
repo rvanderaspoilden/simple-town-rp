@@ -12,8 +12,8 @@ namespace Dissonance
         [SerializeField] private float _volume;
         public float Volume
         {
-            get { return _volume; }
-            set { _volume = value; }
+            get => _volume;
+            set => _volume = value;
         }
 
         /// <summary>
@@ -22,8 +22,8 @@ namespace Dissonance
         [SerializeField] private long _fadeInTicks;
         public TimeSpan FadeIn
         {
-            get { return new TimeSpan(_fadeInTicks); }
-            set { _fadeInTicks = value.Ticks; }
+            get => new TimeSpan(_fadeInTicks);
+            set => _fadeInTicks = value.Ticks;
         }
 
         /// <summary>
@@ -32,8 +32,8 @@ namespace Dissonance
         [SerializeField] private long _fadeOutTicks;
         public TimeSpan FadeOut
         {
-            get { return new TimeSpan(_fadeOutTicks); }
-            set { _fadeOutTicks = value.Ticks; }
+            get => new TimeSpan(_fadeOutTicks);
+            set => _fadeOutTicks = value.Ticks;
         }
     }
 }

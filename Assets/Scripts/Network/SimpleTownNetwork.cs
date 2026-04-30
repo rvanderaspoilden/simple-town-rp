@@ -35,7 +35,7 @@ public class SimpleTownNetwork : NetworkManager {
     [SerializeField]
     private City cityData;
 
-    public delegate void PlayerDisconnected(int connId);
+    public delegate void PlayerDisconnected(NetworkConnectionToClient conn);
 
     public static event PlayerDisconnected OnPlayerDisconnected;
 
@@ -90,15 +90,7 @@ public class SimpleTownNetwork : NetworkManager {
     #endregion
 
     #region Start & Stop
-
-    /// <summary>
-    /// Set the frame rate for a headless server.
-    /// <para>Override if you wish to disable the behavior or set your own tick rate.</para>
-    /// </summary>
-    public override void ConfigureServerFrameRate() {
-        base.ConfigureServerFrameRate();
-    }
-
+    
     /// <summary>
     /// called when quitting the application by closing the window / pressing stop in the editor
     /// </summary>
@@ -141,113 +133,52 @@ public class SimpleTownNetwork : NetworkManager {
     /// <param name="customHandling">true to indicate that scene loading will be handled through overrides</param>
     public override void OnClientChangeScene(string newSceneName, SceneOperation sceneOperation, bool customHandling) { }
 
-    /// <summary>
-    /// Called on clients when a scene has completed loaded, when the scene load was initiated by the server.
-    /// <para>Scene changes can cause player objects to be destroyed. The default implementation of OnClientSceneChanged in the NetworkManager is to add a player object for the connection if no player object exists.</para>
-    /// </summary>
-    /// <param name="conn">The network connection that the scene change message arrived on.</param>
-    public override void OnClientSceneChanged(NetworkConnection conn) {
-        base.OnClientSceneChanged(conn);
-    }
-
     #endregion
 
     #region Server System Callbacks
 
-    /// <summary>
-    /// Called on the server when a new client connects.
-    /// <para>Unity calls this on the Server when a Client connects to the Server. Use an override to tell the NetworkManager what to do when a client connects to the server.</para>
-    /// </summary>
-    /// <param name="conn">Connection from client.</param>
-    public override void OnServerConnect(NetworkConnection conn) { }
-
-    /// <summary>
-    /// Called on the server when a client is ready.
-    /// <para>The default implementation of this function calls NetworkServer.SetClientReady() to continue the network setup process.</para>
-    /// </summary>
-    /// <param name="conn">Connection from client.</param>
-    public override void OnServerReady(NetworkConnection conn) {
-        base.OnServerReady(conn);
-    }
-
-    /// <summary>
-    /// Called on the server when a client adds a new player with ClientScene.AddPlayer.
-    /// <para>The default implementation for this function creates a new player object from the playerPrefab.</para>
-    /// </summary>
-    /// <param name="conn">Connection from client.</param>
-    public override void OnServerAddPlayer(NetworkConnection conn) {
-        base.OnServerAddPlayer(conn);
-    }
 
     /// <summary>
     /// Called on the server when a client disconnects.
     /// <para>This is called on the Server when a Client disconnects from the Server. Use an override to decide what should happen when a disconnection is detected.</para>
     /// </summary>
     /// <param name="conn">Connection from client.</param>
-    public override void OnServerDisconnect(NetworkConnection conn) {
-        base.OnServerDisconnect(conn);
-
+    public override void OnServerDisconnect(NetworkConnectionToClient conn) {
         Debug.Log($"[Server] A player has been disconnected {conn.connectionId}");
-        OnPlayerDisconnected?.Invoke(conn.connectionId);
+        OnPlayerDisconnected?.Invoke(conn);
+        base.OnServerDisconnect(conn);
     }
 
     #endregion
 
     #region Client System Callbacks
 
-    /// <summary>
-    /// Called on the client when connected to a server.
-    /// <para>The default implementation of this function sets the client as ready and adds a player. Override the function to dictate what happens when the client connects.</para>
-    /// </summary>
-    /// <param name="conn">Connection to the server.</param>
-    public override void OnClientConnect(NetworkConnection conn) {
-        base.OnClientConnect(conn);
+    public override void OnClientConnect() {
+        base.OnClientConnect();
 
         if (useSpectusAccount) {
-            CreateCharacterMessage mock = new CreateCharacterMessage {
+            NetworkClient.Send(new CreateCharacterMessage {
                 userId = "60468a435ebca93ebc119758",
                 characterId = "6064cd05b9d4fd3afca4a146"
-            };
-            conn.Send(mock);
-
+            });
             Debug.Log("Connect with Spectus account");
-
-            return;
-        } else if (useElbloodyAccount) {
-            CreateCharacterMessage mock = new CreateCharacterMessage {
-                userId = "60468a665ebca93ebc11975a",
-                characterId = "6064dcaa84de3905a65c94b0"
-            };
-            conn.Send(mock);
-
-            Debug.Log("Connect with Elbloody account");
-
             return;
         }
 
-        CreateCharacterMessage characterMessage = new CreateCharacterMessage {
+        if (useElbloodyAccount) {
+            NetworkClient.Send(new CreateCharacterMessage {
+                userId = "60468a665ebca93ebc11975a",
+                characterId = "6064dcaa84de3905a65c94b0"
+            });
+            Debug.Log("Connect with Elbloody account");
+            return;
+        }
+
+        NetworkClient.Send(new CreateCharacterMessage {
             userId = this.characterData.UserId,
             characterId = this.characterData.Id
-        };
-
-        conn.Send(characterMessage);
+        });
     }
-
-    /// <summary>
-    /// Called on clients when disconnected from a server.
-    /// <para>This is called on the client when it disconnects from the server. Override this function to decide what happens when the client disconnects.</para>
-    /// </summary>
-    /// <param name="conn">Connection to the server.</param>
-    public override void OnClientDisconnect(NetworkConnection conn) {
-        base.OnClientDisconnect(conn);
-    }
-
-    /// <summary>
-    /// Called on clients when a servers tells the client it is no longer ready.
-    /// <para>This is commonly used when switching scenes.</para>
-    /// </summary>
-    /// <param name="conn">Connection to the server.</param>
-    public override void OnClientNotReady(NetworkConnection conn) { }
 
     #endregion
 
@@ -345,18 +276,18 @@ public class SimpleTownNetwork : NetworkManager {
     #region Custom Register Handler Callback
 
     [ServerCallback]
-    private void OnBuySomething(NetworkConnection conn, CreateDeliveryRequest request) {
+    private void OnBuySomething(NetworkConnectionToClient conn, CreateDeliveryRequest request) {
         StartCoroutine(BuyCoroutine(conn, request));
     }
 
     [ServerCallback]
-    private void OnPlayerTeleportTo(NetworkConnection conn, TeleportMessage request) {
+    private void OnPlayerTeleportTo(NetworkConnectionToClient conn, TeleportMessage request) {
         Debug.Log($"Player {conn.identity.gameObject.name} want to teleport");
         conn.Send(request);
     }
 
     [ServerCallback]
-    private void OnSpawnItem(NetworkConnection conn, SpawnItemMessage request) {
+    private void OnSpawnItem(NetworkConnectionToClient conn, SpawnItemMessage request) {
         ItemConfig itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == request.itemId);
 
         if (!itemConfig) {
@@ -371,7 +302,7 @@ public class SimpleTownNetwork : NetworkManager {
         Debug.Log($"[SimpleTownNetwork] [SpawnItem] Player {conn.identity.gameObject.name} spawned an item [id={request.itemId}]");
     }
 
-    private IEnumerator BuyCoroutine(NetworkConnection conn, CreateDeliveryRequest body) {
+    private IEnumerator BuyCoroutine(NetworkConnectionToClient conn, CreateDeliveryRequest body) {
         Debug.Log($"Server: {body.recipientId} wants to buy props with config Id [{body.propsConfigId}]");
 
         UnityWebRequest request = ApiManager.Instance.CreateDeliveryRequest(body);
@@ -417,7 +348,7 @@ public class SimpleTownNetwork : NetworkManager {
         TimeManager.StartTimestamp = this.cityData.last_timestamp;
     }
 
-    private void OnCreateCharacter(NetworkConnection conn, CreateCharacterMessage message) {
+    private void OnCreateCharacter(NetworkConnectionToClient conn, CreateCharacterMessage message) {
         Debug.Log($"Server: Retrieve character data for {message.characterId}");
         StartCoroutine(SetupCharacterCoroutine(conn, message.userId));
     }
@@ -439,7 +370,7 @@ public class SimpleTownNetwork : NetworkManager {
     }
 
     [Server]
-    private IEnumerator SetupCharacterCoroutine(NetworkConnection conn, string userId) {
+    private IEnumerator SetupCharacterCoroutine(NetworkConnectionToClient conn, string userId) {
         UnityWebRequest characterRequest = ApiManager.Instance.RetrieveCharacterByUserIdRequest(userId);
 
         yield return characterRequest.SendWebRequest();

@@ -11,7 +11,7 @@ namespace Dissonance
     internal class PlayerTrackerManager
     {
         #region fields
-        private static readonly Log Log = Logs.Create(LogCategory.Core, typeof(PlayerTrackerManager).Name);
+        private static readonly Log Log = Logs.Create(LogCategory.Core, nameof(PlayerTrackerManager));
 
         private readonly Dictionary<string, IDissonancePlayer> _unlinkedPlayerTrackers = new Dictionary<string, IDissonancePlayer>();
 
@@ -20,21 +20,17 @@ namespace Dissonance
 
         public PlayerTrackerManager([NotNull] PlayerCollection players)
         {
-            if (players == null)
-                throw new ArgumentNullException("players");
-
-            _players = players;
+            _players = players ?? throw new ArgumentNullException(nameof(players));
         }
 
         #region players
         public void AddPlayer([NotNull] VoicePlayerState state)
         {
             if (state == null)
-                throw new ArgumentNullException("state", "Cannot start tracking a null player");
+                throw new ArgumentNullException(nameof(state), "Cannot start tracking a null player");
 
             //We've got a player and we *might* already have the tracker for it. Search for an unlinked tracker
-            IDissonancePlayer tracker;
-            if (_unlinkedPlayerTrackers.TryGetValue(state.Name, out tracker))
+            if (_unlinkedPlayerTrackers.TryGetValue(state.Name, out var tracker))
             {
                 state.Tracker = tracker;
                 _unlinkedPlayerTrackers.Remove(state.Name);
@@ -46,7 +42,7 @@ namespace Dissonance
         public void RemovePlayer([NotNull] VoicePlayerState state)
         {
             if (state == null)
-                throw new ArgumentNullException("state", "Cannot stop tracking a null player");
+                throw new ArgumentNullException(nameof(state), "Cannot stop tracking a null player");
 
             //Save the tracker. The player could rejoin the session, in which case we'd need this tracker again
             var tracker = state.Tracker;
@@ -61,11 +57,10 @@ namespace Dissonance
         public void AddTracker([NotNull] IDissonancePlayer player)
         {
             if (player == null)
-                throw new ArgumentNullException("player", "Cannot track a null player");
+                throw new ArgumentNullException(nameof(player), "Cannot track a null player");
 
             //Associate tracker with player state
-            VoicePlayerState state;
-            if (_players.TryGet(player.PlayerId, out state))
+            if (_players.TryGet(player.PlayerId, out var state))
             {
                 state.Tracker = player;
                 Log.Debug("Associated position tracking for '{0}'", player.PlayerId);
@@ -80,7 +75,7 @@ namespace Dissonance
         public void RemoveTracker([NotNull] IDissonancePlayer player)
         {
             if (player == null)
-                throw new ArgumentNullException("player", "Cannot stop tracking a null player");
+                throw new ArgumentNullException(nameof(player), "Cannot stop tracking a null player");
 
             //Try to remove the player from the list of untracked players, just in case we haven't linked it up yet
             if (_unlinkedPlayerTrackers.Remove(player.PlayerId))
@@ -88,8 +83,7 @@ namespace Dissonance
             else
             {
                 //Disassociate the tracker from the player state
-                VoicePlayerState state;
-                if (_players.TryGet(player.PlayerId, out state))
+                if (_players.TryGet(player.PlayerId, out var state))
                 {
                     state.Tracker = null;
                     Log.Debug("Disassociated position tracking for '{0}' (because RemoveTracker called)", player.PlayerId);
