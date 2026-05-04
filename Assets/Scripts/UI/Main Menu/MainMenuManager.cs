@@ -68,20 +68,16 @@ namespace Sim {
         }
 
         private void OnHomesRetrieved(List<Home> homes) {
-            // if (homes != null && homes.Count > 0) {
-            //     Debug.Log("Homes retrieved !");
-            //     ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = homes;
-            //
-            //     this.mainMenuPanel.SetActive(true);
-            // } else {
-            //     Debug.Log("Homes not found");
-            //     this.apartmentCreationManager.Show();
-            // }
+            if (homes != null && homes.Count > 0) {
+                Debug.Log("Homes retrieved !");
+                ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = homes;
             
-            ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = homes;
+                this.mainMenuPanel.SetActive(true);
+            } else {
+                Debug.Log("Homes not found");
+                this.apartmentCreationManager.Show();
+            }
             
-            this.mainMenuPanel.SetActive(true);
-
             LoadingManager.Instance.Hide();
         }
 

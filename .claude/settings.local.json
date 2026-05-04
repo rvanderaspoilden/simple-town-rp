@@ -1,6 +1,20 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__ai-game-developer__scene-list-opened",
+      "mcp__ai-game-developer__assets-find",
+      "mcp__ai-game-developer__scene-open",
+      "mcp__ai-game-developer__scene-get-data",
+      "mcp__ai-game-developer__gameobject-find",
+      "PowerShell($j = Get-Content \"C:/Users/rodol/.claude/projects/D--Workspace-Unity-TheBroz-simple-town-rp/d4b585b5-5801-4b37-afd5-55dcfb4bb006/tool-results/mcp-ai-game-developer-gameobject-find-1777890698102.txt\" -Raw | ConvertFrom-Json; $j.result.Hierarchy.children | ForEach-Object { [PSCustomObject]@{ name=$_.name; active=$_.activeSelf; children=\\($_.children | Measure-Object\\).Count } } | Format-Table -AutoSize)",
+      "mcp__ai-game-developer__script-execute",
+      "mcp__ai-game-developer__assets-get-data",
+      "mcp__ai-game-developer__scene-save",
+      "mcp__ai-game-developer__console-get-logs"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "ai-game-developer"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

@@ -2086,6 +2086,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
+      propertyPath: cityName
+      value: TheBroz
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
       propertyPath: onlineScene
       value: Assets/Scenes/City.unity
       objectReference: {fileID: 0}
@@ -2102,7 +2107,7 @@ PrefabInstance:
     - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
       propertyPath: editorAutoStart
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
