@@ -791,7 +791,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 13.05
+  m_fontSize: 15.85
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -1572,7 +1572,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 21.4
+  m_fontSize: 26.9
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -2086,11 +2086,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
-      propertyPath: onlineScene
-      value: Assets/Scenes/City.unity
-      objectReference: {fileID: 0}
-    - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
-        type: 3}
       propertyPath: authenticator
       value: 
       objectReference: {fileID: 0}
@@ -2107,11 +2102,6 @@ PrefabInstance:
     - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
       propertyPath: headlessStartMode
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
-        type: 3}
-      propertyPath: useSpectusAccount
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
@@ -2528,7 +2518,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 15.55
+  m_fontSize: 20.8
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

@@ -291,7 +291,7 @@ namespace Sim {
             if (request.responseCode == 200) {
                 HomeResponse homeResponse = JsonUtility.FromJson<HomeResponse>(request.downloadHandler.text);
 
-                OnHomesRetrieved?.Invoke(homeResponse.Homes.ToList());
+                OnHomesRetrieved?.Invoke(homeResponse.Homes.ToList()); 
             } else {
                 OnHomesRetrieved?.Invoke(null);
             }

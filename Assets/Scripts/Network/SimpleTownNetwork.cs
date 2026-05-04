@@ -158,8 +158,8 @@ public class SimpleTownNetwork : NetworkManager {
 
         if (useSpectusAccount) {
             NetworkClient.Send(new CreateCharacterMessage {
-                userId = "60468a435ebca93ebc119758",
-                characterId = "6064cd05b9d4fd3afca4a146"
+                userId = "b6844cac-a0aa-416f-9129-d5896437ed38",
+                characterId = "b6f052bd-79a4-482b-9075-351db5ca852d"
             });
             Debug.Log("Connect with Spectus account");
             return;
@@ -178,6 +178,8 @@ public class SimpleTownNetwork : NetworkManager {
             userId = this.characterData.UserId,
             characterId = this.characterData.Id
         });
+        
+        LoadingManager.Instance.Hide();
     }
 
     #endregion
@@ -346,6 +348,7 @@ public class SimpleTownNetwork : NetworkManager {
         Debug.Log($"Client: city data has been updated");
         this.cityData = message.City;
         TimeManager.StartTimestamp = this.cityData.last_timestamp;
+        LoadingManager.Instance.Hide();
     }
 
     private void OnCreateCharacter(NetworkConnectionToClient conn, CreateCharacterMessage message) {
