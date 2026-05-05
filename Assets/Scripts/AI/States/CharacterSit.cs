@@ -1,16 +1,16 @@
 using DG.Tweening;
+using Interaction;
 using Sim;
-using Sim.Building;
 using UnityEngine;
 
 namespace AI.States {
     public class CharacterSit : IState {
         private readonly PlayerController player;
-        private readonly Seat props;
+        private readonly ISeatBehavior props;
         private readonly Transform seatTransform;
         private readonly Vector3 lastPosition;
 
-        public CharacterSit(PlayerController player, Seat props, Transform seatTransform) {
+        public CharacterSit(PlayerController player, ISeatBehavior props, Transform seatTransform) {
             this.player = player;
             this.props = props;
             this.seatTransform = seatTransform;

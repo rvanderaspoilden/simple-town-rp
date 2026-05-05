@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Interaction;
 using Mirror;
 using Sim.Enums;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
-    public class Seat : Props {
+    public class Seat : Props, ISeatBehavior {
         [Header("Settings")]
         [SerializeField]
         private Transform[] seatPositions;

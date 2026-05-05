@@ -206,6 +206,8 @@ public class SimpleTownNetwork : NetworkManager {
         NetworkServer.RegisterHandler<TeleportMessage>(OnPlayerTeleportTo);
         NetworkServer.RegisterHandler<SpawnItemMessage>(OnSpawnItem);
 
+        PropSystemBootstrap.OnServerStart();
+
         StartCoroutine(this.RetrieveCityData());
     }
 
@@ -217,6 +219,8 @@ public class SimpleTownNetwork : NetworkManager {
         NetworkClient.RegisterHandler<ShopResponseMessage>(OnShopResponse);
         NetworkClient.RegisterHandler<UpdateCityDataMessage>(OnCityDataUpdatedResponse);
         NetworkClient.RegisterHandler<NotificationMessage>(OnNotificationReceived);
+
+        PropSystemBootstrap.OnClientStart();
     }
 
     /// <summary>
@@ -233,6 +237,8 @@ public class SimpleTownNetwork : NetworkManager {
         NetworkServer.UnregisterHandler<TeleportMessage>();
         NetworkServer.UnregisterHandler<SpawnItemMessage>();
 
+        PropSystemBootstrap.OnServerStop();
+
         this.UpdateTimestamp();
     }
 
@@ -244,6 +250,8 @@ public class SimpleTownNetwork : NetworkManager {
         NetworkClient.UnregisterHandler<ShopResponseMessage>();
         NetworkClient.UnregisterHandler<UpdateCityDataMessage>();
         NetworkClient.UnregisterHandler<NotificationMessage>();
+
+        PropSystemBootstrap.OnClientStop();
 
         SceneManager.LoadScene("Main Menu");
     }

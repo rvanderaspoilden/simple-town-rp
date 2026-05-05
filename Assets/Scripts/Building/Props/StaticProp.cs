@@ -48,7 +48,7 @@ namespace Sim.Building {
             return this.actions != null && this.actions.Length > 0;
         }
 
-        public Action[] GetActions(bool withPriority = false) {
+        public virtual Action[] GetActions(bool withPriority = false) {
             if (this.actions == null) return System.Array.Empty<Action>();
 
             // Static props have no apartment context, so any action requiring apartment

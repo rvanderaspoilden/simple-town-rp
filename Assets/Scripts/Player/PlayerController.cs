@@ -161,6 +161,8 @@ namespace Sim {
             CharacterInfoPanelUI.Instance.Setup(this.characterHome);
             CharacterInfoPanelUI.Instance.UpdateHealthUI(this.playerHealth.Health);
             CharacterInfoPanelUI.Instance.UpdateMoney(this.playerBankAccount.Money);
+
+            ClientPropManager.Instance?.EnterRoom("city");
         }
 
         public override void OnStopClient() {
@@ -398,11 +400,11 @@ namespace Sim {
             this.stateMachine.SetState(this.characterInteractState);
         }
 
-        public void Sit(Seat props, Transform seatTransform) {
+        public void Sit(ISeatBehavior props, Transform seatTransform) {
             this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
         }
 
-        public void Sleep(Seat props, Transform couchTransform) {
+        public void Sleep(ISeatBehavior props, Transform couchTransform) {
             this.stateMachine.SetState(new CharacterSleep(this, props, couchTransform));
         }
 

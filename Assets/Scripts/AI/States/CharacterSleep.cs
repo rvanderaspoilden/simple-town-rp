@@ -1,17 +1,17 @@
 using System.Linq;
 using DG.Tweening;
+using Interaction;
 using Sim;
-using Sim.Building;
 using UnityEngine;
 
 namespace AI.States {
     public class CharacterSleep : IState {
         private readonly PlayerController player;
-        private readonly Seat props;
+        private readonly ISeatBehavior props;
         private readonly Transform couchTransform;
         private readonly Vector3 lastPosition;
 
-        public CharacterSleep(PlayerController player, Seat props, Transform couchTransform) {
+        public CharacterSleep(PlayerController player, ISeatBehavior props, Transform couchTransform) {
             this.player = player;
             this.props = props;
             this.couchTransform = couchTransform;
