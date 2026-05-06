@@ -711,9 +711,10 @@ GameObject:
   - component: {fileID: 8156312196573066119}
   - component: {fileID: 5124389593258780698}
   - component: {fileID: 8296343340899375894}
-  - component: {fileID: 5492012384660244121}
-  - component: {fileID: 1309318768034623582}
   - component: {fileID: -5135324604479662166}
+  - component: {fileID: 2878275780825259050}
+  - component: {fileID: 2597056374735957148}
+  - component: {fileID: 9192888726839140867}
   m_Layer: 10
   m_Name: Bed
   m_TagString: Untagged
@@ -843,50 +844,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0.003368974, y: 0.2964766, z: 0.01010704}
   m_TimeToStationary: 0.5
---- !u!114 &5492012384660244121
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7379255850799395618}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 773af611c2f95854183afcec6aa194c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
-  configuration: {fileID: 11400000, guid: 6f19d4f4ec8df944886244eb4e2cda50, type: 2}
-  defaultPresetId: -1
-  seatPositions:
-  - {fileID: 2031148820630749418}
-  - {fileID: 3388856791303708046}
-  - {fileID: 790134369235906653}
-  - {fileID: 8442515964848484778}
-  - {fileID: 3849939816036304334}
-  - {fileID: 3388737999849008003}
-  couchPositions:
-  - {fileID: 3288644901753888404}
-  - {fileID: 6324506205261352980}
---- !u!114 &1309318768034623582
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7379255850799395618}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  _assetId: 2254249292
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
 --- !u!82 &-5135324604479662166
 AudioSource:
   m_ObjectHideFlags: 0
@@ -984,6 +941,56 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2878275780825259050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7379255850799395618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &2597056374735957148
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7379255850799395618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ad35feecaa29af458d29d72a0b0d023, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeatBehaviour
+  configuration: {fileID: 11400000, guid: 6f19d4f4ec8df944886244eb4e2cda50, type: 2}
+  defaultPresetId: -1
+  seatTransforms:
+  - {fileID: 2031148820630749418}
+  - {fileID: 3388856791303708046}
+  - {fileID: 790134369235906653}
+  - {fileID: 8442515964848484778}
+  - {fileID: 3849939816036304334}
+  - {fileID: 3388737999849008003}
+  couchTransforms:
+  - {fileID: 3288644901753888404}
+  - {fileID: 6324506205261352980}
+--- !u!114 &9192888726839140867
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7379255850799395618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54f9ecb512830054ab54f6df06820ae1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeatPropSource
 --- !u!1 &7431729989626605027
 GameObject:
   m_ObjectHideFlags: 0

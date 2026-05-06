@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AI;
@@ -162,7 +162,12 @@ namespace Sim {
             CharacterInfoPanelUI.Instance.UpdateHealthUI(this.playerHealth.Health);
             CharacterInfoPanelUI.Instance.UpdateMoney(this.playerBankAccount.Money);
 
-            ClientPropManager.Instance?.EnterRoom("city");
+            if (ClientPropManager.Instance == null) {
+                Debug.LogError("[PlayerController] ClientPropManager.Instance is null! Props will not be synchronized. Make sure ClientPropManager is in the scene.");
+            } else {
+                ClientPropManager.Instance.EnterRoom("city");
+                Debug.Log("[PlayerController] Entered room 'city'");
+            }
         }
 
         public override void OnStopClient() {

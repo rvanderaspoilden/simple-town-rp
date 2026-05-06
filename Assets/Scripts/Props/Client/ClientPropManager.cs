@@ -15,6 +15,7 @@ using UnityEngine;
 ///
 /// All routing is by propId (no prefab ↔ scene-object lookup).
 /// </summary>
+[DefaultExecutionOrder(-100)] // Ensure this initializes before NetworkManager callbacks
 public class ClientPropManager : MonoBehaviour {
     public static ClientPropManager Instance { get; private set; }
 
@@ -31,6 +32,8 @@ public class ClientPropManager : MonoBehaviour {
     private void Awake() {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        DontDestroyOnLoad(gameObject);
+        Debug.Log("[ClientPropManager] Initialized and set to DontDestroyOnLoad");
     }
 
     // ── Mirror handler registration ───────────────────────────────────────────

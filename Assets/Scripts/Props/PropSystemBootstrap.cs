@@ -44,7 +44,14 @@ public static class PropSystemBootstrap {
     // ── Client ────────────────────────────────────────────────────────────────
 
     public static void OnClientStart() {
-        ClientPropManager.Instance?.RegisterHandlers();
+        // Auto-create ClientPropManager if missing
+        if (ClientPropManager.Instance == null) {
+            Debug.LogWarning("[PropSystem] ClientPropManager.Instance is null! Creating automatically...");
+            var go = new GameObject("ClientPropManager (AutoCreated)");
+            go.AddComponent<ClientPropManager>();
+        }
+
+        ClientPropManager.Instance.RegisterHandlers();
         Debug.Log("[PropSystem] Client handlers registered");
     }
 
