@@ -34,6 +34,7 @@ namespace Sim {
             DeliveryBoxBehaviour.OnOpened            += OnDeliveryBoxOpened;
             DeliveryBoxBehaviour.UnPackage           += OpenPackageFromDeliveryBox;
             DispenserBehaviour.OnOpened              += OnDispenserOpened;
+            PackageBehaviour.OnOpened                += OnPackageOpened;
             ClientPropManager.OnBuildAckReceived     += OnBuildAck;
         }
 
@@ -54,6 +55,7 @@ namespace Sim {
                 DeliveryBoxBehaviour.OnOpened            -= OnDeliveryBoxOpened;
                 DeliveryBoxBehaviour.UnPackage           -= OpenPackageFromDeliveryBox;
                 DispenserBehaviour.OnOpened              -= OnDispenserOpened;
+                PackageBehaviour.OnOpened                -= OnPackageOpened;
                 ClientPropManager.OnBuildAckReceived     -= OnBuildAck;
             }
         }
@@ -80,6 +82,12 @@ namespace Sim {
         private void OnDispenserOpened(DispenserBehaviour dispenser) {
             // Open the dispenser UI for the new prop system
             DefaultViewUI.Instance.ShowPropsContentUI(dispenser);
+        }
+
+        private void OnPackageOpened(PackageBehaviour package) {
+            // Enter UNPACKAGING state and init build mode with the PropsConfig inside the package
+            this.player.SetState(StateType.UNPACKAGING);
+            BuildManager.Instance.Init(package.GetPropsConfigInside());
         }
 
         private void OnDeliveryBoxOpened(DeliveryBoxBehaviour box, Delivery[] _) {

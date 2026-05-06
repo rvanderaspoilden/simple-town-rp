@@ -18,7 +18,8 @@
       "Bash(npx unity-mcp-cli *)",
       "Bash(Remove-Item \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-rp\\\\Assets\\\\Scripts\\\\Props\\\\Server\\\\ServerDoorTrigger.cs\" -Force)",
       "Bash(Remove-Item \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-rp\\\\Assets\\\\Scripts\\\\Props\\\\Server\\\\ServerDoorTrigger.cs.meta\" -Force -ErrorAction SilentlyContinue)",
-      "Bash(Write-Host \"ServerDoorTrigger deleted\")"
+      "Bash(Write-Host \"ServerDoorTrigger deleted\")",
+      "Bash(xargs grep *)"
     ]
   },
   "enableAllProjectMcpServers": true,

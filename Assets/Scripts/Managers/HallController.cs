@@ -73,8 +73,6 @@ public class HallController : NetworkBehaviour {
 
         this.elevator.HallController = this;
 
-        this.elevator.ParentId = netId;
-
         NetworkServer.Spawn(this.elevator.gameObject);
         for (int i = 0; i < this.apartmentSpawnPoints.Length; i++) {
             Address address = new Address {

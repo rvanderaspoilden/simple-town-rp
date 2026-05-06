@@ -25,7 +25,7 @@ namespace Sim.Building {
         private bool isInBuildableArea;
 
         [SerializeField]
-        private Props currentProps;
+        private PropBehaviourBase currentProps;
 
         [SerializeField]
         private bool placeable;
@@ -51,7 +51,7 @@ namespace Sim.Building {
         private void Awake() {
             this.colliderTriggered = new List<Collider>();
             this.navMeshObstacle = GetComponentInChildren<NavMeshObstacle>();
-            this.currentProps = GetComponent<Props>();
+            this.currentProps = GetComponent<PropBehaviourBase>();
             this.propsRenderer = GetComponent<PropsRenderer>();
             this.collider = GetComponent<Collider>();
 

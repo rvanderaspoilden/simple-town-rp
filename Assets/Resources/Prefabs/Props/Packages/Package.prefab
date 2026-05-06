@@ -15,8 +15,9 @@ GameObject:
   - component: {fileID: 2686430353325794601}
   - component: {fileID: -4363456237023114618}
   - component: {fileID: 3046694514775587690}
-  - component: {fileID: 8929184733979110359}
-  - component: {fileID: 5147536922835649959}
+  - component: {fileID: 5085618503510842961}
+  - component: {fileID: 4275894008647507813}
+  - component: {fileID: 6996241086097520150}
   m_Layer: 10
   m_Name: Package
   m_TagString: Interactable
@@ -180,7 +181,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &8929184733979110359
+--- !u!114 &5085618503510842961
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -189,29 +190,36 @@ MonoBehaviour:
   m_GameObject: {fileID: 9098399826493897008}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 725278664e63bf949b882d41b7ac9968, type: 3}
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &4275894008647507813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9098399826493897008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac5735293af53174a8e7a89b45f435f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PackagePropSource
+--- !u!114 &6996241086097520150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9098399826493897008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 171109a5ebdcdf0428c948dfe6b570c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PackageBehaviour
   configuration: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   defaultPresetId: -1
+  openSound: {fileID: 8300000, guid: 3cdf6946b7f8a1549ab339405d1c0146, type: 3}
   propsInside: {fileID: 0}
---- !u!114 &5147536922835649959
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9098399826493897008}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
-  sceneId: 0
-  _assetId: 2149063454
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0

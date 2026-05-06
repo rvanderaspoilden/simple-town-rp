@@ -20,8 +20,6 @@ namespace Sim.UI
 
         [SerializeField] private int cursorIdx;
 
-        [SerializeField] private Props linkedProps; // Legacy system (to be removed)
-
         [SerializeField] private PropBehaviourBase linkedPropBehaviour; // New system
 
         private bool isHover;
@@ -53,29 +51,10 @@ namespace Sim.UI
             }
         }
 
-        public void Setup(Props props)
-        {
-            this.linkedProps = props;
-            this.linkedPropBehaviour = null;
-            this.propsImage.sprite = props.GetConfiguration().Sprite;
-
-            if (this.linkedProps.GetType() == typeof(Dispenser))
-            {
-                this.items = ((DispenserConfiguration)this.linkedProps.GetConfiguration()).ItemsToSell
-                    .Select(x => x.DisplayWithPrice()).ToArray();
-            }
-            else if (this.linkedProps.GetType() == typeof(DeliveryBox))
-            {
-                this.items = ((DeliveryBox)this.linkedProps).Deliveries.Select(x => x.DisplayName()).ToArray();
-            }
-
-            this.SetCursorIdx(0);
-        }
 
         public void Setup(PropBehaviourBase behaviour)
         {
             this.linkedPropBehaviour = behaviour;
-            this.linkedProps = null;
             this.propsImage.sprite = behaviour.GetConfiguration()?.Sprite;
 
             // Handle specific prop types
@@ -122,21 +101,6 @@ namespace Sim.UI
                         Delivery delivery = deliveries[this.cursorIdx];
                         deliveryBox.OpenDelivery(delivery);
                     }
-                }
-            }
-            else if (this.linkedProps != null)
-            {
-                // Legacy system
-                if (this.linkedProps.GetType() == typeof(Dispenser))
-                {
-                    ItemConfig itemConfig = ((DispenserConfiguration)this.linkedProps.GetConfiguration())
-                        .ItemsToSell[this.cursorIdx].item;
-                    ((Dispenser)this.linkedProps).BuyItem(itemConfig);
-                }
-                else if (this.linkedProps.GetType() == typeof(DeliveryBox))
-                {
-                    Delivery delivery = ((DeliveryBox)this.linkedProps).Deliveries[this.cursorIdx];
-                    ((DeliveryBox)this.linkedProps).OpenDelivery(delivery);
                 }
             }
         }

@@ -87,11 +87,6 @@ namespace Sim {
             this.elevatorUI.gameObject.SetActive(false);
         }
 
-        public void ShowPropsContentUI(Props props) {
-            this.propsContentUI.Setup(props);
-            this.propsContentUI.gameObject.SetActive(true);
-        }
-
         public void ShowPropsContentUI(PropBehaviourBase behaviour) {
             this.propsContentUI.Setup(behaviour);
             this.propsContentUI.gameObject.SetActive(true);

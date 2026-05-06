@@ -1,99 +1,65 @@
-using System;
-using System.Collections;
 using System.Linq;
-using DG.Tweening;
 using Interaction;
-using Mirror;
 using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
 
 namespace Sim.Building {
+    /// <summary>
+    /// Legacy base for prop scripts. No longer a NetworkBehaviour — the new prop system
+    /// (PropBehaviourBase + ServerPropManager + ClientPropManager) handles all networking.
+    /// Props.cs is kept as a thin compatibility layer:
+    ///   - exposes PropsConfig + IInteractable for legacy code paths,
+    ///   - publishes the OnMoveRequest static event consumed by PlayerInteraction,
+    ///   - skips its own action setup when a PropBehaviourBase is also present.
+    /// </summary>
     [RequireComponent(typeof(PropsRenderer))]
-    public class Props : NetworkEntity, IInteractable {
+    public class Props : MonoBehaviour, IInteractable {
         [Header("Props settings")]
-        [SerializeField]
-        protected PropsConfig configuration;
+        [SerializeField] protected PropsConfig configuration;
 
-        [SerializeField]
-        protected int defaultPresetId = -1;
+        [SerializeField] protected int defaultPresetId = -1;
 
         protected Action[] actions;
-
         protected Action[] unbuiltActions;
-
-        [SyncVar(hook = nameof(SetIsBuilt))]
-        private bool built;
-
         protected PropsRenderer propsRenderer;
-
-        private Action currentAction;
-
-        [SyncVar(hook = nameof(SetPresetId))]
-        private int presetId = -1;
-
-        private ApartmentController apartmentController;
-
         protected AudioSource audioSource;
+
+        private bool built = true;
+        private int presetId = -1;
+        private ApartmentController apartmentController;
+        private bool _hasPropBehaviourBase;
 
         public delegate void PropsAction(Props props);
 
         public static event PropsAction OnMoveRequest;
 
+        public static void RaiseMoveRequest(Props props) => OnMoveRequest?.Invoke(props);
+
         protected virtual void Awake() {
-            this.built = true;
-            this.propsRenderer = GetComponent<PropsRenderer>();
-            this.audioSource = GetComponent<AudioSource>();
+            propsRenderer = GetComponent<PropsRenderer>();
+            audioSource = GetComponent<AudioSource>();
+            _hasPropBehaviourBase = GetComponent<PropBehaviourBase>() != null;
         }
 
         protected virtual void Start() {
-            this.ConfigureActions();
-        }
-
-        public override void OnStartServer() {
-            base.OnStartServer();
-
-            if (this.defaultPresetId != -1) {
-                PresetId = this.defaultPresetId;
-            }
-
-            if (isClient) {
-                this.apartmentController = NetworkClient.spawned.ContainsKey(ParentId)
-                    ? NetworkClient.spawned[ParentId].GetComponent<ApartmentController>()
-                    : null;
-            }
+            apartmentController = GetComponentInParent<ApartmentController>();
+            if (defaultPresetId != -1) PresetId = defaultPresetId;
+            if (!_hasPropBehaviourBase) ConfigureActions();
         }
 
         protected virtual void OnDestroy() {
-            this.UnSubscribeActions(this.actions);
-            this.UnSubscribeActions(this.unbuiltActions);
-        }
-
-        protected override void AssignParent() {
-            Transform curTransform = this.transform;
-            Vector3 position = curTransform.position;
-            Quaternion rotation = curTransform.rotation;
-
-            this.apartmentController = NetworkClient.spawned.ContainsKey(ParentId)
-                ? NetworkClient.spawned[ParentId].GetComponent<ApartmentController>()
-                : null;
-
-            if (this.apartmentController) {
-                curTransform.SetParent(this.apartmentController.PropsContainer);
-                curTransform.localPosition = position;
-                curTransform.localRotation = rotation;
-            } else {
-                Debug.LogError($"Parent identity not found for props {this.name}");
+            if (!_hasPropBehaviourBase) {
+                UnSubscribeActions(actions);
+                UnSubscribeActions(unbuiltActions);
             }
         }
 
-        public virtual void StopInteraction() {
-            throw new NotImplementedException();
-        }
+        public virtual void StopInteraction() { }
 
         public void InitBuilt(bool isBuilt) {
-            this.built = isBuilt;
+            built = isBuilt;
         }
 
         public ApartmentController ApartmentController {
@@ -101,64 +67,59 @@ namespace Sim.Building {
             set => apartmentController = value;
         }
 
-        /**
-         * Setup all action when a props is built
-         */
         private void SetupActions() {
-            this.actions = this.configuration.GetActions().Where(x => x).Select(Instantiate).ToArray();
-            SubscribeActions(this.actions);
+            actions = configuration.GetActions().Where(x => x).Select(Instantiate).ToArray();
+            SubscribeActions(actions);
+        }
+
+        private void SetupUnbuiltActions() {
+            unbuiltActions = configuration.GetUnbuiltActions().Where(x => x).Select(Instantiate).ToArray();
+            SubscribeActions(unbuiltActions);
         }
 
         private void SubscribeActions(Action[] actionList) {
-            foreach (var action in actionList) {
-                action.OnExecute += DoAction;
-            }
+            foreach (var action in actionList) action.OnExecute += DoAction;
         }
 
         private void UnSubscribeActions(Action[] actionList) {
-            foreach (var action in actionList) {
-                action.OnExecute -= DoAction;
-            }
-        }
-
-        /**
-         * Setup all actions when a props is not built
-         */
-        private void SetupUnbuiltActions() {
-            this.unbuiltActions = this.configuration.GetUnbuiltActions().Where(x => x).Select(Instantiate).ToArray();
-            SubscribeActions(this.unbuiltActions);
+            if (actionList == null) return;
+            foreach (var action in actionList) action.OnExecute -= DoAction;
         }
 
         public void ConfigureActions() {
-            this.SetupActions();
-            this.SetupUnbuiltActions();
+            SetupActions();
+            SetupUnbuiltActions();
         }
 
-        public float GetRange() {
-            return this.configuration.GetRangeToInteract();
-        }
+        public float GetRange() => configuration.GetRangeToInteract();
 
         public bool IsInteractable() {
-            return this.IsBuilt() ? this.actions.Length > 0 : this.unbuiltActions.Length > 0;
+            if (_hasPropBehaviourBase) return false;
+            Action[] acts = IsBuilt() ? actions : unbuiltActions;
+            return acts != null && acts.Length > 0;
         }
 
         public virtual Action[] GetActions(bool withPriority = false) {
-            Action[] actionsToReturn = this.IsBuilt() ? this.actions : this.unbuiltActions;
+            if (_hasPropBehaviourBase) return System.Array.Empty<Action>();
 
-            bool hasPermission = this.apartmentController && this.apartmentController.IsTenant(PlayerController.Local.CharacterData);
+            Action[] actionsToReturn = IsBuilt() ? actions : unbuiltActions;
+            bool hasPermission = apartmentController != null
+                              && apartmentController.IsTenant(PlayerController.Local?.CharacterData);
 
-            actionsToReturn = actionsToReturn.Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission).ToArray();
+            actionsToReturn = actionsToReturn
+                .Where(x => (x.NeedPermission && hasPermission) || !x.NeedPermission)
+                .ToArray();
 
             if (withPriority) {
-                actionsToReturn = actionsToReturn.Where(x => !x.Type.Equals(ActionTypeEnum.SELL) && !x.Type.Equals(ActionTypeEnum.MOVE)).ToArray();
+                actionsToReturn = actionsToReturn
+                    .Where(x => x.Type != ActionTypeEnum.SELL && x.Type != ActionTypeEnum.MOVE)
+                    .ToArray();
             }
 
             return actionsToReturn;
         }
 
-        public bool IsBuilt() {
-            return this.built;
-        }
+        public bool IsBuilt() => built;
 
         public int PresetId {
             get => presetId;
@@ -168,121 +129,52 @@ namespace Sim.Building {
             }
         }
 
-        public void SetPresetId(int oldId, int newId) {
-            this.presetId = newId;
-            this.UpdatePresetRender();
+        public void SetPresetId(int newId) {
+            presetId = newId;
+            UpdatePresetRender();
         }
 
         private void UpdatePresetRender() {
-            if (this.configuration.Presets == null || this.configuration.Presets.Length == 0 && this.PresetId != -1) {
-                return;
-            }
-
-            PropsPreset preset = this.configuration.Presets.FirstOrDefault(x => x.ID == this.PresetId);
-
-            if (preset != null) {
-                this.propsRenderer.SetPreset(preset);
-            } else {
-                Debug.LogError($"Props configuration of {configuration.name} doesn't have preset with ID {this.PresetId}");
-            }
+            if (configuration.Presets == null || (configuration.Presets.Length == 0 && presetId != -1)) return;
+            PropsPreset preset = configuration.Presets.FirstOrDefault(x => x.ID == presetId);
+            if (preset != null) propsRenderer.SetPreset(preset);
+            else Debug.LogError($"Props configuration of {configuration.name} doesn't have preset with ID {presetId}");
         }
 
-        public void SetIsBuilt(bool oldValue, bool newValue) {
-            this.built = newValue;
-
-            if (this.propsRenderer == null) {
-                this.propsRenderer = GetComponent<PropsRenderer>();
-            }
-
-            this.propsRenderer.UpdateGraphics();
+        public void SetIsBuilt(bool newValue) {
+            built = newValue;
+            if (propsRenderer == null) propsRenderer = GetComponent<PropsRenderer>();
+            propsRenderer.UpdateGraphics();
         }
 
         private void DoAction(Action action) {
-            Debug.Log("do action : " + action.Label);
-
             switch (action.Type) {
                 case ActionTypeEnum.MOVE:
-                    this.Move();
+                    OnMoveRequest?.Invoke(this);
                     break;
-
-                case ActionTypeEnum.BUILD:
-                    this.Build();
-                    break;
-
                 case ActionTypeEnum.SELL:
-                    this.Sell();
+                    // PlayerController.Local?.Sell(this);
                     break;
-
                 case ActionTypeEnum.LOOK:
-                    this.Look();
+                    PlayerController.Local?.Look(transform);
                     break;
-
+                case ActionTypeEnum.BUILD:
+                    Debug.LogWarning($"[Props] Build on legacy Props without PropBehaviourBase ({name})");
+                    break;
                 default:
-                    this.Execute(action);
+                    Execute(action);
                     break;
             }
         }
 
-        protected virtual void Execute(Action action) {
-            throw new NotImplementedException();
-        }
+        protected virtual void Execute(Action action) { }
 
-        [Client]
-        private void Build() {
-            this.CmdBuild();
-        }
+        public PropsConfig GetConfiguration() => configuration;
 
-        [Command(requiresAuthority = false)]
-        public void CmdBuild(NetworkConnectionToClient sender = null) {
-            // TODO(security): Check if sender is allowed to build props
-            this.built = true;
+        public void SetConfiguration(PropsConfig config) => configuration = config;
 
-            Debug.Log($"Server: player {sender.identity.netId} built {this.name}");
+        public bool IsWallProps() => configuration.GetSurfaceToPose() == BuildSurfaceEnum.WALL;
 
-            RpcBuild();
-
-            StartCoroutine(GetComponentInParent<ApartmentController>().Save());
-        }
-
-        [ClientRpc]
-        public void RpcBuild() {
-            this.transform.localScale = Vector3.zero;
-            this.transform.DOScale(Vector3.one, 1f).SetEase(Ease.OutBounce);
-
-            if (this.audioSource && this.configuration.BuildSound) {
-                this.audioSource.PlayOneShot(this.configuration.BuildSound);
-            }
-        }
-
-        [Client]
-        private void Look() {
-            PlayerController.Local.Look(this.transform);
-        }
-
-        [Client]
-        private void Move() {
-            OnMoveRequest?.Invoke(this);
-        }
-
-        [Client]
-        private void Sell() {
-            PlayerController.Local.Sell(this);
-        }
-
-        public PropsConfig GetConfiguration() {
-            return this.configuration;
-        }
-
-        public void SetConfiguration(PropsConfig config) {
-            this.configuration = config;
-        }
-
-        public bool IsWallProps() {
-            return this.configuration.GetSurfaceToPose() == BuildSurfaceEnum.WALL;
-        }
-
-        public bool IsGroundProps() {
-            return this.configuration.GetSurfaceToPose() == BuildSurfaceEnum.GROUND;
-        }
+        public bool IsGroundProps() => configuration.GetSurfaceToPose() == BuildSurfaceEnum.GROUND;
     }
 }

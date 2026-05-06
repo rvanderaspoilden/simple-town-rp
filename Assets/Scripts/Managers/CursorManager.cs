@@ -1,6 +1,7 @@
 ﻿using System;
 using Sim.Building;
 using Sim.Enums;
+using Sim.Scriptables;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -85,10 +86,11 @@ namespace Sim {
         }
 
         private bool IsProps() {
-            Props props = hit.collider.GetComponentInParent<Props>();
+            PropBehaviourBase behaviour = hit.collider.GetComponentInParent<PropBehaviourBase>();
 
-            if (props) {
-                this.SetCursor(props.IsBuilt() ? props.GetConfiguration().GetCursor() : this.buildCursor);
+            if (behaviour != null) {
+                PropsConfig cfg = behaviour.GetConfiguration();
+                this.SetCursor(behaviour.IsBuilt() ? cfg?.GetCursor() : this.buildCursor);
                 return true;
             }
 

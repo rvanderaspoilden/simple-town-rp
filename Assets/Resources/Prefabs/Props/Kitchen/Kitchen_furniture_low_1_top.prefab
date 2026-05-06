@@ -11,10 +11,11 @@ GameObject:
   - component: {fileID: 5918493991939781527}
   - component: {fileID: 3813980051838624658}
   - component: {fileID: 3706306878326944935}
-  - component: {fileID: 285675152447615750}
   - component: {fileID: 8233497492226445947}
   - component: {fileID: 4485133164483728174}
-  - component: {fileID: 3864918365865051382}
+  - component: {fileID: -6798123980823797142}
+  - component: {fileID: -3840861392148682634}
+  - component: {fileID: -6647860349735841547}
   m_Layer: 10
   m_Name: Kitchen_furniture_low_1_top
   m_TagString: Untagged
@@ -77,23 +78,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.59, y: 2.350467, z: 0.59}
   m_Center: {x: 0, y: 1.1750704, z: 0}
---- !u!114 &285675152447615750
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2194918128932550989}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  _assetId: 2386132119
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
 --- !u!54 &8233497492226445947
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -152,7 +136,7 @@ MonoBehaviour:
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
---- !u!114 &3864918365865051382
+--- !u!114 &-6798123980823797142
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -161,13 +145,36 @@ MonoBehaviour:
   m_GameObject: {fileID: 2194918128932550989}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
-  configuration: {fileID: 11400000, guid: a4257caa7619fb84ea19eebd3e24f8e4, type: 2}
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &-3840861392148682634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2194918128932550989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
+--- !u!114 &-6647860349735841547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2194918128932550989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
+  configuration: {fileID: 0}
   defaultPresetId: -1
 --- !u!1 &4288617102113945947
 GameObject:

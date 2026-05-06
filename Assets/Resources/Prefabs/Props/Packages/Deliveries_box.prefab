@@ -13,9 +13,10 @@ GameObject:
   - component: {fileID: 6143171811788772055}
   - component: {fileID: 4207040394463709097}
   - component: {fileID: 2572363981237224747}
-  - component: {fileID: 4492236850374378933}
   - component: {fileID: 6030021783315985112}
-  - component: {fileID: 5027993590988749555}
+  - component: {fileID: 5399789582393485571}
+  - component: {fileID: 390694194272511672}
+  - component: {fileID: 2731312214940245181}
   m_Layer: 10
   m_Name: Deliveries_box
   m_TagString: Untagged
@@ -134,27 +135,6 @@ MonoBehaviour:
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
---- !u!114 &4492236850374378933
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 157794796782048766}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7dc54430586f3fc47aa8c28d5f730333, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
-  configuration: {fileID: 11400000, guid: b43a5ecb6e6b9714fa38739a82e85e0a, type: 2}
-  defaultPresetId: 0
-  clapTransform: {fileID: 138060944164593019}
-  openedClapRotation: {x: -0.20557225, y: 0, z: 0, w: 0.9786419}
-  package: {fileID: 4354147788758023283}
-  deliveryCount: 0
 --- !u!82 &6030021783315985112
 AudioSource:
   m_ObjectHideFlags: 0
@@ -252,7 +232,7 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &5027993590988749555
+--- !u!114 &5399789582393485571
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -261,14 +241,40 @@ MonoBehaviour:
   m_GameObject: {fileID: 157794796782048766}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  _assetId: 2999201413
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &390694194272511672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 157794796782048766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca6f80b4f7180864d9c9604c77ebe4ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBoxPropSource
+--- !u!114 &2731312214940245181
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 157794796782048766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af0387ee4aa0d8e42b89e51a128bfe85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryBoxBehaviour
+  configuration: {fileID: 11400000, guid: b43a5ecb6e6b9714fa38739a82e85e0a, type: 2}
+  defaultPresetId: 0
+  clapTransform: {fileID: 138060944164593019}
+  openedClapRotation: {x: 0.20791161, y: 0, z: 0, w: -0.9781476}
+  package: {fileID: 4354147788758023283}
 --- !u!1 &950377353407173432
 GameObject:
   m_ObjectHideFlags: 0

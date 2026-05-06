@@ -63,12 +63,13 @@ GameObject:
   m_Component:
   - component: {fileID: 8385377411682366318}
   - component: {fileID: 3541074618040244338}
-  - component: {fileID: 3541074618040244337}
   - component: {fileID: 3541074618040244336}
   - component: {fileID: 3541074618040244364}
   - component: {fileID: 3541074618040244339}
-  - component: {fileID: 9172454051542479054}
   - component: {fileID: 918496897738596669}
+  - component: {fileID: 5017874931243878137}
+  - component: {fileID: -7783753962966018848}
+  - component: {fileID: -261895982248481493}
   m_Layer: 10
   m_Name: Kitchen Bottom Cabinet
   m_TagString: Untagged
@@ -117,23 +118,6 @@ MonoBehaviour:
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
---- !u!114 &3541074618040244337
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4757351023532540285}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
-  configuration: {fileID: 11400000, guid: d35c64d30ca587f43aa4818c4afdcf20, type: 2}
-  defaultPresetId: -1
 --- !u!65 &3541074618040244336
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -198,23 +182,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.41182408, z: 0.02013576}
   m_TimeToStationary: 0.5
---- !u!114 &9172454051542479054
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4757351023532540285}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  _assetId: 3859671351
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
 --- !u!82 &918496897738596669
 AudioSource:
   m_ObjectHideFlags: 0
@@ -312,6 +279,46 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &5017874931243878137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4757351023532540285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &-7783753962966018848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4757351023532540285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
+--- !u!114 &-261895982248481493
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4757351023532540285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
+  configuration: {fileID: 11400000, guid: d35c64d30ca587f43aa4818c4afdcf20, type: 2}
+  defaultPresetId: -1
 --- !u!1 &6568046362678458036
 GameObject:
   m_ObjectHideFlags: 0

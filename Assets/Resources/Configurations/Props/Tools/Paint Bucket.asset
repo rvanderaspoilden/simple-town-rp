@@ -14,12 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 14
   displayName: Pot de peinture
+  sprite: {fileID: 0}
   propsType: 2
   buyable: 0
-  prefab: {fileID: 5714901522130916933, guid: 826fc67ca35882040930f82fa56ee4f5, type: 3}
+  price: 0
+  prefab: {fileID: 8521137688823115919, guid: 826fc67ca35882040930f82fa56ee4f5, type: 3}
   packageConfig: {fileID: 0}
   surfaceToPose: 0
   posableOnProps: 0
+  hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
   rangeToInteract: 2
@@ -30,3 +33,4 @@ MonoBehaviour:
   unbuiltActions: []
   cursor: {fileID: 2800000, guid: fc4b7d40fef93c84c9788c76d6c5cb19, type: 3}
   presets: []
+  buildSound: {fileID: 0}

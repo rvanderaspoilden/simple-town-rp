@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Mirror;
 using Sim.Building;
+using Sim.Enums;
 using UnityEngine;
 
 /// <summary>

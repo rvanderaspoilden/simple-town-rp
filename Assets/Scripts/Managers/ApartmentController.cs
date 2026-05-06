@@ -16,16 +16,7 @@ namespace Sim {
     public class ApartmentController : NetworkEntity {
         [Header("Settings")]
         [SerializeField]
-        private FrontDoor frontDoorPrefab;
-
-        [SerializeField]
         private Transform frontDoorSpawn;
-
-        [SerializeField]
-        private SimpleDoor simpleDoorPrefab;
-
-        [SerializeField]
-        private DeliveryBox deliveryBoxPrefab;
 
         [SerializeField]
         private Transform propsContainer;
@@ -60,9 +51,6 @@ namespace Sim {
         [Header("Only for debug")]
         [SerializeField]
         private Home homeData;
-
-        [SerializeField]
-        private FrontDoor frontDoor;
 
         [SyncVar(hook = nameof(OnSetAddress))]
         [SerializeField]

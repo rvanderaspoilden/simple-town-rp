@@ -40,13 +40,11 @@ namespace Sim.Building {
         private VisibilityModeEnum mode = VisibilityModeEnum.AUTO;
         private PreviewStateEnum previewState = PreviewStateEnum.NONE;
         private Dictionary<Renderer, Material[]> defaultMaterialsByRenderer;
-        private Props props;
 
-        // Set by IPropBehaviour-based prefabs (no Props component) to drive the unbuilt material.
-        private bool? _isBuiltOverride;
+        // Driven by PropBehaviourBase via SetBuiltState. Defaults to "built" until told otherwise.
+        private bool _isBuilt = true;
 
         private void Awake() {
-            this.props = GetComponent<Props>();
             this.SetupDefaultMaterials();
         }
 
@@ -60,11 +58,8 @@ namespace Sim.Building {
             this.UpdateGraphics();
         }
 
-        /// <summary>
-        /// Override the built state for props that don't have a Props MonoBehaviour (new IPropBehaviour system).
-        /// </summary>
         public void SetBuiltState(bool isBuilt) {
-            _isBuiltOverride = isBuilt;
+            _isBuilt = isBuilt;
             UpdateGraphics();
         }
 
@@ -142,9 +137,7 @@ namespace Sim.Building {
                         if (visibility == VisibilityStateEnum.HIDE) {
                             newMaterials[i] = DatabaseManager.Instance.GetTransparentMaterial();
                         } else if (visibility == VisibilityStateEnum.SHOW) {
-                            bool isUnbuilt = _isBuiltOverride.HasValue
-                                ? !_isBuiltOverride.Value
-                                : (this.props && !this.props.IsBuilt());
+                            bool isUnbuilt = !_isBuilt;
 
                             if (isUnbuilt) {
                                 newMaterials[i] = DatabaseManager.Instance.GetUnbuiltMaterial();

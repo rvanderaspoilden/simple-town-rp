@@ -10,14 +10,10 @@ using Action = Sim.Interactables.Action;
 
 /// <summary>
 /// Base class for all new-system prop behaviours.
-/// Replaces the old Props NetworkBehaviour for interaction concerns:
 ///   - reads PropsConfig for actions, range and presets
 ///   - drives PropsRenderer for built/unbuilt visuals and preset changes
-///   - dispatches base actions: LOOK (client-local), BUILD (C2S), MOVE/SELL (delegated to Props if present)
+///   - dispatches base actions: LOOK (client-local), BUILD/MOVE/SELL (C2S messages or static events)
 ///   - delegates type-specific actions to Execute()
-///
-/// Apartment props keep a Props component alongside for Mirror spawn / parenting;
-/// Props.Start() skips its own action setup when PropBehaviourBase is detected.
 /// </summary>
 [RequireComponent(typeof(PropIdentity))]
 public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IInteractable
@@ -124,6 +120,8 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
     protected void SendPropInteraction(PropType type, byte[] payload) =>
         ClientPropManager.Instance?.RequestInteraction(PropId, type, payload);
+
+    public bool IsBuilt() => _isBuilt;
 
     public bool IsWallProps() =>
         configuration?.GetSurfaceToPose() == BuildSurfaceEnum.WALL;

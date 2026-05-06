@@ -21,6 +21,7 @@ public static class PropInteractionRouter {
             case PropType.PaintBucket:  HandlePaintBucket (conn, msg); break;
             case PropType.Dispenser:    HandleDispenser   (conn, msg); break;
             case PropType.DeliveryBox:  HandleDeliveryBox (conn, msg); break;
+            case PropType.Package:      HandlePackage     (conn, msg); break;
             case PropType.Door:
                 Debug.LogWarning($"[PropInteractionRouter] Rejected door interaction from conn={conn.connectionId} (doors are trigger-driven)");
                 break;
@@ -271,6 +272,22 @@ public static class PropInteractionRouter {
         }
 
         PropInteractionDispatcher.Instance?.OpenDeliveryBox(conn, msg.PropId, msg.RoomId);
+    }
+
+    // ── Package ────────────────────────────────────────────────────────────────
+    // L'ouverture d'un colis est client-local : elle déclenche le mode construction.
+    // Le serveur valide juste l'existence du prop.
+
+    private static void HandlePackage(NetworkConnectionToClient conn, C2S_PropInteraction msg) {
+        if (!PackageInteraction.IsOpenRequest(msg.Payload)) return;
+
+        if (!ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out _)) {
+            Debug.LogWarning($"[PropInteractionRouter] Package {msg.PropId} not found in room '{msg.RoomId}'");
+            return;
+        }
+
+        Debug.Log($"[PropInteractionRouter] Package {msg.PropId} opened by conn={conn.connectionId}");
+        // The actual opening logic (build mode) is handled client-side via PackageBehaviour.OnOpened event
     }
 
 }

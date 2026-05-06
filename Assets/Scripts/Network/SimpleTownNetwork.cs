@@ -202,7 +202,6 @@ public class SimpleTownNetwork : NetworkManager {
     /// </summary>
     public override void OnStartServer() {
         NetworkServer.RegisterHandler<CreateCharacterMessage>(OnCreateCharacter);
-        NetworkServer.RegisterHandler<CreateDeliveryRequest>(OnBuySomething);
         NetworkServer.RegisterHandler<TeleportMessage>(OnPlayerTeleportTo);
         NetworkServer.RegisterHandler<SpawnItemMessage>(OnSpawnItem);
 
@@ -285,10 +284,6 @@ public class SimpleTownNetwork : NetworkManager {
 
     #region Custom Register Handler Callback
 
-    [ServerCallback]
-    private void OnBuySomething(NetworkConnectionToClient conn, CreateDeliveryRequest request) {
-        StartCoroutine(BuyCoroutine(conn, request));
-    }
 
     [ServerCallback]
     private void OnPlayerTeleportTo(NetworkConnectionToClient conn, TeleportMessage request) {
@@ -312,27 +307,6 @@ public class SimpleTownNetwork : NetworkManager {
         Debug.Log($"[SimpleTownNetwork] [SpawnItem] Player {conn.identity.gameObject.name} spawned an item [id={request.itemId}]");
     }
 
-    private IEnumerator BuyCoroutine(NetworkConnectionToClient conn, CreateDeliveryRequest body) {
-        Debug.Log($"Server: {body.recipientId} wants to buy props with config Id [{body.propsConfigId}]");
-
-        UnityWebRequest request = ApiManager.Instance.CreateDeliveryRequest(body);
-
-        yield return request.SendWebRequest();
-
-        if (request.responseCode == 201) {
-            Debug.Log($"Server: Props [{body.propsConfigId}] has been successfully bought");
-
-            conn.Send(new ShopResponseMessage { isSuccess = true });
-
-            foreach (var deliveryBox in FindObjectsOfType<DeliveryBox>()) {
-                deliveryBox.CheckDeliveries();
-            }
-        } else {
-            Debug.LogError($"Server: Props [{body.propsConfigId}] cannot be bought");
-
-            conn.Send(new ShopResponseMessage { isSuccess = false });
-        }
-    }
 
     [ClientCallback]
     public void OnShopResponse(ShopResponseMessage message) {

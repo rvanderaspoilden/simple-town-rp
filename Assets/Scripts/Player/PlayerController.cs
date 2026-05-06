@@ -478,28 +478,6 @@ namespace Sim {
             this.Die();
         }
 
-        [Client]
-        public void Sell(Props props) {
-            CmdSell(props.netId);
-        }
-
-        [Command]
-        public void CmdSell(uint propsNetId) {
-            if (!NetworkServer.spawned.ContainsKey(propsNetId)) {
-                Debug.LogError($"Server: Try to sell {propsNetId} but it not exist");
-            }
-
-            GameObject propsObject = NetworkServer.spawned[propsNetId].gameObject;
-
-            Debug.Log($"Server: player {netId} sold {propsObject.name}");
-
-            propsObject.SetActive(false);
-
-            NetworkServer.Destroy(propsObject);
-
-            StartCoroutine(propsObject.GetComponentInParent<ApartmentController>().Save());
-        }
-
         public IState CurrentState() {
             return this.stateMachine.CurrentState;
         }

@@ -1,5 +1,6 @@
 using DG.Tweening;
 using Sim.Building;
+using Sim.Enums;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AI;

@@ -156,6 +156,34 @@ namespace Sim {
         }
 
         /**
+         * This method is used to start build mode from a Package
+         * (unpackaging the PropsConfig contained in the package)
+         */
+        public void Init(PropsConfig propsConfig) {
+            if (propsConfig == null) {
+                Debug.LogError("[BuildManager] Init(PropsConfig) called with null config");
+                return;
+            }
+
+            this.currentPropBehaviour = PropsManager.Instance.InstantiateProps(propsConfig, -1); // -1 = no preset
+            this.currentPropsCollider = this.currentPropBehaviour.GetComponent<BoxCollider>();
+            this.currentPreview = this.currentPropBehaviour.gameObject.AddComponent<BuildPreview>();
+
+            this.SetMode(BuildModeEnum.POSING);
+
+            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
+
+            PropsVisibilityUI.Instance.Bind(this.apartmentController);
+
+            if (propsConfig.GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
+                this.apartmentController.SetWallVisibility(VisibilityModeEnum.FORCE_HIDE);
+                WallVisibilityUI.Instance.Bind(this.apartmentController, VisibilityModeEnum.FORCE_HIDE);
+            } else {
+                WallVisibilityUI.Instance.Bind(this.apartmentController);
+            }
+        }
+
+        /**
          * This method is used to start edit mode
          */
         public void Edit(Props props) {
@@ -646,9 +674,7 @@ namespace Sim {
 
         private int GetLayerMask() {
             if (this.mode == BuildModeEnum.POSING) {
-                if (this.currentPropSelected != null) {
-                    return CommonUtils.GetLayerMaskSurfacesToPose(this.currentPropSelected);
-                } else if (this.currentPropBehaviour != null) {
+                if (this.currentPropBehaviour != null) {
                     return CommonUtils.GetLayerMaskSurfacesToPose(this.currentPropBehaviour);
                 }
             }

@@ -9,4 +9,5 @@ public enum PropType : byte {
     Dispenser    = 3,   // distributeur : catalogue en ScriptableObject, achat via C2S
     PaintBucket  = 4,   // seau de peinture : paintConfigId + couleur
     DeliveryBox  = 5,   // boîte de livraison : deliveryCount + ouverture via REST
+    Package      = 6,   // colis : contient un PropsConfig à déballer, ouverture client-local
 }
