@@ -217,32 +217,44 @@ public static class PropInteractionRouter {
         int itemId = DispenserInteraction.GetItemId(msg.Payload);
         if (itemId < 0) return;
 
-        ItemConfig itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == itemId);
-        if (itemConfig == null) {
-            Debug.LogWarning($"[PropInteractionRouter] Item {itemId} not found in database");
+        // Get the dispenser configuration from the prop's PropsConfig
+        // The PropsConfig should be a DispenserConfiguration
+        DispenserConfiguration dispenserConfig = null;
+        if (state.PrefabId > 0) {
+            PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(state.PrefabId);
+            dispenserConfig = propsConfig as DispenserConfiguration;
+        }
+
+        if (dispenserConfig == null) {
+            Debug.LogWarning($"[PropInteractionRouter] Dispenser {msg.PropId} has no DispenserConfiguration");
             conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
             return;
         }
 
+        // Find the item price in the dispenser's catalog
+        if (!dispenserConfig.ItemsToSell.Exists(x => x.item.ID == itemId)) {
+            Debug.LogWarning($"[PropInteractionRouter] Item {itemId} not found in dispenser catalog");
+            conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+            return;
+        }
+        
+        ItemPrice itemPrice = dispenserConfig.ItemsToSell.Find(x => x.item.ID == itemId);
+
         PlayerBankAccount bank = conn.identity.GetComponent<PlayerBankAccount>();
         if (bank == null) return;
 
-
-        /*
-        ItemPrice itemPrice = ((DispenserConfiguration) itemConfig).ItemsToSell.Find(x => x.item.ID == itemId);
         if (bank.Money < itemPrice.price) {
             conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
             return;
         }
 
         bank.TakeMoney(itemPrice.price);
-        UnityEngine.Object item = UnityEngine.Object.Instantiate(
-            itemPrice.item.Prefab, conn.identity.transform.position, UnityEngine.Quaternion.identity
+        Object item = Object.Instantiate(
+            itemPrice.item.Prefab, conn.identity.transform.position, Quaternion.identity
         );
-        NetworkServer.Spawn(item as UnityEngine.GameObject, conn);
+        NetworkServer.Spawn(item as GameObject, conn);
 
         conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = true, ItemId = itemId });
-        */
 
         Debug.Log($"[PropInteractionRouter] Player {conn.connectionId} bought item {itemId} from dispenser {msg.PropId}");
     }

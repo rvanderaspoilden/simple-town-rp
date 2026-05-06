@@ -33,6 +33,7 @@ namespace Sim {
             PaintBucketBehaviour.OnOpened            += OpenBucket;
             DeliveryBoxBehaviour.OnOpened            += OnDeliveryBoxOpened;
             DeliveryBoxBehaviour.UnPackage           += OpenPackageFromDeliveryBox;
+            DispenserBehaviour.OnOpened              += OnDispenserOpened;
             ClientPropManager.OnBuildAckReceived     += OnBuildAck;
         }
 
@@ -52,6 +53,7 @@ namespace Sim {
                 PaintBucketBehaviour.OnOpened            -= OpenBucket;
                 DeliveryBoxBehaviour.OnOpened            -= OnDeliveryBoxOpened;
                 DeliveryBoxBehaviour.UnPackage           -= OpenPackageFromDeliveryBox;
+                DispenserBehaviour.OnOpened              -= OnDispenserOpened;
                 ClientPropManager.OnBuildAckReceived     -= OnBuildAck;
             }
         }
@@ -75,8 +77,15 @@ namespace Sim {
             NetworkClient.Send(new C2S_RemoveProp { RoomId = id.RoomId, PropId = id.PropId });
         }
 
+        private void OnDispenserOpened(DispenserBehaviour dispenser) {
+            // Open the dispenser UI for the new prop system
+            DefaultViewUI.Instance.ShowPropsContentUI(dispenser);
+        }
+
         private void OnDeliveryBoxOpened(DeliveryBoxBehaviour box, Delivery[] _) {
             this.currentDeliveryBox = box;
+            // Open the delivery box UI for the new prop system
+            DefaultViewUI.Instance.ShowPropsContentUI(box);
         }
 
         private void OpenPackageFromDeliveryBox(Delivery delivery) {

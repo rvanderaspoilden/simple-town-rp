@@ -8,20 +8,29 @@ using UnityEngine;
 /// Place this component (with PropIdentity) on every door prefab — front and inner.
 /// The lock state and door number are part of the DoorState payload, set by the
 /// apartment via ServerPropManager.UpdatePropState.
+/// Reads defaultPresetId from sibling PropBehaviourBase if present.
 /// </summary>
 public class DoorPropSource : ServerPropSource {
     [Header("Default state")]
     [SerializeField] private DoorLockState defaultLockState = DoorLockState.UNLOCKED;
 
+    private PropBehaviourBase _behaviour;
+
+    private void Awake() {
+        _behaviour = GetComponent<PropBehaviourBase>();
+    }
+
     public override PropType Type => PropType.Door;
 
-    public override byte[] GetInitialState() =>
-        new DoorState {
-            Header     = PropStateHeader.Default,
+    public override byte[] GetInitialState() {
+        int presetId = _behaviour != null ? _behaviour.DefaultPresetId : -1;
+        return new DoorState {
+            Header     = new PropStateHeader { IsBuilt = true, PresetId = presetId },
             IsOpen     = false,
             LockState  = defaultLockState,
             DoorNumber = 0
         }.Serialize();
+    }
 
     private readonly List<Collider> _occupants = new List<Collider>();
 

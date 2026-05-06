@@ -50,10 +50,18 @@ public class ServerPropManager {
             Debug.LogWarning($"[ServerPropManager] Scene prop on '{source.gameObject.name}' has no propId — skipped");
             return;
         }
+
+        // Get PropsConfig from PropBehaviourBase to store PrefabId
+        int prefabId = 0;
+        PropBehaviourBase behaviour = source.GetComponent<PropBehaviourBase>();
+        if (behaviour != null && behaviour.GetConfiguration() != null) {
+            prefabId = behaviour.GetConfiguration().GetId();
+        }
+
         RegisterInternal(
             roomId:   source.RoomId,
             propId:   source.PropId,
-            prefabId: 0,
+            prefabId: prefabId,
             position: source.transform.position,
             rotation: source.transform.rotation,
             type:     source.Type,

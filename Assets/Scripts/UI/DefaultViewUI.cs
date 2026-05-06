@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Mirror;
 using Network.Messages;
@@ -91,7 +91,12 @@ namespace Sim {
             this.propsContentUI.Setup(props);
             this.propsContentUI.gameObject.SetActive(true);
         }
-        
+
+        public void ShowPropsContentUI(PropBehaviourBase behaviour) {
+            this.propsContentUI.Setup(behaviour);
+            this.propsContentUI.gameObject.SetActive(true);
+        }
+
         public void HidePropsContentUI() {
             this.propsContentUI.gameObject.SetActive(false);
         }

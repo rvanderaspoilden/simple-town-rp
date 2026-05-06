@@ -6,12 +6,10 @@ using Action = Sim.Interactables.Action;
 /// <summary>
 /// Client-side behaviour for Dispenser props.
 /// Opening the shop UI is client-local; purchasing sends C2S_PropInteraction to the server.
-/// Note: assign dispenserConfig (DispenserConfiguration) for the item catalog,
 /// and configuration (PropsConfig, from base) for actions/range/presets.
 /// </summary>
 [RequireComponent(typeof(PropIdentity))]
 public class DispenserBehaviour : PropBehaviourBase {
-    [SerializeField] private DispenserConfiguration dispenserConfig;
     [SerializeField] private AudioClip              useSound;
 
     public delegate void OpenEvent(DispenserBehaviour dispenser);
@@ -25,13 +23,6 @@ public class DispenserBehaviour : PropBehaviourBase {
     protected override void Awake() {
         base.Awake();
         _audio = GetComponent<AudioSource>();
-    }
-
-    // ── IPropBehaviour ────────────────────────────────────────────────────────
-
-    public override void ApplyState(PropType type, byte[] payload) {
-        base.ApplyState(type, payload);
-        // DispenserState only carries the header — nothing extra to update
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -48,7 +39,7 @@ public class DispenserBehaviour : PropBehaviourBase {
         SendPropInteraction(PropType.Dispenser, DispenserInteraction.BuyRequest(itemConfig.ID));
     }
 
-    public DispenserConfiguration GetConfiguration() => dispenserConfig;
+    public DispenserConfiguration GetConfiguration() => base.configuration as DispenserConfiguration;
 
     // ── IInteractable ─────────────────────────────────────────────────────────
 
@@ -74,5 +65,9 @@ public class DispenserBehaviour : PropBehaviourBase {
         if (action.Type == ActionTypeEnum.USE) {
             OnOpened?.Invoke(this);
         }
+    }
+    
+    public override void StopInteraction() {
+        DefaultViewUI.Instance.HidePropsContentUI();
     }
 }
