@@ -18,7 +18,7 @@ public struct S2C_RoomSnapshot : NetworkMessage {
 /// <summary>Ordonne au client d'instancier un prop.</summary>
 public struct S2C_PropSpawn : NetworkMessage {
     public int        PropId;
-    public string     PrefabId;
+    public int        PrefabId;   // PropsConfig.GetId()
     public string     RoomId;
     public Vector3    Position;
     public Quaternion Rotation;
@@ -34,6 +34,17 @@ public struct S2C_PropUpdate : NetworkMessage {
     public byte[]   Payload;
 }
 
+/// <summary>
+/// Met à jour la position/rotation d'un prop (édition apartment).
+/// Séparé de PropUpdate parce que la transform n'est pas dans le payload.
+/// </summary>
+public struct S2C_PropTransform : NetworkMessage {
+    public int        PropId;
+    public string     RoomId;
+    public Vector3    Position;
+    public Quaternion Rotation;
+}
+
 /// <summary>Ordonne au client de détruire un prop.</summary>
 public struct S2C_PropRemove : NetworkMessage {
     public int    PropId;
@@ -47,7 +58,7 @@ public struct S2C_PropRemove : NetworkMessage {
 public struct S2C_DeliveryBoxOpened : NetworkMessage {
     public int        PropId;
     public string     RoomId;
-    public Delivery[] Deliveries;  // Delivery est [Serializable], Mirror peut sérialiser les tableaux de classes simples
+    public Delivery[] Deliveries;
 }
 
 /// <summary>
@@ -60,19 +71,26 @@ public struct S2C_DispenserPurchaseResult : NetworkMessage {
     public int  ItemId;   // -1 si échec
 }
 
+/// <summary>
+/// Confirme côté local-player la fin d'un build/edit (sortie du build mode).
+/// </summary>
+public struct S2C_BuildAck : NetworkMessage {
+    public bool Success;
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 //  Client → Server
 // ═════════════════════════════════════════════════════════════════════════════
 
 /// <summary>
-/// Demande d'interaction générique.
+/// Demande d'interaction générique sur un prop existant.
 /// Le serveur route selon PropType et valide l'autorité.
 /// </summary>
 public struct C2S_PropInteraction : NetworkMessage {
     public int      PropId;
     public string   RoomId;
     public PropType Type;
-    public byte[]   Payload;   // contexte selon PropType (SeatInteraction, DispenserInteraction…)
+    public byte[]   Payload;
 }
 
 /// <summary>Le client entre dans une room et demande son snapshot.</summary>
@@ -83,4 +101,37 @@ public struct C2S_EnterRoom : NetworkMessage {
 /// <summary>Le client quitte une room.</summary>
 public struct C2S_LeaveRoom : NetworkMessage {
     public string RoomId;
+}
+
+/// <summary>
+/// Demande de création d'un prop (via build mode après livraison).
+/// Le serveur valide la livraison via REST, supprime la livraison, spawn le prop,
+/// rafraîchit le compteur de la DeliveryBox, et renvoie un S2C_BuildAck au client.
+/// </summary>
+public struct C2S_BuildProp : NetworkMessage {
+    public string     RoomId;
+    public int        DeliveryBoxPropId;   // pour rafraîchir le compteur après spawn
+    public string     DeliveryId;          // _id mongodb de la livraison à supprimer
+    public int        PropConfigId;
+    public int        PresetId;
+    public Vector3    Position;
+    public Quaternion Rotation;
+
+    // Initial state pour PaintBucket (Type == DeliveryType.COVER)
+    public int        PaintConfigId;       // -1 si non-bucket
+    public float      ColorR, ColorG, ColorB;
+}
+
+/// <summary>Demande de déplacement d'un prop existant (édition).</summary>
+public struct C2S_EditProp : NetworkMessage {
+    public string     RoomId;
+    public int        PropId;
+    public Vector3    Position;
+    public Quaternion Rotation;
+}
+
+/// <summary>Demande de suppression d'un prop (vente).</summary>
+public struct C2S_RemoveProp : NetworkMessage {
+    public string RoomId;
+    public int    PropId;
 }

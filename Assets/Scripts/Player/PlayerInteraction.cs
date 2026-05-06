@@ -1,12 +1,9 @@
-﻿using System.Collections;
-using System.Linq;
-using Mirror;
+﻿using Mirror;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace Sim {
     [RequireComponent(typeof(PlayerController))]
@@ -14,7 +11,8 @@ namespace Sim {
         [Header("DEBUG")]
         private Delivery currentDelivery;
 
-        private PaintBucket currentOpenedBucket;
+        private PaintBucketBehaviour currentOpenedBucket;
+        private DeliveryBoxBehaviour currentDeliveryBox;
 
         private PlayerController player;
 
@@ -25,13 +23,17 @@ namespace Sim {
         public override void OnStartClient() {
             if (!isLocalPlayer) return;
 
-            BuildManager.OnCancel += OnBuildModificationCanceled;
-            BuildManager.OnValidatePropCreation += OnValidatePropCreation;
-            BuildManager.OnValidatePropEdit += OnValidatePropEdit;
+            BuildManager.OnCancel                    += OnBuildModificationCanceled;
+            BuildManager.OnValidatePropCreation      += OnValidatePropCreation;
+            BuildManager.OnValidatePropEdit          += OnValidatePropEdit;
             BuildManager.OnValidatePaintModification += OnValidatePaintModification;
-            Props.OnMoveRequest += OnMoveRequest;
-            PaintBucket.OnOpened += OpenBucket;
-            DeliveryBox.UnPackage += OpenPackageFromDeliveryBox;
+            Props.OnMoveRequest                      += OnMoveRequest;
+            PropBehaviourBase.OnMoveRequest          += OnMoveRequestNew;
+            PropBehaviourBase.OnSellRequest          += OnSellRequest;
+            PaintBucketBehaviour.OnOpened            += OpenBucket;
+            DeliveryBoxBehaviour.OnOpened            += OnDeliveryBoxOpened;
+            DeliveryBoxBehaviour.UnPackage           += OpenPackageFromDeliveryBox;
+            ClientPropManager.OnBuildAckReceived     += OnBuildAck;
         }
 
         public override void OnStartLocalPlayer() {
@@ -40,40 +42,52 @@ namespace Sim {
 
         private void OnDestroy() {
             if (isLocalPlayer) {
-                BuildManager.OnCancel -= OnBuildModificationCanceled;
-                BuildManager.OnValidatePropCreation -= OnValidatePropCreation;
-                BuildManager.OnValidatePropEdit -= OnValidatePropEdit;
+                BuildManager.OnCancel                    -= OnBuildModificationCanceled;
+                BuildManager.OnValidatePropCreation      -= OnValidatePropCreation;
+                BuildManager.OnValidatePropEdit          -= OnValidatePropEdit;
                 BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
-                Props.OnMoveRequest -= OnMoveRequest;
-                PaintBucket.OnOpened -= OpenBucket;
-                DeliveryBox.UnPackage -= OpenPackageFromDeliveryBox;
+                Props.OnMoveRequest                      -= OnMoveRequest;
+                PropBehaviourBase.OnMoveRequest          -= OnMoveRequestNew;
+                PropBehaviourBase.OnSellRequest          -= OnSellRequest;
+                PaintBucketBehaviour.OnOpened            -= OpenBucket;
+                DeliveryBoxBehaviour.OnOpened            -= OnDeliveryBoxOpened;
+                DeliveryBoxBehaviour.UnPackage           -= OpenPackageFromDeliveryBox;
+                ClientPropManager.OnBuildAckReceived     -= OnBuildAck;
             }
         }
 
         private void OnMoveRequest(Props props) {
+            // Legacy path (still used while doors/old props exist) — left for compat
             this.player.SetState(StateType.MOVING_PROPS);
-
             BuildManager.Instance.Edit(props);
         }
 
+        private void OnMoveRequestNew(PropBehaviourBase behaviour) {
+            // New system path for PropBehaviourBase props
+            this.player.SetState(StateType.MOVING_PROPS);
+            BuildManager.Instance.Edit(behaviour);
+        }
+
+        private void OnSellRequest(PropBehaviourBase behaviour) {
+            // New system: prop has propId/roomId on its PropIdentity
+            PropIdentity id = behaviour.GetComponent<PropIdentity>();
+            if (id == null || id.PropId <= 0) return;
+            NetworkClient.Send(new C2S_RemoveProp { RoomId = id.RoomId, PropId = id.PropId });
+        }
+
+        private void OnDeliveryBoxOpened(DeliveryBoxBehaviour box, Delivery[] _) {
+            this.currentDeliveryBox = box;
+        }
 
         private void OpenPackageFromDeliveryBox(Delivery delivery) {
             this.currentDelivery = delivery;
-
             this.player.SetState(StateType.UNPACKAGING);
-
             BuildManager.Instance.Init(delivery);
         }
 
-        private void OpenBucket(PaintBucket bucket) {
+        private void OpenBucket(PaintBucketBehaviour bucket) {
             this.currentOpenedBucket = bucket;
-
             this.player.SetState(StateType.PAINTING);
-
-            /*if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                RoomManager.Instance.SetWallVisibility(VisibilityModeEnum.FORCE_SHOW);
-            }*/ // TODO 
-
             BuildManager.Instance.Init(this.currentOpenedBucket);
         }
 
@@ -84,130 +98,95 @@ namespace Sim {
 
         private void OnValidatePaintModification() {
             ApartmentController apartmentController = this.currentOpenedBucket.GetComponentInParent<ApartmentController>();
-            
+
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
                 apartmentController.ApplyWallSettings();
             } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
                 apartmentController.ApplyGroundSettings();
             }
 
-            this.CmdDestroyProps(this.currentOpenedBucket.netId);
-
-            this.player.SetState(StateType.FREE);
-        }
-
-        [Command(requiresAuthority = false)]
-        public void CmdDestroyProps(uint netId) {
-            if (!NetworkServer.spawned.ContainsKey(netId)) {
-                Debug.LogError($"Server: Try to destroy {netId} but it not exist");
+            // Destroy the bucket via the new prop system
+            PropIdentity id = this.currentOpenedBucket.GetComponent<PropIdentity>();
+            if (id != null) {
+                NetworkClient.Send(new C2S_RemoveProp { RoomId = id.RoomId, PropId = id.PropId });
             }
 
-            GameObject propsObject = NetworkServer.spawned[netId].gameObject;
-
-            ApartmentController apartmentController = propsObject.GetComponentInParent<ApartmentController>();
-
-            NetworkServer.Destroy(propsObject);
-            
-            StartCoroutine(apartmentController.Save());
+            this.player.SetState(StateType.FREE);
         }
 
         private void OnValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation) {
-            uint deliveryBoxNetId = ((Props)PlayerController.Local.GetInteractedObject()).netId;
-
-            if (deliveryBoxNetId > 0) {
-                this.CmdValidatePropCreation(deliveryBoxNetId, this.currentDelivery, propsConfig.GetId(), presetId, position, rotation);
-            } else {
-                Debug.LogError("Client: OnValidatePropCreation not found deliveryBoxNetId");
-            }
-        }
-
-        [Command(requiresAuthority = false)]
-        public void CmdValidatePropCreation(uint deliveryBoxNetId, Delivery delivery, int propsConfigId, int presetId, Vector3 position, Quaternion rotation,
-            NetworkConnectionToClient sender = null) {
-            if (!NetworkServer.spawned.ContainsKey(deliveryBoxNetId)) {
-                Debug.LogError("Server: CmdValidatePropCreation not found deliveryBoxNetId");
+            if (this.currentDeliveryBox == null) {
+                Debug.LogError("[PlayerInteraction] OnValidatePropCreation without an opened delivery box");
                 return;
             }
 
-            DeliveryBox deliveryBox = NetworkServer.spawned[deliveryBoxNetId].GetComponent<DeliveryBox>();
-            ApartmentController apartmentController = deliveryBox.GetComponentInParent<ApartmentController>();
-            PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(propsConfigId);
-            Props props = PropsManager.Instance.InstantiateProps(propsConfig, presetId, position, rotation);
-            props.ParentId = apartmentController.netId;
-            props.transform.SetParent(apartmentController.PropsContainer);
-            props.InitBuilt(!propsConfig.MustBeBuilt());
-            props.ApartmentController = apartmentController;
+            PropIdentity boxId = this.currentDeliveryBox.GetComponent<PropIdentity>();
+            if (boxId == null) {
+                Debug.LogError("[PlayerInteraction] DeliveryBox has no PropIdentity");
+                return;
+            }
 
-            if (delivery.Type.Equals(DeliveryType.COVER)) {
-                PaintBucket coverProps = props as PaintBucket;
-
-                if (coverProps) {
-                    coverProps.Init(delivery.PaintConfigId, delivery.Color);
+            float r = 1f, g = 1f, b = 1f;
+            int paintConfigId = -1;
+            if (this.currentDelivery.Type == DeliveryType.COVER) {
+                paintConfigId = this.currentDelivery.PaintConfigId;
+                if (this.currentDelivery.Color != null && this.currentDelivery.Color.Length >= 3) {
+                    r = this.currentDelivery.Color[0];
+                    g = this.currentDelivery.Color[1];
+                    b = this.currentDelivery.Color[2];
                 }
             }
 
-            StartCoroutine(this.DeleteDeliveryCoroutine(apartmentController, deliveryBox, delivery, props, sender));
+            NetworkClient.Send(new C2S_BuildProp {
+                RoomId            = boxId.RoomId,
+                DeliveryBoxPropId = boxId.PropId,
+                DeliveryId        = this.currentDelivery._id,
+                PropConfigId      = propsConfig.GetId(),
+                PresetId          = presetId,
+                Position          = position,
+                Rotation          = rotation,
+                PaintConfigId     = paintConfigId,
+                ColorR            = r,
+                ColorG            = g,
+                ColorB            = b,
+            });
         }
 
-        [Server]
-        private IEnumerator DeleteDeliveryCoroutine(ApartmentController apartmentController, DeliveryBox deliveryBox, Delivery delivery, Props props,
-            NetworkConnectionToClient sender) {
-            UnityWebRequest request = ApiManager.Instance.DeleteDeliveryRequest(delivery);
-
-            yield return request.SendWebRequest();
-
-            if (request.responseCode == 200) {
-                NetworkServer.Spawn(props.gameObject);
-
-                StartCoroutine(apartmentController.Save());
-
-                yield return StartCoroutine(deliveryBox.RetrieveDeliveries());
-
-                this.TargetPropsCreated(sender);
-
-                deliveryBox.RefreshPlayerUI(sender);
-            } else {
-                Destroy(props.gameObject);
-                Debug.LogError($"Cannot delete delivery ID {delivery._id} from server");
-            }
-        }
-
-        [TargetRpc]
-        public void TargetPropsCreated(NetworkConnection conn) {
-            this.player.SetState(StateType.FREE);
-        }
-
-        [Client]
         private void OnValidatePropEdit(Props props) {
-            this.CmdPropEdit(props.netId, props.transform.localPosition, props.transform.localRotation);
-        }
-
-        [Command(requiresAuthority = false)]
-        public void CmdPropEdit(uint propNetId, Vector3 localPosition, Quaternion localRotation, NetworkConnectionToClient sender = null) {
-            if (!NetworkServer.spawned.ContainsKey(propNetId)) {
-                Debug.LogError($"Server: propNetId {propNetId} not found");
-                this.TargetPropEdit(sender, false);
+            // Legacy path — old NetworkBehaviour Props (still used until full cleanup)
+            // Resolve the new-system propId from the same GameObject
+            PropIdentity id = props.GetComponent<PropIdentity>();
+            if (id == null || id.PropId <= 0) {
+                Debug.LogError("[PlayerInteraction] OnValidatePropEdit: prop has no PropIdentity");
+                return;
             }
 
-            Props props = NetworkServer.spawned[propNetId].GetComponent<Props>();
-            props.transform.localPosition = localPosition;
-            props.transform.localRotation = localRotation;
+            // Convert to world-space (ServerPropManager stores world transforms)
+            Vector3    worldPos = props.transform.position;
+            Quaternion worldRot = props.transform.rotation;
 
-            StartCoroutine(props.GetComponentInParent<ApartmentController>().Save());
+            NetworkClient.Send(new C2S_EditProp {
+                RoomId   = id.RoomId,
+                PropId   = id.PropId,
+                Position = worldPos,
+                Rotation = worldRot,
+            });
 
-            this.TargetPropEdit(sender, true);
-        }
-
-        [TargetRpc]
-        public void TargetPropEdit(NetworkConnection conn, bool result) {
-            if (result) {
-                BuildManager.Instance.EditionIsValidated();
-            } else {
-                Debug.LogError("Client: PropEdit failed so reset local props transform");
-                BuildManager.Instance.Reset();
-            }
-
+            // The legacy flow expected a TargetRpc-driven EditionIsValidated.
+            // In the new flow we optimistically validate locally — server will broadcast
+            // the new transform via S2C_PropTransform and propagate to other clients.
+            BuildManager.Instance.EditionIsValidated();
             this.player.SetState(StateType.FREE);
+        }
+
+        private void OnBuildAck(bool success) {
+            if (success) {
+                this.player.SetState(StateType.FREE);
+            } else {
+                Debug.LogError("[PlayerInteraction] Build failed server-side");
+                BuildManager.Instance.Reset();
+                this.player.SetState(StateType.FREE);
+            }
         }
     }
 }

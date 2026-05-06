@@ -193,11 +193,12 @@ GameObject:
   m_Component:
   - component: {fileID: 7308210625640271717}
   - component: {fileID: 1052807866499421825}
-  - component: {fileID: 5238004039082318049}
   - component: {fileID: 2771511891607624702}
   - component: {fileID: 5352777861638834637}
   - component: {fileID: 3172339694962803062}
-  - component: {fileID: 6424025961685690303}
+  - component: {fileID: 779511495327405233}
+  - component: {fileID: 88430761921340440}
+  - component: {fileID: 3915253719444581284}
   m_Layer: 10
   m_Name: bench_1
   m_TagString: Untagged
@@ -246,23 +247,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.8091552, y: 0.899256, z: 0.64762604}
   m_Center: {x: 0, y: 0.44556212, z: -0.03262721}
---- !u!114 &5238004039082318049
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4799508744634321900}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  _assetId: 4183394666
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
 --- !u!54 &2771511891607624702
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -327,7 +311,7 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.4455621, z: -0.03262721}
   m_TimeToStationary: 0.5
---- !u!114 &6424025961685690303
+--- !u!114 &779511495327405233
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -336,19 +320,42 @@ MonoBehaviour:
   m_GameObject: {fileID: 4799508744634321900}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 773af611c2f95854183afcec6aa194c6, type: 3}
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &88430761921340440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4799508744634321900}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ad35feecaa29af458d29d72a0b0d023, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeatBehaviour
   configuration: {fileID: 11400000, guid: 184a6c90254d0ec4a9f7c9fe3d579c8e, type: 2}
   defaultPresetId: -1
-  seatPositions:
+  seatTransforms:
   - {fileID: 4464586395131599633}
   - {fileID: 1196119531891332180}
   - {fileID: 7654661244179482440}
-  couchPositions: []
+  couchTransforms: []
+--- !u!114 &3915253719444581284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4799508744634321900}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54f9ecb512830054ab54f6df06820ae1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeatPropSource
 --- !u!1 &5589943370578285159
 GameObject:
   m_ObjectHideFlags: 0

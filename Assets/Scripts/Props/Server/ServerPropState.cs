@@ -11,7 +11,7 @@ using UnityEngine;
 /// </summary>
 public class ServerPropState {
     public int        PropId;
-    public string     PrefabId;
+    public int        PrefabId;   // PropsConfig.GetId()
     public string     RoomId;
     public Vector3    Position;
     public Quaternion Rotation;

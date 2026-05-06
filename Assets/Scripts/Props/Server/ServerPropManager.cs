@@ -53,7 +53,7 @@ public class ServerPropManager {
         RegisterInternal(
             roomId:   source.RoomId,
             propId:   source.PropId,
-            prefabId: string.Empty,
+            prefabId: 0,
             position: source.transform.position,
             rotation: source.transform.rotation,
             type:     source.Type,
@@ -71,22 +71,28 @@ public class ServerPropManager {
     /// </summary>
     public int SpawnProp(
         string     roomId,
-        string     prefabId,
+        int        prefabId,
         Vector3    position,
-        Quaternion rotation
+        Quaternion rotation,
+        byte[]     initialPayloadOverride = null
     ) {
         if (!NetworkServer.active) return -1;
 
-        GameObject prefab = PropPrefabDatabase.Instance?.GetPrefab(prefabId);
+        var propsConfig = Sim.DatabaseManager.PropsDatabase?.GetPropsById(prefabId);
+        if (propsConfig == null) {
+            Debug.LogWarning($"[ServerPropManager] PropsConfig id={prefabId} not found in DatabaseManager — spawn aborted");
+            return -1;
+        }
+        GameObject prefab = propsConfig.GetPrefab()?.gameObject;
         if (prefab == null) {
-            Debug.LogWarning($"[ServerPropManager] Prefab '{prefabId}' not found in database — spawn aborted");
+            Debug.LogWarning($"[ServerPropManager] PropsConfig id={prefabId} has no prefab assigned");
             return -1;
         }
 
         int propId = _nextAutoId++;
 
         GameObject instance = UnityEngine.Object.Instantiate(prefab, position, rotation);
-        instance.name = $"{prefabId}#{propId}";
+        instance.name = $"Prop{prefabId}#{propId}";
 
         PropIdentity identity = instance.GetComponent<PropIdentity>();
         if (identity == null) {
@@ -98,7 +104,8 @@ public class ServerPropManager {
 
         ServerPropSource source = instance.GetComponent<ServerPropSource>();
         PropType         type    = source != null ? source.Type    : PropType.Generic;
-        byte[]           payload = source != null ? source.GetInitialState() : Array.Empty<byte>();
+        byte[]           payload = initialPayloadOverride
+                                   ?? (source != null ? source.GetInitialState() : Array.Empty<byte>());
 
         RegisterInternal(roomId, propId, prefabId, position, rotation, type, payload, isScene: false);
         _spawnedGOs[propId] = instance;
@@ -106,6 +113,10 @@ public class ServerPropManager {
         BroadcastToRoom(roomId, BuildSpawnMessage(roomId, propId, prefabId, position, rotation, type, payload));
         return propId;
     }
+
+    /// <summary>Returns the server-side GameObject for a runtime-spawned prop (or null).</summary>
+    public GameObject GetSpawnedGameObject(int propId) =>
+        _spawnedGOs.TryGetValue(propId, out var go) ? go : null;
 
     // ── State update ──────────────────────────────────────────────────────────
 
@@ -120,6 +131,35 @@ public class ServerPropManager {
             RoomId  = roomId,
             Type    = state.Type,
             Payload = payload
+        });
+    }
+
+    /// <summary>
+    /// Updates the position/rotation of a runtime-spawned prop and broadcasts to the room.
+    /// Scene props cannot be moved — their transform is part of the scene asset.
+    /// </summary>
+    public void UpdatePropTransform(string roomId, int propId, Vector3 position, Quaternion rotation) {
+        if (!TryGetState(roomId, propId, out var state)) {
+            Debug.LogWarning($"[ServerPropManager] Prop {propId} not found in room '{roomId}'");
+            return;
+        }
+        if (state.IsScene) {
+            Debug.LogWarning($"[ServerPropManager] Cannot move scene prop {propId} in '{roomId}'");
+            return;
+        }
+        state.Position = position;
+        state.Rotation = rotation;
+
+        if (_spawnedGOs.TryGetValue(propId, out var go) && go != null) {
+            go.transform.position = position;
+            go.transform.rotation = rotation;
+        }
+
+        BroadcastToRoom(roomId, new S2C_PropTransform {
+            PropId   = propId,
+            RoomId   = roomId,
+            Position = position,
+            Rotation = rotation
         });
     }
 
@@ -183,10 +223,17 @@ public class ServerPropManager {
     public bool TryGetPropState(string roomId, int propId, out ServerPropState state) =>
         TryGetState(roomId, propId, out state);
 
+    /// <summary>Returns a snapshot of all prop states in a room (safe to iterate while mutating).</summary>
+    public IReadOnlyList<ServerPropState> GetRoomStates(string roomId) {
+        if (!_rooms.TryGetValue(roomId, out var room))
+            return System.Array.Empty<ServerPropState>();
+        return new System.Collections.Generic.List<ServerPropState>(room.Values);
+    }
+
     // ── Internal ──────────────────────────────────────────────────────────────
 
     private void RegisterInternal(
-        string roomId, int propId, string prefabId,
+        string roomId, int propId, int prefabId,
         Vector3 position, Quaternion rotation, PropType type, byte[] payload, bool isScene
     ) {
         if (!_rooms.TryGetValue(roomId, out var room)) {
@@ -211,7 +258,7 @@ public class ServerPropManager {
     }
 
     private static S2C_PropSpawn BuildSpawnMessage(
-        string roomId, int propId, string prefabId,
+        string roomId, int propId, int prefabId,
         Vector3 position, Quaternion rotation, PropType type, byte[] payload
     ) => new S2C_PropSpawn {
         PropId   = propId,

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Sim.Building;
 using Sim.Utils;
 using UnityEngine;
@@ -6,50 +6,71 @@ using UnityEngine;
 namespace Sim {
     [Serializable]
     public struct SceneData {
-        public CoverData[] walls;
-        public CoverData[] grounds;
-        public BucketData[] buckets;
+        public CoverData[]   walls;
+        public CoverData[]   grounds;
+        public BucketData[]  buckets;
         public DefaultData[] props;
     }
 
+    /// <summary>
+    /// Persisted form of an apartment prop. Built from a ServerPropState in the
+    /// new prop system (no NetworkBehaviour involved).
+    /// </summary>
     [Serializable]
     public class DefaultData {
-        public int id;
+        public int           id;          // PropsConfig.GetId()
         public TransformData transform;
-        public bool isBuilt;
-        public int presetId = -1;
+        public bool          isBuilt;
+        public int           presetId = -1;
 
-        public void Init(Props props) {
-            this.id = props.GetConfiguration().GetId();
-            this.transform = SaveUtils.CreateTransformData(props.transform);
-            this.isBuilt = props.IsBuilt();
-            this.presetId = props.PresetId;
+        public DefaultData() { }
+
+        /// <summary>Initialize from a ServerPropState (new system).</summary>
+        public DefaultData(ServerPropState state, Transform parent) {
+            this.id = state.PrefabId;
+
+            // Convert world-space pos/rot stored in ServerPropState to local-space
+            // relative to the apartment props container — this matches the legacy
+            // save format and how ApartmentController re-applies positions on load.
+            Vector3 localPos = parent != null ? parent.InverseTransformPoint(state.Position) : state.Position;
+            Quaternion localRot = parent != null ? Quaternion.Inverse(parent.rotation) * state.Rotation : state.Rotation;
+
+            this.transform = new TransformData {
+                position = new Vector3Data(localPos),
+                rotation = new Vector3Data(localRot.eulerAngles)
+            };
+
+            PropStateHeader header = PropStateHeader.ReadFrom(state.Payload);
+            this.isBuilt  = header.IsBuilt;
+            this.presetId = header.PresetId;
         }
     }
 
     [Serializable]
     public class BucketData : DefaultData {
         public float[] color;
-        public int paintConfigId;
-        
+        public int     paintConfigId;
+
         public BucketData() { }
 
-        public BucketData(Props props) {
-            base.Init(props);
+        public BucketData(ServerPropState state, Transform parent) : base(state, parent) {
+            PaintBucketState bucketState = PaintBucketState.Deserialize(state.Payload);
+            this.paintConfigId = bucketState.PaintConfigId;
+            this.color         = new[] { bucketState.R, bucketState.G, bucketState.B, 1f };
         }
     }
 
     [Serializable]
     public struct CoverData {
-        public int idx;
-        public int paintConfigId;
+        public int     idx;
+        public int     paintConfigId;
         public float[] additionalColor;
 
         public Color GetColor() {
             if (additionalColor.Length > 3) {
                 return new Color(additionalColor[0], additionalColor[1], additionalColor[2]);
             }
-            
+
             return Color.white;
         }
     }

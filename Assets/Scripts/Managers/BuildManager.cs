@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Mirror;
 using Sim.Building;
 using Sim.Entities;
@@ -33,7 +33,9 @@ namespace Sim {
 
         private Props currentPropSelected;
 
-        private PaintBucket currentOpenedBucket;
+        private PropBehaviourBase currentPropBehaviour;
+
+        private PaintBucketBehaviour currentOpenedBucket;
 
         private BuildModeEnum mode;
 
@@ -135,9 +137,9 @@ namespace Sim {
         public void Init(Delivery delivery) {
             PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(delivery.PropsConfigId);
 
-            this.currentPropSelected = PropsManager.Instance.InstantiateProps(propsConfig, delivery.PropsPresetId);
-            this.currentPropsCollider = this.currentPropSelected.GetComponent<BoxCollider>();
-            this.currentPreview = this.currentPropSelected.gameObject.AddComponent<BuildPreview>();
+            this.currentPropBehaviour = PropsManager.Instance.InstantiateProps(propsConfig, delivery.PropsPresetId);
+            this.currentPropsCollider = this.currentPropBehaviour.GetComponent<BoxCollider>();
+            this.currentPreview = this.currentPropBehaviour.gameObject.AddComponent<BuildPreview>();
 
             this.SetMode(BuildModeEnum.POSING);
 
@@ -197,9 +199,53 @@ namespace Sim {
         }
 
         /**
+         * This method is used to start edit mode for new-system props (PropBehaviourBase)
+         */
+        public void Edit(PropBehaviourBase behaviour) {
+            this.currentPropBehaviour = behaviour;
+            this.currentPropsCollider = this.currentPropBehaviour.GetComponent<BoxCollider>();
+            this.currentPreview = this.currentPropBehaviour.gameObject.AddComponent<BuildPreview>();
+            this.originPosition = this.currentPropBehaviour.transform.position;
+            this.originRotation = this.currentPropBehaviour.transform.rotation;
+
+            PropsConfig config = behaviour.GetComponent<PropsConfig>() ?? behaviour.GetComponent<Props>()?.GetConfiguration();
+            if (config != null && config.HasPosableSurface) {
+                RaycastHit[] hits = new RaycastHit[30];
+                Vector3 colliderBounds = this.transform.InverseTransformDirection(this.currentPropsCollider.bounds.extents);
+
+                var size = Physics.BoxCastNonAlloc(this.originPosition + new Vector3(0, colliderBounds.y, 0), colliderBounds, Vector3.up, hits, Quaternion.identity,
+                    0.05f, (1 << 10));
+
+                if (size > 0) {
+                    foreach (var raycastHit in hits) {
+                        if (raycastHit.collider && raycastHit.collider != this.currentPropsCollider) {
+                            raycastHit.collider.gameObject.AddComponent<BuildPreview>();
+                            raycastHit.collider.transform.parent = this.currentPropBehaviour.transform;
+                        }
+                    }
+                }
+            }
+
+            this.isEditing = true;
+
+            this.SetMode(BuildModeEnum.POSING);
+
+            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
+
+            PropsVisibilityUI.Instance.Bind(this.apartmentController);
+
+            if (behaviour.IsGroundProps()) {
+                this.apartmentController.SetWallVisibility(VisibilityModeEnum.FORCE_HIDE);
+                WallVisibilityUI.Instance.Bind(this.apartmentController, VisibilityModeEnum.FORCE_HIDE);
+            } else {
+                WallVisibilityUI.Instance.Bind(this.apartmentController);
+            }
+        }
+
+        /**
          * This method is the entrypoint to start build mode
          */
-        public void Init(PaintBucket paintBucket) {
+        public void Init(PaintBucketBehaviour paintBucket) {
             this.currentOpenedBucket = paintBucket;
             this.SetMode(this.currentOpenedBucket.GetPaintConfig().GetSurface() == BuildSurfaceEnum.WALL ? BuildModeEnum.WALL_PAINT : BuildModeEnum.GROUND_PAINT);
 
@@ -251,21 +297,46 @@ namespace Sim {
 
             if (this.mode == BuildModeEnum.VALIDATING) {
                 if (this.isEditing) {
-                    if (this.currentPropSelected.GetConfiguration().HasPosableSurface) { // Reset child parent in case of posable surface props
-                        foreach (Props child in this.currentPropSelected.GetComponentsInChildren<Props>()) {
-                            child.transform.parent = this.currentPropSelected.transform.parent;
-                            child.GetComponent<BuildPreview>().Destroy();
-                            OnValidatePropEdit?.Invoke(child);
+                    // Handle legacy Props system
+                    if (this.currentPropSelected != null) {
+                        if (this.currentPropSelected.GetConfiguration().HasPosableSurface) { // Reset child parent in case of posable surface props
+                            foreach (Props child in this.currentPropSelected.GetComponentsInChildren<Props>()) {
+                                child.transform.parent = this.currentPropSelected.transform.parent;
+                                child.GetComponent<BuildPreview>().Destroy();
+                                OnValidatePropEdit?.Invoke(child);
+                            }
+                        } else {
+                            OnValidatePropEdit?.Invoke(this.currentPropSelected);
                         }
-                    } else {
-                        OnValidatePropEdit?.Invoke(this.currentPropSelected);
+                    }
+                    // Handle new PropBehaviourBase system
+                    else if (this.currentPropBehaviour != null) {
+                        PropsConfig config = this.currentPropBehaviour.GetComponent<PropsConfig>() ?? this.currentPropBehaviour.GetComponent<Props>()?.GetConfiguration();
+                        if (config != null && config.HasPosableSurface) {
+                            foreach (Props child in this.currentPropBehaviour.GetComponentsInChildren<Props>()) {
+                                child.transform.parent = this.currentPropBehaviour.transform.parent;
+                                child.GetComponent<BuildPreview>().Destroy();
+                                OnValidatePropEdit?.Invoke(child);
+                            }
+                        } else {
+                            OnValidatePropEdit?.Invoke(this.currentPropBehaviour.GetComponent<Props>());
+                        }
                     }
                 } else {
-                    OnValidatePropCreation?.Invoke(this.currentPropSelected.GetConfiguration(),
-                        this.currentPropSelected.PresetId,
-                        this.currentPropSelected.transform.position,
-                        this.currentPropSelected.transform.rotation);
-                    Destroy(this.currentPropSelected.gameObject);
+                    if (this.currentPropSelected != null) {
+                        OnValidatePropCreation?.Invoke(this.currentPropSelected.GetConfiguration(),
+                            this.currentPropSelected.PresetId,
+                            this.currentPropSelected.transform.position,
+                            this.currentPropSelected.transform.rotation);
+                        Destroy(this.currentPropSelected.gameObject);
+                    } else if (this.currentPropBehaviour != null) {
+                        PropsConfig config = this.currentPropBehaviour.GetComponent<PropsConfig>() ?? this.currentPropBehaviour.GetComponent<Props>()?.GetConfiguration();
+                        int presetId = this.currentPropBehaviour.GetComponent<Props>()?.PresetId ?? -1;
+                        OnValidatePropCreation?.Invoke(config, presetId,
+                            this.currentPropBehaviour.transform.position,
+                            this.currentPropBehaviour.transform.rotation);
+                        Destroy(this.currentPropBehaviour.gameObject);
+                    }
                 }
             } else if (this.mode == BuildModeEnum.WALL_PAINT || this.mode == BuildModeEnum.GROUND_PAINT) {
                 OnValidatePaintModification?.Invoke();
@@ -301,12 +372,33 @@ namespace Sim {
                     Destroy(this.currentPropSelected.gameObject);
                     this.currentPropSelected = null;
                 }
+            } else if (this.currentPropBehaviour) {
+                if (this.isEditing) {
+                    this.currentPropBehaviour.transform.position = this.originPosition;
+                    this.currentPropBehaviour.transform.rotation = this.originRotation;
+
+                    PropsConfig config = this.currentPropBehaviour.GetComponent<PropsConfig>() ?? this.currentPropBehaviour.GetComponent<Props>()?.GetConfiguration();
+                    if (config != null && config.HasPosableSurface) { // Reset child parent in case of posable surface props
+                        foreach (Props child in this.currentPropBehaviour.GetComponentsInChildren<Props>()) {
+                            child.GetComponent<BuildPreview>().Destroy();
+                            child.transform.parent = this.currentPropBehaviour.transform.parent;
+                        }
+                    }
+
+                    this.currentPreview.Destroy();
+                    this.currentPropBehaviour = null;
+                    this.isEditing = false;
+                } else {
+                    // if prop behaviour is selected => destroy it
+                    Destroy(this.currentPropBehaviour.gameObject);
+                    this.currentPropBehaviour = null;
+                }
             }
 
-            if (this.currentOpenedBucket) {
+            if (this.currentOpenedBucket != null) {
                 // if a bucket was opened reset it and all walls in preview
                 if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                    this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetWallPreview(); // TODO: use apartmentController
+                    this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetWallPreview();
                 } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
                     this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetGroundPreview();
                 }
@@ -316,7 +408,8 @@ namespace Sim {
         }
 
         private void ManagePropsRotation() {
-            if (this.currentPropSelected.IsGroundProps()) {
+            // Handle legacy Props system
+            if (this.currentPropSelected != null && this.currentPropSelected.IsGroundProps()) {
                 if (Input.GetKeyDown(KeyCode.DownArrow)) {
                     Vector3 currentLocalAngle = this.currentPropSelected.transform.localEulerAngles;
                     float newAngle = (Mathf.CeilToInt(currentLocalAngle.y / 90f) * 90f) - 90f;
@@ -339,10 +432,35 @@ namespace Sim {
                     this.currentPropSelected.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
                 }
             }
+            // Handle new PropBehaviourBase system
+            else if (this.currentPropBehaviour != null && this.currentPropBehaviour.IsGroundProps()) {
+                if (Input.GetKeyDown(KeyCode.DownArrow)) {
+                    Vector3 currentLocalAngle = this.currentPropBehaviour.transform.localEulerAngles;
+                    float newAngle = (Mathf.CeilToInt(currentLocalAngle.y / 90f) * 90f) - 90f;
+                    this.currentPropBehaviour.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
+                } else if (Input.GetKeyDown(KeyCode.UpArrow)) {
+                    Vector3 currentLocalAngle = this.currentPropBehaviour.transform.localEulerAngles;
+                    float newAngle = (Mathf.FloorToInt(currentLocalAngle.y / 90f) * 90f) + 90f;
+                    this.currentPropBehaviour.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
+                } else if (Input.GetKey(KeyCode.LeftArrow)) {
+                    Vector3 currentLocalAngle = this.currentPropBehaviour.transform.localEulerAngles;
+                    this.currentPropBehaviour.transform.localEulerAngles =
+                        new Vector3(currentLocalAngle.x, currentLocalAngle.y - this.propsRotationSpeed, currentLocalAngle.z);
+                } else if (Input.GetKey(KeyCode.RightArrow)) {
+                    Vector3 currentLocalAngle = this.currentPropBehaviour.transform.localEulerAngles;
+                    this.currentPropBehaviour.transform.localEulerAngles =
+                        new Vector3(currentLocalAngle.x, currentLocalAngle.y + this.propsRotationSpeed, currentLocalAngle.z);
+                } else if (Input.GetKeyDown(KeyCode.R)) {
+                    Vector3 currentLocalAngle = this.currentPropBehaviour.transform.localEulerAngles;
+                    float newAngle = (Mathf.FloorToInt(Mathf.Round(currentLocalAngle.y / 45f)) * 45f) + 45f;
+                    this.currentPropBehaviour.transform.localEulerAngles = new Vector3(currentLocalAngle.x, newAngle, currentLocalAngle.z);
+                }
+            }
         }
 
         private void ManagePropMovement() {
-            if (this.currentPropSelected.IsGroundProps()) {
+            // Handle legacy Props system
+            if (this.currentPropSelected != null && this.currentPropSelected.IsGroundProps()) {
                 Vector3 point = hit.point;
                 Transform currentPropsTransform = this.currentPropSelected.transform;
                 this.currentPropsBounds = currentPropsTransform.InverseTransformDirection(this.currentPropsCollider.bounds.extents);
@@ -401,7 +519,7 @@ namespace Sim {
                 } else if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Posable Surface")) {
                     currentPropsTransform.position = new Vector3(hit.point.x, hit.point.y + (hit.normal.y * 0.01f), hit.point.z);
                 }
-            } else if (this.currentPropSelected.IsWallProps() && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
+            } else if (this.currentPropSelected != null && this.currentPropSelected.IsWallProps() && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
                 this.currentPropSelected.transform.position = hit.point + (hit.normal * 0.01f);
                 Vector3 rotation = this.currentPropSelected.transform.localEulerAngles;
 
@@ -416,6 +534,82 @@ namespace Sim {
                 }
 
                 this.currentPropSelected.transform.eulerAngles = rotation;
+            }
+            // Handle new PropBehaviourBase system
+            else if (this.currentPropBehaviour != null && this.currentPropBehaviour.IsGroundProps()) {
+                Vector3 point = hit.point;
+                Transform currentPropsTransform = this.currentPropBehaviour.transform;
+                this.currentPropsBounds = currentPropsTransform.InverseTransformDirection(this.currentPropsCollider.bounds.extents);
+
+                if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) {
+                    if (this.currentPropBehaviour.GetConfiguration().IsPosableOnProps()) {
+                        if (Physics.Raycast(point, Vector3.up, out hit, 10, (1 << 16))) {
+                            point = hit.point;
+                        }
+                    } else if (this.magnetismActivated || this.instantMagnetismActivated) {
+                        float maxHitDistanceZ = Mathf.Abs(this.currentPropsBounds.z) + this.magneticRange;
+                        float maxHitDistanceX = Mathf.Abs(this.currentPropsBounds.x) + this.magneticRange;
+
+                        if (Physics.Raycast(hit.point, currentPropsTransform.TransformDirection(Vector3.back), out magneticHit, maxHitDistanceZ, (1 << 12))) {
+                            point = magneticHit.point;
+                            this.lastMagneticPoint = point;
+                            this.magneticDirection = DirectionEnum.BACK;
+
+                            RaycastHit subHit;
+                            if (Physics.Raycast(magneticHit.point + (magneticHit.normal * 0.001f), -currentPropsTransform.right, out subHit, maxHitDistanceX,
+                                (1 << 12))) {
+                                point = subHit.point;
+                                this.lastMagneticPoint = point;
+                                this.magneticDirection = DirectionEnum.LEFT;
+                            } else if (Physics.Raycast(magneticHit.point + (magneticHit.normal * 0.001f), currentPropsTransform.right, out subHit, maxHitDistanceX,
+                                (1 << 12))) {
+                                point = subHit.point;
+                                this.lastMagneticPoint = point;
+                                this.magneticDirection = DirectionEnum.RIGHT;
+                            }
+                        }
+                    }
+
+                    this.CalculatePlacement(point, currentPropsTransform);
+                } else if ((this.magnetismActivated || this.instantMagnetismActivated) && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall") &&
+                           hit.normal.y == 0) {
+                    if (Physics.Raycast(point, Vector3.down, out magneticHit, 10, (1 << 9))) {
+                        point = magneticHit.point;
+                        this.lastMagneticPoint = point;
+                        this.magneticDirection = DirectionEnum.DOWN;
+
+                        float maxHitDistanceX = Mathf.Abs(this.currentPropsBounds.x) + this.magneticRange;
+                        RaycastHit subHit;
+                        if (Physics.Raycast(magneticHit.point + (hit.normal * 0.001f), -currentPropsTransform.right, out subHit, maxHitDistanceX, (1 << 12))) {
+                            point = subHit.point;
+                            this.lastMagneticPoint = point;
+                            this.magneticDirection = DirectionEnum.LEFT;
+                        } else if (Physics.Raycast(magneticHit.point + (hit.normal * 0.001f), currentPropsTransform.right, out subHit, maxHitDistanceX, (1 << 12))) {
+                            point = subHit.point;
+                            this.lastMagneticPoint = point;
+                            this.magneticDirection = DirectionEnum.RIGHT;
+                        }
+
+                        this.CalculatePlacement(point, currentPropsTransform);
+                    }
+                } else if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Posable Surface")) {
+                    currentPropsTransform.position = new Vector3(hit.point.x, hit.point.y + (hit.normal.y * 0.01f), hit.point.z);
+                }
+            } else if (this.currentPropBehaviour != null && this.currentPropBehaviour.IsWallProps() && hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall")) {
+                this.currentPropBehaviour.transform.position = hit.point + (hit.normal * 0.01f);
+                Vector3 rotation = this.currentPropBehaviour.transform.localEulerAngles;
+
+                if (hit.normal == Vector3.forward) {
+                    rotation.y = 360;
+                } else if (hit.normal == -Vector3.forward) {
+                    rotation.y = 180f;
+                } else if (hit.normal == -Vector3.left) {
+                    rotation.y = 90;
+                } else if (hit.normal == Vector3.left) {
+                    rotation.y = 270f;
+                }
+
+                this.currentPropBehaviour.transform.eulerAngles = rotation;
             }
         }
 
@@ -452,7 +646,11 @@ namespace Sim {
 
         private int GetLayerMask() {
             if (this.mode == BuildModeEnum.POSING) {
-                return CommonUtils.GetLayerMaskSurfacesToPose(this.currentPropSelected);
+                if (this.currentPropSelected != null) {
+                    return CommonUtils.GetLayerMaskSurfacesToPose(this.currentPropSelected);
+                } else if (this.currentPropBehaviour != null) {
+                    return CommonUtils.GetLayerMaskSurfacesToPose(this.currentPropBehaviour);
+                }
             }
 
             return (1 << 11); // Preview Layer

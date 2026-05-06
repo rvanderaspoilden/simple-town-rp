@@ -262,6 +262,28 @@ namespace Sim {
                 DefaultViewUI.Instance.SetLocationText(string.Empty);
                 DefaultViewUI.Instance.SetTenantText(string.Empty);
             }
+
+            RefreshPropRoom();
+        }
+
+        /// <summary>
+        /// Switches the local player into the prop room matching the current geographic area.
+        /// Apartment areas → "apt:..." room. Default → "city".
+        /// </summary>
+        private void RefreshPropRoom() {
+            if (ClientPropManager.Instance == null) return;
+
+            GeographicArea current = CurrentGeographicArea;
+            string targetRoom = "city";
+
+            if (current != null && current.Type == GeographicType.APARTMENT) {
+                ApartmentController apt = current.GetComponentInParent<ApartmentController>();
+                if (apt != null && !string.IsNullOrEmpty(apt.RoomId)) {
+                    targetRoom = apt.RoomId;
+                }
+            }
+
+            ClientPropManager.Instance.EnterRoom(targetRoom);
         }
 
         public GeographicArea CurrentGeographicArea => currentGeographicArea.LastOrDefault();

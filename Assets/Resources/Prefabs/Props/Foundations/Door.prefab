@@ -410,9 +410,10 @@ GameObject:
   m_Component:
   - component: {fileID: 6215916191798703011}
   - component: {fileID: 7015627864882207455}
-  - component: {fileID: 7933995681442427898}
-  - component: {fileID: 7407824494658972058}
   - component: {fileID: 868195336000130247}
+  - component: {fileID: 3388392950133142627}
+  - component: {fileID: 6108673226602487419}
+  - component: {fileID: 4972500163223285798}
   m_Layer: 2
   m_Name: Door
   m_TagString: Untagged
@@ -459,46 +460,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 2.0043561, z: 1.67}
   m_Center: {x: -0.50201845, y: 0.9968139, z: -0.05183959}
---- !u!114 &7933995681442427898
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6924292189066641840}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2a135ca4bb1b07f49881fa0b5a6a6df1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
-  openedLocalRotation: {x: 0, y: -90, z: 0}
-  defaultLockState: 1
-  doorBody: {fileID: 8010329451379658466}
-  navMeshObstacle: {fileID: 868195336000130247}
-  doorOpenSound: {fileID: 8300000, guid: 4f8aa9e57a7a5ed4295faa1a774724d0, type: 3}
-  doorCloseSound: {fileID: 8300000, guid: 952e8d12e090ef744a71c6f912f460d0, type: 3}
-  audioSource: {fileID: 1634870283909603354}
-  colliderTriggered: []
---- !u!114 &7407824494658972058
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6924292189066641840}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  _assetId: 3522044764
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
 --- !u!208 &868195336000130247
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -515,3 +476,51 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -0.5020185, y: 0.9968139, z: -0.05183959}
   m_TimeToStationary: 0.5
+--- !u!114 &3388392950133142627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6924292189066641840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &6108673226602487419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6924292189066641840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c200ce95d4e0f2040b5f2c279fc7abb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorBehaviour
+  configuration: {fileID: 11400000, guid: 375410120f7019f4c949b3bc160a7c34, type: 2}
+  defaultPresetId: -1
+  doorBody: {fileID: 8010329451379658466}
+  openedLocalRotation: {x: 0, y: -90, z: 0}
+  navMeshObstacle: {fileID: 868195336000130247}
+  numberTxt: {fileID: 0}
+  audioSource: {fileID: 1634870283909603354}
+  openClip: {fileID: 8300000, guid: 4f8aa9e57a7a5ed4295faa1a774724d0, type: 3}
+  closeClip: {fileID: 8300000, guid: 952e8d12e090ef744a71c6f912f460d0, type: 3}
+--- !u!114 &4972500163223285798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6924292189066641840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 405e4537d25da954ebd57a5b56857dc4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorPropSource
+  defaultLockState: 1

@@ -25,7 +25,7 @@ namespace Sim.Scriptables {
         private int price;
 
         [SerializeField]
-        private Props prefab;
+        private PropBehaviourBase prefab;
 
         [SerializeField]
         private PropsConfig packageConfig;
@@ -107,7 +107,7 @@ namespace Sim.Scriptables {
             return this.rangeToInteract;
         }
 
-        public Props GetPrefab() {
+        public PropBehaviourBase GetPrefab() {
             return this.prefab;
         }
 

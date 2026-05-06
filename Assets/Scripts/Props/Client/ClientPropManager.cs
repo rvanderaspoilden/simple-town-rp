@@ -39,19 +39,25 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_RoomSnapshot>           (OnRoomSnapshot);
         NetworkClient.RegisterHandler<S2C_PropSpawn>              (OnPropSpawn);
         NetworkClient.RegisterHandler<S2C_PropUpdate>             (OnPropUpdate);
+        NetworkClient.RegisterHandler<S2C_PropTransform>          (OnPropTransform);
         NetworkClient.RegisterHandler<S2C_PropRemove>             (OnPropRemove);
         NetworkClient.RegisterHandler<S2C_DeliveryBoxOpened>      (OnDeliveryBoxOpened);
         NetworkClient.RegisterHandler<S2C_DispenserPurchaseResult>(OnDispenserPurchaseResult);
+        NetworkClient.RegisterHandler<S2C_BuildAck>               (OnBuildAck);
     }
 
     public void UnregisterHandlers() {
         NetworkClient.UnregisterHandler<S2C_RoomSnapshot>();
         NetworkClient.UnregisterHandler<S2C_PropSpawn>();
         NetworkClient.UnregisterHandler<S2C_PropUpdate>();
+        NetworkClient.UnregisterHandler<S2C_PropTransform>();
         NetworkClient.UnregisterHandler<S2C_PropRemove>();
         NetworkClient.UnregisterHandler<S2C_DeliveryBoxOpened>();
         NetworkClient.UnregisterHandler<S2C_DispenserPurchaseResult>();
+        NetworkClient.UnregisterHandler<S2C_BuildAck>();
     }
+
+    public static event System.Action<bool> OnBuildAckReceived;
 
     // ── Room entry / exit ─────────────────────────────────────────────────────
 
@@ -98,14 +104,15 @@ public class ClientPropManager : MonoBehaviour {
         if (msg.RoomId != _currentRoomId) return;
         if (_props.ContainsKey(msg.PropId)) return;
 
-        GameObject prefab = PropPrefabDatabase.Instance?.GetPrefab(msg.PrefabId);
+        var propsConfig = Sim.DatabaseManager.PropsDatabase?.GetPropsById(msg.PrefabId);
+        GameObject prefab = propsConfig?.GetPrefab()?.gameObject;
         if (prefab == null) {
-            Debug.LogWarning($"[ClientPropManager] Prefab '{msg.PrefabId}' not in database — prop {msg.PropId} skipped");
+            Debug.LogWarning($"[ClientPropManager] PropsConfig id={msg.PrefabId} not found — prop {msg.PropId} skipped");
             return;
         }
 
         GameObject go = Instantiate(prefab, msg.Position, msg.Rotation);
-        go.name = $"{msg.PrefabId}#{msg.PropId}";
+        go.name = $"Prop{msg.PrefabId}#{msg.PropId}";
 
         PropIdentity identity = go.GetComponent<PropIdentity>();
         identity?.Assign(msg.PropId, msg.RoomId);
@@ -123,6 +130,18 @@ public class ClientPropManager : MonoBehaviour {
         if (_props.TryGetValue(msg.PropId, out var behaviour)) {
             behaviour.ApplyState(msg.Type, msg.Payload);
         }
+    }
+
+    private void OnPropTransform(S2C_PropTransform msg) {
+        if (msg.RoomId != _currentRoomId) return;
+        if (_spawnedGOs.TryGetValue(msg.PropId, out var go) && go != null) {
+            go.transform.position = msg.Position;
+            go.transform.rotation = msg.Rotation;
+        }
+    }
+
+    private void OnBuildAck(S2C_BuildAck msg) {
+        OnBuildAckReceived?.Invoke(msg.Success);
     }
 
     private void OnPropRemove(S2C_PropRemove msg) {

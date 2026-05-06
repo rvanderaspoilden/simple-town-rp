@@ -1,9 +1,7 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using Sim.Building;
-using Sim.Scriptables;
 using UnityEngine;
 
 namespace Sim.Utils {
@@ -31,39 +29,50 @@ namespace Sim.Utils {
             }).ToArray();
         }
 
-        public static DefaultData CreateDefaultData(Props props) {
-            DefaultData data = new DefaultData();
-            data.Init(props);
-            return data;
-        }
-
-        public static BucketData CreateBucketData(PaintBucket paintBucket) {
-            BucketData data = new BucketData();
-            data.Init(paintBucket);
-            data.paintConfigId = paintBucket.PaintConfigId;
-            data.color = CommonUtils.ColorToArray(paintBucket.GetColor());
-
-            return data;
-        }
-
+        /// <summary>
+        /// Spawns a prop in the new system from a saved DefaultData entry.
+        /// Returns the assigned propId (or -1 on failure).
+        /// </summary>
         [Server]
-        public static Props InstantiatePropsFromSave(DefaultData data, ApartmentController parent) {
-            PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(data.id);
-            Props props = PropsManager.Instance.InstantiateProps(propsConfig, data.presetId, data.transform.position.ToVector3(),
-                Quaternion.Euler(data.transform.rotation.ToVector3()));
+        public static int SpawnPropFromSave(DefaultData data, ApartmentController parent) {
+            // Reconstruct world-space pos/rot from local-space saved values
+            Transform container = parent.PropsContainer;
+            Vector3    localPos = data.transform.position.ToVector3();
+            Quaternion localRot = Quaternion.Euler(data.transform.rotation.ToVector3());
 
-            props.InitBuilt(!propsConfig.MustBeBuilt() || data.isBuilt);
+            Vector3    worldPos = container != null ? container.TransformPoint(localPos) : localPos;
+            Quaternion worldRot = container != null ? container.rotation * localRot     : localRot;
 
-            props.transform.SetParent(parent.PropsContainer);
-            props.transform.localPosition = data.transform.position.ToVector3();
-            props.transform.localEulerAngles = data.transform.rotation.ToVector3();
+            // Build initial payload from saved state
+            PropStateHeader header = new PropStateHeader { IsBuilt = data.isBuilt, PresetId = data.presetId };
 
-            props.ParentId = parent.netId;
-            props.ApartmentController = parent;
+            byte[] payload;
+            if (data is BucketData bucket) {
+                payload = new PaintBucketState {
+                    Header        = header,
+                    PaintConfigId = bucket.paintConfigId,
+                    R = bucket.color != null && bucket.color.Length > 0 ? bucket.color[0] : 1f,
+                    G = bucket.color != null && bucket.color.Length > 1 ? bucket.color[1] : 1f,
+                    B = bucket.color != null && bucket.color.Length > 2 ? bucket.color[2] : 1f
+                }.Serialize();
+            } else {
+                payload = new GenericPropState { Header = header }.Serialize();
+            }
 
-            NetworkServer.Spawn(props.gameObject);
+            int propId = ServerPropManager.Instance.SpawnProp(
+                parent.RoomId, data.id, worldPos, worldRot, payload
+            );
 
-            return props;
+            if (propId >= 0) {
+                GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(propId);
+                if (go != null && container != null) {
+                    go.transform.SetParent(container);
+                    go.transform.position = worldPos;
+                    go.transform.rotation = worldRot;
+                }
+            }
+
+            return propId;
         }
     }
 }

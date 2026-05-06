@@ -78,7 +78,7 @@ namespace Sim.Building {
         }
 
         [Client]
-        public void PreviewMaterialOnFace(RaycastHit hit, PaintBucket paintBucket) {
+        public void PreviewMaterialOnFace(RaycastHit hit, PaintBucketBehaviour paintBucket) {
             if (this.coverSettingsInPreview.Count == 0) {
                 this.coverSettingsInPreview = new Dictionary<int, CoverSettings>(this.coverSettingsByFaces);
             }

@@ -91,8 +91,6 @@ namespace Sim {
         [SerializeField]
         private ApartmentState state = ApartmentState.NOT_CREATED;
 
-        private Type[] defaultPropsTypes = new[] { typeof(Props), typeof(Seat) };
-
         private bool forcePropsHidden;
 
         private bool forceWallHidden;
@@ -139,6 +137,12 @@ namespace Sim {
 
         public Transform SpawnPosition => spawnPosition;
 
+        /// <summary>
+        /// Stable id used by the new prop system to scope props per apartment.
+        /// Format: "apt:{street}:{doorNumber}".
+        /// </summary>
+        public string RoomId => $"apt:{address.street}:{address.doorNumber}";
+
         private void OnSetPresetName(string old, string newValue) {
             this.presetName = newValue;
 
@@ -177,12 +181,13 @@ namespace Sim {
         }
 
         private void UpdatePropsVisibility(VisibilityModeEnum mode) {
-            GetComponentsInChildren<Props>().ToList().Select(x => x.GetComponent<PropsRenderer>()).ToList().ForEach(
-                propsRenderer => {
-                    if (propsRenderer && propsRenderer.IsHideable()) {
-                        propsRenderer.SetVisibilityMode(mode);
-                    }
-                });
+            // Cover both the legacy Props NetworkBehaviours (still used for doors)
+            // and the new system's PropsRenderer attached to behaviours under propsContainer.
+            foreach (PropsRenderer pr in GetComponentsInChildren<PropsRenderer>()) {
+                if (pr != null && pr.IsHideable()) {
+                    pr.SetVisibilityMode(mode);
+                }
+            }
 
             OnPropsVisibilityModeChanged?.Invoke(mode);
         }
@@ -247,19 +252,78 @@ namespace Sim {
             this.associatedHallController = hallController;
             this.address = newAddress;
 
-            this.frontDoor = Instantiate(this.frontDoorPrefab, this.frontDoorSpawn.position, this.frontDoorSpawn.rotation);
-            this.frontDoor.transform.SetParent(this.propsContainer);
-            this.frontDoor.ParentId = netId;
-            this.frontDoor.Number = newAddress.doorNumber;
-            NetworkServer.Spawn(this.frontDoor.gameObject);
+            // Spawn the front door in the CITY room so hall players see open/close animations.
+            // Lock state and door number are part of the DoorState payload.
+            byte[] frontDoorPayload = new DoorState {
+                Header     = PropStateHeader.Default,
+                IsOpen     = false,
+                LockState  = DoorLockState.LOCKED,
+                DoorNumber = newAddress.doorNumber
+            }.Serialize();
+
+            int doorPropId = ServerPropManager.Instance.SpawnProp(
+                FrontDoorRoomId,
+                this.frontDoorPrefabConfigId,
+                this.frontDoorSpawn.position,
+                this.frontDoorSpawn.rotation,
+                frontDoorPayload
+            );
+            if (doorPropId >= 0) {
+                this.frontDoorPropId = doorPropId;
+                GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(doorPropId);
+                if (go != null) {
+                    go.transform.SetParent(this.propsContainer);
+                    go.transform.position = this.frontDoorSpawn.position;
+                    go.transform.rotation = this.frontDoorSpawn.rotation;
+                }
+            }
 
             StartCoroutine(RetrieveData());
         }
 
         [Server]
         public void Regenerate() {
+            // Wipe any previously-spawned props (apt room) before re-instantiating
+            // (avoids stacking duplicates on tenant change / hot reload).
+            ServerPropManager.Instance.ClearRoom(this.RoomId);
+            this.deliveryBoxPropId = 0;
+            // Note: front door is in the city room; we keep it but reset its number/lock if needed.
             StartCoroutine(RetrieveData());
         }
+
+        private void OnDestroy() {
+            if (NetworkServer.active) {
+                ServerPropManager.Instance.ClearRoom(this.RoomId);
+                if (this.frontDoorPropId > 0) {
+                    ServerPropManager.Instance.RemoveProp(FrontDoorRoomId, this.frontDoorPropId);
+                }
+            }
+        }
+
+        /// <summary>Updates the front door lock state via the new prop system.</summary>
+        [Server]
+        private void SetFrontDoorLockState(DoorLockState newState) {
+            if (this.frontDoorPropId <= 0) return;
+            if (!ServerPropManager.Instance.TryGetPropState(FrontDoorRoomId, this.frontDoorPropId, out var state)) return;
+            DoorState current = DoorState.Deserialize(state.Payload);
+            if (current.LockState == newState) return;
+            current.LockState = newState;
+            ServerPropManager.Instance.UpdatePropState(FrontDoorRoomId, this.frontDoorPropId, current.Serialize());
+        }
+
+        // Front door lives in the city room so all players (hall + apt) see it.
+        private const string FrontDoorRoomId = "city";
+
+        /// <summary>PropId of the apartment's front door (new system). 0 if not yet spawned.</summary>
+        public int FrontDoorPropId => frontDoorPropId;
+        private int frontDoorPropId;
+
+        [Header("Prop Config IDs (PropsConfig.GetId())")]
+        [SerializeField, Tooltip("PropsConfig id of the front door prefab. Must be in PropsDatabase.")]
+        private int frontDoorPrefabConfigId;
+
+        [SerializeField, Tooltip("PropsConfig id of the inner (simple) door prefab. Must be in PropsDatabase.")]
+        private int simpleDoorPrefabConfigId;
 
         [Server]
         private IEnumerator RetrieveData() {
@@ -297,9 +361,9 @@ namespace Sim {
 
                 InstantiateLevel(homeResponse.SceneData);
 
-                this.frontDoor.SetLockState(DoorLockState.UNLOCKED);
+                this.SetFrontDoorLockState(DoorLockState.UNLOCKED);
             } else {
-                this.frontDoor.SetLockState(DoorLockState.LOCKED);
+                this.SetFrontDoorLockState(DoorLockState.LOCKED);
                 this.state = ApartmentState.NOT_GENERATED;
                 this.associatedHallController.CheckGenerationState();
             }
@@ -307,13 +371,14 @@ namespace Sim {
 
         [Server]
         private void InstantiateLevel(SceneData sceneData) {
+            // Spawn paint buckets in the new prop system (PaintBucketState carries paintConfigId+color)
             sceneData.buckets?.ToList().ForEach(data => {
-                PaintBucket props = SaveUtils.InstantiatePropsFromSave(data, this) as PaintBucket;
-                props.Init(data.paintConfigId, data.color);
+                SaveUtils.SpawnPropFromSave(data, this);
             });
 
+            // Spawn standard props in the new prop system
             sceneData.props?.ToList().ForEach(data => {
-                Props props = SaveUtils.InstantiatePropsFromSave(data, this);
+                SaveUtils.SpawnPropFromSave(data, this);
             });
 
             if (sceneData.walls != null) {
@@ -354,25 +419,62 @@ namespace Sim {
                 }
             }
 
-            foreach (var currentConfigurationDoorSpawner in this.currentConfiguration.doorSpawners) {
-                SimpleDoor simpleDoor = Instantiate(this.simpleDoorPrefab, currentConfigurationDoorSpawner.position, currentConfigurationDoorSpawner.rotation);
-                simpleDoor.ParentId = netId;
-                simpleDoor.transform.SetParent(this.transform);
-                NetworkServer.Spawn(simpleDoor.gameObject);
+            // Inner doors live in the apartment room (visible only to people inside).
+            // Default lock state is UNLOCKED (set by DoorPropSource serialized field).
+            foreach (var spawner in this.currentConfiguration.doorSpawners) {
+                int innerDoorPropId = ServerPropManager.Instance.SpawnProp(
+                    this.RoomId,
+                    this.simpleDoorPrefabConfigId,
+                    spawner.position,
+                    spawner.rotation
+                );
+                if (innerDoorPropId >= 0) {
+                    GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(innerDoorPropId);
+                    if (go != null) {
+                        go.transform.SetParent(this.transform);
+                        go.transform.position = spawner.position;
+                        go.transform.rotation = spawner.rotation;
+                    }
+                }
             }
 
-            DeliveryBox deliveryBox = Instantiate(this.deliveryBoxPrefab, this.currentConfiguration.deliveryBoxSpawn.position,
-                this.currentConfiguration.deliveryBoxSpawn.rotation);
-            deliveryBox.ParentId = netId;
-            deliveryBox.transform.SetParent(this.transform);
-            NetworkServer.Spawn(deliveryBox.gameObject);
+            // Spawn the apartment delivery box via the new prop system.
+            // The prefab must carry: PropIdentity, DeliveryBoxBehaviour, DeliveryBoxPropSource.
+            int deliveryBoxConfigId = this.deliveryBoxPrefabConfigId;
+            int deliveryBoxPropId = ServerPropManager.Instance.SpawnProp(
+                this.RoomId,
+                deliveryBoxConfigId,
+                this.currentConfiguration.deliveryBoxSpawn.position,
+                this.currentConfiguration.deliveryBoxSpawn.rotation
+            );
+            if (deliveryBoxPropId >= 0) {
+                GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(deliveryBoxPropId);
+                if (go != null) {
+                    go.transform.SetParent(this.propsContainer);
+                    go.transform.position = this.currentConfiguration.deliveryBoxSpawn.position;
+                    go.transform.rotation = this.currentConfiguration.deliveryBoxSpawn.rotation;
+                }
+                this.deliveryBoxPropId = deliveryBoxPropId;
 
-            this.frontDoor.SetLockState(DoorLockState.UNLOCKED);
+                // Trigger initial fetch of the deliveries to populate the count.
+                if (!string.IsNullOrEmpty(this.tenantId)) {
+                    PropInteractionDispatcher.Instance?.RefreshDeliveryBoxCount(deliveryBoxPropId, this.RoomId, this.tenantId);
+                }
+            }
+
+            this.SetFrontDoorLockState(DoorLockState.UNLOCKED);
 
             this.state = ApartmentState.GENERATED;
 
             this.associatedHallController.CheckGenerationState();
         }
+
+        /// <summary>PropId of the apartment's delivery box (new system). 0 if not yet spawned.</summary>
+        public int DeliveryBoxPropId => deliveryBoxPropId;
+        private int deliveryBoxPropId;
+
+        [SerializeField, Tooltip("PropsConfig id (PropsConfig.GetId()) of the delivery box prefab. Must be in PropsDatabase.")]
+        private int deliveryBoxPrefabConfigId;
 
         public void ResetWallPreview() {
             this.currentConfiguration.walls.Reset();
@@ -426,13 +528,27 @@ namespace Sim {
 
         [Server]
         private SceneData GenerateSceneData() {
+            // Read all props in this apartment's room from the new prop system,
+            // skipping the delivery box (lifecycle managed by the apartment, not saved).
+            List<BucketData>  buckets = new List<BucketData>();
+            List<DefaultData> props   = new List<DefaultData>();
+
+            foreach (ServerPropState state in ServerPropManager.Instance.GetRoomStates(this.RoomId)) {
+                if (state.IsScene) continue;                       // scene props not saved
+                if (state.PropId == this.deliveryBoxPropId) continue; // delivery box re-spawned on load
+
+                if (state.Type == PropType.PaintBucket) {
+                    buckets.Add(new BucketData(state, this.propsContainer));
+                } else {
+                    props.Add(new DefaultData(state, this.propsContainer));
+                }
+            }
+
             SceneData sceneData = new SceneData {
-                walls = SaveUtils.CreateCoverDatas(this.coverSettingsByFaces),
+                walls   = SaveUtils.CreateCoverDatas(this.coverSettingsByFaces),
                 grounds = SaveUtils.CreateCoverDatas(this.coverSettingsByGround),
-                buckets = GetComponentsInChildren<PaintBucket>().ToList().Where(x => x.ApartmentController == this).Select(SaveUtils.CreateBucketData).ToArray(),
-                props = GetComponentsInChildren<Props>().ToList()
-                    .Where(props => props.ApartmentController == this && defaultPropsTypes.Contains(props.GetType()))
-                    .Select(SaveUtils.CreateDefaultData).ToArray()
+                buckets = buckets.ToArray(),
+                props   = props.ToArray()
             };
 
             return sceneData;

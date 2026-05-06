@@ -1,5 +1,6 @@
 using Mirror;
 using Sim;
+using Sim.Building;
 using Sim.Scriptables;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ using UnityEngine;
 public static class PropInteractionRouter {
     public static void Route(NetworkConnectionToClient conn, C2S_PropInteraction msg) {
         switch (msg.Type) {
+            case PropType.Generic:      HandleGeneric     (conn, msg); break;
             case PropType.Seat:         HandleSeat        (conn, msg); break;
             case PropType.PaintBucket:  HandlePaintBucket (conn, msg); break;
             case PropType.Dispenser:    HandleDispenser   (conn, msg); break;
@@ -25,6 +27,32 @@ public static class PropInteractionRouter {
             default:
                 Debug.LogWarning($"[PropInteractionRouter] Unhandled PropType={msg.Type} from conn={conn.connectionId}");
                 break;
+        }
+    }
+
+    // ── Generic ───────────────────────────────────────────────────────────────
+
+    private static void HandleGeneric(NetworkConnectionToClient conn, C2S_PropInteraction msg) {
+        if (!ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out var state)) {
+            Debug.LogWarning($"[PropInteractionRouter] Generic prop {msg.PropId} not found in room '{msg.RoomId}'");
+            return;
+        }
+
+        if (GenericPropInteraction.IsBuildRequest(msg.Payload)) {
+            PropStateHeader header = PropStateHeader.ReadFrom(state.Payload);
+            if (header.IsBuilt) return; // already built
+
+            // Update isBuilt in the header and broadcast new state to the room
+            header = new PropStateHeader { IsBuilt = true, PresetId = header.PresetId };
+            byte[] updatedPayload = state.Payload.Length >= PropStateHeader.ByteSize
+                ? (byte[])state.Payload.Clone()
+                : new byte[PropStateHeader.ByteSize];
+            header.WriteTo(updatedPayload, 0);
+
+            ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, updatedPayload);
+
+            // Trigger apartment save server-side (find ApartmentController by room)
+            TriggerApartmentSave(msg.RoomId);
         }
     }
 
@@ -40,14 +68,123 @@ public static class PropInteractionRouter {
         uint      sender  = conn.identity.netId;
 
         if (SeatInteraction.IsRevokeRequest(msg.Payload)) {
-            if (current.OccupantNetId != sender) return;
-            ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId,
-                new SeatState { Header = current.Header, OccupantNetId = 0 }.Serialize());
+            bool changed = ClearOccupant(current.SeatOccupants, sender);
+            if (ClearOccupant(current.CouchOccupants, sender)) {
+                changed = true;
+                SetPlayerState(sender, PlayerState.IDLE);
+            }
+            if (changed)
+                ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, current.Serialize());
+
         } else if (SeatInteraction.IsSitRequest(msg.Payload)) {
-            if (current.IsOccupied) return;
-            ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId,
-                new SeatState { Header = current.Header, OccupantNetId = sender }.Serialize());
+            if (current.SeatOccupants == null) return;
+            if (System.Array.Exists(current.SeatOccupants, id => id == sender)) return; // already seated
+            int idx = System.Array.IndexOf(current.SeatOccupants, 0u);
+            if (idx < 0) return; // no free slot
+            current.SeatOccupants[idx] = sender;
+            ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, current.Serialize());
+
+        } else if (SeatInteraction.IsCouchRequest(msg.Payload)) {
+            if (current.CouchOccupants == null) return;
+            if (System.Array.Exists(current.CouchOccupants, id => id == sender)) return;
+            int idx = System.Array.IndexOf(current.CouchOccupants, 0u);
+            if (idx < 0) return;
+            current.CouchOccupants[idx] = sender;
+            SetPlayerState(sender, PlayerState.SLEEPING);
+            ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, current.Serialize());
         }
+    }
+
+    /// <summary>
+    /// Frees every seat/couch slot held by <paramref name="netId"/> in the given room.
+    /// Called on disconnect.
+    /// </summary>
+    public static void ReleaseSeatsByPlayer(string roomId, uint netId) {
+        foreach (ServerPropState state in ServerPropManager.Instance.GetRoomStates(roomId)) {
+            if (state.Type != PropType.Seat) continue;
+            SeatState current = SeatState.Deserialize(state.Payload);
+            bool changed = ClearOccupant(current.SeatOccupants, netId)
+                        | ClearOccupant(current.CouchOccupants, netId);
+            if (changed)
+                ServerPropManager.Instance.UpdatePropState(roomId, state.PropId, current.Serialize());
+        }
+    }
+
+    // ── Seat helpers ──────────────────────────────────────────────────────────
+
+    private static bool ClearOccupant(uint[] slots, uint netId) {
+        if (slots == null) return false;
+        bool changed = false;
+        for (int i = 0; i < slots.Length; i++) {
+            if (slots[i] == netId) { slots[i] = 0; changed = true; }
+        }
+        return changed;
+    }
+
+    private static void SetPlayerState(uint netId, PlayerState newState) {
+        if (Mirror.NetworkServer.spawned.TryGetValue(netId, out var ni)) {
+            PlayerController pc = ni.GetComponent<PlayerController>();
+            if (pc != null) pc.PlayerState = newState;
+        }
+    }
+
+    public static ApartmentController FindApartmentByRoom(string roomId) {
+        foreach (ApartmentController apt in UnityEngine.Object.FindObjectsByType<ApartmentController>(UnityEngine.FindObjectsSortMode.None)) {
+            if (apt.RoomId == roomId) return apt;
+        }
+        return null;
+    }
+
+    private static void TriggerApartmentSave(string roomId) {
+        ApartmentController apt = FindApartmentByRoom(roomId);
+        if (apt != null) apt.StartCoroutine(apt.Save());
+    }
+
+    // ── Build / Edit / Remove handlers (apartment build mode) ─────────────────
+
+    public static void HandleBuildProp(NetworkConnectionToClient conn, C2S_BuildProp msg) {
+        ApartmentController apt = FindApartmentByRoom(msg.RoomId);
+        if (apt == null) {
+            Debug.LogWarning($"[PropInteractionRouter] BuildProp: apartment not found for room '{msg.RoomId}'");
+            conn.Send(new S2C_BuildAck { Success = false });
+            return;
+        }
+        // Permission: only the tenant can build
+        PlayerController pc = conn.identity?.GetComponent<PlayerController>();
+        if (pc?.CharacterData == null || !apt.IsTenant(pc.CharacterData)) {
+            Debug.LogWarning($"[PropInteractionRouter] BuildProp denied: conn={conn.connectionId} not tenant of '{msg.RoomId}'");
+            conn.Send(new S2C_BuildAck { Success = false });
+            return;
+        }
+        PropInteractionDispatcher.Instance?.BuildProp(conn, msg, apt);
+    }
+
+    public static void HandleEditProp(NetworkConnectionToClient conn, C2S_EditProp msg) {
+        ApartmentController apt = FindApartmentByRoom(msg.RoomId);
+        if (apt == null) return;
+
+        PlayerController pc = conn.identity?.GetComponent<PlayerController>();
+        if (pc?.CharacterData == null || !apt.IsTenant(pc.CharacterData)) {
+            Debug.LogWarning($"[PropInteractionRouter] EditProp denied: conn={conn.connectionId}");
+            return;
+        }
+
+        ServerPropManager.Instance.UpdatePropTransform(msg.RoomId, msg.PropId, msg.Position, msg.Rotation);
+        apt.StartCoroutine(apt.Save());
+    }
+
+    public static void HandleRemoveProp(NetworkConnectionToClient conn, C2S_RemoveProp msg) {
+        ApartmentController apt = FindApartmentByRoom(msg.RoomId);
+        if (apt == null) return;
+
+        PlayerController pc = conn.identity?.GetComponent<PlayerController>();
+        if (pc?.CharacterData == null || !apt.IsTenant(pc.CharacterData)) {
+            Debug.LogWarning($"[PropInteractionRouter] RemoveProp denied: conn={conn.connectionId}");
+            return;
+        }
+
+        ServerPropManager.Instance.RemoveProp(msg.RoomId, msg.PropId);
+        apt.StartCoroutine(apt.Save());
     }
 
     // ── PaintBucket ───────────────────────────────────────────────────────────
@@ -80,8 +217,6 @@ public static class PropInteractionRouter {
         int itemId = DispenserInteraction.GetItemId(msg.Payload);
         if (itemId < 0) return;
 
-        // Récupère la configuration du distributeur depuis la base de données
-        // Le prefabId du state est l'ID string qui mappe sur le PropsConfig
         ItemConfig itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == itemId);
         if (itemConfig == null) {
             Debug.LogWarning($"[PropInteractionRouter] Item {itemId} not found in database");
@@ -126,13 +261,4 @@ public static class PropInteractionRouter {
         PropInteractionDispatcher.Instance?.OpenDeliveryBox(conn, msg.PropId, msg.RoomId);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private static int ParseConfigId(string prefabId) {
-        // Convention : prefabId = "dispenser_{configId}" ou directement l'ID en string
-        if (int.TryParse(prefabId, out int id)) return id;
-        var parts = prefabId.Split('_');
-        if (parts.Length > 1 && int.TryParse(parts[parts.Length - 1], out int tail)) return tail;
-        return -1;
-    }
 }

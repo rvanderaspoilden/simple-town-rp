@@ -54,52 +54,79 @@ public struct GenericPropState {
 }
 
 // ─── Door ─────────────────────────────────────────────────────────────────────
-// Payload : header(5) + isOpen(1) = 6 bytes
+// Payload : header(5) + isOpen(1) + lockState(1) + doorNumber(4) = 11 bytes
+// LockState (Sim.Building.DoorLockState) : 0 = LOCKED, 1 = UNLOCKED
+// DoorNumber : 0 pour les portes intérieures ; numéro affiché pour les portes d'entrée
 
 public struct DoorState {
-    public PropStateHeader Header;
-    public bool            IsOpen;
+    public PropStateHeader         Header;
+    public bool                    IsOpen;
+    public Sim.Building.DoorLockState LockState;
+    public int                     DoorNumber;
 
     public byte[] Serialize() {
-        byte[] buf = new byte[PropStateHeader.ByteSize + 1];
+        byte[] buf = new byte[PropStateHeader.ByteSize + 1 + 1 + 4];
         Header.WriteTo(buf, 0);
-        buf[PropStateHeader.ByteSize] = IsOpen ? (byte)1 : (byte)0;
+        int off = PropStateHeader.ByteSize;
+        buf[off++] = IsOpen ? (byte)1 : (byte)0;
+        buf[off++] = (byte)LockState;
+        BitConverter.GetBytes(DoorNumber).CopyTo(buf, off);
         return buf;
     }
 
     public static DoorState Deserialize(byte[] data) {
+        if (data == null || data.Length < PropStateHeader.ByteSize + 1) {
+            return new DoorState { Header = PropStateHeader.Default };
+        }
         int off = PropStateHeader.ByteSize;
+        bool                              isOpen     = data[off++] != 0;
+        Sim.Building.DoorLockState lockState  = data.Length > off ? (Sim.Building.DoorLockState)data[off++] : Sim.Building.DoorLockState.UNLOCKED;
+        int                               doorNumber = data.Length >= off + 4 ? BitConverter.ToInt32(data, off) : 0;
         return new DoorState {
-            Header = PropStateHeader.ReadFrom(data, 0),
-            IsOpen = data != null && data.Length > off && data[off] != 0
+            Header     = PropStateHeader.ReadFrom(data, 0),
+            IsOpen     = isOpen,
+            LockState  = lockState,
+            DoorNumber = doorNumber
         };
     }
 }
 
 // ─── Seat ─────────────────────────────────────────────────────────────────────
-// Payload : header(5) + occupantNetId(4) = 9 bytes
-// OccupantNetId == 0 → siège libre
+// Payload : header(5) + seatCount(1) + [seatNetId(4) × N] + couchCount(1) + [couchNetId(4) × M]
+// netId == 0 → slot libre
 
 public struct SeatState {
     public PropStateHeader Header;
-    public uint            OccupantNetId;
-
-    public bool IsOccupied => OccupantNetId != 0;
+    public uint[]          SeatOccupants;    // one entry per seat slot, 0 = empty
+    public uint[]          CouchOccupants;   // one entry per couch slot, 0 = empty
 
     public byte[] Serialize() {
-        byte[] buf = new byte[PropStateHeader.ByteSize + 4];
-        Header.WriteTo(buf, 0);
-        BitConverter.GetBytes(OccupantNetId).CopyTo(buf, PropStateHeader.ByteSize);
+        int n   = SeatOccupants?.Length  ?? 0;
+        int m   = CouchOccupants?.Length ?? 0;
+        byte[] buf = new byte[PropStateHeader.ByteSize + 1 + 4 * n + 1 + 4 * m];
+        int off = 0;
+        Header.WriteTo(buf, off); off += PropStateHeader.ByteSize;
+        buf[off++] = (byte)n;
+        for (int i = 0; i < n; i++) { BitConverter.GetBytes(SeatOccupants[i]).CopyTo(buf, off);  off += 4; }
+        buf[off++] = (byte)m;
+        for (int i = 0; i < m; i++) { BitConverter.GetBytes(CouchOccupants[i]).CopyTo(buf, off); off += 4; }
         return buf;
     }
 
     public static SeatState Deserialize(byte[] data) {
-        int off = PropStateHeader.ByteSize;
-        return new SeatState {
-            Header        = PropStateHeader.ReadFrom(data, 0),
-            OccupantNetId = (data != null && data.Length >= off + 4)
-                ? BitConverter.ToUInt32(data, off) : 0u
-        };
+        int minLen = PropStateHeader.ByteSize + 2;
+        if (data == null || data.Length < minLen)
+            return new SeatState { Header = PropStateHeader.Default, SeatOccupants = System.Array.Empty<uint>(), CouchOccupants = System.Array.Empty<uint>() };
+
+        int off = 0;
+        PropStateHeader header = PropStateHeader.ReadFrom(data, off); off += PropStateHeader.ByteSize;
+        int n = data[off++];
+        uint[] seats = new uint[n];
+        for (int i = 0; i < n; i++) { seats[i] = BitConverter.ToUInt32(data, off); off += 4; }
+        int m = (off < data.Length) ? data[off++] : 0;
+        uint[] couches = new uint[m];
+        for (int i = 0; i < m; i++) { couches[i] = BitConverter.ToUInt32(data, off); off += 4; }
+        return new SeatState { Header = header, SeatOccupants = seats, CouchOccupants = couches };
     }
 }
 
@@ -186,12 +213,23 @@ public struct DispenserState {
 
 // ─── Payloads d'interaction C2S ───────────────────────────────────────────────
 
+// ─── Generic prop interactions ────────────────────────────────────────────────
+// PropType.Generic avec les payloads suivants :
+//   0 = BUILD (le joueur construit un meuble non encore posé)
+
+public static class GenericPropInteraction {
+    public static readonly byte[] BuildRequest = { 0 };
+    public static bool IsBuildRequest(byte[] d) => d != null && d.Length >= 1 && d[0] == 0;
+}
+
 public static class SeatInteraction {
     public static readonly byte[] SitRequest    = { 0 };
     public static readonly byte[] RevokeRequest = { 1 };
+    public static readonly byte[] CouchRequest  = { 2 };
 
-    public static bool IsSitRequest   (byte[] data) => data != null && data.Length >= 1 && data[0] == 0;
-    public static bool IsRevokeRequest(byte[] data) => data != null && data.Length >= 1 && data[0] == 1;
+    public static bool IsSitRequest   (byte[] d) => d != null && d.Length >= 1 && d[0] == 0;
+    public static bool IsRevokeRequest(byte[] d) => d != null && d.Length >= 1 && d[0] == 1;
+    public static bool IsCouchRequest (byte[] d) => d != null && d.Length >= 1 && d[0] == 2;
 }
 
 /// <summary>

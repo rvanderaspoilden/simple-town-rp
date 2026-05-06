@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Interaction;
 using Sim.Building;
 using Sim.Enums;
@@ -32,6 +32,18 @@ namespace Sim.Utils {
             int layerValue = (1 << 12);
             if (props.IsGroundProps()) {
                 layerValue = layerValue | (props.GetConfiguration().IsPosableOnProps() ? (1 << 9 | 1 << 16) : (1 << 9)); // Ground + SuperPosable layers
+            }
+
+            return layerValue;
+        }
+
+        /**
+         * Overload for new-system props (PropBehaviourBase)
+         */
+        public static int GetLayerMaskSurfacesToPose(PropBehaviourBase behaviour) {
+            int layerValue = (1 << 12);
+            if (behaviour.IsGroundProps()) {
+                layerValue = layerValue | (behaviour.GetConfiguration().IsPosableOnProps() ? (1 << 9 | 1 << 16) : (1 << 9)); // Ground + SuperPosable layers
             }
 
             return layerValue;
