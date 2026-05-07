@@ -21,6 +21,43 @@ public class SeatBehaviour : PropBehaviourBase, ISeatBehavior {
     public int SeatSlotCount  => seatTransforms?.Length ?? 0;
     public int CouchSlotCount => couchTransforms?.Length ?? 0;
 
+    // Accès côté serveur (NPC IA) pour snapper sur le bon emplacement.
+    public Transform[] SeatTransforms  => seatTransforms;
+    public Transform[] CouchTransforms => couchTransforms;
+
+    // ── Registre global propId → SeatBehaviour ──────────────────────────────────
+    // Permet à SeatService (serveur) de retrouver l'instance d'un siège
+    // sans FindObjectsByType. Indexé par propId (assigné via PropIdentity).
+    private static readonly System.Collections.Generic.Dictionary<int, SeatBehaviour> _byPropId
+        = new System.Collections.Generic.Dictionary<int, SeatBehaviour>();
+
+    public static bool TryGet(int propId, out SeatBehaviour behaviour) =>
+        _byPropId.TryGetValue(propId, out behaviour);
+
+    public static System.Collections.Generic.IEnumerable<SeatBehaviour> All => _byPropId.Values;
+
+    private int _registeredPropId = -1;
+
+    /// <summary>
+    /// Enregistre le siège dans le registre global. Idempotent et tolérant à un
+    /// PropId pas encore assigné (cas runtime spawn : PropIdentity.Assign est
+    /// appelé après Awake/OnEnable).
+    /// </summary>
+    private void RegisterIfReady() {
+        var id = GetComponent<PropIdentity>();
+        if (id == null || id.PropId <= 0) return;
+        if (_registeredPropId == id.PropId) return;
+        if (_registeredPropId > 0) _byPropId.Remove(_registeredPropId);
+        _byPropId[id.PropId] = this;
+        _registeredPropId = id.PropId;
+    }
+
+    private void OnEnable()  => RegisterIfReady();
+    private void OnDisable() {
+        if (_registeredPropId > 0) _byPropId.Remove(_registeredPropId);
+        _registeredPropId = -1;
+    }
+
     private SeatState _state;
 
     protected override void Awake() {
@@ -35,6 +72,7 @@ public class SeatBehaviour : PropBehaviourBase, ISeatBehavior {
 
     public override void ApplyState(PropType type, byte[] payload) {
         base.ApplyState(type, payload);
+        RegisterIfReady(); // PropIdentity peut avoir été assigné après Awake
 
         SeatState incoming = SeatState.Deserialize(payload);
         uint localNetId = PlayerController.Local?.netId ?? 0;

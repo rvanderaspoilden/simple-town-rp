@@ -61,38 +61,40 @@ public static class PropInteractionRouter {
     // ── Seat ──────────────────────────────────────────────────────────────────
 
     private static void HandleSeat(NetworkConnectionToClient conn, C2S_PropInteraction msg) {
-        if (!ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out var state)) {
-            Debug.LogWarning($"[PropInteractionRouter] Seat {msg.PropId} not found in room '{msg.RoomId}'");
+        // Le joueur est un ICharacterEntity comme un autre — délégation à SeatService.
+        // Le couch reste géré inline ici (pas de pendant NPC pour le moment).
+        ICharacterEntity entity = conn.identity != null
+            ? conn.identity.GetComponent<ICharacterEntity>()
+            : null;
+        if (entity == null) {
+            Debug.LogWarning($"[PropInteractionRouter] Seat: connection {conn.connectionId} has no ICharacterEntity");
             return;
         }
 
-        SeatState current = SeatState.Deserialize(state.Payload);
-        uint      sender  = conn.identity.netId;
-
         if (SeatInteraction.IsRevokeRequest(msg.Payload)) {
-            bool changed = ClearOccupant(current.SeatOccupants, sender);
-            if (ClearOccupant(current.CouchOccupants, sender)) {
-                changed = true;
-                SetPlayerState(sender, PlayerState.IDLE);
+            // Couch : on ramène le PlayerState à IDLE (pas géré par SeatService).
+            if (ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out var s2)) {
+                SeatState cur = SeatState.Deserialize(s2.Payload);
+                if (ClearOccupant(cur.CouchOccupants, entity.OccupantId)) {
+                    SetPlayerState(entity.OccupantId, PlayerState.IDLE);
+                    ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, cur.Serialize());
+                }
             }
-            if (changed)
-                ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, current.Serialize());
+            SeatService.ReleaseSeat(entity, msg.RoomId, msg.PropId);
 
         } else if (SeatInteraction.IsSitRequest(msg.Payload)) {
-            if (current.SeatOccupants == null) return;
-            if (System.Array.Exists(current.SeatOccupants, id => id == sender)) return; // already seated
-            int idx = System.Array.IndexOf(current.SeatOccupants, 0u);
-            if (idx < 0) return; // no free slot
-            current.SeatOccupants[idx] = sender;
-            ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, current.Serialize());
+            SeatService.TryReserveSeat(entity, msg.RoomId, msg.PropId, out _);
 
         } else if (SeatInteraction.IsCouchRequest(msg.Payload)) {
+            // Couch reste inline (pas d'API dédiée pour l'instant).
+            if (!ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out var state)) return;
+            SeatState current = SeatState.Deserialize(state.Payload);
             if (current.CouchOccupants == null) return;
-            if (System.Array.Exists(current.CouchOccupants, id => id == sender)) return;
+            if (System.Array.Exists(current.CouchOccupants, id => id == entity.OccupantId)) return;
             int idx = System.Array.IndexOf(current.CouchOccupants, 0u);
             if (idx < 0) return;
-            current.CouchOccupants[idx] = sender;
-            SetPlayerState(sender, PlayerState.SLEEPING);
+            current.CouchOccupants[idx] = entity.OccupantId;
+            SetPlayerState(entity.OccupantId, PlayerState.SLEEPING);
             ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, current.Serialize());
         }
     }

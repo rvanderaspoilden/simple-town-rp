@@ -19,7 +19,15 @@ using Action = Sim.Interactables.Action;
 using Random = UnityEngine.Random;
 
 namespace Sim {
-    public class PlayerController : NetworkBehaviour {
+    public class PlayerController : NetworkBehaviour, ICharacterEntity {
+
+        // ── ICharacterEntity ─────────────────────────────────────────────────
+        // Le joueur utilise directement son netId comme OccupantId (le bit 31
+        // n'est pas mis en pratique ; cf. CharacterEntityIds).
+        public uint      OccupantId => netId;
+        public bool      IsNpc      => false;
+        public Transform Transform  => transform;
+
         [Header("Settings")]
         [SerializeField]
         private Transform headTargetForCamera;

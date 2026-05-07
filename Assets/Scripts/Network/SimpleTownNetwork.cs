@@ -235,6 +235,7 @@ public class SimpleTownNetwork : NetworkManager
         GameLogger.Network.Debug("HandlersRegistered {Count} handlers", 4);
 
         PropSystemBootstrap.OnServerStart();
+        NpcSystemBootstrap.OnServerStart();
 
         StartCoroutine(this.RetrieveCityData());
         GameLogger.Network.Info("ServerStarted {Active}", NetworkServer.active);
@@ -257,6 +258,7 @@ public class SimpleTownNetwork : NetworkManager
         ClientLogger.NetworkDebug("HandlersRegistered {Count} handlers", 7);
 
         PropSystemBootstrap.OnClientStart();
+        NpcSystemBootstrap.OnClientStart();
         ClientLogger.Network("ClientStarted {Active}", NetworkClient.active);
     }
 
@@ -279,6 +281,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkServer.UnregisterHandler<TeleportMessage>();
         NetworkServer.UnregisterHandler<SpawnItemMessage>();
 
+        NpcSystemBootstrap.OnServerStop();
         PropSystemBootstrap.OnServerStop();
 
         this.UpdateTimestamp();
@@ -300,6 +303,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.UnregisterHandler<S2C_HallDespawn>();
         NetworkClient.UnregisterHandler<S2C_ApartmentSpawn>();
 
+        NpcSystemBootstrap.OnClientStop();
         PropSystemBootstrap.OnClientStop();
 
         SceneManager.LoadScene("Main Menu");

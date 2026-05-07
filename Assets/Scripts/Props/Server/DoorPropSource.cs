@@ -33,11 +33,11 @@ public class DoorPropSource : ServerPropSource {
         }.Serialize();
     }
 
-    private readonly List<Collider> _occupants = new List<Collider>();
+    private readonly List<Collider> _occupants = new();
 
     private void OnTriggerEnter(Collider other) {
         if (!NetworkServer.active) return;
-        if (!IsPlayer(other)) return;
+        if (!IsCharacterOrNpc(other)) return;
         if (!_occupants.Contains(other)) _occupants.Add(other);
         Sync();
     }
@@ -58,6 +58,6 @@ public class DoorPropSource : ServerPropSource {
         ServerPropManager.Instance.UpdatePropState(RoomId, PropId, current.Serialize());
     }
 
-    private static bool IsPlayer(Collider c) =>
-        c.gameObject.layer == LayerMask.NameToLayer("Player");
+    private static bool IsCharacterOrNpc(Collider c) =>
+        c.gameObject.layer == LayerMask.NameToLayer("Player") || c.gameObject.layer == LayerMask.NameToLayer("NPC");
 }

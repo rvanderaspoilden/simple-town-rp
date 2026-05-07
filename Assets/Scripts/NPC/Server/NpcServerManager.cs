@@ -1,0 +1,233 @@
+using System;
+using System.Collections.Generic;
+using Mirror;
+using Sim.Logging;
+using UnityEngine;
+
+/// <summary>
+/// Manager autoritaire des NPC côté serveur.
+///
+/// • Plain C# singleton (pas de MonoBehaviour, pas de NetworkBehaviour).
+/// • Mirror est utilisé UNIQUEMENT comme transport — pas de NetworkIdentity,
+///   pas de NetworkTransform, pas de SyncVar.
+/// • Broadcast scoped par room via PlayerRoomTracker (cohérent avec
+///   ServerPropManager).
+///
+/// Lifecycle :
+///   - Register(roomId, prefabId, position, rotation)  → assigne npcId, broadcast Spawn
+///   - PushTransform(npcId, position, rotation, velocity, animState)
+///         → appelé par NpcAIController dans son Update
+///         → throttle interne : on agrège, le tick configurable décide quand envoyer
+///   - Unregister(npcId) → broadcast Destroy
+///
+/// La cadence d'envoi (UpdatesPerSecond) est configurable. À chaque tick,
+/// les NPC qui ont franchi un seuil de déplacement / rotation OU dont l'état
+/// d'animation a changé sont broadcastés.
+/// </summary>
+public class NpcServerManager {
+    private static NpcServerManager _instance;
+    public static NpcServerManager Instance => _instance ??= new NpcServerManager();
+
+    // ── Configuration réseau ──────────────────────────────────────────────────
+    /// <summary>Fréquence d'envoi des updates (Hz).</summary>
+    public float UpdatesPerSecond = 10f;
+
+    /// <summary>Distance minimale (mètres) avant de renvoyer une position.</summary>
+    public float PositionThreshold = 0.05f;
+
+    /// <summary>Angle minimal (degrés) avant de renvoyer une rotation.</summary>
+    public float RotationThresholdDeg = 2f;
+
+    /// <summary>Si false, la rotation n'est jamais incluse dans les deltas.</summary>
+    public bool SyncRotation = true;
+
+    // ── Stockage ──────────────────────────────────────────────────────────────
+    private readonly Dictionary<int, NpcServerState>          _npcs        = new Dictionary<int, NpcServerState>();
+    private readonly Dictionary<string, HashSet<int>>         _byRoom      = new Dictionary<string, HashSet<int>>();
+
+    private int   _nextId       = 1;
+    private float _accumulator  = 0f;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    public void Reset() {
+        int count = _npcs.Count;
+        _npcs.Clear();
+        _byRoom.Clear();
+        _nextId = 1;
+        _accumulator = 0f;
+        GameLogger.Network.Info("NpcServerManagerReset {Count}", count);
+    }
+
+    /// <summary>
+    /// Enregistre un nouveau NPC dans une room et broadcast son spawn aux clients
+    /// déjà présents dans cette room. Retourne le npcId attribué.
+    /// </summary>
+    public int Register(string roomId, string prefabId, Vector3 position, Quaternion rotation,
+                         string styleJson = null, NpcIdentity identity = default) {
+        if (!NetworkServer.active) {
+            GameLogger.Network.Warning("NpcRegisterNotServer {PrefabId} {RoomId}", prefabId, roomId);
+            return -1;
+        }
+        if (string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(prefabId)) {
+            GameLogger.Network.Warning("NpcRegisterInvalidArgs {PrefabId} {RoomId}", prefabId, roomId);
+            return -1;
+        }
+
+        int id = _nextId++;
+        var state = new NpcServerState {
+            NpcId          = id,
+            PrefabId       = prefabId,
+            RoomId         = roomId,
+            StyleJson      = styleJson ?? string.Empty,
+            Identity       = identity,
+            Position       = position,
+            Rotation       = rotation,
+            Velocity       = Vector3.zero,
+            AnimationState = NpcAnimationState.Idle,
+
+            LastSentPosition       = position,
+            LastSentRotation       = rotation,
+            LastSentAnimationState = NpcAnimationState.Idle,
+            EverSent               = false
+        };
+        _npcs[id] = state;
+
+        if (!_byRoom.TryGetValue(roomId, out var set)) {
+            set = new HashSet<int>();
+            _byRoom[roomId] = set;
+        }
+        set.Add(id);
+
+        BroadcastToRoom(roomId, new S2C_SpawnNpc {
+            NpcId     = id,
+            PrefabId  = prefabId,
+            RoomId    = roomId,
+            Position  = position,
+            Rotation  = rotation,
+            StyleJson = state.StyleJson,
+            FirstName = identity.FirstName ?? string.Empty,
+            LastName  = identity.LastName  ?? string.Empty,
+            Mood      = (byte)identity.Mood
+        });
+
+        GameLogger.Network.Info("NpcRegistered {NpcId} {PrefabId} {RoomId} {Position}",
+            id, prefabId, roomId, position);
+        return id;
+    }
+
+    /// <summary>Met à jour le state pur (pas de broadcast immédiat — le tick décide).</summary>
+    public void PushTransform(int npcId, Vector3 position, Quaternion rotation,
+                              Vector3 velocity, NpcAnimationState animState) {
+        if (!_npcs.TryGetValue(npcId, out var s)) return;
+        s.Position       = position;
+        s.Rotation       = rotation;
+        s.Velocity       = velocity;
+        s.AnimationState = animState;
+    }
+
+    public void Unregister(int npcId) {
+        if (!_npcs.TryGetValue(npcId, out var s)) return;
+        _npcs.Remove(npcId);
+        if (_byRoom.TryGetValue(s.RoomId, out var set)) {
+            set.Remove(npcId);
+            if (set.Count == 0) _byRoom.Remove(s.RoomId);
+        }
+        BroadcastToRoom(s.RoomId, new S2C_DestroyNpc { NpcId = npcId, RoomId = s.RoomId });
+        GameLogger.Network.Info("NpcUnregistered {NpcId} {RoomId}", npcId, s.RoomId);
+    }
+
+    // ── Tick (appelé par NpcSystemBootstrap depuis MonoBehaviour Update) ──────
+
+    public void Tick(float deltaTime) {
+        if (UpdatesPerSecond <= 0f) return;
+        _accumulator += deltaTime;
+        float interval = 1f / UpdatesPerSecond;
+        if (_accumulator < interval) return;
+        _accumulator = 0f;
+
+        FlushUpdates();
+    }
+
+    /// <summary>Broadcast immédiat des deltas qui dépassent les seuils.</summary>
+    private void FlushUpdates() {
+        float posThreshSq = PositionThreshold * PositionThreshold;
+
+        foreach (var kv in _npcs) {
+            NpcServerState s = kv.Value;
+
+            bool posChanged  = !s.EverSent || (s.Position - s.LastSentPosition).sqrMagnitude >= posThreshSq;
+            bool rotChanged  = SyncRotation && (!s.EverSent ||
+                               Quaternion.Angle(s.Rotation, s.LastSentRotation) >= RotationThresholdDeg);
+            bool animChanged = !s.EverSent || s.AnimationState != s.LastSentAnimationState;
+
+            if (!posChanged && !rotChanged && !animChanged) continue;
+
+            BroadcastToRoom(s.RoomId, new S2C_UpdateNpcTransform {
+                NpcId          = s.NpcId,
+                RoomId         = s.RoomId,
+                Position       = s.Position,
+                Rotation       = SyncRotation ? s.Rotation : s.LastSentRotation,
+                Velocity       = s.Velocity,
+                AnimationState = s.AnimationState
+            });
+
+            s.LastSentPosition       = s.Position;
+            if (SyncRotation) s.LastSentRotation = s.Rotation;
+            s.LastSentAnimationState = s.AnimationState;
+            s.EverSent               = true;
+        }
+    }
+
+    // ── Snapshot (envoi à un client qui entre dans la room) ───────────────────
+
+    public void SendRoomSnapshot(NetworkConnectionToClient conn, string roomId) {
+        if (!_byRoom.TryGetValue(roomId, out var ids)) return;
+
+        int sent = 0;
+        foreach (int id in ids) {
+            if (!_npcs.TryGetValue(id, out var s)) continue;
+
+            conn.Send(new S2C_SpawnNpc {
+                NpcId     = s.NpcId,
+                PrefabId  = s.PrefabId,
+                RoomId    = s.RoomId,
+                Position  = s.Position,
+                Rotation  = s.Rotation,
+                StyleJson = s.StyleJson,
+                FirstName = s.Identity.FirstName ?? string.Empty,
+                LastName  = s.Identity.LastName  ?? string.Empty,
+                Mood      = (byte)s.Identity.Mood
+            });
+            // Envoie immédiatement un transform pour amorcer l'interpolation
+            // avec velocity et animationState courants.
+            conn.Send(new S2C_UpdateNpcTransform {
+                NpcId          = s.NpcId,
+                RoomId         = s.RoomId,
+                Position       = s.Position,
+                Rotation       = s.Rotation,
+                Velocity       = s.Velocity,
+                AnimationState = s.AnimationState
+            });
+            sent++;
+        }
+        GameLogger.Network.Debug("NpcSnapshotSent {ConnectionId} {RoomId} {Count}",
+            conn.connectionId, roomId, sent);
+    }
+
+    // ── Queries ───────────────────────────────────────────────────────────────
+
+    public IReadOnlyCollection<int> GetNpcIdsInRoom(string roomId) =>
+        _byRoom.TryGetValue(roomId, out var set)
+            ? (IReadOnlyCollection<int>)set
+            : Array.Empty<int>();
+
+    // ── Internal ──────────────────────────────────────────────────────────────
+
+    private static void BroadcastToRoom<T>(string roomId, T message) where T : struct, NetworkMessage {
+        var conns = PlayerRoomTracker.Instance.GetConnectionsInRoom(roomId);
+        foreach (var conn in conns) {
+            conn.Send(message);
+        }
+    }
+}

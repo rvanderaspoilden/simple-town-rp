@@ -19,6 +19,13 @@ public class PlayerRoomTracker {
     private readonly Dictionary<string, HashSet<NetworkConnectionToClient>> _roomToConns
         = new Dictionary<string, HashSet<NetworkConnectionToClient>>();
 
+    /// <summary>Fired AFTER a connection has been registered into a room.
+    /// Subscribers (e.g. NpcServerManager) can use it to push a room snapshot.</summary>
+    public static event Action<NetworkConnectionToClient, string> OnPlayerEnterRoom;
+
+    /// <summary>Fired BEFORE a connection is removed from a room.</summary>
+    public static event Action<NetworkConnectionToClient, string> OnPlayerLeaveRoom;
+
     /// <summary>Wipes all state. Call on server stop.</summary>
     public void Reset() {
         _connToRoom.Clear();
@@ -45,6 +52,8 @@ public class PlayerRoomTracker {
             _roomToConns[roomId] = set;
         }
         set.Add(conn);
+
+        OnPlayerEnterRoom?.Invoke(conn, roomId);
     }
 
     /// <summary>Removes a connection from its current room without entering another.</summary>
@@ -70,6 +79,7 @@ public class PlayerRoomTracker {
     // ── Internal ──────────────────────────────────────────────────────────────
 
     private void RemoveFromRoom(NetworkConnectionToClient conn, string roomId) {
+        OnPlayerLeaveRoom?.Invoke(conn, roomId);
         _connToRoom.Remove(conn);
         if (_roomToConns.TryGetValue(roomId, out var set)) {
             set.Remove(conn);
