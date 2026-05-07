@@ -14,8 +14,9 @@ GameObject:
   - component: {fileID: 7170792406590309696}
   - component: {fileID: 4910287927518518884}
   - component: {fileID: 7597156552802683900}
-  - component: {fileID: 3806690590309955983}
-  - component: {fileID: 4363248231917646557}
+  - component: {fileID: 5510067851413907226}
+  - component: {fileID: 3786096459047049891}
+  - component: {fileID: 1105492343954088490}
   m_Layer: 10
   m_Name: Elevator
   m_TagString: Untagged
@@ -153,7 +154,7 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -1.5000001, y: 1.105, z: -0.05}
   m_TimeToStationary: 0.5
---- !u!114 &3806690590309955983
+--- !u!114 &5510067851413907226
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -162,15 +163,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1198565143842987083}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  _assetId: 2189182066
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
---- !u!114 &4363248231917646557
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &3786096459047049891
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -179,15 +177,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 1198565143842987083}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d5aa8bcc00caab4c8c550ed30da293d, type: 3}
+  m_Script: {fileID: 11500000, guid: c3ad52b15434d0145b0c722bec5bb343, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
+  m_EditorClassIdentifier: Assembly-CSharp::TeleporterBehaviour
   configuration: {fileID: 11400000, guid: ef9881e59425baa42b6d1ba3fa89becb, type: 2}
   defaultPresetId: -1
   spawnTransform: {fileID: 7324135557444786934}
+--- !u!114 &1105492343954088490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1198565143842987083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb7a942e3e5d6aa4991d8cfeb9b7da6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TeleporterPropSource
 --- !u!1 &7012034732280398628
 GameObject:
   m_ObjectHideFlags: 0

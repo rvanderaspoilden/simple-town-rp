@@ -86,6 +86,53 @@ public class PropInteractionDispatcher : MonoBehaviour {
         ServerPropManager.Instance.UpdatePropState(roomId, propId, newPayload);
     }
 
+    // ── Teleporter ────────────────────────────────────────────────────────────
+
+    public void HandleTeleporterUse(NetworkConnectionToClient conn, int floorDestination) {
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (string.IsNullOrEmpty(roomId)) {
+            Debug.LogWarning($"[PropInteractionDispatcher] TeleporterUse: conn {conn.connectionId} has no tracked room");
+            return;
+        }
+
+        if (!TeleporterBehaviour.TryGetByRoom(roomId, out TeleporterBehaviour teleporter)) {
+            Debug.LogWarning($"[PropInteractionDispatcher] TeleporterUse: no teleporter registered for room '{roomId}'");
+            return;
+        }
+
+        teleporter.ServerHandleUse(floorDestination, conn);
+    }
+
+    // ── Apartment covers / save ───────────────────────────────────────────────
+    // Apartments share their room with the rest of the floor, so we resolve the
+    // target apartment via the connection (only the tenant can save / paint covers).
+
+    public void HandleSaveApartment(NetworkConnectionToClient conn, string roomId) {
+        if (!ServerApartmentRegistry.Instance.TryGetByConn(conn, out ApartmentController apt)) {
+            Debug.LogWarning($"[PropInteractionDispatcher] SaveApartment: conn {conn.connectionId} owns no apartment");
+            return;
+        }
+        StartCoroutine(apt.Save());
+    }
+
+    public void HandleApplyWallCovers(NetworkConnectionToClient conn, string roomId, byte[] coversJson) {
+        if (!ServerApartmentRegistry.Instance.TryGetByConn(conn, out ApartmentController apt)) {
+            Debug.LogWarning($"[PropInteractionDispatcher] ApplyWallCovers: conn {conn.connectionId} owns no apartment");
+            return;
+        }
+        apt.ServerApplyWallCovers(CoverDataWrapper.Deserialize(coversJson));
+        StartCoroutine(apt.Save());
+    }
+
+    public void HandleApplyGroundCovers(NetworkConnectionToClient conn, string roomId, byte[] coversJson) {
+        if (!ServerApartmentRegistry.Instance.TryGetByConn(conn, out ApartmentController apt)) {
+            Debug.LogWarning($"[PropInteractionDispatcher] ApplyGroundCovers: conn {conn.connectionId} owns no apartment");
+            return;
+        }
+        apt.ServerApplyGroundCovers(CoverDataWrapper.Deserialize(coversJson));
+        StartCoroutine(apt.Save());
+    }
+
     // ── Build prop (delivery → spawn → save) ──────────────────────────────────
 
     public void BuildProp(NetworkConnectionToClient conn, C2S_BuildProp msg, ApartmentController apt) {
@@ -135,6 +182,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
             conn.Send(new S2C_BuildAck { Success = false });
             yield break;
         }
+        apt.TrackProp(newPropId);
 
         // 4. Reparent server-side instance under apartment props container (for hierarchy queries)
         GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(newPropId);

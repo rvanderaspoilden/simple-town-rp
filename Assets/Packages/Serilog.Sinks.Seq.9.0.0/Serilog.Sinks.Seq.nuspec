@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Serilog.Sinks.Seq</id>
+    <version>9.0.0</version>
+    <authors>Serilog Contributors,Serilog.Sinks.Seq Contributors,Datalust Pty Ltd</authors>
+    <license type="expression">Apache-2.0</license>
+    <licenseUrl>https://licenses.nuget.org/Apache-2.0</licenseUrl>
+    <icon>icon.png</icon>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/serilog/serilog-sinks-seq</projectUrl>
+    <description>A Serilog sink that writes events to Seq using newline-delimited JSON and HTTP/HTTPS.</description>
+    <copyright>Copyright © Serilog Contributors, Serilog.Sinks.Seq Contributors, Datalust Pty Ltd.</copyright>
+    <tags>serilog seq</tags>
+    <repository type="git" url="https://github.com/datalust/serilog-sinks-seq" branch="refs/heads/main" commit="70607272d94d423070e49b5b6f1250c734e322ec" />
+    <dependencies>
+      <group targetFramework="net6.0">
+        <dependency id="Serilog" version="4.2.0" exclude="Build,Analyzers" />
+        <dependency id="Serilog.Sinks.File" version="6.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="Serilog" version="4.2.0" exclude="Build,Analyzers" />
+        <dependency id="Serilog.Sinks.File" version="6.0.0" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

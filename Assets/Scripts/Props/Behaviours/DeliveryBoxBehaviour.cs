@@ -55,13 +55,10 @@ public class DeliveryBoxBehaviour : PropBehaviourBase {
 
     // ── IInteractable ─────────────────────────────────────────────────────────
 
-    public override bool IsInteractable() =>
-        _deliveryCount > 0 && base.IsInteractable();
+    public override bool IsInteractable() => base.IsInteractable();
 
-    public override Action[] GetActions(bool withPriority = false) {
-        if (_deliveryCount == 0) return System.Array.Empty<Action>();
-        return base.GetActions(withPriority);
-    }
+    public override Action[] GetActions(bool withPriority = false) =>
+        base.GetActions(withPriority);
 
     // ── PropBehaviourBase ─────────────────────────────────────────────────────
 

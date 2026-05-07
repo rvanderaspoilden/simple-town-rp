@@ -135,3 +135,43 @@ public struct C2S_RemoveProp : NetworkMessage {
     public string RoomId;
     public int    PropId;
 }
+
+/// <summary>
+/// Le client demande au serveur d'utiliser l'ascenseur dans sa room courante.
+/// Pas de PropId — le serveur route via PlayerRoomTracker → TeleporterBehaviour.TryGetByRoom.
+/// </summary>
+public struct C2S_TeleporterUse : NetworkMessage {
+    public int FloorDestination;
+}
+
+/// <summary>
+/// Payload arbitraire attaché à une room (au-delà des props individuels).
+/// Broadcast à l'entrée de room et sur chaque changement via ServerPropManager.SetRoomState.
+/// </summary>
+public struct S2C_RoomState : NetworkMessage {
+    public string RoomId;
+    public byte[] Payload;
+}
+
+/// <summary>Le client demande au serveur de sauvegarder l'appartement.</summary>
+public struct C2S_SaveApartment : NetworkMessage {
+    public string RoomId;
+}
+
+/// <summary>
+/// Le client envoie de nouveaux paramètres de revêtement pour les murs.
+/// CoversJson = CoverDataWrapper.Serialize() — tableau de Sim.CoverData JSON-encodé.
+/// </summary>
+public struct C2S_ApplyWallCovers : NetworkMessage {
+    public string RoomId;
+    public byte[] CoversJson;
+}
+
+/// <summary>
+/// Le client envoie de nouveaux paramètres de revêtement pour les sols.
+/// CoversJson = CoverDataWrapper.Serialize() — tableau de Sim.CoverData JSON-encodé.
+/// </summary>
+public struct C2S_ApplyGroundCovers : NetworkMessage {
+    public string RoomId;
+    public byte[] CoversJson;
+}

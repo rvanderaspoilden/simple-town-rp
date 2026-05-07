@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -7,13 +7,14 @@ using Mirror;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
+using Sim.Scriptables;
 using Sim.Utils;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
 namespace Sim {
-    public class ApartmentController : NetworkEntity {
+    public class ApartmentController : MonoBehaviour {
         [Header("Settings")]
         [SerializeField]
         private Transform frontDoorSpawn;
@@ -52,23 +53,14 @@ namespace Sim {
         [SerializeField]
         private Home homeData;
 
-        [SyncVar(hook = nameof(OnSetAddress))]
-        [SerializeField]
-        private Address address;
-
         [SerializeField]
         private CharacterData tenant;
 
-        [SyncVar]
-        [SerializeField]
+        private string street;
+        private int doorNumber;
+        private int floorNumber;
         private string tenantId;
-        
-        [SyncVar]
-        [SerializeField]
         private Identity tenantIdentity;
-
-        [SyncVar(hook = nameof(OnSetPresetName))]
-        [SerializeField]
         private string presetName;
 
         private ApartmentPresetConfiguration currentConfiguration;
@@ -80,141 +72,192 @@ namespace Sim {
         private ApartmentState state = ApartmentState.NOT_CREATED;
 
         private bool forcePropsHidden;
-
         private bool forceWallHidden;
 
-        private readonly SyncDictionary<int, CoverSettings> coverSettingsByFaces = new SyncDictionary<int, CoverSettings>();
-
-        private readonly SyncDictionary<int, CoverSettings> coverSettingsByGround = new SyncDictionary<int, CoverSettings>();
+        private readonly Dictionary<int, CoverSettings> coverSettingsByFaces  = new Dictionary<int, CoverSettings>();
+        private readonly Dictionary<int, CoverSettings> coverSettingsByGround = new Dictionary<int, CoverSettings>();
 
         public delegate void VisibilityModeChanged(VisibilityModeEnum mode);
 
         public static event VisibilityModeChanged OnPropsVisibilityModeChanged;
-
         public static event VisibilityModeChanged OnWallVisibilityModeChanged;
 
         private void Awake() {
             this.talyahConfiguration.container.SetActive(false);
             this.ahmedConfiguration.container.SetActive(false);
             this.katarinaConfiguration.container.SetActive(false);
+
+            ClientPropManager.OnRoomStateReceived += OnRoomStateReceived;
         }
 
-        [Command(requiresAuthority = false)]
-        public void CmdSaveHome(NetworkConnectionToClient sender = null) {
-            StartCoroutine(this.Save());
-        }
+        private void OnDestroy() {
+            ClientPropManager.OnRoomStateReceived -= OnRoomStateReceived;
 
-        public override void OnStartServer() {
-            base.OnStartServer();
-
-            if (!isClient) {
-                this.roof.gameObject.SetActive(false);
+            if (NetworkServer.active) {
+                ServerApartmentRegistry.Instance.Unregister(this.ApartmentKey);
+                ServerPropManager.Instance?.RemoveApartmentState(this.RoomId, this.ApartmentKey);
+                foreach (int propId in _ownedPropIds.ToArray())
+                    ServerPropManager.Instance?.RemoveProp(this.RoomId, propId);
+                _ownedPropIds.Clear();
+                this.frontDoorPropId = 0;
+                this.deliveryBoxPropId = 0;
             }
         }
 
-        private void OnSetAddress(Address old, Address newValue) {
-            this.address = newValue;
+        // ── Server-side init ──────────────────────────────────────────────────
 
-            if (NetworkClient.spawned.ContainsKey(ParentId)) {
-                this.geographicArea.LocationText =
-                    $"{this.address.street}, Étage {NetworkClient.spawned[ParentId].GetComponent<HallController>().FloorNumber}, Porte {this.address.doorNumber}";
+        [Server]
+        public void Init(Address newAddress, HallController hallController) {
+            this.associatedHallController = hallController;
+            this.street     = newAddress.street;
+            this.doorNumber = newAddress.doorNumber;
+            this.floorNumber = hallController.FloorNumber;
+
+            if (!isActiveAndEnabled) this.roof.gameObject.SetActive(false);
+
+            byte[] frontDoorPayload = new DoorState {
+                Header     = PropStateHeader.Default,
+                IsOpen     = false,
+                LockState  = DoorLockState.LOCKED,
+                DoorNumber = newAddress.doorNumber
+            }.Serialize();
+
+            int doorPropId = ServerPropManager.Instance.SpawnProp(
+                this.RoomId,
+                this.frontDoorPrefabConfig.GetId(),
+                this.frontDoorSpawn.position,
+                this.frontDoorSpawn.rotation,
+                frontDoorPayload
+            );
+            if (doorPropId >= 0) {
+                this.frontDoorPropId = doorPropId;
+                TrackProp(doorPropId);
+                GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(doorPropId);
+                if (go != null) {
+                    go.transform.SetParent(this.propsContainer);
+                    go.transform.position = this.frontDoorSpawn.position;
+                    go.transform.rotation = this.frontDoorSpawn.rotation;
+                }
             }
+
+            ServerApartmentRegistry.Instance.Register(this.ApartmentKey, this);
+
+            StartCoroutine(RetrieveData());
         }
 
-        public Address Address => address;
+        [Server]
+        public void Regenerate() {
+            foreach (int propId in _ownedPropIds.ToArray())
+                ServerPropManager.Instance?.RemoveProp(this.RoomId, propId);
+            _ownedPropIds.Clear();
+            this.frontDoorPropId = 0;
+            this.deliveryBoxPropId = 0;
+            StartCoroutine(RetrieveData());
+        }
 
-        public Transform SpawnPosition => spawnPosition;
+        // ── Client-side init ──────────────────────────────────────────────────
 
         /// <summary>
-        /// Stable id used by the new prop system to scope props per apartment.
-        /// Format: "apt:{street}:{doorNumber}".
+        /// Called on clients (and on server-as-host) once the apartment data is known.
+        /// Sets up the visual state: preset configuration, geographic area label.
+        /// Cover data arrives later via S2C_RoomState → ApplyRoomState.
         /// </summary>
-        public string RoomId => $"apt:{address.street}:{address.doorNumber}";
+        public void ClientSetup(string streetName, int doorNum, int floorNum, string preset, HallController hall) {
+            this.street     = streetName;
+            this.doorNumber = doorNum;
+            this.floorNumber = floorNum;
+            this.associatedHallController = hall;
 
-        private void OnSetPresetName(string old, string newValue) {
-            this.presetName = newValue;
+            ApplyPresetName(preset);
+            UpdateGeographicArea();
+        }
 
-            if (this.presetName == "ahmed") {
-                this.currentConfiguration = this.ahmedConfiguration;
-            } else if (this.presetName == "talyah") {
-                this.currentConfiguration = this.talyahConfiguration;
-            } else {
-                this.currentConfiguration = this.katarinaConfiguration;
+        // ── RoomState subscription ────────────────────────────────────────────
+
+        private void OnRoomStateReceived(string roomId, byte[] payload) {
+            if (string.IsNullOrEmpty(this.street) || roomId != this.RoomId) return;
+            ApartmentRoomState state = ApartmentRoomState.Deserialize(payload);
+            // Multiple apartments share the hall room — only apply if the payload
+            // identifies this specific apartment.
+            if (state == null || state.street != this.street || state.doorNumber != this.doorNumber) return;
+            ApplyRoomState(state);
+        }
+
+        public void ApplyRoomState(ApartmentRoomState state) {
+            if (state == null) return;
+
+            if (!string.IsNullOrEmpty(state.presetName) && state.presetName != this.presetName) {
+                ApplyPresetName(state.presetName);
             }
 
-            this.currentConfiguration.container.SetActive(true);
-
-            this.coverSettingsByFaces.OnChange += OnWallSettingsChanged;
-            this.coverSettingsByGround.OnChange += OnGroundSettingsChanged;
-
-            for (int i = 0; i < this.grounds.Length; i++) {
-                if (this.coverSettingsByGround.ContainsKey(i)) {
-                    this.grounds[i].SetCoverSettings(this.coverSettingsByGround[i]);
+            if (this.currentConfiguration.walls != null) {
+                if (state.walls != null && state.walls.Length > 0) {
+                    Dictionary<int, CoverSettings> wallDict = state.walls.ToDictionary(
+                        x => x.idx,
+                        x => new CoverSettings { paintConfigId = x.paintConfigId, additionalColor = x.GetColor() }
+                    );
+                    this.currentConfiguration.walls.Setup(wallDict);
+                } else {
+                    this.currentConfiguration.walls.Setup(new Dictionary<int, CoverSettings>());
                 }
             }
 
-            this.currentConfiguration.walls.Setup(this.coverSettingsByFaces.ToDictionary(x => x.Key, x => x.Value));
-        }
-
-        public void SetPropsVisibility(VisibilityModeEnum mode) {
-            this.forcePropsHidden = mode == VisibilityModeEnum.FORCE_HIDE;
-
-            this.UpdatePropsVisibility(mode);
-        }
-
-        public void TogglePropsVisible() {
-            this.forcePropsHidden = !this.forcePropsHidden;
-
-            this.UpdatePropsVisibility(this.forcePropsHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
-        }
-
-        private void UpdatePropsVisibility(VisibilityModeEnum mode) {
-            // Cover both the legacy Props NetworkBehaviours (still used for doors)
-            // and the new system's PropsRenderer attached to behaviours under propsContainer.
-            foreach (PropsRenderer pr in GetComponentsInChildren<PropsRenderer>()) {
-                if (pr != null && pr.IsHideable()) {
-                    pr.SetVisibilityMode(mode);
+            if (state.grounds != null && state.grounds.Length > 0) {
+                Dictionary<int, CoverData> groundsDict = state.grounds.ToDictionary(x => x.idx);
+                for (int i = 0; i < this.grounds.Length; i++) {
+                    if (groundsDict.TryGetValue(i, out CoverData cd)) {
+                        this.grounds[i].SetCoverSettings(new CoverSettings {
+                            paintConfigId   = cd.paintConfigId,
+                            additionalColor = cd.GetColor()
+                        });
+                    }
                 }
             }
-
-            OnPropsVisibilityModeChanged?.Invoke(mode);
         }
-        
-        protected override void AssignParent() {
-            Transform curTransform = this.transform;
-            Vector3 position = curTransform.position;
 
-            if (NetworkClient.spawned.ContainsKey(ParentId)) {
-                this.associatedHallController = NetworkClient.spawned[ParentId].GetComponent<HallController>();
-                curTransform.SetParent(this.associatedHallController.transform);
-                curTransform.localPosition = position;
+        // ── Server: broadcast room state to all players in the room ──────────
 
-                this.geographicArea.LocationText = $"{this.address.street}, Étage {this.associatedHallController.FloorNumber}, Porte {this.address.doorNumber}";
-            } else {
-                Debug.LogError($"[ApartmentController] [AssignParent] Parent identity not found for apartment {this.name}");
+        [Server]
+        public void UpdateRoomState() {
+            ApartmentRoomState state = new ApartmentRoomState {
+                street     = this.street,
+                doorNumber = this.doorNumber,
+                tenantId   = this.tenantId,
+                presetName = this.presetName,
+                walls      = SaveUtils.CreateCoverDatas(this.coverSettingsByFaces),
+                grounds    = SaveUtils.CreateCoverDatas(this.coverSettingsByGround)
+            };
+            ServerPropManager.Instance.SetApartmentState(this.RoomId, this.ApartmentKey, state.Serialize());
+        }
+
+        // ── Server: apply cover updates received from client ──────────────────
+
+        [Server]
+        public void ServerApplyWallCovers(CoverData[] covers) {
+            foreach (var cd in covers) {
+                this.coverSettingsByFaces[cd.idx] = new CoverSettings {
+                    paintConfigId   = cd.paintConfigId,
+                    additionalColor = cd.GetColor()
+                };
             }
+            UpdateRoomState();
         }
 
-        public override void OnStopClient() {
-            base.OnStopClient();
-
-            this.coverSettingsByFaces.OnChange -= OnWallSettingsChanged;
-            this.coverSettingsByGround.OnChange -= OnGroundSettingsChanged;
+        [Server]
+        public void ServerApplyGroundCovers(CoverData[] covers) {
+            foreach (var cd in covers) {
+                this.coverSettingsByGround[cd.idx] = new CoverSettings {
+                    paintConfigId   = cd.paintConfigId,
+                    additionalColor = cd.GetColor()
+                };
+            }
+            UpdateRoomState();
         }
 
-        private void OnWallSettingsChanged(SyncIDictionary<int, CoverSettings>.Operation operation, int key, CoverSettings item) {
-            this.currentConfiguration.walls.Setup(this.coverSettingsByFaces.ToDictionary(x => x.Key, x => x.Value));
-        }
-
-        private void OnGroundSettingsChanged(SyncIDictionary<int, CoverSettings>.Operation operation, int key, CoverSettings item) {
-            this.grounds[key].SetCoverSettings(item);
-        }
-
-        public Transform PropsContainer => propsContainer;
+        // ── Save ──────────────────────────────────────────────────────────────
 
         [Server]
         public IEnumerator Save() {
-            // TODO: handle save queue
             yield return null;
 
             Debug.Log("Save home....");
@@ -235,96 +278,21 @@ namespace Sim {
             Debug.Log("Saved locally");
         }
 
-        [Server]
-        public void Init(Address newAddress, HallController hallController) {
-            this.associatedHallController = hallController;
-            this.address = newAddress;
-
-            // Spawn the front door in the CITY room so hall players see open/close animations.
-            // Lock state and door number are part of the DoorState payload.
-            byte[] frontDoorPayload = new DoorState {
-                Header     = PropStateHeader.Default,
-                IsOpen     = false,
-                LockState  = DoorLockState.LOCKED,
-                DoorNumber = newAddress.doorNumber
-            }.Serialize();
-
-            int doorPropId = ServerPropManager.Instance.SpawnProp(
-                FrontDoorRoomId,
-                this.frontDoorPrefabConfigId,
-                this.frontDoorSpawn.position,
-                this.frontDoorSpawn.rotation,
-                frontDoorPayload
-            );
-            if (doorPropId >= 0) {
-                this.frontDoorPropId = doorPropId;
-                GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(doorPropId);
-                if (go != null) {
-                    go.transform.SetParent(this.propsContainer);
-                    go.transform.position = this.frontDoorSpawn.position;
-                    go.transform.rotation = this.frontDoorSpawn.rotation;
-                }
-            }
-
-            StartCoroutine(RetrieveData());
-        }
-
-        [Server]
-        public void Regenerate() {
-            // Wipe any previously-spawned props (apt room) before re-instantiating
-            // (avoids stacking duplicates on tenant change / hot reload).
-            ServerPropManager.Instance.ClearRoom(this.RoomId);
-            this.deliveryBoxPropId = 0;
-            // Note: front door is in the city room; we keep it but reset its number/lock if needed.
-            StartCoroutine(RetrieveData());
-        }
-
-        private void OnDestroy() {
-            if (NetworkServer.active) {
-                ServerPropManager.Instance.ClearRoom(this.RoomId);
-                if (this.frontDoorPropId > 0) {
-                    ServerPropManager.Instance.RemoveProp(FrontDoorRoomId, this.frontDoorPropId);
-                }
-            }
-        }
-
-        /// <summary>Updates the front door lock state via the new prop system.</summary>
-        [Server]
-        private void SetFrontDoorLockState(DoorLockState newState) {
-            if (this.frontDoorPropId <= 0) return;
-            if (!ServerPropManager.Instance.TryGetPropState(FrontDoorRoomId, this.frontDoorPropId, out var state)) return;
-            DoorState current = DoorState.Deserialize(state.Payload);
-            if (current.LockState == newState) return;
-            current.LockState = newState;
-            ServerPropManager.Instance.UpdatePropState(FrontDoorRoomId, this.frontDoorPropId, current.Serialize());
-        }
-
-        // Front door lives in the city room so all players (hall + apt) see it.
-        private const string FrontDoorRoomId = "city";
-
-        /// <summary>PropId of the apartment's front door (new system). 0 if not yet spawned.</summary>
-        public int FrontDoorPropId => frontDoorPropId;
-        private int frontDoorPropId;
-
-        [Header("Prop Config IDs (PropsConfig.GetId())")]
-        [SerializeField, Tooltip("PropsConfig id of the front door prefab. Must be in PropsDatabase.")]
-        private int frontDoorPrefabConfigId;
-
-        [SerializeField, Tooltip("PropsConfig id of the inner (simple) door prefab. Must be in PropsDatabase.")]
-        private int simpleDoorPrefabConfigId;
+        // ── RetrieveData (server coroutine) ───────────────────────────────────
 
         [Server]
         private IEnumerator RetrieveData() {
-            UnityWebRequest request = ApiManager.Instance.RetrieveHomeRequest(this.address);
+            Address addr = new Address { street = this.street, doorNumber = this.doorNumber, homeType = HomeTypeEnum.APARTMENT };
+            UnityWebRequest request = ApiManager.Instance.RetrieveHomeRequest(addr);
 
             yield return request.SendWebRequest();
 
             Home homeResponse = JsonUtility.FromJson<Home>(request.downloadHandler.text);
 
             if (homeResponse?.Id != null) {
-                this.homeData = homeResponse;
+                this.homeData   = homeResponse;
                 this.presetName = this.homeData.Preset;
-                
+
                 UnityWebRequest tenantRequest = ApiManager.Instance.RetrieveCharacterByIdRequest(this.HomeData.Tenant);
 
                 yield return tenantRequest.SendWebRequest();
@@ -332,24 +300,34 @@ namespace Sim {
                 CharacterResponse characterResponse = JsonUtility.FromJson<CharacterResponse>(tenantRequest.downloadHandler.text);
 
                 if (characterResponse?.Characters?.Length > 0) {
-                    this.tenant = characterResponse.Characters[0];
-                    this.tenantId = this.tenant.Id;
+                    this.tenant         = characterResponse.Characters[0];
+                    this.tenantId       = this.tenant.Id;
                     this.tenantIdentity = this.tenant.Identity;
                 } else {
                     Debug.LogError($"[ApartmentController] [RetrieveData] Cannot retrieve tenant data with [tenantId={this.HomeData.Tenant}, homeId={this.HomeData.Id}]");
                 }
 
-                if (this.presetName == "ahmed") {
-                    this.currentConfiguration = this.ahmedConfiguration;
-                } else if (this.presetName == "talyah") {
-                    this.currentConfiguration = this.talyahConfiguration;
-                } else {
-                    this.currentConfiguration = this.katarinaConfiguration;
-                }
-
+                ApplyPresetServerSide(this.presetName);
                 InstantiateLevel(homeResponse.SceneData);
 
+                if (this.deliveryBoxPropId > 0 && !string.IsNullOrEmpty(this.tenantId)) {
+                    UnityWebRequest countReq = ApiManager.Instance.RetrieveDeliveriesRequest(this.tenantId);
+                    yield return countReq.SendWebRequest();
+                    if (countReq.responseCode == 200) {
+                        DeliveryResponse dr = JsonUtility.FromJson<DeliveryResponse>(countReq.downloadHandler.text);
+                        uint count = dr?.Deliveries != null ? (uint)dr.Deliveries.Count : 0;
+                        if (ServerPropManager.Instance.TryGetPropState(this.RoomId, this.deliveryBoxPropId, out var propState)) {
+                            PropStateHeader header = PropStateHeader.ReadFrom(propState.Payload);
+                            byte[] newPayload = new DeliveryBoxState { Header = header, DeliveryCount = count }.Serialize();
+                            ServerPropManager.Instance.UpdatePropState(this.RoomId, this.deliveryBoxPropId, newPayload);
+                        }
+                    }
+                }
+
                 this.SetFrontDoorLockState(DoorLockState.UNLOCKED);
+                this.state = ApartmentState.GENERATED;
+                UpdateRoomState();
+                this.associatedHallController.CheckGenerationState();
             } else {
                 this.SetFrontDoorLockState(DoorLockState.LOCKED);
                 this.state = ApartmentState.NOT_GENERATED;
@@ -358,33 +336,32 @@ namespace Sim {
         }
 
         [Server]
-        private void InstantiateLevel(SceneData sceneData) {
-            // Spawn paint buckets in the new prop system (PaintBucketState carries paintConfigId+color)
-            sceneData.buckets?.ToList().ForEach(data => {
-                SaveUtils.SpawnPropFromSave(data, this);
-            });
+        private void ApplyPresetServerSide(string name) {
+            if (name == "ahmed") {
+                this.currentConfiguration = this.ahmedConfiguration;
+            } else if (name == "talyah") {
+                this.currentConfiguration = this.talyahConfiguration;
+            } else {
+                this.currentConfiguration = this.katarinaConfiguration;
+            }
+        }
 
-            // Spawn standard props in the new prop system
-            sceneData.props?.ToList().ForEach(data => {
-                SaveUtils.SpawnPropFromSave(data, this);
-            });
+        [Server]
+        private void InstantiateLevel(SceneData sceneData) {
+            sceneData.buckets?.ToList().ForEach(data => { SaveUtils.SpawnPropFromSave(data, this); });
+            sceneData.props?.ToList().ForEach(data => { SaveUtils.SpawnPropFromSave(data, this); });
 
             if (sceneData.walls != null) {
                 Dictionary<int, CoverSettings> wallSettings = sceneData.walls.ToDictionary(
                     x => x.idx,
                     x => new CoverSettings { paintConfigId = x.paintConfigId, additionalColor = x.GetColor() }
                 );
-
                 for (int i = 0; i < this.currentConfiguration.walls.SharedMaterials().Length; i++) {
-                    if (wallSettings.ContainsKey(i)) {
-                        this.coverSettingsByFaces.Add(i, wallSettings[i]);
-                    } else {
-                        this.coverSettingsByFaces.Add(i, defaultWallCoverSettings);
-                    }
+                    this.coverSettingsByFaces[i] = wallSettings.ContainsKey(i) ? wallSettings[i] : defaultWallCoverSettings;
                 }
             } else {
                 for (int i = 0; i < this.currentConfiguration.walls.SharedMaterials().Length; i++) {
-                    this.coverSettingsByFaces.Add(i, defaultWallCoverSettings);
+                    this.coverSettingsByFaces[i] = defaultWallCoverSettings;
                 }
             }
 
@@ -393,30 +370,24 @@ namespace Sim {
                     x => x.idx,
                     x => new CoverSettings { paintConfigId = x.paintConfigId, additionalColor = x.GetColor() }
                 );
-
                 for (int i = 0; i < this.grounds.Length; i++) {
-                    if (groundSettings.ContainsKey(i)) {
-                        this.coverSettingsByGround.Add(i, groundSettings[i]);
-                    } else {
-                        this.coverSettingsByGround.Add(i, defaultGroundCoverSettings);
-                    }
+                    this.coverSettingsByGround[i] = groundSettings.ContainsKey(i) ? groundSettings[i] : defaultGroundCoverSettings;
                 }
             } else {
                 for (int i = 0; i < this.grounds.Length; i++) {
-                    this.coverSettingsByGround.Add(i, defaultGroundCoverSettings);
+                    this.coverSettingsByGround[i] = defaultGroundCoverSettings;
                 }
             }
 
-            // Inner doors live in the apartment room (visible only to people inside).
-            // Default lock state is UNLOCKED (set by DoorPropSource serialized field).
             foreach (var spawner in this.currentConfiguration.doorSpawners) {
                 int innerDoorPropId = ServerPropManager.Instance.SpawnProp(
                     this.RoomId,
-                    this.simpleDoorPrefabConfigId,
+                    this.simpleDoorPrefabConfig.GetId(),
                     spawner.position,
                     spawner.rotation
                 );
                 if (innerDoorPropId >= 0) {
+                    TrackProp(innerDoorPropId);
                     GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(innerDoorPropId);
                     if (go != null) {
                         go.transform.SetParent(this.transform);
@@ -426,16 +397,14 @@ namespace Sim {
                 }
             }
 
-            // Spawn the apartment delivery box via the new prop system.
-            // The prefab must carry: PropIdentity, DeliveryBoxBehaviour, DeliveryBoxPropSource.
-            int deliveryBoxConfigId = this.deliveryBoxPrefabConfigId;
             int deliveryBoxPropId = ServerPropManager.Instance.SpawnProp(
                 this.RoomId,
-                deliveryBoxConfigId,
+                this.deliveryBoxPrefabConfig.GetId(),
                 this.currentConfiguration.deliveryBoxSpawn.position,
                 this.currentConfiguration.deliveryBoxSpawn.rotation
             );
             if (deliveryBoxPropId >= 0) {
+                TrackProp(deliveryBoxPropId);
                 GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(deliveryBoxPropId);
                 if (go != null) {
                     go.transform.SetParent(this.propsContainer);
@@ -443,87 +412,19 @@ namespace Sim {
                     go.transform.rotation = this.currentConfiguration.deliveryBoxSpawn.rotation;
                 }
                 this.deliveryBoxPropId = deliveryBoxPropId;
-
-                // Trigger initial fetch of the deliveries to populate the count.
-                if (!string.IsNullOrEmpty(this.tenantId)) {
-                    PropInteractionDispatcher.Instance?.RefreshDeliveryBoxCount(deliveryBoxPropId, this.RoomId, this.tenantId);
-                }
             }
-
-            this.SetFrontDoorLockState(DoorLockState.UNLOCKED);
-
-            this.state = ApartmentState.GENERATED;
-
-            this.associatedHallController.CheckGenerationState();
-        }
-
-        /// <summary>PropId of the apartment's delivery box (new system). 0 if not yet spawned.</summary>
-        public int DeliveryBoxPropId => deliveryBoxPropId;
-        private int deliveryBoxPropId;
-
-        [SerializeField, Tooltip("PropsConfig id (PropsConfig.GetId()) of the delivery box prefab. Must be in PropsDatabase.")]
-        private int deliveryBoxPrefabConfigId;
-
-        public void ResetWallPreview() {
-            this.currentConfiguration.walls.Reset();
-        }
-
-        public void ResetGroundPreview() {
-            this.grounds.Where(x => x.IsPreview()).ToList().ForEach(x => x.ResetPreview());
-        }
-
-        public void ApplyWallSettings() {
-            this.CmdApplyWallSettings(SaveUtils.CreateCoverDatas(this.currentConfiguration.walls.CoverSettingsInPreview));
-            this.currentConfiguration.walls.ApplyModification();
-        }
-
-        public void ApplyGroundSettings() {
-            Ground[] groundFiltered = this.grounds.Where(x => x.IsPreview()).ToArray();
-            Dictionary<int, CoverSettings> groundDataToUpdate = groundFiltered.ToDictionary(x => Array.IndexOf(grounds, x), x => x.CurrentCover);
-
-            foreach (var ground in groundFiltered) {
-                ground.ApplyModification();
-            }
-
-            this.CmdApplyGroundSettings(SaveUtils.CreateCoverDatas(groundDataToUpdate));
-        }
-
-        [Command(requiresAuthority = false)]
-        public void CmdApplyWallSettings(CoverData[] newSettings, NetworkConnectionToClient sender = null) {
-            foreach (var wallFaceData in newSettings) {
-                this.coverSettingsByFaces[wallFaceData.idx] = new CoverSettings {
-                    paintConfigId = wallFaceData.paintConfigId,
-                    additionalColor = wallFaceData.GetColor()
-                };
-            }
-
-            Debug.Log("Server: Apply wall settings");
-            StartCoroutine(this.Save());
-        }
-
-        [Command(requiresAuthority = false)]
-        public void CmdApplyGroundSettings(CoverData[] newSettings, NetworkConnectionToClient sender = null) {
-            foreach (var groundData in newSettings) {
-                this.coverSettingsByGround[groundData.idx] = new CoverSettings {
-                    paintConfigId = groundData.paintConfigId,
-                    additionalColor = groundData.GetColor()
-                };
-            }
-
-            Debug.Log("Server: Apply ground settings");
-            StartCoroutine(this.Save());
         }
 
         [Server]
         private SceneData GenerateSceneData() {
-            // Read all props in this apartment's room from the new prop system,
-            // skipping the delivery box (lifecycle managed by the apartment, not saved).
             List<BucketData>  buckets = new List<BucketData>();
             List<DefaultData> props   = new List<DefaultData>();
 
-            foreach (ServerPropState state in ServerPropManager.Instance.GetRoomStates(this.RoomId)) {
-                if (state.IsScene) continue;                       // scene props not saved
-                if (state.PropId == this.deliveryBoxPropId) continue; // delivery box re-spawned on load
+            foreach (int propId in _ownedPropIds) {
+                if (propId == this.frontDoorPropId) continue;
+                if (propId == this.deliveryBoxPropId) continue;
+                if (!ServerPropManager.Instance.TryGetPropState(this.RoomId, propId, out var state)) continue;
+                if (state.IsScene) continue;
 
                 if (state.Type == PropType.PaintBucket) {
                     buckets.Add(new BucketData(state, this.propsContainer));
@@ -532,15 +433,135 @@ namespace Sim {
                 }
             }
 
-            SceneData sceneData = new SceneData {
+            return new SceneData {
                 walls   = SaveUtils.CreateCoverDatas(this.coverSettingsByFaces),
                 grounds = SaveUtils.CreateCoverDatas(this.coverSettingsByGround),
                 buckets = buckets.ToArray(),
                 props   = props.ToArray()
             };
-
-            return sceneData;
         }
+
+        [Server]
+        private void SetFrontDoorLockState(DoorLockState newState) {
+            if (this.frontDoorPropId <= 0) return;
+            if (!ServerPropManager.Instance.TryGetPropState(this.RoomId, this.frontDoorPropId, out var state)) return;
+            DoorState current = DoorState.Deserialize(state.Payload);
+            if (current.LockState == newState) return;
+            current.LockState = newState;
+            ServerPropManager.Instance.UpdatePropState(this.RoomId, this.frontDoorPropId, current.Serialize());
+        }
+
+        // ── Client: apply cover preview ───────────────────────────────────────
+
+        public void ApplyWallSettings() {
+            CoverData[] covers = SaveUtils.CreateCoverDatas(this.currentConfiguration.walls.CoverSettingsInPreview);
+            this.currentConfiguration.walls.ApplyModification();
+            NetworkClient.Send(new C2S_ApplyWallCovers {
+                RoomId      = this.RoomId,
+                CoversJson  = new CoverDataWrapper { items = covers }.Serialize()
+            });
+        }
+
+        public void ApplyGroundSettings() {
+            Ground[] groundFiltered = this.grounds.Where(x => x.IsPreview()).ToArray();
+            Dictionary<int, CoverSettings> groundDataToUpdate = groundFiltered.ToDictionary(
+                x => Array.IndexOf(grounds, x), x => x.CurrentCover
+            );
+            foreach (var ground in groundFiltered) ground.ApplyModification();
+            CoverData[] covers = SaveUtils.CreateCoverDatas(groundDataToUpdate);
+            NetworkClient.Send(new C2S_ApplyGroundCovers {
+                RoomId     = this.RoomId,
+                CoversJson = new CoverDataWrapper { items = covers }.Serialize()
+            });
+        }
+
+        // ── Visibility helpers ────────────────────────────────────────────────
+
+        public void SetPropsVisibility(VisibilityModeEnum mode) {
+            this.forcePropsHidden = mode == VisibilityModeEnum.FORCE_HIDE;
+            this.UpdatePropsVisibility(mode);
+        }
+
+        public void TogglePropsVisible() {
+            this.forcePropsHidden = !this.forcePropsHidden;
+            this.UpdatePropsVisibility(this.forcePropsHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
+        }
+
+        private void UpdatePropsVisibility(VisibilityModeEnum mode) {
+            foreach (PropsRenderer pr in GetComponentsInChildren<PropsRenderer>()) {
+                if (pr != null && pr.IsHideable()) pr.SetVisibilityMode(mode);
+            }
+            OnPropsVisibilityModeChanged?.Invoke(mode);
+        }
+
+        public void ResetWallPreview()   => this.currentConfiguration.walls.Reset();
+
+        public void ResetGroundPreview() =>
+            this.grounds.Where(x => x.IsPreview()).ToList().ForEach(x => x.ResetPreview());
+
+        #region Wall Visibility Management
+
+        public void SetWallVisibility(VisibilityModeEnum mode) {
+            this.forceWallHidden = mode == VisibilityModeEnum.FORCE_HIDE;
+            this.UpdateWallVisibility(mode);
+        }
+
+        private void UpdateWallVisibility(VisibilityModeEnum mode) {
+            if (mode == VisibilityModeEnum.FORCE_HIDE) {
+                this.currentConfiguration.walls.HideWalls();
+                this.currentConfiguration.shortWalls.SetActive(true);
+            } else {
+                this.currentConfiguration.walls.Reset();
+                this.currentConfiguration.shortWalls.SetActive(false);
+            }
+            OnWallVisibilityModeChanged?.Invoke(mode);
+        }
+
+        public void ToggleWallVisibility() {
+            this.forceWallHidden = !this.forceWallHidden;
+            this.UpdateWallVisibility(this.forceWallHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
+        }
+
+        #endregion
+
+        // ── Internal helpers ──────────────────────────────────────────────────
+
+        private void ApplyPresetName(string name) {
+            if (string.IsNullOrEmpty(name)) return;
+            this.presetName = name;
+
+            if (name == "ahmed") {
+                this.currentConfiguration = this.ahmedConfiguration;
+            } else if (name == "talyah") {
+                this.currentConfiguration = this.talyahConfiguration;
+            } else {
+                this.currentConfiguration = this.katarinaConfiguration;
+            }
+
+            this.currentConfiguration.container.SetActive(true);
+        }
+
+        private void UpdateGeographicArea() {
+            if (this.geographicArea != null) {
+                this.geographicArea.LocationText =
+                    $"{this.street}, Étage {this.floorNumber}, Porte {this.doorNumber}";
+            }
+        }
+
+        // ── Properties ────────────────────────────────────────────────────────
+
+        public Address Address => new Address { street = this.street, doorNumber = this.doorNumber, homeType = HomeTypeEnum.APARTMENT };
+
+        public Transform SpawnPosition => spawnPosition;
+
+        // The "room" is the whole hall (one room per floor). All apartments on the same
+        // floor share this room id for prop sync. Use ApartmentKey to identify a specific apt.
+        public string RoomId => associatedHallController != null ? associatedHallController.RoomId : $"apt:{street}:{doorNumber}";
+
+        // Stable per-apartment identifier (independent of RoomId).
+        public string ApartmentKey => $"apt:{street}:{doorNumber}";
+
+        public Transform PropsContainer => propsContainer;
 
         public ApartmentState State => state;
 
@@ -553,37 +574,31 @@ namespace Sim {
 
         public Identity TenantIdentity => tenantIdentity;
 
-        public bool IsTenant(CharacterData character) {
-            return character.Id == this.tenantId;
-        }
-        
-        #region Wall Visibility Management
+        public bool IsTenant(CharacterData character) => character.Id == this.tenantId;
 
-        public void SetWallVisibility(VisibilityModeEnum mode) {
-            this.forceWallHidden = mode == VisibilityModeEnum.FORCE_HIDE;
+        public string PresetName => presetName;
 
-            this.UpdateWallVisibility(mode);
-        }
+        public int FrontDoorPropId => frontDoorPropId;
+        private int frontDoorPropId;
 
-        private void UpdateWallVisibility(VisibilityModeEnum mode) {
-            if (mode == VisibilityModeEnum.FORCE_HIDE) {
-                this.currentConfiguration.walls.HideWalls();
-                this.currentConfiguration.shortWalls.SetActive(true);
-            } else {
-                this.currentConfiguration.walls.Reset();
-                this.currentConfiguration.shortWalls.SetActive(false);
-            }
+        // Tracks every prop spawned by this apartment so OnDestroy/Regenerate can clean up
+        // only this apt's props (the room is shared with the rest of the hall).
+        private readonly HashSet<int> _ownedPropIds = new HashSet<int>();
+        public void TrackProp(int propId) { if (propId > 0) _ownedPropIds.Add(propId); }
+        public bool OwnsProp(int propId) => _ownedPropIds.Contains(propId);
 
-            OnWallVisibilityModeChanged?.Invoke(mode);
-        }
+        [Header("Prop Config")]
+        [SerializeField, Tooltip("PropsConfig of the front door prefab. Must be in PropsDatabase.")]
+        private PropsConfig frontDoorPrefabConfig;
 
-        public void ToggleWallVisibility() {
-            this.forceWallHidden = !this.forceWallHidden;
+        [SerializeField, Tooltip("PropsConfig of the inner (simple) door prefab. Must be in PropsDatabase.")]
+        private PropsConfig simpleDoorPrefabConfig;
 
-            this.UpdateWallVisibility(this.forceWallHidden ? VisibilityModeEnum.FORCE_HIDE : VisibilityModeEnum.AUTO);
-        }
+        public int DeliveryBoxPropId => deliveryBoxPropId;
+        private int deliveryBoxPropId;
 
-        #endregion
+        [SerializeField, Tooltip("PropsConfig of the delivery box prefab. Must be in PropsDatabase.")]
+        private PropsConfig deliveryBoxPrefabConfig;
     }
 
     [Serializable]

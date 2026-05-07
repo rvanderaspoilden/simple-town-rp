@@ -27,8 +27,7 @@ namespace Sim {
             BuildManager.OnValidatePropCreation      += OnValidatePropCreation;
             BuildManager.OnValidatePropEdit          += OnValidatePropEdit;
             BuildManager.OnValidatePaintModification += OnValidatePaintModification;
-            Props.OnMoveRequest                      += OnMoveRequest;
-            PropBehaviourBase.OnMoveRequest          += OnMoveRequestNew;
+            PropBehaviourBase.OnMoveRequest          += OnMoveRequest;
             PropBehaviourBase.OnSellRequest          += OnSellRequest;
             PaintBucketBehaviour.OnOpened            += OpenBucket;
             DeliveryBoxBehaviour.OnOpened            += OnDeliveryBoxOpened;
@@ -48,8 +47,7 @@ namespace Sim {
                 BuildManager.OnValidatePropCreation      -= OnValidatePropCreation;
                 BuildManager.OnValidatePropEdit          -= OnValidatePropEdit;
                 BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
-                Props.OnMoveRequest                      -= OnMoveRequest;
-                PropBehaviourBase.OnMoveRequest          -= OnMoveRequestNew;
+                PropBehaviourBase.OnMoveRequest          -= OnMoveRequest;
                 PropBehaviourBase.OnSellRequest          -= OnSellRequest;
                 PaintBucketBehaviour.OnOpened            -= OpenBucket;
                 DeliveryBoxBehaviour.OnOpened            -= OnDeliveryBoxOpened;
@@ -60,14 +58,7 @@ namespace Sim {
             }
         }
 
-        private void OnMoveRequest(Props props) {
-            // Legacy path (still used while doors/old props exist) — left for compat
-            this.player.SetState(StateType.MOVING_PROPS);
-            BuildManager.Instance.Edit(props);
-        }
-
-        private void OnMoveRequestNew(PropBehaviourBase behaviour) {
-            // New system path for PropBehaviourBase props
+        private void OnMoveRequest(PropBehaviourBase behaviour) {
             this.player.SetState(StateType.MOVING_PROPS);
             BuildManager.Instance.Edit(behaviour);
         }
@@ -169,29 +160,20 @@ namespace Sim {
             });
         }
 
-        private void OnValidatePropEdit(Props props) {
-            // Legacy path — old NetworkBehaviour Props (still used until full cleanup)
-            // Resolve the new-system propId from the same GameObject
-            PropIdentity id = props.GetComponent<PropIdentity>();
+        private void OnValidatePropEdit(PropBehaviourBase behaviour) {
+            PropIdentity id = behaviour.GetComponent<PropIdentity>();
             if (id == null || id.PropId <= 0) {
                 Debug.LogError("[PlayerInteraction] OnValidatePropEdit: prop has no PropIdentity");
                 return;
             }
 
-            // Convert to world-space (ServerPropManager stores world transforms)
-            Vector3    worldPos = props.transform.position;
-            Quaternion worldRot = props.transform.rotation;
-
             NetworkClient.Send(new C2S_EditProp {
                 RoomId   = id.RoomId,
                 PropId   = id.PropId,
-                Position = worldPos,
-                Rotation = worldRot,
+                Position = behaviour.transform.position,
+                Rotation = behaviour.transform.rotation,
             });
 
-            // The legacy flow expected a TargetRpc-driven EditionIsValidated.
-            // In the new flow we optimistically validate locally — server will broadcast
-            // the new transform via S2C_PropTransform and propagate to other clients.
             BuildManager.Instance.EditionIsValidated();
             this.player.SetState(StateType.FREE);
         }

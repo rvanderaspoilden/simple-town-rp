@@ -10,4 +10,5 @@ public enum PropType : byte {
     PaintBucket  = 4,   // seau de peinture : paintConfigId + couleur
     DeliveryBox  = 5,   // boîte de livraison : deliveryCount + ouverture via REST
     Package      = 6,   // colis : contient un PropsConfig à déballer, ouverture client-local
+    Teleporter   = 7,   // ascenseur : routing par roomId, use via C2S_TeleporterUse
 }

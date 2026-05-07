@@ -28,16 +28,8 @@ namespace Sim {
             PropsConfig configInstance = Instantiate(config);
             behaviour.SetConfiguration(configInstance);
 
-            // Apply preset via PropIdentity/ServerPropSource system
-            // The preset will be handled by the prop's GenericPropSource or similar component
-            if (presetId != -1 && behaviour.GetComponent<PropIdentity>() != null) {
-                // Store preset in the prop for later state initialization
-                // This will be picked up by ServerPropSource.GetInitialState()
-                var field = behaviour.GetType().GetField("defaultPresetId", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (field != null) {
-                    field.SetValue(behaviour, presetId);
-                }
-            }
+            if (presetId != -1)
+                behaviour.SetDefaultPresetId(presetId);
 
             return behaviour;
         }

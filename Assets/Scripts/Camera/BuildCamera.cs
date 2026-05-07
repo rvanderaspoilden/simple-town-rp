@@ -93,7 +93,9 @@ namespace Sim {
 
         private void BuildModeChanged(BuildModeEnum mode) {
             if (mode == BuildModeEnum.VALIDATING) {
-                this.SetTargetPosition(BuildManager.Instance.GetCurrentPreviewedProps().transform.position, true);
+                Transform previewTransform = BuildManager.Instance.GetCurrentPreviewTransform();
+                if (previewTransform != null)
+                    this.SetTargetPosition(previewTransform.position, true);
             }
         }
 

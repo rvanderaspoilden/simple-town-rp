@@ -78,7 +78,7 @@ namespace Sim {
             }
         }
 
-        public void ShowElevatorUI(Teleporter elevator) {
+        public void ShowElevatorUI(TeleporterBehaviour elevator) {
             this.elevatorUI.Bind(elevator);
             this.elevatorUI.gameObject.SetActive(true);
         }

@@ -7,8 +7,15 @@
       "dependencies": {},
       "hash": "d252b0b3b51fa8a9416dee810fb0ba1530ee9f7a"
     },
+    "com.github-glitchenzo.nugetforunity": {
+      "version": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "acc1c7bc9ea34c33b830e40316fca52553878d29"
+    },
     "com.ivanmurzak.unity.mcp": {
-      "version": "0.67.2",
+      "version": "0.69.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -18,12 +25,32 @@
       },
       "url": "https://package.openupm.com"
     },
-    "com.ivanmurzak.unity.mcp.probuilder": {
-      "version": "1.0.68",
+    "com.ivanmurzak.unity.mcp.animation": {
+      "version": "1.1.33",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.ivanmurzak.unity.mcp": "0.67.2",
+        "com.ivanmurzak.unity.mcp": "0.69.0",
+        "com.unity.modules.animation": "1.0.0"
+      },
+      "url": "https://package.openupm.com"
+    },
+    "com.ivanmurzak.unity.mcp.particlesystem": {
+      "version": "1.0.60",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.ivanmurzak.unity.mcp": "0.69.0",
+        "com.unity.modules.particlesystem": "1.0.0"
+      },
+      "url": "https://package.openupm.com"
+    },
+    "com.ivanmurzak.unity.mcp.probuilder": {
+      "version": "1.0.72",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.ivanmurzak.unity.mcp": "0.69.0",
         "com.unity.probuilder": "5.2.4"
       },
       "url": "https://package.openupm.com"

@@ -49,6 +49,8 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
     public int DefaultPresetId => defaultPresetId;
 
+    public void SetDefaultPresetId(int id) { defaultPresetId = id; }
+
     // ── Unity lifecycle ───────────────────────────────────────────────────────
 
     protected virtual void Awake()

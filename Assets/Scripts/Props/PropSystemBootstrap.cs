@@ -1,4 +1,5 @@
 using Mirror;
+using Sim.Logging;
 using UnityEngine;
 
 /// <summary>
@@ -13,74 +14,98 @@ public static class PropSystemBootstrap {
     // ── Server ────────────────────────────────────────────────────────────────
 
     public static void OnServerStart() {
+        GameLogger.Network.Info("PropSystemServerStarting");
+        
         NetworkServer.RegisterHandler<C2S_EnterRoom>      (Server_OnEnterRoom);
         NetworkServer.RegisterHandler<C2S_LeaveRoom>      (Server_OnLeaveRoom);
         NetworkServer.RegisterHandler<C2S_PropInteraction>(Server_OnInteraction);
         NetworkServer.RegisterHandler<C2S_BuildProp>      (Server_OnBuildProp);
         NetworkServer.RegisterHandler<C2S_EditProp>       (Server_OnEditProp);
         NetworkServer.RegisterHandler<C2S_RemoveProp>     (Server_OnRemoveProp);
+        NetworkServer.RegisterHandler<C2S_TeleporterUse>  (Server_OnTeleporterUse);
+        NetworkServer.RegisterHandler<C2S_SaveApartment>  (Server_OnSaveApartment);
+        NetworkServer.RegisterHandler<C2S_ApplyWallCovers>(Server_OnApplyWallCovers);
+        NetworkServer.RegisterHandler<C2S_ApplyGroundCovers>(Server_OnApplyGroundCovers);
 
         SimpleTownNetwork.OnPlayerDisconnected += Server_OnDisconnect;
 
-        Debug.Log("[PropSystem] Server handlers registered");
+        GameLogger.Network.Info("PropSystemServerStarted {HandlerCount}", 10);
     }
 
     public static void OnServerStop() {
+        GameLogger.Network.Info("PropSystemServerStopping");
+        
         NetworkServer.UnregisterHandler<C2S_EnterRoom>();
         NetworkServer.UnregisterHandler<C2S_LeaveRoom>();
         NetworkServer.UnregisterHandler<C2S_PropInteraction>();
         NetworkServer.UnregisterHandler<C2S_BuildProp>();
         NetworkServer.UnregisterHandler<C2S_EditProp>();
         NetworkServer.UnregisterHandler<C2S_RemoveProp>();
+        NetworkServer.UnregisterHandler<C2S_TeleporterUse>();
+        NetworkServer.UnregisterHandler<C2S_SaveApartment>();
+        NetworkServer.UnregisterHandler<C2S_ApplyWallCovers>();
+        NetworkServer.UnregisterHandler<C2S_ApplyGroundCovers>();
 
         SimpleTownNetwork.OnPlayerDisconnected -= Server_OnDisconnect;
 
         ServerPropManager.Instance.Reset();
         PlayerRoomTracker.Instance.Reset();
 
-        Debug.Log("[PropSystem] Server handlers unregistered");
+        GameLogger.Network.Info("PropSystemServerStopped");
     }
 
     // ── Client ────────────────────────────────────────────────────────────────
 
     public static void OnClientStart() {
+        ClientLogger.Network("PropSystemClientStarting");
+        
         // Auto-create ClientPropManager if missing
         if (ClientPropManager.Instance == null) {
-            Debug.LogWarning("[PropSystem] ClientPropManager.Instance is null! Creating automatically...");
+            ClientLogger.NetworkWarning("ClientPropManagerMissing, creating automatically");
             var go = new GameObject("ClientPropManager (AutoCreated)");
             go.AddComponent<ClientPropManager>();
         }
 
         ClientPropManager.Instance.RegisterHandlers();
-        Debug.Log("[PropSystem] Client handlers registered");
+        ClientLogger.Network("PropSystemClientStarted");
     }
 
     public static void OnClientStop() {
+        ClientLogger.Network("PropSystemClientStopping");
         ClientPropManager.Instance?.UnregisterHandlers();
-        Debug.Log("[PropSystem] Client handlers unregistered");
+        ClientLogger.Network("PropSystemClientStopped");
     }
 
     // ── Server message handlers ───────────────────────────────────────────────
 
     private static void Server_OnEnterRoom(NetworkConnectionToClient conn, C2S_EnterRoom msg) {
-        if (string.IsNullOrEmpty(msg.RoomId)) return;
+        if (string.IsNullOrEmpty(msg.RoomId)) {
+            GameLogger.Network.Warning("EnterRoomEmptyRoomId {ConnectionId}", conn.connectionId);
+            return;
+        }
 
+        GameLogger.Network.Info("EnterRoom {ConnectionId} {RoomId} {PlayerNetId}",
+            conn.connectionId, msg.RoomId, conn.identity?.netId ?? 0);
+        
         PlayerRoomTracker.Instance.EnterRoom(conn, msg.RoomId);
         ServerPropManager.Instance.SendRoomSnapshot(conn, msg.RoomId);
 
-        Debug.Log($"[PropSystem] Player {conn.connectionId} entered room '{msg.RoomId}'");
+        GameLogger.Network.Debug("RoomSnapshotSent {ConnectionId} {RoomId}", conn.connectionId, msg.RoomId);
     }
 
     private static void Server_OnLeaveRoom(NetworkConnectionToClient conn, C2S_LeaveRoom msg) {
+        GameLogger.Network.Info("LeaveRoom {ConnectionId} {RoomId}", conn.connectionId, msg.RoomId);
         PlayerRoomTracker.Instance.LeaveRoom(conn);
-        Debug.Log($"[PropSystem] Player {conn.connectionId} left room '{msg.RoomId}'");
     }
 
     private static void Server_OnDisconnect(NetworkConnectionToClient conn) {
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        GameLogger.Network.Info("PropSystemPlayerDisconnect {ConnectionId} {RoomId} {PlayerNetId}",
+            conn.connectionId, roomId ?? "none", conn.identity?.netId ?? 0);
+        
         // Free any seat/couch slots held by the disconnecting player before removing room tracking
         if (conn.identity != null) {
-            uint   netId  = conn.identity.netId;
-            string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+            uint netId = conn.identity.netId;
             if (!string.IsNullOrEmpty(roomId))
                 PropInteractionRouter.ReleaseSeatsByPlayer(roomId, netId);
         }
@@ -91,34 +116,77 @@ public static class PropSystemBootstrap {
         // Verify the sender is actually in the room they claim
         string playerRoom = PlayerRoomTracker.Instance.GetRoom(conn);
         if (playerRoom != msg.RoomId) {
-            Debug.LogWarning($"[PropSystem] Conn {conn.connectionId} sent interaction for room '{msg.RoomId}' but is in '{playerRoom}'");
+            GameLogger.Network.Warning("PropInteractionRoomMismatch {ConnectionId} {ClaimedRoom} {ActualRoom} {PropId}",
+                conn.connectionId, msg.RoomId, playerRoom ?? "none", msg.PropId);
             return;
         }
 
+        GameLogger.Network.Debug("PropInteraction {ConnectionId} {RoomId} {PropId} {Type}",
+            conn.connectionId, msg.RoomId, msg.PropId, msg.Type);
+        
         PropInteractionRouter.Route(conn, msg);
     }
 
     private static void Server_OnBuildProp(NetworkConnectionToClient conn, C2S_BuildProp msg) {
-        if (PlayerRoomTracker.Instance.GetRoom(conn) != msg.RoomId) {
-            Debug.LogWarning($"[PropSystem] Conn {conn.connectionId} BuildProp room mismatch");
+        string playerRoom = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (playerRoom != msg.RoomId) {
+            GameLogger.Network.Warning("BuildPropRoomMismatch {ConnectionId} {ClaimedRoom} {ActualRoom}",
+                conn.connectionId, msg.RoomId, playerRoom ?? "none");
             return;
         }
+        
+        GameLogger.Network.Info("BuildProp {ConnectionId} {RoomId} {PropConfigId} {Position}",
+            conn.connectionId, msg.RoomId, msg.PropConfigId, msg.Position);
         PropInteractionRouter.HandleBuildProp(conn, msg);
     }
 
     private static void Server_OnEditProp(NetworkConnectionToClient conn, C2S_EditProp msg) {
-        if (PlayerRoomTracker.Instance.GetRoom(conn) != msg.RoomId) {
-            Debug.LogWarning($"[PropSystem] Conn {conn.connectionId} EditProp room mismatch");
+        string playerRoom = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (playerRoom != msg.RoomId) {
+            GameLogger.Network.Warning("EditPropRoomMismatch {ConnectionId} {ClaimedRoom} {ActualRoom} {PropId}",
+                conn.connectionId, msg.RoomId, playerRoom ?? "none", msg.PropId);
             return;
         }
+        
+        GameLogger.Network.Info("EditProp {ConnectionId} {RoomId} {PropId} {Position}",
+            conn.connectionId, msg.RoomId, msg.PropId, msg.Position);
         PropInteractionRouter.HandleEditProp(conn, msg);
     }
 
     private static void Server_OnRemoveProp(NetworkConnectionToClient conn, C2S_RemoveProp msg) {
-        if (PlayerRoomTracker.Instance.GetRoom(conn) != msg.RoomId) {
-            Debug.LogWarning($"[PropSystem] Conn {conn.connectionId} RemoveProp room mismatch");
+        string playerRoom = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (playerRoom != msg.RoomId) {
+            GameLogger.Network.Warning("RemovePropRoomMismatch {ConnectionId} {ClaimedRoom} {ActualRoom} {PropId}",
+                conn.connectionId, msg.RoomId, playerRoom ?? "none", msg.PropId);
             return;
         }
+        
+        GameLogger.Network.Info("RemoveProp {ConnectionId} {RoomId} {PropId}",
+            conn.connectionId, msg.RoomId, msg.PropId);
         PropInteractionRouter.HandleRemoveProp(conn, msg);
+    }
+
+    private static void Server_OnTeleporterUse(NetworkConnectionToClient conn, C2S_TeleporterUse msg) {
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        GameLogger.Network.Info("TeleporterUse {ConnectionId} {RoomId} {FloorDestination}",
+            conn.connectionId, roomId ?? "unknown", msg.FloorDestination);
+        PropInteractionDispatcher.Instance?.HandleTeleporterUse(conn, msg.FloorDestination);
+    }
+
+    private static void Server_OnSaveApartment(NetworkConnectionToClient conn, C2S_SaveApartment msg) {
+        GameLogger.Network.Info("SaveApartment {ConnectionId} {RoomId}", conn.connectionId, msg.RoomId);
+        PropInteractionDispatcher.Instance?.HandleSaveApartment(conn, msg.RoomId);
+    }
+
+    private static void Server_OnApplyWallCovers(NetworkConnectionToClient conn, C2S_ApplyWallCovers msg) {
+        GameLogger.Network.Info("ApplyWallCovers {ConnectionId} {RoomId} {JsonLength}",
+            conn.connectionId, msg.RoomId, msg.CoversJson?.Length ?? 0);
+        PropInteractionDispatcher.Instance?.HandleApplyWallCovers(conn, msg.RoomId, msg.CoversJson);
+    }
+
+    private static void Server_OnApplyGroundCovers(NetworkConnectionToClient conn, C2S_ApplyGroundCovers msg) {
+        GameLogger.Network.Info("ApplyGroundCovers {ConnectionId} {RoomId} {JsonLength}",
+            conn.connectionId, msg.RoomId, msg.CoversJson?.Length ?? 0);
+        PropInteractionDispatcher.Instance?.HandleApplyGroundCovers(conn, msg.RoomId, msg.CoversJson);
     }
 }

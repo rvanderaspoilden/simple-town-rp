@@ -52,8 +52,9 @@ public static class PropInteractionRouter {
 
             ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, updatedPayload);
 
-            // Trigger apartment save server-side (find ApartmentController by room)
-            TriggerApartmentSave(msg.RoomId);
+            // Trigger apartment save server-side (find apartment that owns this prop)
+            ApartmentController apt = ServerApartmentRegistry.Instance.FindOwnerOfProp(msg.PropId);
+            if (apt != null) apt.StartCoroutine(apt.Save());
         }
     }
 
@@ -129,31 +130,20 @@ public static class PropInteractionRouter {
         }
     }
 
-    public static ApartmentController FindApartmentByRoom(string roomId) {
-        foreach (ApartmentController apt in UnityEngine.Object.FindObjectsByType<ApartmentController>(UnityEngine.FindObjectsSortMode.None)) {
-            if (apt.RoomId == roomId) return apt;
-        }
-        return null;
-    }
-
-    private static void TriggerApartmentSave(string roomId) {
-        ApartmentController apt = FindApartmentByRoom(roomId);
-        if (apt != null) apt.StartCoroutine(apt.Save());
-    }
+    /// <summary>
+    /// Resolves the apartment owned by the player on this connection (the tenant).
+    /// Apartments share the hall room with the rest of the floor, so we cannot route
+    /// by msg.RoomId — only the tenant can build/edit/remove inside their own apt.
+    /// </summary>
+    public static ApartmentController FindApartmentByConn(NetworkConnectionToClient conn) =>
+        ServerApartmentRegistry.Instance.TryGetByConn(conn, out var apt) ? apt : null;
 
     // ── Build / Edit / Remove handlers (apartment build mode) ─────────────────
 
     public static void HandleBuildProp(NetworkConnectionToClient conn, C2S_BuildProp msg) {
-        ApartmentController apt = FindApartmentByRoom(msg.RoomId);
+        ApartmentController apt = FindApartmentByConn(conn);
         if (apt == null) {
-            Debug.LogWarning($"[PropInteractionRouter] BuildProp: apartment not found for room '{msg.RoomId}'");
-            conn.Send(new S2C_BuildAck { Success = false });
-            return;
-        }
-        // Permission: only the tenant can build
-        PlayerController pc = conn.identity?.GetComponent<PlayerController>();
-        if (pc?.CharacterData == null || !apt.IsTenant(pc.CharacterData)) {
-            Debug.LogWarning($"[PropInteractionRouter] BuildProp denied: conn={conn.connectionId} not tenant of '{msg.RoomId}'");
+            Debug.LogWarning($"[PropInteractionRouter] BuildProp denied: conn={conn.connectionId} owns no apartment");
             conn.Send(new S2C_BuildAck { Success = false });
             return;
         }
@@ -161,30 +151,26 @@ public static class PropInteractionRouter {
     }
 
     public static void HandleEditProp(NetworkConnectionToClient conn, C2S_EditProp msg) {
-        ApartmentController apt = FindApartmentByRoom(msg.RoomId);
+        ApartmentController apt = FindApartmentByConn(conn);
         if (apt == null) return;
-
-        PlayerController pc = conn.identity?.GetComponent<PlayerController>();
-        if (pc?.CharacterData == null || !apt.IsTenant(pc.CharacterData)) {
-            Debug.LogWarning($"[PropInteractionRouter] EditProp denied: conn={conn.connectionId}");
+        if (!apt.OwnsProp(msg.PropId)) {
+            Debug.LogWarning($"[PropInteractionRouter] EditProp denied: prop {msg.PropId} not owned by tenant {apt.TenantId}");
             return;
         }
 
-        ServerPropManager.Instance.UpdatePropTransform(msg.RoomId, msg.PropId, msg.Position, msg.Rotation);
+        ServerPropManager.Instance.UpdatePropTransform(apt.RoomId, msg.PropId, msg.Position, msg.Rotation);
         apt.StartCoroutine(apt.Save());
     }
 
     public static void HandleRemoveProp(NetworkConnectionToClient conn, C2S_RemoveProp msg) {
-        ApartmentController apt = FindApartmentByRoom(msg.RoomId);
+        ApartmentController apt = FindApartmentByConn(conn);
         if (apt == null) return;
-
-        PlayerController pc = conn.identity?.GetComponent<PlayerController>();
-        if (pc?.CharacterData == null || !apt.IsTenant(pc.CharacterData)) {
-            Debug.LogWarning($"[PropInteractionRouter] RemoveProp denied: conn={conn.connectionId}");
+        if (!apt.OwnsProp(msg.PropId)) {
+            Debug.LogWarning($"[PropInteractionRouter] RemoveProp denied: prop {msg.PropId} not owned by tenant {apt.TenantId}");
             return;
         }
 
-        ServerPropManager.Instance.RemoveProp(msg.RoomId, msg.PropId);
+        ServerPropManager.Instance.RemoveProp(apt.RoomId, msg.PropId);
         apt.StartCoroutine(apt.Save());
     }
 

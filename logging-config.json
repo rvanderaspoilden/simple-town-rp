@@ -1,0 +1,33 @@
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "System": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "File",
+        "Args": {
+          "path": "Logs/log-.json",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 30,
+          "formatter": "Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact",
+          "buffered": true,
+          "flushToDiskInterval": "00:00:05"
+        }
+      }
+    ],
+    "Enrich": [
+      "FromLogContext",
+      "WithThreadId",
+      "WithMachineName"
+    ],
+    "Properties": {
+      "Application": "SimpleTownRP",
+      "Environment": "Production"
+    }
+  }
+}

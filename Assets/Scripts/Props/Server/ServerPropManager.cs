@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Mirror;
+using Sim.Logging;
 using UnityEngine;
 
 /// <summary>
@@ -24,17 +25,28 @@ public class ServerPropManager {
     // Runtime-spawned GameObjects (server-side instances). Scene props are not tracked here.
     private readonly Dictionary<int, GameObject> _spawnedGOs = new Dictionary<int, GameObject>();
 
+    private readonly Dictionary<string, byte[]> _roomStates = new Dictionary<string, byte[]>();
+
+    // Per-apartment state, grouped by room id. Each apartment in a hall room stores its
+    // own payload under a unique key (typically the ApartmentKey). The snapshot resends
+    // every entry so newcomers see all apartment states in the floor they enter.
+    private readonly Dictionary<string, Dictionary<string, byte[]>> _apartmentStatesByRoom
+        = new Dictionary<string, Dictionary<string, byte[]>>();
+
     private int _nextAutoId = 10000; // runtime IDs start high to avoid collisions with scene IDs (1..9999)
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     public void Reset() {
+        int spawnedCount = _spawnedGOs.Count;
         foreach (var go in _spawnedGOs.Values) {
             if (go != null) UnityEngine.Object.Destroy(go);
         }
         _spawnedGOs.Clear();
         _rooms.Clear();
+        _roomStates.Clear();
         _nextAutoId = 10000;
+        GameLogger.Network.Info("ServerPropManagerReset {DestroyedProps}", spawnedCount);
     }
 
     // ── Scene props ───────────────────────────────────────────────────────────
@@ -47,7 +59,7 @@ public class ServerPropManager {
     public void RegisterSceneProp(ServerPropSource source) {
         if (source == null) return;
         if (source.PropId <= 0) {
-            Debug.LogWarning($"[ServerPropManager] Scene prop on '{source.gameObject.name}' has no propId — skipped");
+            GameLogger.Network.Warning("ScenePropNoId {ObjectName}", source.gameObject.name);
             return;
         }
 
@@ -68,6 +80,8 @@ public class ServerPropManager {
             payload:  source.GetInitialState(),
             isScene:  true
         );
+        
+        GameLogger.Network.Debug("ScenePropRegistered {PropId} {RoomId} {PrefabId}", source.PropId, source.RoomId, prefabId);
     }
 
     // ── Runtime spawning ──────────────────────────────────────────────────────
@@ -84,16 +98,19 @@ public class ServerPropManager {
         Quaternion rotation,
         byte[]     initialPayloadOverride = null
     ) {
-        if (!NetworkServer.active) return -1;
+        if (!NetworkServer.active) {
+            GameLogger.Network.Warning("SpawnPropNotServer {PrefabId} {RoomId}", prefabId, roomId);
+            return -1;
+        }
 
         var propsConfig = Sim.DatabaseManager.PropsDatabase?.GetPropsById(prefabId);
         if (propsConfig == null) {
-            Debug.LogWarning($"[ServerPropManager] PropsConfig id={prefabId} not found in DatabaseManager — spawn aborted");
+            GameLogger.Network.Warning("SpawnPropConfigNotFound {PrefabId} {RoomId}", prefabId, roomId);
             return -1;
         }
         GameObject prefab = propsConfig.GetPrefab()?.gameObject;
         if (prefab == null) {
-            Debug.LogWarning($"[ServerPropManager] PropsConfig id={prefabId} has no prefab assigned");
+            GameLogger.Network.Warning("SpawnPropPrefabNull {PrefabId} {RoomId}", prefabId, roomId);
             return -1;
         }
 
@@ -104,7 +121,7 @@ public class ServerPropManager {
 
         PropIdentity identity = instance.GetComponent<PropIdentity>();
         if (identity == null) {
-            Debug.LogError($"[ServerPropManager] Prefab '{prefabId}' is missing PropIdentity component");
+            GameLogger.Network.Error(null, "SpawnPropNoIdentity {PrefabId} {PropId}", prefabId, propId);
             UnityEngine.Object.Destroy(instance);
             return -1;
         }
@@ -119,6 +136,8 @@ public class ServerPropManager {
         _spawnedGOs[propId] = instance;
 
         BroadcastToRoom(roomId, BuildSpawnMessage(roomId, propId, prefabId, position, rotation, type, payload));
+        
+        GameLogger.Network.Info("PropSpawned {PropId} {PrefabId} {RoomId} {Position}", propId, prefabId, roomId, position);
         return propId;
     }
 
@@ -130,7 +149,7 @@ public class ServerPropManager {
 
     public void UpdatePropState(string roomId, int propId, byte[] payload) {
         if (!TryGetState(roomId, propId, out var state)) {
-            Debug.LogWarning($"[ServerPropManager] Prop {propId} not found in room '{roomId}'");
+            GameLogger.Network.Warning("UpdatePropStateNotFound {PropId} {RoomId}", propId, roomId);
             return;
         }
         state.Payload = payload;
@@ -140,6 +159,7 @@ public class ServerPropManager {
             Type    = state.Type,
             Payload = payload
         });
+        GameLogger.Network.Debug("PropStateUpdated {PropId} {RoomId} {PayloadSize}", propId, roomId, payload?.Length ?? 0);
     }
 
     /// <summary>
@@ -148,11 +168,11 @@ public class ServerPropManager {
     /// </summary>
     public void UpdatePropTransform(string roomId, int propId, Vector3 position, Quaternion rotation) {
         if (!TryGetState(roomId, propId, out var state)) {
-            Debug.LogWarning($"[ServerPropManager] Prop {propId} not found in room '{roomId}'");
+            GameLogger.Network.Warning("UpdateTransformNotFound {PropId} {RoomId}", propId, roomId);
             return;
         }
         if (state.IsScene) {
-            Debug.LogWarning($"[ServerPropManager] Cannot move scene prop {propId} in '{roomId}'");
+            GameLogger.Network.Warning("UpdateTransformSceneProp {PropId} {RoomId}", propId, roomId);
             return;
         }
         state.Position = position;
@@ -169,16 +189,23 @@ public class ServerPropManager {
             Position = position,
             Rotation = rotation
         });
+        GameLogger.Network.Debug("PropTransformUpdated {PropId} {RoomId} {Position}", propId, roomId, position);
     }
 
     // ── Remove ────────────────────────────────────────────────────────────────
 
     public void RemoveProp(string roomId, int propId) {
-        if (!_rooms.TryGetValue(roomId, out var room) || !room.TryGetValue(propId, out var state)) return;
+        if (!_rooms.TryGetValue(roomId, out var room) || !room.TryGetValue(propId, out var state)) {
+            GameLogger.Network.Warning("RemovePropNotFound {PropId} {RoomId}", propId, roomId);
+            return;
+        }
 
         room.Remove(propId);
         if (_spawnedGOs.TryGetValue(propId, out var go)) {
-            if (go != null) UnityEngine.Object.Destroy(go);
+            if (go != null) {
+                UnityEngine.Object.Destroy(go);
+                GameLogger.Network.Info("PropRemoved {PropId} {RoomId}", propId, roomId);
+            }
             _spawnedGOs.Remove(propId);
         }
         BroadcastToRoom(roomId, new S2C_PropRemove { PropId = propId, RoomId = roomId });
@@ -186,6 +213,7 @@ public class ServerPropManager {
 
     public void ClearRoom(string roomId) {
         if (!_rooms.TryGetValue(roomId, out var room)) return;
+        int count = room.Count;
         foreach (int id in new List<int>(room.Keys)) {
             BroadcastToRoom(roomId, new S2C_PropRemove { PropId = id, RoomId = roomId });
             if (_spawnedGOs.TryGetValue(id, out var go)) {
@@ -194,6 +222,7 @@ public class ServerPropManager {
             }
         }
         _rooms.Remove(roomId);
+        GameLogger.Network.Info("RoomCleared {RoomId} {PropCount}", roomId, count);
     }
 
     // ── Snapshot ──────────────────────────────────────────────────────────────
@@ -206,6 +235,9 @@ public class ServerPropManager {
     public void SendRoomSnapshot(NetworkConnectionToClient conn, string roomId) {
         if (!_rooms.TryGetValue(roomId, out var room)) {
             conn.Send(new S2C_RoomSnapshot { RoomId = roomId, PropCount = 0 });
+            if (_roomStates.TryGetValue(roomId, out var statePayload))
+                conn.Send(new S2C_RoomState { RoomId = roomId, Payload = statePayload });
+            GameLogger.Network.Debug("RoomSnapshotEmpty {ConnectionId} {RoomId}", conn.connectionId, roomId);
             return;
         }
 
@@ -224,7 +256,48 @@ public class ServerPropManager {
                 conn.Send(BuildSpawnMessage(s.RoomId, s.PropId, s.PrefabId, s.Position, s.Rotation, s.Type, s.Payload));
             }
         }
+
+        if (_roomStates.TryGetValue(roomId, out var roomStatePayload))
+            conn.Send(new S2C_RoomState { RoomId = roomId, Payload = roomStatePayload });
+
+        if (_apartmentStatesByRoom.TryGetValue(roomId, out var byApt)) {
+            foreach (var kv in byApt)
+                conn.Send(new S2C_RoomState { RoomId = roomId, Payload = kv.Value });
+        }
+        
+        GameLogger.Network.Debug("RoomSnapshotSent {ConnectionId} {RoomId} {PropCount}", conn.connectionId, roomId, room.Count);
     }
+
+    // ── RoomState (Phase 2) ───────────────────────────────────────────────────
+
+    public void SetRoomState(string roomId, byte[] payload) {
+        _roomStates[roomId] = payload;
+        BroadcastToRoom(roomId, new S2C_RoomState { RoomId = roomId, Payload = payload });
+        GameLogger.Network.Debug("RoomStateSet {RoomId} {PayloadSize}", roomId, payload?.Length ?? 0);
+    }
+
+    /// <summary>
+    /// Stores a per-apartment state payload (multiple apartments can coexist in the same
+    /// hall room) and broadcasts an S2C_RoomState to all connections in that room.
+    /// On EnterRoom, every stored entry for the room is resent so late joiners see them all.
+    /// </summary>
+    public void SetApartmentState(string roomId, string apartmentKey, byte[] payload) {
+        if (!_apartmentStatesByRoom.TryGetValue(roomId, out var byApt)) {
+            byApt = new Dictionary<string, byte[]>();
+            _apartmentStatesByRoom[roomId] = byApt;
+        }
+        byApt[apartmentKey] = payload;
+        BroadcastToRoom(roomId, new S2C_RoomState { RoomId = roomId, Payload = payload });
+        GameLogger.Network.Debug("ApartmentStateSet {RoomId} {ApartmentKey} {PayloadSize}", roomId, apartmentKey, payload?.Length ?? 0);
+    }
+
+    public void RemoveApartmentState(string roomId, string apartmentKey) {
+        if (_apartmentStatesByRoom.TryGetValue(roomId, out var byApt))
+            byApt.Remove(apartmentKey);
+    }
+
+    public bool TryGetRoomState(string roomId, out byte[] payload) =>
+        _roomStates.TryGetValue(roomId, out payload);
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -279,8 +352,15 @@ public class ServerPropManager {
     };
 
     private static void BroadcastToRoom<T>(string roomId, T message) where T : struct, NetworkMessage {
-        foreach (var conn in PlayerRoomTracker.Instance.GetConnectionsInRoom(roomId)) {
+        var connections = PlayerRoomTracker.Instance.GetConnectionsInRoom(roomId);
+        int sentCount = 0;
+        foreach (var conn in connections) {
             conn.Send(message);
+            sentCount++;
+        }
+        if (sentCount > 0) {
+            GameLogger.Network.Debug("BroadcastToRoom {RoomId} {MessageType} {RecipientCount}",
+                roomId, typeof(T).Name, sentCount);
         }
     }
 }

@@ -9,6 +9,7 @@ using Mirror;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
+using Sim.Logging;
 using Sim.Scriptables;
 using Sim.UI;
 using Sim.Utils;
@@ -131,11 +132,13 @@ namespace Sim {
                 this.rigidbody.useGravity = false;
                 Destroy(GetComponent<AudioListener>());
                 this.SetupActions();
+                ClientLogger.NetworkDebug("RemotePlayerStartClient {NetId}", netId);
             }
         }
 
         public override void OnStartServer() {
             base.OnStartServer();
+            GameLogger.Network.Debug("PlayerStartServer {NetId} {IsClient}", netId, isClient);
 
             if (!isClient) {
                 this.navMeshAgent.enabled = false;
@@ -145,6 +148,8 @@ namespace Sim {
         }
 
         public override void OnStartLocalPlayer() {
+            ClientLogger.Player("LocalPlayerStart {NetId} {CharacterName}", netId, characterData?.Identity.FullName ?? "unknown");
+            
             this.InitStateMachine();
 
             if (this._playerState == PlayerState.DIED) {
@@ -163,15 +168,16 @@ namespace Sim {
             CharacterInfoPanelUI.Instance.UpdateMoney(this.playerBankAccount.Money);
 
             if (ClientPropManager.Instance == null) {
-                Debug.LogError("[PlayerController] ClientPropManager.Instance is null! Props will not be synchronized. Make sure ClientPropManager is in the scene.");
+                ClientLogger.NetworkError(null, "ClientPropManagerNull {NetId}", netId);
             } else {
                 ClientPropManager.Instance.EnterRoom("city");
-                Debug.Log("[PlayerController] Entered room 'city'");
+                ClientLogger.Player("PlayerEnteredRoom {RoomId} {NetId}", "city", netId);
             }
         }
 
         public override void OnStopClient() {
             if (isLocalPlayer) {
+                ClientLogger.Player("LocalPlayerStop {NetId}", netId);
                 this.UnSubscribeActions(this.actions);
             }
         }
@@ -211,21 +217,32 @@ namespace Sim {
 
         [Command]
         public void CmdConsume(uint itemNetId) {
+            GameLogger.Network.Debug("CmdConsume {PlayerNetId} {ItemNetId}", netId, itemNetId);
+            
             Item item = NetworkUtils.FindObject(itemNetId).GetComponent<Item>();
+            if (item == null) {
+                GameLogger.Network.Warning("CmdConsumeItemNotFound {PlayerNetId} {ItemNetId}", netId, itemNetId);
+                return;
+            }
 
             this.playerHealth.ApplyModifications(((ConsumableConfig) item.Configuration).Impacts);
             this.playerHands.UnEquipAndDestroy(itemNetId);
             
+            GameLogger.Player.Info("PlayerConsumedItem {PlayerNetId} {ItemNetId} {ItemId}", netId, itemNetId, item.Configuration?.ID ?? 0);
             this.RpcConsume();
         }
 
         [ClientRpc]
         public void RpcConsume() {
+            ClientLogger.NetworkDebug("RpcConsume {PlayerNetId} {IsLocalPlayer}", netId, isLocalPlayer);
+            
             if (isLocalPlayer) {
                 HUDManager.Instance.InventoryUI.Invoke(nameof(InventoryUI.UpdateUI), .1f);
+                ClientLogger.UI("InventoryUpdateTriggered");
             }
             
             this.audioSource.PlayOneShot(this.eatSound);
+            ClientLogger.Audio("EatSoundPlayed {PlayerNetId}", netId);
         }
 
         public void ResetGeographicArea() {
@@ -340,7 +357,10 @@ namespace Sim {
 
         [Command]
         public void CmdSetTalk(bool value) {
-            this.isTalking = value;
+            if (this.isTalking != value) {
+                GameLogger.Network.Debug("CmdSetTalk {PlayerNetId} {Value}", netId, value);
+                this.isTalking = value;
+            }
         }
 
         #region State Machine Management
@@ -446,6 +466,7 @@ namespace Sim {
 
         [Server]
         public void Kill() {
+            GameLogger.Player.Warning("PlayerKilled {PlayerNetId}", netId);
             this.Die();
             this.TargetKill(this.netIdentity.connectionToClient);
             Invoke(nameof(Revive), 4f);
@@ -456,25 +477,27 @@ namespace Sim {
             BuildingBehavior buildingBehavior = FindObjectsOfType<BuildingBehavior>().FirstOrDefault(x => x.Match(this.characterHome.Address));
 
             if (buildingBehavior) {
+                GameLogger.Player.Info("PlayerRevived {PlayerNetId} {BuildingStreet}", netId, this.characterHome.Address.street);
                 buildingBehavior.TeleportToApartment(this.characterHome.Address.doorNumber, this.netIdentity.connectionToClient);
                 this.playerHealth.ResetAll();
                 this.playerBankAccount.TakeMoney(50);
                 this.TargetRevive(this.netIdentity.connectionToClient);
             } else {
-                Debug.LogError($"[PlayerController] [Revive] Cannot find building with street name {this.characterHome.Address.street}");
+                GameLogger.Network.Error(null, "ReviveBuildingNotFound {PlayerNetId} {Street}", netId, this.characterHome.Address.street);
             }
         }
 
         [TargetRpc]
         public void TargetRevive(NetworkConnection conn) {
-            Debug.Log("I'm now alive");
+            ClientLogger.Player("PlayerRevivedClient {PlayerNetId}", netId);
             Invoke(nameof(Idle), 1f);
             NotificationManager.Instance.AddNotification("20 BC vous ont été volé lors de votre évanouissement. Les voleurs sont partout, faites attention à votre argent.", NotificationType.BANK);
+            ClientLogger.UI("ReviveNotificationShown");
         }
 
         [TargetRpc]
         public void TargetKill(NetworkConnection conn) {
-            Debug.Log("You are died");
+            ClientLogger.Player("PlayerDiedClient {PlayerNetId}", netId);
             this.Die();
         }
 

@@ -6379,7 +6379,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 232480507653709765}
-  - component: {fileID: 608618609674454386}
   - component: {fileID: 608618609674454397}
   m_Layer: 0
   m_Name: Apartment
@@ -6413,23 +6412,6 @@ Transform:
   - {fileID: 884419003834539224}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &608618609674454386
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 608618609674454399}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  _assetId: 669567246
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
 --- !u!114 &608618609674454397
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6442,16 +6424,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c59169967b7493649aa403554b6b2ab8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
-  frontDoorPrefab: {fileID: 9199841686096881086, guid: a3bce8cccb6db7d45bff1758e06fdd87,
-    type: 3}
   frontDoorSpawn: {fileID: 1293833945300934857}
-  simpleDoorPrefab: {fileID: 7933995681442427898, guid: 3cb1bad74eac2ad4098dc85c2e5a439b,
-    type: 3}
-  deliveryBoxPrefab: {fileID: 4492236850374378933, guid: 3c5fddc122d575d419dbe304880aacff,
-    type: 3}
   propsContainer: {fileID: 9206331865974619853}
   geographicArea: {fileID: 3653648617068967680}
   ahmedConfiguration:
@@ -6550,11 +6523,6 @@ MonoBehaviour:
       grounds: []
       buckets: []
       props: []
-  frontDoor: {fileID: 0}
-  address:
-    homeType: 0
-    doorNumber: 0
-    street: 
   tenant:
     _id: 
     user_id: 
@@ -6587,15 +6555,14 @@ MonoBehaviour:
       skinColorPercent: 0
       gender: 0
     mood: 0
-  tenantId: 
-  tenantIdentity:
-    firstname: 
-    lastname: 
-    originCountry: 
-    job: 0
-  presetName: 
   associatedHallController: {fileID: 0}
   state: 0
+  frontDoorPrefabConfig: {fileID: 11400000, guid: 7f933f9ec207f9b45a889cd39db10533,
+    type: 2}
+  simpleDoorPrefabConfig: {fileID: 11400000, guid: 375410120f7019f4c949b3bc160a7c34,
+    type: 2}
+  deliveryBoxPrefabConfig: {fileID: 11400000, guid: b43a5ecb6e6b9714fa38739a82e85e0a,
+    type: 2}
 --- !u!1 &791534694558885429
 GameObject:
   m_ObjectHideFlags: 0

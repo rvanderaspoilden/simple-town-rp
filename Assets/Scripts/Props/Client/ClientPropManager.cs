@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Mirror;
+using Sim.Logging;
 using UnityEngine;
 
 /// <summary>
@@ -33,7 +34,7 @@ public class ClientPropManager : MonoBehaviour {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        Debug.Log("[ClientPropManager] Initialized and set to DontDestroyOnLoad");
+        ClientLogger.Network("ClientPropManagerInitialized");
     }
 
     // ── Mirror handler registration ───────────────────────────────────────────
@@ -47,6 +48,8 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_DeliveryBoxOpened>      (OnDeliveryBoxOpened);
         NetworkClient.RegisterHandler<S2C_DispenserPurchaseResult>(OnDispenserPurchaseResult);
         NetworkClient.RegisterHandler<S2C_BuildAck>               (OnBuildAck);
+        NetworkClient.RegisterHandler<S2C_RoomState>              (OnRoomState);
+        ClientLogger.NetworkDebug("ClientPropHandlersRegistered {Count}", 9);
     }
 
     public void UnregisterHandlers() {
@@ -58,9 +61,12 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.UnregisterHandler<S2C_DeliveryBoxOpened>();
         NetworkClient.UnregisterHandler<S2C_DispenserPurchaseResult>();
         NetworkClient.UnregisterHandler<S2C_BuildAck>();
+        NetworkClient.UnregisterHandler<S2C_RoomState>();
+        ClientLogger.NetworkDebug("ClientPropHandlersUnregistered");
     }
 
-    public static event System.Action<bool> OnBuildAckReceived;
+    public static event System.Action<bool>           OnBuildAckReceived;
+    public static event System.Action<string, byte[]> OnRoomStateReceived;
 
     // ── Room entry / exit ─────────────────────────────────────────────────────
 
@@ -70,9 +76,14 @@ public class ClientPropManager : MonoBehaviour {
     /// the new room, then asks the server for the snapshot.
     /// </summary>
     public void EnterRoom(string roomId) {
-        if (_currentRoomId == roomId) return;
+        if (_currentRoomId == roomId) {
+            ClientLogger.NetworkDebug("EnterRoomSkipped {RoomId} (already in room)", roomId);
+            return;
+        }
 
+        string oldRoomId = _currentRoomId;
         if (!string.IsNullOrEmpty(_currentRoomId)) {
+            ClientLogger.Network("LeaveRoomRequest {RoomId}", _currentRoomId);
             NetworkClient.Send(new C2S_LeaveRoom { RoomId = _currentRoomId });
         }
         ClearProps();
@@ -81,13 +92,18 @@ public class ClientPropManager : MonoBehaviour {
         IndexSceneProps(roomId);
 
         NetworkClient.Send(new C2S_EnterRoom { RoomId = roomId });
-        Debug.Log($"[ClientPropManager] Entering room '{roomId}' (indexed {_props.Count} scene props)");
+        ClientLogger.Network("EnterRoomRequest {RoomId} {OldRoomId} {ScenePropCount}", roomId, oldRoomId ?? "none", _props.Count);
     }
 
     // ── Interaction dispatch ──────────────────────────────────────────────────
 
     public void RequestInteraction(int propId, PropType type, byte[] payload) {
-        if (string.IsNullOrEmpty(_currentRoomId)) return;
+        if (string.IsNullOrEmpty(_currentRoomId)) {
+            ClientLogger.NetworkWarning("PropInteractionNoRoom {PropId} {Type}", propId, type);
+            return;
+        }
+        ClientLogger.NetworkDebug("PropInteractionRequest {RoomId} {PropId} {Type} {PayloadSize}",
+            _currentRoomId, propId, type, payload?.Length ?? 0);
         NetworkClient.Send(new C2S_PropInteraction {
             PropId  = propId,
             RoomId  = _currentRoomId,
@@ -99,18 +115,28 @@ public class ClientPropManager : MonoBehaviour {
     // ── S2C handlers ──────────────────────────────────────────────────────────
 
     private void OnRoomSnapshot(S2C_RoomSnapshot msg) {
-        if (msg.RoomId != _currentRoomId) return;
-        Debug.Log($"[ClientPropManager] Snapshot for '{msg.RoomId}' ({msg.PropCount} props)");
+        if (msg.RoomId != _currentRoomId) {
+            ClientLogger.NetworkDebug("RoomSnapshotIgnored {MsgRoomId} {CurrentRoomId}", msg.RoomId, _currentRoomId);
+            return;
+        }
+        ClientLogger.Network("RoomSnapshotReceived {RoomId} {PropCount}", msg.RoomId, msg.PropCount);
     }
 
     private void OnPropSpawn(S2C_PropSpawn msg) {
-        if (msg.RoomId != _currentRoomId) return;
-        if (_props.ContainsKey(msg.PropId)) return;
+        if (msg.RoomId != _currentRoomId) {
+            ClientLogger.NetworkDebug("PropSpawnIgnored {PropId} {MsgRoomId} {CurrentRoomId}",
+                msg.PropId, msg.RoomId, _currentRoomId);
+            return;
+        }
+        if (_props.ContainsKey(msg.PropId)) {
+            ClientLogger.NetworkDebug("PropSpawnDuplicate {PropId} (already exists)", msg.PropId);
+            return;
+        }
 
         var propsConfig = Sim.DatabaseManager.PropsDatabase?.GetPropsById(msg.PrefabId);
         GameObject prefab = propsConfig?.GetPrefab()?.gameObject;
         if (prefab == null) {
-            Debug.LogWarning($"[ClientPropManager] PropsConfig id={msg.PrefabId} not found — prop {msg.PropId} skipped");
+            ClientLogger.NetworkWarning("PropSpawnConfigNotFound {PropId} {PrefabId}", msg.PropId, msg.PrefabId);
             return;
         }
 
@@ -126,12 +152,17 @@ public class ClientPropManager : MonoBehaviour {
             behaviour.ApplyState(msg.Type, msg.Payload);
         }
         _spawnedGOs[msg.PropId] = go;
+        
+        ClientLogger.NetworkDebug("PropSpawned {PropId} {PrefabId} {RoomId}", msg.PropId, msg.PrefabId, msg.RoomId);
     }
 
     private void OnPropUpdate(S2C_PropUpdate msg) {
         if (msg.RoomId != _currentRoomId) return;
         if (_props.TryGetValue(msg.PropId, out var behaviour)) {
             behaviour.ApplyState(msg.Type, msg.Payload);
+            ClientLogger.NetworkDebug("PropUpdated {PropId} {RoomId} {Type}", msg.PropId, msg.RoomId, msg.Type);
+        } else {
+            ClientLogger.NetworkDebug("PropUpdateUnknownProp {PropId} {RoomId}", msg.PropId, msg.RoomId);
         }
     }
 
@@ -140,30 +171,44 @@ public class ClientPropManager : MonoBehaviour {
         if (_spawnedGOs.TryGetValue(msg.PropId, out var go) && go != null) {
             go.transform.position = msg.Position;
             go.transform.rotation = msg.Rotation;
+            ClientLogger.NetworkDebug("PropTransformUpdated {PropId} {Position}", msg.PropId, msg.Position);
         }
     }
 
     private void OnBuildAck(S2C_BuildAck msg) {
+        ClientLogger.Network("BuildAck {Success}", msg.Success);
         OnBuildAckReceived?.Invoke(msg.Success);
+    }
+
+    private void OnRoomState(S2C_RoomState msg) {
+        ClientLogger.NetworkDebug("RoomStateReceived {RoomId} {PayloadSize}", msg.RoomId, msg.Payload?.Length ?? 0);
+        OnRoomStateReceived?.Invoke(msg.RoomId, msg.Payload);
     }
 
     private void OnPropRemove(S2C_PropRemove msg) {
         if (msg.RoomId != _currentRoomId) return;
         _props.Remove(msg.PropId);
         if (_spawnedGOs.TryGetValue(msg.PropId, out var go)) {
-            if (go != null) Destroy(go);
+            if (go != null) {
+                Destroy(go);
+                ClientLogger.NetworkDebug("PropRemoved {PropId} {RoomId}", msg.PropId, msg.RoomId);
+            }
             _spawnedGOs.Remove(msg.PropId);
         }
     }
 
     private void OnDeliveryBoxOpened(S2C_DeliveryBoxOpened msg) {
         if (msg.RoomId != _currentRoomId) return;
+        ClientLogger.Network("DeliveryBoxOpened {PropId} {RoomId} {DeliveryCount}",
+            msg.PropId, msg.RoomId, msg.Deliveries?.Length ?? 0);
         if (_props.TryGetValue(msg.PropId, out var behaviour) && behaviour is DeliveryBoxBehaviour box) {
             box.OnDeliveryBoxOpened(msg.Deliveries);
         }
     }
 
     private void OnDispenserPurchaseResult(S2C_DispenserPurchaseResult msg) {
+        ClientLogger.Network("DispenserPurchaseResult {PropId} {Success} {ItemId}",
+            msg.PropId, msg.Success, msg.ItemId);
         if (_props.TryGetValue(msg.PropId, out var behaviour) && behaviour is DispenserBehaviour disp) {
             disp.HandlePurchaseResult(msg.Success, msg.ItemId);
         }

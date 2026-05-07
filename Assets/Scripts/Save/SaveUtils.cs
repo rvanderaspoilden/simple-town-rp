@@ -21,14 +21,6 @@ namespace Sim.Utils {
             }).ToArray();
         }
 
-        public static CoverData[] CreateCoverDatas(SyncDictionary<int, CoverSettings> settings) {
-            return settings.Select(pair => new CoverData {
-                idx = pair.Key,
-                additionalColor = pair.Value.GetColor(),
-                paintConfigId = pair.Value.paintConfigId
-            }).ToArray();
-        }
-
         /// <summary>
         /// Spawns a prop in the new system from a saved DefaultData entry.
         /// Returns the assigned propId (or -1 on failure).
@@ -64,6 +56,7 @@ namespace Sim.Utils {
             );
 
             if (propId >= 0) {
+                parent.TrackProp(propId);
                 GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(propId);
                 if (go != null && container != null) {
                     go.transform.SetParent(container);

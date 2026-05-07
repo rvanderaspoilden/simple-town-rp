@@ -1,6 +1,5 @@
-using System;
+using Mirror;
 using Sim;
-using Sim.Interactables;
 using TMPro;
 using UnityEngine;
 
@@ -18,9 +17,9 @@ public class ElevatorUI : MonoBehaviour {
     [SerializeField]
     private AudioClip backgroundSound;
 
-    private Teleporter teleporterBind;
+    private TeleporterBehaviour teleporterBind;
 
-    public void Bind(Teleporter bind) {
+    public void Bind(TeleporterBehaviour bind) {
         this.teleporterBind = bind;
         this.searchTxt.text = string.Empty;
         HUDManager.Instance.PlayBackgroundSound(this.backgroundSound, .03f);
@@ -44,7 +43,7 @@ public class ElevatorUI : MonoBehaviour {
 
             if (originFloor != floorToGo) {
                 HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
-                this.teleporterBind.CmdUse(floorToGo);
+                NetworkClient.Send(new C2S_TeleporterUse { FloorDestination = floorToGo });
                 DefaultViewUI.Instance.HideElevatorUI();
                 LoadingManager.Instance.Show(true);
             } else {
@@ -59,7 +58,7 @@ public class ElevatorUI : MonoBehaviour {
         if (originFloor != 0) {
             HUDManager.Instance.PlaySound(this.navigateButtonClickSound, .6f);
             DefaultViewUI.Instance.HideElevatorUI();
-            this.teleporterBind.CmdUse(0);
+            NetworkClient.Send(new C2S_TeleporterUse { FloorDestination = 0 });
         } else {
             DefaultViewUI.Instance.HideElevatorUI();
         }

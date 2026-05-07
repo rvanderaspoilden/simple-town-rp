@@ -10,8 +10,7 @@ namespace Sim.Building {
     /// Cosmetic / decorative prop that lives directly in a scene without any NetworkIdentity.
     /// Used for the City scene where most props have no runtime state to synchronize.
     /// Only purely-local actions (LOOK and subclass-specific Execute) are supported.
-    /// Stateful behaviours (build/sell/move, lock state, occupancy, etc.) belong on the
-    /// NetworkBehaviour-based <see cref="Props"/> hierarchy.
+    /// Stateful behaviours (build/sell/move, lock state, occupancy, etc.) use PropBehaviourBase.
     /// </summary>
     [RequireComponent(typeof(PropsRenderer))]
     public class StaticProp : MonoBehaviour, IInteractable {

@@ -51,14 +51,14 @@ Read the /unity-initial-setup skill for detailed installation instructions.
   "type": "object",
   "properties": {
     "gameObjectRefs": {
-      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Runtime.Data.GameObjectRef[]"
+      "$ref": "#/$defs/AIGD.GameObjectRef[]"
     },
     "deleteSourceObjects": {
       "type": "boolean"
     }
   },
   "$defs": {
-    "com.IvanMurzak.Unity.MCP.Runtime.Data.GameObjectRef": {
+    "AIGD.GameObjectRef": {
       "type": "object",
       "properties": {
         "instanceID": {
@@ -94,10 +94,10 @@ Read the /unity-initial-setup skill for detailed installation instructions.
     "System.Type": {
       "type": "string"
     },
-    "com.IvanMurzak.Unity.MCP.Runtime.Data.GameObjectRef[]": {
+    "AIGD.GameObjectRef[]": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Runtime.Data.GameObjectRef",
+        "$ref": "#/$defs/AIGD.GameObjectRef",
         "description": "Find GameObject in opened Prefab or in the active Scene."
       }
     }
