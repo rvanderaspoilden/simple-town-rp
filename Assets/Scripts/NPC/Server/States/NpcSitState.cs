@@ -29,7 +29,22 @@ public class NpcSitState : NpcStateBase {
 
     public bool HasFinished => _phase == Phase.Done;
 
-    public override NpcStateType StateType => NpcStateType.Sitting;
+    /// <summary>
+    /// State logique courant — DYNAMIQUE selon la phase.
+    ///
+    /// CRITIQUE : pendant qu'on marche vers le siège (Approaching) on émet Walking,
+    /// PAS Sitting. Sinon le client snap immédiatement à la position courante (encore
+    /// loin du siège) puis fige le transform, et le NPC continue de bouger côté
+    /// serveur → "glissement" visuel + animation Sit jouée trop tôt.
+    ///
+    /// On ne passe à Sitting QU'APRÈS le snap serveur sur le siège (phase Sitting),
+    /// au moment où la position dans le snapshot suivant correspond au siège exact.
+    /// </summary>
+    public override NpcStateType StateType => _phase switch {
+        Phase.Sitting     => NpcStateType.Sitting,
+        Phase.Approaching => NpcStateType.Walking,
+        _                 => NpcStateType.Idle,
+    };
 
     public NpcSitState(NpcAIController npc) : base(npc) {
         _animator = Npc.GetComponent<PlayerAnimator>();

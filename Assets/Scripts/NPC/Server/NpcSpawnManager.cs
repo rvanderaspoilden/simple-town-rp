@@ -23,7 +23,7 @@ public class NpcSpawnManager {
     public static  NpcSpawnManager Instance => _instance ??= new NpcSpawnManager();
 
     // ── Config (réglable depuis le bootstrap / scene component) ───────────────
-    public int    MaxActiveNpcs       = 5;
+    public int    MaxActiveNpcs       = 10;
     public float  RespawnDelaySeconds = 20f;
     public string RoomId              = "city";
 

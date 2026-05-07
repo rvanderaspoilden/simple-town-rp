@@ -185,19 +185,30 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
             current = NpcStateType.Walking;
         }
 
-        // Détection de transition → notify (broadcast immédiat).
-        if (current != _lastNotifiedState) {
-            NpcServerManager.Instance.NotifyStateChanged(_npcId, current);
-            _lastNotifiedState = current;
-        }
+        // ORDRE CRITIQUE :
+        //   1. PushTransform met à jour la position serveur (qui est DÉJÀ le siège
+        //      après NpcSitState.Tick → snap).
+        //   2. NotifyStateChanged broadcaste alors avec la position fraîche.
+        // Inverser l'ordre causerait un broadcast Sitting + position pré-snap →
+        // le client snapperait à la mauvaise position, puis l'update suivante
+        // n'arriverait jamais (delta filter : state inchangé, pos inchangée selon
+        // delta) → "glissement" de l'ancienne position vers le siège.
+        // Les NpcAgent.velocity est aussi à 0 si l'agent est désactivé → blend
+        // tree client passe Idle direct, sans Walk résiduel pendant le sit.
+        Vector3 vel = (_agent != null && _agent.enabled) ? _agent.velocity : Vector3.zero;
 
         NpcServerManager.Instance.PushTransform(
             _npcId,
             transform.position,
             transform.rotation,
-            _agent.velocity,
+            vel,
             current
         );
+
+        if (current != _lastNotifiedState) {
+            NpcServerManager.Instance.NotifyStateChanged(_npcId, current);
+            _lastNotifiedState = current;
+        }
     }
 
     // ── State machine wiring ──────────────────────────────────────────────────
