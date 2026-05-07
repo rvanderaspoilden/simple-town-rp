@@ -54,6 +54,8 @@ public static class SeatService {
         current.SeatOccupants[idx] = occupant;
         ServerPropManager.Instance.UpdatePropState(roomId, propId, current.Serialize());
         seatTransform = seat.SeatTransforms[idx];
+        GameLogger.Network.Info("SeatReserved {PropId} {Slot} {Occupant} {IsNpc} {RoomId}",
+            propId, idx, occupant, entity.IsNpc, roomId);
         return seatTransform != null;
     }
 
@@ -66,8 +68,11 @@ public static class SeatService {
         SeatState current = SeatState.Deserialize(state.Payload);
         bool changed = ClearOccupant(current.SeatOccupants,  entity.OccupantId)
                      | ClearOccupant(current.CouchOccupants, entity.OccupantId);
-        if (changed)
+        if (changed) {
             ServerPropManager.Instance.UpdatePropState(roomId, propId, current.Serialize());
+            GameLogger.Network.Info("SeatReleased {PropId} {Occupant} {IsNpc} {RoomId}",
+                propId, entity.OccupantId, entity.IsNpc, roomId);
+        }
     }
 
     /// <summary>Libère tous les slots détenus par l'entité dans toute la room.</summary>
@@ -84,13 +89,20 @@ public static class SeatService {
     }
 
     /// <summary>
-    /// Cherche le premier siège libre dans la room. Renvoie le propId et le transform
-    /// d'approche (position du seat slot 0 — le NPC s'approchera de cette position avant
-    /// de tenter une vraie réservation, qui ré-évaluera la disponibilité).
+    /// Cherche le siège libre LE PLUS PROCHE de <paramref name="origin"/> dans la room.
+    /// Si <paramref name="maxDistance"/> &gt; 0, ignore les sièges au-delà.
+    /// Renvoie false si aucun siège valide n'est trouvé.
+    ///
+    /// Le NPC s'approchera de la position retournée puis ré-évaluera la disponibilité
+    /// via <see cref="TryReserveSeat"/> (le slot peut avoir été pris entre-temps).
     /// </summary>
-    public static bool TryFindFreeSeatInRoom(string roomId, out int propId, out Vector3 approachPosition) {
+    public static bool TryFindFreeSeatInRoom(string roomId, Vector3 origin, float maxDistance,
+                                              out int propId, out Vector3 approachPosition) {
         propId = -1;
         approachPosition = Vector3.zero;
+
+        float bestSqr = maxDistance > 0f ? maxDistance * maxDistance : float.MaxValue;
+        bool  found   = false;
 
         foreach (ServerPropState state in ServerPropManager.Instance.GetRoomStates(roomId)) {
             if (state.Type != PropType.Seat) continue;
@@ -101,11 +113,16 @@ public static class SeatService {
             if (!SeatBehaviour.TryGet(state.PropId, out var behaviour)) continue;
             if (behaviour.SeatTransforms == null || behaviour.SeatTransforms.Length == 0) continue;
 
-            propId = state.PropId;
-            approachPosition = behaviour.SeatTransforms[0].position;
-            return true;
+            Vector3 pos = behaviour.SeatTransforms[0].position;
+            float sqr = (pos - origin).sqrMagnitude;
+            if (sqr > bestSqr) continue;
+
+            bestSqr          = sqr;
+            propId           = state.PropId;
+            approachPosition = pos;
+            found            = true;
         }
-        return false;
+        return found;
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────

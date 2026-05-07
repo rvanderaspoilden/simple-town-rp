@@ -1,5 +1,7 @@
+using System;
 using Sim;
 using Sim.Enums;
+using Sim.Logging;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -41,6 +43,10 @@ public class ClientNpcView : MonoBehaviour {
     private bool     _hasNext;
     private float    _displayedSpeed;
 
+    /// <summary>Dernier state logique reçu — pilote l'animation et le mode de rendu.</summary>
+    private NpcStateType _currentState = NpcStateType.Idle;
+    private NpcStateType _appliedState = (NpcStateType)255;
+
     private PlayerAnimator      _animator;
     private CharacterStyleSetup _styleSetup;
 
@@ -71,7 +77,7 @@ public class ClientNpcView : MonoBehaviour {
                 Style style = JsonUtility.FromJson<Style>(styleJson);
                 _styleSetup.ApplyStyle(style);
             }
-            catch (System.Exception e) {
+            catch (Exception e) {
                 Debug.LogWarning($"[ClientNpcView] Failed to apply style for npc#{npcId}: {e.Message}");
             }
         }
@@ -94,8 +100,18 @@ public class ClientNpcView : MonoBehaviour {
     }
 
     public void PushSnapshot(Vector3 position, Quaternion rotation,
-                             Vector3 velocity, NpcAnimationState animState) {
-        if (_hasNext && (position - _next.Position).sqrMagnitude > snapDistance * snapDistance) {
+                             Vector3 velocity, NpcStateType state) {
+        if (state != _currentState) {
+            ClientLogger.Network("NpcStateReceived {NpcId} {From} {To}", NpcId, _currentState, state);
+            _currentState = state;
+        }
+
+        // Sitting : on snap directement à la position du siège (pas d'interpolation
+        // de marche — sinon le NPC "glisse" vers le siège).
+        bool isSitting   = state == NpcStateType.Sitting;
+        bool snapJump    = _hasNext && (position - _next.Position).sqrMagnitude > snapDistance * snapDistance;
+
+        if (isSitting || snapJump) {
             transform.position = position;
             transform.rotation = rotation;
             _prev = _next = new Snapshot {
@@ -118,21 +134,44 @@ public class ClientNpcView : MonoBehaviour {
         }
         _hasPrev = _hasNext = true;
 
-        _displayedSpeed = velocity.magnitude;
+        // Quand assis on force la vélocité affichée à 0 pour que le blend tree
+        // ne tente pas de jouer Walk en parallèle.
+        _displayedSpeed = isSitting ? 0f : velocity.magnitude;
     }
 
     private void Update() {
         if (!_hasPrev || !_hasNext) return;
 
-        float renderTime = Time.time - interpolationDelay;
-        float duration   = Mathf.Max(0.0001f, _next.ServerTime - _prev.ServerTime);
-        float t          = Mathf.Clamp01((renderTime - _prev.ServerTime) / duration);
+        // Position / rotation
+        if (_currentState == NpcStateType.Sitting) {
+            // Pas d'interpolation : on reste collé au siège (déjà appliqué dans PushSnapshot).
+            transform.position = _next.Position;
+            transform.rotation = _next.Rotation;
+        }
+        else {
+            float renderTime = Time.time - interpolationDelay;
+            float duration   = Mathf.Max(0.0001f, _next.ServerTime - _prev.ServerTime);
+            float t          = Mathf.Clamp01((renderTime - _prev.ServerTime) / duration);
+            transform.position = Vector3.Lerp(_prev.Position, _next.Position, t);
+            transform.rotation = Quaternion.Slerp(_prev.Rotation, _next.Rotation, t);
+        }
 
-        transform.position = Vector3.Lerp(_prev.Position, _next.Position, t);
-        transform.rotation = Quaternion.Slerp(_prev.Rotation, _next.Rotation, t);
-
+        // Animator — pilotage via PlayerAnimator (mêmes paramètres que le joueur).
         if (_animator != null) {
             _animator.SetVelocity(_displayedSpeed);
+
+            // Sit / unsit déclenchés sur transition de state, pas en continu.
+            if (_appliedState != _currentState) {
+                if (_currentState == NpcStateType.Sitting) {
+                    _animator.SetAction(CharacterAnimatorAction.SIT);
+                    ClientLogger.Network("NpcAppliedSit {NpcId}", NpcId);
+                }
+                else if (_appliedState == NpcStateType.Sitting) {
+                    _animator.SetAction(CharacterAnimatorAction.NONE);
+                    ClientLogger.Network("NpcAppliedUnsit {NpcId}", NpcId);
+                }
+                _appliedState = _currentState;
+            }
         }
     }
 }

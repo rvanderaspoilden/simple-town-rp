@@ -17,7 +17,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -75,8 +75,8 @@ Material:
     - Vector1_244B0600: 1.03
     - Vector1_34CF798A: 1.75
     - Vector1_36E8227: 0.91
-    - Vector1_3D886DA1: 0.298
-    - Vector1_46E42935: 0
+    - Vector1_3D886DA1: 0.261
+    - Vector1_46E42935: 0.2
     - Vector1_47683D42: 0.346
     - Vector1_A0EAD698: 0.36
     - Vector1_A6A0BC26: 7.18
@@ -85,7 +85,7 @@ Material:
     - Vector1_DF445019: 1.5
     - Vector1_E03AB928: 0.05
     - Vector1_E5C51606: 1.45
-    - Vector1_F38B44AA: 0.54
+    - Vector1_F38B44AA: 0.25
     - _AlphaClip: 0
     - _Blend: 0
     - _BumpScale: 1
@@ -112,7 +112,7 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - Color_7D9A58EC: {r: 0.05098038, g: 0.15999341, b: 0.29411766, a: 1}
+    - Color_7D9A58EC: {r: 0.10684408, g: 0.26735646, b: 0.46226418, a: 1}
     - Color_F01C36BF: {r: 0, g: 0.8679245, b: 0.83359015, a: 0.48235294}
     - Vector2_37B21477: {r: 0.3, g: 0.3, b: 1, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}

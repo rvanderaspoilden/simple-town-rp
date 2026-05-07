@@ -7,6 +7,8 @@ using UnityEngine;
 public class NpcBackToHomeState : NpcStateBase {
     private bool _despawnRequested;
 
+    public override NpcStateType StateType => NpcStateType.BackToHome;
+
     public NpcBackToHomeState(NpcAIController npc) : base(npc) { }
 
     public override void OnEnter() {

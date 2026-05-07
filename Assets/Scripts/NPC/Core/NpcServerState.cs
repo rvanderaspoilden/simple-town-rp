@@ -15,14 +15,14 @@ public class NpcServerState {
     /// <summary>Identité (nom, mood) — constante après le spawn.</summary>
     public NpcIdentity Identity;
 
-    public Vector3           Position;
-    public Quaternion        Rotation;
-    public Vector3           Velocity;
-    public NpcAnimationState AnimationState;
+    public Vector3      Position;
+    public Quaternion   Rotation;
+    public Vector3      Velocity;
+    public NpcStateType State;
 
     // Dernier état réellement broadcasté → utilisé pour décider si on renvoie un update.
-    public Vector3           LastSentPosition;
-    public Quaternion        LastSentRotation;
-    public NpcAnimationState LastSentAnimationState;
-    public bool              EverSent;
+    public Vector3      LastSentPosition;
+    public Quaternion   LastSentRotation;
+    public NpcStateType LastSentState;
+    public bool         EverSent;
 }

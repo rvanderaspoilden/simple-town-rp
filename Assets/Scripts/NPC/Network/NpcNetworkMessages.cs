@@ -38,7 +38,7 @@ public struct S2C_UpdateNpcTransform : NetworkMessage {
     public Vector3           Position;
     public Quaternion        Rotation;
     public Vector3           Velocity;
-    public NpcAnimationState AnimationState;
+    public NpcStateType      State;
 }
 
 /// <summary>Ordonne au client de détruire un NPC.</summary>

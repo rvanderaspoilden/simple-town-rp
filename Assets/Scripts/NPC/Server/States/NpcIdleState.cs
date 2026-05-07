@@ -9,6 +9,8 @@ public class NpcIdleState : NpcStateBase {
 
     public bool IsIdleComplete { get; private set; }
 
+    public override NpcStateType StateType => NpcStateType.Idle;
+
     public NpcIdleState(NpcAIController npc) : base(npc) { }
 
     public override void OnEnter() {

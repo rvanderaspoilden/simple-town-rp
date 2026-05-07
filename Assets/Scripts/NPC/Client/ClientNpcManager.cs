@@ -93,7 +93,7 @@ public class ClientNpcManager : MonoBehaviour {
 
     private void OnUpdateTransform(S2C_UpdateNpcTransform msg) {
         if (_views.TryGetValue(msg.NpcId, out var view) && view != null) {
-            view.PushSnapshot(msg.Position, msg.Rotation, msg.Velocity, msg.AnimationState);
+            view.PushSnapshot(msg.Position, msg.Rotation, msg.Velocity, msg.State);
         }
     }
 

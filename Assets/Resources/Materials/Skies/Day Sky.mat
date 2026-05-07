@@ -19,7 +19,6 @@ Material:
   - _ENABLEMOON_ON
   - _ENABLEPATTERNOVERLAY_ON
   - _ENABLESTARSTWINKLING_ON
-  - _ENABLESTARS_ON
   - _ENABLESUN_ON
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -144,13 +143,13 @@ Material:
     - _EnableFogMessage: 0
     - _EnableMoon: 1
     - _EnablePatternOverlay: 1
-    - _EnableStars: 1
+    - _EnableStars: 0
     - _EnableStarsRotation: 0
     - _EnableStarsTwinkling: 1
     - _EnableSun: 1
     - _EnvironmentReflections: 1
     - _EquatorHeight: 0.569
-    - _EquatorSmoothness: 0.5
+    - _EquatorSmoothness: 0.399
     - _FogCat: 1
     - _FogFill: 0
     - _FogHeight: 0
@@ -198,14 +197,14 @@ Material:
     - _CloudsShadowColor: {r: 0.49803913, g: 0.7450981, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _EquatorColor: {r: 0.39957076, g: 0.5781721, b: 0.667, a: 1}
-    - _GroundColor: {r: 0.2141321, g: 0.7068128, b: 0.9150943, a: 1}
+    - _EquatorColor: {r: 1, g: 0.91217285, b: 0.8066038, a: 1}
+    - _GroundColor: {r: 0.990566, g: 0.85946685, b: 0.7242346, a: 1}
     - _MoonColor: {r: 1, g: 1, b: 1, a: 1}
-    - _SkyColor: {r: 1, g: 0.9877422, b: 0.9575472, a: 1}
+    - _SkyColor: {r: 0.9198113, g: 1, b: 0.9966177, a: 1}
     - _SkyboxRotationAxis: {r: 0, g: 1, b: 0, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _StarsRotationAxis: {r: 0, g: 1, b: 0, a: 0}
-    - _SunColor: {r: 1, g: 1, b: 1, a: 1}
+    - _SunColor: {r: 1, g: 0.8392157, b: 0.6392157, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &8696644505582062805

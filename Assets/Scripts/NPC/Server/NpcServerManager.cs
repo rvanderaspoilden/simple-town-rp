@@ -84,12 +84,12 @@ public class NpcServerManager {
             Position       = position,
             Rotation       = rotation,
             Velocity       = Vector3.zero,
-            AnimationState = NpcAnimationState.Idle,
+            State          = NpcStateType.Idle,
 
-            LastSentPosition       = position,
-            LastSentRotation       = rotation,
-            LastSentAnimationState = NpcAnimationState.Idle,
-            EverSent               = false
+            LastSentPosition = position,
+            LastSentRotation = rotation,
+            LastSentState    = NpcStateType.Idle,
+            EverSent         = false
         };
         _npcs[id] = state;
 
@@ -118,12 +118,43 @@ public class NpcServerManager {
 
     /// <summary>Met à jour le state pur (pas de broadcast immédiat — le tick décide).</summary>
     public void PushTransform(int npcId, Vector3 position, Quaternion rotation,
-                              Vector3 velocity, NpcAnimationState animState) {
+                              Vector3 velocity, NpcStateType stateType) {
         if (!_npcs.TryGetValue(npcId, out var s)) return;
-        s.Position       = position;
-        s.Rotation       = rotation;
-        s.Velocity       = velocity;
-        s.AnimationState = animState;
+        s.Position = position;
+        s.Rotation = rotation;
+        s.Velocity = velocity;
+        s.State    = stateType;
+    }
+
+    /// <summary>
+    /// Notifie un changement de state logique. Force un broadcast immédiat (sans
+    /// attendre le tick) pour que les clients voient la transition au plus tôt
+    /// — critique pour les states comme Sitting où l'animation doit changer
+    /// précisément au moment où la position se fixe.
+    /// </summary>
+    public void NotifyStateChanged(int npcId, NpcStateType newState) {
+        if (!_npcs.TryGetValue(npcId, out var s)) return;
+        if (s.State == newState && s.EverSent) return;
+
+        NpcStateType previous = s.State;
+        s.State = newState;
+
+        BroadcastToRoom(s.RoomId, new S2C_UpdateNpcTransform {
+            NpcId    = s.NpcId,
+            RoomId   = s.RoomId,
+            Position = s.Position,
+            Rotation = s.Rotation,
+            Velocity = s.Velocity,
+            State    = newState
+        });
+
+        s.LastSentPosition = s.Position;
+        s.LastSentRotation = s.Rotation;
+        s.LastSentState    = newState;
+        s.EverSent         = true;
+
+        GameLogger.Network.Info("NpcStateChanged {NpcId} {From} {To} {RoomId}",
+            npcId, previous, newState, s.RoomId);
     }
 
     public void Unregister(int npcId) {
@@ -156,26 +187,26 @@ public class NpcServerManager {
         foreach (var kv in _npcs) {
             NpcServerState s = kv.Value;
 
-            bool posChanged  = !s.EverSent || (s.Position - s.LastSentPosition).sqrMagnitude >= posThreshSq;
-            bool rotChanged  = SyncRotation && (!s.EverSent ||
-                               Quaternion.Angle(s.Rotation, s.LastSentRotation) >= RotationThresholdDeg);
-            bool animChanged = !s.EverSent || s.AnimationState != s.LastSentAnimationState;
+            bool posChanged   = !s.EverSent || (s.Position - s.LastSentPosition).sqrMagnitude >= posThreshSq;
+            bool rotChanged   = SyncRotation && (!s.EverSent ||
+                                Quaternion.Angle(s.Rotation, s.LastSentRotation) >= RotationThresholdDeg);
+            bool stateChanged = !s.EverSent || s.State != s.LastSentState;
 
-            if (!posChanged && !rotChanged && !animChanged) continue;
+            if (!posChanged && !rotChanged && !stateChanged) continue;
 
             BroadcastToRoom(s.RoomId, new S2C_UpdateNpcTransform {
-                NpcId          = s.NpcId,
-                RoomId         = s.RoomId,
-                Position       = s.Position,
-                Rotation       = SyncRotation ? s.Rotation : s.LastSentRotation,
-                Velocity       = s.Velocity,
-                AnimationState = s.AnimationState
+                NpcId    = s.NpcId,
+                RoomId   = s.RoomId,
+                Position = s.Position,
+                Rotation = SyncRotation ? s.Rotation : s.LastSentRotation,
+                Velocity = s.Velocity,
+                State    = s.State
             });
 
-            s.LastSentPosition       = s.Position;
+            s.LastSentPosition = s.Position;
             if (SyncRotation) s.LastSentRotation = s.Rotation;
-            s.LastSentAnimationState = s.AnimationState;
-            s.EverSent               = true;
+            s.LastSentState    = s.State;
+            s.EverSent         = true;
         }
     }
 
@@ -202,12 +233,12 @@ public class NpcServerManager {
             // Envoie immédiatement un transform pour amorcer l'interpolation
             // avec velocity et animationState courants.
             conn.Send(new S2C_UpdateNpcTransform {
-                NpcId          = s.NpcId,
-                RoomId         = s.RoomId,
-                Position       = s.Position,
-                Rotation       = s.Rotation,
-                Velocity       = s.Velocity,
-                AnimationState = s.AnimationState
+                NpcId    = s.NpcId,
+                RoomId   = s.RoomId,
+                Position = s.Position,
+                Rotation = s.Rotation,
+                Velocity = s.Velocity,
+                State    = s.State
             });
             sent++;
         }

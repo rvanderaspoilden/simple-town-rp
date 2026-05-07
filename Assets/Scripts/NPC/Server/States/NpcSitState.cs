@@ -1,4 +1,5 @@
 using Sim;
+using Sim.Logging;
 using UnityEngine;
 
 /// <summary>
@@ -28,6 +29,8 @@ public class NpcSitState : NpcStateBase {
 
     public bool HasFinished => _phase == Phase.Done;
 
+    public override NpcStateType StateType => NpcStateType.Sitting;
+
     public NpcSitState(NpcAIController npc) : base(npc) {
         _animator = Npc.GetComponent<PlayerAnimator>();
     }
@@ -36,12 +39,16 @@ public class NpcSitState : NpcStateBase {
         _phase      = Phase.Searching;
         _seatPropId = -1;
 
-        if (SeatService.TryFindFreeSeatInRoom(Npc.RoomId, out _seatPropId, out _approachPos)) {
+        if (SeatService.TryFindFreeSeatInRoom(
+                Npc.RoomId,
+                Npc.transform.position,
+                Npc.MaxSeatSearchDistance,
+                out _seatPropId, out _approachPos)) {
             Npc.SetDestination(_approachPos);
             _phase = Phase.Approaching;
         }
         else {
-            // Pas de siège disponible — fallback immédiat vers Idle.
+            // Pas de siège disponible (ou trop loin) — fallback immédiat vers Idle.
             _phase = Phase.Done;
         }
     }
@@ -51,23 +58,23 @@ public class NpcSitState : NpcStateBase {
             case Phase.Approaching:
                 if (Npc.HasReachedDestination()) {
                     if (SeatService.TryReserveSeat(Npc, Npc.RoomId, _seatPropId, out Transform slot)) {
-                        // Snap au siège — exact même séquence que CharacterSit.OnEnter
-                        // (disable agent → set transform → SetAction(SIT)).
                         _preSitPosition = Npc.transform.position;
                         Npc.StopAgent();
                         Npc.SetAgentEnabled(false);
                         Npc.transform.position = slot.position;
                         Npc.transform.rotation = slot.rotation;
 
-                        if (_animator != null) {
-                            _animator.SetAction(CharacterAnimatorAction.SIT);
-                        }
+                        if (_animator != null) _animator.SetAction(CharacterAnimatorAction.SIT);
 
                         _sitTimer = Random.Range(Npc.MinSitSeconds, Npc.MaxSitSeconds);
                         _phase = Phase.Sitting;
+
+                        GameLogger.Network.Info("NpcSitBegin {NpcId} {PropId} {Duration}",
+                            Npc.NpcId, _seatPropId, _sitTimer);
                     }
                     else {
-                        // Le slot a été pris entre la recherche et l'arrivée.
+                        GameLogger.Network.Debug("NpcSitAborted {NpcId} {PropId} (slot taken)",
+                            Npc.NpcId, _seatPropId);
                         _phase = Phase.Done;
                     }
                 }
@@ -92,12 +99,13 @@ public class NpcSitState : NpcStateBase {
     }
 
     private void LeaveSeat() {
-        if (_animator != null) {
-            _animator.SetAction(CharacterAnimatorAction.NONE);
-        }
+        if (_animator != null) _animator.SetAction(CharacterAnimatorAction.NONE);
+
         if (_seatPropId > 0) {
             SeatService.ReleaseSeat(Npc, Npc.RoomId, _seatPropId);
+            GameLogger.Network.Info("NpcSitEnd {NpcId} {PropId}", Npc.NpcId, _seatPropId);
         }
+
         // Téléport au point d'avant l'assise (sur la navmesh) puis réactive l'agent
         // — même séquence que CharacterSit.OnExit côté joueur.
         Npc.transform.position = _preSitPosition;

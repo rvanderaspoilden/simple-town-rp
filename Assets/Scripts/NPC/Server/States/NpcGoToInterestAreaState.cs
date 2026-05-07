@@ -11,6 +11,8 @@ public class NpcGoToInterestAreaState : NpcStateBase {
 
     public bool HasArrived { get; private set; }
 
+    public override NpcStateType StateType => NpcStateType.GoingToInterestArea;
+
     public NpcGoToInterestAreaState(NpcAIController npc) : base(npc) { }
 
     public override void OnEnter() {

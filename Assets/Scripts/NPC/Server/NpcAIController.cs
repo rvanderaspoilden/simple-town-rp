@@ -55,6 +55,10 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     [SerializeField] private float minSitSeconds  = 5f;
     [SerializeField] private float maxSitSeconds  = 12f;
 
+    [Tooltip("Distance maxi à laquelle un NPC ira chercher un siège (mètres). " +
+             "0 = illimité.")]
+    [SerializeField] private float maxSeatSearchDistance = 12f;
+
     // ── Runtime ───────────────────────────────────────────────────────────────
     private NavMeshAgent        _agent;
     private CharacterStyleSetup _styleSetup;
@@ -82,8 +86,9 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     public NpcIdentity   Identity            => _identity;
     public float         MinIdleSeconds      => minIdleSeconds;
     public float         MaxIdleSeconds      => maxIdleSeconds;
-    public float         MinSitSeconds       => minSitSeconds;
-    public float         MaxSitSeconds       => maxSitSeconds;
+    public float         MinSitSeconds          => minSitSeconds;
+    public float         MaxSitSeconds          => maxSitSeconds;
+    public float         MaxSeatSearchDistance  => maxSeatSearchDistance;
 
     public void SetAgentEnabled(bool value) {
         if (_agent != null) _agent.enabled = value;
@@ -159,22 +164,39 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         }
     }
 
+    // Mémo du state envoyé pour détecter les transitions et déclencher
+    // un broadcast immédiat (cf. NpcServerManager.NotifyStateChanged).
+    private NpcStateType _lastNotifiedState = (NpcStateType)255;
+
     private void Update() {
         if (!NetworkServer.active || _stateMachine == null) return;
 
         _stateMachine.Tick();
 
-        NpcAnimationState anim =
-            _agent.velocity.sqrMagnitude > 0.01f
-                ? NpcAnimationState.Walk
-                : NpcAnimationState.Idle;
+        // L'état logique vient directement de la state machine (source unique).
+        NpcStateType current = (_stateMachine.CurrentState is NpcStateBase nsb)
+            ? nsb.StateType
+            : NpcStateType.Idle;
+
+        // Walking est dérivé du couple (Idle, vélocité) pour préserver l'animation
+        // "Walk" sur les blend trees existants pendant les déplacements rapides.
+        // Les states explicites (Sitting, GoingToInterestArea, BackToHome) priment.
+        if (current == NpcStateType.Idle && _agent.velocity.sqrMagnitude > 0.01f) {
+            current = NpcStateType.Walking;
+        }
+
+        // Détection de transition → notify (broadcast immédiat).
+        if (current != _lastNotifiedState) {
+            NpcServerManager.Instance.NotifyStateChanged(_npcId, current);
+            _lastNotifiedState = current;
+        }
 
         NpcServerManager.Instance.PushTransform(
             _npcId,
             transform.position,
             transform.rotation,
             _agent.velocity,
-            anim
+            current
         );
     }
 

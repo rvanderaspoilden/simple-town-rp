@@ -16,6 +16,12 @@ public abstract class NpcStateBase : IState {
         Npc = npc;
     }
 
+    /// <summary>
+    /// Type logique de cet état (synchronisé au client). Doit être stable
+    /// pour toute la durée de vie de l'instance.
+    /// </summary>
+    public abstract NpcStateType StateType { get; }
+
     public abstract void OnEnter();
     public abstract void Tick();
     public abstract void OnExit();
