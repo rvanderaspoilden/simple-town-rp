@@ -198,54 +198,92 @@ public static class PropInteractionRouter {
     // ── Dispenser ─────────────────────────────────────────────────────────────
 
     private static void HandleDispenser(NetworkConnectionToClient conn, C2S_PropInteraction msg) {
-        if (!ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out var state)) {
-            Debug.LogWarning($"[PropInteractionRouter] Dispenser {msg.PropId} not found in room '{msg.RoomId}'");
-            return;
+        try {
+            if (!ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out var state)) {
+                Debug.LogWarning($"[Dispenser] Purchase rejected: prop {msg.PropId} not found in room '{msg.RoomId}'");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                return;
+            }
+
+            int itemId = DispenserInteraction.GetItemId(msg.Payload);
+            if (itemId < 0) {
+                Debug.LogWarning($"[Dispenser] Purchase rejected: invalid payload from conn={conn.connectionId}");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                return;
+            }
+
+            Debug.Log($"[Dispenser] Purchase request player={conn.connectionId} prop={msg.PropId} item={itemId}");
+
+            if (conn.identity == null) {
+                Debug.LogWarning($"[Dispenser] Purchase rejected: conn={conn.connectionId} has no identity");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                return;
+            }
+
+            // Resolve DispenserConfiguration from registered PrefabId
+            DispenserConfiguration dispenserConfig = null;
+            if (state.PrefabId > 0) {
+                PropsConfig propsConfig = DatabaseManager.PropsDatabase?.GetPropsById(state.PrefabId);
+                dispenserConfig = propsConfig as DispenserConfiguration;
+            }
+
+            if (dispenserConfig == null) {
+                Debug.LogWarning($"[Dispenser] Purchase rejected: no DispenserConfiguration for prop {msg.PropId} (PrefabId={state.PrefabId}). Ensure PropsConfig.GetId() returns a non-zero value.");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                return;
+            }
+
+            // Find the item in the catalog (defensive: guard against null entries)
+            ItemPrice? found = null;
+            foreach (ItemPrice ip in dispenserConfig.ItemsToSell) {
+                if (ip.item != null && ip.item.ID == itemId) { found = ip; break; }
+            }
+
+            if (found == null) {
+                Debug.LogWarning($"[Dispenser] Purchase rejected: item {itemId} not found in catalog of dispenser {msg.PropId}");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                return;
+            }
+
+            ItemPrice itemPrice = found.Value;
+
+            PlayerBankAccount bank = conn.identity.GetComponent<PlayerBankAccount>();
+            if (bank == null) {
+                Debug.LogWarning($"[Dispenser] Purchase rejected: player conn={conn.connectionId} has no PlayerBankAccount");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                return;
+            }
+
+            if (bank.Money < itemPrice.price) {
+                Debug.Log($"[Dispenser] Purchase rejected: insufficient funds player={conn.connectionId} has={bank.Money} needs={itemPrice.price}");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                return;
+            }
+
+            if (itemPrice.item.Prefab == null) {
+                Debug.LogError($"[Dispenser] Purchase failed: ItemConfig {itemId} has no prefab assigned");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                return;
+            }
+
+            Debug.Log($"[Dispenser] Purchase validated player={conn.connectionId} item={itemId} price={itemPrice.price}");
+
+            bank.TakeMoney(itemPrice.price);
+
+            // Spawn item server-authoritatively (same pattern as SpawnItemMessage handler)
+            // itemPrice.item.Prefab is an Item component — must use .gameObject to get the GO
+            Vector3 spawnPos = conn.identity.transform.position;
+            GameObject itemGO = Object.Instantiate(itemPrice.item.Prefab.gameObject, spawnPos, Quaternion.identity);
+            NetworkServer.Spawn(itemGO);
+
+            conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = true, ItemId = itemId });
+            Debug.Log($"[Dispenser] Purchase success spawning item={itemId} at {spawnPos}");
         }
-
-        int itemId = DispenserInteraction.GetItemId(msg.Payload);
-        if (itemId < 0) return;
-
-        // Get the dispenser configuration from the prop's PropsConfig
-        // The PropsConfig should be a DispenserConfiguration
-        DispenserConfiguration dispenserConfig = null;
-        if (state.PrefabId > 0) {
-            PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(state.PrefabId);
-            dispenserConfig = propsConfig as DispenserConfiguration;
+        catch (System.Exception ex) {
+            Debug.LogError($"[Dispenser] ERROR during purchase flow prop={msg.PropId}: {ex}");
+            try { conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 }); }
+            catch { /* connection may already be closing */ }
         }
-
-        if (dispenserConfig == null) {
-            Debug.LogWarning($"[PropInteractionRouter] Dispenser {msg.PropId} has no DispenserConfiguration");
-            conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
-            return;
-        }
-
-        // Find the item price in the dispenser's catalog
-        if (!dispenserConfig.ItemsToSell.Exists(x => x.item.ID == itemId)) {
-            Debug.LogWarning($"[PropInteractionRouter] Item {itemId} not found in dispenser catalog");
-            conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
-            return;
-        }
-        
-        ItemPrice itemPrice = dispenserConfig.ItemsToSell.Find(x => x.item.ID == itemId);
-
-        PlayerBankAccount bank = conn.identity.GetComponent<PlayerBankAccount>();
-        if (bank == null) return;
-
-        if (bank.Money < itemPrice.price) {
-            conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
-            return;
-        }
-
-        bank.TakeMoney(itemPrice.price);
-        Object item = Object.Instantiate(
-            itemPrice.item.Prefab, conn.identity.transform.position, Quaternion.identity
-        );
-        NetworkServer.Spawn(item as GameObject, conn);
-
-        conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = true, ItemId = itemId });
-
-        Debug.Log($"[PropInteractionRouter] Player {conn.connectionId} bought item {itemId} from dispenser {msg.PropId}");
     }
 
     // ── DeliveryBox ───────────────────────────────────────────────────────────
