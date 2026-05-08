@@ -21,7 +21,7 @@ public class ClientItemManager
 
     private ClientItemManager()
     {
-        _prefabDatabase = Resources.Load<ItemPrefabDatabase>("Configurations/Items/ItemPrefabDatabase");
+        _prefabDatabase = Resources.Load<ItemPrefabDatabase>("Configurations/Databases/Item Prefab Database");
         if (_prefabDatabase == null)
             Debug.LogWarning("[ClientItemManager] ItemPrefabDatabase not found at Resources/Configurations/Items/ItemPrefabDatabase");
     }

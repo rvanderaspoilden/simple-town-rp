@@ -12,4 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a0b8caf9b95e2a409f126858cdd279c, type: 3}
   m_Name: Item Prefab Database
   m_EditorClassIdentifier: Assembly-CSharp::ItemPrefabDatabase
-  entries: []
+  items:
+  - {fileID: 11400000, guid: f87a69d22cb44a849b0e1d1de1c0e45b, type: 2}
+  - {fileID: 11400000, guid: 70001605968937c4b8c3cfc200290038, type: 2}
+  - {fileID: 11400000, guid: 2b6f56311abcbdf46955b18d7fabb744, type: 2}
+  - {fileID: 11400000, guid: efce2a51cd3b7d345a7d2eac4a233b08, type: 2}
+  - {fileID: 11400000, guid: 153b267c4b23f1f4b88eb0701fe9dfb7, type: 2}
