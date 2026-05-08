@@ -23,7 +23,7 @@ public class ItemConfig : ScriptableObject {
     private List<Action> equippedActions;
 
     [SerializeField]
-    private Item prefab;
+    private ItemBehaviour prefab;
 
     [SerializeField]
     private Texture2D cursor;
@@ -43,7 +43,7 @@ public class ItemConfig : ScriptableObject {
 
     public List<Action> EquippedActions => equippedActions;
 
-    public Item Prefab => prefab;
+    public ItemBehaviour Prefab => prefab;
 
     public Texture2D Cursor => cursor;
 

@@ -231,11 +231,11 @@ public class SimpleTownNetwork : NetworkManager
         NetworkServer.RegisterHandler<CreateCharacterMessage>(OnCreateCharacter);
         NetworkServer.RegisterHandler<CreateDeliveryRequest>(OnCreateDelivery);
         NetworkServer.RegisterHandler<TeleportMessage>(OnPlayerTeleportTo);
-        NetworkServer.RegisterHandler<SpawnItemMessage>(OnSpawnItem);
-        GameLogger.Network.Debug("HandlersRegistered {Count} handlers", 4);
+        GameLogger.Network.Debug("HandlersRegistered {Count} handlers", 3);
 
         PropSystemBootstrap.OnServerStart();
         NpcSystemBootstrap.OnServerStart();
+        ItemSystemBootstrap.OnServerStart();
 
         StartCoroutine(this.RetrieveCityData());
         GameLogger.Network.Info("ServerStarted {Active}", NetworkServer.active);
@@ -259,6 +259,7 @@ public class SimpleTownNetwork : NetworkManager
 
         PropSystemBootstrap.OnClientStart();
         NpcSystemBootstrap.OnClientStart();
+        ItemSystemBootstrap.OnClientStart();
         ClientLogger.Network("ClientStarted {Active}", NetworkClient.active);
     }
 
@@ -279,8 +280,8 @@ public class SimpleTownNetwork : NetworkManager
         NetworkServer.UnregisterHandler<CreateCharacterMessage>();
         NetworkServer.UnregisterHandler<CreateDeliveryRequest>();
         NetworkServer.UnregisterHandler<TeleportMessage>();
-        NetworkServer.UnregisterHandler<SpawnItemMessage>();
 
+        ItemSystemBootstrap.OnServerStop();
         NpcSystemBootstrap.OnServerStop();
         PropSystemBootstrap.OnServerStop();
 
@@ -303,6 +304,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.UnregisterHandler<S2C_HallDespawn>();
         NetworkClient.UnregisterHandler<S2C_ApartmentSpawn>();
 
+        ItemSystemBootstrap.OnClientStop();
         NpcSystemBootstrap.OnClientStop();
         PropSystemBootstrap.OnClientStop();
 
@@ -351,29 +353,6 @@ public class SimpleTownNetwork : NetworkManager
             conn.connectionId, conn.identity?.gameObject.name ?? "unknown", request.destination, request.NewRoomId);
         conn.Send(request);
         GameLogger.Network.Debug("TeleportSent {ConnectionId}", conn.connectionId);
-    }
-
-    [ServerCallback]
-    private void OnSpawnItem(NetworkConnectionToClient conn, SpawnItemMessage request)
-    {
-        GameLogger.Network.Info("SpawnItemRequest {ConnectionId} {ItemId} {Position}",
-            conn.connectionId, request.itemId, request.position);
-
-        ItemConfig itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == request.itemId);
-
-        if (!itemConfig)
-        {
-            GameLogger.Network.Error(null, "SpawnItemConfigNotFound {ConnectionId} {ItemId}",
-                conn.connectionId, request.itemId);
-            return;
-        }
-
-        GameObject item = Instantiate(itemConfig.Prefab.gameObject, request.position, Quaternion.identity);
-
-        NetworkServer.Spawn(item);
-
-        GameLogger.Network.Info("ItemSpawned {ConnectionId} {ItemId} {ItemNetId} {Position}",
-            conn.connectionId, request.itemId, item.GetComponent<NetworkIdentity>()?.netId ?? 0, request.position);
     }
 
 

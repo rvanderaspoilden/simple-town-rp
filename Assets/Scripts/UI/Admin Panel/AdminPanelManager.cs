@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Mirror;
 using Sim;
 using TMPro;
 using UnityEngine;
@@ -46,7 +47,7 @@ public class AdminPanelManager : MonoBehaviour {
             Button button = Instantiate(this.buttonPrefab, this.itemSpawnerContentTransform);
             button.GetComponentInChildren<TextMeshProUGUI>().text = itemConfig.Label;
             button.onClick.AddListener((() => {
-                PlayerController.Local.connectionToServer.Send(new SpawnItemMessage() { itemId = itemConfig.ID, position = PlayerController.Local.transform.position });
+                NetworkClient.Send(new C2S_AdminSpawnItem { ItemConfigId = itemConfig.ID, Position = PlayerController.Local.transform.position });
             }));
 
             this._buttons.Add(button);

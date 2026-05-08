@@ -2,188 +2,169 @@ using System.Linq;
 using Sim;
 using UnityEngine;
 
-public class InventoryUI : MonoBehaviour {
+public class InventoryUI : MonoBehaviour
+{
     [Header("Settings")]
-    [SerializeField]
-    private ItemSlot leftHandSlot;
+    [SerializeField] private ItemSlot leftHandSlot;
+    [SerializeField] private ItemSlot rightHandSlot;
+    [SerializeField] private ItemSlot bothHandSlot;
+    [SerializeField] private ItemSlot leftPocketSlot;
+    [SerializeField] private ItemSlot rightPocketSlot;
 
-    [SerializeField]
-    private ItemSlot rightHandSlot;
+    [SerializeField] private Transform     poolContainer;
+    [SerializeField] private DraggableItem draggableItemPrefab;
 
-    [SerializeField]
-    private ItemSlot bothHandSlot;
-
-    [SerializeField]
-    private ItemSlot leftPocketSlot;
-
-    [SerializeField]
-    private ItemSlot rightPocketSlot;
-
-    [SerializeField]
-    private Transform poolContainer;
-
-    [SerializeField]
-    private DraggableItem draggableItemPrefab;
-
-    [SerializeField]
-    private InventoryActionMenu leftHandActionMenu;
-
-    [SerializeField]
-    private InventoryActionMenu rightHandActionMenu;
+    [SerializeField] private InventoryActionMenu leftHandActionMenu;
+    [SerializeField] private InventoryActionMenu rightHandActionMenu;
 
     [Header("Only for debug")]
-    [SerializeField]
-    private InventoryActionMenu currentActionMenu;
+    [SerializeField] private InventoryActionMenu currentActionMenu;
 
     private GenericPool<DraggableItem> _draggableItemPool;
 
-    private void Awake() {
-        this._draggableItemPool = new GenericPool<DraggableItem>(OnCreateDraggableItem, OnGetDraggableItem, OnReleaseDraggableItem);
+    private void Awake()
+    {
+        _draggableItemPool = new GenericPool<DraggableItem>(
+            OnCreateDraggableItem, OnGetDraggableItem, OnReleaseDraggableItem);
     }
 
-    private void OnEnable() {
-        this.UpdateUI();
+    private void OnEnable()
+    {
+        UpdateUI();
 
-        DraggableItem.OnLeftClick += OnItemLeftClicked;
+        DraggableItem.OnLeftClick  += OnItemLeftClicked;
         DraggableItem.OnRightClick += OnItemRightClicked;
-        DraggableItem.OnStartDrag += OnItemStartDrag;
-        ItemSlot.OnItemMove += OnItemMoved;
-        PlayerHands.OnHandChanged += OnPlayerHandChanged;
+        DraggableItem.OnStartDrag  += OnItemStartDrag;
+        ItemSlot.OnItemMove        += OnItemMoved;
+        PlayerHands.OnHandChanged  += OnPlayerHandChanged;
     }
 
-    private void OnDisable() {
-        this._draggableItemPool.Dispose();
+    private void OnDisable()
+    {
+        _draggableItemPool.Dispose();
 
-        DraggableItem.OnLeftClick -= OnItemLeftClicked;
+        DraggableItem.OnLeftClick  -= OnItemLeftClicked;
         DraggableItem.OnRightClick -= OnItemRightClicked;
-        DraggableItem.OnStartDrag -= OnItemStartDrag;
-        ItemSlot.OnItemMove -= OnItemMoved;
-        PlayerHands.OnHandChanged -= OnPlayerHandChanged;
+        DraggableItem.OnStartDrag  -= OnItemStartDrag;
+        ItemSlot.OnItemMove        -= OnItemMoved;
+        PlayerHands.OnHandChanged  -= OnPlayerHandChanged;
     }
 
-    private void Update() {
-        if (Input.GetKeyDown(KeyCode.Escape)) {
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
             HUDManager.Instance.CloseInventory();
-        }
     }
 
-    private void OnPlayerHandChanged() {
+    private void OnPlayerHandChanged()
+    {
         Debug.Log("[InventoryUI] [OnPlayerChanged]");
-        this.CloseCurrentActionMenu();
+        CloseCurrentActionMenu();
         HUDManager.Instance.InventoryUI.Invoke(nameof(UpdateUI), .1f);
     }
 
-    private void OnItemLeftClicked(DraggableItem draggableItem) {
-        this.CloseCurrentActionMenu();
-    }
+    private void OnItemLeftClicked(DraggableItem draggableItem)   => CloseCurrentActionMenu();
+    private void OnItemStartDrag(DraggableItem draggableItem)     => CloseCurrentActionMenu();
 
-    private void OnItemStartDrag(DraggableItem draggableItem) {
-        this.CloseCurrentActionMenu();
-    }
-
-    private void OnItemRightClicked(DraggableItem draggableItem) {
-        if (draggableItem.ItemSlot == this.leftHandSlot) {
-            if (currentActionMenu == this.leftHandActionMenu) {
-                this.CloseCurrentActionMenu();
-            } else {
-                this.DisplayLeftActionMenu();
-            }
-        } else if (draggableItem.ItemSlot == this.rightHandSlot) {
-            if (currentActionMenu == this.rightHandActionMenu) {
-                this.CloseCurrentActionMenu();
-            } else {
-                this.DisplayRightActionMenu();
-            }
+    private void OnItemRightClicked(DraggableItem draggableItem)
+    {
+        if (draggableItem.ItemSlot == leftHandSlot)
+        {
+            if (currentActionMenu == leftHandActionMenu) CloseCurrentActionMenu();
+            else DisplayLeftActionMenu();
+        }
+        else if (draggableItem.ItemSlot == rightHandSlot)
+        {
+            if (currentActionMenu == rightHandActionMenu) CloseCurrentActionMenu();
+            else DisplayRightActionMenu();
         }
     }
 
-    private void OnItemMoved(ItemSlot originSlot, ItemSlot targetSlot) {
-        if ((originSlot == this.leftHandSlot && targetSlot == this.rightHandSlot) || (originSlot == this.rightHandSlot && targetSlot == this.leftHandSlot)) {
+    private void OnItemMoved(ItemSlot originSlot, ItemSlot targetSlot)
+    {
+        bool leftToRight = originSlot == leftHandSlot  && targetSlot == rightHandSlot;
+        bool rightToLeft = originSlot == rightHandSlot && targetSlot == leftHandSlot;
+        if (leftToRight || rightToLeft)
             PlayerController.Local.PlayerHands.Swap();
-        }
     }
 
-    public void DisplayLeftActionMenu() {
-        this.CloseCurrentActionMenu();
-
+    public void DisplayLeftActionMenu()
+    {
+        CloseCurrentActionMenu();
         if (PlayerController.Local.PlayerHands.LeftHandItem == null) return;
-
-        this.leftHandActionMenu.Setup(PlayerController.Local.PlayerHands.LeftHandItem.GetActions().ToList());
-
-        this.currentActionMenu = this.leftHandActionMenu;
+        leftHandActionMenu.Setup(PlayerController.Local.PlayerHands.LeftHandItem.GetActions().ToList());
+        currentActionMenu = leftHandActionMenu;
     }
 
-    public void DisplayRightActionMenu() {
-        this.CloseCurrentActionMenu();
-
+    public void DisplayRightActionMenu()
+    {
+        CloseCurrentActionMenu();
         if (PlayerController.Local.PlayerHands.RightHandItem == null) return;
-
-        this.rightHandActionMenu.Setup(PlayerController.Local.PlayerHands.RightHandItem.GetActions().ToList());
-
-        this.currentActionMenu = this.rightHandActionMenu;
+        rightHandActionMenu.Setup(PlayerController.Local.PlayerHands.RightHandItem.GetActions().ToList());
+        currentActionMenu = rightHandActionMenu;
     }
 
-    public void CloseCurrentActionMenu(bool instantly = false) {
-        if (!this.currentActionMenu) return;
-
-        this.currentActionMenu.Hide(instantly);
-        this.currentActionMenu = null;
+    public void CloseCurrentActionMenu(bool instantly = false)
+    {
+        if (!currentActionMenu) return;
+        currentActionMenu.Hide(instantly);
+        currentActionMenu = null;
     }
 
-    public void UpdateUI() {
-        this._draggableItemPool.Dispose();
-        this.leftHandSlot.Clear();
-        this.rightHandSlot.Clear();
-        this.bothHandSlot.Clear();
+    public void UpdateUI()
+    {
+        _draggableItemPool.Dispose();
+        leftHandSlot.Clear();
+        rightHandSlot.Clear();
+        bothHandSlot.Clear();
 
-        if (PlayerController.Local.PlayerHands.RightHandItem &&
-            PlayerController.Local.PlayerHands.RightHandItem.Configuration.HandleType == ItemHandleType.TWO_HAND) {
-            this.leftHandSlot.gameObject.SetActive(false);
-            this.rightHandSlot.gameObject.SetActive(false);
-            this.bothHandSlot.gameObject.SetActive(true);
+        ItemBehaviour rightItem = PlayerController.Local.PlayerHands.RightHandItem;
+        ItemBehaviour leftItem  = PlayerController.Local.PlayerHands.LeftHandItem;
 
-            DraggableItem draggableItem = this._draggableItemPool.Get();
-            draggableItem.SetConfiguration(PlayerController.Local.PlayerHands.RightHandItem.Configuration);
-            this.bothHandSlot.SetItem(draggableItem);
-        } else {
-            this.leftHandSlot.gameObject.SetActive(true);
-            this.rightHandSlot.gameObject.SetActive(true);
-            this.bothHandSlot.gameObject.SetActive(false);
+        if (rightItem != null && rightItem.Configuration.HandleType == ItemHandleType.TWO_HAND)
+        {
+            leftHandSlot.gameObject.SetActive(false);
+            rightHandSlot.gameObject.SetActive(false);
+            bothHandSlot.gameObject.SetActive(true);
 
-            if (PlayerController.Local.PlayerHands.LeftHandItem) {
-                DraggableItem draggableItem = this._draggableItemPool.Get();
-                draggableItem.SetConfiguration(PlayerController.Local.PlayerHands.LeftHandItem.Configuration);
-                this.leftHandSlot.SetItem(draggableItem);
+            DraggableItem draggable = _draggableItemPool.Get();
+            draggable.SetConfiguration(rightItem.Configuration);
+            bothHandSlot.SetItem(draggable);
+        }
+        else
+        {
+            leftHandSlot.gameObject.SetActive(true);
+            rightHandSlot.gameObject.SetActive(true);
+            bothHandSlot.gameObject.SetActive(false);
+
+            if (leftItem != null)
+            {
+                DraggableItem draggable = _draggableItemPool.Get();
+                draggable.SetConfiguration(leftItem.Configuration);
+                leftHandSlot.SetItem(draggable);
             }
 
-            if (PlayerController.Local.PlayerHands.RightHandItem) {
-                DraggableItem draggableItem = this._draggableItemPool.Get();
-                draggableItem.SetConfiguration(PlayerController.Local.PlayerHands.RightHandItem.Configuration);
-                this.rightHandSlot.SetItem(draggableItem);
-            } else if (this.rightHandSlot.Item) {
-                this._draggableItemPool.Release(this.rightHandSlot.Item);
-                this.rightHandSlot.Clear();
+            if (rightItem != null)
+            {
+                DraggableItem draggable = _draggableItemPool.Get();
+                draggable.SetConfiguration(rightItem.Configuration);
+                rightHandSlot.SetItem(draggable);
+            }
+            else if (rightHandSlot.Item)
+            {
+                _draggableItemPool.Release(rightHandSlot.Item);
+                rightHandSlot.Clear();
             }
         }
 
-        this.CloseCurrentActionMenu(true);
+        CloseCurrentActionMenu(true);
     }
 
     #region Pool Management
 
-    private DraggableItem OnCreateDraggableItem() {
-        DraggableItem draggableItem = Instantiate(this.draggableItemPrefab, this.poolContainer);
-        return draggableItem;
-    }
-
-    private void OnGetDraggableItem(DraggableItem draggableItem) {
-        draggableItem.gameObject.SetActive(true);
-    }
-
-    private void OnReleaseDraggableItem(DraggableItem draggableItem) {
-        draggableItem.transform.parent = this.poolContainer;
-        draggableItem.gameObject.SetActive(false);
-    }
+    private DraggableItem OnCreateDraggableItem()                   => Instantiate(draggableItemPrefab, poolContainer);
+    private void          OnGetDraggableItem(DraggableItem item)    => item.gameObject.SetActive(true);
+    private void          OnReleaseDraggableItem(DraggableItem item) { item.transform.parent = poolContainer; item.gameObject.SetActive(false); }
 
     #endregion
 }

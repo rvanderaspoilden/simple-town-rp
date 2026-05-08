@@ -73,11 +73,6 @@ namespace Sim {
             // uses ServerPropManager/ClientPropManager which instantiate prefabs
             // directly without Mirror's NetworkServer.Spawn()
 
-            // Items and Buildings still use Mirror's spawning system
-            foreach (ItemConfig config in ItemConfigs) {
-                NetworkManager.singleton.spawnPrefabs.Add(config.Prefab.gameObject);
-            }
-
             foreach (BuildingConfig config in BuildingConfigurations) {
                 NetworkManager.singleton.spawnPrefabs.Add(config.Prefab.gameObject);
             }

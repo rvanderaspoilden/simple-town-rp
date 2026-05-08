@@ -11,9 +11,9 @@ GameObject:
   - component: {fileID: 3081819804773363062}
   - component: {fileID: 2119798346847134419}
   - component: {fileID: 4219870739489642009}
-  - component: {fileID: 5943300934610817160}
-  - component: {fileID: 9058872108172342977}
   - component: {fileID: 2510245000628374721}
+  - component: {fileID: 9219997740277683412}
+  - component: {fileID: 8125782637803982039}
   m_Layer: 19
   m_Name: SodaBottle
   m_TagString: Interactable
@@ -94,41 +94,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &5943300934610817160
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2418154155051317196}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  _assetId: 828465476
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
---- !u!114 &9058872108172342977
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2418154155051317196}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c75c37c073bbe31498e4ab569c64ef67, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
-  configuration: {fileID: 11400000, guid: efce2a51cd3b7d345a7d2eac4a233b08, type: 2}
-  playerNetIdBind: 0
-  handBind: 0
 --- !u!65 &2510245000628374721
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -150,3 +115,27 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.18049198, y: 0.56041193, z: 0.15631066}
   m_Center: {x: 0, y: 0.28020597, z: 0}
+--- !u!114 &9219997740277683412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2418154155051317196}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf1f0aa548853a34daf7e6faee450220, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemIdentity
+--- !u!114 &8125782637803982039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2418154155051317196}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe8ced2236cd9ba459e66e5c517bc3c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ConsumableItemBehaviour

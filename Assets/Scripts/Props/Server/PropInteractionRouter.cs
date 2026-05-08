@@ -270,11 +270,10 @@ public static class PropInteractionRouter {
 
             bank.TakeMoney(itemPrice.price);
 
-            // Spawn item server-authoritatively (same pattern as SpawnItemMessage handler)
-            // itemPrice.item.Prefab is an Item component — must use .gameObject to get the GO
+            // Spawn item via the packet-based item system (room-scoped, no NetworkIdentity)
+            string roomId   = PlayerRoomTracker.Instance.GetRoom(conn);
             Vector3 spawnPos = conn.identity.transform.position;
-            GameObject itemGO = Object.Instantiate(itemPrice.item.Prefab.gameObject, spawnPos, Quaternion.identity);
-            NetworkServer.Spawn(itemGO);
+            ServerItemManager.Instance.SpawnItem(roomId ?? "city", itemPrice.item.ID, spawnPos, Quaternion.identity);
 
             conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = true, ItemId = itemId });
             Debug.Log($"[Dispenser] Purchase success spawning item={itemId} at {spawnPos}");

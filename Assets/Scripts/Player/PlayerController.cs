@@ -219,24 +219,35 @@ namespace Sim {
             this.audioSource.PlayOneShot(this.walkStepSound);
         }
 
-        public void Consume(Consumable consumable) {
-            this.CmdConsume(consumable.netId);
+        public void ConsumeItem(int entityId) {
+            this.CmdConsumeItem(entityId);
         }
 
         [Command]
-        public void CmdConsume(uint itemNetId) {
-            GameLogger.Network.Debug("CmdConsume {PlayerNetId} {ItemNetId}", netId, itemNetId);
-            
-            Item item = NetworkUtils.FindObject(itemNetId).GetComponent<Item>();
-            if (item == null) {
-                GameLogger.Network.Warning("CmdConsumeItemNotFound {PlayerNetId} {ItemNetId}", netId, itemNetId);
+        public void CmdConsumeItem(int entityId) {
+            GameLogger.Network.Debug("CmdConsumeItem {PlayerNetId} {EntityId}", netId, entityId);
+
+            string roomId = PlayerRoomTracker.Instance.GetRoom(connectionToClient);
+            if (roomId == null) {
+                GameLogger.Network.Warning("CmdConsumeItemNoRoom {PlayerNetId}", netId);
                 return;
             }
 
-            this.playerHealth.ApplyModifications(((ConsumableConfig) item.Configuration).Impacts);
-            this.playerHands.UnEquipAndDestroy(itemNetId);
-            
-            GameLogger.Player.Info("PlayerConsumedItem {PlayerNetId} {ItemNetId} {ItemId}", netId, itemNetId, item.Configuration?.ID ?? 0);
+            ItemEntity entity = ServerItemManager.Instance.GetEntity(roomId, entityId);
+            if (entity == null) {
+                GameLogger.Network.Warning("CmdConsumeItemNotFound {PlayerNetId} {EntityId}", netId, entityId);
+                return;
+            }
+
+            ItemConfig config = DatabaseManager.ItemConfigs.Find(x => x.ID == entity.ItemConfigId);
+            if (config is ConsumableConfig consumableConfig) {
+                this.playerHealth.ApplyModifications(consumableConfig.Impacts);
+            }
+
+            ServerItemManager.Instance.DespawnItem(roomId, entityId);
+
+            GameLogger.Player.Info("PlayerConsumedItem {PlayerNetId} {EntityId} {ItemConfigId}",
+                netId, entityId, entity.ItemConfigId);
             this.RpcConsume();
         }
 
