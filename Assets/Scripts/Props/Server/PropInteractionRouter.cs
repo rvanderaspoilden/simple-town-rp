@@ -270,13 +270,25 @@ public static class PropInteractionRouter {
 
             bank.TakeMoney(itemPrice.price);
 
-            // Spawn item via the packet-based item system (room-scoped, no NetworkIdentity)
-            string roomId   = PlayerRoomTracker.Instance.GetRoom(conn);
-            Vector3 spawnPos = conn.identity.transform.position;
-            ServerItemManager.Instance.SpawnItem(roomId ?? "city", itemPrice.item.ID, spawnPos, Quaternion.identity);
+            string roomId = PlayerRoomTracker.Instance.GetRoom(conn) ?? "city";
+
+            // Try to place item directly into a free hand (right first, then left)
+            int entityId = ServerItemManager.Instance.SpawnItemInHand(roomId, itemPrice.item.ID, conn, itemPrice.item);
+
+            if (entityId >= 0)
+            {
+                Debug.Log($"[Dispenser] Assigning purchased item to hand entity={entityId} item={itemId}");
+            }
+            else
+            {
+                // Fallback: no free hand — spawn item at player's feet
+                Vector3 spawnPos = conn.identity.transform.position;
+                entityId = ServerItemManager.Instance.SpawnItem(roomId, itemPrice.item.ID, spawnPos, Quaternion.identity);
+                Debug.Log($"[Dispenser] No free hands — spawning item in world entity={entityId} item={itemId} pos={spawnPos}");
+            }
 
             conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = true, ItemId = itemId });
-            Debug.Log($"[Dispenser] Purchase success spawning item={itemId} at {spawnPos}");
+            Debug.Log($"[Dispenser] Purchase success item={itemId} entity={entityId}");
         }
         catch (System.Exception ex) {
             Debug.LogError($"[Dispenser] ERROR during purchase flow prop={msg.PropId}: {ex}");

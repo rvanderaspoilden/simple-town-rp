@@ -58,9 +58,9 @@ public class InventoryUI : MonoBehaviour
 
     private void OnPlayerHandChanged()
     {
-        Debug.Log("[InventoryUI] [OnPlayerChanged]");
-        CloseCurrentActionMenu();
-        HUDManager.Instance.InventoryUI.Invoke(nameof(UpdateUI), .1f);
+        Debug.Log("[InventoryUI] [OnPlayerHandChanged] Refreshing all slots");
+        CloseCurrentActionMenu(true);
+        UpdateUI();
     }
 
     private void OnItemLeftClicked(DraggableItem draggableItem)   => CloseCurrentActionMenu();
@@ -114,9 +114,14 @@ public class InventoryUI : MonoBehaviour
     public void UpdateUI()
     {
         _draggableItemPool.Dispose();
+
+        Debug.Log("[InventoryUI] Clearing previous slot LeftHand");
         leftHandSlot.Clear();
+        Debug.Log("[InventoryUI] Clearing previous slot RightHand");
         rightHandSlot.Clear();
         bothHandSlot.Clear();
+
+        if (PlayerController.Local == null) return;
 
         ItemBehaviour rightItem = PlayerController.Local.PlayerHands.RightHandItem;
         ItemBehaviour leftItem  = PlayerController.Local.PlayerHands.LeftHandItem;
@@ -130,6 +135,7 @@ public class InventoryUI : MonoBehaviour
             DraggableItem draggable = _draggableItemPool.Get();
             draggable.SetConfiguration(rightItem.Configuration);
             bothHandSlot.SetItem(draggable);
+            Debug.Log("[InventoryUI] Refresh slot BothHands (two-hand item)");
         }
         else
         {
@@ -142,6 +148,7 @@ public class InventoryUI : MonoBehaviour
                 DraggableItem draggable = _draggableItemPool.Get();
                 draggable.SetConfiguration(leftItem.Configuration);
                 leftHandSlot.SetItem(draggable);
+                Debug.Log("[InventoryUI] Refresh slot LeftHand");
             }
 
             if (rightItem != null)
@@ -149,11 +156,7 @@ public class InventoryUI : MonoBehaviour
                 DraggableItem draggable = _draggableItemPool.Get();
                 draggable.SetConfiguration(rightItem.Configuration);
                 rightHandSlot.SetItem(draggable);
-            }
-            else if (rightHandSlot.Item)
-            {
-                _draggableItemPool.Release(rightHandSlot.Item);
-                rightHandSlot.Clear();
+                Debug.Log("[InventoryUI] Refresh slot RightHand");
             }
         }
 

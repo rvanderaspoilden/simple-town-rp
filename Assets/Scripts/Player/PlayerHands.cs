@@ -27,6 +27,26 @@ public class PlayerHands : MonoBehaviour
 
     public void SetHand(HandType hand, ItemBehaviour item, int entityId)
     {
+        // Idempotent move: if the same entity is already in the OTHER hand,
+        // clear it there first. This handles the "swap with one empty hand"
+        // case where the server only broadcasts a single attach packet and
+        // never an explicit detach for the source hand.
+        if (entityId != -1)
+        {
+            if (hand == HandType.Left && rightEntityId == entityId)
+            {
+                Debug.Log($"[PlayerHands] Moving entity={entityId} Right -> Left, clearing source slot");
+                rightHandItem = null;
+                rightEntityId = -1;
+            }
+            else if (hand == HandType.Right && leftEntityId == entityId)
+            {
+                Debug.Log($"[PlayerHands] Moving entity={entityId} Left -> Right, clearing source slot");
+                leftHandItem = null;
+                leftEntityId = -1;
+            }
+        }
+
         if (hand == HandType.Left)
         {
             leftHandItem  = item;
@@ -59,6 +79,14 @@ public class PlayerHands : MonoBehaviour
 
     public void RequestSwap()
     {
+        // Client-side prediction: swap local state immediately for instant UI feedback.
+        // The server is authoritative — its S2C_ItemAttachedToHand broadcasts will
+        // overwrite this state on arrival (no-op in the typical case, corrective on divergence).
+        Debug.Log($"[InventoryUI] Local prediction swap Right={rightEntityId} <-> Left={leftEntityId}");
+        (leftHandItem, rightHandItem)   = (rightHandItem, leftHandItem);
+        (leftEntityId, rightEntityId)   = (rightEntityId, leftEntityId);
+        NotifyChanged();
+
         NetworkClient.Send(new C2S_RequestSwapHands());
     }
 

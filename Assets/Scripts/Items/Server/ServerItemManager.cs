@@ -76,6 +76,72 @@ public class ServerItemManager
     // ── Spawn / despawn ───────────────────────────────────────────────────────
 
     /// <summary>
+    /// Creates an item and attaches it directly to the player's free hand.
+    /// Broadcasts S2C_SpawnItem with IsHeld=true — clients attach immediately, no world flash.
+    /// Returns the entityId, or -1 if the player has no free hand.
+    /// </summary>
+    public int SpawnItemInHand(string roomId, int itemConfigId, NetworkConnectionToClient conn,
+        ItemConfig config = null)
+    {
+        if (conn.identity == null) return -1;
+        uint playerNetId = conn.identity.netId;
+
+        var handState   = GetOrCreateHandState(playerNetId);
+        var resolvedCfg = config ?? DatabaseManager.ItemConfigs.Find(x => x.ID == itemConfigId);
+        HandType? hand  = ResolveHand(resolvedCfg, handState);
+
+        if (!hand.HasValue)
+            return -1;
+
+        int entityId = _nextEntityId++;
+
+        var entity = new ItemEntity
+        {
+            EntityId     = entityId,
+            RoomId       = roomId,
+            ItemConfigId = itemConfigId,
+            Position     = conn.identity.transform.position,
+            Rotation     = Quaternion.identity,
+            HolderNetId  = playerNetId,
+            HolderHand   = hand.Value,
+            LocalPosition = Vector3.zero,
+            LocalRotation = Quaternion.identity
+        };
+
+        if (!_rooms.TryGetValue(roomId, out var roomItems))
+        {
+            roomItems = new Dictionary<int, ItemEntity>();
+            _rooms[roomId] = roomItems;
+        }
+        roomItems[entityId] = entity;
+
+        handState.Set(hand.Value, entityId);
+        _playerHands[playerNetId] = handState;
+
+        GameLogger.Network.Info(
+            "Item SpawnInHand entity={EntityId} configId={ItemConfigId} player={PlayerNetId} hand={Hand} room={RoomId}",
+            entityId, itemConfigId, playerNetId, hand.Value, roomId);
+
+        BroadcastToRoom(roomId, new S2C_SpawnItem
+        {
+            EntityId      = entityId,
+            RoomId        = roomId,
+            ItemConfigId  = itemConfigId,
+            Position      = entity.Position,
+            Rotation      = entity.Rotation,
+            IsHeld        = true,
+            HolderNetId   = playerNetId,
+            HolderHand    = hand.Value,
+            LocalPosition = Vector3.zero,
+            LocalRotation = Quaternion.identity
+        });
+
+        return entityId;
+    }
+
+
+
+    /// <summary>
     /// Creates a world item in the given room and broadcasts it to all players there.
     /// Returns the assigned entityId.
     /// </summary>

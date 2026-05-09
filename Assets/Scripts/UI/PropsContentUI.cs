@@ -24,6 +24,44 @@ namespace Sim.UI
 
         private bool isHover;
 
+        private void OnEnable()
+        {
+            DispenserBehaviour.OnPurchaseResult   += OnPurchaseResult;
+            DeliveryBoxBehaviour.UnPackage        += OnDeliveryUnpackage;
+        }
+
+        private void OnDisable()
+        {
+            DispenserBehaviour.OnPurchaseResult   -= OnPurchaseResult;
+            DeliveryBoxBehaviour.UnPackage        -= OnDeliveryUnpackage;
+            this.linkedPropBehaviour = null;
+        }
+
+        private void OnPurchaseResult(int itemId, bool success)
+        {
+            if (!success) return;
+            Debug.Log("[PropsContentUI] Closing and resetting interaction state (purchase)");
+            CloseAndResetInteraction();
+        }
+
+        private void OnDeliveryUnpackage(Sim.Entities.Delivery delivery)
+        {
+            Debug.Log("[PropsContentUI] Closing and resetting interaction state (delivery)");
+            // Note: delivery flow already changes player state via OpenPackageFromDeliveryBox;
+            // we just hide the UI here without forcing Idle (it would override UNPACKAGING).
+            DefaultViewUI.Instance.HidePropsContentUI();
+        }
+
+        /// <summary>
+        /// Hides the UI and explicitly returns the local player to Idle so the
+        /// state machine can show the context menu again on the next interaction.
+        /// </summary>
+        private void CloseAndResetInteraction()
+        {
+            DefaultViewUI.Instance.HidePropsContentUI();
+            PlayerController.Local?.Idle();
+        }
+
         public void OnPointerEnter(PointerEventData eventData)
         {
             this.isHover = true;

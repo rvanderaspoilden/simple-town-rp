@@ -37,7 +37,9 @@ public class GenericPool<T> where T : MonoBehaviour {
     }
 
     public void Dispose() {
-        for (int i = 0; i < this.activeElements.Count; i++) {
+        // Iterate in reverse: Release() mutates activeElements (removes the
+        // current item). Forward iteration would skip every other element.
+        for (int i = this.activeElements.Count - 1; i >= 0; i--) {
             this.Release(this.activeElements[i]);
         }
     }
