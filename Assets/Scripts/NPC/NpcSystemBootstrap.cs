@@ -16,6 +16,8 @@ public static class NpcSystemBootstrap {
         GameLogger.Network.Info("NpcSystemServerStarting");
 
         PlayerRoomTracker.OnPlayerEnterRoom += Server_OnPlayerEnterRoom;
+        PlayerRoomTracker.OnPlayerEnterRoom += RoomActivityController.Instance.HandlePlayerEnterRoom;
+        PlayerRoomTracker.OnPlayerLeaveRoom += RoomActivityController.Instance.HandlePlayerLeaveRoom;
 
         // Charge la database de noms et configure le SpawnManager.
         NpcSpawnManager.Instance.NameDatabase =
@@ -35,15 +37,19 @@ public static class NpcSystemBootstrap {
         GameLogger.Network.Info("NpcSystemServerStopping");
 
         PlayerRoomTracker.OnPlayerEnterRoom -= Server_OnPlayerEnterRoom;
+        PlayerRoomTracker.OnPlayerEnterRoom -= RoomActivityController.Instance.HandlePlayerEnterRoom;
+        PlayerRoomTracker.OnPlayerLeaveRoom -= RoomActivityController.Instance.HandlePlayerLeaveRoom;
 
         if (_serverTickerGO != null) {
             Object.Destroy(_serverTickerGO);
             _serverTickerGO = null;
         }
 
-        NpcSpawnManager.Instance.Reset();
+        NpcSpawnManager.Instance.Reset();   // retourne les NPC actifs au pool
+        NpcPool.Instance.Dispose();         // détruit tous les GOs poolés
         NpcServerManager.Instance.Reset();
         InterestPointRegistry.Instance.Reset();
+        RoomActivityController.Instance.Reset();
         GameLogger.Network.Info("NpcSystemServerStopped");
     }
 

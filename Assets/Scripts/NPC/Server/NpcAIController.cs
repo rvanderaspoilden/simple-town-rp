@@ -1,5 +1,6 @@
 using AI;
 using Mirror;
+using Sim.Logging;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -7,14 +8,16 @@ using UnityEngine.AI;
 /// IA serveur d'un NPC. Vit UNIQUEMENT côté serveur.
 /// Le GameObject porteur n'a PAS de NetworkIdentity.
 ///
-/// Architecture :
-///   - Hôte d'une <see cref="StateMachine"/> (réutilisée du système joueur).
-///   - États : NpcIdleState, NpcGoToInterestAreaState, NpcBackToHomeState.
-///   - Configuré par <see cref="NpcSpawnManager"/> via <see cref="ConfigureForSpawn"/>
-///     juste après instanciation, AVANT que Start ne s'exécute.
+/// Architecture pooling :
+///   Le cycle de vie est piloté par OnEnable/OnDisable (et non Start/OnDestroy)
+///   pour être compatible avec NpcPool — le même GO est réactivé plusieurs fois.
 ///
-/// Le prefab NPC est une copie du prefab joueur dont les composants gameplay/réseau
-/// ont été retirés mais qui conserve Animator, PlayerAnimator et CharacterStyleSetup.
+///   Ordre garanti par NpcPool.Get() :
+///     1. ConfigureForSpawn()  — injecte home / identity / roomId / prefabId
+///     2. ResetForPool()       — efface tout état transient de la vie précédente
+///     3. SetActive(true)      — déclenche OnEnable → Register + BuildStateMachine
+///
+///   NpcPool.Release() appelle SetActive(false) → OnDisable → cleanup propre.
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
 public class NpcAIController : MonoBehaviour, ICharacterEntity
@@ -69,15 +72,19 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private NpcBackToHomeState        _backHomeState;
     private NpcSitState               _sitState;
 
-    private int _npcId             = -1;
-    private int _visitCount        = 0;
-    private int _visitTarget       = 0;
+    private int _npcId       = -1;
+    private int _visitCount  = 0;
+    private int _visitTarget = 0;
 
-    // Données injectées par le SpawnManager avant le Start.
+    // Données injectées par NpcPool.Get() via ConfigureForSpawn AVANT OnEnable.
     private NpcSpawnPoint _home;
     private NpcIdentity   _identity = NpcIdentity.Empty;
 
-    // ── Public API (accédée par les états) ────────────────────────────────────
+    // ── Public API ────────────────────────────────────────────────────────────
+
+    /// <summary>Prefab source utilisé par NpcPool pour identifier la queue de recyclage.</summary>
+    public GameObject SourcePrefab { get; set; }
+
     public int           NpcId               => _npcId;
     public string        RoomId              => roomId;
     public string        PrefabId            => prefabId;
@@ -86,9 +93,9 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     public NpcIdentity   Identity            => _identity;
     public float         MinIdleSeconds      => minIdleSeconds;
     public float         MaxIdleSeconds      => maxIdleSeconds;
-    public float         MinSitSeconds          => minSitSeconds;
-    public float         MaxSitSeconds          => maxSitSeconds;
-    public float         MaxSeatSearchDistance  => maxSeatSearchDistance;
+    public float         MinSitSeconds       => minSitSeconds;
+    public float         MaxSitSeconds       => maxSitSeconds;
+    public float         MaxSeatSearchDistance => maxSeatSearchDistance;
 
     public void SetAgentEnabled(bool value) {
         if (_agent != null) _agent.enabled = value;
@@ -98,14 +105,35 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     public InterestPoint LastVisitedInterest { get; set; }
 
     /// <summary>
-    /// Appelé par <see cref="NpcSpawnManager"/> juste après Instantiate, avant Start.
-    /// Permet d'injecter les données de spawn (home, identité, room).
+    /// Appelé par NpcPool.Get() avant SetActive(true).
+    /// Injecte les données de spawn (home, identité, room).
     /// </summary>
-    public void ConfigureForSpawn(NpcSpawnPoint home, NpcIdentity identity, string roomId, string prefabId) {
-        _home     = home;
-        _identity = identity;
-        this.roomId   = roomId   ?? this.roomId;
-        this.prefabId = !string.IsNullOrEmpty(prefabId) ? prefabId : this.prefabId;
+    public void ConfigureForSpawn(NpcSpawnPoint home, NpcIdentity identity,
+                                   string newRoomId, string newPrefabId) {
+        _home         = home;
+        _identity     = identity;
+        this.roomId   = newRoomId   ?? this.roomId;
+        this.prefabId = !string.IsNullOrEmpty(newPrefabId) ? newPrefabId : this.prefabId;
+    }
+
+    /// <summary>
+    /// Efface tout état transient de la vie précédente du NPC.
+    /// Appelé par NpcPool.Get() après ConfigureForSpawn, avant SetActive(true).
+    /// IMPORTANT : ne réinitialise PAS les données injectées par ConfigureForSpawn.
+    /// </summary>
+    public void ResetForPool() {
+        _visitCount          = 0;
+        _visitTarget         = 0;
+        _npcId               = -1;
+        LastVisitedInterest  = null;
+        _lastNotifiedState   = (NpcStateType)255;
+        _stateMachine        = null;
+        _idleState           = null;
+        _goToState           = null;
+        _backHomeState       = null;
+        _sitState            = null;
+        GameLogger.Network.Debug("[NPCPool] ResetForPool complete {PrefabId} {FullName}",
+            prefabId, _identity.FullName);
     }
 
     public void IncrementVisitCount() => _visitCount++;
@@ -134,9 +162,12 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         _styleSetup = GetComponent<CharacterStyleSetup>();
     }
 
-    private void Start() {
+    /// <summary>
+    /// Enregistre le NPC auprès de NpcServerManager et démarre la state machine.
+    /// Déclenché par NpcPool.Get() → SetActive(true).
+    /// </summary>
+    private void OnEnable() {
         if (!NetworkServer.active) {
-            // IA STRICTEMENT serveur — sécurité côté host.
             enabled = false;
             return;
         }
@@ -153,14 +184,41 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
         _visitTarget = Random.Range(minVisitsBeforeReturn, maxVisitsBeforeReturn + 1);
         BuildStateMachine();
+
+        GameLogger.Network.Debug("[NPCPool] Reusing NPC from pool {NpcId} {FullName}",
+            _npcId, _identity.FullName);
     }
 
+    /// <summary>
+    /// Libère les sièges, désenregistre du NpcServerManager, stoppe la navigation.
+    /// Déclenché par NpcPool.Release() → SetActive(false).
+    /// </summary>
+    private void OnDisable() {
+        if (!NetworkServer.active || _npcId <= 0) return;
+
+        // Libère tout siège tenu par ce NPC.
+        SeatService.ReleaseAllSeats(this, roomId);
+
+        // Désenregistre (broadcast S2C_DestroyNpc aux clients).
+        NpcServerManager.Instance.Unregister(_npcId);
+
+        // Stoppe la navigation.
+        if (_agent != null && _agent.isOnNavMesh) _agent.ResetPath();
+
+        GameLogger.Network.Debug("[NPCPool] Returning NPC to pool {NpcId}", _npcId);
+        _npcId = -1;
+    }
+
+    /// <summary>
+    /// Filet de sécurité au cas où le GO est détruit pendant qu'il est actif
+    /// (ex. NpcPool.Dispose() en fin de session serveur).
+    /// </summary>
     private void OnDestroy() {
-        if (NetworkServer.active) {
-            // Libère tout siège tenu par ce NPC (au cas où il est détruit en pleine assise).
-            if (_npcId > 0) SeatService.ReleaseAllSeats(this, roomId);
-            if (_npcId > 0) NpcServerManager.Instance.Unregister(_npcId);
+        if (NetworkServer.active && _npcId > 0) {
+            SeatService.ReleaseAllSeats(this, roomId);
+            NpcServerManager.Instance.Unregister(_npcId);
             NpcSpawnManager.Instance.OnNpcDestroyed(this);
+            _npcId = -1;
         }
     }
 
@@ -171,6 +229,9 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private void Update() {
         if (!NetworkServer.active || _stateMachine == null) return;
 
+        // Suspend all AI work if the room is inactive (no players present).
+        if (!RoomActivityController.Instance.IsRoomActive(roomId)) return;
+
         _stateMachine.Tick();
 
         // L'état logique vient directement de la state machine (source unique).
@@ -180,21 +241,11 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
         // Walking est dérivé du couple (Idle, vélocité) pour préserver l'animation
         // "Walk" sur les blend trees existants pendant les déplacements rapides.
-        // Les states explicites (Sitting, GoingToInterestArea, BackToHome) priment.
         if (current == NpcStateType.Idle && _agent.velocity.sqrMagnitude > 0.01f) {
             current = NpcStateType.Walking;
         }
 
-        // ORDRE CRITIQUE :
-        //   1. PushTransform met à jour la position serveur (qui est DÉJÀ le siège
-        //      après NpcSitState.Tick → snap).
-        //   2. NotifyStateChanged broadcaste alors avec la position fraîche.
-        // Inverser l'ordre causerait un broadcast Sitting + position pré-snap →
-        // le client snapperait à la mauvaise position, puis l'update suivante
-        // n'arriverait jamais (delta filter : state inchangé, pos inchangée selon
-        // delta) → "glissement" de l'ancienne position vers le siège.
-        // Les NpcAgent.velocity est aussi à 0 si l'agent est désactivé → blend
-        // tree client passe Idle direct, sans Walk résiduel pendant le sit.
+        // ORDRE CRITIQUE : PushTransform d'abord (position fraîche), NotifyStateChanged ensuite.
         Vector3 vel = (_agent != null && _agent.enabled) ? _agent.velocity : Vector3.zero;
 
         NpcServerManager.Instance.PushTransform(
@@ -220,8 +271,6 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         _backHomeState = new NpcBackToHomeState(this);
         _sitState      = new NpcSitState(this);
 
-        // Idle → priorité au retour à la maison ; sinon tirage aléatoire entre Sit et GoTo.
-        // Les prédicats consomment un flag _wantsToSit décidé à la sortie d'Idle.
         _stateMachine.AddTransition(_idleState, _backHomeState,
             () => _idleState.IsIdleComplete && ShouldReturnHome());
         _stateMachine.AddTransition(_idleState, _sitState,
@@ -229,24 +278,11 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         _stateMachine.AddTransition(_idleState, _goToState,
             () => _idleState.IsIdleComplete && !ShouldReturnHome());
 
-        // Visite ou assise terminée → Idle
-        _stateMachine.AddTransition(_goToState, _idleState,
-            () => _goToState.HasArrived);
-        _stateMachine.AddTransition(_sitState, _idleState,
-            () => _sitState.HasFinished);
+        _stateMachine.AddTransition(_goToState, _idleState, () => _goToState.HasArrived);
+        _stateMachine.AddTransition(_sitState,  _idleState, () => _sitState.HasFinished);
 
         _stateMachine.SetState(_idleState);
     }
 
-    /// <summary>
-    /// Tirage aléatoire (une seule fois par sortie d'Idle) pour décider si le NPC va
-    /// tenter de s'asseoir. Le résultat est mémorisé pour rester stable au sein d'une
-    /// même évaluation de transition.
-    /// </summary>
-    private bool DecideSit() {
-        // Le prédicat n'est évalué qu'une fois IsIdleComplete vrai, et la transition
-        // qui suit (Sit OU GoTo) reset Idle dès le tick courant. Donc en pratique
-        // le tirage n'a lieu qu'une fois par cycle Idle.
-        return Random.value < sitProbability;
-    }
+    private bool DecideSit() => Random.value < sitProbability;
 }

@@ -6,23 +6,19 @@ using UnityEngine;
 
 /// <summary>
 /// Gère le cycle de vie des NPC : sélection des spawn points disponibles,
-/// instanciation, despawn propre, respawn différé. Tourne en singleton plain C#
-/// (cohérent avec NpcServerManager / ServerPropManager).
+/// spawn via NpcPool (pas d'Instantiate/Destroy runtime), despawn propre,
+/// respawn différé. Tourne en singleton plain C#.
 ///
 /// Lifecycle :
-///   - Spawn point libre + sous le cap → instancier un NPC
-///   - NPC.RequestDespawn (ex. retour à la maison) → Destroy + libérer le slot
-///   - Le slot est verrouillé pendant <see cref="RespawnDelaySeconds"/> avant
-///     de pouvoir être réutilisé.
-///
-/// Le tick (toutes les secondes par défaut) est piloté par un MonoBehaviour
-/// helper créé par <see cref="NpcSystemBootstrap"/>.
+///   - Spawn point libre + sous le cap → NpcPool.Get() → NPC actif
+///   - NPC.RequestDespawn (ex. retour à la maison) → InternalRelease + NpcPool.Release()
+///   - Le slot est verrouillé pendant RespawnDelaySeconds avant réutilisation.
 /// </summary>
 public class NpcSpawnManager {
     private static NpcSpawnManager _instance;
     public static  NpcSpawnManager Instance => _instance ??= new NpcSpawnManager();
 
-    // ── Config (réglable depuis le bootstrap / scene component) ───────────────
+    // ── Config ────────────────────────────────────────────────────────────────
     public int    MaxActiveNpcs       = 10;
     public float  RespawnDelaySeconds = 20f;
     public string RoomId              = "city";
@@ -34,23 +30,35 @@ public class NpcSpawnManager {
     public NpcNameDatabase NameDatabase;
 
     // ── État interne ──────────────────────────────────────────────────────────
-    private readonly List<NpcSpawnPoint>  _spawnPoints       = new List<NpcSpawnPoint>();
-    private readonly List<NpcAIController> _activeNpcs       = new List<NpcAIController>();
+    private readonly List<NpcSpawnPoint>   _spawnPoints  = new List<NpcSpawnPoint>();
+    private readonly List<NpcAIController> _activeNpcs   = new List<NpcAIController>();
     private readonly Dictionary<NpcSpawnPoint, float> _cooldowns
         = new Dictionary<NpcSpawnPoint, float>();
     private readonly HashSet<string> _activeFullNames = new HashSet<string>();
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Retourne tous les NPC actifs au pool et réinitialise le tracking.
+    /// Appelé depuis NpcSystemBootstrap.OnServerStop (avant NpcPool.Dispose).
+    /// </summary>
     public void Reset() {
-        // Détruit les NPC vivants. Ils s'auto-désenregistreront via OnDestroy.
-        for (int i = _activeNpcs.Count - 1; i >= 0; i--) {
-            if (_activeNpcs[i] != null) Object.Destroy(_activeNpcs[i].gameObject);
-        }
+        // Copie la liste pour éviter la modification pendant l'itération.
+        var toRelease = new List<NpcAIController>(_activeNpcs);
+
+        // Efface le tracking en amont pour que OnNpcDestroyed (appelé via OnDisable)
+        // ne tente pas de modifier des collections en cours d'itération.
         _activeNpcs.Clear();
         _cooldowns.Clear();
         _activeFullNames.Clear();
-        // _spawnPoints est rempli par les OnEnable des NpcSpawnPoint en scène.
+
+        foreach (var npc in toRelease) {
+            if (npc == null) continue;
+            // Libère le spawn point avant le Release pour éviter toute réutilisation
+            // pendant le shutdown (NpcPool.Release appelle OnDisable).
+            if (npc.Home != null) npc.Home.IsOccupied = false;
+            NpcPool.Instance.Release(npc);
+        }
     }
 
     public void RegisterSpawnPoint(NpcSpawnPoint point) {
@@ -64,10 +72,13 @@ public class NpcSpawnManager {
         _cooldowns.Remove(point);
     }
 
-    // ── Tick (sélection / spawn) ──────────────────────────────────────────────
+    // ── Tick ──────────────────────────────────────────────────────────────────
 
     public void Tick(float deltaTime) {
         if (!NetworkServer.active) return;
+
+        // Skip spawning entièrement quand la room n'a pas de joueurs.
+        if (!RoomActivityController.Instance.IsRoomActive(RoomId)) return;
 
         // Décrémenter cooldowns
         if (_cooldowns.Count > 0) {
@@ -78,17 +89,15 @@ public class NpcSpawnManager {
             }
         }
 
-        // Cap atteint ?
         if (_activeNpcs.Count >= MaxActiveNpcs) return;
 
-        // Cherche un spawn point libre (non occupé, non en cooldown)
         for (int i = 0; i < _spawnPoints.Count; i++) {
             var sp = _spawnPoints[i];
             if (sp == null || sp.IsOccupied) continue;
             if (_cooldowns.ContainsKey(sp))   continue;
 
             SpawnAt(sp);
-            // Un seul spawn par tick pour amortir les pics de charge
+            // Un seul spawn par tick pour amortir les pics de charge.
             return;
         }
     }
@@ -102,22 +111,19 @@ public class NpcSpawnManager {
             return;
         }
 
-        GameObject go = Object.Instantiate(prefab, point.Position, point.Rotation);
-        NpcAIController ai = go.GetComponent<NpcAIController>();
+        NpcIdentity identity = GenerateUniqueIdentity();
+
+        // NpcPool.Get() appelle ConfigureForSpawn + ResetForPool + SetActive(true) → OnEnable.
+        NpcAIController ai = NpcPool.Instance.Get(
+            prefab, point, identity, RoomId, point.PrefabId,
+            point.Position, point.Rotation);
+
         if (ai == null) {
-            GameLogger.Network.Error(null, "NpcSpawnNoAIController {Prefab}", prefab.name);
-            Object.Destroy(go);
+            GameLogger.Network.Error(null, "NpcSpawnPoolGetFailed {SpawnPoint}", point.name);
             return;
         }
 
-        // Identité unique côté actifs.
-        NpcIdentity identity = GenerateUniqueIdentity();
         _activeFullNames.Add(identity.FullName);
-
-        // Configure l'IA AVANT son Start (instantiate déclenche Awake/Start
-        // plus tard ce frame, après notre setter).
-        ai.ConfigureForSpawn(point, identity, RoomId, point.PrefabId);
-
         _activeNpcs.Add(ai);
         point.IsOccupied = true;
 
@@ -125,21 +131,29 @@ public class NpcSpawnManager {
             point.name, identity.FullName, _activeNpcs.Count, MaxActiveNpcs);
     }
 
-    /// <summary>Appelé par <see cref="NpcBackToHomeState"/> quand le NPC est rentré.</summary>
+    /// <summary>Appelé par NpcBackToHomeState quand le NPC est rentré chez lui.</summary>
     public void RequestDespawn(NpcAIController npc) {
         if (npc == null) return;
         Despawn(npc);
     }
 
-    /// <summary>Appelé aussi par OnDestroy d'un NPC pour nettoyer le tracking.</summary>
+    /// <summary>
+    /// Appelé par NpcAIController.OnDestroy (filet de sécurité — destruction inattendue).
+    /// Lors d'un despawn normal via RequestDespawn, InternalRelease est déjà appelé.
+    /// </summary>
     public void OnNpcDestroyed(NpcAIController npc) {
         if (npc == null) return;
         InternalRelease(npc);
     }
 
     private void Despawn(NpcAIController npc) {
+        // Nettoie le tracking avant le Release pour éviter que OnDisable ne rappelle
+        // InternalRelease depuis OnDestroy (NPC toujours actif pendant le Release).
         InternalRelease(npc);
-        if (npc != null && npc.gameObject != null) Object.Destroy(npc.gameObject);
+        // NpcPool.Release → SetActive(false) → OnDisable → unregister seats/server.
+        NpcPool.Instance.Release(npc);
+        GameLogger.Network.Debug("[NPCPool] Returning NPC to pool (despawn) {FullName}",
+            npc.Identity.FullName);
     }
 
     private void InternalRelease(NpcAIController npc) {
@@ -174,7 +188,6 @@ public class NpcSpawnManager {
         return new NpcIdentity {
             FirstName = first,
             LastName  = last,
-            // Mood random parmi les valeurs de MoodEnum (0..4 — cf. MoodEnum.cs)
             Mood      = (Sim.Enums.MoodEnum)Random.Range(0, 5)
         };
     }
