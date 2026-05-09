@@ -313,28 +313,14 @@ namespace Sim {
                 DefaultViewUI.Instance.SetTenantText(string.Empty);
             }
 
-            RefreshPropRoom();
         }
 
-        /// <summary>
-        /// Switches the local player into the prop room matching the current geographic area.
-        /// Apartment areas → "apt:..." room. Default → "city".
-        /// </summary>
-        private void RefreshPropRoom() {
-            if (ClientPropManager.Instance == null) return;
-
-            GeographicArea current = CurrentGeographicArea;
-            string targetRoom = "city";
-
-            if (current != null && current.Type == GeographicType.APARTMENT) {
-                ApartmentController apt = current.GetComponentInParent<ApartmentController>();
-                if (apt != null && !string.IsNullOrEmpty(apt.RoomId)) {
-                    targetRoom = apt.RoomId;
-                }
-            }
-
-            ClientPropManager.Instance.EnterRoom(targetRoom);
-        }
+        // Room transitions are authoritative via TeleportMessage.NewRoomId
+        // (SimpleTownNetwork.OnTeleportPlayer → ClientPropManager.EnterRoom).
+        // GeographicArea triggers are spatial sub-zones inside a single room
+        // (e.g. apartment volumes inside hall:street:floor) and must NOT trigger
+        // a room change — doing so would ClearProps() and despawn every prop on
+        // the floor (hall doors, apt doors, delivery boxes…).
 
         public GeographicArea CurrentGeographicArea => currentGeographicArea.LastOrDefault();
 
@@ -508,11 +494,12 @@ namespace Sim {
 
         [Server]
         public void Revive() {
-            BuildingBehavior buildingBehavior = FindObjectsOfType<BuildingBehavior>().FirstOrDefault(x => x.Match(this.characterHome.Address));
+            BuildingBehavior buildingBehavior = FindObjectsByType<BuildingBehavior>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .FirstOrDefault(x => x.Match(this.characterHome.Address));
 
             if (buildingBehavior) {
                 GameLogger.Player.Info("PlayerRevived {PlayerNetId} {BuildingStreet}", netId, this.characterHome.Address.street);
-                buildingBehavior.TeleportToApartment(this.characterHome.Address.doorNumber, this.netIdentity.connectionToClient);
+                buildingBehavior.TeleportExistingPlayerToApartment(this.characterHome.Address.doorNumber, this.netIdentity.connectionToClient);
                 this.playerHealth.ResetAll();
                 this.playerBankAccount.TakeMoney(50);
                 this.TargetRevive(this.netIdentity.connectionToClient);

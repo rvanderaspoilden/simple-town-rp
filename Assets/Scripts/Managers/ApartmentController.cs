@@ -147,6 +147,11 @@ namespace Sim {
 
         [Server]
         public void Regenerate() {
+            // Reset to NOT_CREATED so CheckGenerationState counts this apartment as pending,
+            // and tell the hall to reset its broadcast guard so it will re-broadcast.
+            this.state = ApartmentState.NOT_CREATED;
+            this.associatedHallController?.OnApartmentRegenerating();
+
             foreach (int propId in _ownedPropIds.ToArray())
                 ServerPropManager.Instance?.RemoveProp(this.RoomId, propId);
             _ownedPropIds.Clear();
@@ -170,6 +175,7 @@ namespace Sim {
 
             ApplyPresetName(preset);
             UpdateGeographicArea();
+            Debug.Log($"[Apartment] Creating apartment runtime id={doorNum} street={streetName} floor={floorNum} preset={preset}");
         }
 
         // ── RoomState subscription ────────────────────────────────────────────
@@ -327,10 +333,12 @@ namespace Sim {
                 this.SetFrontDoorLockState(DoorLockState.UNLOCKED);
                 this.state = ApartmentState.GENERATED;
                 UpdateRoomState();
+                Debug.Log($"[Apartment] Registered apartment id={this.doorNumber} door={this.doorNumber} tenant={this.tenantId} preset={this.presetName} room={this.RoomId}");
                 this.associatedHallController.CheckGenerationState();
             } else {
                 this.SetFrontDoorLockState(DoorLockState.LOCKED);
                 this.state = ApartmentState.NOT_GENERATED;
+                Debug.Log($"[Apartment] Apartment door={this.doorNumber} has no tenant — NOT_GENERATED, room={this.RoomId}");
                 this.associatedHallController.CheckGenerationState();
             }
         }
@@ -527,7 +535,8 @@ namespace Sim {
         // ── Internal helpers ──────────────────────────────────────────────────
 
         private void ApplyPresetName(string name) {
-            if (string.IsNullOrEmpty(name)) return;
+            // Always fall back to "talyah" so unoccupied apartments still have visible geometry.
+            if (string.IsNullOrEmpty(name)) name = "talyah";
             this.presetName = name;
 
             if (name == "ahmed") {
@@ -539,6 +548,7 @@ namespace Sim {
             }
 
             this.currentConfiguration.container.SetActive(true);
+            Debug.Log($"[Apartment] Applying door number {this.doorNumber} preset={name}");
         }
 
         private void UpdateGeographicArea() {

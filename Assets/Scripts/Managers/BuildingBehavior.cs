@@ -4,7 +4,11 @@ using Mirror;
 using Sim.Entities;
 using UnityEngine;
 
-public class BuildingBehavior : NetworkBehaviour {
+// Plain MonoBehaviour. The building has no per-field network state (no SyncVar,
+// no ClientRpc/TargetRpc) — all gameplay sync goes through custom NetworkMessages
+// (S2C_HallSpawn, S2C_HallDespawn, S2C_ApartmentSpawn, TeleportMessage).
+// Lifecycle is driven explicitly by SimpleTownNetwork via ServerInit/ServerShutdown.
+public class BuildingBehavior : MonoBehaviour {
     [Header("Settings")]
     [SerializeField]
     private string streetName;
@@ -35,10 +39,46 @@ public class BuildingBehavior : NetworkBehaviour {
 
     private void OnDestroy() {
         _buildingRegistry.Remove(streetName);
+        // Allow the inclusive scan to re-run on the next lookup (e.g. after a
+        // scene reload). Awake won't re-fire on the new BuildingBehavior if it's
+        // still on an inactive GameObject.
+        _inactiveScanDone = false;
     }
 
-    public static bool TryGetBuilding(string street, out BuildingBehavior building) =>
-        _buildingRegistry.TryGetValue(street, out building);
+    public string StreetName => streetName;
+
+    /// <summary>
+    /// Lookup a BuildingBehavior by street name.
+    ///
+    /// Robust against scenes where the BuildingBehavior is on an inactive GameObject:
+    /// in that case <c>Awake()</c> never runs and the registry stays empty, so we
+    /// fall back to a one-time inclusive scan (FindObjectsInactive.Include) and
+    /// populate the registry on demand. Subsequent lookups hit the registry directly.
+    /// </summary>
+    public static bool TryGetBuilding(string street, out BuildingBehavior building) {
+        if (_buildingRegistry.TryGetValue(street, out building)) return true;
+
+        // Fallback: discover inactive instances and register them.
+        DiscoverInactiveBuildings();
+        return _buildingRegistry.TryGetValue(street, out building);
+    }
+
+    private static bool _inactiveScanDone;
+    public static void DiscoverInactiveBuildings() {
+        if (_inactiveScanDone) return;
+        _inactiveScanDone = true;
+
+        BuildingBehavior[] all = FindObjectsByType<BuildingBehavior>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        foreach (BuildingBehavior bb in all) {
+            if (string.IsNullOrEmpty(bb.streetName)) continue;
+            if (!_buildingRegistry.ContainsKey(bb.streetName)) {
+                _buildingRegistry[bb.streetName] = bb;
+                Debug.Log($"[Building] Discovered inactive BuildingBehavior street={bb.streetName} — registered for client routing");
+            }
+        }
+    }
 
     // ── Client-side hall registry (used by HallController) ───────────────────
 
@@ -50,15 +90,21 @@ public class BuildingBehavior : NetworkBehaviour {
         _clientHalls.Remove((street, floor));
     }
 
-    // ── Mirror server lifecycle ───────────────────────────────────────────────
+    // ── Server lifecycle (driven by SimpleTownNetwork.OnStartServer/OnStopServer) ─
 
-    public override void OnStartServer() {
+    public void ServerInit() {
+        if (this.mainElevator == null) {
+            Debug.LogError($"[Building] ServerInit street={streetName}: mainElevator is null");
+            return;
+        }
         this.mainElevator.InitServerSide("city");
         this.mainElevator.OnUse += TeleportToFloor;
     }
 
-    public override void OnStopServer() {
-        this.mainElevator.OnUse -= TeleportToFloor;
+    public void ServerShutdown() {
+        if (this.mainElevator != null) {
+            this.mainElevator.OnUse -= TeleportToFloor;
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -72,9 +118,14 @@ public class BuildingBehavior : NetworkBehaviour {
 
     // ── Server: teleport player to their apartment ────────────────────────────
 
-    [Server]
-    public void TeleportToApartment(int doorNumber, NetworkConnection conn) {
-        Debug.Log($"Server: Teleport player to apartment {doorNumber}");
+    /// <summary>
+    /// Entry point for a NEW player login. The playerGo is not yet network-spawned;
+    /// HallController.CheckGenerationState will call FinalizePlayerSpawn once the floor
+    /// is fully loaded. This ensures the lifecycle order:
+    ///   LoadFloorData → BuildHall → RegisterEntities → AddPlayerForConnection → TeleportMessage
+    /// </summary>
+    public void TeleportToApartment(int doorNumber, NetworkConnectionToClient conn, GameObject playerGo) {
+        Debug.Log($"[Building] TeleportToApartment building={streetName} door={doorNumber} conn={conn.connectionId}");
 
         int targetFloor = this.GetFloorByDoorNumber(doorNumber);
 
@@ -84,12 +135,31 @@ public class BuildingBehavior : NetworkBehaviour {
 
         HallController hallController = hallControllerByFloor[targetFloor];
         hallController.CheckApartmentState(doorNumber);
-        hallController.MoveToApartment(doorNumber, conn);
+        hallController.MoveToApartment(doorNumber, conn, playerGo);
     }
 
-    [ServerCallback]
+    /// <summary>
+    /// Teleports a player that is already network-spawned back to their apartment.
+    /// Used by PlayerController.Revive() — no playerGo needed.
+    /// </summary>
+    public void TeleportExistingPlayerToApartment(int doorNumber, NetworkConnectionToClient conn) {
+        Debug.Log($"[Building] TeleportExistingPlayer building={streetName} door={doorNumber} conn={conn.connectionId}");
+
+        int targetFloor = this.GetFloorByDoorNumber(doorNumber);
+
+        if (!hallControllerByFloor.ContainsKey(targetFloor)) {
+            CreateHall(targetFloor);
+        }
+
+        HallController hallController = hallControllerByFloor[targetFloor];
+        hallController.CheckApartmentState(doorNumber);
+        // Pass null as playerGo — player is already spawned, FinalizeAndTeleport skips AddPlayerForConnection.
+        hallController.MoveToApartment(doorNumber, conn, null);
+    }
+
     public void TeleportToFloor(int originFloor, int targetFloor, NetworkConnectionToClient conn) {
-        Debug.Log($"Server: Teleport from {originFloor} to {targetFloor}");
+        if (!NetworkServer.active) return;
+        Debug.Log($"[Building] TeleportToFloor building={streetName} from={originFloor} to={targetFloor} conn={conn.connectionId}");
 
         if (targetFloor == 0) {
             conn.Send(new TeleportMessage {
@@ -100,6 +170,7 @@ public class BuildingBehavior : NetworkBehaviour {
             if (!hallControllerByFloor.ContainsKey(targetFloor)) {
                 CreateHall(targetFloor);
             }
+            // Existing player using elevator — no playerGo needed (already spawned).
             hallControllerByFloor[targetFloor].MoveToSpawn(conn);
         }
 
@@ -109,19 +180,18 @@ public class BuildingBehavior : NetworkBehaviour {
         }
     }
 
-    [Server]
     private void CreateHall(int targetFloor) {
         Vector3 spawnPos = this.GetSpawnPositionForHall(targetFloor);
         HallController newHall = Instantiate(this.hallPrefab, spawnPos, Quaternion.identity);
 
-        Debug.Log($"[BuildingBehavior] Hall created at {spawnPos.y} for floor {targetFloor}");
+        Debug.Log($"[Hall] Building runtime hall for room hall:{streetName}:{targetFloor} at {spawnPos}");
 
         newHall.Init(streetName, targetFloor, this);
         newHall.Elevator.OnUse += TeleportToFloor;
 
         hallControllerByFloor.Add(targetFloor, newHall);
 
-        // Inform all clients so they can instantiate their local copy
+        // Inform all clients so they can instantiate their local copy.
         NetworkServer.SendToAll(new S2C_HallSpawn {
             Street      = streetName,
             FloorNumber = targetFloor,
@@ -129,7 +199,6 @@ public class BuildingBehavior : NetworkBehaviour {
         });
     }
 
-    [Server]
     public void TryToCleanHall(HallController hallController) {
         if (!hallController.ContainPlayers()) {
             hallController.Elevator.OnUse -= TeleportToFloor;
@@ -150,20 +219,31 @@ public class BuildingBehavior : NetworkBehaviour {
     // ── Client-side S2C handlers (called from SimpleTownNetwork) ─────────────
 
     public void OnClientHallSpawn(S2C_HallSpawn msg) {
-        if (_clientHalls.ContainsKey((msg.Street, msg.FloorNumber))) return; // already exists
+        if (_clientHalls.ContainsKey((msg.Street, msg.FloorNumber))) {
+            Debug.Log($"[Hall] OnClientHallSpawn skipped — already exists street={msg.Street} floor={msg.FloorNumber}");
+            return;
+        }
 
         if (NetworkServer.active) {
-            // Host mode: server already created the hall; ClientSetup will be called
-            // when S2C_ApartmentSpawn arrives (ClientSpawnApartment sets it up)
+            // Host mode: server already created the hall; just register it client-side.
             if (hallControllerByFloor.TryGetValue(msg.FloorNumber, out HallController existing)) {
+                Debug.Log($"[Hall] Host-mode setup of existing hall street={msg.Street} floor={msg.FloorNumber}");
                 existing.ClientSetup(msg.Street, msg.FloorNumber);
+            } else {
+                Debug.LogError($"[Hall] Host-mode: server hall not found for floor={msg.FloorNumber}");
             }
             return;
         }
 
-        // Client-only mode: instantiate hall prefab locally
+        if (hallPrefab == null) {
+            Debug.LogError($"[Hall] hallPrefab is NULL on BuildingBehavior street={streetName} — check scene/prefab assignment");
+            return;
+        }
+
+        Debug.Log($"[Hall] Instantiating hall prefab prefabId={hallPrefab.name} street={msg.Street} floor={msg.FloorNumber} pos={msg.Position}");
         HallController hall = Instantiate(hallPrefab, msg.Position, Quaternion.identity);
         hall.ClientSetup(msg.Street, msg.FloorNumber);
+        Debug.Log($"[Hall] Runtime HallController created room=hall:{msg.Street}:{msg.FloorNumber}");
     }
 
     public void OnClientHallDespawn(S2C_HallDespawn msg) {
@@ -187,8 +267,13 @@ public class BuildingBehavior : NetworkBehaviour {
 
     // ── Utility ───────────────────────────────────────────────────────────────
 
+    // Layout: 9 columns × N rows, each cell 100 units apart.
+    // floor 1-9  → row 0, y = -100
+    // floor 10-18 → row 1, y = -200
+    // No two floors share the same (x,y) position.
     private Vector3 GetSpawnPositionForHall(int floorNumber) {
-        int x = floorNumber - (Mathf.FloorToInt(floorNumber / 10f) * 10);
-        return new Vector3(x * 100, -100 + (-100 * floorNumber % 10), 0);
+        int col = (floorNumber - 1) % 9;        // 0..8
+        int row = (floorNumber - 1) / 9;        // 0, 1, 2 …
+        return new Vector3((col + 1) * 100f, -100f - row * 100f, 0f);
     }
 }

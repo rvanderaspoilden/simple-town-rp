@@ -119,6 +119,7 @@ public class ClientPropManager : MonoBehaviour {
             ClientLogger.NetworkDebug("RoomSnapshotIgnored {MsgRoomId} {CurrentRoomId}", msg.RoomId, _currentRoomId);
             return;
         }
+        Debug.Log($"[Hall] Received hall snapshot room={msg.RoomId} propCount={msg.PropCount}");
         ClientLogger.Network("RoomSnapshotReceived {RoomId} {PropCount}", msg.RoomId, msg.PropCount);
     }
 
@@ -152,7 +153,7 @@ public class ClientPropManager : MonoBehaviour {
             behaviour.ApplyState(msg.Type, msg.Payload);
         }
         _spawnedGOs[msg.PropId] = go;
-        
+
         ClientLogger.NetworkDebug("PropSpawned {PropId} {PrefabId} {RoomId}", msg.PropId, msg.PrefabId, msg.RoomId);
     }
 
@@ -182,6 +183,7 @@ public class ClientPropManager : MonoBehaviour {
 
     private void OnRoomState(S2C_RoomState msg) {
         ClientLogger.NetworkDebug("RoomStateReceived {RoomId} {PayloadSize}", msg.RoomId, msg.Payload?.Length ?? 0);
+        Debug.Log($"[RoomSnapshot] Finished entity reconstruction room={msg.RoomId} props={_props.Count}");
         OnRoomStateReceived?.Invoke(msg.RoomId, msg.Payload);
     }
 

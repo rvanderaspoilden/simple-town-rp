@@ -45,6 +45,8 @@ public class SimpleTownNetwork : NetworkManager
         set => characterHomes = value;
     }
 
+    public City CityData => cityData;
+
     #region Unity Callbacks
 
     public override void OnValidate()
@@ -167,6 +169,10 @@ public class SimpleTownNetwork : NetworkManager
     {
         base.OnClientConnect();
 
+        // Do NOT hide loading here. The loading screen stays visible until the
+        // TeleportCoroutine places the player at their apartment (or until
+        // UpdateCityDataMessage arrives with ShouldHideLoading=true for city-spawn players).
+
         if (useSpectusAccount)
         {
             var msg = new CreateCharacterMessage
@@ -199,8 +205,6 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.Send(characterMsg);
         ClientLogger.Network("SendCreateCharacter {UserId} {CharacterId}", characterMsg.userId,
             characterMsg.characterId);
-
-        LoadingManager.Instance.Hide();
     }
 
     #endregion
@@ -236,6 +240,13 @@ public class SimpleTownNetwork : NetworkManager
         PropSystemBootstrap.OnServerStart();
         NpcSystemBootstrap.OnServerStart();
         ItemSystemBootstrap.OnServerStart();
+
+        // Initialize all BuildingBehavior instances (scene objects, possibly inactive).
+        // Replaces the former NetworkBehaviour.OnStartServer hook on each building.
+        foreach (BuildingBehavior bb in FindObjectsByType<BuildingBehavior>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None)) {
+            bb.ServerInit();
+        }
 
         StartCoroutine(this.RetrieveCityData());
         GameLogger.Network.Info("ServerStarted {Active}", NetworkServer.active);
@@ -284,6 +295,11 @@ public class SimpleTownNetwork : NetworkManager
         ItemSystemBootstrap.OnServerStop();
         NpcSystemBootstrap.OnServerStop();
         PropSystemBootstrap.OnServerStop();
+
+        foreach (BuildingBehavior bb in FindObjectsByType<BuildingBehavior>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None)) {
+            bb.ServerShutdown();
+        }
 
         this.UpdateTimestamp();
         GameLogger.Network.Info("ServerStopped");
@@ -417,10 +433,16 @@ public class SimpleTownNetwork : NetworkManager
     [ClientCallback]
     public void OnCityDataUpdatedResponse(UpdateCityDataMessage message)
     {
-        ClientLogger.Network("CityDataUpdated {CityId} {Timestamp}", message.City.ID, message.City.last_timestamp);
+        ClientLogger.Network("CityDataUpdated {CityId} {Timestamp} {ShouldHideLoading}",
+            message.City.ID, message.City.last_timestamp, message.ShouldHideLoading);
         this.cityData = message.City;
         TimeManager.StartTimestamp = this.cityData.last_timestamp;
-        LoadingManager.Instance.Hide();
+
+        // Only hide loading for players that spawn directly in the city (no apartment).
+        // Apartment players have a TeleportMessage following immediately — TeleportCoroutine
+        // manages the loading screen for them.
+        if (message.ShouldHideLoading)
+            LoadingManager.Instance.Hide();
     }
 
     private void OnCreateCharacter(NetworkConnectionToClient conn, CreateCharacterMessage message)
@@ -433,10 +455,16 @@ public class SimpleTownNetwork : NetworkManager
     [ClientCallback]
     private void OnHallSpawn(S2C_HallSpawn msg)
     {
+        Debug.Log($"[RoomSnapshot] Received hall entity street={msg.Street} floor={msg.FloorNumber} pos={msg.Position}");
         ClientLogger.NetworkDebug("HallSpawn {Street} {Floor}", msg.Street, msg.FloorNumber);
         if (BuildingBehavior.TryGetBuilding(msg.Street, out var building))
         {
             building.OnClientHallSpawn(msg);
+        }
+        else
+        {
+            Debug.LogError($"[Hall] No BuildingBehavior registered for street={msg.Street} — cannot reconstruct hall client-side. " +
+                           "Check City scene: 'Behaviour Manager' GameObject must contain a BuildingBehavior reachable via FindObjectsByType(Include).");
         }
     }
 
@@ -491,78 +519,106 @@ public class SimpleTownNetwork : NetworkManager
         GameLogger.Network.Debug("SetupCharacterStart {ConnectionId} {UserId}", conn.connectionId, userId);
 
         UnityWebRequest characterRequest = ApiManager.Instance.RetrieveCharacterByUserIdRequest(userId);
-
         yield return characterRequest.SendWebRequest();
 
-        if (characterRequest.responseCode == 200)
-        {
-            CharacterResponse characterResponse =
-                JsonUtility.FromJson<CharacterResponse>(characterRequest.downloadHandler.text);
-
-            GameLogger.Network.Info("CharacterRetrieved {ConnectionId} {UserId} {CharacterName}",
-                conn.connectionId, userId, characterResponse.Characters[0].Identity.FullName);
-
-            GameObject go = Instantiate(this.playerPrefab, startPositions[0].transform.position, Quaternion.identity);
-
-            PlayerController player = go.GetComponent<PlayerController>();
-            player.SetRawCharacterData(JsonUtility.ToJson(characterResponse.Characters[0]));
-
-            go.name = $"Player [conn={conn.connectionId}] [{characterResponse.Characters[0].Identity.FullName}]";
-
-            // Retrieve home and teleport
-
-            UnityWebRequest homeRequest =
-                ApiManager.Instance.RetrieveHomesByCharacterRequest(characterResponse.Characters[0]);
-
-            yield return homeRequest.SendWebRequest();
-
-            if (homeRequest.responseCode == 200)
-            {
-                HomeResponse homeResponse = JsonUtility.FromJson<HomeResponse>(homeRequest.downloadHandler.text);
-
-                if (homeResponse.Homes.Length > 0)
-                {
-                    player.SetRawCharacterHome(JsonUtility.ToJson(homeResponse.Homes[0]));
-
-                    Address address = homeResponse.Homes[0].Address;
-
-                    GameLogger.Network.Debug("HomeRetrieved {ConnectionId} {Street} {DoorNumber}",
-                        conn.connectionId, address.street, address.doorNumber);
-
-                    BuildingBehavior buildingBehavior =
-                        FindObjectsOfType<BuildingBehavior>().FirstOrDefault(x => x.Match(address));
-
-                    if (buildingBehavior)
-                    {
-                        buildingBehavior.TeleportToApartment(address.doorNumber, conn);
-                    }
-                    else
-                    {
-                        GameLogger.Network.Error(null, "BuildingNotFound {ConnectionId} {Street}",
-                            conn.connectionId, address.street);
-                    }
-                }
-                else
-                {
-                    GameLogger.Network.Warning("NoHomeFound {ConnectionId} {UserId}", conn.connectionId, userId);
-                }
-            }
-
-            NetworkServer.AddPlayerForConnection(conn, go);
-
-            uint playerNetId = go.GetComponent<NetworkIdentity>()?.netId ?? 0;
-            GameLogger.Network.Info("PlayerSpawned {ConnectionId} {UserId} {PlayerNetId} {CharacterName}",
-                conn.connectionId, userId, playerNetId, characterResponse.Characters[0].Identity.FullName);
-
-            conn.Send(new UpdateCityDataMessage() { City = this.cityData });
-            GameLogger.Network.Debug("CityDataSent {ConnectionId}", conn.connectionId);
-        }
-        else
+        if (characterRequest.responseCode != 200)
         {
             GameLogger.Network.Error(null, "CharacterRetrievalFailed {ConnectionId} {UserId} {ResponseCode}",
                 conn.connectionId, userId, characterRequest.responseCode);
             conn.Disconnect();
+            yield break;
         }
+
+        CharacterResponse characterResponse =
+            JsonUtility.FromJson<CharacterResponse>(characterRequest.downloadHandler.text);
+
+        GameLogger.Network.Info("CharacterRetrieved {ConnectionId} {UserId} {CharacterName}",
+            conn.connectionId, userId, characterResponse.Characters[0].Identity.FullName);
+
+        // Prepare the player GO server-side but do NOT call AddPlayerForConnection yet.
+        // The correct lifecycle is:
+        //   LoadFloorData → BuildHall → RegisterEntities → AddPlayerForConnection → TeleportMessage
+        // HallController.CheckGenerationState (or MoveToApartment for already-generated halls)
+        // will call FinalizePlayerSpawn once the floor is ready.
+        GameObject go = Instantiate(this.playerPrefab, startPositions[0].transform.position, Quaternion.identity);
+        PlayerController player = go.GetComponent<PlayerController>();
+        player.SetRawCharacterData(JsonUtility.ToJson(characterResponse.Characters[0]));
+        go.name = $"Player [conn={conn.connectionId}] [{characterResponse.Characters[0].Identity.FullName}]";
+
+        UnityWebRequest homeRequest =
+            ApiManager.Instance.RetrieveHomesByCharacterRequest(characterResponse.Characters[0]);
+        yield return homeRequest.SendWebRequest();
+
+        bool sentToBuilding = false;
+
+        if (homeRequest.responseCode == 200)
+        {
+            HomeResponse homeResponse = JsonUtility.FromJson<HomeResponse>(homeRequest.downloadHandler.text);
+
+            if (homeResponse.Homes.Length > 0)
+            {
+                player.SetRawCharacterHome(JsonUtility.ToJson(homeResponse.Homes[0]));
+                Address address = homeResponse.Homes[0].Address;
+
+                GameLogger.Network.Debug("HomeRetrieved {ConnectionId} {Street} {DoorNumber}",
+                    conn.connectionId, address.street, address.doorNumber);
+
+                // Use inclusive find — the BuildingBehavior may sit on an inactive
+                // GameObject in the scene (Behaviour Manager is shipped inactive).
+                BuildingBehavior buildingBehavior =
+                    FindObjectsByType<BuildingBehavior>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                        .FirstOrDefault(x => x.Match(address));
+
+                if (buildingBehavior != null)
+                {
+                    // Hand off to building — AddPlayerForConnection happens when hall is ready.
+                    buildingBehavior.TeleportToApartment(address.doorNumber, conn, go);
+                    sentToBuilding = true;
+                    Debug.Log($"[Building] Loading floor data building={address.street} door={address.doorNumber}");
+                }
+                else
+                {
+                    GameLogger.Network.Error(null, "BuildingNotFound {ConnectionId} {Street}",
+                        conn.connectionId, address.street);
+                }
+            }
+            else
+            {
+                GameLogger.Network.Warning("NoHomeFound {ConnectionId} {UserId}", conn.connectionId, userId);
+            }
+        }
+
+        if (!sentToBuilding)
+        {
+            // Fallback: no building/home found — spawn player in city immediately.
+            FinalizePlayerSpawn(conn, go, spawnInCity: true);
+        }
+    }
+
+    /// <summary>
+    /// Called by HallController once the floor is fully loaded, or immediately
+    /// when no building is found. Spawns the player for the connection and sends
+    /// the current city snapshot.
+    /// </summary>
+    [Server]
+    public void FinalizePlayerSpawn(NetworkConnectionToClient conn, GameObject playerGo, bool spawnInCity = false)
+    {
+        if (playerGo == null)
+        {
+            GameLogger.Network.Error(null, "FinalizePlayerSpawnNullGo {ConnectionId}", conn.connectionId);
+            return;
+        }
+
+        NetworkServer.AddPlayerForConnection(conn, playerGo);
+
+        uint netId = playerGo.GetComponent<NetworkIdentity>()?.netId ?? 0;
+        GameLogger.Network.Info("PlayerSpawned {ConnectionId} {NetId} {SpawnInCity}", conn.connectionId, netId, spawnInCity);
+
+        // ShouldHideLoading=true only for city-spawn players (no apartment follows).
+        // Apartment players will receive a TeleportMessage right after; TeleportCoroutine
+        // handles the loading screen for them.
+        conn.Send(new UpdateCityDataMessage { City = this.cityData, ShouldHideLoading = spawnInCity });
+        GameLogger.Network.Debug("CityDataSent {ConnectionId} {ShouldHideLoading}", conn.connectionId, spawnInCity);
     }
 
     #endregion

@@ -24,17 +24,25 @@ public class HallController : MonoBehaviour {
     [SerializeField]
     private GeographicArea geographicArea;
 
-    private HashSet<NetworkConnection> playersInside = new HashSet<NetworkConnection>();
+    private readonly HashSet<NetworkConnectionToClient> playersInside = new HashSet<NetworkConnectionToClient>();
 
     private string street;
     private int floorNumber;
     private bool isGenerated;
+    // Guard: prevent CheckGenerationState from broadcasting more than once.
+    // Reset when an apartment calls Regenerate so that a re-gen cycle re-broadcasts.
+    private bool _generationBroadcasted;
 
     private TeleporterBehaviour elevator;
     private BuildingBehavior associatedBuilding;
 
-    private readonly HashSet<ApartmentController>     generatedApartments = new HashSet<ApartmentController>();
-    private readonly Dictionary<NetworkConnection, int> playersToMove      = new Dictionary<NetworkConnection, int>();
+    private readonly HashSet<ApartmentController> generatedApartments = new HashSet<ApartmentController>();
+
+    // Key: connection waiting for this floor to be ready.
+    // Value: (playerGo, doorNumber).  doorNumber == -1 means "teleport to elevator spawn".
+    // playerGo is null for existing (already-spawned) players using the elevator.
+    private readonly Dictionary<NetworkConnectionToClient, (GameObject playerGo, int doorNumber)> playersToMove
+        = new Dictionary<NetworkConnectionToClient, (GameObject, int)>();
 
     // Client-side apartment registry (doorNumber → controller)
     private readonly Dictionary<int, ApartmentController> _clientApartments = new Dictionary<int, ApartmentController>();
@@ -148,6 +156,10 @@ public class HallController : MonoBehaviour {
 
     // ── Server: player movement ───────────────────────────────────────────────
 
+    /// <summary>
+    /// Teleports an EXISTING (already-spawned) player to the hall elevator spawn.
+    /// Called from BuildingBehavior.TeleportToFloor (elevator use).
+    /// </summary>
     [Server]
     public void MoveToSpawn(NetworkConnectionToClient conn) {
         if (this.isGenerated) {
@@ -157,78 +169,121 @@ public class HallController : MonoBehaviour {
             });
             this.playersInside.Add(conn);
         } else {
-            this.playersToMove.Add(conn, -1);
+            // playerGo is null for existing players (already spawned)
+            this.playersToMove[conn] = (null, -1);
         }
     }
 
+    /// <summary>
+    /// Called for a NEW player (playerGo not yet network-spawned).
+    /// If the floor is ready: finalizes the spawn + teleports immediately.
+    /// Otherwise: queues until CheckGenerationState fires.
+    /// </summary>
     [Server]
-    public void MoveToApartment(int doorNumber, NetworkConnection conn) {
+    public void MoveToApartment(int doorNumber, NetworkConnectionToClient conn, GameObject playerGo) {
         if (this.isGenerated) {
             ApartmentController apartmentTarget = GetApartmentByDoorNumber(doorNumber);
-            conn.Send(new TeleportMessage {
-                destination = apartmentTarget.SpawnPosition.position,
-                NewRoomId   = apartmentTarget.RoomId
-            });
-            this.playersInside.Add(conn);
+            FinalizeAndTeleport(conn, playerGo, apartmentTarget.SpawnPosition.position, apartmentTarget.RoomId);
         } else {
-            this.playersToMove.Add(conn, doorNumber);
+            this.playersToMove[conn] = (playerGo, doorNumber);
         }
+    }
+
+    // Spawns the player (if not yet spawned) then sends TeleportMessage + UpdateCityDataMessage.
+    [Server]
+    private void FinalizeAndTeleport(NetworkConnectionToClient conn, GameObject playerGo,
+                                     Vector3 destination, string roomId) {
+        if (playerGo != null) {
+            // New player — finalize network spawn first so OnStartLocalPlayer fires before
+            // TeleportMessage is processed by the client.
+            SimpleTownNetwork stn = Mirror.NetworkManager.singleton as SimpleTownNetwork;
+            stn?.FinalizePlayerSpawn(conn, playerGo, spawnInCity: false);
+        }
+
+        conn.Send(new TeleportMessage { destination = destination, NewRoomId = roomId });
+        this.playersInside.Add(conn);
     }
 
     [Server]
     public void CheckGenerationState() {
+        // Guard: prevent double-broadcast when multiple apartment coroutines
+        // complete in the same frame.
+        if (_generationBroadcasted) return;
+
         this.isGenerated = this.generatedApartments
             .Where(x => x.State != ApartmentState.NOT_CREATED)
             .Count() == this.generatedApartments.Count;
 
         if (!this.isGenerated) return;
 
+        _generationBroadcasted = true;
+
         if (this.geographicArea != null) {
             this.geographicArea.LocationText = $"{this.street}, Étage {this.floorNumber}";
         }
 
-        // Broadcast each generated apartment to all clients
+        // Broadcast each apartment to all clients so they reconstruct the hall visually.
+        int propCount = 0;
         foreach (ApartmentController apt in this.generatedApartments) {
+            // Always send a preset name — use "talyah" as default for unoccupied apartments
+            // so the client has geometry to show even when the apartment is NOT_GENERATED.
+            string preset = (apt.State == ApartmentState.GENERATED && !string.IsNullOrEmpty(apt.PresetName))
+                ? apt.PresetName
+                : "talyah";
+
             NetworkServer.SendToAll(new S2C_ApartmentSpawn {
                 Street      = this.street,
                 FloorNumber = this.floorNumber,
                 DoorNumber  = apt.Address.doorNumber,
-                PresetName  = apt.State == ApartmentState.GENERATED ? apt.PresetName : string.Empty,
+                PresetName  = preset,
                 Position    = apt.transform.position,
                 Rotation    = apt.transform.rotation
             });
+            propCount++;
+            Debug.Log($"[Apartment] Registered apartment id={apt.Address.doorNumber} door={apt.Address.doorNumber} preset={preset}");
         }
+        Debug.Log($"[RoomSnapshot] Floor {RoomId} fully generated — {propCount} apartments broadcast");
 
-        // Move any waiting players
-        foreach (KeyValuePair<NetworkConnection, int> entry in this.playersToMove) {
-            TeleportMessage teleportMessage = new TeleportMessage {
-                destination = this.elevator.SpawnTransform.position,
-                NewRoomId   = RoomId
-            };
+        // Finalize spawn + teleport for all waiting players.
+        foreach (var kv in this.playersToMove) {
+            NetworkConnectionToClient conn     = kv.Key;
+            GameObject               playerGo  = kv.Value.playerGo;
+            int                      doorNumber = kv.Value.doorNumber;
 
-            if (entry.Value != -1) {
-                ApartmentController apartmentTarget = this.generatedApartments
-                    .FirstOrDefault(x => x.Address.doorNumber.Equals(entry.Value));
+            if (doorNumber == -1) {
+                // Elevator-path: teleport to spawn point (existing player, no GO).
+                FinalizeAndTeleport(conn, playerGo,
+                    this.elevator.SpawnTransform.position, RoomId);
+            } else {
+                ApartmentController apt = this.generatedApartments
+                    .FirstOrDefault(x => x.Address.doorNumber == doorNumber);
 
-                if (!apartmentTarget) {
-                    throw new Exception($"[HallController] Cannot move player to door number {entry.Value}");
+                if (!apt) {
+                    Debug.LogError($"[HallController] Cannot move player to door {doorNumber} — apartment not found");
+                    continue;
                 }
 
-                teleportMessage = new TeleportMessage {
-                    destination = apartmentTarget.SpawnPosition.position,
-                    NewRoomId   = apartmentTarget.RoomId
-                };
+                Debug.Log($"[Hall] Spawning and teleporting player conn={conn.connectionId} to door={doorNumber} room={apt.RoomId}");
+                FinalizeAndTeleport(conn, playerGo, apt.SpawnPosition.position, apt.RoomId);
             }
-
-            entry.Key.Send(teleportMessage);
-            this.playersInside.Add(entry.Key);
         }
 
         this.playersToMove.Clear();
     }
 
+    /// <summary>
+    /// Called by ApartmentController.Regenerate() so the hall can be re-generated
+    /// and re-broadcast if a stale apartment triggers a re-fetch.
+    /// </summary>
+    [Server]
+    public void OnApartmentRegenerating() {
+        _generationBroadcasted = false;
+        this.isGenerated = false;
+    }
+
     public void RemovePlayer(NetworkIdentity networkIdentity) {
-        this.playersInside.Remove(networkIdentity.connectionToClient);
+        if (networkIdentity?.connectionToClient != null)
+            this.playersInside.Remove(networkIdentity.connectionToClient);
     }
 
     public bool ContainPlayers() {
@@ -251,6 +306,7 @@ public class HallController : MonoBehaviour {
     [Server]
     private void RemoveDisconnectedPlayer(NetworkConnectionToClient conn) {
         this.playersInside.Remove(conn);
-        this.associatedBuilding.TryToCleanHall(this);
+        this.playersToMove.Remove(conn); // also clean up if they disconnected while waiting
+        this.associatedBuilding?.TryToCleanHall(this);
     }
 }

@@ -68,6 +68,10 @@ namespace Sim.Logging {
                     }
                 }
 
+                if (Application.isEditor) {
+                    configuration = configuration.WriteTo.Sink(new UnityEditorSink());
+                }
+
                 Log.Logger = configuration.CreateLogger();
 
                 _isInitialized = true;
