@@ -117,6 +117,15 @@ namespace Sim {
 
         public static event StateChanged OnStateChanged;
 
+        public delegate void LocalPlayerMoveStarted();
+
+        /// <summary>
+        /// Fired once when the local player initiates a movement (MoveTo).
+        /// UI flows tied to a current interaction (e.g. PropsContentUI) subscribe
+        /// to this to close themselves cleanly when movement interrupts the interaction.
+        /// </summary>
+        public static event LocalPlayerMoveStarted OnLocalPlayerMoveStarted; // TODO: to remove and use state
+
         public delegate void CharacterDataChanged(CharacterData characterData);
 
         public static event CharacterDataChanged OnCharacterDataChanged;
@@ -450,6 +459,12 @@ namespace Sim {
             this.navMeshAgent.SetDestination(targetPoint);
 
             HUDManager.Instance.CloseInventory();
+
+            if (isLocalPlayer)
+            {
+                Debug.Log("[Interaction] Player movement interrupted current interaction");
+                OnLocalPlayerMoveStarted?.Invoke();
+            }
         }
 
         public void LookAt(Transform target) {

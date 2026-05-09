@@ -43,21 +43,10 @@ public class DispenserBehaviour : PropBehaviourBase {
 
     // ── IInteractable ─────────────────────────────────────────────────────────
 
-    public override bool IsInteractable() =>
-        base.IsInteractable()
-        && PlayerController.Local != null
-        && PlayerController.Local.PlayerHands.HasFreeHand();
-
-    public override Action[] GetActions(bool withPriority = false) {
-        Action[] acts = base.GetActions(withPriority);
-        foreach (var a in acts) {
-            if (a.Type == ActionTypeEnum.USE) {
-                a.IsForbidden = PlayerController.Local == null
-                             || !PlayerController.Local.PlayerHands.HasFreeHand();
-            }
-        }
-        return acts;
-    }
+    // The dispenser remains interactable even when both hands are full:
+    // the server-side purchase flow now spawns the bought item in the world
+    // (room) as a fallback when no hand is free.
+    // See PropInteractionRouter.HandleDispenser + ServerItemManager.SpawnItemInHand.
 
     // ── PropBehaviourBase ─────────────────────────────────────────────────────
 
