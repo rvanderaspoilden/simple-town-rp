@@ -149,9 +149,13 @@ public class HallController : MonoBehaviour {
     [Server]
     public void CheckApartmentState(int doorNumber) {
         ApartmentController apartmentTarget = GetApartmentByDoorNumber(doorNumber);
-        if (apartmentTarget.State != ApartmentState.GENERATED) {
-            Debug.Log($"Server: apartment {doorNumber} isn't generated so create it");
+        // NOT_CREATED means Init() already started RetrieveData() — don't interrupt it with Regenerate().
+        // Only regenerate if the previous load found no tenant (NOT_GENERATED) but a new player is now claiming it.
+        if (apartmentTarget.State == ApartmentState.NOT_GENERATED) {
+            Debug.Log($"Server: apartment {doorNumber} was NOT_GENERATED — regenerating for new tenant");
             apartmentTarget.Regenerate();
+        } else {
+            Debug.Log($"Server: apartment {doorNumber} state={apartmentTarget.State} — no regeneration needed");
         }
     }
 
@@ -172,15 +176,23 @@ public class HallController : MonoBehaviour {
     [Server]
     public void MoveToSpawn(NetworkConnectionToClient conn) {
         if (this.isGenerated) {
-            conn.Send(new TeleportMessage {
-                destination = this.elevator.SpawnTransform.position,
-                NewRoomId   = RoomId
-            });
+            Vector3 dest = GetElevatorSpawnPosition();
+            Debug.Log($"[Hall] MoveToSpawn (isGenerated=true) immediate teleport conn={conn.connectionId} room={RoomId}");
+            conn.Send(new TeleportMessage { destination = dest, NewRoomId = RoomId });
             this.playersInside.Add(conn);
         } else {
             // playerGo is null for existing players (already spawned)
+            Debug.Log($"[Hall] MoveToSpawn (isGenerated=false) queued conn={conn.connectionId} room={RoomId} pendingApts={this.generatedApartments.Count}");
             this.playersToMove[conn] = (null, -1);
         }
+    }
+
+    private Vector3 GetElevatorSpawnPosition() {
+        if (this.elevator != null && this.elevator.SpawnTransform != null)
+            return this.elevator.SpawnTransform.position;
+        // Fallback: elevator was placed at elevatorSpawn, use that transform directly.
+        Debug.LogWarning($"[Hall] elevator.SpawnTransform is null for room={RoomId} — falling back to elevatorSpawn position");
+        return this.elevatorSpawn != null ? this.elevatorSpawn.position : this.transform.position;
     }
 
     /// <summary>
@@ -219,9 +231,12 @@ public class HallController : MonoBehaviour {
         // complete in the same frame.
         if (_generationBroadcasted) return;
 
-        this.isGenerated = this.generatedApartments
+        int doneCount = this.generatedApartments
             .Where(x => x.State != ApartmentState.NOT_CREATED)
-            .Count() == this.generatedApartments.Count;
+            .Count();
+        this.isGenerated = doneCount == this.generatedApartments.Count;
+
+        Debug.Log($"[Hall] CheckGenerationState room={RoomId} apartmentsDone={doneCount}/{this.generatedApartments.Count} isGenerated={this.isGenerated} pendingPlayers={this.playersToMove.Count}");
 
         if (!this.isGenerated) return;
 
@@ -261,8 +276,7 @@ public class HallController : MonoBehaviour {
 
             if (doorNumber == -1) {
                 // Elevator-path: teleport to spawn point (existing player, no GO).
-                FinalizeAndTeleport(conn, playerGo,
-                    this.elevator.SpawnTransform.position, RoomId);
+                FinalizeAndTeleport(conn, playerGo, GetElevatorSpawnPosition(), RoomId);
             } else {
                 ApartmentController apt = this.generatedApartments
                     .FirstOrDefault(x => x.Address.doorNumber == doorNumber);

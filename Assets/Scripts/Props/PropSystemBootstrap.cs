@@ -15,7 +15,15 @@ public static class PropSystemBootstrap {
 
     public static void OnServerStart() {
         GameLogger.Network.Info("PropSystemServerStarting");
-        
+
+        // Auto-create PropInteractionDispatcher if missing from the scene.
+        if (PropInteractionDispatcher.Instance == null) {
+            GameLogger.Network.Warning("PropInteractionDispatcherMissing, creating automatically");
+            var go = new GameObject("PropInteractionDispatcher (AutoCreated)");
+            UnityEngine.Object.DontDestroyOnLoad(go);
+            go.AddComponent<PropInteractionDispatcher>();
+        }
+
         NetworkServer.RegisterHandler<C2S_EnterRoom>      (Server_OnEnterRoom);
         NetworkServer.RegisterHandler<C2S_LeaveRoom>      (Server_OnLeaveRoom);
         NetworkServer.RegisterHandler<C2S_PropInteraction>(Server_OnInteraction);

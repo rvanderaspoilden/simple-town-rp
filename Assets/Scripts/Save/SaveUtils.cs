@@ -35,10 +35,13 @@ namespace Sim.Utils {
             Vector3    worldPos = container != null ? container.TransformPoint(localPos) : localPos;
             Quaternion worldRot = container != null ? container.rotation * localRot     : localRot;
 
-            // Build initial payload from saved state
+            // Build initial payload from saved state — only override the full payload for
+            // PaintBucket (paint config + color need to come from the save). For every other
+            // type we let the ServerPropSource emit the type-specific body (seat slots,
+            // delivery count, ...) and just override the header (isBuilt + presetId).
             PropStateHeader header = new PropStateHeader { IsBuilt = data.isBuilt, PresetId = data.presetId };
 
-            byte[] payload;
+            byte[] payload = null;
             if (data is BucketData bucket) {
                 payload = new PaintBucketState {
                     Header        = header,
@@ -47,12 +50,12 @@ namespace Sim.Utils {
                     G = bucket.color != null && bucket.color.Length > 1 ? bucket.color[1] : 1f,
                     B = bucket.color != null && bucket.color.Length > 2 ? bucket.color[2] : 1f
                 }.Serialize();
-            } else {
-                payload = new GenericPropState { Header = header }.Serialize();
             }
 
             int propId = ServerPropManager.Instance.SpawnProp(
-                parent.RoomId, data.id, worldPos, worldRot, payload
+                parent.RoomId, data.id, worldPos, worldRot,
+                initialPayloadOverride: payload,
+                headerOverride:         header
             );
 
             if (propId >= 0) {

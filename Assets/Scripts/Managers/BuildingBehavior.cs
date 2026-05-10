@@ -162,13 +162,21 @@ public class BuildingBehavior : MonoBehaviour {
         Debug.Log($"[Building] TeleportToFloor building={streetName} from={originFloor} to={targetFloor} conn={conn.connectionId}");
 
         if (targetFloor == 0) {
+            if (this.mainElevator == null || this.mainElevator.SpawnTransform == null) {
+                Debug.LogError($"[Building] TeleportToFloor to city failed — mainElevator or its SpawnTransform is null on building {streetName}");
+                return;
+            }
             conn.Send(new TeleportMessage {
                 destination = this.mainElevator.SpawnTransform.position,
                 NewRoomId   = "city"
             });
         } else {
-            if (!hallControllerByFloor.ContainsKey(targetFloor)) {
+            bool createdNewHall = !hallControllerByFloor.ContainsKey(targetFloor);
+            if (createdNewHall) {
+                Debug.Log($"[Building] TeleportToFloor: creating new hall floor={targetFloor} for conn={conn.connectionId}");
                 CreateHall(targetFloor);
+            } else {
+                Debug.Log($"[Building] TeleportToFloor: reusing existing hall floor={targetFloor}");
             }
             // Existing player using elevator — no playerGo needed (already spawned).
             hallControllerByFloor[targetFloor].MoveToSpawn(conn);

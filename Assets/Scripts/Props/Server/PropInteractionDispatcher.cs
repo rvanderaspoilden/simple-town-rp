@@ -3,6 +3,7 @@ using Mirror;
 using Sim;
 using Sim.Building;
 using Sim.Entities;
+using Sim.Logging;
 using Sim.Scriptables;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -76,14 +77,20 @@ public class PropInteractionDispatcher : MonoBehaviour {
         if (req.responseCode == 200) {
             DeliveryResponse response = JsonUtility.FromJson<DeliveryResponse>(req.downloadHandler.text);
             if (response?.Deliveries != null) count = (uint)response.Deliveries.Count;
+        } else {
+            Debug.LogWarning($"[PropInteractionDispatcher] DeliveryBox count fetch failed ({req.responseCode}) for char {characterId} prop={propId} room={roomId}");
         }
 
-        if (!ServerPropManager.Instance.TryGetPropState(roomId, propId, out var state)) yield break;
+        if (!ServerPropManager.Instance.TryGetPropState(roomId, propId, out var state)) {
+            Debug.LogWarning($"[PropInteractionDispatcher] DeliveryBox refresh: prop {propId} not found in room {roomId} (was the box despawned?)");
+            yield break;
+        }
 
         // Preserve header (built/preset) when updating the delivery count.
         PropStateHeader header = PropStateHeader.ReadFrom(state.Payload);
         byte[] newPayload = new DeliveryBoxState { Header = header, DeliveryCount = count }.Serialize();
         ServerPropManager.Instance.UpdatePropState(roomId, propId, newPayload);
+        Debug.Log($"[PropInteractionDispatcher] DeliveryBox {propId} refreshed: count={count} (room={roomId})");
     }
 
     // ── Teleporter ────────────────────────────────────────────────────────────
@@ -91,12 +98,12 @@ public class PropInteractionDispatcher : MonoBehaviour {
     public void HandleTeleporterUse(NetworkConnectionToClient conn, int floorDestination) {
         string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
         if (string.IsNullOrEmpty(roomId)) {
-            Debug.LogWarning($"[PropInteractionDispatcher] TeleporterUse: conn {conn.connectionId} has no tracked room");
+            GameLogger.Network.Warning("TeleporterUseNoRoom {ConnectionId}", conn.connectionId);
             return;
         }
 
         if (!TeleporterBehaviour.TryGetByRoom(roomId, out TeleporterBehaviour teleporter)) {
-            Debug.LogWarning($"[PropInteractionDispatcher] TeleporterUse: no teleporter registered for room '{roomId}'");
+            GameLogger.Network.Warning("TeleporterUseNoTeleporter {ConnectionId} {RoomId}", conn.connectionId, roomId);
             return;
         }
 
@@ -161,22 +168,23 @@ public class PropInteractionDispatcher : MonoBehaviour {
         bool isBuilt = !config.MustBeBuilt();
         PropStateHeader header = new PropStateHeader { IsBuilt = isBuilt, PresetId = msg.PresetId };
 
-        byte[] initialPayload;
+        // PaintBucket needs the full payload (paint config + color); for every other
+        // prop type we let the ServerPropSource emit the correct body (seat slots,
+        // delivery count, ...) and only override the header to carry isBuilt/presetId.
+        byte[] initialPayload = null;
         if (msg.PaintConfigId >= 0) {
-            // PaintBucket initial payload (PropType.PaintBucket)
             initialPayload = new PaintBucketState {
                 Header        = header,
                 PaintConfigId = msg.PaintConfigId,
                 R = msg.ColorR, G = msg.ColorG, B = msg.ColorB
             }.Serialize();
-        } else {
-            // Generic init: header only — sources will use their own initial state if needed
-            initialPayload = new GenericPropState { Header = header }.Serialize();
         }
 
         // 3. Spawn the prop in the apartment room
         int newPropId = ServerPropManager.Instance.SpawnProp(
-            apt.RoomId, msg.PropConfigId, msg.Position, msg.Rotation, initialPayload
+            apt.RoomId, msg.PropConfigId, msg.Position, msg.Rotation,
+            initialPayloadOverride: initialPayload,
+            headerOverride:         header
         );
         if (newPropId < 0) {
             conn.Send(new S2C_BuildAck { Success = false });
@@ -196,8 +204,13 @@ public class PropInteractionDispatcher : MonoBehaviour {
         if (msg.DeliveryBoxPropId > 0) {
             string tenantCharId = apt.TenantId;
             if (!string.IsNullOrEmpty(tenantCharId)) {
+                Debug.Log($"[PropInteractionDispatcher] BuildProp consumed delivery — refreshing box {msg.DeliveryBoxPropId} for tenant {tenantCharId} room={apt.RoomId}");
                 RefreshDeliveryBoxCount(msg.DeliveryBoxPropId, apt.RoomId, tenantCharId);
+            } else {
+                Debug.LogWarning($"[PropInteractionDispatcher] BuildProp: skipping delivery box refresh — apt.TenantId empty (apt={apt.ApartmentKey} room={apt.RoomId})");
             }
+        } else {
+            Debug.LogWarning($"[PropInteractionDispatcher] BuildProp: skipping delivery box refresh — msg.DeliveryBoxPropId={msg.DeliveryBoxPropId} (client did not provide a box id)");
         }
 
         // 6. Persist the apartment

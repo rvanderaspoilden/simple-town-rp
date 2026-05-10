@@ -6,7 +6,6 @@ using AI.States;
 using DG.Tweening;
 using Interaction;
 using Mirror;
-using Sim.Building;
 using Sim.Entities;
 using Sim.Enums;
 using Sim.Logging;
@@ -304,7 +303,7 @@ namespace Sim {
                 DefaultViewUI.Instance.SetLocationText(current.LocationText);
 
                 if (current.Type == GeographicType.APARTMENT) {
-                    DefaultViewUI.Instance.SetTenantText($"Locataire: {current.GetComponentInParent<ApartmentController>().TenantIdentity.FullName}");
+                    DefaultViewUI.Instance.SetTenantText($"Locataire: {current.GetComponentInParent<ApartmentController>().TenantFullName}");
                 } else {
                     DefaultViewUI.Instance.SetTenantText(string.Empty);
                 }

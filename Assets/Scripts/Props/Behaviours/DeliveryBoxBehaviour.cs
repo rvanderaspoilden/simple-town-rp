@@ -31,11 +31,20 @@ public class DeliveryBoxBehaviour : PropBehaviourBase {
         base.ApplyState(type, payload);
         DeliveryBoxState state = DeliveryBoxState.Deserialize(payload);
         _deliveryCount = state.DeliveryCount;
+        Debug.Log($"[DeliveryBox] ApplyState propId={GetComponent<PropIdentity>()?.PropId} count={_deliveryCount} packageActive={(package != null ? package.activeSelf : false)}");
         UpdateGraphics();
     }
 
     public void OnDeliveryBoxOpened(Delivery[] deliveries) {
         _lastDeliveries = deliveries ?? System.Array.Empty<Delivery>();
+        // The list is authoritative — keep _deliveryCount in sync with it so the
+        // visuals (clap rotation + package GameObject) update even if the matching
+        // S2C_PropUpdate hasn't been processed yet.
+        uint listCount = (uint)_lastDeliveries.Length;
+        if (_deliveryCount != listCount) {
+            _deliveryCount = listCount;
+            UpdateGraphics();
+        }
         OnOpened?.Invoke(this, _lastDeliveries);
     }
 

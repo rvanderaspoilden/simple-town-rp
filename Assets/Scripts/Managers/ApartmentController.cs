@@ -60,6 +60,7 @@ namespace Sim {
         private int doorNumber;
         private int floorNumber;
         private string tenantId;
+        private string tenantFullName;
         private Identity tenantIdentity;
         private string presetName;
 
@@ -157,6 +158,25 @@ namespace Sim {
             _ownedPropIds.Clear();
             this.frontDoorPropId = 0;
             this.deliveryBoxPropId = 0;
+
+            // Re-spawn the front door (Init spawns it once; Regenerate must also provide it
+            // so the hallway door exists before RetrieveData unlocks/locks it).
+            byte[] lockedPayload = new DoorState {
+                Header     = PropStateHeader.Default,
+                IsOpen     = false,
+                LockState  = DoorLockState.LOCKED,
+                DoorNumber = this.doorNumber
+            }.Serialize();
+            int newDoorId = ServerPropManager.Instance.SpawnProp(
+                this.RoomId, this.frontDoorPrefabConfig.GetId(),
+                this.frontDoorSpawn.position, this.frontDoorSpawn.rotation,
+                lockedPayload
+            );
+            if (newDoorId >= 0) {
+                this.frontDoorPropId = newDoorId;
+                TrackProp(newDoorId);
+            }
+
             StartCoroutine(RetrieveData());
         }
 
@@ -194,6 +214,11 @@ namespace Sim {
 
             if (!string.IsNullOrEmpty(state.tenantId)) {
                 this.tenantId = state.tenantId;
+            }
+            
+            if (!string.IsNullOrEmpty(state.tenantFullName))
+            {
+                this.tenantFullName = state.tenantFullName;
             }
 
             if (!string.IsNullOrEmpty(state.presetName) && state.presetName != this.presetName) {
@@ -233,6 +258,7 @@ namespace Sim {
                 street     = this.street,
                 doorNumber = this.doorNumber,
                 tenantId   = this.tenantId,
+                tenantFullName = this.tenantIdentity.FullName,
                 presetName = this.presetName,
                 walls      = SaveUtils.CreateCoverDatas(this.coverSettingsByFaces),
                 grounds    = SaveUtils.CreateCoverDatas(this.coverSettingsByGround)
@@ -292,6 +318,7 @@ namespace Sim {
 
         [Server]
         private IEnumerator RetrieveData() {
+            Debug.Log($"[Apartment] RetrieveData start door={this.doorNumber} street={this.street} room={this.RoomId}");
             Address addr = new Address { street = this.street, doorNumber = this.doorNumber, homeType = HomeTypeEnum.APARTMENT };
             UnityWebRequest request = ApiManager.Instance.RetrieveHomeRequest(addr);
 
@@ -585,6 +612,8 @@ namespace Sim {
         }
 
         public string TenantId => tenantId;
+
+        public string TenantFullName => tenantFullName;
 
         public Identity TenantIdentity => tenantIdentity;
 
