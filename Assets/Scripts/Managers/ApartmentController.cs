@@ -192,6 +192,10 @@ namespace Sim {
         public void ApplyRoomState(ApartmentRoomState state) {
             if (state == null) return;
 
+            if (!string.IsNullOrEmpty(state.tenantId)) {
+                this.tenantId = state.tenantId;
+            }
+
             if (!string.IsNullOrEmpty(state.presetName) && state.presetName != this.presetName) {
                 ApplyPresetName(state.presetName);
             }

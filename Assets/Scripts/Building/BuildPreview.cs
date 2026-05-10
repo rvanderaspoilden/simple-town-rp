@@ -61,6 +61,58 @@ namespace Sim.Building {
             }
 
             this.gameObject.layer = LayerMask.NameToLayer("Preview");
+
+            // When BuildPreview is added retroactively to a prop already overlapping
+            // trigger volumes (Edit on a placed prop), Unity does not always replay
+            // OnTriggerEnter/Stay for those pre-existing contacts after the layer
+            // change — `isInBuildableArea` would stay false forever and the preview
+            // would be stuck red. Seed overlap state explicitly via OverlapBox.
+            SeedOverlapState();
+        }
+
+        private void SeedOverlapState() {
+            if (this.collider == null) return;
+
+            Bounds b = this.collider.bounds;
+            // Bounds is world-AABB; using identity rotation is conservative but fine
+            // for seeding (we only need an initial snapshot — OnTriggerStay/Exit take
+            // over from the next FixedUpdate).
+            Collider[] hits = Physics.OverlapBox(
+                b.center, b.extents, Quaternion.identity, ~0, QueryTriggerInteraction.Collide);
+
+            int selfIgnored = 0;
+            foreach (Collider other in hits) {
+                if (other == this.collider || other.transform.IsChildOf(this.transform)) {
+                    selfIgnored++;
+                    continue;
+                }
+                RouteOverlap(other);
+            }
+
+            Debug.Log($"[BuildMode] Seeded preview prop={this.currentProps?.GetInstanceID()} " +
+                      $"hits={hits.Length} selfIgnored={selfIgnored} " +
+                      $"inBuildableArea={isInBuildableArea} blockers={colliderTriggered.Count}");
+        }
+
+        private void RouteOverlap(Collider other) {
+            if (other.CompareTag("Buildable Area")) {
+                if (this.buildableArea != other) {
+                    this.buildableArea = other;
+                    ApartmentController apt = this.buildableArea.GetComponentInParent<ApartmentController>();
+                    this.isInBuildableArea = apt != null && apt.IsTenant(PlayerController.Local.CharacterData);
+                }
+                return;
+            }
+
+            if (other.CompareTag("Roof") || other.CompareTag("Dissonance") || other.CompareTag("Geographic Area")) return;
+
+            if (this.currentProps.IsWallProps() && !this.colliderTriggered.Contains(other)) {
+                this.colliderTriggered.Add(other);
+            } else if (this.currentProps.IsGroundProps()
+                       && other.gameObject.layer != LayerMask.NameToLayer("Ground")
+                       && !this.colliderTriggered.Contains(other)) {
+                this.colliderTriggered.Add(other);
+            }
         }
 
         private void Update() {
@@ -114,18 +166,11 @@ namespace Sim.Building {
         }
 
         private void OnTriggerStay(Collider other) {
-            if (other.CompareTag("Buildable Area") && this.buildableArea != other) {
-                this.buildableArea = other;
-                this.isInBuildableArea = this.buildableArea.GetComponentInParent<ApartmentController>().IsTenant(PlayerController.Local.CharacterData);
-            } else if (!other.CompareTag("Buildable Area") && !other.CompareTag("Roof") && !other.CompareTag("Dissonance") && !other.CompareTag("Geographic Area")) {
-                if (this.currentProps.IsWallProps() && !this.colliderTriggered.Find(x => x == other)) {
-                    this.colliderTriggered.Add(other);
-                } else if (this.currentProps.IsGroundProps() && other.gameObject.layer != LayerMask.NameToLayer("Ground") &&
-                           !this.colliderTriggered.Find(x => x == other)) {
-                    this.colliderTriggered.Add(other);
-                }
-            }
+            // Ignore self / our own children — guards against a prop's child colliders
+            // ever reaching this callback if a future prop hierarchy adds them.
+            if (other == this.collider || other.transform.IsChildOf(this.transform)) return;
 
+            RouteOverlap(other);
             this.CheckValidity();
         }
 
@@ -143,9 +188,17 @@ namespace Sim.Building {
             if (navMeshObstacle && navMeshObstacle.enabled) return;
 
             this.haveFreeArea = this.colliderTriggered.Count(x => x.gameObject.activeInHierarchy) == 0;
+            bool wasPlaceable = this.placeable;
             this.placeable = this.haveFreeArea && this.detectGround && this.validRotation && this.isInBuildableArea;
 
             this.propsRenderer.SetPreviewState(this.placeable ? PreviewStateEnum.VALID : PreviewStateEnum.ERROR);
+
+            if (wasPlaceable != this.placeable) {
+                Debug.Log($"[BuildMode] Local placement valid={this.placeable} " +
+                          $"freeArea={this.haveFreeArea} ground={this.detectGround} " +
+                          $"rot={this.validRotation} inBuildable={this.isInBuildableArea} " +
+                          $"blockers={this.colliderTriggered.Count}");
+            }
 
             OnPlaceableStateChanged?.Invoke(this.placeable);
         }

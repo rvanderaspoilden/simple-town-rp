@@ -175,6 +175,9 @@ namespace Sim {
         }
 
         public void Edit(PropBehaviourBase behaviour) {
+            PropIdentity identity = behaviour.GetComponent<PropIdentity>();
+            Debug.Log($"[BuildMode] Entering build mode prop={identity?.PropId} room={identity?.RoomId} pos={behaviour.transform.position}");
+
             this.currentPropBehaviour = behaviour;
             this.currentPropsCollider = this.currentPropBehaviour.GetComponent<BoxCollider>();
             this.currentPreview = this.currentPropBehaviour.gameObject.AddComponent<BuildPreview>();
@@ -267,6 +270,7 @@ namespace Sim {
 
             if (this.mode == BuildModeEnum.VALIDATING) {
                 if (this.isEditing) {
+                    Debug.Log($"[BuildMode] Confirm placement requested prop={this.currentPropBehaviour?.GetComponent<PropIdentity>()?.PropId} pos={this.currentPropBehaviour?.transform.position}");
                     PropsConfig config = this.currentPropBehaviour.GetConfiguration();
                     if (config != null && config.HasPosableSurface) {
                         foreach (PropBehaviourBase child in this.currentPropBehaviour.GetComponentsInChildren<PropBehaviourBase>()) {

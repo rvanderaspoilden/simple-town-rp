@@ -102,6 +102,15 @@ public class HallController : MonoBehaviour {
         }
 
         BuildingBehavior.RegisterClientHall(streetName, floor, this);
+
+        // Client-only: instantiate the elevator. In host mode Init() already created it.
+        if (!NetworkServer.active && this.elevator == null
+            && this.elevatorPrefab != null && this.elevatorSpawn != null) {
+            this.elevator = Instantiate(this.elevatorPrefab, this.elevatorSpawn.position, this.elevatorSpawn.rotation);
+            this.elevator.transform.SetParent(this.transform);
+            this.elevator.HallController = this;
+            Debug.Log($"[Hall] Client elevator instantiated street={streetName} floor={floor}");
+        }
     }
 
     /// <summary>
