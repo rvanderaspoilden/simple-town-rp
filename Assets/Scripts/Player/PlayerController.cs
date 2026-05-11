@@ -65,6 +65,8 @@ namespace Sim {
         [SerializeField]
         private IInteractable interactableTarget;
 
+        private Vector3 interactionOriginPoint;
+
         [SerializeField]
         private bool showRadialMenuWithPriority;
 
@@ -404,7 +406,7 @@ namespace Sim {
 
             return (this.interactableTarget != null &&
                     this.navMeshAgent.remainingDistance > this.navMeshAgent.stoppingDistance &&
-                    this.CanInteractWith(this.interactableTarget, this.interactableTarget.transform.position)) ||
+                    this.CanInteractWith(this.interactableTarget, this.interactionOriginPoint)) ||
                    (!this.navMeshAgent.hasPath && MarkerController.Instance.IsActive());
         };
 
@@ -447,6 +449,7 @@ namespace Sim {
             string targetName = (interactable as UnityEngine.Object)?.name ?? interactable?.GetType().Name ?? "null";
             Debug.Log($"[Interaction] Started interaction target={targetName}");
             this.interactableTarget = interactable;
+            this.interactionOriginPoint = targetPoint;
             this.showRadialMenuWithPriority = showPriorityActions;
             MoveTo(targetPoint);
         }
@@ -591,6 +594,8 @@ namespace Sim {
             get => interactableTarget;
             set => interactableTarget = value;
         }
+
+        public Vector3 InteractionOriginPoint => interactionOriginPoint;
 
         public bool ShowRadialMenuWithPriority {
             get => showRadialMenuWithPriority;

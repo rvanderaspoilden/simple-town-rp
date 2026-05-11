@@ -139,7 +139,9 @@ namespace Sim {
 
             if (!(leftMouseClick || rightMouseClick || leftMousePressed)) return;
 
-            RaycastHit[] hits = Physics.RaycastAll(ray.origin, ray.direction, 100, this.layerMaskInFreeMode);
+            // Ignore trigger colliders: props can host triggers for occupancy detection (e.g. DoorPropSource)
+            // and we don't want those to intercept the click — only solid geometry should be hit.
+            RaycastHit[] hits = Physics.RaycastAll(ray.origin, ray.direction, 100, this.layerMaskInFreeMode, QueryTriggerInteraction.Ignore);
             if (hits.Length == 0) return;
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 

@@ -14,7 +14,7 @@ namespace AI.States {
             this.player.PlayerState = PlayerState.IDLE;
 
             var target = this.player.InteractableTarget;
-            if (!target.IsAlive() || !this.player.CanInteractWith(target, target.transform.position)) {
+            if (!target.IsAlive() || !this.player.CanInteractWith(target, this.player.InteractionOriginPoint)) {
                 this.player.InteractableTarget = null;
                 return;
             }
