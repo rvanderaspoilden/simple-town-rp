@@ -142,7 +142,8 @@ namespace Sim {
                 PlayerController player = hit.collider.GetComponent<PlayerController>();
 
                 if (interactable != null && !leftMousePressed) {
-                    if (interactable.IsInteractable()) {
+                    bool skipForLeftClick = leftMouseClick && interactable.IsRightClickOnly();
+                    if (interactable.IsInteractable() && !skipForLeftClick) {
                         bool canInteract = PlayerController.Local.CanInteractWith(interactable, hit.point);
                         Action[] actions = interactable.GetActions();
 

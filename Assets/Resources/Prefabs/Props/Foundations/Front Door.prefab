@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2011421994988231673}
   - component: {fileID: 962142985894930025}
   - component: {fileID: 397727228306799723}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Frame_door
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 2909737378142921162}
   - component: {fileID: 4396453280823455544}
   - component: {fileID: 5961911287069129278}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -196,7 +196,7 @@ GameObject:
   - component: {fileID: 3963872367271934335}
   - component: {fileID: 3882929773458843960}
   - component: {fileID: 4048183342026063404}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Front Door
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -306,6 +306,9 @@ MonoBehaviour:
   audioSource: {fileID: 7388977077264481874}
   openClip: {fileID: 8300000, guid: 4f8aa9e57a7a5ed4295faa1a774724d0, type: 3}
   closeClip: {fileID: 8300000, guid: 952e8d12e090ef744a71c6f912f460d0, type: 3}
+  lockClip: {fileID: 8300000, guid: c2dc6a4ee70e4344e8e25bf44f538f9e, type: 3}
+  unlockClip: {fileID: 8300000, guid: 26ba141b9d89e4644b5e00f1cf484701, type: 3}
+  ringClip: {fileID: 8300000, guid: 933967666cf08f948b930cf5b66f99ae, type: 3}
 --- !u!1 &4005046755810259179
 GameObject:
   m_ObjectHideFlags: 0
@@ -316,7 +319,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4909311895246835471}
   - component: {fileID: 7388977077264481874}
-  m_Layer: 2
+  m_Layer: 10
   m_Name: Audio Source
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -446,7 +449,7 @@ GameObject:
   - component: {fileID: 5620326121584809441}
   - component: {fileID: 6920015741213350848}
   - component: {fileID: 322291302365957247}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Handle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -536,7 +539,7 @@ GameObject:
   - component: {fileID: 3597680818199682954}
   - component: {fileID: 2756158921833503131}
   - component: {fileID: 4054892697280689493}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Number
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -631,7 +634,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '12
+  m_text: '
 
 '
   m_isRightToLeft: 0

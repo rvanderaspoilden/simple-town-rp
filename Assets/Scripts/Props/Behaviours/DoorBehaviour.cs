@@ -14,11 +14,9 @@ using Action = Sim.Interactables.Action;
 /// Optional numberTxt is set on FrontDoor prefabs to display the apartment number.
 ///
 /// Interaction rules (front door only, _displayedNumber > 0):
-///   - Owner (tenant of this apartment): LOCK action(s) from PropsConfig
-///   - Others: RING action from PropsConfig
+///   - Owner (tenant of this apartment): LOCK / UNLOCK toggle (from PropsConfig.Actions)
+///   - Others: RING (from PropsConfig.Actions)
 /// Inner doors (_displayedNumber == 0) have no interaction.
-///
-/// Both actions must be declared in the door's PropsConfig.Actions array.
 /// </summary>
 public class DoorBehaviour : PropBehaviourBase {
     [Header("Door")]
@@ -31,29 +29,47 @@ public class DoorBehaviour : PropBehaviourBase {
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip   openClip;
     [SerializeField] private AudioClip   closeClip;
+    [SerializeField] private AudioClip   lockClip;
+    [SerializeField] private AudioClip   unlockClip;
     [SerializeField] private AudioClip   ringClip;
 
     private bool          _isOpen;
     private DoorLockState _lockState = DoorLockState.UNLOCKED;
     private int           _displayedNumber = -1;
 
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    protected override void Awake() {
+        base.Awake();
+        Debug.Log($"[DoorBehaviour] {name} Awake — builtActions={_builtActions?.Length ?? 0} types=[{(_builtActions != null ? string.Join(",", _builtActions.Where(a => a != null).Select(a => a.Type.ToString())) : "")}]");
+    }
+
     // ── IInteractable overrides ───────────────────────────────────────────────
 
     public override bool IsInteractable() {
-        if (!enabled || !gameObject.activeInHierarchy) return false;
-        return _displayedNumber > 0;
+        bool interactable = enabled && gameObject.activeInHierarchy && _displayedNumber > 0;
+        Debug.Log($"[DoorBehaviour] {name} IsInteractable={interactable} (enabled={enabled} active={gameObject.activeInHierarchy} displayedNumber={_displayedNumber})");
+        return interactable;
     }
 
     public override Action[] GetActions(bool withPriority = false) {
         if (!enabled || !gameObject.activeInHierarchy) return System.Array.Empty<Action>();
-        if (_displayedNumber <= 0 || _builtActions == null) return System.Array.Empty<Action>();
+        if (_displayedNumber <= 0 || _builtActions == null) {
+            Debug.Log($"[DoorBehaviour] {name} GetActions skipped: displayedNumber={_displayedNumber} builtActionsCount={_builtActions?.Length ?? 0}");
+            return System.Array.Empty<Action>();
+        }
 
-        if (IsLocalPlayerOwner()) {
-            // Door UNLOCKED → show LOCK; door LOCKED → show UNLOCK
+        bool isOwner = IsLocalPlayerOwner();
+        Debug.Log($"[DoorBehaviour] {name} GetActions: displayedNumber={_displayedNumber} isOwner={isOwner} lockState={_lockState} builtActions=[{string.Join(", ", _builtActions.Where(a => a != null).Select(a => a.Type.ToString()))}]");
+
+        if (isOwner) {
             ActionTypeEnum wantedType = _lockState == DoorLockState.UNLOCKED
                 ? ActionTypeEnum.LOCK
                 : ActionTypeEnum.UNLOCK;
-            return _builtActions.Where(a => a != null && a.Type == wantedType).ToArray();
+            Action[] filtered = _builtActions.Where(a => a != null && a.Type == wantedType).ToArray();
+            if (filtered.Length == 0 && wantedType == ActionTypeEnum.UNLOCK)
+                filtered = _builtActions.Where(a => a != null && a.Type == ActionTypeEnum.LOCK).ToArray();
+            return filtered;
         }
 
         return _builtActions.Where(a => a != null && a.Type == ActionTypeEnum.RING).ToArray();
@@ -62,15 +78,23 @@ public class DoorBehaviour : PropBehaviourBase {
     // ── IPropBehaviour override ───────────────────────────────────────────────
 
     public override void ApplyState(PropType type, byte[] payload) {
+        Debug.Log($"[DoorBehaviour] {name} ApplyState called payloadLen={payload?.Length ?? 0}");
         DoorState state = DoorState.Deserialize(payload);
 
-        if (numberTxt != null && state.DoorNumber != _displayedNumber) {
+        if (state.DoorNumber != _displayedNumber) {
             _displayedNumber = state.DoorNumber;
-            numberTxt.text   = state.DoorNumber > 0 ? state.DoorNumber.ToString() : string.Empty;
+            if (numberTxt != null) {
+                numberTxt.text = state.DoorNumber > 0 ? state.DoorNumber.ToString() : string.Empty;
+            }
+            Debug.Log($"[DoorBehaviour] {name} doorNumber updated → {_displayedNumber}");
         }
 
         if (_lockState != state.LockState) {
             _lockState = state.LockState;
+            if (audioSource != null) {
+                AudioClip clip = _lockState == DoorLockState.LOCKED ? lockClip : unlockClip;
+                if (clip != null) audioSource.PlayOneShot(clip);
+            }
         }
 
         if (_isOpen != state.IsOpen) {

@@ -66,6 +66,8 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
 
     public bool IsInteractable() => _lookAction != null;
 
+    public bool IsRightClickOnly() => false;
+
     public void StopInteraction() { }
 
     public Action[] GetActions(bool withPriority = false) {

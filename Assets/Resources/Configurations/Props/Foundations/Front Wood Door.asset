@@ -26,11 +26,12 @@ MonoBehaviour:
   connectedToWall: 0
   toBuild: 0
   rangeToInteract: 2
+  rightClickOnly: 1
   actions:
   - {fileID: 11400000, guid: 5d8d67afe48899d49b26ea8e9dddba77, type: 2}
   - {fileID: 11400000, guid: b0825841061261b449098b6ee1160715, type: 2}
   - {fileID: 11400000, guid: 9808a42dc7e64e745a5b19811b1735ad, type: 2}
   unbuiltActions: []
-  cursor: {fileID: 2800000, guid: 4378877113f84e042864303ef44cf72c, type: 3}
+  cursor: {fileID: 0}
   presets: []
   buildSound: {fileID: 0}

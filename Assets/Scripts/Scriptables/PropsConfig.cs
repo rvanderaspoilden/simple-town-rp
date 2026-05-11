@@ -49,6 +49,9 @@ namespace Sim.Scriptables {
         private float rangeToInteract;
 
         [SerializeField]
+        private bool rightClickOnly;
+
+        [SerializeField]
         private Action[] actions;
 
         [SerializeField]
@@ -105,6 +108,10 @@ namespace Sim.Scriptables {
 
         public float GetRangeToInteract() {
             return this.rangeToInteract;
+        }
+
+        public bool IsRightClickOnly() {
+            return this.rightClickOnly;
         }
 
         public PropBehaviourBase GetPrefab() {

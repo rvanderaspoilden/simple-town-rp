@@ -73,6 +73,8 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
         return _holderNetId == NetworkClient.connection?.identity?.netId;
     }
 
+    public bool IsRightClickOnly() => false;
+
     public Action[] GetActions(bool withPriority = false)
     {
         if (!_isHeld)

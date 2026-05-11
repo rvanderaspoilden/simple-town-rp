@@ -459,7 +459,6 @@ namespace Sim {
 
             if (isLocalPlayer)
             {
-                Debug.Log("[Interaction] Player movement interrupted current interaction");
                 OnLocalPlayerMoveStarted?.Invoke();
             }
         }

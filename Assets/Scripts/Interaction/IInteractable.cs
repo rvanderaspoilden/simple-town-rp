@@ -7,6 +7,8 @@ namespace Interaction {
 
         public bool IsInteractable();
 
+        public bool IsRightClickOnly();
+
         public Action[] GetActions(bool withPriority = false);
 
         public void StopInteraction();

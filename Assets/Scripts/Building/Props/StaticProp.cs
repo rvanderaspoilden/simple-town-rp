@@ -47,6 +47,9 @@ namespace Sim.Building {
             return this.actions != null && this.actions.Length > 0;
         }
 
+        public bool IsRightClickOnly() =>
+            this.configuration != null && this.configuration.IsRightClickOnly();
+
         public virtual Action[] GetActions(bool withPriority = false) {
             if (this.actions == null) return System.Array.Empty<Action>();
 

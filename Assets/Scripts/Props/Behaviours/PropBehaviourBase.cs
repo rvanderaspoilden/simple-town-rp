@@ -91,6 +91,9 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         return acts != null && acts.Length > 0;
     }
 
+    public virtual bool IsRightClickOnly() =>
+        configuration != null && configuration.IsRightClickOnly();
+
     public virtual Action[] GetActions(bool withPriority = false)
     {
         Action[] acts = _isBuilt ? _builtActions : _unbuiltActions;

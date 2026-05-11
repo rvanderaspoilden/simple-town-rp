@@ -355,6 +355,7 @@ public static class PropInteractionRouter {
             current.LockState = current.LockState == DoorLockState.LOCKED
                 ? DoorLockState.UNLOCKED
                 : DoorLockState.LOCKED;
+            if (current.LockState == DoorLockState.LOCKED) current.IsOpen = false;
             ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, current.Serialize());
             Debug.Log($"[PropInteractionRouter] Door {msg.PropId} lock toggled to {current.LockState} by conn={conn.connectionId}");
 

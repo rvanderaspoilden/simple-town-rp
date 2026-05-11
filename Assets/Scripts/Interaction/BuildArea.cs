@@ -134,6 +134,8 @@ public class BuildArea : NetworkBehaviour, IInteractable {
         return this._state != BuildAreaState.OWNED;
     }
 
+    public bool IsRightClickOnly() => false;
+
     public Action[] GetActions(bool withPriority = false) {
         foreach (var action in this._actions) {
             if (action.Type == ActionTypeEnum.BUILD) {
