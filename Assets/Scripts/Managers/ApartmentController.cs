@@ -100,6 +100,7 @@ namespace Sim {
                 foreach (int propId in _ownedPropIds.ToArray())
                     ServerPropManager.Instance?.RemoveProp(this.RoomId, propId);
                 _ownedPropIds.Clear();
+                _lightPropIds.Clear();
                 this.frontDoorPropId = 0;
                 this.deliveryBoxPropId = 0;
             }
@@ -156,6 +157,7 @@ namespace Sim {
             foreach (int propId in _ownedPropIds.ToArray())
                 ServerPropManager.Instance?.RemoveProp(this.RoomId, propId);
             _ownedPropIds.Clear();
+            _lightPropIds.Clear();
             this.frontDoorPropId = 0;
             this.deliveryBoxPropId = 0;
 
@@ -436,6 +438,37 @@ namespace Sim {
                 }
             }
 
+            // Ceiling lights — apartment fixtures. If we have a saved layout, restore those
+            // (the tenant may have moved their lights); otherwise spawn at the preset's
+            // default positions. Lights are reparented under propsContainer so their
+            // local-space transforms match DefaultData's reference frame.
+            if (sceneData.lights != null && sceneData.lights.Length > 0) {
+                foreach (DefaultData lightData in sceneData.lights) {
+                    int lightPropId = SaveUtils.SpawnPropFromSave(lightData, this);
+                    if (lightPropId >= 0) _lightPropIds.Add(lightPropId);
+                }
+            } else if (this.lightPrefabConfig != null && this.currentConfiguration.lightSpawns != null) {
+                foreach (Transform spawner in this.currentConfiguration.lightSpawns) {
+                    if (spawner == null) continue;
+                    int lightPropId = ServerPropManager.Instance.SpawnProp(
+                        this.RoomId,
+                        this.lightPrefabConfig.GetId(),
+                        spawner.position,
+                        spawner.rotation
+                    );
+                    if (lightPropId >= 0) {
+                        TrackProp(lightPropId);
+                        _lightPropIds.Add(lightPropId);
+                        GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(lightPropId);
+                        if (go != null && this.propsContainer != null) {
+                            go.transform.SetParent(this.propsContainer);
+                            go.transform.position = spawner.position;
+                            go.transform.rotation = spawner.rotation;
+                        }
+                    }
+                }
+            }
+
             int deliveryBoxPropId = ServerPropManager.Instance.SpawnProp(
                 this.RoomId,
                 this.deliveryBoxPrefabConfig.GetId(),
@@ -458,6 +491,7 @@ namespace Sim {
         private SceneData GenerateSceneData() {
             List<BucketData>  buckets = new List<BucketData>();
             List<DefaultData> props   = new List<DefaultData>();
+            List<DefaultData> lights  = new List<DefaultData>();
 
             foreach (int propId in _ownedPropIds) {
                 if (propId == this.frontDoorPropId) continue;
@@ -465,7 +499,9 @@ namespace Sim {
                 if (!ServerPropManager.Instance.TryGetPropState(this.RoomId, propId, out var state)) continue;
                 if (state.IsScene) continue;
 
-                if (state.Type == PropType.PaintBucket) {
+                if (_lightPropIds.Contains(propId)) {
+                    lights.Add(new DefaultData(state, this.propsContainer));
+                } else if (state.Type == PropType.PaintBucket) {
                     buckets.Add(new BucketData(state, this.propsContainer));
                 } else {
                     props.Add(new DefaultData(state, this.propsContainer));
@@ -476,7 +512,8 @@ namespace Sim {
                 walls   = SaveUtils.CreateCoverDatas(this.coverSettingsByFaces),
                 grounds = SaveUtils.CreateCoverDatas(this.coverSettingsByGround),
                 buckets = buckets.ToArray(),
-                props   = props.ToArray()
+                props   = props.ToArray(),
+                lights  = lights.ToArray()
             };
         }
 
@@ -671,6 +708,13 @@ namespace Sim {
 
         [SerializeField, Tooltip("PropsConfig of the delivery box prefab. Must be in PropsDatabase.")]
         private PropsConfig deliveryBoxPrefabConfig;
+
+        [SerializeField, Tooltip("PropsConfig of the ceiling light prefab. Must be in PropsDatabase.")]
+        private PropsConfig lightPrefabConfig;
+
+        // Tracks light prop ids so GenerateSceneData skips them (they're apartment fixtures,
+        // not user-placed props).
+        private readonly HashSet<int> _lightPropIds = new HashSet<int>();
     }
 
     [Serializable]
@@ -680,6 +724,7 @@ namespace Sim {
         public GameObject shortWalls;
         public Transform[] doorSpawners;
         public Transform deliveryBoxSpawn;
+        public Transform[] lightSpawns;
     }
 
     [Serializable]

@@ -10,6 +10,7 @@ namespace Sim {
         public CoverData[]   grounds;
         public BucketData[]  buckets;
         public DefaultData[] props;
+        public DefaultData[] lights;
     }
 
     /// <summary>

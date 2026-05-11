@@ -152,6 +152,18 @@ namespace Sim.Building {
                 return;
             }
 
+            // Roof props: the roof surface itself acts as the buildable area. Any Roof-layer
+            // collider belonging to the player's apartment counts as a valid build zone, so
+            // the user doesn't need to manually tag the surface as "Buildable Area".
+            if (this.currentProps.IsRoofProps() && other.gameObject.layer == LayerMask.NameToLayer("Roof")) {
+                if (this.buildableArea != other) {
+                    this.buildableArea = other;
+                    ApartmentController apt = other.GetComponentInParent<ApartmentController>();
+                    this.isInBuildableArea = apt != null && apt.IsTenant(PlayerController.Local.CharacterData);
+                }
+                return;
+            }
+
             if (other.CompareTag("Roof") || other.CompareTag("Dissonance") || other.CompareTag("Geographic Area")) return;
 
             if (this.currentProps.IsWallProps() && !this.colliderTriggered.Contains(other)) {
@@ -184,7 +196,13 @@ namespace Sim.Building {
         }
 
         private void Update() {
-            if (Physics.Raycast(this.transform.position, Vector3.down, 10, (1 << 9))) {
+            if (this.currentProps.IsRoofProps()) {
+                // Roof props must hang under a roof — check there's roof geometry within a small
+                // radius. CheckSphere works whether the position is inside the surface collider
+                // or just below it, and respects trigger colliders regardless of the global
+                // queriesHitTriggers setting.
+                this.detectGround = Physics.CheckSphere(this.transform.position, 0.5f, (1 << 17), QueryTriggerInteraction.Collide);
+            } else if (Physics.Raycast(this.transform.position, Vector3.down, 10, (1 << 9))) {
                 this.detectGround = this.CheckConnectedToWallConstraint();
             } else {
                 this.detectGround = false;

@@ -135,6 +135,9 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     public bool IsGroundProps() =>
         configuration?.GetSurfaceToPose() == BuildSurfaceEnum.GROUND;
 
+    public bool IsRoofProps() =>
+        configuration?.GetSurfaceToPose() == BuildSurfaceEnum.ROOF;
+
     public void SetConfiguration(PropsConfig config) =>
         configuration = config;
 

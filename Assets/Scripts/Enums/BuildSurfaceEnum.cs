@@ -2,6 +2,7 @@
     [System.Serializable]
     public enum BuildSurfaceEnum {
         GROUND,
-        WALL
+        WALL,
+        ROOF
     }
 }

@@ -496,6 +496,13 @@ namespace Sim {
                 else if (hit.normal == Vector3.left)     rot.y = 270f;
 
                 this.currentPropBehaviour.transform.eulerAngles = rot;
+            } else if (this.currentPropBehaviour != null && this.currentPropBehaviour.IsRoofProps() &&
+                       hit.collider.gameObject.layer == LayerMask.NameToLayer("Roof")) {
+                // Roof props (ceiling lights, etc.) snap to the underside of the roof.
+                // The hit.normal points down into the room — offset slightly along it so the
+                // prop doesn't z-fight with the roof surface. Rotation stays free (user can
+                // tweak with R/arrows like ground props).
+                this.currentPropBehaviour.transform.position = hit.point + (hit.normal * 0.01f);
             }
         }
 

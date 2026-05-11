@@ -28,6 +28,10 @@ namespace Sim.Utils {
          * This method is used to give layers on which ones the props can be posed
          */
         public static int GetLayerMaskSurfacesToPose(PropBehaviourBase behaviour) {
+            if (behaviour.IsRoofProps()) {
+                return (1 << 17); // Roof layer only — roof props can only stick under the roof
+            }
+
             int layerValue = (1 << 12);
             if (behaviour.IsGroundProps()) {
                 layerValue = layerValue | (behaviour.GetConfiguration().IsPosableOnProps() ? (1 << 9 | 1 << 16) : (1 << 9)); // Ground + SuperPosable layers
