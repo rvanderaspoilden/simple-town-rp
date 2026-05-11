@@ -11,10 +11,10 @@ GameObject:
   - component: {fileID: 2127671928954517741}
   - component: {fileID: 1877362390716784388}
   - component: {fileID: 1877362390716784399}
-  - component: {fileID: 1877362390716784392}
   - component: {fileID: 1877362390716784393}
   - component: {fileID: 158653375197822347}
-  - component: {fileID: 7084507113008723270}
+  - component: {fileID: 8346880411121705338}
+  - component: {fileID: 9183628207398814159}
   m_Layer: 10
   m_Name: Photo_frame
   m_TagString: Untagged
@@ -54,7 +54,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -81,23 +81,6 @@ MonoBehaviour:
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
---- !u!114 &1877362390716784392
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1642919910190817879}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
-  configuration: {fileID: 11400000, guid: a21fd06878382e04f8d11893703996a2, type: 2}
-  defaultPresetId: -1
 --- !u!54 &1877362390716784393
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -222,7 +205,7 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &7084507113008723270
+--- !u!114 &8346880411121705338
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -231,14 +214,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 1642919910190817879}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
-  sceneId: 0
-  _assetId: 1351132002
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &9183628207398814159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1642919910190817879}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
+  configuration: {fileID: 11400000, guid: a21fd06878382e04f8d11893703996a2, type: 2}
+  defaultPresetId: -1
 --- !u!1 &3984352727748727481
 GameObject:
   m_ObjectHideFlags: 0

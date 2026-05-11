@@ -105,7 +105,14 @@ namespace Sim {
         }
 
         private void OnValidatePaintModification() {
-            ApartmentController apartmentController = this.currentOpenedBucket.GetComponentInParent<ApartmentController>();
+            // In client-only mode the bucket is not reparented under the apartment, so
+            // GetComponentInParent<ApartmentController> would return null. Use the apartment
+            // resolved by BuildManager when paint mode was entered.
+            ApartmentController apartmentController = BuildManager.Instance.CurrentApartment;
+            if (apartmentController == null) {
+                Debug.LogError("[PlayerInteraction] OnValidatePaintModification: no current apartment");
+                return;
+            }
 
             if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
                 apartmentController.ApplyWallSettings();

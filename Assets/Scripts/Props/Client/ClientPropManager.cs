@@ -132,11 +132,28 @@ public class ClientPropManager : MonoBehaviour {
             return;
         }
         if (_props.ContainsKey(msg.PropId)) {
-            // Host mode: server-side runtime GO was already indexed by IndexSceneProps.
-            // The server sends S2C_PropSpawn with the authoritative state — apply it.
+            // Already indexed (scene props or previously spawned). Apply the authoritative state.
             _props[msg.PropId].ApplyState(msg.Type, msg.Payload);
             ClientLogger.NetworkDebug("PropSpawnExistingStateApplied {PropId} {RoomId}", msg.PropId, msg.RoomId);
             return;
+        }
+
+        // Host mode: the server already instantiated the GameObject. Reuse it instead of
+        // instantiating a duplicate that would overlap and confuse the renderer state.
+        if (NetworkServer.active) {
+            GameObject hostGo = ServerPropManager.Instance.GetSpawnedGameObject(msg.PropId);
+            if (hostGo != null) {
+                IPropBehaviour hostBehaviour = hostGo.GetComponent<IPropBehaviour>();
+                if (hostBehaviour != null) {
+                    _props[msg.PropId] = hostBehaviour;
+                    _spawnedGOs[msg.PropId] = hostGo;
+                    PropStateHeader hostHeader = PropStateHeader.ReadFrom(msg.Payload);
+                    Debug.Log($"[PropSpawn] (host) Reusing server GO propId={msg.PropId} prefabId={msg.PrefabId} presetId={hostHeader.PresetId} isBuilt={hostHeader.IsBuilt}");
+                    hostBehaviour.ApplyState(msg.Type, msg.Payload);
+                }
+                ClientLogger.NetworkDebug("PropSpawnHostReused {PropId} {PrefabId} {RoomId}", msg.PropId, msg.PrefabId, msg.RoomId);
+                return;
+            }
         }
 
         var propsConfig = Sim.DatabaseManager.PropsDatabase?.GetPropsById(msg.PrefabId);

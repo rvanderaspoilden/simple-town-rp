@@ -37,6 +37,28 @@ namespace Sim.Building {
             }
         }
 
+        /// <summary>True if this ground is currently displaying the bucket's paint settings.</summary>
+        public bool IsPaintedWith(PaintBucketBehaviour paintBucket) {
+            return this.currentCover.paintConfigId == paintBucket.PaintConfigId
+                && this.currentCover.additionalColor == paintBucket.GetColor();
+        }
+
+        /// <summary>Idempotent apply — sets the cover to <paramref name="settings"/> and enters preview if not already.</summary>
+        [Client]
+        public void ApplyPaint(CoverSettings settings) {
+            if (!this.preview) {
+                this.oldCoverSettings = this.currentCover;
+                this.preview = true;
+            }
+            this.SetCoverSettings(settings);
+        }
+
+        /// <summary>Reverts to the pre-preview settings, no-op if not in preview.</summary>
+        [Client]
+        public void ErasePaint() {
+            if (this.preview) this.ResetPreview();
+        }
+
         [Client]
         public void ApplyModification() {
             this.preview = false;

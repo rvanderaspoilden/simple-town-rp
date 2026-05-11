@@ -245,6 +245,8 @@ namespace Sim {
 
         public bool InstantMagnetismActivated => instantMagnetismActivated;
 
+        public ApartmentController CurrentApartment => apartmentController;
+
         public void Cancel() {
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
@@ -323,10 +325,15 @@ namespace Sim {
             }
 
             if (this.currentOpenedBucket != null) {
-                if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
-                    this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetWallPreview();
-                } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
-                    this.currentOpenedBucket.GetComponentInParent<ApartmentController>().ResetGroundPreview();
+                // In client-only mode the bucket is not reparented under the apartment, so
+                // GetComponentInParent<ApartmentController> would return null. Use the cached
+                // apartment resolved at Init time instead.
+                if (this.apartmentController != null) {
+                    if (this.currentOpenedBucket.GetPaintConfig().IsWallCover()) {
+                        this.apartmentController.ResetWallPreview();
+                    } else if (this.currentOpenedBucket.GetPaintConfig().IsGroundCover()) {
+                        this.apartmentController.ResetGroundPreview();
+                    }
                 }
 
                 this.currentOpenedBucket = null;

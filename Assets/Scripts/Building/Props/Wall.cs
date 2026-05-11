@@ -77,31 +77,72 @@ namespace Sim.Building {
             this.meshCollider.enabled = false;
         }
 
-        [Client]
-        public void PreviewMaterialOnFace(RaycastHit hit, PaintBucketBehaviour paintBucket) {
-            if (this.coverSettingsInPreview.Count == 0) {
-                this.coverSettingsInPreview = new Dictionary<int, CoverSettings>(this.coverSettingsByFaces);
-            }
-
+        /// <summary>
+        /// Returns the submesh index hit by the raycast (-1 if invalid).
+        /// </summary>
+        public int GetSubmeshFromHit(RaycastHit hit) {
             Mesh mesh = meshCollider.sharedMesh;
+            if (mesh == null || hit.triangleIndex < 0) return -1;
 
             int limit = hit.triangleIndex * 3;
             int submesh;
             for (submesh = 0; submesh < mesh.subMeshCount; submesh++) {
                 int numIndices = mesh.GetTriangles(submesh).Length;
-                if (numIndices > limit)
-                    break;
-
+                if (numIndices > limit) return submesh;
                 limit -= numIndices;
             }
+            return -1;
+        }
 
-            if (this.coverSettingsInPreview[submesh].Equals(paintBucket)) {
-                this.coverSettingsInPreview[submesh] = this.coverSettingsByFaces[submesh];
-            } else {
-                this.coverSettingsInPreview[submesh] = new CoverSettings {paintConfigId = paintBucket.PaintConfigId, additionalColor = paintBucket.GetColor()};
-            }
+        /// <summary>True if the face at <paramref name="submesh"/> currently displays the bucket's paint settings.</summary>
+        public bool IsFacePaintedWith(int submesh, PaintBucketBehaviour paintBucket) {
+            if (submesh < 0) return false;
+            Dictionary<int, CoverSettings> current = this.coverSettingsInPreview.Count > 0
+                ? this.coverSettingsInPreview
+                : this.coverSettingsByFaces;
+            return current.TryGetValue(submesh, out CoverSettings cs) && cs.Equals(paintBucket);
+        }
 
+        [Client]
+        public void ApplyPaintOnFace(int submesh, PaintBucketBehaviour paintBucket) {
+            if (submesh < 0) return;
+            EnsurePreviewSeeded();
+            this.coverSettingsInPreview[submesh] = new CoverSettings {
+                paintConfigId   = paintBucket.PaintConfigId,
+                additionalColor = paintBucket.GetColor()
+            };
             this.UpdateWallFaces();
+        }
+
+        [Client]
+        public void ErasePaintOnFace(int submesh) {
+            if (submesh < 0) return;
+            EnsurePreviewSeeded();
+            if (this.coverSettingsByFaces.TryGetValue(submesh, out CoverSettings original)) {
+                this.coverSettingsInPreview[submesh] = original;
+                this.UpdateWallFaces();
+            }
+        }
+
+        /// <summary>Apply the bucket's paint to every editable face on this wall.</summary>
+        [Client]
+        public void ApplyPaintOnAllFaces(PaintBucketBehaviour paintBucket) {
+            EnsurePreviewSeeded();
+            CoverSettings target = new CoverSettings {
+                paintConfigId   = paintBucket.PaintConfigId,
+                additionalColor = paintBucket.GetColor()
+            };
+            foreach (int i in this.coverSettingsByFaces.Keys.ToList()) {
+                if (Array.IndexOf(this.sharedMaterialsToIgnore, i) != -1) continue;
+                this.coverSettingsInPreview[i] = target;
+            }
+            this.UpdateWallFaces();
+        }
+
+        private void EnsurePreviewSeeded() {
+            if (this.coverSettingsInPreview.Count == 0) {
+                this.coverSettingsInPreview = new Dictionary<int, CoverSettings>(this.coverSettingsByFaces);
+            }
         }
 
         public void UpdateWallFaces() {
