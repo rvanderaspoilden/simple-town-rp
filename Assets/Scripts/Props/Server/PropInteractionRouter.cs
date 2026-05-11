@@ -364,6 +364,9 @@ public static class PropInteractionRouter {
             DoorPropSource source = FindDoorSource(msg.PropId);
             if (source != null) source.Sync();
 
+            // Persist the new lock state so it survives logout/server restart.
+            apt.StartCoroutine(apt.Save());
+
             Debug.Log($"[PropInteractionRouter] Door {msg.PropId} lock={current.LockState} by conn={conn.connectionId}");
 
         } else if (DoorInteraction.IsRingRequest(msg.Payload)) {

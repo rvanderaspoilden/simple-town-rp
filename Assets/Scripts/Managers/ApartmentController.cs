@@ -160,6 +160,7 @@ namespace Sim {
             _lightPropIds.Clear();
             this.frontDoorPropId = 0;
             this.deliveryBoxPropId = 0;
+            this._frontDoorRestoredFromSave = false;
 
             // Re-spawn the front door (Init spawns it once; Regenerate must also provide it
             // so the hallway door exists before RetrieveData unlocks/locks it).
@@ -363,7 +364,12 @@ namespace Sim {
                     }
                 }
 
-                this.SetFrontDoorLockState(DoorLockState.UNLOCKED);
+                // Auto-unlock front door for a new tenant. If the save already carried a
+                // lockState for this door (player explicitly locked it before logout), the
+                // restore in InstantiateLevel already applied it — don't clobber.
+                if (!this._frontDoorRestoredFromSave) {
+                    this.SetFrontDoorLockState(DoorLockState.UNLOCKED);
+                }
                 this.state = ApartmentState.GENERATED;
                 UpdateRoomState();
                 Debug.Log($"[Apartment] Registered apartment id={this.doorNumber} door={this.doorNumber} tenant={this.tenantId} preset={this.presetName} room={this.RoomId}");
@@ -389,6 +395,10 @@ namespace Sim {
 
         [Server]
         private void InstantiateLevel(SceneData sceneData) {
+            if (sceneData.schemaVersion > SceneData.CurrentSchemaVersion) {
+                Debug.LogWarning($"[Apartment] SceneData saved with schema v{sceneData.schemaVersion} but client only supports v{SceneData.CurrentSchemaVersion}. Loading anyway — newer fields will be ignored.");
+            }
+
             sceneData.buckets?.ToList().ForEach(data => { SaveUtils.SpawnPropFromSave(data, this); });
             sceneData.props?.ToList().ForEach(data => { SaveUtils.SpawnPropFromSave(data, this); });
 
@@ -485,21 +495,75 @@ namespace Sim {
                 }
                 this.deliveryBoxPropId = deliveryBoxPropId;
             }
+
+            // Restore saved door states (lockState + isOpen) on top of the freshly-spawned
+            // default doors. Returns true if the front door was restored — caller then
+            // skips the automatic UNLOCK so the player's locked state is honored.
+            this._frontDoorRestoredFromSave = ApplySavedDoorStates(sceneData);
         }
+
+        [Server]
+        private bool ApplySavedDoorStates(SceneData sceneData) {
+            if (sceneData.doors == null || sceneData.doors.Length == 0) return false;
+
+            bool frontDoorRestored = false;
+            foreach (DoorData savedDoor in sceneData.doors) {
+                int matchedPropId = FindDoorPropIdForSave(savedDoor);
+                if (matchedPropId <= 0) continue;
+
+                if (!ServerPropManager.Instance.TryGetPropState(this.RoomId, matchedPropId, out var state)) continue;
+                DoorState current = DoorState.Deserialize(state.Payload);
+                current.LockState = (DoorLockState)savedDoor.lockState;
+                current.IsOpen    = savedDoor.isOpen;
+                ServerPropManager.Instance.UpdatePropState(this.RoomId, matchedPropId, current.Serialize());
+
+                if (matchedPropId == this.frontDoorPropId) frontDoorRestored = true;
+            }
+            return frontDoorRestored;
+        }
+
+        /// <summary>
+        /// Find the spawned door propId that corresponds to a saved DoorData entry.
+        /// Front doors match by doorNumber (unique per apartment); inner doors (doorNumber=0)
+        /// match by world position with a small tolerance.
+        /// </summary>
+        [Server]
+        private int FindDoorPropIdForSave(DoorData savedDoor) {
+            if (savedDoor.doorNumber > 0) {
+                return this.frontDoorPropId;
+            }
+
+            Vector3 savedWorldPos = this.propsContainer != null
+                ? this.propsContainer.TransformPoint(savedDoor.transform.position.ToVector3())
+                : savedDoor.transform.position.ToVector3();
+
+            foreach (int propId in _ownedPropIds) {
+                if (propId == this.frontDoorPropId) continue;
+                if (!ServerPropManager.Instance.TryGetPropState(this.RoomId, propId, out var state)) continue;
+                if (state.Type != PropType.Door) continue;
+                if (Vector3.Distance(state.Position, savedWorldPos) < 0.1f) return propId;
+            }
+            return -1;
+        }
+
+        private bool _frontDoorRestoredFromSave;
 
         [Server]
         private SceneData GenerateSceneData() {
             List<BucketData>  buckets = new List<BucketData>();
             List<DefaultData> props   = new List<DefaultData>();
             List<DefaultData> lights  = new List<DefaultData>();
+            List<DoorData>    doors   = new List<DoorData>();
 
             foreach (int propId in _ownedPropIds) {
-                if (propId == this.frontDoorPropId) continue;
                 if (propId == this.deliveryBoxPropId) continue;
                 if (!ServerPropManager.Instance.TryGetPropState(this.RoomId, propId, out var state)) continue;
                 if (state.IsScene) continue;
 
-                if (_lightPropIds.Contains(propId)) {
+                if (state.Type == PropType.Door) {
+                    // Doors (front + inner) carry lockState/isOpen which must persist.
+                    doors.Add(new DoorData(state, this.propsContainer));
+                } else if (_lightPropIds.Contains(propId)) {
                     lights.Add(new DefaultData(state, this.propsContainer));
                 } else if (state.Type == PropType.PaintBucket) {
                     buckets.Add(new BucketData(state, this.propsContainer));
@@ -509,11 +573,13 @@ namespace Sim {
             }
 
             return new SceneData {
+                schemaVersion = SceneData.CurrentSchemaVersion,
                 walls   = SaveUtils.CreateCoverDatas(this.coverSettingsByFaces),
                 grounds = SaveUtils.CreateCoverDatas(this.coverSettingsByGround),
                 buckets = buckets.ToArray(),
                 props   = props.ToArray(),
-                lights  = lights.ToArray()
+                lights  = lights.ToArray(),
+                doors   = doors.ToArray()
             };
         }
 

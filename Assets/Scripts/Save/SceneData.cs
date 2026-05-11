@@ -6,11 +6,18 @@ using UnityEngine;
 namespace Sim {
     [Serializable]
     public struct SceneData {
+        /// <summary>Bump this when changing the save format. Read-side migrations branch on this value.</summary>
+        public const int CurrentSchemaVersion = 1;
+
+        // Schema version of this serialized payload. A value of 0 (the default for older
+        // saves missing the field) is treated as "v0 — pre-versioning".
+        public int           schemaVersion;
         public CoverData[]   walls;
         public CoverData[]   grounds;
         public BucketData[]  buckets;
         public DefaultData[] props;
         public DefaultData[] lights;
+        public DoorData[]    doors;
     }
 
     /// <summary>
@@ -58,6 +65,26 @@ namespace Sim {
             PaintBucketState bucketState = PaintBucketState.Deserialize(state.Payload);
             this.paintConfigId = bucketState.PaintConfigId;
             this.color         = new[] { bucketState.R, bucketState.G, bucketState.B, 1f };
+        }
+    }
+
+    /// <summary>
+    /// Persisted door state. Front door = doorNumber > 0; inner doors = doorNumber 0.
+    /// lockState is stored as int (0=LOCKED, 1=UNLOCKED) for JsonUtility compatibility.
+    /// </summary>
+    [Serializable]
+    public class DoorData : DefaultData {
+        public int  lockState;
+        public bool isOpen;
+        public int  doorNumber;
+
+        public DoorData() { }
+
+        public DoorData(ServerPropState state, Transform parent) : base(state, parent) {
+            DoorState ds   = DoorState.Deserialize(state.Payload);
+            this.lockState = (int)ds.LockState;
+            this.isOpen    = ds.IsOpen;
+            this.doorNumber = ds.DoorNumber;
         }
     }
 

@@ -30,7 +30,9 @@
       "Bash(grep -B 1 -A 20 \"&3231884544855697046$\" Assets/Resources/Prefabs/Structures/Hotel.prefab)",
       "Bash(awk '/Transform:/,/m_LocalEulerAnglesHint/' Assets/Scenes/City.unity)",
       "Bash(grep -A 12 \"&8790402999747395076$\" Assets/Scenes/City.unity)",
-      "Bash(grep -A 16 \"&8790402999747395076$\" Assets/Scenes/City.unity)"
+      "Bash(grep -A 16 \"&8790402999747395076$\" Assets/Scenes/City.unity)",
+      "Bash(npx tsc *)",
+      "Bash(npx --prefix \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-ws\" tsc -p \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-ws\\\\tsconfig.json\" --noEmit)"
     ]
   },
   "enableAllProjectMcpServers": true,
