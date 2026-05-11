@@ -21,6 +21,16 @@ namespace Sim {
         [SerializeField]
         private Texture2D moveCursor;
 
+        [Header("Paint mode")]
+        [SerializeField]
+        private Texture2D wallPaintCursor;
+
+        [SerializeField]
+        private Texture2D groundPaintCursor;
+
+        [SerializeField]
+        private Texture2D eraserCursor;
+
         [Header("Debug")]
         [SerializeField]
         private Texture2D currentCursor;
@@ -54,6 +64,9 @@ namespace Sim {
         private void Update() {
             if (!CameraManager.Instance) return;
 
+            // Paint mode wins over the generic build-camera cursors.
+            if (CameraManager.Instance.GetMode() == CameraModeEnum.BUILD && TrySetPaintCursor()) return;
+
             Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
 
             if (CameraManager.Instance.GetMode() == CameraModeEnum.FREE && !EventSystem.current.IsPointerOverGameObject() &&
@@ -69,6 +82,29 @@ namespace Sim {
             } else {
                 this.SetCursor(null);
             }
+        }
+
+        private bool TrySetPaintCursor() {
+            if (BuildManager.Instance == null) return false;
+
+            BuildModeEnum mode = BuildManager.Instance.GetMode();
+            bool isWallPaint   = mode == BuildModeEnum.WALL_PAINT;
+            bool isGroundPaint = mode == BuildModeEnum.GROUND_PAINT;
+            if (!isWallPaint && !isGroundPaint) return false;
+
+            // Right-click drag = eraser; left-click drag uses the paint cursor (auto-invert
+            // is per-face so showing the eraser there would flicker).
+            if (Input.GetMouseButton(1) && this.eraserCursor != null) {
+                this.SetCursor(this.eraserCursor);
+                return true;
+            }
+
+            Texture2D paint = isWallPaint ? this.wallPaintCursor : this.groundPaintCursor;
+            if (paint != null) {
+                this.SetCursor(paint);
+                return true;
+            }
+            return false;
         }
 
         private void SetCursor(Texture2D cursorTexture) {

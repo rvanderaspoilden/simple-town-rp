@@ -24,6 +24,11 @@ namespace Sim.UI {
         [SerializeField]
         private HelpConfig helpConfig;
 
+        [Header("Paint mode")]
+        [SerializeField]
+        [Tooltip("Optional 'Tout repeindre' button — only shown in paint mode.")]
+        private GameObject paintAllBtn;
+
         public delegate void OnValidateEvent();
 
         public static event OnValidateEvent OnValidate;
@@ -37,11 +42,19 @@ namespace Sim.UI {
 
             HelpPanel.Instance.Setup(this.helpConfig);
 
-            this.currentModeImg.sprite = BuildManager.Instance.GetMode() == BuildModeEnum.WALL_PAINT || BuildManager.Instance.GetMode() == BuildModeEnum.GROUND_PAINT
-                ? this.paintEditSprite
-                : propsEditSprite;
+            bool isPaint = BuildManager.Instance.GetMode() == BuildModeEnum.WALL_PAINT
+                        || BuildManager.Instance.GetMode() == BuildModeEnum.GROUND_PAINT;
+
+            this.currentModeImg.sprite = isPaint ? this.paintEditSprite : propsEditSprite;
+
+            if (this.paintAllBtn != null) this.paintAllBtn.SetActive(isPaint);
 
             this.SetValidateButtonInteractable(true);
+        }
+
+        /// <summary>Bind this to the "Tout repeindre" button OnClick.</summary>
+        public void PaintAll() {
+            BuildManager.Instance.PaintAll();
         }
 
         private void OnDisable() {

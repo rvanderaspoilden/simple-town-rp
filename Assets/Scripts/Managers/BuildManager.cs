@@ -23,6 +23,14 @@ namespace Sim {
         [SerializeField]
         private float magneticPropsMargin;
 
+        [Header("Paint")]
+        [SerializeField]
+        private AudioClip paintSound;
+
+        [SerializeField]
+        [Range(0f, 1f)]
+        private float paintSoundVolume = 0.6f;
+
         [Header("Debug")]
         [SerializeField]
         private bool magnetismActivated;
@@ -61,6 +69,16 @@ namespace Sim {
         private Vector3 currentPropsBounds;
 
         private Collider currentPropsCollider;
+
+        // Hold-to-paint tracking: avoids re-acting on the same target each frame during a drag.
+        private int  _lastPaintTargetId   = 0;
+        private int  _lastPaintSubmesh    = -1;
+        private bool _lastPaintWasErase   = false;
+
+        // Hover preview tracking (paint mode, no mouse button held).
+        private Sim.Building.Wall   _hoverWall;
+        private int                 _hoverWallSubmesh = -1;
+        private Sim.Building.Ground _hoverGround;
 
         public delegate void ValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation);
 
@@ -111,6 +129,8 @@ namespace Sim {
         private void Update() {
             if (this.mode == BuildModeEnum.NONE)
                 return;
+
+            this.HandleShortcuts();
 
             if (this.mode == BuildModeEnum.WALL_PAINT || this.mode == BuildModeEnum.GROUND_PAINT) {
                 this.Painting();
@@ -263,6 +283,32 @@ namespace Sim {
 
             this.isEditing = false;
         }
+
+        private void HandleShortcuts() {
+            if (Input.GetKeyDown(KeyCode.Escape)) {
+                this.Cancel();
+                return;
+            }
+
+            bool isPaint = this.mode == BuildModeEnum.WALL_PAINT || this.mode == BuildModeEnum.GROUND_PAINT;
+
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) {
+                if (isPaint) {
+                    this.Apply();
+                } else if (this.mode == BuildModeEnum.POSING && this.currentPreview != null && this.currentPreview.IsPlaceable()) {
+                    this.SetMode(BuildModeEnum.VALIDATING);
+                } else if (this.mode == BuildModeEnum.VALIDATING) {
+                    this.Apply();
+                }
+                return;
+            }
+
+            if (isPaint && Input.GetKeyDown(KeyCode.Z)) {
+                this.ResetCurrentPreview();
+            }
+        }
+
+        public void ApplyFromInput() => Apply();
 
         private void Apply() {
             if (!(this.mode == BuildModeEnum.VALIDATING && this.currentPreview.IsPlaceable()) &&
@@ -471,6 +517,10 @@ namespace Sim {
 
         private void SetMode(BuildModeEnum mode) {
             Debug.Log($"Build Mode changed from {this.mode} to {mode}");
+            bool wasPaint = this.mode == BuildModeEnum.WALL_PAINT || this.mode == BuildModeEnum.GROUND_PAINT;
+            bool isPaint  = mode      == BuildModeEnum.WALL_PAINT || mode      == BuildModeEnum.GROUND_PAINT;
+            if (wasPaint && !isPaint) ClearAllHover();
+
             this.mode = mode;
             OnModeChanged?.Invoke(this.mode);
 
@@ -503,23 +553,183 @@ namespace Sim {
         }
 
         private void Painting() {
-            if (!Input.GetMouseButtonDown(0) || EventSystem.current.IsPointerOverGameObject()) return;
+            bool leftHeld  = Input.GetMouseButton(0);
+            bool rightHeld = Input.GetMouseButton(1);
 
-            int layerMask = CommonUtils.GetLayerMaskSurfacesToPaint(this.currentOpenedBucket.GetPaintConfig());
+            bool overUI = EventSystem.current.IsPointerOverGameObject();
+            bool isWallPaint = this.mode == BuildModeEnum.WALL_PAINT;
 
-            if (!Physics.Raycast(this.camera.ScreenPointToRay(Input.mousePosition), out hit, 100, layerMask)) return;
+            // Hover preview when no paint button is held.
+            if (!leftHeld && !rightHeld) {
+                _lastPaintTargetId = 0;
+                _lastPaintSubmesh  = -1;
 
-            if (layerMask == (1 << 12)) {
-                Wall wall = hit.collider.GetComponent<Wall>();
-                if (wall.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
-                    wall.PreviewMaterialOnFace(hit, this.currentOpenedBucket);
+                if (overUI || !TryPaintRaycast(isWallPaint, out RaycastHit hoverHit, out bool isTarget) || !isTarget) {
+                    ClearAllHover();
+                    return;
                 }
-            } else if (layerMask == (1 << 9)) {
+                ApplyHoverPreview(hoverHit, isWallPaint);
+                return;
+            }
+
+            ClearAllHover();
+            if (overUI) return;
+
+            if (!TryPaintRaycast(isWallPaint, out hit, out bool hitIsTarget) || !hitIsTarget) return;
+
+            bool erase = rightHeld;
+
+            if (isWallPaint) {
+                Wall wall = hit.collider.GetComponent<Wall>();
+                if (wall == null || !wall.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) return;
+
+                int submesh = wall.GetSubmeshFromHit(hit);
+                if (submesh < 0) return;
+
+                int targetId = wall.GetInstanceID();
+                if (targetId == _lastPaintTargetId && submesh == _lastPaintSubmesh && erase == _lastPaintWasErase) return;
+
+                // Idempotence: skip when the face is already in the desired state.
+                bool alreadyPainted = wall.IsFacePaintedWith(submesh, this.currentOpenedBucket);
+                bool alreadyOriginal = !wall.IsFacePainted(submesh);
+                if ((!erase && alreadyPainted) || (erase && alreadyOriginal)) {
+                    _lastPaintTargetId = targetId; _lastPaintSubmesh = submesh; _lastPaintWasErase = erase;
+                    return;
+                }
+
+                _lastPaintTargetId = targetId; _lastPaintSubmesh = submesh; _lastPaintWasErase = erase;
+
+                wall.ConsumeHover();
+                if (erase) wall.ErasePaintOnFace(submesh);
+                else       wall.ApplyPaintOnFace(submesh, this.currentOpenedBucket);
+
+                PlayPaintSfx(hit.point);
+            } else {
                 Ground ground = hit.collider.GetComponent<Ground>();
-                if (ground.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
-                    ground.Preview(this.currentOpenedBucket.GetCoverSettings());
+                if (ground == null || !ground.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) return;
+
+                int targetId = ground.GetInstanceID();
+                if (targetId == _lastPaintTargetId && erase == _lastPaintWasErase) return;
+
+                // Idempotence: skip when the ground is already in the desired state.
+                bool alreadyPainted  = ground.IsPaintedWith(this.currentOpenedBucket);
+                bool alreadyOriginal = !ground.IsPreview();
+                if ((!erase && alreadyPainted) || (erase && alreadyOriginal)) {
+                    _lastPaintTargetId = targetId; _lastPaintSubmesh = 0; _lastPaintWasErase = erase;
+                    return;
+                }
+
+                _lastPaintTargetId = targetId; _lastPaintSubmesh = 0; _lastPaintWasErase = erase;
+
+                ground.ConsumeHover();
+                if (erase) ground.ErasePaint();
+                else       ground.ApplyPaint(this.currentOpenedBucket.GetCoverSettings());
+
+                PlayPaintSfx(hit.point);
+            }
+        }
+
+        /// <summary>
+        /// Raycast for paint mode: the first non-hidden hit wins. Hidden props (FORCE_HIDE)
+        /// and hidden walls (disabled collider) don't block. Returns true if the first
+        /// active hit is on the requested target surface; false if blocked or nothing was hit.
+        /// </summary>
+        private bool TryPaintRaycast(bool isWallPaint, out RaycastHit firstActive, out bool isTarget) {
+            firstActive = default;
+            isTarget = false;
+
+            int wallLayer   = 12;
+            int groundLayer = 9;
+            int propsLayer  = 10;
+            int targetLayer = isWallPaint ? wallLayer : groundLayer;
+            int mask = isWallPaint
+                ? ((1 << wallLayer)  | (1 << propsLayer))
+                : ((1 << groundLayer)| (1 << wallLayer) | (1 << propsLayer));
+
+            RaycastHit[] hits = Physics.RaycastAll(this.camera.ScreenPointToRay(Input.mousePosition), 100, mask);
+            if (hits.Length == 0) return false;
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            foreach (var h in hits) {
+                if (h.collider.gameObject.layer == propsLayer) {
+                    var pr = h.collider.GetComponentInParent<Sim.Building.PropsRenderer>();
+                    if (pr != null && pr.IsCurrentlyHidden()) continue;
+                }
+                firstActive = h;
+                isTarget = h.collider.gameObject.layer == targetLayer;
+                return true;
+            }
+            return false;
+        }
+
+        private void ApplyHoverPreview(RaycastHit hoverHit, bool isWallPaint) {
+            if (isWallPaint) {
+                Wall wall = hoverHit.collider.GetComponent<Wall>();
+                if (wall == null || !wall.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
+                    ClearAllHover();
+                    return;
+                }
+                int submesh = wall.GetSubmeshFromHit(hoverHit);
+                if (submesh < 0) { ClearAllHover(); return; }
+
+                if (_hoverWall != wall || _hoverWallSubmesh != submesh) {
+                    if (_hoverWall != null) _hoverWall.ClearHover();
+                    if (_hoverGround != null) { _hoverGround.ClearHover(); _hoverGround = null; }
+                    _hoverWall = wall;
+                    _hoverWallSubmesh = submesh;
+                    _hoverWall.HoverFace(submesh, this.currentOpenedBucket);
+                }
+            } else {
+                Ground ground = hoverHit.collider.GetComponent<Ground>();
+                if (ground == null || !ground.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
+                    ClearAllHover();
+                    return;
+                }
+
+                if (_hoverGround != ground) {
+                    if (_hoverGround != null) _hoverGround.ClearHover();
+                    if (_hoverWall != null) { _hoverWall.ClearHover(); _hoverWall = null; _hoverWallSubmesh = -1; }
+                    _hoverGround = ground;
+                    _hoverGround.HoverApply(this.currentOpenedBucket.GetCoverSettings());
                 }
             }
+        }
+
+        private void ClearAllHover() {
+            if (_hoverWall != null) { _hoverWall.ClearHover(); _hoverWall = null; _hoverWallSubmesh = -1; }
+            if (_hoverGround != null) { _hoverGround.ClearHover(); _hoverGround = null; }
+        }
+
+        private void PlayPaintSfx(Vector3 worldPos) {
+            if (this.paintSound == null) return;
+            AudioSource.PlayClipAtPoint(this.paintSound, worldPos, this.paintSoundVolume);
+        }
+
+        /// <summary>
+        /// Apply the current bucket's paint to every editable face (walls) or every ground in the apartment.
+        /// </summary>
+        public void PaintAll() {
+            if (this.currentOpenedBucket == null || this.apartmentController == null) return;
+
+            if (this.mode == BuildModeEnum.WALL_PAINT) {
+                foreach (Wall wall in this.apartmentController.GetComponentsInChildren<Wall>()) {
+                    if (wall.ApartmentController != this.apartmentController) continue;
+                    wall.ApplyPaintOnAllFaces(this.currentOpenedBucket);
+                }
+            } else if (this.mode == BuildModeEnum.GROUND_PAINT) {
+                foreach (Ground ground in this.apartmentController.GetComponentsInChildren<Ground>()) {
+                    if (ground.ApartmentController != this.apartmentController) continue;
+                    ground.ApplyPaint(this.currentOpenedBucket.GetCoverSettings());
+                }
+            }
+            PlayPaintSfx(this.apartmentController.transform.position);
+        }
+
+        /// <summary>Discards the in-progress paint preview without leaving paint mode.</summary>
+        public void ResetCurrentPreview() {
+            if (this.apartmentController == null) return;
+            if (this.mode == BuildModeEnum.WALL_PAINT)        this.apartmentController.ResetWallPreview();
+            else if (this.mode == BuildModeEnum.GROUND_PAINT) this.apartmentController.ResetGroundPreview();
         }
     }
 }

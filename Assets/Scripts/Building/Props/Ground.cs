@@ -59,6 +59,34 @@ namespace Sim.Building {
             if (this.preview) this.ResetPreview();
         }
 
+        // ── Hover preview ────────────────────────────────────────────────────
+        // Visual-only swap; does NOT modify currentCover so cancelling without painting
+        // leaves no trace in the ground's state.
+        private bool     _isHovering;
+
+        [Client]
+        public void HoverApply(CoverSettings settings) {
+            CoverConfig coverConfig = DatabaseManager.PaintDatabase?.GetPaintById(settings.paintConfigId);
+            if (coverConfig == null) return;
+            Material mat = new Material(coverConfig.GetMaterial());
+            if (coverConfig.AllowCustomColor()) mat.color = settings.additionalColor;
+            this.renderer.material = mat;
+            _isHovering = true;
+        }
+
+        [Client]
+        public void ClearHover() {
+            if (!_isHovering) return;
+            _isHovering = false;
+            this.ApplyPaint(); // re-render from real state (currentCover)
+        }
+
+        /// <summary>Drop the hover flag without re-rendering — call when the ground has just been painted.</summary>
+        [Client]
+        public void ConsumeHover() {
+            _isHovering = false;
+        }
+
         [Client]
         public void ApplyModification() {
             this.preview = false;

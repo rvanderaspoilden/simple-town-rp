@@ -104,6 +104,11 @@ namespace Sim.Building {
             return this.hideable;
         }
 
+        /// <summary>True when the prop is currently hidden (FORCE_HIDE on a hideable prop).</summary>
+        public bool IsCurrentlyHidden() {
+            return this.hideable && this.mode == VisibilityModeEnum.FORCE_HIDE;
+        }
+
         public void SetVisibilityMode(VisibilityModeEnum mode) {
             this.mode = mode;
 

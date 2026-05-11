@@ -103,6 +103,16 @@ namespace Sim.Building {
             return current.TryGetValue(submesh, out CoverSettings cs) && cs.Equals(paintBucket);
         }
 
+        /// <summary>True when the face's currently displayed cover differs from its persisted base value.</summary>
+        public bool IsFacePainted(int submesh) {
+            if (submesh < 0) return false;
+            if (this.coverSettingsInPreview.Count == 0) return false; // no override → showing base
+            if (!this.coverSettingsInPreview.TryGetValue(submesh, out var preview)) return false;
+            if (!this.coverSettingsByFaces.TryGetValue(submesh, out var baseSettings)) return true;
+            return preview.paintConfigId != baseSettings.paintConfigId
+                || preview.additionalColor != baseSettings.additionalColor;
+        }
+
         [Client]
         public void ApplyPaintOnFace(int submesh, PaintBucketBehaviour paintBucket) {
             if (submesh < 0) return;
@@ -143,6 +153,54 @@ namespace Sim.Building {
             if (this.coverSettingsInPreview.Count == 0) {
                 this.coverSettingsInPreview = new Dictionary<int, CoverSettings>(this.coverSettingsByFaces);
             }
+        }
+
+        // ── Hover preview ────────────────────────────────────────────────────
+        // A purely visual swap on a single face — does NOT touch coverSettingsInPreview,
+        // so cancelling without painting won't trigger a network update.
+        private int _hoverSubmesh = -1;
+        private Material _hoverPrevMaterial;
+
+        [Client]
+        public void HoverFace(int submesh, PaintBucketBehaviour bucket) {
+            if (_hoverSubmesh == submesh) return;
+            ClearHover();
+            if (submesh < 0) return;
+            if (Array.IndexOf(this.sharedMaterialsToIgnore, submesh) != -1) return;
+
+            if (this.renderer == null) this.renderer = GetComponent<MeshRenderer>();
+            Material[] mats = this.renderer.sharedMaterials;
+            if (submesh >= mats.Length) return;
+
+            CoverConfig coverConfig = DatabaseManager.PaintDatabase?.GetPaintById(bucket.PaintConfigId);
+            if (coverConfig == null) return;
+
+            _hoverPrevMaterial = mats[submesh];
+            Material newMat = new Material(coverConfig.GetMaterial());
+            if (coverConfig.AllowCustomColor()) newMat.color = bucket.GetColor();
+            mats[submesh] = newMat;
+            this.renderer.sharedMaterials = mats;
+            _hoverSubmesh = submesh;
+        }
+
+        [Client]
+        public void ClearHover() {
+            if (_hoverSubmesh < 0) return;
+            if (this.renderer == null) this.renderer = GetComponent<MeshRenderer>();
+            Material[] mats = this.renderer.sharedMaterials;
+            if (_hoverSubmesh < mats.Length) {
+                mats[_hoverSubmesh] = _hoverPrevMaterial;
+                this.renderer.sharedMaterials = mats;
+            }
+            _hoverSubmesh = -1;
+            _hoverPrevMaterial = null;
+        }
+
+        /// <summary>Drop the hover bookkeeping without restoring the material — call when the face has just been painted.</summary>
+        [Client]
+        public void ConsumeHover() {
+            _hoverSubmesh = -1;
+            _hoverPrevMaterial = null;
         }
 
         public void UpdateWallFaces() {
