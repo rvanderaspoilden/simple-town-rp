@@ -355,9 +355,16 @@ public static class PropInteractionRouter {
             current.LockState = current.LockState == DoorLockState.LOCKED
                 ? DoorLockState.UNLOCKED
                 : DoorLockState.LOCKED;
-            if (current.LockState == DoorLockState.LOCKED) current.IsOpen = false;
             ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, current.Serialize());
-            Debug.Log($"[PropInteractionRouter] Door {msg.PropId} lock toggled to {current.LockState} by conn={conn.connectionId}");
+
+            // Re-evaluate IsOpen from the door's trigger occupants. Sync() handles both transitions:
+            //   - lock with occupants present → closes the door
+            //   - unlock with occupants present → opens the door
+            //   - either transition with no occupants → leaves the door closed
+            DoorPropSource source = FindDoorSource(msg.PropId);
+            if (source != null) source.Sync();
+
+            Debug.Log($"[PropInteractionRouter] Door {msg.PropId} lock={current.LockState} by conn={conn.connectionId}");
 
         } else if (DoorInteraction.IsRingRequest(msg.Payload)) {
             // Broadcast ring sound to all clients in the room
@@ -367,6 +374,18 @@ public static class PropInteractionRouter {
             }
             Debug.Log($"[PropInteractionRouter] Door {msg.PropId} rung by conn={conn.connectionId} room={msg.RoomId}");
         }
+    }
+
+    /// <summary>
+    /// Locates the DoorPropSource matching this propId. Front and inner doors may be either
+    /// scene-registered or runtime-spawned depending on the apartment build flow, so we sweep
+    /// all DoorPropSource instances instead of relying on ServerPropManager._spawnedGOs.
+    /// </summary>
+    private static DoorPropSource FindDoorSource(int propId) {
+        foreach (var d in Object.FindObjectsByType<DoorPropSource>(FindObjectsInactive.Include, FindObjectsSortMode.None)) {
+            if (d.PropId == propId) return d;
+        }
+        return null;
     }
 
 }

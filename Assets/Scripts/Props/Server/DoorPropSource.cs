@@ -48,7 +48,13 @@ public class DoorPropSource : ServerPropSource {
         Sync();
     }
 
-    private void Sync() {
+    /// <summary>
+    /// Re-evaluates door open/closed based on current LockState and tracked occupants.
+    /// Called from OnTriggerEnter/Exit (occupants changed) and from the interaction router
+    /// after LockState is toggled (so the door auto-closes on lock and auto-opens on unlock
+    /// when someone is already in the trigger area).
+    /// </summary>
+    public void Sync() {
         if (!ServerPropManager.Instance.TryGetPropState(RoomId, PropId, out var state)) return;
         DoorState current = DoorState.Deserialize(state.Payload);
         bool shouldOpen = current.LockState == DoorLockState.UNLOCKED && _occupants.Count > 0;

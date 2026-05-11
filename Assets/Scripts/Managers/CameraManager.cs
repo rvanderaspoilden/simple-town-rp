@@ -137,13 +137,31 @@ namespace Sim {
 
             Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
 
-            if ((leftMouseClick || rightMouseClick || leftMousePressed) && Physics.Raycast(ray.origin, ray.direction, out hit, 100, this.layerMaskInFreeMode)) {
+            if (!(leftMouseClick || rightMouseClick || leftMousePressed)) return;
+
+            RaycastHit[] hits = Physics.RaycastAll(ray.origin, ray.direction, 100, this.layerMaskInFreeMode);
+            if (hits.Length == 0) return;
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            bool useLeftClickFilter = leftMouseClick || leftMousePressed;
+            bool hasHit = false;
+            foreach (RaycastHit h in hits) {
+                if (useLeftClickFilter) {
+                    IInteractable ii = h.collider.GetComponentInParent<IInteractable>();
+                    if (ii != null && ii.IsRightClickOnly()) continue;
+                }
+                hit = h;
+                hasHit = true;
+                break;
+            }
+            if (!hasHit) return;
+
+            {
                 IInteractable interactable = hit.collider.GetComponentInParent<IInteractable>();
                 PlayerController player = hit.collider.GetComponent<PlayerController>();
 
                 if (interactable != null && !leftMousePressed) {
-                    bool skipForLeftClick = leftMouseClick && interactable.IsRightClickOnly();
-                    if (interactable.IsInteractable() && !skipForLeftClick) {
+                    if (interactable.IsInteractable()) {
                         bool canInteract = PlayerController.Local.CanInteractWith(interactable, hit.point);
                         Action[] actions = interactable.GetActions();
 
