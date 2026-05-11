@@ -566,8 +566,14 @@ namespace Sim {
         // ── Internal helpers ──────────────────────────────────────────────────
 
         private void ApplyPresetName(string name) {
-            // Always fall back to "talyah" so unoccupied apartments still have visible geometry.
-            if (string.IsNullOrEmpty(name)) name = "talyah";
+            // Empty preset = unoccupied apartment: skip the interior geometry entirely.
+            // The roof and the (locked) front door stay active so the building still reads
+            // visually from outside, but walls/grounds aren't instantiated for nothing.
+            if (string.IsNullOrEmpty(name)) {
+                ApplyUnoccupiedState();
+                return;
+            }
+
             this.presetName = name;
 
             if (name == "ahmed") {
@@ -579,7 +585,30 @@ namespace Sim {
             }
 
             this.currentConfiguration.container.SetActive(true);
+            SetGroundsActive(true);
             Debug.Log($"[Apartment] Applying door number {this.doorNumber} preset={name}");
+        }
+
+        /// <summary>
+        /// Visual state for an apartment with no tenant: no preset container, no grounds.
+        /// Roof and front door remain active.
+        /// </summary>
+        private void ApplyUnoccupiedState() {
+            this.presetName = null;
+            // Awake already deactivates all preset containers, but redo it to cover the
+            // occupied → unoccupied transition (if it ever happens at runtime).
+            this.talyahConfiguration.container.SetActive(false);
+            this.ahmedConfiguration.container.SetActive(false);
+            this.katarinaConfiguration.container.SetActive(false);
+            SetGroundsActive(false);
+            Debug.Log($"[Apartment] Door {this.doorNumber}: unoccupied — keeping roof + front door only");
+        }
+
+        private void SetGroundsActive(bool active) {
+            if (this.grounds == null) return;
+            foreach (Ground g in this.grounds) {
+                if (g != null) g.gameObject.SetActive(active);
+            }
         }
 
         private void UpdateGeographicArea() {

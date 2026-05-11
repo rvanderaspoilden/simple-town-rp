@@ -249,11 +249,12 @@ public class HallController : MonoBehaviour {
         // Broadcast each apartment to all clients so they reconstruct the hall visually.
         int propCount = 0;
         foreach (ApartmentController apt in this.generatedApartments) {
-            // Always send a preset name — use "talyah" as default for unoccupied apartments
-            // so the client has geometry to show even when the apartment is NOT_GENERATED.
+            // Empty preset name signals "unoccupied" — the client keeps only roof + front
+            // door active and skips instantiating walls/grounds (performance win for halls
+            // with many empty apartments).
             string preset = (apt.State == ApartmentState.GENERATED && !string.IsNullOrEmpty(apt.PresetName))
                 ? apt.PresetName
-                : "talyah";
+                : "";
 
             NetworkServer.SendToAll(new S2C_ApartmentSpawn {
                 Street      = this.street,
