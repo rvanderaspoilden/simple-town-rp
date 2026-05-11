@@ -392,6 +392,16 @@ namespace Sim {
         }
 
         private Func<bool> HasReachedTargetPosition() => () => {
+            // IInteractable is an interface: C# != null bypasses Unity's == override and returns true even
+            // for destroyed MonoBehaviours. Cast to UnityEngine.Object to use Unity's destroyed-object check.
+            if (this.interactableTarget != null && !(this.interactableTarget as UnityEngine.Object)) {
+                Debug.Log("[Interaction] Target destroyed during interaction");
+                Debug.Log("[Interaction] Cancelling current interaction safely");
+                Debug.Log("[PlayerController] Cleared stale interactable reference");
+                this.interactableTarget = null;
+                return true; // force transition to idleState to reset movement cleanly
+            }
+
             return (this.interactableTarget != null &&
                     this.navMeshAgent.remainingDistance > this.navMeshAgent.stoppingDistance &&
                     this.CanInteractWith(this.interactableTarget, this.interactableTarget.transform.position)) ||
@@ -434,6 +444,8 @@ namespace Sim {
         }
 
         public void SetTarget(Vector3 targetPoint, IInteractable interactable, bool showPriorityActions = false) {
+            string targetName = (interactable as UnityEngine.Object)?.name ?? interactable?.GetType().Name ?? "null";
+            Debug.Log($"[Interaction] Started interaction target={targetName}");
             this.interactableTarget = interactable;
             this.showRadialMenuWithPriority = showPriorityActions;
             MoveTo(targetPoint);
@@ -573,6 +585,8 @@ namespace Sim {
                 OnCharacterDataChanged?.Invoke(characterData);
             }
         }
+
+        public Home CharacterHome => characterHome;
 
         public IInteractable InteractableTarget {
             get => interactableTarget;

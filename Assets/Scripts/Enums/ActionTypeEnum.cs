@@ -16,7 +16,9 @@
         EAT,
         DROP,
         DRINK,
-        USE
+        USE,
+        RING,
+        UNLOCK
     }
 
 }

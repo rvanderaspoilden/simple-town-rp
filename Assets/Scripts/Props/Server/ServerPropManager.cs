@@ -140,17 +140,29 @@ public class ServerPropManager {
         byte[]           payload = initialPayloadOverride
                                    ?? (source != null ? source.GetInitialState() : Array.Empty<byte>());
 
-        if (headerOverride.HasValue && payload != null && payload.Length >= PropStateHeader.ByteSize) {
-            payload = (byte[])payload.Clone();
+        if (headerOverride.HasValue) {
+            // Ensure payload is large enough to hold the header; create a minimal one if the source
+            // didn't provide one (e.g. prop has no ServerPropSource component).
+            if (payload == null || payload.Length < PropStateHeader.ByteSize) {
+                byte[] extended = new byte[PropStateHeader.ByteSize + (payload?.Length ?? 0)];
+                payload?.CopyTo(extended, PropStateHeader.ByteSize);
+                payload = extended;
+            } else {
+                payload = (byte[])payload.Clone();
+            }
             headerOverride.Value.WriteTo(payload, 0);
+            GameLogger.Network.Debug("PropPayloadHeaderOverride {PropId} {IsBuilt} {PresetId}",
+                propId, headerOverride.Value.IsBuilt, headerOverride.Value.PresetId);
         }
 
         RegisterInternal(roomId, propId, prefabId, position, rotation, type, payload, isScene: false);
         _spawnedGOs[propId] = instance;
 
         BroadcastToRoom(roomId, BuildSpawnMessage(roomId, propId, prefabId, position, rotation, type, payload));
-        
-        GameLogger.Network.Info("PropSpawned {PropId} {PrefabId} {RoomId} {Position}", propId, prefabId, roomId, position);
+
+        GameLogger.Network.Info("PropSpawned {PropId} {PrefabId} {RoomId} {Position} {PresetId}",
+            propId, prefabId, roomId, position,
+            headerOverride.HasValue ? headerOverride.Value.PresetId : PropStateHeader.ReadFrom(payload).PresetId);
         return propId;
     }
 

@@ -1,10 +1,11 @@
 using Interaction;
 using Sim;
 using Sim.Building;
+using Sim.Utils;
 
 namespace AI.States {
     public class CharacterInteract : IState {
-        
+
         private readonly PlayerController player;
 
         private IInteractable interactable;
@@ -18,12 +19,14 @@ namespace AI.States {
             get => interactable;
             set {
                 interactable = value;
-                this.player.LookAt(interactable.transform);
+                if (value.IsAlive()) {
+                    this.player.LookAt(interactable.transform);
+                }
             }
         }
 
         public void OnEnter() {
-            if (interactable != null) {
+            if (interactable.IsAlive()) {
                 this.player.LookAt(interactable.transform);
             }
         }
@@ -32,7 +35,10 @@ namespace AI.States {
         }
 
         public void OnExit() {
-            this.interactable.StopInteraction();
+            if (interactable.IsAlive()) {
+                this.interactable.StopInteraction();
+            }
+            this.interactable = null;
         }
     }
 }

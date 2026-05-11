@@ -74,6 +74,15 @@ namespace Sim.Utils {
             throw new Exception($"No scene name associated to roomTypeEnum => {roomType}");
         }
         
+        /// <summary>
+        /// Returns true when the IInteractable's underlying Unity object exists and has not been destroyed.
+        /// Must cast to UnityEngine.Object explicitly — interface references bypass Unity's == operator override,
+        /// so a plain != null check returns true even for destroyed MonoBehaviours.
+        /// </summary>
+        public static bool IsAlive(this IInteractable interactable) {
+            return interactable != null && (interactable as UnityEngine.Object) != null;
+        }
+
         public static bool CanInteractWith(this PlayerController player, IInteractable interactable, Vector3 originPoint) {
             float maxRange = interactable.GetRange();
             Vector3 origin = Vector3.Scale(originPoint, new Vector3(1, 0, 1));

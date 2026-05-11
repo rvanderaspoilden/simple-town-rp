@@ -86,6 +86,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
     public virtual bool IsInteractable()
     {
+        if (!enabled || !gameObject.activeInHierarchy) return false;
         Action[] acts = _isBuilt ? _builtActions : _unbuiltActions;
         return acts != null && acts.Length > 0;
     }
@@ -137,6 +138,17 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     public PropsConfig GetConfiguration() =>
         configuration;
 
+    /// <summary>
+    /// Applies the given preset visually without changing the network state.
+    /// Call after SetConfiguration so the lookup uses the correct Presets array.
+    /// </summary>
+    public void ApplyPresetVisual(int presetId)
+    {
+        if (presetId < 0 || _renderer == null || configuration?.Presets == null) return;
+        PropsPreset preset = configuration.Presets.FirstOrDefault(p => p.ID == presetId);
+        if (preset != null) _renderer.SetPreset(preset);
+    }
+
     protected void ApplyHeader(PropStateHeader header)
     {
         bool wasBuilt = _isBuilt;
@@ -146,11 +158,35 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         {
             _renderer.SetBuiltState(header.IsBuilt);
 
-            if (header.PresetId >= 0 && configuration?.Presets != null)
+            if (header.PresetId >= 0)
             {
-                PropsPreset preset = configuration.Presets.FirstOrDefault(p => p.ID == header.PresetId);
-                if (preset != null) _renderer.SetPreset(preset);
+                if (configuration == null)
+                {
+                    Debug.LogWarning($"[PropsRenderer] Cannot apply presetId={header.PresetId} on {name}: configuration is null");
+                }
+                else if (configuration.Presets == null || configuration.Presets.Length == 0)
+                {
+                    Debug.LogWarning($"[PropsRenderer] Cannot apply presetId={header.PresetId} on {name}: Presets array is null or empty in PropsConfig '{configuration.name}'");
+                }
+                else
+                {
+                    PropsPreset preset = configuration.Presets.FirstOrDefault(p => p.ID == header.PresetId);
+                    if (preset != null)
+                    {
+                        Debug.Log($"[PropsRenderer] Applying presetId={header.PresetId} on {name}");
+                        _renderer.SetPreset(preset);
+                        Debug.Log($"[PropsRenderer] Visual refresh completed presetId={header.PresetId} on {name}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[PropsRenderer] Preset id={header.PresetId} not found in PropsConfig '{configuration.name}' (available: [{string.Join(", ", configuration.Presets.Select(p => p.ID))}])");
+                    }
+                }
             }
+        }
+        else if (header.PresetId >= 0)
+        {
+            Debug.LogWarning($"[PropsRenderer] presetId={header.PresetId} ignored on {name}: no PropsRenderer component");
         }
 
         if (!wasBuilt && _isBuilt) OnJustBuilt();

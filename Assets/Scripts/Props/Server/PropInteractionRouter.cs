@@ -1,6 +1,7 @@
 using Mirror;
 using Sim;
 using Sim.Building;
+using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
 
@@ -22,9 +23,7 @@ public static class PropInteractionRouter {
             case PropType.Dispenser:    HandleDispenser   (conn, msg); break;
             case PropType.DeliveryBox:  HandleDeliveryBox (conn, msg); break;
             case PropType.Package:      HandlePackage     (conn, msg); break;
-            case PropType.Door:
-                Debug.LogWarning($"[PropInteractionRouter] Rejected door interaction from conn={conn.connectionId} (doors are trigger-driven)");
-                break;
+            case PropType.Door:         HandleDoor        (conn, msg); break;
             default:
                 Debug.LogWarning($"[PropInteractionRouter] Unhandled PropType={msg.Type} from conn={conn.connectionId}");
                 break;
@@ -325,6 +324,48 @@ public static class PropInteractionRouter {
 
         Debug.Log($"[PropInteractionRouter] Package {msg.PropId} opened by conn={conn.connectionId}");
         // The actual opening logic (build mode) is handled client-side via PackageBehaviour.OnOpened event
+    }
+
+    // ── Door ───────────────────────────────────────────────────────────────────
+    // LockRequest : owner only — toggles the front door lock state.
+    // RingRequest : any non-owner — broadcasts S2C_DoorRing to all players in the room.
+
+    private static void HandleDoor(NetworkConnectionToClient conn, C2S_PropInteraction msg) {
+        if (!ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out var state)) {
+            Debug.LogWarning($"[PropInteractionRouter] Door {msg.PropId} not found in room '{msg.RoomId}'");
+            return;
+        }
+
+        if (DoorInteraction.IsLockRequest(msg.Payload)) {
+            // Validate ownership: the requesting player must be the tenant of the apartment
+            // whose front door this prop represents.
+            ApartmentController apt = ServerApartmentRegistry.Instance.FindOwnerOfProp(msg.PropId);
+            if (apt == null) {
+                Debug.LogWarning($"[PropInteractionRouter] Door lock denied: prop {msg.PropId} has no owning apartment");
+                return;
+            }
+
+            Sim.PlayerController pc = conn.identity?.GetComponent<Sim.PlayerController>();
+            if (pc == null || !apt.IsTenant(pc.CharacterData)) {
+                Debug.LogWarning($"[PropInteractionRouter] Door lock denied: conn={conn.connectionId} is not tenant of apt={apt.ApartmentKey}");
+                return;
+            }
+
+            DoorState current = DoorState.Deserialize(state.Payload);
+            current.LockState = current.LockState == DoorLockState.LOCKED
+                ? DoorLockState.UNLOCKED
+                : DoorLockState.LOCKED;
+            ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, current.Serialize());
+            Debug.Log($"[PropInteractionRouter] Door {msg.PropId} lock toggled to {current.LockState} by conn={conn.connectionId}");
+
+        } else if (DoorInteraction.IsRingRequest(msg.Payload)) {
+            // Broadcast ring sound to all clients in the room
+            var ring = new S2C_DoorRing { PropId = msg.PropId, RoomId = msg.RoomId };
+            foreach (var c in PlayerRoomTracker.Instance.GetConnectionsInRoom(msg.RoomId)) {
+                if (c != null && c.isReady) c.Send(ring);
+            }
+            Debug.Log($"[PropInteractionRouter] Door {msg.PropId} rung by conn={conn.connectionId} room={msg.RoomId}");
+        }
     }
 
 }

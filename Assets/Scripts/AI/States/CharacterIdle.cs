@@ -13,14 +13,16 @@ namespace AI.States {
         public void OnEnter() {
             this.player.PlayerState = PlayerState.IDLE;
 
-            if (this.player.InteractableTarget == null ||
-                !this.player.CanInteractWith(this.player.InteractableTarget, this.player.InteractableTarget.transform.position)) return;
-            
-            Transform interactableTransform = this.player.InteractableTarget.transform;
-            this.player.LookAt(interactableTransform);
+            var target = this.player.InteractableTarget;
+            if (!target.IsAlive() || !this.player.CanInteractWith(target, target.transform.position)) {
+                this.player.InteractableTarget = null;
+                return;
+            }
+
+            this.player.LookAt(target.transform);
             HUDManager.Instance.ShowContextMenu(
-                this.player.InteractableTarget.GetActions(this.player.ShowRadialMenuWithPriority),
-                interactableTransform,
+                target.GetActions(this.player.ShowRadialMenuWithPriority),
+                target.transform,
                 this.player.ShowRadialMenuWithPriority
             );
             this.player.InteractableTarget = null;

@@ -167,6 +167,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
 
         bool isBuilt = !config.MustBeBuilt();
         PropStateHeader header = new PropStateHeader { IsBuilt = isBuilt, PresetId = msg.PresetId };
+        Debug.Log($"[Delivery] Unpack creating prop configId={msg.PropConfigId} presetId={msg.PresetId} isBuilt={isBuilt}");
 
         // PaintBucket needs the full payload (paint config + color); for every other
         // prop type we let the ServerPropSource emit the correct body (seat slots,

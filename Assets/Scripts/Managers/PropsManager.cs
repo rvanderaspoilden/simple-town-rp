@@ -28,8 +28,11 @@ namespace Sim {
             PropsConfig configInstance = Instantiate(config);
             behaviour.SetConfiguration(configInstance);
 
-            if (presetId != -1)
+            if (presetId != -1) {
                 behaviour.SetDefaultPresetId(presetId);
+                // Apply the preset visual on the build preview so the player sees the correct variant
+                behaviour.ApplyPresetVisual(presetId);
+            }
 
             return behaviour;
         }

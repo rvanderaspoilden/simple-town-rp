@@ -49,7 +49,8 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_DispenserPurchaseResult>(OnDispenserPurchaseResult);
         NetworkClient.RegisterHandler<S2C_BuildAck>               (OnBuildAck);
         NetworkClient.RegisterHandler<S2C_RoomState>              (OnRoomState);
-        ClientLogger.NetworkDebug("ClientPropHandlersRegistered {Count}", 9);
+        NetworkClient.RegisterHandler<S2C_DoorRing>               (OnDoorRing);
+        ClientLogger.NetworkDebug("ClientPropHandlersRegistered {Count}", 10);
     }
 
     public void UnregisterHandlers() {
@@ -62,6 +63,7 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.UnregisterHandler<S2C_DispenserPurchaseResult>();
         NetworkClient.UnregisterHandler<S2C_BuildAck>();
         NetworkClient.UnregisterHandler<S2C_RoomState>();
+        NetworkClient.UnregisterHandler<S2C_DoorRing>();
         ClientLogger.NetworkDebug("ClientPropHandlersUnregistered");
     }
 
@@ -130,7 +132,10 @@ public class ClientPropManager : MonoBehaviour {
             return;
         }
         if (_props.ContainsKey(msg.PropId)) {
-            ClientLogger.NetworkDebug("PropSpawnDuplicate {PropId} (already exists)", msg.PropId);
+            // Host mode: server-side runtime GO was already indexed by IndexSceneProps.
+            // The server sends S2C_PropSpawn with the authoritative state — apply it.
+            _props[msg.PropId].ApplyState(msg.Type, msg.Payload);
+            ClientLogger.NetworkDebug("PropSpawnExistingStateApplied {PropId} {RoomId}", msg.PropId, msg.RoomId);
             return;
         }
 
@@ -150,6 +155,8 @@ public class ClientPropManager : MonoBehaviour {
         IPropBehaviour behaviour = go.GetComponent<IPropBehaviour>();
         if (behaviour != null) {
             _props[msg.PropId] = behaviour;
+            PropStateHeader header = PropStateHeader.ReadFrom(msg.Payload);
+            Debug.Log($"[PropSpawn] Received prop propId={msg.PropId} prefabId={msg.PrefabId} presetId={header.PresetId} isBuilt={header.IsBuilt}");
             behaviour.ApplyState(msg.Type, msg.Payload);
         }
         _spawnedGOs[msg.PropId] = go;
@@ -179,6 +186,14 @@ public class ClientPropManager : MonoBehaviour {
     private void OnBuildAck(S2C_BuildAck msg) {
         ClientLogger.Network("BuildAck {Success}", msg.Success);
         OnBuildAckReceived?.Invoke(msg.Success);
+    }
+
+    private void OnDoorRing(S2C_DoorRing msg) {
+        if (msg.RoomId != _currentRoomId) return;
+        if (_props.TryGetValue(msg.PropId, out var behaviour) && behaviour is DoorBehaviour door) {
+            door.PlayRingSound();
+        }
+        ClientLogger.NetworkDebug("DoorRing {PropId} {RoomId}", msg.PropId, msg.RoomId);
     }
 
     private void OnRoomState(S2C_RoomState msg) {

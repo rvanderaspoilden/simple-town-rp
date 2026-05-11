@@ -368,3 +368,17 @@ public static class PackageInteraction
     public static readonly byte[] OpenRequest = { 0 };
     public static bool IsOpenRequest(byte[] data) => data != null && data.Length >= 1 && data[0] == 0;
 }
+
+/// <summary>
+/// Payloads d'interaction sur les portes.
+///   0 = LockRequest  : bascule le verrou (owner uniquement, validé serveur)
+///   1 = RingRequest  : sonne la sonnette (tout joueur sauf owner)
+/// </summary>
+public static class DoorInteraction
+{
+    public static readonly byte[] LockRequest = { 0 };
+    public static readonly byte[] RingRequest = { 1 };
+
+    public static bool IsLockRequest(byte[] d) => d != null && d.Length >= 1 && d[0] == 0;
+    public static bool IsRingRequest(byte[] d) => d != null && d.Length >= 1 && d[0] == 1;
+}

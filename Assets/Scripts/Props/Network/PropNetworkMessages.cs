@@ -78,6 +78,15 @@ public struct S2C_BuildAck : NetworkMessage {
     public bool Success;
 }
 
+/// <summary>
+/// Diffuse à tous les clients de la room le son de sonnette d'une porte.
+/// Le client joue le son sur le DoorBehaviour identifié par PropId.
+/// </summary>
+public struct S2C_DoorRing : NetworkMessage {
+    public int    PropId;
+    public string RoomId;
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 //  Client → Server
 // ═════════════════════════════════════════════════════════════════════════════
