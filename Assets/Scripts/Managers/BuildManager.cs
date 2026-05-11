@@ -302,10 +302,6 @@ namespace Sim {
                 }
                 return;
             }
-
-            if (isPaint && Input.GetKeyDown(KeyCode.Z)) {
-                this.ResetCurrentPreview();
-            }
         }
 
         public void ApplyFromInput() => Apply();

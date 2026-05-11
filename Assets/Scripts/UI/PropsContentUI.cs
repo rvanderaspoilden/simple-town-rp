@@ -26,23 +26,24 @@ namespace Sim.UI
 
         private void OnEnable()
         {
-            DispenserBehaviour.OnPurchaseResult       += OnPurchaseResult;
-            DeliveryBoxBehaviour.UnPackage            += OnDeliveryUnpackage;
-            PlayerController.OnLocalPlayerMoveStarted += OnLocalPlayerMoveStarted;
+            DispenserBehaviour.OnPurchaseResult         += OnPurchaseResult;
+            DeliveryBoxBehaviour.UnPackage              += OnDeliveryUnpackage;
+            PlayerController.OnLocalPlayerStateChanged  += OnLocalPlayerStateChanged;
         }
 
         private void OnDisable()
         {
-            DispenserBehaviour.OnPurchaseResult       -= OnPurchaseResult;
-            DeliveryBoxBehaviour.UnPackage            -= OnDeliveryUnpackage;
-            PlayerController.OnLocalPlayerMoveStarted -= OnLocalPlayerMoveStarted;
+            DispenserBehaviour.OnPurchaseResult         -= OnPurchaseResult;
+            DeliveryBoxBehaviour.UnPackage              -= OnDeliveryUnpackage;
+            PlayerController.OnLocalPlayerStateChanged  -= OnLocalPlayerStateChanged;
             this.linkedPropBehaviour = null;
         }
 
-        private void OnLocalPlayerMoveStarted()
+        private void OnLocalPlayerStateChanged(PlayerState state)
         {
-            // The state machine has already transitioned to moveState; we just
-            // hide the UI here. Calling Idle() would cancel the player's movement.
+            // Movement interrupts the prop interaction — hide the UI without forcing
+            // Idle (the state machine is already in moveState).
+            if (state != PlayerState.MOVING) return;
             Debug.Log("[PropsContentUI] Closing because interaction ended (player moved)");
             DefaultViewUI.Instance.HidePropsContentUI();
         }

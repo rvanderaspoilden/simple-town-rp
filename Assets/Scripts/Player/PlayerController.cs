@@ -118,14 +118,14 @@ namespace Sim {
 
         public static event StateChanged OnStateChanged;
 
-        public delegate void LocalPlayerMoveStarted();
+        public delegate void LocalPlayerStateChanged(PlayerState state);
 
         /// <summary>
-        /// Fired once when the local player initiates a movement (MoveTo).
-        /// UI flows tied to a current interaction (e.g. PropsContentUI) subscribe
-        /// to this to close themselves cleanly when movement interrupts the interaction.
+        /// Fired when the local player's state-machine state changes (IDLE, MOVING,
+        /// INTERACTING, ...). UI flows tied to a current interaction subscribe to
+        /// this to close themselves when the state transitions away from INTERACTING.
         /// </summary>
-        public static event LocalPlayerMoveStarted OnLocalPlayerMoveStarted; // TODO: to remove and use state
+        public static event LocalPlayerStateChanged OnLocalPlayerStateChanged;
 
         public delegate void CharacterDataChanged(CharacterData characterData);
 
@@ -202,7 +202,11 @@ namespace Sim {
 
         public PlayerState PlayerState {
             get => _playerState;
-            set => _playerState = value;
+            set {
+                if (_playerState == value) return;
+                _playerState = value;
+                if (isLocalPlayer) OnLocalPlayerStateChanged?.Invoke(value);
+            }
         }
 
         private void OnTriggerStay(Collider other) {
@@ -459,11 +463,6 @@ namespace Sim {
             this.navMeshAgent.SetDestination(targetPoint);
 
             HUDManager.Instance.CloseInventory();
-
-            if (isLocalPlayer)
-            {
-                OnLocalPlayerMoveStarted?.Invoke();
-            }
         }
 
         public void LookAt(Transform target) {
