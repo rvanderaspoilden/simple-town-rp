@@ -18,7 +18,7 @@ MonoBehaviour:
   propsType: 0
   buyable: 1
   price: 0
-  prefab: {fileID: 5973222490024165713, guid: c9f5b807d82028e4a8915cbecbd07e37, type: 3}
+  prefab: {fileID: 8004327168801155453, guid: c9f5b807d82028e4a8915cbecbd07e37, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
@@ -26,6 +26,7 @@ MonoBehaviour:
   connectedToWall: 0
   toBuild: 1
   rangeToInteract: 1
+  rightClickOnly: 0
   actions:
   - {fileID: 11400000, guid: 311933ce8dd17294ab54f062123cb09b, type: 2}
   - {fileID: 11400000, guid: 47c6a5d5aa9e25b459b00e437d4ebca1, type: 2}

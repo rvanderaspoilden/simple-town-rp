@@ -31,12 +31,20 @@ namespace Sim {
         [Range(0f, 1f)]
         private float paintSoundVolume = 0.6f;
 
+        [Header("Grid placement (ground props)")]
+        [SerializeField]
+        [Tooltip("Cell size used when grid mode is on. Position is snapped to the nearest cell on X/Z.")]
+        private float gridSize = 1f;
+
         [Header("Debug")]
         [SerializeField]
         private bool magnetismActivated;
 
         [SerializeField]
         private bool instantMagnetismActivated;
+
+        [SerializeField]
+        private bool gridModeActivated;
 
         private PropBehaviourBase currentPropBehaviour;
 
@@ -95,6 +103,10 @@ namespace Sim {
         public delegate void MagnetismStateChanged();
 
         public static event MagnetismStateChanged OnMagnetismStateChange;
+
+        public delegate void GridModeStateChanged();
+
+        public static event GridModeStateChanged OnGridModeStateChange;
 
         public delegate void CancelModification();
 
@@ -265,6 +277,15 @@ namespace Sim {
 
         public bool InstantMagnetismActivated => instantMagnetismActivated;
 
+        public bool GridModeActivated => gridModeActivated;
+
+        public float GridSize => gridSize;
+
+        public void ToggleGridMode() {
+            this.gridModeActivated = !this.gridModeActivated;
+            OnGridModeStateChange?.Invoke();
+        }
+
         public ApartmentController CurrentApartment => apartmentController;
 
         public void Cancel() {
@@ -414,6 +435,8 @@ namespace Sim {
                         if (Physics.Raycast(point, Vector3.up, out hit, 10, (1 << 16))) {
                             point = hit.point;
                         }
+                    } else if (this.gridModeActivated) {
+                        // Grid mode bypasses wall magnetism — placement is purely grid-snapped.
                     } else if (this.magnetismActivated || this.instantMagnetismActivated) {
                         float maxZ = Mathf.Abs(this.currentPropsBounds.z) + this.magneticRange;
                         float maxX = Mathf.Abs(this.currentPropsBounds.x) + this.magneticRange;
@@ -437,7 +460,8 @@ namespace Sim {
                     }
 
                     this.CalculatePlacement(point, t);
-                } else if ((this.magnetismActivated || this.instantMagnetismActivated) &&
+                } else if (!this.gridModeActivated &&
+                           (this.magnetismActivated || this.instantMagnetismActivated) &&
                            hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall") && hit.normal.y == 0) {
                     if (Physics.Raycast(point, Vector3.down, out magneticHit, 10, (1 << 9))) {
                         point = magneticHit.point;
@@ -476,12 +500,23 @@ namespace Sim {
         }
 
         private void CalculatePlacement(Vector3 point, Transform t) {
-            float x = Mathf.FloorToInt(point.x / this.propsStepSize) * this.propsStepSize;
-            float z = Mathf.FloorToInt(point.z / this.propsStepSize) * this.propsStepSize;
+            float step = this.gridModeActivated ? Mathf.Max(0.0001f, this.gridSize) : this.propsStepSize;
+            // Grid mode snaps to the nearest cell centre, the fine step uses floor (smooth follow).
+            float x = this.gridModeActivated
+                ? Mathf.Round(point.x / step) * step
+                : Mathf.FloorToInt(point.x / step) * step;
+            float z = this.gridModeActivated
+                ? Mathf.Round(point.z / step) * step
+                : Mathf.FloorToInt(point.z / step) * step;
 
             if (lastPosition.x == x && lastPosition.z == z) return;
 
             lastPosition = new Vector3(x, 0, z);
+
+            if (this.gridModeActivated) {
+                t.position = new Vector3(x, point.y + 0.01f, z);
+                return;
+            }
 
             if ((this.magnetismActivated || this.instantMagnetismActivated) && this.lastMagneticPoint == point) {
                 Vector3 offset = Vector3.zero;

@@ -44,6 +44,18 @@ namespace Sim.Building {
 
         private PropsRenderer propsRenderer;
 
+        // Original collider trigger state, restored on Destroy().
+        // BuildPreview relies on OnTriggerStay/Exit; if the prop's collider is solid
+        // (isTrigger=false), no trigger callbacks fire and overlap state never updates.
+        private bool restoreColliderIsTrigger;
+        private bool colliderWasTrigger;
+
+        // Trigger callbacks (OnTriggerStay/Exit) only fire when at least one of the
+        // two colliders' GameObjects has a Rigidbody. Props ship without one, so we
+        // add a kinematic Rigidbody for the duration of the preview and remove it
+        // when the preview ends.
+        private Rigidbody addedKinematicRigidbody;
+
         public delegate void PlaceableState(bool isPlaceable);
 
         public static event PlaceableState OnPlaceableStateChanged;
@@ -60,6 +72,28 @@ namespace Sim.Building {
                 navMeshObstacle.enabled = false;
             }
 
+            // Force the prop's collider into trigger mode for the duration of the preview
+            // so OnTriggerStay/Exit fire reliably (props can now ship with isTrigger=false).
+            if (this.collider != null && !this.collider.isTrigger) {
+                this.colliderWasTrigger    = this.collider.isTrigger;
+                this.restoreColliderIsTrigger = true;
+                this.collider.isTrigger    = true;
+            }
+
+            // Ensure a Rigidbody is present so trigger callbacks fire against static
+            // colliders (other props, walls, ground). Use kinematic so physics doesn't
+            // move the prop while the user is dragging it.
+            if (GetComponent<Rigidbody>() == null) {
+                this.addedKinematicRigidbody = this.gameObject.AddComponent<Rigidbody>();
+                this.addedKinematicRigidbody.isKinematic = true;
+                this.addedKinematicRigidbody.useGravity  = false;
+            }
+
+            Debug.Log($"[BuildPreview/Awake] prop={this.currentProps?.name} " +
+                      $"collider={this.collider?.GetType().Name} isTrigger={this.collider?.isTrigger} " +
+                      $"hadRigidbody={this.addedKinematicRigidbody == null} " +
+                      $"pos={this.transform.position} rot={this.transform.eulerAngles}");
+
             this.gameObject.layer = LayerMask.NameToLayer("Preview");
 
             // When BuildPreview is added retroactively to a prop already overlapping
@@ -73,25 +107,61 @@ namespace Sim.Building {
         private void SeedOverlapState() {
             if (this.collider == null) return;
 
-            Bounds b = this.collider.bounds;
-            // Bounds is world-AABB; using identity rotation is conservative but fine
-            // for seeding (we only need an initial snapshot — OnTriggerStay/Exit take
-            // over from the next FixedUpdate).
+            // Use the actual oriented box of the collider when possible (BoxCollider).
+            // Previously this used world-AABB extents with identity rotation, which
+            // over-includes for rotated props: a wall touched only by the AABB but
+            // not by the real OBB would be seeded as a blocker, and OnTriggerExit
+            // would never fire (the physics system never saw a real overlap).
+            Vector3 center;
+            Vector3 halfExtents;
+            Quaternion rotation;
+
+            if (this.collider is BoxCollider box) {
+                center      = transform.TransformPoint(box.center);
+                halfExtents = Vector3.Scale(box.size * 0.5f, transform.lossyScale);
+                // Account for the box collider's own rotation contribution by using the
+                // GO rotation (BoxCollider has no rotation of its own beyond the transform).
+                rotation    = transform.rotation;
+            } else {
+                Bounds b    = this.collider.bounds;
+                center      = b.center;
+                halfExtents = b.extents;
+                rotation    = Quaternion.identity;
+            }
+
             Collider[] hits = Physics.OverlapBox(
-                b.center, b.extents, Quaternion.identity, ~0, QueryTriggerInteraction.Collide);
+                center, halfExtents, rotation, ~0, QueryTriggerInteraction.Collide);
 
             int selfIgnored = 0;
             foreach (Collider other in hits) {
                 if (other == this.collider || other.transform.IsChildOf(this.transform)) {
                     selfIgnored++;
+                    Debug.Log($"[BuildPreview/Seed] SKIP self/child {other.name}");
                     continue;
                 }
+
+                bool penetrating = Physics.ComputePenetration(
+                    this.collider, this.transform.position, this.transform.rotation,
+                    other,          other.transform.position, other.transform.rotation,
+                    out _, out _);
+
+                Debug.Log($"[BuildPreview/Seed] hit name={other.name} layer={LayerMask.LayerToName(other.gameObject.layer)} " +
+                          $"tag={other.tag} isTrigger={other.isTrigger} type={other.GetType().Name} " +
+                          $"penetrating={penetrating}");
+
+                // Only seed colliders that actually penetrate the prop's OBB. This is
+                // what the physics system would have raised an OnTriggerEnter for — if
+                // there's no real penetration, OnTriggerExit will never fire either,
+                // and the entry would stick in colliderTriggered forever.
+                if (!penetrating) continue;
+
                 RouteOverlap(other);
             }
 
-            Debug.Log($"[BuildMode] Seeded preview prop={this.currentProps?.GetInstanceID()} " +
+            Debug.Log($"[BuildPreview/Seed] result prop={this.currentProps?.name} " +
                       $"hits={hits.Length} selfIgnored={selfIgnored} " +
-                      $"inBuildableArea={isInBuildableArea} blockers={colliderTriggered.Count}");
+                      $"inBuildableArea={isInBuildableArea} blockers={colliderTriggered.Count} " +
+                      $"blockerNames=[{string.Join(",", colliderTriggered.Select(c => c?.name ?? "null"))}]");
         }
 
         private void RouteOverlap(Collider other) {
@@ -115,6 +185,32 @@ namespace Sim.Building {
             }
         }
 
+        private float _lastBlockerDumpTime;
+
+        private void FixedUpdate() {
+            // Validate that each tracked blocker is still actually penetrating the prop.
+            // The physics broadphase trigger-tracking and Physics.ComputePenetration don't
+            // always agree (especially with concave MeshColliders): OverlapBox / ComputePen
+            // may report a contact that Unity's trigger system never registers, leaving
+            // stale entries that no OnTriggerExit will ever clean up.
+            if (this.collider == null || this.colliderTriggered.Count == 0) return;
+
+            for (int i = this.colliderTriggered.Count - 1; i >= 0; i--) {
+                Collider other = this.colliderTriggered[i];
+                if (other == null) { this.colliderTriggered.RemoveAt(i); continue; }
+                if (!other.gameObject.activeInHierarchy) continue;
+
+                bool stillOverlapping = Physics.ComputePenetration(
+                    this.collider, this.transform.position, this.transform.rotation,
+                    other,          other.transform.position, other.transform.rotation,
+                    out _, out _);
+                if (!stillOverlapping) {
+                    Debug.Log($"[BuildPreview/PruneStale] removing {other.name} (no longer penetrating)");
+                    this.colliderTriggered.RemoveAt(i);
+                }
+            }
+        }
+
         private void Update() {
             if (Physics.Raycast(this.transform.position, Vector3.down, 10, (1 << 9))) {
                 this.detectGround = this.CheckConnectedToWallConstraint();
@@ -129,6 +225,16 @@ namespace Sim.Building {
             }
 
             this.CheckValidity();
+
+            // Periodic dump while we're stuck: which colliders are blocking?
+            if (!this.placeable && Time.time - _lastBlockerDumpTime > 1f) {
+                _lastBlockerDumpTime = Time.time;
+                if (this.colliderTriggered.Count > 0) {
+                    Debug.Log($"[BuildPreview/Stuck] blockers={this.colliderTriggered.Count} " +
+                              $"names=[{string.Join(",", this.colliderTriggered.Select(c => c == null ? "null" : c.name + "(" + LayerMask.LayerToName(c.gameObject.layer) + ")"))}] " +
+                              $"freeArea={this.haveFreeArea} ground={this.detectGround} rot={this.validRotation} inBuildable={this.isInBuildableArea}");
+                }
+            }
         }
 
         /**
@@ -165,6 +271,13 @@ namespace Sim.Building {
             return this.transform.rotation.eulerAngles != Vector3.zero && isUpperLeftValid && isUpperRightValid && isLowerRightValid && isLowerLeftValid;
         }
 
+        private void OnTriggerEnter(Collider other) {
+            if (other == this.collider || other.transform.IsChildOf(this.transform)) return;
+            Debug.Log($"[BuildPreview/TriggerEnter] {other.name} layer={LayerMask.LayerToName(other.gameObject.layer)} tag={other.tag}");
+            RouteOverlap(other);
+            this.CheckValidity();
+        }
+
         private void OnTriggerStay(Collider other) {
             // Ignore self / our own children — guards against a prop's child colliders
             // ever reaching this callback if a future prop hierarchy adds them.
@@ -175,6 +288,7 @@ namespace Sim.Building {
         }
 
         private void OnTriggerExit(Collider other) {
+            Debug.Log($"[BuildPreview/TriggerExit] {other.name} layer={LayerMask.LayerToName(other.gameObject.layer)} tag={other.tag}");
             if (buildableArea == other) {
                 buildableArea = null;
                 this.isInBuildableArea = false;
@@ -206,6 +320,15 @@ namespace Sim.Building {
         public void Destroy() {
             if (navMeshObstacle) {
                 navMeshObstacle.enabled = true;
+            }
+
+            if (this.restoreColliderIsTrigger && this.collider != null) {
+                this.collider.isTrigger = this.colliderWasTrigger;
+            }
+
+            if (this.addedKinematicRigidbody != null) {
+                Destroy(this.addedKinematicRigidbody);
+                this.addedKinematicRigidbody = null;
             }
 
             this.propsRenderer.SetPreviewState(PreviewStateEnum.NONE);
