@@ -1,8 +1,12 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Mirror;
+using Newtonsoft.Json;
 using Sim;
 using Sim.Building;
 using Sim.Entities;
+using Sim.Entities.Persistence;
 using Sim.Logging;
 using Sim.Scriptables;
 using UnityEngine;
@@ -127,7 +131,9 @@ public class PropInteractionDispatcher : MonoBehaviour {
             Debug.LogWarning($"[PropInteractionDispatcher] ApplyWallCovers: conn {conn.connectionId} owns no apartment");
             return;
         }
-        apt.ServerApplyWallCovers(CoverDataWrapper.Deserialize(coversJson));
+        CoverData[] covers = CoverDataWrapper.Deserialize(coversJson);
+        apt.ServerApplyWallCovers(covers);
+        SyncCovers(apt.HomeData?.Id, BuildCoverEntries("wall", covers));
         StartCoroutine(apt.Save());
     }
 
@@ -136,8 +142,22 @@ public class PropInteractionDispatcher : MonoBehaviour {
             Debug.LogWarning($"[PropInteractionDispatcher] ApplyGroundCovers: conn {conn.connectionId} owns no apartment");
             return;
         }
-        apt.ServerApplyGroundCovers(CoverDataWrapper.Deserialize(coversJson));
+        CoverData[] covers = CoverDataWrapper.Deserialize(coversJson);
+        apt.ServerApplyGroundCovers(covers);
+        SyncCovers(apt.HomeData?.Id, BuildCoverEntries("ground", covers));
         StartCoroutine(apt.Save());
+    }
+
+    private static IEnumerable<CoverApplyEntry> BuildCoverEntries(string surfaceKind, CoverData[] covers) {
+        if (covers == null) yield break;
+        foreach (CoverData cd in covers) {
+            yield return new CoverApplyEntry {
+                SurfaceKind   = surfaceKind,
+                SurfaceIndex  = cd.idx,
+                PaintConfigId = cd.paintConfigId,
+                Color         = cd.additionalColor,
+            };
+        }
     }
 
     // ── Build prop (delivery → spawn → save) ──────────────────────────────────
@@ -147,7 +167,9 @@ public class PropInteractionDispatcher : MonoBehaviour {
     }
 
     private IEnumerator BuildPropCoroutine(NetworkConnectionToClient conn, C2S_BuildProp msg, ApartmentController apt) {
-        // 1. Fetch delivery to validate + get type/paint info from backend
+        // 1. Consume the delivery and capture the materialized prop UUID. The
+        // DELETE endpoint returns the deleted row so we get its prop_id in the
+        // same round-trip (avoids an extra GET).
         UnityWebRequest deleteReq = ApiManager.Instance.DeleteDeliveryRequest(new Delivery { _id = msg.DeliveryId });
         yield return deleteReq.SendWebRequest();
 
@@ -156,6 +178,8 @@ public class PropInteractionDispatcher : MonoBehaviour {
             conn.Send(new S2C_BuildAck { Success = false });
             yield break;
         }
+
+        string propUuid = ExtractPropIdFromDeliveryResponse(deleteReq.downloadHandler?.text);
 
         // 2. Build initial payload — header carries presetId + isBuilt
         PropsConfig config = DatabaseManager.PropsDatabase.GetPropsById(msg.PropConfigId);
@@ -201,6 +225,14 @@ public class PropInteractionDispatcher : MonoBehaviour {
             go.transform.rotation = msg.Rotation;
         }
 
+        // 4b. Bridge runtime int propId → persistent UUID, and PATCH the prop's
+        // new location in the DB. The buy flow created the prop in the transit
+        // place; the build flow moves it to the apartment.
+        if (!string.IsNullOrEmpty(propUuid)) {
+            ServerPropManager.Instance.AssociateUuid(newPropId, propUuid);
+            yield return PatchBuiltPropLocation(propUuid, apt, msg, isBuilt);
+        }
+
         // 5. Refresh delivery box count (the build consumed a delivery)
         if (msg.DeliveryBoxPropId > 0) {
             string tenantCharId = apt.TenantId;
@@ -214,7 +246,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
             Debug.LogWarning($"[PropInteractionDispatcher] BuildProp: skipping delivery box refresh — msg.DeliveryBoxPropId={msg.DeliveryBoxPropId} (client did not provide a box id)");
         }
 
-        // 6. Persist the apartment
+        // 6. Persist the apartment (legacy scene_data path — dual-write during Phase 1)
         yield return apt.StartCoroutine(apt.Save());
 
         // 7. Notify the requesting client
@@ -222,4 +254,168 @@ public class PropInteractionDispatcher : MonoBehaviour {
             conn.Send(new S2C_BuildAck { Success = true });
         }
     }
+
+    /// <summary>
+    /// Parse the deleted delivery row returned by DELETE /deliveries/:id and
+    /// extract the linked prop UUID. Returns null for legacy deliveries created
+    /// before Phase 1 (which have no prop_id) — the build then degrades to the
+    /// pre-Phase-1 behavior (legacy scene_data save only).
+    /// </summary>
+    private static string ExtractPropIdFromDeliveryResponse(string body) {
+        if (string.IsNullOrEmpty(body)) return null;
+        try {
+            var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(body);
+            if (dict == null) return null;
+            // Backend returns the Delivery shape: { _id, recipientId, type, ..., propId }
+            return dict.TryGetValue("propId", out object id) ? id?.ToString() : null;
+        } catch {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Move the bought-then-built prop from the transit place to the apartment
+    /// place via PATCH /props/:id. expectedVersion is 1 — the prop hasn't been
+    /// modified between buy and build under the current flow.
+    /// </summary>
+    private IEnumerator PatchBuiltPropLocation(string propUuid, ApartmentController apt, C2S_BuildProp msg, bool isBuilt) {
+        string aptPlaceId = apt.HomeData?.Id;
+        if (string.IsNullOrEmpty(aptPlaceId)) {
+            Debug.LogWarning($"[PropInteractionDispatcher] PatchBuiltPropLocation: apartment has no HomeData.Id (apt={apt.ApartmentKey}), skipping PATCH");
+            yield break;
+        }
+
+        UpdatePropBody body = new UpdatePropBody {
+            expectedVersion = 1,
+            placeId  = aptPlaceId,
+            position = new Vector3Body(msg.Position),
+            rotation = new Vector3Body(msg.Rotation.eulerAngles),
+            isBuilt  = isBuilt,
+        };
+
+        UnityWebRequest req = ApiManager.Instance.UpdatePropRequest(propUuid, body);
+        yield return req.SendWebRequest();
+
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[PropInteractionDispatcher] PATCH /props/{propUuid} failed code={req.responseCode} body={req.downloadHandler.text}");
+            yield break;
+        }
+
+        // Build flow: this is the very first PATCH for this prop (version 1 → 2).
+        // The bridge was just associated in BuildPropCoroutine with version 1.
+        // Update to the new server-reported version so subsequent PATCHes match.
+        int newPropIdRuntime = FindRuntimeIdForUuid(propUuid);
+        TrackVersionFromResponse(newPropIdRuntime, req.downloadHandler.text);
+        Debug.Log($"[PropInteractionDispatcher] Prop {propUuid} moved from transit to apt={apt.ApartmentKey}");
+    }
+
+    // ── Public DB-sync helpers (called from runtime state handlers) ───────────
+    //
+    // Each helper looks up the prop's UUID + version via ServerPropManager.GetBridge,
+    // performs the PATCH/DELETE, and updates the cached version. If the prop has no
+    // bridge (legacy spawn before Phase 1, or pre-buy-flow apt props), the sync is
+    // a no-op — the legacy apt.Save() path keeps it persisted via scene_data.
+
+    public void SyncPropTransform(int propId, Vector3 position, Quaternion rotation) {
+        ServerPropManager.PropDbBridge bridge = ServerPropManager.Instance.GetBridge(propId);
+        if (bridge == null) return;
+        StartCoroutine(PatchPropCoroutine(propId, bridge, new UpdatePropBody {
+            expectedVersion = bridge.Version,
+            position = new Vector3Body(position),
+            rotation = new Vector3Body(rotation.eulerAngles),
+        }));
+    }
+
+    public void SyncPropState(int propId, Dictionary<string, object> stateData) {
+        ServerPropManager.PropDbBridge bridge = ServerPropManager.Instance.GetBridge(propId);
+        if (bridge == null) return;
+        StartCoroutine(PatchPropCoroutine(propId, bridge, new UpdatePropBody {
+            expectedVersion = bridge.Version,
+            stateData       = stateData,
+        }));
+    }
+
+    /// <summary>
+    /// PATCH the prop's `is_built` flag. Called when a player completes a build
+    /// interaction on a prop that had `mustBeBuilt = true` and was placed in
+    /// "unbuilt" state at unpackage time.
+    /// </summary>
+    public void SyncPropBuilt(int propId, bool isBuilt) {
+        ServerPropManager.PropDbBridge bridge = ServerPropManager.Instance.GetBridge(propId);
+        if (bridge == null) return;
+        StartCoroutine(PatchPropCoroutine(propId, bridge, new UpdatePropBody {
+            expectedVersion = bridge.Version,
+            isBuilt         = isBuilt,
+        }));
+    }
+
+    public void SyncPropRemove(int propId) {
+        ServerPropManager.PropDbBridge bridge = ServerPropManager.Instance.GetBridge(propId);
+        if (bridge == null) return;
+        StartCoroutine(DeletePropCoroutine(propId, bridge.Uuid));
+    }
+
+    public void SyncCovers(string placeId, IEnumerable<CoverApplyEntry> covers) {
+        if (string.IsNullOrEmpty(placeId) || covers == null) return;
+        StartCoroutine(UpsertCoversCoroutine(placeId, covers));
+    }
+
+    /// <summary>Lightweight DTO used by SyncCovers callers.</summary>
+    public struct CoverApplyEntry {
+        public string SurfaceKind;        // "wall" | "ground"
+        public int    SurfaceIndex;
+        public int    PaintConfigId;
+        public float[] Color;
+    }
+
+    private IEnumerator PatchPropCoroutine(int propId, ServerPropManager.PropDbBridge bridge, UpdatePropBody body) {
+        UnityWebRequest req = ApiManager.Instance.UpdatePropRequest(bridge.Uuid, body);
+        yield return req.SendWebRequest();
+
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[PropInteractionDispatcher] PATCH /props/{bridge.Uuid} failed code={req.responseCode} body={req.downloadHandler.text}");
+            yield break;
+        }
+        TrackVersionFromResponse(propId, req.downloadHandler.text);
+    }
+
+    private IEnumerator DeletePropCoroutine(int propId, string propUuid) {
+        UnityWebRequest req = ApiManager.Instance.DeletePropRequest(propUuid);
+        yield return req.SendWebRequest();
+
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[PropInteractionDispatcher] DELETE /props/{propUuid} failed code={req.responseCode} body={req.downloadHandler.text}");
+            yield break;
+        }
+        ServerPropManager.Instance.ClearBridge(propId);
+        Debug.Log($"[PropInteractionDispatcher] Prop {propUuid} deleted from DB");
+    }
+
+    private IEnumerator UpsertCoversCoroutine(string placeId, IEnumerable<CoverApplyEntry> covers) {
+        var payload = new {
+            covers = System.Linq.Enumerable.Select(covers, c => new {
+                surfaceKind   = c.SurfaceKind,
+                surfaceIndex  = c.SurfaceIndex,
+                paintConfigId = c.PaintConfigId,
+                color         = c.Color ?? new float[] { 1, 1, 1, 1 },
+            }).ToArray()
+        };
+        UnityWebRequest req = ApiManager.Instance.UpsertCoversRequest(placeId, payload);
+        yield return req.SendWebRequest();
+
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[PropInteractionDispatcher] PUT /places/{placeId}/covers failed code={req.responseCode} body={req.downloadHandler.text}");
+        }
+    }
+
+    private void TrackVersionFromResponse(int propId, string body) {
+        if (propId <= 0 || string.IsNullOrEmpty(body)) return;
+        try {
+            PropJson updated = JsonConvert.DeserializeObject<PropJson>(body);
+            if (updated != null) ServerPropManager.Instance.UpdateVersion(propId, updated.version);
+        } catch { /* tolerated; next PATCH will fail and we'll re-sync */ }
+    }
+
+    private static int FindRuntimeIdForUuid(string uuid) =>
+        ServerPropManager.Instance.FindPropIdByUuid(uuid);
 }

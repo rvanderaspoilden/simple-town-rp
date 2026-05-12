@@ -51,6 +51,11 @@ public static class PropInteractionRouter {
 
             ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, updatedPayload);
 
+            // Phase 2 — relational sync. The runtime header just flipped to IsBuilt=true;
+            // persist the same flag on the props row so the next load doesn't show the
+            // prop as still-to-be-built.
+            PropInteractionDispatcher.Instance?.SyncPropBuilt(msg.PropId, true);
+
             // Trigger apartment save server-side (find apartment that owns this prop)
             ApartmentController apt = ServerApartmentRegistry.Instance.FindOwnerOfProp(msg.PropId);
             if (apt != null) apt.StartCoroutine(apt.Save());
@@ -160,6 +165,8 @@ public static class PropInteractionRouter {
         }
 
         ServerPropManager.Instance.UpdatePropTransform(apt.RoomId, msg.PropId, msg.Position, msg.Rotation);
+        // Dual-write: legacy scene_data save + per-prop PATCH on the new model.
+        PropInteractionDispatcher.Instance?.SyncPropTransform(msg.PropId, msg.Position, msg.Rotation);
         apt.StartCoroutine(apt.Save());
     }
 
@@ -171,6 +178,10 @@ public static class PropInteractionRouter {
             return;
         }
 
+        // PATCH/DELETE must happen BEFORE we remove the runtime state (which would
+        // clear the bridge along with _spawnedGOs on Reset, though here it's a
+        // single prop). Order is: sync DB → wipe runtime → legacy save.
+        PropInteractionDispatcher.Instance?.SyncPropRemove(msg.PropId);
         ServerPropManager.Instance.RemoveProp(apt.RoomId, msg.PropId);
         apt.StartCoroutine(apt.Save());
     }
@@ -365,6 +376,13 @@ public static class PropInteractionRouter {
             if (source != null) source.Sync();
 
             // Persist the new lock state so it survives logout/server restart.
+            // Dual-write: legacy scene_data + per-prop PATCH on the new model.
+            PropInteractionDispatcher.Instance?.SyncPropState(msg.PropId, new System.Collections.Generic.Dictionary<string, object> {
+                { "kind",       "door" },
+                { "lockState",  (int)current.LockState },
+                { "isOpen",     current.IsOpen },
+                { "doorNumber", current.DoorNumber },
+            });
             apt.StartCoroutine(apt.Save());
 
             Debug.Log($"[PropInteractionRouter] Door {msg.PropId} lock={current.LockState} by conn={conn.connectionId}");

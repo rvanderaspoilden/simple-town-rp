@@ -53,12 +53,23 @@
 │     └────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
              │ TCP/IP (Mirror KCP or TCP)
+             │ (Mirror network messages — gameplay)
+             │
+             │ HTTPS (only the Unity SERVER hits these for in-game state;
+             │        clients hit auth/character endpoints at main menu)
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      NestJS BACKEND                                  │
-│  /auth/login, /characters, /homes, /deliveries, /city               │
-│  MongoDB via Mongoose                                                │
+│                      NestJS BACKEND (simple-town-ws)                 │
+│                                                                      │
+│  Auth / catalog       /auth/login, /characters, /homes, /city       │
+│  Gameplay state       /places, /props, /covers, /deliveries         │
+│                       (Phase 2: read switch live — see PERSISTENCE) │
+│                                                                      │
+│  Supabase (PostgreSQL) — JSONB where natural, relational elsewhere  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+> **Persistence model:** see `PERSISTENCE.md` for the full schema, the
+> migration phases (0 → 3), and the runtime int-propId ↔ DB-UUID bridge.
 
 ---
 

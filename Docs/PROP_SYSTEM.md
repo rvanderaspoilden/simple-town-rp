@@ -1,5 +1,9 @@
 # PROP_SYSTEM.md — Prop Lifecycle
 
+> **Persistence:** runtime state lives in `ServerPropManager`; durable state
+> lives in the `props` / `covers` tables (see `PERSISTENCE.md`). A runtime
+> `int propId` is bridged to a DB `UUID` via `ServerPropManager.PropDbBridge`.
+
 ---
 
 ## Two Prop Origins
@@ -154,21 +158,32 @@ Client instantiates the prefab via `DatabaseManager.PropsDatabase.GetPropsById(m
 
 ## Build Flow
 
-Full sequence in `PropInteractionDispatcher.BuildPropCoroutine()`:
+Full sequence in `PropInteractionDispatcher.BuildPropCoroutine()` (Phase 2):
 
-1. REST DELETE `/deliveries/{DeliveryId}` — validates the delivery exists and removes it
-2. Look up `PropsConfig` by `msg.PropConfigId`
-3. Determine `isBuilt` from `config.MustBeBuilt()` — if the prop requires the BUILD action before becoming interactive, `IsBuilt=false`
-4. Build initial payload:
+1. REST `DELETE /deliveries/{DeliveryId}` — backend echoes the deleted row so
+   we can read its `propId` (the UUID assigned at buy time, see `PERSISTENCE.md`
+   §5.1). Without a `downloadHandler` on the request this NREs — `ApiManager.
+   DeleteDeliveryRequest` attaches a `DownloadHandlerBuffer`.
+2. Extract `propUuid` from the response body.
+3. Look up `PropsConfig` by `msg.PropConfigId`.
+4. Determine `isBuilt` from `config.MustBeBuilt()` — if the prop requires the
+   BUILD action before becoming interactive, `IsBuilt=false`.
+5. Build initial payload:
    - If `msg.PaintConfigId >= 0`: `PaintBucketState { Header, PaintConfigId, R, G, B }.Serialize()`
-   - Otherwise: `GenericPropState { Header }.Serialize()`
-5. `ServerPropManager.SpawnProp(apt.RoomId, PropConfigId, Position, Rotation, initialPayload)` → returns `newPropId`
-   - Inside `SpawnProp`: instantiates prefab, assigns `PropIdentity`, records `ServerPropState`, broadcasts `S2C_PropSpawn` to room
-6. `apt.TrackProp(newPropId)` — adds to `_ownedPropIds`
-7. Reparent server-side GO under `apt.PropsContainer`
-8. `PropInteractionDispatcher.RefreshDeliveryBoxCount()` — REST fetch, updates `DeliveryBoxState.DeliveryCount`, broadcasts `S2C_PropUpdate`
-9. `apt.Save()` — REST PUT `/homes/{id}` with `GenerateSceneData()`
-10. `conn.Send(new S2C_BuildAck { Success = true })`
+   - Otherwise: let `ServerPropSource` emit its default body (header override only).
+6. `ServerPropManager.SpawnProp(apt.RoomId, PropConfigId, Position, Rotation, …)` → returns `newPropId`.
+7. `apt.TrackProp(newPropId)` — adds to `_ownedPropIds`.
+8. Reparent server-side GO under `apt.PropsContainer`.
+9. **Bridge:** `ServerPropManager.AssociateUuid(newPropId, propUuid)` ties the
+   runtime int ID to the DB UUID. Subsequent sync calls (`SyncPropTransform`,
+   `SyncPropState`, `SyncPropBuilt`, `SyncPropRemove`) look up the UUID via
+   this bridge.
+10. **PATCH** `/props/{propUuid}` (`PatchBuiltPropLocation`) — moves the prop from
+    the transit place to the apartment place, sets position/rotation/isBuilt,
+    returns the new `version`. The bridge's `Version` is updated.
+11. `RefreshDeliveryBoxCount()` — REST GET delivery count, updates `DeliveryBoxState.DeliveryCount`, broadcasts `S2C_PropUpdate`.
+12. `apt.Save()` — legacy dual-write to `homes.scene_data` (removed in Phase 3).
+13. `conn.Send(new S2C_BuildAck { Success = true })`.
 
 ---
 
@@ -181,7 +196,9 @@ Full sequence in `PropInteractionDispatcher.BuildPropCoroutine()`:
    - Updates `ServerPropState.Position`/`Rotation`
    - Moves server-side GO if present in `_spawnedGOs`
    - Broadcasts `S2C_PropTransform { PropId, RoomId, Position, Rotation }` to room
-4. `apt.StartCoroutine(apt.Save())`
+4. `PropInteractionDispatcher.SyncPropTransform(propId, pos, rot)` — PATCHes
+   `/props/{uuid}` with the new position+rotation (no-op if no bridge).
+5. `apt.StartCoroutine(apt.Save())` — legacy dual-write (removed in Phase 3).
 
 ---
 
@@ -193,7 +210,8 @@ Full sequence in `PropInteractionDispatcher.BuildPropCoroutine()`:
    - Removes from `_rooms[roomId]`
    - If in `_spawnedGOs`: `UnityEngine.Object.Destroy(go)`, removes from `_spawnedGOs`
    - Broadcasts `S2C_PropRemove { PropId, RoomId }` to room
-3. `apt.StartCoroutine(apt.Save())`
+3. `PropInteractionDispatcher.SyncPropRemove(propId)` — DELETE `/props/{uuid}` (no-op if no bridge).
+4. `apt.StartCoroutine(apt.Save())` — legacy dual-write (removed in Phase 3).
 
 Client `OnPropRemove`:
 - Removes from `_props`
@@ -258,3 +276,53 @@ Full payload sizes:
 | Dispenser | 5 bytes | header only |
 | Package | 9 bytes | header(5) + propsConfigId(4) |
 | Teleporter | n/a | no C2S_PropInteraction payload — uses C2S_TeleporterUse |
+
+---
+
+## UUID Bridge & DB Sync (Phase 2 onward)
+
+`ServerPropManager` keeps a `Dictionary<int, PropDbBridge>` mapping the
+runtime `int propId` to the persistent UUID + version pair.
+
+```
+ServerPropManager
+├── _rooms                     : Dictionary<string, Dictionary<int, ServerPropState>>
+├── _spawnedGOs                : Dictionary<int, GameObject>
+└── _runtimeToDb (new)         : Dictionary<int, PropDbBridge { Uuid, Version }>
+
+API:
+  AssociateUuid(propId, uuid, version=1)   — set up the bridge
+  GetUuid(propId)                          — read the UUID
+  GetBridge(propId)                        — read uuid + version (for PATCH)
+  UpdateVersion(propId, version)           — refresh after a successful PATCH
+  FindPropIdByUuid(uuid)                   — reverse lookup (used at build time)
+  ClearBridge(propId)                      — on remove
+```
+
+A bridge is created in two places:
+1. **Apartment load** — `ApartmentController.InstantiateLevelFromPlaceState`
+   spawns each persisted prop with its `propUuid` + `propVersion`, and the
+   `SpawnProp` overload auto-bridges.
+2. **Build** — `PropInteractionDispatcher.BuildPropCoroutine` extracts the
+   UUID from the deleted delivery row and calls `AssociateUuid`.
+
+### Dispatcher sync helpers
+
+Every gameplay write goes through one of these. They look up the bridge,
+no-op if absent (legacy / fixture prop), otherwise PATCH/DELETE with
+`expectedVersion`:
+
+| Helper | Triggered by | DB effect |
+|---|---|---|
+| `SyncPropTransform(propId, pos, rot)` | `HandleEditProp` | PATCH `position`, `rotation` |
+| `SyncPropState(propId, dict)` | door lock, paint, seat… | PATCH `state_data` |
+| `SyncPropBuilt(propId, true)` | `HandleGeneric` build action | PATCH `is_built` |
+| `SyncPropRemove(propId)` | `HandleRemoveProp` | DELETE `/props/{uuid}` |
+| `SyncCovers(placeId, entries)` | wall/ground paint | PUT `/covers/{placeId}` |
+
+After every successful PATCH, the dispatcher reads `version` from the
+response and calls `UpdateVersion(propId, …)` so the next write doesn't
+409. The Unity server is the single writer, so 409s should never happen
+under normal operation — treat them as bugs.
+
+See `PERSISTENCE.md` for the full flow (buy / build / load / dual-write).

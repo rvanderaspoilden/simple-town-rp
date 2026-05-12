@@ -348,7 +348,11 @@ namespace Sim {
                 }
 
                 ApplyPresetServerSide(this.presetName);
-                InstantiateLevel(homeResponse.SceneData);
+
+                // Phase 2 — read switch. Fetch the relational state from /places/:id/state.
+                // Falls back to the legacy scene_data path if the endpoint errors out, so a
+                // misconfigured backend doesn't bring down the game.
+                yield return LoadPlaceStateOrFallback(homeResponse);
 
                 if (this.deliveryBoxPropId > 0 && !string.IsNullOrEmpty(this.tenantId)) {
                     UnityWebRequest countReq = ApiManager.Instance.RetrieveDeliveriesRequest(this.tenantId);
@@ -515,6 +519,9 @@ namespace Sim {
                 DoorState current = DoorState.Deserialize(state.Payload);
                 current.LockState = (DoorLockState)savedDoor.lockState;
                 current.IsOpen    = savedDoor.isOpen;
+                // A locked door must visually be closed at load — sanitize stale saves
+                // where the player locked while the door was still ajar.
+                if (current.LockState == DoorLockState.LOCKED) current.IsOpen = false;
                 ServerPropManager.Instance.UpdatePropState(this.RoomId, matchedPropId, current.Serialize());
 
                 if (matchedPropId == this.frontDoorPropId) frontDoorRestored = true;
@@ -547,6 +554,241 @@ namespace Sim {
         }
 
         private bool _frontDoorRestoredFromSave;
+
+        /// <summary>
+        /// Phase 2 read switch entry point. Tries the new relational endpoint first;
+        /// if the call fails or the place doesn't exist yet, falls back to the
+        /// legacy JSONB scene_data path. The fallback gives us a smooth rollout —
+        /// once the new path is validated in prod we can remove it.
+        /// </summary>
+        [Server]
+        private IEnumerator LoadPlaceStateOrFallback(Home homeResponse) {
+            UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(homeResponse.Id);
+            yield return stateReq.SendWebRequest();
+
+            if (stateReq.responseCode == 200) {
+                try {
+                    Sim.Entities.Persistence.PlaceStateJson state =
+                        Newtonsoft.Json.JsonConvert.DeserializeObject<Sim.Entities.Persistence.PlaceStateJson>(
+                            stateReq.downloadHandler.text);
+
+                    if (state?.place != null && PlaceStateIsHydrated(state)) {
+                        Debug.Log($"[Apartment] RetrieveData using new path placeId={state.place.Id} props={state.props?.Length ?? 0} covers={state.covers?.Length ?? 0}");
+                        InstantiateLevelFromPlaceState(state);
+                        yield break;
+                    }
+                    Debug.LogWarning($"[Apartment] /places/:id/state empty (place={state?.place != null} props={state?.props?.Length ?? 0} covers={state?.covers?.Length ?? 0}) — falling back to scene_data");
+                } catch (System.Exception e) {
+                    Debug.LogWarning($"[Apartment] Failed to parse /places/:id/state ({e.Message}) — falling back to scene_data");
+                }
+            } else {
+                Debug.LogWarning($"[Apartment] /places/{homeResponse.Id}/state failed ({stateReq.responseCode}) — falling back to scene_data");
+            }
+
+            InstantiateLevel(homeResponse.SceneData);
+        }
+
+        /// <summary>
+        /// Returns true when the place has been initialized with preset data
+        /// (covers + at least some props). False for freshly-created places that
+        /// haven't had their preset materialized into the relational tables yet
+        /// — caller should fall back to the legacy scene_data path in that case.
+        /// </summary>
+        public static bool PlaceStateIsHydrated(Sim.Entities.Persistence.PlaceStateJson state) {
+            if (state == null) return false;
+            bool hasCovers = state.covers != null && state.covers.Length > 0;
+            bool hasProps  = state.props  != null && state.props.Length  > 0;
+            return hasCovers || hasProps;
+        }
+
+        /// <summary>
+        /// Phase 2 read path — hydrate the apartment from a PlaceStateJson fetched
+        /// via GET /places/:id/state. Mirrors InstantiateLevel but consumes the
+        /// relational shape (props rows + covers rows) instead of the JSONB
+        /// scene_data.
+        /// </summary>
+        [Server]
+        public void InstantiateLevelFromPlaceState(Sim.Entities.Persistence.PlaceStateJson state) {
+            if (state == null) {
+                Debug.LogWarning("[Apartment] InstantiateLevelFromPlaceState: null state");
+                return;
+            }
+
+            // 1. Covers — populate the cover dictionaries directly (no C2S broadcast at load).
+            Dictionary<int, CoverSettings> wallSettings   = new Dictionary<int, CoverSettings>();
+            Dictionary<int, CoverSettings> groundSettings = new Dictionary<int, CoverSettings>();
+            if (state.covers != null) {
+                foreach (var c in state.covers) {
+                    Color color = c.color != null && c.color.Length >= 3
+                        ? new Color(c.color[0], c.color[1], c.color[2])
+                        : Color.white;
+                    CoverSettings cs = new CoverSettings { paintConfigId = c.paintConfigId, additionalColor = color };
+                    if (c.surfaceKind == "wall")   wallSettings[c.surfaceIndex]   = cs;
+                    if (c.surfaceKind == "ground") groundSettings[c.surfaceIndex] = cs;
+                }
+            }
+            int wallSlots = this.currentConfiguration.walls.SharedMaterials().Length;
+            for (int i = 0; i < wallSlots; i++) {
+                this.coverSettingsByFaces[i] = wallSettings.ContainsKey(i) ? wallSettings[i] : defaultWallCoverSettings;
+            }
+            for (int i = 0; i < this.grounds.Length; i++) {
+                this.coverSettingsByGround[i] = groundSettings.ContainsKey(i) ? groundSettings[i] : defaultGroundCoverSettings;
+            }
+
+            // 2. Props — each row carries its own UUID + version, bridged on spawn.
+            int lightConfigId = this.lightPrefabConfig != null ? this.lightPrefabConfig.GetId() : -1;
+            int savedLightsSpawned = 0;
+            if (state.props != null) {
+                foreach (Sim.Entities.Persistence.PropJson p in state.props) {
+                    // Skip props that aren't physically placed in THIS apt (stored / transit / nested).
+                    if (p.position == null) continue;
+                    if (p.placeId != state.place?.Id) continue;
+
+                    // Front door special-case: Init() already spawned a default-locked door
+                    // for this apt. Don't spawn a duplicate — instead apply the saved state
+                    // (lockState + isOpen) onto the existing one and bridge its UUID.
+                    if (IsFrontDoorEntry(p)) {
+                        RestoreFrontDoorFromPlaceEntry(p);
+                        continue;
+                    }
+
+                    Vector3    worldPos  = p.position.ToVector3();
+                    Quaternion worldRot  = Quaternion.Euler(p.rotation != null ? p.rotation.ToVector3() : Vector3.zero);
+
+                    PropStateHeader header = new PropStateHeader { IsBuilt = p.isBuilt, PresetId = p.presetIndex };
+                    byte[] payload = Sim.Entities.Persistence.StateDataMapper.BuildPayload(p.stateData, header);
+
+                    int propId = ServerPropManager.Instance.SpawnProp(
+                        roomId:                 this.RoomId,
+                        prefabId:               p.configId,
+                        position:               worldPos,
+                        rotation:               worldRot,
+                        initialPayloadOverride: payload,
+                        headerOverride:         payload == null ? (PropStateHeader?) header : null,
+                        propUuid:               p.Id,
+                        propVersion:            p.version
+                    );
+                    if (propId < 0) continue;
+
+                    TrackProp(propId);
+                    if (p.configId == lightConfigId) {
+                        _lightPropIds.Add(propId);
+                        savedLightsSpawned++;
+                    }
+
+                    GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(propId);
+                    if (go != null && this.propsContainer != null) {
+                        go.transform.SetParent(this.propsContainer);
+                        go.transform.position = worldPos;
+                        go.transform.rotation = worldRot;
+                    }
+                }
+            }
+
+            // 3. Fixtures from the preset — inner doors, lights (fallback), delivery box.
+            // These were never persisted as individual rows in the legacy scene_data, so
+            // the new state.props won't carry them on backfilled apartments. Treat them
+            // as preset-driven fixtures, mirroring InstantiateLevel's behavior.
+            SpawnInnerDoorsFromPreset();
+            if (savedLightsSpawned == 0) SpawnLightsFromPreset();
+            SpawnDeliveryBoxFromPreset();
+        }
+
+        [Server]
+        private void SpawnInnerDoorsFromPreset() {
+            if (this.currentConfiguration.doorSpawners == null) return;
+            if (this.simpleDoorPrefabConfig == null) return;
+
+            foreach (var spawner in this.currentConfiguration.doorSpawners) {
+                if (spawner == null) continue;
+                int innerDoorPropId = ServerPropManager.Instance.SpawnProp(
+                    this.RoomId,
+                    this.simpleDoorPrefabConfig.GetId(),
+                    spawner.position,
+                    spawner.rotation
+                );
+                if (innerDoorPropId < 0) continue;
+                TrackProp(innerDoorPropId);
+                GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(innerDoorPropId);
+                if (go != null) {
+                    go.transform.SetParent(this.transform);
+                    go.transform.position = spawner.position;
+                    go.transform.rotation = spawner.rotation;
+                }
+            }
+        }
+
+        [Server]
+        private void SpawnLightsFromPreset() {
+            if (this.currentConfiguration.lightSpawns == null) return;
+            if (this.lightPrefabConfig == null) return;
+
+            foreach (Transform spawner in this.currentConfiguration.lightSpawns) {
+                if (spawner == null) continue;
+                int lightPropId = ServerPropManager.Instance.SpawnProp(
+                    this.RoomId,
+                    this.lightPrefabConfig.GetId(),
+                    spawner.position,
+                    spawner.rotation
+                );
+                if (lightPropId < 0) continue;
+                TrackProp(lightPropId);
+                _lightPropIds.Add(lightPropId);
+                GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(lightPropId);
+                if (go != null && this.propsContainer != null) {
+                    go.transform.SetParent(this.propsContainer);
+                    go.transform.position = spawner.position;
+                    go.transform.rotation = spawner.rotation;
+                }
+            }
+        }
+
+        [Server]
+        private bool IsFrontDoorEntry(Sim.Entities.Persistence.PropJson p) {
+            if (p.stateData == null) return false;
+            if (!p.stateData.TryGetValue("kind", out object kind) || kind?.ToString() != "door") return false;
+            if (!p.stateData.TryGetValue("doorNumber", out object dn) || dn == null) return false;
+            return int.TryParse(dn.ToString(), out int doorNum) && doorNum == this.doorNumber;
+        }
+
+        [Server]
+        private void RestoreFrontDoorFromPlaceEntry(Sim.Entities.Persistence.PropJson p) {
+            if (this.frontDoorPropId <= 0) return;
+            if (!ServerPropManager.Instance.TryGetPropState(this.RoomId, this.frontDoorPropId, out var current)) return;
+
+            DoorState ds = DoorState.Deserialize(current.Payload);
+            if (p.stateData.TryGetValue("lockState", out object ls) && int.TryParse(ls?.ToString(), out int lockInt))
+                ds.LockState = (DoorLockState) lockInt;
+            if (p.stateData.TryGetValue("isOpen", out object io) && bool.TryParse(io?.ToString(), out bool isOpen))
+                ds.IsOpen = isOpen;
+            // A locked door must visually be closed at load — sanitize stale saves
+            // where the player locked while the door was still ajar.
+            if (ds.LockState == DoorLockState.LOCKED) ds.IsOpen = false;
+            ServerPropManager.Instance.UpdatePropState(this.RoomId, this.frontDoorPropId, ds.Serialize());
+            ServerPropManager.Instance.AssociateUuid(this.frontDoorPropId, p.Id, p.version);
+            this._frontDoorRestoredFromSave = true;
+        }
+
+        [Server]
+        private void SpawnDeliveryBoxFromPreset() {
+            if (this.deliveryBoxPropId > 0) return;        // already spawned (idempotency)
+
+            int boxId = ServerPropManager.Instance.SpawnProp(
+                this.RoomId,
+                this.deliveryBoxPrefabConfig.GetId(),
+                this.currentConfiguration.deliveryBoxSpawn.position,
+                this.currentConfiguration.deliveryBoxSpawn.rotation
+            );
+            if (boxId < 0) return;
+            TrackProp(boxId);
+            GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(boxId);
+            if (go != null && this.propsContainer != null) {
+                go.transform.SetParent(this.propsContainer);
+                go.transform.position = this.currentConfiguration.deliveryBoxSpawn.position;
+                go.transform.rotation = this.currentConfiguration.deliveryBoxSpawn.rotation;
+            }
+            this.deliveryBoxPropId = boxId;
+        }
 
         [Server]
         private SceneData GenerateSceneData() {
