@@ -38,7 +38,10 @@
       "Bash(npx --prefix D:/Workspace/Unity/TheBroz/simple-town-ws tsc --noEmit -p D:/Workspace/Unity/TheBroz/simple-town-ws/tsconfig.json)",
       "Bash(rm D:/Workspace/Unity/TheBroz/simple-town-ws/src/item/enums/item-type.enum.ts)",
       "Bash(rmdir D:/Workspace/Unity/TheBroz/simple-town-ws/src/item/enums)",
-      "Bash(grep -E \"\\\\.\\(cs\\)$\")"
+      "Bash(grep -E \"\\\\.\\(cs\\)$\")",
+      "Bash(unity-mcp-cli run-system-tool *)",
+      "PowerShell(unity-mcp-cli run-system-tool ping --input '{\"message\":\"jobs setup\"}')",
+      "PowerShell(npx unity-mcp-cli run-system-tool ping --input '{\\\\\"message\\\\\":\\\\\"jobs setup\\\\\"}')"
     ]
   },
   "enableAllProjectMcpServers": true,

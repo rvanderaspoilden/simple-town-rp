@@ -163,6 +163,13 @@ namespace Sim {
                 this.rigidbody.useGravity = false;
                 Destroy(GetComponent<AudioListener>());
             }
+
+            Sim.Jobs.JobTargetHooks.RegisterPlayer(this);
+        }
+
+        public override void OnStopServer() {
+            Sim.Jobs.JobTargetHooks.UnregisterPlayer(this);
+            base.OnStopServer();
         }
 
         public override void OnStartLocalPlayer() {

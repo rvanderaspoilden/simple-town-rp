@@ -1,0 +1,98 @@
+using Mirror;
+using Sim.Logging;
+using UnityEngine;
+
+namespace Sim.Jobs {
+    /// <summary>
+    /// Wire le système de jobs dans le lifecycle de Mirror. À appeler depuis
+    /// SimpleTownNetwork.OnStartServer/OnStopServer/OnStartClient/OnStopClient
+    /// (même pattern que NpcSystemBootstrap).
+    /// </summary>
+    public static class JobSystemBootstrap {
+        private static GameObject _tickerGO;
+
+        // ── Server ────────────────────────────────────────────────────────────
+
+        public static void OnServerStart() {
+            GameLogger.System.Info("JobSystemServerStarting");
+
+            JobDatabase.Load();
+            JobServerManager.Instance.Subscribe();
+            JobBoardServer.Instance.Subscribe();
+            RewardSystem.Subscribe();
+
+            NetworkServer.RegisterHandler<JobAcceptedMessage>(OnAcceptedFromClient);
+            NetworkServer.RegisterHandler<JobAbandonRequestMessage>(OnAbandonFromClient);
+            NetworkServer.RegisterHandler<JobBoardOpenMessage>(OnBoardOpenFromClient);
+            NetworkServer.RegisterHandler<JobBoardCloseMessage>(OnBoardCloseFromClient);
+            NetworkServer.RegisterHandler<JobBoardTakeMessage>(OnBoardTakeFromClient);
+
+            _tickerGO = new GameObject("JobServerTicker");
+            Object.DontDestroyOnLoad(_tickerGO);
+            _tickerGO.AddComponent<JobServerTicker>();
+
+            GameLogger.System.Info("JobSystemServerStarted");
+        }
+
+        public static void OnServerStop() {
+            GameLogger.System.Info("JobSystemServerStopping");
+
+            NetworkServer.UnregisterHandler<JobAcceptedMessage>();
+            NetworkServer.UnregisterHandler<JobAbandonRequestMessage>();
+            NetworkServer.UnregisterHandler<JobBoardOpenMessage>();
+            NetworkServer.UnregisterHandler<JobBoardCloseMessage>();
+            NetworkServer.UnregisterHandler<JobBoardTakeMessage>();
+
+            if (_tickerGO != null) {
+                Object.Destroy(_tickerGO);
+                _tickerGO = null;
+            }
+
+            RewardSystem.Unsubscribe();
+            JobBoardServer.Instance.Reset();
+            JobServerManager.Instance.Reset();
+            JobTargetRegistry.Instance.Reset();
+            GameLogger.System.Info("JobSystemServerStopped");
+        }
+
+        private static void OnAcceptedFromClient(NetworkConnectionToClient conn, JobAcceptedMessage msg)
+            => JobServerManager.Instance.Accept(msg.instanceId, conn);
+
+        private static void OnAbandonFromClient(NetworkConnectionToClient conn, JobAbandonRequestMessage msg)
+            => JobServerManager.Instance.Abandon(msg.instanceId, conn);
+
+        private static void OnBoardOpenFromClient(NetworkConnectionToClient conn, JobBoardOpenMessage msg)
+            => JobBoardServer.Instance.OpenBoard(conn, msg.Category);
+
+        private static void OnBoardCloseFromClient(NetworkConnectionToClient conn, JobBoardCloseMessage msg)
+            => JobBoardServer.Instance.CloseBoard(conn, msg.Category);
+
+        private static void OnBoardTakeFromClient(NetworkConnectionToClient conn, JobBoardTakeMessage msg)
+            => JobServerManager.Instance.TakeFromBoard(msg.instanceId, conn);
+
+        // ── Client ────────────────────────────────────────────────────────────
+
+        public static void OnClientStart() {
+            JobDatabase.Load();
+            JobClientManager.Instance.RegisterHandlers();
+            JobBoardClient.Instance.RegisterHandlers();
+            GameLogger.System.Info("JobSystemClientStarted");
+        }
+
+        public static void OnClientStop() {
+            JobClientManager.Instance.UnregisterHandlers();
+            JobClientManager.Instance.ClearAll();
+            JobBoardClient.Instance.UnregisterHandlers();
+            JobBoardClient.Instance.ClearAll();
+            GameLogger.System.Info("JobSystemClientStopped");
+        }
+    }
+
+    /// <summary>MonoBehaviour qui tick JobServerManager chaque frame.</summary>
+    public class JobServerTicker : MonoBehaviour {
+        private void Update() {
+            if (!NetworkServer.active) return;
+            JobServerManager.Instance.Tick(Time.deltaTime);
+        }
+    }
+}
