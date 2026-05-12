@@ -113,7 +113,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -319,5 +319,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DispenserBehaviour
   configuration: {fileID: 11400000, guid: 7f7edea9f7dc1ff4180dea1cede84f93, type: 2}
   defaultPresetId: -1
-  dispenserConfig: {fileID: 11400000, guid: 7f7edea9f7dc1ff4180dea1cede84f93, type: 2}
   useSound: {fileID: 8300000, guid: ca806aab1d446614bbe7fb0c0af69b79, type: 3}

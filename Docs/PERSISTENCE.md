@@ -368,9 +368,11 @@ See §4 above.
 
 - Extend the model to halls, city, shop places (same schema, different
   `places.type`).
-- Replace `deliveries` table: a prop with `place_id = TransitPlaceId` and
-  `owned_by = recipientCharacterId` *is* a delivery in flight. The `deliveries`
-  table becomes redundant.
+- **Enrich `deliveries` with lifecycle + timing** (status, scheduled_at,
+  carrier_id, …) in parallel with a future "Livreur" job system. Design
+  captured in `plans/wobbly-wobbling-clarke.md` (Phase 4 — deferred). The
+  earlier idea of absorbing `deliveries` into `props` was dropped: a delivery
+  is a transaction (who/when/status), distinct from the prop (object identity).
 - Per-player inventory: `places` with `type='inventory'` and a `properties.slot`
   field. Props move there on pickup, back to apt on drop.
 - Container nesting: already supported via `props.container_prop_id`. A chest

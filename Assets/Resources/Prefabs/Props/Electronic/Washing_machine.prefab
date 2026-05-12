@@ -246,9 +246,10 @@ GameObject:
   - component: {fileID: 4929738433403594458}
   - component: {fileID: 3551557995915264590}
   - component: {fileID: 6308244906838559916}
-  - component: {fileID: 8333477539720295434}
   - component: {fileID: 8416394669718736620}
-  - component: {fileID: 132754545407399391}
+  - component: {fileID: 7733419706606496576}
+  - component: {fileID: 6086612053224618236}
+  - component: {fileID: 8664208087953458229}
   m_Layer: 10
   m_Name: Washing_machine
   m_TagString: Untagged
@@ -290,7 +291,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -361,23 +362,6 @@ MonoBehaviour:
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
---- !u!114 &8333477539720295434
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6061768437498095646}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
-  configuration: {fileID: 11400000, guid: 583cfb8a18523174aba1465c66226cba, type: 2}
-  defaultPresetId: -1
 --- !u!82 &8416394669718736620
 AudioSource:
   m_ObjectHideFlags: 0
@@ -475,7 +459,7 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &132754545407399391
+--- !u!114 &7733419706606496576
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -484,14 +468,37 @@ MonoBehaviour:
   m_GameObject: {fileID: 6061768437498095646}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
-  sceneId: 0
-  _assetId: 2497256914
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &6086612053224618236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6061768437498095646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
+  configuration: {fileID: 11400000, guid: 583cfb8a18523174aba1465c66226cba, type: 2}
+  defaultPresetId: -1
+--- !u!114 &8664208087953458229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6061768437498095646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
 --- !u!1 &7621544520772611530
 GameObject:
   m_ObjectHideFlags: 0
