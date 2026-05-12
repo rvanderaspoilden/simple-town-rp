@@ -114,17 +114,9 @@ public class PropInteractionDispatcher : MonoBehaviour {
         teleporter.ServerHandleUse(floorDestination, conn);
     }
 
-    // ── Apartment covers / save ───────────────────────────────────────────────
+    // ── Apartment covers ──────────────────────────────────────────────────────
     // Apartments share their room with the rest of the floor, so we resolve the
-    // target apartment via the connection (only the tenant can save / paint covers).
-
-    public void HandleSaveApartment(NetworkConnectionToClient conn, string roomId) {
-        if (!ServerApartmentRegistry.Instance.TryGetByConn(conn, out ApartmentController apt)) {
-            Debug.LogWarning($"[PropInteractionDispatcher] SaveApartment: conn {conn.connectionId} owns no apartment");
-            return;
-        }
-        StartCoroutine(apt.Save());
-    }
+    // target apartment via the connection (only the tenant can paint covers).
 
     public void HandleApplyWallCovers(NetworkConnectionToClient conn, string roomId, byte[] coversJson) {
         if (!ServerApartmentRegistry.Instance.TryGetByConn(conn, out ApartmentController apt)) {
@@ -134,7 +126,6 @@ public class PropInteractionDispatcher : MonoBehaviour {
         CoverData[] covers = CoverDataWrapper.Deserialize(coversJson);
         apt.ServerApplyWallCovers(covers);
         SyncCovers(apt.HomeData?.Id, BuildCoverEntries("wall", covers));
-        StartCoroutine(apt.Save());
     }
 
     public void HandleApplyGroundCovers(NetworkConnectionToClient conn, string roomId, byte[] coversJson) {
@@ -145,7 +136,6 @@ public class PropInteractionDispatcher : MonoBehaviour {
         CoverData[] covers = CoverDataWrapper.Deserialize(coversJson);
         apt.ServerApplyGroundCovers(covers);
         SyncCovers(apt.HomeData?.Id, BuildCoverEntries("ground", covers));
-        StartCoroutine(apt.Save());
     }
 
     private static IEnumerable<CoverApplyEntry> BuildCoverEntries(string surfaceKind, CoverData[] covers) {
@@ -246,10 +236,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
             Debug.LogWarning($"[PropInteractionDispatcher] BuildProp: skipping delivery box refresh — msg.DeliveryBoxPropId={msg.DeliveryBoxPropId} (client did not provide a box id)");
         }
 
-        // 6. Persist the apartment (legacy scene_data path — dual-write during Phase 1)
-        yield return apt.StartCoroutine(apt.Save());
-
-        // 7. Notify the requesting client
+        // 6. Notify the requesting client
         if (conn != null && conn.isReady) {
             conn.Send(new S2C_BuildAck { Success = true });
         }
@@ -257,9 +244,8 @@ public class PropInteractionDispatcher : MonoBehaviour {
 
     /// <summary>
     /// Parse the deleted delivery row returned by DELETE /deliveries/:id and
-    /// extract the linked prop UUID. Returns null for legacy deliveries created
-    /// before Phase 1 (which have no prop_id) — the build then degrades to the
-    /// pre-Phase-1 behavior (legacy scene_data save only).
+    /// extract the linked prop UUID. Returns null if the delivery row carries no
+    /// prop_id — the build then runs without DB persistence for that prop.
     /// </summary>
     private static string ExtractPropIdFromDeliveryResponse(string body) {
         if (string.IsNullOrEmpty(body)) return null;
@@ -313,8 +299,9 @@ public class PropInteractionDispatcher : MonoBehaviour {
     //
     // Each helper looks up the prop's UUID + version via ServerPropManager.GetBridge,
     // performs the PATCH/DELETE, and updates the cached version. If the prop has no
-    // bridge (legacy spawn before Phase 1, or pre-buy-flow apt props), the sync is
-    // a no-op — the legacy apt.Save() path keeps it persisted via scene_data.
+    // bridge (e.g. a freshly preset-spawned fixture not yet materialized), the
+    // sync is a no-op — MaterializeUnbridgedDoors handles deferred persistence
+    // at apartment load.
 
     public void SyncPropTransform(int propId, Vector3 position, Quaternion rotation) {
         ServerPropManager.PropDbBridge bridge = ServerPropManager.Instance.GetBridge(propId);

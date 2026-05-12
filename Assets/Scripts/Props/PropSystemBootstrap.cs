@@ -31,7 +31,6 @@ public static class PropSystemBootstrap {
         NetworkServer.RegisterHandler<C2S_EditProp>       (Server_OnEditProp);
         NetworkServer.RegisterHandler<C2S_RemoveProp>     (Server_OnRemoveProp);
         NetworkServer.RegisterHandler<C2S_TeleporterUse>  (Server_OnTeleporterUse);
-        NetworkServer.RegisterHandler<C2S_SaveApartment>  (Server_OnSaveApartment);
         NetworkServer.RegisterHandler<C2S_ApplyWallCovers>(Server_OnApplyWallCovers);
         NetworkServer.RegisterHandler<C2S_ApplyGroundCovers>(Server_OnApplyGroundCovers);
 
@@ -50,7 +49,6 @@ public static class PropSystemBootstrap {
         NetworkServer.UnregisterHandler<C2S_EditProp>();
         NetworkServer.UnregisterHandler<C2S_RemoveProp>();
         NetworkServer.UnregisterHandler<C2S_TeleporterUse>();
-        NetworkServer.UnregisterHandler<C2S_SaveApartment>();
         NetworkServer.UnregisterHandler<C2S_ApplyWallCovers>();
         NetworkServer.UnregisterHandler<C2S_ApplyGroundCovers>();
 
@@ -179,11 +177,6 @@ public static class PropSystemBootstrap {
         GameLogger.Network.Info("TeleporterUse {ConnectionId} {RoomId} {FloorDestination}",
             conn.connectionId, roomId ?? "unknown", msg.FloorDestination);
         PropInteractionDispatcher.Instance?.HandleTeleporterUse(conn, msg.FloorDestination);
-    }
-
-    private static void Server_OnSaveApartment(NetworkConnectionToClient conn, C2S_SaveApartment msg) {
-        GameLogger.Network.Info("SaveApartment {ConnectionId} {RoomId}", conn.connectionId, msg.RoomId);
-        PropInteractionDispatcher.Instance?.HandleSaveApartment(conn, msg.RoomId);
     }
 
     private static void Server_OnApplyWallCovers(NetworkConnectionToClient conn, C2S_ApplyWallCovers msg) {

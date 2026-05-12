@@ -55,10 +55,6 @@ public static class PropInteractionRouter {
             // persist the same flag on the props row so the next load doesn't show the
             // prop as still-to-be-built.
             PropInteractionDispatcher.Instance?.SyncPropBuilt(msg.PropId, true);
-
-            // Trigger apartment save server-side (find apartment that owns this prop)
-            ApartmentController apt = ServerApartmentRegistry.Instance.FindOwnerOfProp(msg.PropId);
-            if (apt != null) apt.StartCoroutine(apt.Save());
         }
     }
 
@@ -165,9 +161,7 @@ public static class PropInteractionRouter {
         }
 
         ServerPropManager.Instance.UpdatePropTransform(apt.RoomId, msg.PropId, msg.Position, msg.Rotation);
-        // Dual-write: legacy scene_data save + per-prop PATCH on the new model.
         PropInteractionDispatcher.Instance?.SyncPropTransform(msg.PropId, msg.Position, msg.Rotation);
-        apt.StartCoroutine(apt.Save());
     }
 
     public static void HandleRemoveProp(NetworkConnectionToClient conn, C2S_RemoveProp msg) {
@@ -178,12 +172,10 @@ public static class PropInteractionRouter {
             return;
         }
 
-        // PATCH/DELETE must happen BEFORE we remove the runtime state (which would
-        // clear the bridge along with _spawnedGOs on Reset, though here it's a
-        // single prop). Order is: sync DB → wipe runtime → legacy save.
+        // DELETE must happen BEFORE we wipe runtime state — the dispatcher reads
+        // the UUID bridge from ServerPropManager, which RemoveProp clears.
         PropInteractionDispatcher.Instance?.SyncPropRemove(msg.PropId);
         ServerPropManager.Instance.RemoveProp(apt.RoomId, msg.PropId);
-        apt.StartCoroutine(apt.Save());
     }
 
     // ── PaintBucket ───────────────────────────────────────────────────────────
@@ -383,7 +375,6 @@ public static class PropInteractionRouter {
                 { "isOpen",     current.IsOpen },
                 { "doorNumber", current.DoorNumber },
             });
-            apt.StartCoroutine(apt.Save());
 
             Debug.Log($"[PropInteractionRouter] Door {msg.PropId} lock={current.LockState} by conn={conn.connectionId}");
 

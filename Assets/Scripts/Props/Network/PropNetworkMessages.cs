@@ -162,11 +162,6 @@ public struct S2C_RoomState : NetworkMessage {
     public byte[] Payload;
 }
 
-/// <summary>Le client demande au serveur de sauvegarder l'appartement.</summary>
-public struct C2S_SaveApartment : NetworkMessage {
-    public string RoomId;
-}
-
 /// <summary>
 /// Le client envoie de nouveaux paramètres de revêtement pour les murs.
 /// CoversJson = CoverDataWrapper.Serialize() — tableau de Sim.CoverData JSON-encodé.

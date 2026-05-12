@@ -5,7 +5,7 @@ using UnityEngine;
 // ─── ApartmentRoomState ───────────────────────────────────────────────────────
 // Payload attaché à la room "apt:{street}:{door}" via ServerPropManager.SetRoomState.
 // Sérialisé/désérialisé avec JsonUtility (cohérent avec le reste du projet).
-// Utilise Sim.CoverData (défini dans SceneData.cs) pour walls/grounds.
+// Utilise Sim.CoverData (Save/SceneData.cs) pour walls/grounds.
 
 [Serializable]
 public class ApartmentRoomState

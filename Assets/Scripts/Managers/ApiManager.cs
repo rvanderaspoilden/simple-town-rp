@@ -88,20 +88,6 @@ namespace Sim {
             this.authenticationCoroutine ??= StartCoroutine(this.AuthenticationCoroutine(username, password));
         }
 
-        public UnityWebRequest SaveHomeRequest(Home home, SceneData sceneData) {
-            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(sceneData));
-
-            UnityWebRequest request = new UnityWebRequest($"{this.uri}/homes/{home.Id}", "PUT") {
-                uploadHandler = new UploadHandlerRaw(encodedPayload),
-                downloadHandler = new DownloadHandlerBuffer()
-            };
-
-            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
-            request.SetRequestHeader("Content-type", "application/json");
-
-            return request;
-        }
-
         public UnityWebRequest RetrieveHomeRequest(Address address) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(address));
 
