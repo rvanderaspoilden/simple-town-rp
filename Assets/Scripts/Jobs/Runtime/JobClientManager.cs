@@ -56,13 +56,18 @@ namespace Sim.Jobs {
             var state = new JobClientState {
                 InstanceId = msg.instanceId,
                 Definition = def,
-                CurrentStepIndex = 0,
+                CurrentStepIndex = msg.currentStepIndex,
+                CurrentPromptKey = msg.currentPromptKey,
+                CurrentTargetId = msg.currentTargetId,
+                CurrentTargetName = msg.currentTargetName,
                 PrimaryTargetKind = msg.primaryTargetKind,
                 PrimaryTargetId = msg.primaryTargetId,
+                PrimaryTargetName = msg.primaryTargetName,
                 SecondaryTargetKind = msg.secondaryTargetKind,
                 SecondaryTargetId = msg.secondaryTargetId,
+                SecondaryTargetName = msg.secondaryTargetName,
                 PayloadItemId = msg.payloadItemId,
-                Status = JobStatus.Offered
+                Status = msg.Status
             };
             _states[msg.instanceId] = state;
             JobOffered?.Invoke(state);
@@ -72,6 +77,8 @@ namespace Sim.Jobs {
             if (!_states.TryGetValue(msg.instanceId, out var state)) return;
             state.CurrentStepIndex = msg.newStepIndex;
             state.CurrentPromptKey = msg.promptKey;
+            state.CurrentTargetId = msg.currentTargetId;
+            state.CurrentTargetName = msg.currentTargetName;
             state.Status = JobStatus.Active;
             JobStepAdvanced?.Invoke(state);
         }
@@ -91,13 +98,17 @@ namespace Sim.Jobs {
         public JobDefinition Definition;
         public int CurrentStepIndex;
         public string CurrentPromptKey;
+        public string CurrentTargetId;
+        public string CurrentTargetName;
         public JobStatus Status;
         public JobFailureReason FailureReason;
 
         public JobTargetKind PrimaryTargetKind;
         public string PrimaryTargetId;
+        public string PrimaryTargetName;
         public JobTargetKind SecondaryTargetKind;
         public string SecondaryTargetId;
+        public string SecondaryTargetName;
         public string PayloadItemId;
     }
 }

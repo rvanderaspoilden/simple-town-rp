@@ -23,5 +23,13 @@ namespace Sim.Jobs {
             player != null
             && player.netIdentity != null
             && player.netIdentity.connectionToClient != null;
+
+        public string DisplayName {
+            get {
+                if (player == null || player.CharacterData == null) return string.Empty;
+                var fullName = player.CharacterData.Identity.FullName;
+                return string.IsNullOrEmpty(fullName) ? string.Empty : fullName;
+            }
+        }
     }
 }

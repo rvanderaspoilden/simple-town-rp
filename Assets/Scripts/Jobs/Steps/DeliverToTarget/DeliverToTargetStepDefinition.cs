@@ -29,5 +29,7 @@ namespace Sim.Jobs {
 
         public override JobStepInstance CreateInstance(JobInstance owner)
             => new DeliverToTargetStepInstance(owner, this);
+
+        public override string GetActiveTargetKey() => targetKey;
     }
 }

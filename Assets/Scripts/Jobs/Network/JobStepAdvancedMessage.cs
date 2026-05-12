@@ -5,4 +5,6 @@ public struct JobStepAdvancedMessage : NetworkMessage {
     public string instanceId;
     public int newStepIndex;
     public string promptKey;
+    public string currentTargetId;
+    public string currentTargetName;
 }

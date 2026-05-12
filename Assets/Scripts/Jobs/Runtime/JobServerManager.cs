@@ -95,6 +95,7 @@ namespace Sim.Jobs {
 
             if (!job.Take(netId)) return false;
             AddToOwnerIndex(netId, job);
+            SendOffered(job);
             return true;
         }
 
@@ -114,6 +115,7 @@ namespace Sim.Jobs {
             if (job.Status != JobStatus.Offered) return false;
 
             job.Accept();
+            SendOffered(job);
             return true;
         }
 
@@ -174,12 +176,20 @@ namespace Sim.Jobs {
                 ? job.Definition.Steps[job.CurrentStepIndex]
                 : null;
 
+            var activeTarget = ResolveActiveTarget(job, stepDef);
             var msg = new JobStepAdvancedMessage {
                 instanceId = job.InstanceId,
                 newStepIndex = job.CurrentStepIndex,
-                promptKey = stepDef != null ? stepDef.PromptKey : string.Empty
+                promptKey = stepDef != null ? stepDef.PromptKey : string.Empty,
+                currentTargetId = activeTarget?.TargetId ?? string.Empty,
+                currentTargetName = activeTarget?.DisplayName ?? string.Empty
             };
             SendToOwner(job.OwnerNetId, msg);
+        }
+
+        private static IJobTarget ResolveActiveTarget(JobInstance job, JobStepDefinition stepDef) {
+            if (stepDef == null) return null;
+            return job.Context.TargetByKey(stepDef.GetActiveTargetKey());
         }
 
         private void OnJobFinished(JobInstance job) {
@@ -194,13 +204,25 @@ namespace Sim.Jobs {
 
         private void SendOffered(JobInstance job) {
             var ctx = job.Context;
+            var stepDef = job.CurrentStepIndex < job.Definition.Steps.Count
+                ? job.Definition.Steps[job.CurrentStepIndex]
+                : null;
+
+            var activeTarget = ResolveActiveTarget(job, stepDef);
             var msg = new JobOfferedMessage {
                 instanceId = job.InstanceId,
                 jobId = job.Definition.JobId,
+                statusByte = (byte)job.Status,
+                currentStepIndex = job.CurrentStepIndex,
+                currentPromptKey = stepDef != null ? stepDef.PromptKey : string.Empty,
+                currentTargetId = activeTarget?.TargetId ?? string.Empty,
+                currentTargetName = activeTarget?.DisplayName ?? string.Empty,
                 primaryTargetKind = ctx.primaryTarget?.Kind ?? JobTargetKind.Zone,
                 primaryTargetId   = ctx.primaryTarget?.TargetId ?? string.Empty,
+                primaryTargetName = ctx.primaryTarget?.DisplayName ?? string.Empty,
                 secondaryTargetKind = ctx.secondaryTarget?.Kind ?? JobTargetKind.Zone,
                 secondaryTargetId   = ctx.secondaryTarget?.TargetId ?? string.Empty,
+                secondaryTargetName = ctx.secondaryTarget?.DisplayName ?? string.Empty,
                 payloadItemId = ctx.payloadItemId ?? string.Empty
             };
             SendToOwner(job.OwnerNetId, msg);

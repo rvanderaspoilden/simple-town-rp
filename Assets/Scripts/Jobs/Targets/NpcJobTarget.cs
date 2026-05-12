@@ -23,6 +23,8 @@ namespace Sim.Jobs {
         public bool IsAvailable =>
             npc != null && npc.gameObject != null && npc.gameObject.activeInHierarchy;
 
+        public string DisplayName => npc != null ? npc.Identity.FullName : string.Empty;
+
         public int NpcId => npcId;
     }
 }

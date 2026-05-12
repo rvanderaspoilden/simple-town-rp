@@ -8,7 +8,8 @@ namespace Sim.Jobs {
     /// Provider de debug. Drop ce MonoBehaviour dans une scène (serveur).
     ///   offerKey   → Offer direct au premier joueur connecté (mission Offered)
     ///   publishKey → Publish sur le board (mission Available, prenable par tous)
-    /// Une cible primaire est choisie au hasard parmi les NPCs enregistrés.
+    /// Une cible primaire est choisie au hasard parmi les JobDeliveryPoint
+    /// présents en scène et compatibles avec la catégorie de la mission.
     /// </summary>
     public class JobsDebugProvider : MonoBehaviour {
         [Tooltip("Définition de mission à offrir / publier.")]
@@ -19,9 +20,6 @@ namespace Sim.Jobs {
 
         [Tooltip("Touche de publication sur le board (Available).")]
         [SerializeField] private KeyCode publishKey = KeyCode.F10;
-
-        [Tooltip("Si vrai, retente jusqu'à ce qu'au moins un NPC soit disponible comme cible.")]
-        [SerializeField] private bool requireNpcTarget = true;
 
         private void Update() {
             if (!NetworkServer.active) return;
@@ -63,13 +61,29 @@ namespace Sim.Jobs {
         }
 
         private bool TryBuildContext(out JobContext ctx, out IJobTarget primary) {
-            primary = requireNpcTarget ? PickRandomNpc() : null;
-            if (requireNpcTarget && primary == null) {
-                GameLogger.System.Warning("JobsDebugProvider_NoNpcTarget");
-                ctx = null;
+            primary = null;
+            ctx = null;
+
+            var candidates = new List<JobDeliveryPoint>();
+            foreach (var p in JobDeliveryPoint.ByPointId.Values) {
+                if (p == null || !p.IsAvailable) continue;
+                if (p.Category != jobDefinition.Category) continue;
+                candidates.Add(p);
+            }
+            if (candidates.Count < 2) {
+                GameLogger.System.Warning("JobsDebugProvider_NotEnoughDeliveryPoints {Category} {Count}",
+                    jobDefinition.Category, candidates.Count);
                 return false;
             }
-            ctx = new JobContext { primaryTarget = primary };
+
+            int pickupIdx = Random.Range(0, candidates.Count);
+            int deliveryIdx;
+            do { deliveryIdx = Random.Range(0, candidates.Count); }
+            while (deliveryIdx == pickupIdx);
+
+            primary = candidates[pickupIdx];
+            var secondary = candidates[deliveryIdx];
+            ctx = new JobContext { primaryTarget = primary, secondaryTarget = secondary };
             return true;
         }
 
@@ -79,17 +93,6 @@ namespace Sim.Jobs {
                 return conn.identity.netId;
             }
             return 0u;
-        }
-
-        private static IJobTarget PickRandomNpc() {
-            var candidates = new List<IJobTarget>();
-            foreach (var t in JobTargetRegistry.Instance.All) {
-                if (t.Kind != JobTargetKind.Npc) continue;
-                if (!t.IsAvailable) continue;
-                candidates.Add(t);
-            }
-            if (candidates.Count == 0) return null;
-            return candidates[Random.Range(0, candidates.Count)];
         }
     }
 }

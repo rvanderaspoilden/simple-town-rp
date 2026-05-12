@@ -24,5 +24,8 @@ namespace Sim.Jobs {
 
         /// <summary>False si la cible a despawn / s'est déconnectée / n'est plus interactible.</summary>
         bool IsAvailable { get; }
+
+        /// <summary>Nom affiché côté HUD (PNJ FullName, joueur FullName, etc.). Peut être vide.</summary>
+        string DisplayName { get; }
     }
 }

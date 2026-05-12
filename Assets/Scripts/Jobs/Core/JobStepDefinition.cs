@@ -14,5 +14,12 @@ namespace Sim.Jobs {
         public string PromptKey => promptKey;
 
         public abstract JobStepInstance CreateInstance(JobInstance owner);
+
+        /// <summary>
+        /// Clé de la cible active utilisée par ce step ("primary" / "secondary").
+        /// Permet à l'HUD/indicateur de suivre le bon point quand on change de step.
+        /// Override dans les step definitions qui ont un targetKey serialisé.
+        /// </summary>
+        public virtual string GetActiveTargetKey() => "primary";
     }
 }
