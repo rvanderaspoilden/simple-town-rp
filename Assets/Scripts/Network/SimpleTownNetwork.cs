@@ -616,6 +616,18 @@ public class SimpleTownNetwork : NetworkManager
         player.SetRawCharacterData(JsonUtility.ToJson(characterResponse.Characters[0]));
         go.name = $"Player [conn={conn.connectionId}] [{characterResponse.Characters[0].Identity.FullName}]";
 
+        // Provision the character's pocket + hand_left + hand_right places in DB
+        // before the player enters any room. ServerItemManager.OnPlayerEnterRoom
+        // relies on PlayerInventory.PlacesReady to restore held items, so this
+        // MUST complete before the first room entry.
+        PlayerInventory inventory = go.GetComponent<PlayerInventory>() ?? go.AddComponent<PlayerInventory>();
+        string characterId = characterResponse.Characters[0].Id;
+        if (!string.IsNullOrEmpty(characterId)) {
+            yield return inventory.EnsurePlaces(characterId);
+        } else {
+            GameLogger.Network.Warning("EnsurePlaces skipped — character id missing {ConnectionId}", conn.connectionId);
+        }
+
         UnityWebRequest homeRequest =
             ApiManager.Instance.RetrieveHomesByCharacterRequest(characterResponse.Characters[0]);
         yield return homeRequest.SendWebRequest();

@@ -37,7 +37,8 @@
       "Read(//d/Workspace/Unity/TheBroz/**)",
       "Bash(npx --prefix D:/Workspace/Unity/TheBroz/simple-town-ws tsc --noEmit -p D:/Workspace/Unity/TheBroz/simple-town-ws/tsconfig.json)",
       "Bash(rm D:/Workspace/Unity/TheBroz/simple-town-ws/src/item/enums/item-type.enum.ts)",
-      "Bash(rmdir D:/Workspace/Unity/TheBroz/simple-town-ws/src/item/enums)"
+      "Bash(rmdir D:/Workspace/Unity/TheBroz/simple-town-ws/src/item/enums)",
+      "Bash(grep -E \"\\\\.\\(cs\\)$\")"
     ]
   },
   "enableAllProjectMcpServers": true,

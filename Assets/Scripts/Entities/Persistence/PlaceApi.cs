@@ -126,6 +126,69 @@ namespace Sim.Entities.Persistence {
         public float[] color;
     }
 
+    // ── Item ────────────────────────────────────────────────────────────────
+
+    /// <summary>Body for POST /items — never merges, always inserts a new row.</summary>
+    [Serializable]
+    public class CreateItemBody {
+        public string placeId;
+        public int    configId;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? quantity;       // default 1
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, object> stateData;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string ownedBy;
+    }
+
+    /// <summary>Body for POST /items/upsert — stack-aware add. Increments an
+    /// existing matching stack (same place, configId, ownedBy, deep-equal
+    /// stateData) or inserts a new row.</summary>
+    [Serializable]
+    public class UpsertItemBody {
+        public string placeId;
+        public int    configId;
+        public int    quantity;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, object> stateData;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string ownedBy;
+    }
+
+    /// <summary>Body for PATCH /items/:id. expectedVersion is mandatory.</summary>
+    [Serializable]
+    public class UpdateItemBody {
+        public int expectedVersion;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string placeId;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? quantity;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, object> stateData;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string ownedBy;
+    }
+
+    [Serializable]
+    public class ItemJson {
+        [JsonProperty("_id")] public string Id;
+        public string placeId;
+        public int    configId;
+        public int    quantity;
+        public Dictionary<string, object> stateData;
+        public string ownedBy;
+        public int    version;
+    }
+
     // ── Place state aggregate (GET /places/:id/state) ───────────────────────
 
     [Serializable]
@@ -133,5 +196,6 @@ namespace Sim.Entities.Persistence {
         public PlaceJson place;
         public PropJson[] props;
         public CoverJson[] covers;
+        public ItemJson[] items;
     }
 }

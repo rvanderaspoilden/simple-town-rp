@@ -392,6 +392,34 @@ namespace Sim {
             return BuildJsonRequest($"{this.uri}/props{qs.TrimEnd('&', '?')}", "GET", null);
         }
 
+        // ── Items ─────────────────────────────────────────────────────────────
+
+        /// <summary>POST /items — insert a new item row (no merge). For pickup
+        /// flows prefer UpsertItemRequest which is stack-aware.</summary>
+        public UnityWebRequest CreateItemRequest(CreateItemBody body) =>
+            BuildJsonRequest($"{this.uri}/items", "POST", body);
+
+        /// <summary>POST /items/upsert — stack-aware add. Increments an existing
+        /// matching stack in placeId or inserts a new row.</summary>
+        public UnityWebRequest UpsertItemRequest(UpsertItemBody body) =>
+            BuildJsonRequest($"{this.uri}/items/upsert", "POST", body);
+
+        /// <summary>PATCH /items/:id — partial update with optimistic locking.</summary>
+        public UnityWebRequest UpdateItemRequest(string itemId, UpdateItemBody body) =>
+            BuildJsonRequest($"{this.uri}/items/{itemId}", "PATCH", body);
+
+        /// <summary>DELETE /items/:id — destroys the stack (drop / consume).</summary>
+        public UnityWebRequest DeleteItemRequest(string itemId) =>
+            BuildJsonRequest($"{this.uri}/items/{itemId}", "DELETE", null);
+
+        /// <summary>GET /items?placeId=…&amp;ownedBy=… — at least one filter is required.</summary>
+        public UnityWebRequest ListItemsRequest(string placeId, string ownedBy) {
+            string qs = "?";
+            if (!string.IsNullOrEmpty(placeId)) qs += $"placeId={UnityWebRequest.EscapeURL(placeId)}&";
+            if (!string.IsNullOrEmpty(ownedBy)) qs += $"ownedBy={UnityWebRequest.EscapeURL(ownedBy)}";
+            return BuildJsonRequest($"{this.uri}/items{qs.TrimEnd('&', '?')}", "GET", null);
+        }
+
         /// <summary>Bulk upsert covers for a place. Body shape: { covers: CoverInputDto[] }.</summary>
         public UnityWebRequest UpsertCoversRequest(string placeId, object body) =>
             BuildJsonRequest($"{this.uri}/places/{placeId}/covers", "PUT", body);

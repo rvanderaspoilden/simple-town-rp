@@ -4901,6 +4901,7 @@ GameObject:
   - component: {fileID: 2314651008420346383}
   - component: {fileID: -5593754752210305832}
   - component: {fileID: 6741411215430397098}
+  - component: {fileID: -4587985912181790829}
   m_Layer: 8
   m_Name: Character
   m_TagString: Player
@@ -5021,11 +5022,6 @@ MonoBehaviour:
     purchasePrice: 0
     rentPrice: 0
     preset: 
-    sceneData:
-      walls: []
-      grounds: []
-      buckets: []
-      props: []
 --- !u!114 &7147682903337299061
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5368,15 +5364,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d192c8e00ddc9542a5c0c058e7b52e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
   leftHandTransform: {fileID: 2569061278075988576}
   rightHandTransform: {fileID: 2344508820881145707}
   leftHandItem: {fileID: 0}
   rightHandItem: {fileID: 0}
-  leftHandItemNetId: 0
-  rightHandItemNetId: 0
+  leftEntityId: -1
+  rightEntityId: -1
 --- !u!114 &2314651008420346383
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5445,6 +5438,18 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
+--- !u!114 &-4587985912181790829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6953365128800779919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd97bd6957e3cb9419f39563a1e9bc0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInventory
 --- !u!1 &6974000221088511038
 GameObject:
   m_ObjectHideFlags: 0

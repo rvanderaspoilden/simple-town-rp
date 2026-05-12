@@ -1,8 +1,12 @@
+using System.Collections;
 using System.Collections.Generic;
 using Mirror;
+using Newtonsoft.Json;
 using Sim;
+using Sim.Entities.Persistence;
 using Sim.Logging;
 using UnityEngine;
+using UnityEngine.Networking;
 
 /// <summary>
 /// Authoritative server-side store for all world items grouped by room.
@@ -29,6 +33,41 @@ public class ServerItemManager
         = new Dictionary<uint, PlayerHandState>();
 
     private int _nextEntityId = 1;
+
+    // ── DB bridge ─────────────────────────────────────────────────────────────
+    // Maps runtime entityId → DB item row. Mirrors PropDbBridge on ServerPropManager.
+    // A bridge exists ONLY for items that have been persisted (rows in `items`
+    // table). World items spawned on the map have no bridge and are purely
+    // ephemeral — they vanish on server restart if not picked up.
+
+    public class ItemDbBridge
+    {
+        public string Uuid;
+        public int    Version;
+        public string PlaceId;
+    }
+
+    private readonly Dictionary<int, ItemDbBridge> _bridges = new Dictionary<int, ItemDbBridge>();
+
+    public ItemDbBridge GetBridge(int entityId) =>
+        _bridges.TryGetValue(entityId, out var b) ? b : null;
+
+    public void AssociateUuid(int entityId, string uuid, int version, string placeId) {
+        _bridges[entityId] = new ItemDbBridge { Uuid = uuid, Version = version, PlaceId = placeId };
+    }
+
+    public void UpdateBridgeVersion(int entityId, int version) {
+        if (_bridges.TryGetValue(entityId, out var b)) b.Version = version;
+    }
+
+    public void UpdateBridgePlace(int entityId, string placeId, int version) {
+        if (_bridges.TryGetValue(entityId, out var b)) {
+            b.PlaceId = placeId;
+            b.Version = version;
+        }
+    }
+
+    public void ClearBridge(int entityId) => _bridges.Remove(entityId);
 
     private struct PlayerHandState
     {
@@ -69,6 +108,7 @@ public class ServerItemManager
     {
         _rooms.Clear();
         _playerHands.Clear();
+        _bridges.Clear();
         _nextEntityId = 1;
         GameLogger.Network.Info("ServerItemManagerReset");
     }
@@ -135,6 +175,8 @@ public class ServerItemManager
             LocalPosition = Vector3.zero,
             LocalRotation = Quaternion.identity
         });
+
+        PersistPickupAsync(conn, entityId, itemConfigId, hand.Value);
 
         return entityId;
     }
@@ -267,6 +309,8 @@ public class ServerItemManager
             LocalPosition = entity.LocalPosition,
             LocalRotation = entity.LocalRotation
         });
+
+        PersistPickupAsync(conn, msg.EntityId, entity.ItemConfigId, assignedHand.Value);
     }
 
     public void HandleDrop(NetworkConnectionToClient conn, C2S_RequestDropItem msg)
@@ -313,6 +357,11 @@ public class ServerItemManager
 
         GameLogger.Network.Info("Item Drop player={PlayerNetId} entity={EntityId} hand={Hand} room={RoomId}",
             playerNetId, entityId, msg.Hand, roomId);
+
+        // DB: delete the persisted row — the item becomes an ephemeral world item
+        // (no DB tracking). Fire-and-forget; the drop succeeds visually even if
+        // the DELETE fails (orphan row in DB, to be cleaned later).
+        PersistDropAsync(entityId);
 
         conn.Send(new S2C_DropResult { Success = true, Hand = msg.Hand });
 
@@ -386,6 +435,15 @@ public class ServerItemManager
                 LocalRotation = Quaternion.identity
             });
         }
+
+        // DB: each held item changes hand_place. The right-hand item moves to
+        // the left hand_place and vice-versa. Fire-and-forget — out-of-order
+        // patches are safe because each PATCH carries an expectedVersion.
+        PlayerInventory inv = conn.identity.GetComponent<PlayerInventory>();
+        if (inv != null && inv.PlacesReady) {
+            if (rightId != -1) PersistMoveToHandAsync(rightId, inv.HandLeftPlaceId);
+            if (leftId  != -1) PersistMoveToHandAsync(leftId,  inv.HandRightPlaceId);
+        }
     }
 
     // ── Room events ───────────────────────────────────────────────────────────
@@ -393,18 +451,38 @@ public class ServerItemManager
     public void OnPlayerEnterRoom(NetworkConnectionToClient conn, string roomId)
     {
         SendRoomSnapshot(conn, roomId);
+
+        // Items in hand follow the player: every room entry rebuilds the
+        // runtime entities from the DB hand places (idempotent — the previous
+        // OnPlayerLeaveRoom cleaned up runtime state for this player).
+        if (conn.identity == null) return;
+        PlayerInventory inv = conn.identity.GetComponent<PlayerInventory>();
+        if (inv == null || !inv.PlacesReady) return;     // EnsurePlaces should have completed before first room entry
+
+        if (ApiManager.Instance != null) {
+            ApiManager.Instance.StartCoroutine(RestoreHandItemsCoroutine(conn, roomId, inv));
+        }
     }
 
     public void OnPlayerLeaveRoom(NetworkConnectionToClient conn, string roomId)
     {
         if (conn.identity == null) return;
-        DropAllHeldItems(conn.identity.netId, roomId);
+
+        // Held items follow the player across rooms. On leave we just despawn
+        // the runtime entities in the old room (clients there see them go) —
+        // DB rows stay intact. The next OnPlayerEnterRoom (or RestoreHandItems
+        // on reconnect) re-creates the entities in the new room. Same path
+        // handles voluntary teleport AND disconnect (PlayerRoomTracker.OnDisconnect
+        // calls LeaveRoom which fires this event).
+        DespawnHeldItemsKeepingDb(conn.identity.netId, roomId);
     }
 
     public void OnPlayerDisconnect(NetworkConnectionToClient conn)
     {
-        if (conn.identity == null) return;
-        _playerHands.Remove(conn.identity.netId);
+        // Runtime cleanup is already handled by OnPlayerLeaveRoom (fired earlier
+        // in the disconnect chain via PlayerRoomTracker.OnDisconnect). Nothing
+        // extra to do here — DB rows for the player's held items persist and
+        // will be restored on the next reconnect.
     }
 
     // ── Snapshot ──────────────────────────────────────────────────────────────
@@ -476,27 +554,27 @@ public class ServerItemManager
         entity.HolderNetId = 0;
     }
 
-    private void DropAllHeldItems(uint playerNetId, string roomId)
-    {
-        if (!_playerHands.TryGetValue(playerNetId, out var state)) return;
+    /// <summary>
+    /// Called when a player leaves a room (teleport OR disconnect). The
+    /// player's held runtime entities are removed from the room dict and a
+    /// S2C_DestroyItem is broadcast to remaining room members so they stop
+    /// rendering them. DB rows are PRESERVED — the next OnPlayerEnterRoom (or
+    /// reconnect) re-creates the entities in the new room via
+    /// RestoreHandItemsCoroutine. Bridges of the destroyed entityIds are
+    /// cleared (entityIds aren't reused; the new entities get fresh bridges).
+    /// </summary>
+    private void DespawnHeldItemsKeepingDb(uint playerNetId, string roomId) {
         if (!_rooms.TryGetValue(roomId, out var roomItems)) return;
 
-        foreach (var entity in roomItems.Values)
-        {
-            if (entity.HolderNetId != playerNetId) continue;
-
-            Vector3 dropPos = entity.Position;
-            ClearHolderHandState(entity);
-            entity.Position = dropPos;
-
-            BroadcastToRoom(roomId, new S2C_ItemDetachedFromHand
-            {
-                EntityId      = entity.EntityId,
-                WorldPosition = dropPos,
-                WorldRotation = Quaternion.identity
-            });
+        List<int> toDestroy = new List<int>();
+        foreach (var entity in roomItems.Values) {
+            if (entity.HolderNetId == playerNetId) toDestroy.Add(entity.EntityId);
         }
-
+        foreach (int entityId in toDestroy) {
+            roomItems.Remove(entityId);
+            ClearBridge(entityId);
+            BroadcastToRoom(roomId, new S2C_DestroyItem { EntityId = entityId, RoomId = roomId });
+        }
         _playerHands.Remove(playerNetId);
     }
     
@@ -510,6 +588,180 @@ public class ServerItemManager
         if (sentCount > 0) {
             GameLogger.Network.Debug("BroadcastToRoom {RoomId} {MessageType} {RecipientCount}",
                 roomId, typeof(T).Name, sentCount);
+        }
+    }
+
+    // ── DB persistence (fire-and-forget coroutines hosted by ApiManager) ─────
+
+    private void PersistPickupAsync(NetworkConnectionToClient conn, int entityId, int itemConfigId, HandType hand) {
+        if (conn?.identity == null || ApiManager.Instance == null) return;
+        PlayerInventory inv = conn.identity.GetComponent<PlayerInventory>();
+        if (inv == null || !inv.PlacesReady) {
+            Debug.LogWarning($"[ServerItemManager] PersistPickup skipped — PlayerInventory not ready (entity={entityId})");
+            return;
+        }
+        PlayerController player = conn.identity.GetComponent<PlayerController>();
+        string charId = player?.CharacterData?.Id;
+        if (string.IsNullOrEmpty(charId)) {
+            Debug.LogWarning($"[ServerItemManager] PersistPickup skipped — character id missing (entity={entityId})");
+            return;
+        }
+        string handPlaceId = inv.HandPlaceFor(hand);
+        if (string.IsNullOrEmpty(handPlaceId)) return;
+
+        ApiManager.Instance.StartCoroutine(UpsertItemCoroutine(entityId, itemConfigId, handPlaceId, charId));
+    }
+
+    private IEnumerator UpsertItemCoroutine(int entityId, int itemConfigId, string handPlaceId, string charId) {
+        UpsertItemBody body = new UpsertItemBody {
+            placeId  = handPlaceId,
+            configId = itemConfigId,
+            quantity = 1,
+            ownedBy  = charId,
+        };
+        UnityWebRequest req = ApiManager.Instance.UpsertItemRequest(body);
+        yield return req.SendWebRequest();
+
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] Upsert item failed code={req.responseCode} body={req.downloadHandler?.text}");
+            yield break;
+        }
+
+        try {
+            ItemJson item = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
+            if (item != null && !string.IsNullOrEmpty(item.Id)) {
+                AssociateUuid(entityId, item.Id, item.version, handPlaceId);
+            }
+        } catch (System.Exception e) {
+            Debug.LogWarning($"[ServerItemManager] Upsert response parse error: {e.Message}");
+        }
+    }
+
+    private void PersistDropAsync(int entityId) {
+        if (ApiManager.Instance == null) return;
+        ItemDbBridge bridge = GetBridge(entityId);
+        if (bridge == null) return;     // ephemeral item, nothing to delete
+        ApiManager.Instance.StartCoroutine(DeleteItemCoroutine(entityId, bridge.Uuid));
+    }
+
+    private IEnumerator DeleteItemCoroutine(int entityId, string itemUuid) {
+        UnityWebRequest req = ApiManager.Instance.DeleteItemRequest(itemUuid);
+        yield return req.SendWebRequest();
+
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] Delete item {itemUuid} failed code={req.responseCode} body={req.downloadHandler?.text}");
+            // Keep the bridge so a retry could be attempted later — though we have no retry path today.
+            yield break;
+        }
+
+        ClearBridge(entityId);
+    }
+
+    private void PersistMoveToHandAsync(int entityId, string newHandPlaceId) {
+        if (ApiManager.Instance == null) return;
+        ItemDbBridge bridge = GetBridge(entityId);
+        if (bridge == null || bridge.PlaceId == newHandPlaceId) return;
+        ApiManager.Instance.StartCoroutine(MoveItemCoroutine(entityId, bridge, newHandPlaceId));
+    }
+
+    private IEnumerator MoveItemCoroutine(int entityId, ItemDbBridge bridge, string newPlaceId) {
+        UpdateItemBody body = new UpdateItemBody {
+            expectedVersion = bridge.Version,
+            placeId         = newPlaceId,
+        };
+        UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(bridge.Uuid, body);
+        yield return req.SendWebRequest();
+
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] Move item {bridge.Uuid} → {newPlaceId} failed code={req.responseCode} body={req.downloadHandler?.text}");
+            yield break;
+        }
+
+        try {
+            ItemJson item = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
+            if (item != null) UpdateBridgePlace(entityId, newPlaceId, item.version);
+        } catch (System.Exception e) {
+            Debug.LogWarning($"[ServerItemManager] Move item response parse error: {e.Message}");
+        }
+    }
+
+    /// <summary>
+    /// On first room entry after connect, fetch the player's hand_left and
+    /// hand_right place state and re-create runtime entities for each item
+    /// found, attached to the corresponding hand. Items dropped on map during
+    /// previous session are NOT restored (they were ephemeral).
+    /// </summary>
+    private IEnumerator RestoreHandItemsCoroutine(NetworkConnectionToClient conn, string roomId, PlayerInventory inv) {
+        if (conn?.identity == null) yield break;
+        uint playerNetId = conn.identity.netId;
+
+        yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandLeftPlaceId,  HandType.Left);
+        yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandRightPlaceId, HandType.Right);
+    }
+
+    private IEnumerator RestoreOneHand(NetworkConnectionToClient conn, string roomId, uint playerNetId, string handPlaceId, HandType hand) {
+        if (string.IsNullOrEmpty(handPlaceId)) yield break;
+
+        UnityWebRequest req = ApiManager.Instance.GetPlaceStateRequest(handPlaceId);
+        yield return req.SendWebRequest();
+
+        if (req.responseCode != 200) {
+            Debug.LogWarning($"[ServerItemManager] RestoreHand({hand}) GET /places/{handPlaceId}/state failed code={req.responseCode}");
+            yield break;
+        }
+
+        PlaceStateJson state;
+        try {
+            state = JsonConvert.DeserializeObject<PlaceStateJson>(req.downloadHandler.text);
+        } catch (System.Exception e) {
+            Debug.LogWarning($"[ServerItemManager] RestoreHand({hand}) parse error: {e.Message}");
+            yield break;
+        }
+
+        if (state?.items == null) yield break;
+
+        foreach (ItemJson it in state.items) {
+            // Re-create the runtime entity attached to the player in the current room.
+            int entityId = _nextEntityId++;
+            var entity = new ItemEntity {
+                EntityId      = entityId,
+                RoomId        = roomId,
+                ItemConfigId  = it.configId,
+                Position      = conn.identity.transform.position,
+                Rotation      = Quaternion.identity,
+                HolderNetId   = playerNetId,
+                HolderHand    = hand,
+                LocalPosition = Vector3.zero,
+                LocalRotation = Quaternion.identity,
+            };
+
+            if (!_rooms.TryGetValue(roomId, out var roomItems)) {
+                roomItems = new Dictionary<int, ItemEntity>();
+                _rooms[roomId] = roomItems;
+            }
+            roomItems[entityId] = entity;
+
+            var handState = GetOrCreateHandState(playerNetId);
+            handState.Set(hand, entityId);
+            _playerHands[playerNetId] = handState;
+
+            AssociateUuid(entityId, it.Id, it.version, handPlaceId);
+
+            BroadcastToRoom(roomId, new S2C_SpawnItem {
+                EntityId      = entityId,
+                RoomId        = roomId,
+                ItemConfigId  = it.configId,
+                Position      = entity.Position,
+                Rotation      = entity.Rotation,
+                IsHeld        = true,
+                HolderNetId   = playerNetId,
+                HolderHand    = hand,
+                LocalPosition = Vector3.zero,
+                LocalRotation = Quaternion.identity,
+            });
+
+            GameLogger.Network.Info("Item Restore entity={EntityId} configId={ItemConfigId} player={PlayerNetId} hand={Hand}",
+                entityId, it.configId, playerNetId, hand);
         }
     }
 }
