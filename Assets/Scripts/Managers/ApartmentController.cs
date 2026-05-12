@@ -519,6 +519,9 @@ namespace Sim {
                 DoorState current = DoorState.Deserialize(state.Payload);
                 current.LockState = (DoorLockState)savedDoor.lockState;
                 current.IsOpen    = savedDoor.isOpen;
+                // A locked door must visually be closed at load — sanitize stale saves
+                // where the player locked while the door was still ajar.
+                if (current.LockState == DoorLockState.LOCKED) current.IsOpen = false;
                 ServerPropManager.Instance.UpdatePropState(this.RoomId, matchedPropId, current.Serialize());
 
                 if (matchedPropId == this.frontDoorPropId) frontDoorRestored = true;
@@ -693,7 +696,7 @@ namespace Sim {
 
         [Server]
         private void SpawnInnerDoorsFromPreset() {
-            if (this.currentConfiguration?.doorSpawners == null) return;
+            if (this.currentConfiguration.doorSpawners == null) return;
             if (this.simpleDoorPrefabConfig == null) return;
 
             foreach (var spawner in this.currentConfiguration.doorSpawners) {
@@ -758,6 +761,9 @@ namespace Sim {
                 ds.LockState = (DoorLockState) lockInt;
             if (p.stateData.TryGetValue("isOpen", out object io) && bool.TryParse(io?.ToString(), out bool isOpen))
                 ds.IsOpen = isOpen;
+            // A locked door must visually be closed at load — sanitize stale saves
+            // where the player locked while the door was still ajar.
+            if (ds.LockState == DoorLockState.LOCKED) ds.IsOpen = false;
             ServerPropManager.Instance.UpdatePropState(this.RoomId, this.frontDoorPropId, ds.Serialize());
             ServerPropManager.Instance.AssociateUuid(this.frontDoorPropId, p.Id, p.version);
             this._frontDoorRestoredFromSave = true;

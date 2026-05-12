@@ -51,6 +51,11 @@ public static class PropInteractionRouter {
 
             ServerPropManager.Instance.UpdatePropState(msg.RoomId, msg.PropId, updatedPayload);
 
+            // Phase 2 — relational sync. The runtime header just flipped to IsBuilt=true;
+            // persist the same flag on the props row so the next load doesn't show the
+            // prop as still-to-be-built.
+            PropInteractionDispatcher.Instance?.SyncPropBuilt(msg.PropId, true);
+
             // Trigger apartment save server-side (find apartment that owns this prop)
             ApartmentController apt = ServerApartmentRegistry.Instance.FindOwnerOfProp(msg.PropId);
             if (apt != null) apt.StartCoroutine(apt.Save());

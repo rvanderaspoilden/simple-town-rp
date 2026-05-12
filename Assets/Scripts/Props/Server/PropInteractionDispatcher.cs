@@ -335,6 +335,20 @@ public class PropInteractionDispatcher : MonoBehaviour {
         }));
     }
 
+    /// <summary>
+    /// PATCH the prop's `is_built` flag. Called when a player completes a build
+    /// interaction on a prop that had `mustBeBuilt = true` and was placed in
+    /// "unbuilt" state at unpackage time.
+    /// </summary>
+    public void SyncPropBuilt(int propId, bool isBuilt) {
+        ServerPropManager.PropDbBridge bridge = ServerPropManager.Instance.GetBridge(propId);
+        if (bridge == null) return;
+        StartCoroutine(PatchPropCoroutine(propId, bridge, new UpdatePropBody {
+            expectedVersion = bridge.Version,
+            isBuilt         = isBuilt,
+        }));
+    }
+
     public void SyncPropRemove(int propId) {
         ServerPropManager.PropDbBridge bridge = ServerPropManager.Instance.GetBridge(propId);
         if (bridge == null) return;
