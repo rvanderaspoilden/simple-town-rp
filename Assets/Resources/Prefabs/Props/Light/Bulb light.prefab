@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1420280232054623751}
   - component: {fileID: 4957389652683845158}
   - component: {fileID: 6420978478694456040}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Bulb
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 2352109056675780090}
   - component: {fileID: 2352109056675780093}
   - component: {fileID: 1449397831767230975}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Point Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -231,7 +231,7 @@ GameObject:
   - component: {fileID: -1821955292877146062}
   - component: {fileID: -5016174307326259371}
   - component: {fileID: 1664479795526674156}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Bulb light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -275,8 +275,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.09176254, y: 0.08514929, z: 0.088265896}
-  m_Center: {x: -0.000395298, y: -0.042562723, z: -0.00019156933}
+  m_Size: {x: 0.13305664, y: 0.092004776, z: 0.14286208}
+  m_Center: {x: 0, y: -0.03131485, z: 0}
 --- !u!114 &3199024030437757869
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -349,7 +349,7 @@ GameObject:
   - component: {fileID: 3179906906919784986}
   - component: {fileID: 5229429431929181652}
   - component: {fileID: 5668576632068334450}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Socle
   m_TagString: Untagged
   m_Icon: {fileID: 0}

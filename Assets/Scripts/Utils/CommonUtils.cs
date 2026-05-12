@@ -96,13 +96,29 @@ namespace Sim.Utils {
                 return false;
             }
 
-            Vector3 dir = originPoint - player.GetHeadTargetForCamera().position;
-            RaycastHit hit;
-            
-            if (Physics.Raycast(player.GetHeadTargetForCamera().position, dir, out hit)) {
-                return interactable.Equals(hit.collider.GetComponentInParent<IInteractable>());
-            }
+            // Line-of-sight: ensure no solid geometry sits between the player's head
+            // and the prop's hit surface. RaycastAll (trigger-ignoring) — the
+            // interactable is reachable iff it appears in the ordered hit list
+            // before any non-interactable collider does. This correctly handles
+            // roof/wall-mounted props (a single Physics.Raycast can otherwise
+            // pick up scenery colliders near the prop and return them instead
+            // of the prop itself).
+            Vector3 head = player.GetHeadTargetForCamera().position;
+            Vector3 dir  = originPoint - head;
+            float   dist = dir.magnitude;
+            if (dist <= 0.001f) return true;
 
+            RaycastHit[] hits = Physics.RaycastAll(head, dir.normalized, dist + 0.1f, ~0, QueryTriggerInteraction.Ignore);
+            if (hits.Length == 0) return true;     // nothing in the way → fine
+
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (RaycastHit h in hits) {
+                if (h.collider.transform.IsChildOf(player.transform)) continue; // ignore the player's own colliders
+                IInteractable hitInteractable = h.collider.GetComponentInParent<IInteractable>();
+                if (interactable.Equals(hitInteractable)) return true;          // reached the prop
+                if (hitInteractable == null) return false;                       // solid scenery blocks LoS
+                // Otherwise it's a different interactable in the way — keep looking
+            }
             return false;
         }
 
