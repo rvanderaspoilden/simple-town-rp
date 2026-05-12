@@ -2,9 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
+using Newtonsoft.Json;
 using Sim;
 using Sim.Building;
 using Sim.Entities;
+using Sim.Entities.Persistence;
 using Sim.Logging;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -249,6 +251,12 @@ public class SimpleTownNetwork : NetworkManager
         }
 
         StartCoroutine(this.RetrieveCityData());
+
+        // Phase 1: cache the UUID of the system "transit" place so the buy flow
+        // can POST /props with placeId = TransitPlaceId. Idempotent — runs once
+        // per server boot.
+        StartCoroutine(Sim.ApiManager.Instance.EnsureTransitPlace());
+
         GameLogger.Network.Info("ServerStarted {Active}", NetworkServer.active);
     }
 
@@ -385,6 +393,15 @@ public class SimpleTownNetwork : NetworkManager
         GameLogger.Network.Debug("CreateDeliveryStart {ConnectionId} {RecipientId}", conn.connectionId,
             request.recipientId);
 
+        // Phase 1: materialize the bought prop in DB at buy time. The prop sits in
+        // the system "transit" place until the recipient consumes its delivery and
+        // builds it into their apartment. The returned UUID is stored on the
+        // delivery row so the build flow can PATCH the existing prop instead of
+        // spawning a new one.
+        string propId = null;
+        yield return CreatePropInTransit(request, id => propId = id);
+        request.propId = propId;                                // safe: clients can't tamper, propId is set server-side here
+
         UnityWebRequest req = ApiManager.Instance.CreateDeliveryRequest(request);
         yield return req.SendWebRequest();
 
@@ -407,6 +424,60 @@ public class SimpleTownNetwork : NetworkManager
             apt.DeliveryBoxPropId > 0)
             PropInteractionDispatcher.Instance?.RefreshDeliveryBoxCount(apt.DeliveryBoxPropId, apt.RoomId,
                 request.recipientId);
+    }
+
+    /// <summary>
+    /// Phase 1 — materialize the prop in the new persistence model at the moment
+    /// of buy. The prop ends up in the system "transit" place with a fresh UUID,
+    /// owned by the recipient. Position is null until the prop is built into an
+    /// apartment (a future PATCH on this UUID).
+    /// </summary>
+    /// <param name="onCreated">Invoked with the new prop UUID on success; not called on failure.</param>
+    private IEnumerator CreatePropInTransit(CreateDeliveryRequest request, System.Action<string> onCreated)
+    {
+        string transitId = ApiManager.Instance.TransitPlaceId;
+        if (string.IsNullOrEmpty(transitId)) {
+            GameLogger.Network.Warning("CreatePropInTransitSkipped: transit place not ready yet");
+            yield break;
+        }
+
+        CreatePropBody body = new CreatePropBody {
+            placeId     = transitId,
+            configId    = request.propsConfigId,
+            ownedBy     = request.recipientId,
+            builtBy     = request.recipientId,
+            presetIndex = request.propsPresetId,
+            position    = null,                              // in transit → no physical placement
+            rotation    = null,
+            // isBuilt is left to the backend default (true); the build-mode flow
+            // will adjust it via PATCH at placement time for "toBuild" prop configs.
+        };
+
+        // Cover deliveries (paint buckets) carry their paint config + color — bake
+        // those into state_data so the bucket prop is fully specified at buy.
+        if (request.type == DeliveryType.COVER) {
+            body.stateData = new Dictionary<string, object> {
+                { "kind",          "bucket" },
+                { "paintConfigId", request.paintConfigId },
+                { "color",         request.color ?? new float[] { 1, 1, 1, 1 } }
+            };
+        }
+
+        UnityWebRequest req = ApiManager.Instance.CreatePropRequest(body);
+        yield return req.SendWebRequest();
+
+        if (req.responseCode != 200 && req.responseCode != 201) {
+            GameLogger.Network.Warning("CreatePropInTransitFailed {ResponseCode} {Body}",
+                req.responseCode, req.downloadHandler.text);
+            yield break;
+        }
+
+        PropJson prop = JsonConvert.DeserializeObject<PropJson>(req.downloadHandler.text);
+        if (prop != null && !string.IsNullOrEmpty(prop.Id)) {
+            onCreated?.Invoke(prop.Id);
+            GameLogger.Network.Info("CreatedPropInTransit {PropId} {ConfigId} {Recipient}",
+                prop.Id, request.propsConfigId, request.recipientId);
+        }
     }
 
     [ClientCallback]

@@ -32,7 +32,8 @@
       "Bash(grep -A 12 \"&8790402999747395076$\" Assets/Scenes/City.unity)",
       "Bash(grep -A 16 \"&8790402999747395076$\" Assets/Scenes/City.unity)",
       "Bash(npx tsc *)",
-      "Bash(npx --prefix \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-ws\" tsc -p \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-ws\\\\tsconfig.json\" --noEmit)"
+      "Bash(npx --prefix \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-ws\" tsc -p \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-ws\\\\tsconfig.json\" --noEmit)",
+      "Bash(grep -n \"^    }$\\\\|^}$\" \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-rp\\\\Assets\\\\Scripts\\\\Managers\\\\ApiManager.cs\")"
     ]
   },
   "enableAllProjectMcpServers": true,

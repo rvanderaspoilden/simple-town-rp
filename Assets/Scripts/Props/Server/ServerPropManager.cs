@@ -25,6 +25,18 @@ public class ServerPropManager {
     // Runtime-spawned GameObjects (server-side instances). Scene props are not tracked here.
     private readonly Dictionary<int, GameObject> _spawnedGOs = new Dictionary<int, GameObject>();
 
+    // Bridge runtime int propId → persistent UUID + last-known version in the
+    // new `props` table. Set by callers (build flow, place state load) right
+    // after SpawnProp. Lets later runtime events (move, lock, paint, …) PATCH
+    // the correct DB row without needing to plumb the UUID through every state
+    // update. Version is required by the backend's optimistic locking; we keep
+    // it current after each successful PATCH.
+    public class PropDbBridge {
+        public string Uuid;
+        public int    Version;
+    }
+    private readonly Dictionary<int, PropDbBridge> _propBridges = new Dictionary<int, PropDbBridge>();
+
     private readonly Dictionary<string, byte[]> _roomStates = new Dictionary<string, byte[]>();
 
     // Per-apartment state, grouped by room id. Each apartment in a hall room stores its
@@ -45,8 +57,43 @@ public class ServerPropManager {
         _spawnedGOs.Clear();
         _rooms.Clear();
         _roomStates.Clear();
+        _propBridges.Clear();
         _nextAutoId = 10000;
         GameLogger.Network.Info("ServerPropManagerReset {DestroyedProps}", spawnedCount);
+    }
+
+    // ── int propId ↔ persistent UUID bridge ───────────────────────────────────
+
+    /// <summary>Associate a runtime int propId with its UUID + initial version.</summary>
+    public void AssociateUuid(int propId, string propUuid, int version = 1) {
+        if (propId <= 0 || string.IsNullOrEmpty(propUuid)) return;
+        _propBridges[propId] = new PropDbBridge { Uuid = propUuid, Version = version };
+    }
+
+    /// <summary>Returns the persistent UUID for a runtime propId, or null if not bridged.</summary>
+    public string GetUuid(int propId) =>
+        _propBridges.TryGetValue(propId, out PropDbBridge b) ? b.Uuid : null;
+
+    /// <summary>Returns the full bridge (UUID + version), or null if not bridged.</summary>
+    public PropDbBridge GetBridge(int propId) =>
+        _propBridges.TryGetValue(propId, out PropDbBridge b) ? b : null;
+
+    /// <summary>Bumps the cached version after a successful PATCH /props/:id.</summary>
+    public void UpdateVersion(int propId, int newVersion) {
+        if (_propBridges.TryGetValue(propId, out PropDbBridge b)) b.Version = newVersion;
+    }
+
+    /// <summary>Drops the bridge for a prop (called after DELETE /props/:id).</summary>
+    public void ClearBridge(int propId) =>
+        _propBridges.Remove(propId);
+
+    /// <summary>Reverse lookup: int propId for a given UUID, or -1 if not bridged.</summary>
+    public int FindPropIdByUuid(string uuid) {
+        if (string.IsNullOrEmpty(uuid)) return -1;
+        foreach (var kv in _propBridges) {
+            if (kv.Value != null && kv.Value.Uuid == uuid) return kv.Key;
+        }
+        return -1;
     }
 
     // ── Scene props ───────────────────────────────────────────────────────────
@@ -98,13 +145,21 @@ public class ServerPropManager {
     /// type-specific body (seat slots, delivery count, ...) while the build flow controls
     /// the build/preset state.
     /// </summary>
+    /// <summary>
+    /// Optional persistent UUID + version to bridge with the new `props` table.
+    /// Provide these when loading from /places/:id/state — the resulting runtime
+    /// int propId is auto-associated with the UUID, so subsequent state changes
+    /// PATCH the right DB row without callers having to track the mapping.
+    /// </summary>
     public int SpawnProp(
         string             roomId,
         int                prefabId,
         Vector3            position,
         Quaternion         rotation,
         byte[]             initialPayloadOverride = null,
-        PropStateHeader?   headerOverride         = null
+        PropStateHeader?   headerOverride         = null,
+        string             propUuid               = null,
+        int                propVersion            = 1
     ) {
         if (!NetworkServer.active) {
             GameLogger.Network.Warning("SpawnPropNotServer {PrefabId} {RoomId}", prefabId, roomId);
@@ -157,6 +212,12 @@ public class ServerPropManager {
 
         RegisterInternal(roomId, propId, prefabId, position, rotation, type, payload, isScene: false);
         _spawnedGOs[propId] = instance;
+
+        // Auto-bridge with the persistent UUID when the caller knows it (loading
+        // from /places/:id/state, or after a POST /props at buy/build).
+        if (!string.IsNullOrEmpty(propUuid)) {
+            AssociateUuid(propId, propUuid, propVersion);
+        }
 
         BroadcastToRoom(roomId, BuildSpawnMessage(roomId, propId, prefabId, position, rotation, type, payload));
 

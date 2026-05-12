@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using Sim.Entities;
+using Sim.Entities.Persistence;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -56,6 +58,17 @@ namespace Sim {
 
 
         public static ApiManager Instance;
+
+        // Cached UUID of the system "transit" place (where bought-but-not-yet-built
+        // props sit while they're in delivery). Populated by EnsureTransitPlace() at
+        // server boot and stable for the lifetime of the process.
+        private string _transitPlaceId;
+        public string TransitPlaceId => _transitPlaceId;
+
+        private static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings {
+            NullValueHandling   = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Include,
+        };
 
         private void Awake() {
             if (Instance == null) {
@@ -204,7 +217,12 @@ namespace Sim {
         }
 
         public UnityWebRequest DeleteDeliveryRequest(Delivery delivery) {
+            // UnityWebRequest.Delete() ships without a downloadHandler, but the
+            // backend echoes the deleted Delivery row (we need its prop_id for
+            // the buy→build UUID bridge). Attach a buffer so callers can read
+            // `downloadHandler.text` without NRE-ing.
             UnityWebRequest request = UnityWebRequest.Delete($"{this.uri}/deliveries/{delivery._id}");
+            request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
             return request;
         }
@@ -342,6 +360,82 @@ namespace Sim {
         public static string ExtractErrorMessage(UnityWebRequest request) {
             HttpException exception = JsonUtility.FromJson<HttpException>(request.downloadHandler.text);
             return exception != null ? exception?.Message : request.error;
+        }
+
+        // ── /places, /props, /covers (Phase 1) ──────────────────────────────
+        //
+        // These build pre-configured UnityWebRequest objects — caller is
+        // responsible for `yield return request.SendWebRequest()` and inspecting
+        // request.responseCode / request.downloadHandler.text. Bodies use
+        // Newtonsoft.Json so nullable fields / dictionaries serialize correctly
+        // (JsonUtility can't handle either).
+
+        private UnityWebRequest BuildJsonRequest(string url, string method, object body) {
+            UnityWebRequest request = new UnityWebRequest(url, method) {
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+            if (body != null) {
+                byte[] payload = new UTF8Encoding().GetBytes(JsonConvert.SerializeObject(body, JsonSettings));
+                request.uploadHandler = new UploadHandlerRaw(payload);
+            }
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+            request.SetRequestHeader("Content-type", "application/json");
+            request.SetRequestHeader("Accept", "application/json");
+            return request;
+        }
+
+        public UnityWebRequest CreatePlaceRequest(CreatePlaceBody body) =>
+            BuildJsonRequest($"{this.uri}/places", "POST", body);
+
+        public UnityWebRequest GetPlaceStateRequest(string placeId) =>
+            BuildJsonRequest($"{this.uri}/places/{placeId}/state", "GET", null);
+
+        public UnityWebRequest CreatePropRequest(CreatePropBody body) =>
+            BuildJsonRequest($"{this.uri}/props", "POST", body);
+
+        public UnityWebRequest UpdatePropRequest(string propId, UpdatePropBody body) =>
+            BuildJsonRequest($"{this.uri}/props/{propId}", "PATCH", body);
+
+        public UnityWebRequest DeletePropRequest(string propId) =>
+            BuildJsonRequest($"{this.uri}/props/{propId}", "DELETE", null);
+
+        public UnityWebRequest ListPropsRequest(string placeId, string ownedBy) {
+            string qs = "?";
+            if (!string.IsNullOrEmpty(placeId)) qs += $"placeId={UnityWebRequest.EscapeURL(placeId)}&";
+            if (!string.IsNullOrEmpty(ownedBy)) qs += $"ownedBy={UnityWebRequest.EscapeURL(ownedBy)}";
+            return BuildJsonRequest($"{this.uri}/props{qs.TrimEnd('&', '?')}", "GET", null);
+        }
+
+        /// <summary>Bulk upsert covers for a place. Body shape: { covers: CoverInputDto[] }.</summary>
+        public UnityWebRequest UpsertCoversRequest(string placeId, object body) =>
+            BuildJsonRequest($"{this.uri}/places/{placeId}/covers", "PUT", body);
+
+        /// <summary>
+        /// One-shot at server boot: ensures the singleton "transit" place exists
+        /// and caches its UUID on TransitPlaceId. Subsequent buys POST props with
+        /// placeId = TransitPlaceId.
+        /// </summary>
+        public IEnumerator EnsureTransitPlace() {
+            CreatePlaceBody body = new CreatePlaceBody {
+                placeKey = "transit",
+                type     = "transit",
+                ownerId  = "SIMPLE_TOWN"
+            };
+            UnityWebRequest request = CreatePlaceRequest(body);
+            yield return request.SendWebRequest();
+
+            if (request.responseCode != 200 && request.responseCode != 201) {
+                Debug.LogError($"[ApiManager] EnsureTransitPlace failed code={request.responseCode} body={request.downloadHandler.text}");
+                yield break;
+            }
+
+            PlaceJson place = JsonConvert.DeserializeObject<PlaceJson>(request.downloadHandler.text);
+            if (place == null || string.IsNullOrEmpty(place.Id)) {
+                Debug.LogError($"[ApiManager] EnsureTransitPlace returned invalid payload: {request.downloadHandler.text}");
+                yield break;
+            }
+            this._transitPlaceId = place.Id;
+            Debug.Log($"[ApiManager] Transit place ready id={place.Id}");
         }
     }
 }
