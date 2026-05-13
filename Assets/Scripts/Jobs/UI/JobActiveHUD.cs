@@ -1,3 +1,4 @@
+using Sim;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,13 +23,20 @@ namespace Sim.Jobs {
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text stepText;
         [SerializeField] private TMP_Text targetText;
+        [SerializeField] private TMP_Text distanceText;
 
         [Header("Buttons")]
         [SerializeField] private Button acceptButton;
         [SerializeField] private Button abandonButton;
 
+        [Header("Refresh")]
+        [Tooltip("Intervalle de recalcul de la distance NavMesh (secondes).")]
+        [SerializeField] private float distanceRefreshInterval = 0.25f;
+
         private string _currentInstanceId;
+        private string _currentTargetId;
         private bool _subscribed;
+        private float _nextDistanceUpdate;
 
         private void Awake() {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -71,18 +79,21 @@ namespace Sim.Jobs {
 
         private void OnJobOffered(JobClientState state) {
             _currentInstanceId = state.InstanceId;
+            _currentTargetId = state.CurrentTargetId;
             Render(state);
             Show(true);
         }
 
         private void OnJobStepAdvanced(JobClientState state) {
             if (state.InstanceId != _currentInstanceId) return;
+            _currentTargetId = state.CurrentTargetId;
             Render(state);
         }
 
         private void OnJobFinished(JobClientState state) {
             if (state.InstanceId != _currentInstanceId) return;
             _currentInstanceId = null;
+            _currentTargetId = null;
             Show(false);
         }
 
@@ -112,6 +123,28 @@ namespace Sim.Jobs {
 
         private void Show(bool visible) {
             if (root != null) root.SetActive(visible);
+        }
+
+        private void Update() {
+            if (distanceText == null) return;
+            if (root != null && !root.activeSelf) return;
+            if (Time.unscaledTime < _nextDistanceUpdate) return;
+            _nextDistanceUpdate = Time.unscaledTime + distanceRefreshInterval;
+            RefreshDistance();
+        }
+
+        private void RefreshDistance() {
+            if (distanceText == null) return;
+            if (string.IsNullOrEmpty(_currentTargetId) || PlayerController.Local == null) {
+                distanceText.text = string.Empty;
+                return;
+            }
+            if (!JobPoint.ByPointId.TryGetValue(_currentTargetId, out var point) || point == null) {
+                distanceText.text = string.Empty;
+                return;
+            }
+            float d = JobDistanceUtil.Compute(PlayerController.Local.transform.position, point.transform.position);
+            distanceText.text = JobDistanceUtil.FormatMeters(d);
         }
 
         private void OnAcceptClicked() {

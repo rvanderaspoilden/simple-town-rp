@@ -176,7 +176,7 @@ public class ServerItemManager
             LocalRotation = Quaternion.identity
         });
 
-        PersistPickupAsync(conn, entityId, itemConfigId, hand.Value);
+        if (entity.Persistent) PersistPickupAsync(conn, entityId, itemConfigId, hand.Value);
 
         return entityId;
     }
@@ -231,6 +231,10 @@ public class ServerItemManager
     {
         if (!TryGetEntity(roomId, entityId, out var entity)) return;
 
+        // Supprime la ligne DB si elle existe (no-op pour les items éphémères).
+        // Sans ça, un item consommé/admin-destroyed survivait au reconnect.
+        PersistDropAsync(entityId);
+
         if (entity.IsHeld)
             ClearHolderHandState(entity);
 
@@ -266,6 +270,12 @@ public class ServerItemManager
         if (entity.IsHeld)
         {
             conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Already held" });
+            return;
+        }
+
+        if (entity.AuthorizedNetId != 0 && entity.AuthorizedNetId != playerNetId)
+        {
+            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Not yours" });
             return;
         }
 
@@ -310,7 +320,7 @@ public class ServerItemManager
             LocalRotation = entity.LocalRotation
         });
 
-        PersistPickupAsync(conn, msg.EntityId, entity.ItemConfigId, assignedHand.Value);
+        if (entity.Persistent) PersistPickupAsync(conn, msg.EntityId, entity.ItemConfigId, assignedHand.Value);
     }
 
     public void HandleDrop(NetworkConnectionToClient conn, C2S_RequestDropItem msg)
@@ -361,7 +371,7 @@ public class ServerItemManager
         // DB: delete the persisted row — the item becomes an ephemeral world item
         // (no DB tracking). Fire-and-forget; the drop succeeds visually even if
         // the DELETE fails (orphan row in DB, to be cleaned later).
-        PersistDropAsync(entityId);
+        if (entity.Persistent) PersistDropAsync(entityId);
 
         conn.Send(new S2C_DropResult { Success = true, Hand = msg.Hand });
 
@@ -520,6 +530,27 @@ public class ServerItemManager
         return entity;
     }
 
+    /// <summary>
+    /// Restreint le pickup à un seul joueur. 0 = aucune restriction (défaut).
+    /// Utilisé par le système Jobs pour éviter le vol de colis mission.
+    /// </summary>
+    public void SetAuthorizedHolder(string roomId, int entityId, uint netId)
+    {
+        if (TryGetEntity(roomId, entityId, out var entity))
+            entity.AuthorizedNetId = netId;
+    }
+
+    /// <summary>
+    /// Active/désactive la persistance DB pour cet item. Si false, le pickup
+    /// et le drop ne touchent pas l'API REST → l'item disparaît au disconnect
+    /// (pas restauré au reconnect). Pour les items mission éphémères.
+    /// </summary>
+    public void SetPersistent(string roomId, int entityId, bool persistent)
+    {
+        if (TryGetEntity(roomId, entityId, out var entity))
+            entity.Persistent = persistent;
+    }
+
     private bool TryGetEntity(string roomId, int entityId, out ItemEntity entity)
     {
         entity = null;
@@ -541,6 +572,19 @@ public class ServerItemManager
             return (state.RightEntityId == -1 && state.LeftEntityId == -1) ? HandType.Right : (HandType?)null;
 
         return state.GetFreeHand();
+    }
+
+    /// <summary>
+    /// Vérifie si le joueur peut accueillir l'item dans une main.
+    /// - ONE_HAND : au moins une main libre.
+    /// - TWO_HAND : les DEUX mains doivent être libres.
+    /// Utilisé par le flow d'achat avant de débiter le joueur.
+    /// </summary>
+    public bool CanFitInHand(uint playerNetId, ItemConfig config)
+    {
+        if (config == null) return false;
+        var state = GetOrCreateHandState(playerNetId);
+        return ResolveHand(config, state).HasValue;
     }
 
     private void ClearHolderHandState(ItemEntity entity)

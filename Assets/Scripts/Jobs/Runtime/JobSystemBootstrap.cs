@@ -20,6 +20,7 @@ namespace Sim.Jobs {
             JobServerManager.Instance.Subscribe();
             JobBoardServer.Instance.Subscribe();
             RewardSystem.Subscribe();
+            JobItemCleanup.Subscribe();
 
             NetworkServer.RegisterHandler<JobAcceptedMessage>(OnAcceptedFromClient);
             NetworkServer.RegisterHandler<JobAbandonRequestMessage>(OnAbandonFromClient);
@@ -48,6 +49,7 @@ namespace Sim.Jobs {
                 _tickerGO = null;
             }
 
+            JobItemCleanup.Unsubscribe();
             RewardSystem.Unsubscribe();
             JobBoardServer.Instance.Reset();
             JobServerManager.Instance.Reset();

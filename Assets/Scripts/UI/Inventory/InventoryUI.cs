@@ -73,8 +73,10 @@ public class InventoryUI : MonoBehaviour
             if (currentActionMenu == leftHandActionMenu) CloseCurrentActionMenu();
             else DisplayLeftActionMenu();
         }
-        else if (draggableItem.ItemSlot == rightHandSlot)
+        else if (draggableItem.ItemSlot == rightHandSlot || draggableItem.ItemSlot == bothHandSlot)
         {
+            // Pour un item TWO_HAND, l'instance est posée en bothHandSlot ;
+            // les actions sont sur RightHandItem dans ce cas.
             if (currentActionMenu == rightHandActionMenu) CloseCurrentActionMenu();
             else DisplayRightActionMenu();
         }
@@ -91,16 +93,22 @@ public class InventoryUI : MonoBehaviour
     public void DisplayLeftActionMenu()
     {
         CloseCurrentActionMenu();
-        if (PlayerController.Local.PlayerHands.LeftHandItem == null) return;
-        leftHandActionMenu.Setup(PlayerController.Local.PlayerHands.LeftHandItem.GetActions().ToList());
+        var item = PlayerController.Local.PlayerHands.LeftHandItem;
+        if (item == null) return;
+        var actions = item.GetActions().ToList();
+        Debug.Log($"[InventoryUI] LeftHand actions count={actions.Count} for config={item.Configuration?.Label}");
+        leftHandActionMenu.Setup(actions);
         currentActionMenu = leftHandActionMenu;
     }
 
     public void DisplayRightActionMenu()
     {
         CloseCurrentActionMenu();
-        if (PlayerController.Local.PlayerHands.RightHandItem == null) return;
-        rightHandActionMenu.Setup(PlayerController.Local.PlayerHands.RightHandItem.GetActions().ToList());
+        var item = PlayerController.Local.PlayerHands.RightHandItem;
+        if (item == null) return;
+        var actions = item.GetActions().ToList();
+        Debug.Log($"[InventoryUI] RightHand actions count={actions.Count} for config={item.Configuration?.Label}");
+        rightHandActionMenu.Setup(actions);
         currentActionMenu = rightHandActionMenu;
     }
 

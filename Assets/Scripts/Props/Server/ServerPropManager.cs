@@ -166,7 +166,7 @@ public class ServerPropManager {
             return -1;
         }
 
-        var propsConfig = Sim.DatabaseManager.PropsDatabase?.GetPropsById(prefabId);
+        var propsConfig = Sim.DatabaseManager.GetPropsById(prefabId);
         if (propsConfig == null) {
             GameLogger.Network.Warning("SpawnPropConfigNotFound {PrefabId} {RoomId}", prefabId, roomId);
             return -1;

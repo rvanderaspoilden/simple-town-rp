@@ -51,9 +51,9 @@ namespace Sim.Entities {
 
         public string DisplayName() {
             if (this.type == DeliveryType.PROPS) {
-                return DatabaseManager.PropsDatabase.GetPropsById(this.propsConfigId).GetDisplayName();
+                return DatabaseManager.GetPropsById(this.propsConfigId).GetDisplayName();
             } else if(this.type == DeliveryType.COVER) {
-                return DatabaseManager.PaintDatabase.GetPaintById(this.paintConfigId).GetDisplayName();
+                return DatabaseManager.GetPaintById(this.paintConfigId).GetDisplayName();
             }
 
             throw new Exception("error.delivery.type-not-found");

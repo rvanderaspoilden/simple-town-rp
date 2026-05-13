@@ -77,6 +77,11 @@ namespace Sim.Jobs {
             var job = JobInstance.CreatePublished(def, context);
             _byInstanceId[job.InstanceId] = job;
             JobEvents.RaiseJobPublished(job);
+
+            var label = JobLabel(def);
+            NetworkServer.SendToAll(new JobNotificationMessage {
+                text = $"Nouvelle mission : {label}"
+            });
             return job;
         }
 
@@ -96,6 +101,9 @@ namespace Sim.Jobs {
             if (!job.Take(netId)) return false;
             AddToOwnerIndex(netId, job);
             SendOffered(job);
+            SendToOwner(netId, new JobNotificationMessage {
+                text = $"Mission prise : {JobLabel(job.Definition)}"
+            });
             return true;
         }
 
@@ -116,6 +124,9 @@ namespace Sim.Jobs {
 
             job.Accept();
             SendOffered(job);
+            SendToOwner(job.OwnerNetId, new JobNotificationMessage {
+                text = $"Mission prise : {JobLabel(job.Definition)}"
+            });
             return true;
         }
 
@@ -124,9 +135,16 @@ namespace Sim.Jobs {
             if (sender == null || sender.identity == null) return false;
             if (sender.identity.netId != job.OwnerNetId) return false;
 
+            var label = JobLabel(job.Definition);
             job.Abandon();
+            SendToOwner(job.OwnerNetId, new JobNotificationMessage {
+                text = $"Mission annulée : {label}"
+            });
             return true;
         }
+
+        private static string JobLabel(JobDefinition def)
+            => string.IsNullOrEmpty(def.DisplayNameKey) ? def.JobId : def.DisplayNameKey;
 
         // Appelé par SimpleTownNetwork quand un joueur se déconnecte (à wirer).
         public void OnPlayerDisconnected(uint netId) {

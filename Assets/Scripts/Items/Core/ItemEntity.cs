@@ -18,5 +18,16 @@ public class ItemEntity
     public Vector3    LocalPosition;
     public Quaternion LocalRotation;
 
+    /// <summary>Si non zéro, seul ce netId peut ramasser l'item (anti-vol mission).</summary>
+    public uint AuthorizedNetId;
+
+    /// <summary>
+    /// Si false, l'item ne sera jamais persisté en DB (ni au pickup ni au drop)
+    /// et donc pas restauré au reconnect. Utilisé par les items mission (colis,
+    /// outils temporaires) qui doivent disparaître si le joueur déconnecte.
+    /// Défaut true pour préserver le comportement existant.
+    /// </summary>
+    public bool Persistent = true;
+
     public bool IsHeld => HolderNetId != 0;
 }

@@ -25,6 +25,8 @@ namespace Sim.Jobs {
         public int ForOwner => forOwner;
         public int ForPlayerTarget => forPlayerTarget;
 
+        public override string GetDisplayString() => forOwner > 0 ? $"+{forOwner} social" : string.Empty;
+
         public override void Apply(JobInstance job) {
             if (job == null) return;
 

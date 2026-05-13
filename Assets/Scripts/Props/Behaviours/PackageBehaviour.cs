@@ -52,7 +52,7 @@ public class PackageBehaviour : PropBehaviourBase
     {
         if (_propsConfigId > 0)
         {
-            return DatabaseManager.PropsDatabase?.GetPropsById(_propsConfigId);
+            return DatabaseManager.GetPropsById(_propsConfigId);
         }
         return propsInside;
     }

@@ -500,6 +500,7 @@ namespace Sim {
         }
 
         public void Die() {
+            if (this.stateMachine == null) return;
             this.stateMachine.SetState(dieState);
         }
 

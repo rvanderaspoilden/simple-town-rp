@@ -272,6 +272,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.RegisterHandler<ShopResponseMessage>(OnShopResponse);
         NetworkClient.RegisterHandler<UpdateCityDataMessage>(OnCityDataUpdatedResponse);
         NetworkClient.RegisterHandler<NotificationMessage>(OnNotificationReceived);
+        NetworkClient.RegisterHandler<ToastNotificationMessage>(OnToastNotificationReceived);
         NetworkClient.RegisterHandler<S2C_HallSpawn>(OnHallSpawn);
         NetworkClient.RegisterHandler<S2C_HallDespawn>(OnHallDespawn);
         NetworkClient.RegisterHandler<S2C_ApartmentSpawn>(OnApartmentSpawn);
@@ -327,6 +328,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.UnregisterHandler<ShopResponseMessage>();
         NetworkClient.UnregisterHandler<UpdateCityDataMessage>();
         NetworkClient.UnregisterHandler<NotificationMessage>();
+        NetworkClient.UnregisterHandler<ToastNotificationMessage>();
         NetworkClient.UnregisterHandler<S2C_HallSpawn>();
         NetworkClient.UnregisterHandler<S2C_HallDespawn>();
         NetworkClient.UnregisterHandler<S2C_ApartmentSpawn>();
@@ -503,6 +505,14 @@ public class SimpleTownNetwork : NetworkManager
                 HUDManager.Instance.InventoryUI.UpdateUI();
                 break;
         }
+    }
+
+    [ClientCallback]
+    private void OnToastNotificationReceived(ToastNotificationMessage message)
+    {
+        if (NotificationManager.Instance == null) return;
+        if (string.IsNullOrEmpty(message.text)) return;
+        NotificationManager.Instance.AddNotification(message.text, message.Type);
     }
 
     [ClientCallback]

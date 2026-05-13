@@ -156,7 +156,7 @@ public class ClientPropManager : MonoBehaviour {
             }
         }
 
-        var propsConfig = Sim.DatabaseManager.PropsDatabase?.GetPropsById(msg.PrefabId);
+        var propsConfig = Sim.DatabaseManager.GetPropsById(msg.PrefabId);
         GameObject prefab = propsConfig?.GetPrefab()?.gameObject;
         if (prefab == null) {
             ClientLogger.NetworkWarning("PropSpawnConfigNotFound {PropId} {PrefabId}", msg.PropId, msg.PrefabId);

@@ -15,6 +15,8 @@ namespace Sim.Jobs {
 
         public int Amount => amount;
 
+        public override string GetDisplayString() => amount > 0 ? $"{amount} €" : string.Empty;
+
         public override void Apply(JobInstance job) {
             if (amount <= 0 || job == null) return;
             if (!NetworkServer.spawned.TryGetValue(job.OwnerNetId, out var identity)) return;
@@ -27,6 +29,14 @@ namespace Sim.Jobs {
             }
 
             bank.GiveMoney(amount);
+
+            var conn = identity.connectionToClient;
+            if (conn != null) {
+                conn.Send(new JobRewardNotificationMessage {
+                    amount = amount,
+                    label = job.Definition.DisplayNameKey ?? job.Definition.JobId
+                });
+            }
         }
     }
 }

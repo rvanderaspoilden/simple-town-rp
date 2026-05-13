@@ -172,7 +172,7 @@ namespace Sim.Building {
             Material[] mats = this.renderer.sharedMaterials;
             if (submesh >= mats.Length) return;
 
-            CoverConfig coverConfig = DatabaseManager.PaintDatabase?.GetPaintById(bucket.PaintConfigId);
+            CoverConfig coverConfig = DatabaseManager.GetPaintById(bucket.PaintConfigId);
             if (coverConfig == null) return;
 
             _hoverPrevMaterial = mats[submesh];
@@ -218,7 +218,7 @@ namespace Sim.Building {
                 }
                 
                 CoverSettings coverSettings = settingsToUse[i];
-                CoverConfig coverConfig = DatabaseManager.PaintDatabase.GetPaintById(coverSettings.paintConfigId);
+                CoverConfig coverConfig = DatabaseManager.GetPaintById(coverSettings.paintConfigId);
                 Material materialToApply = new Material(coverConfig.GetMaterial());
 
                 if (coverConfig.AllowCustomColor()) {

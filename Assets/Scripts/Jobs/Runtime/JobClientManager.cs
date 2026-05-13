@@ -26,6 +26,8 @@ namespace Sim.Jobs {
             NetworkClient.RegisterHandler<JobOfferedMessage>(OnOffered);
             NetworkClient.RegisterHandler<JobStepAdvancedMessage>(OnStepAdvanced);
             NetworkClient.RegisterHandler<JobFinishedMessage>(OnFinished);
+            NetworkClient.RegisterHandler<JobRewardNotificationMessage>(OnRewardNotification);
+            NetworkClient.RegisterHandler<JobNotificationMessage>(OnJobNotification);
             _handlersRegistered = true;
         }
 
@@ -34,7 +36,23 @@ namespace Sim.Jobs {
             NetworkClient.UnregisterHandler<JobOfferedMessage>();
             NetworkClient.UnregisterHandler<JobStepAdvancedMessage>();
             NetworkClient.UnregisterHandler<JobFinishedMessage>();
+            NetworkClient.UnregisterHandler<JobRewardNotificationMessage>();
+            NetworkClient.UnregisterHandler<JobNotificationMessage>();
             _handlersRegistered = false;
+        }
+
+        private void OnJobNotification(JobNotificationMessage msg) {
+            if (NotificationManager.Instance == null) return;
+            if (string.IsNullOrEmpty(msg.text)) return;
+            NotificationManager.Instance.AddNotification(msg.text, NotificationType.JOB);
+        }
+
+        private void OnRewardNotification(JobRewardNotificationMessage msg) {
+            if (NotificationManager.Instance == null) return;
+            var text = string.IsNullOrEmpty(msg.label)
+                ? $"+{msg.amount} €"
+                : $"{msg.label} : +{msg.amount} €";
+            NotificationManager.Instance.AddNotification(text, NotificationType.BANK);
         }
 
         public void ClearAll() {
