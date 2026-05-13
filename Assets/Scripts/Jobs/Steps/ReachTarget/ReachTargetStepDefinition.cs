@@ -12,15 +12,15 @@ namespace Sim.Jobs {
         [Min(0.1f)]
         [SerializeField] private float arrivalRadius = 2f;
 
-        [Tooltip("Quelle cible du JobContext viser : 'primary' (défaut) ou 'secondary'.")]
-        [SerializeField] private string targetKey = "primary";
+        [Tooltip("Slot de cible à viser dans le JobContext.")]
+        [SerializeField] private JobTargetKey targetKey = JobTargetKey.Pickup;
 
         public float ArrivalRadius => arrivalRadius;
-        public string TargetKey => targetKey;
+        public JobTargetKey TargetKey => targetKey;
 
         public override JobStepInstance CreateInstance(JobInstance owner)
             => new ReachTargetStepInstance(owner, this);
 
-        public override string GetActiveTargetKey() => targetKey;
+        public override string GetActiveTargetKey() => targetKey.ToKey();
     }
 }

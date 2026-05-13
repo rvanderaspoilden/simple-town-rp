@@ -35,6 +35,10 @@ namespace Sim.Jobs {
             return _targets.TryGetValue(key, out var t) ? t : null;
         }
 
+        public IJobTarget TargetByKey(JobTargetKey key) => TargetByKey(key.ToKey());
+
+        public void SetTarget(JobTargetKey key, IJobTarget target) => SetTarget(key.ToKey(), target);
+
         public bool HasTarget(string key) => _targets.ContainsKey(key);
         public IEnumerable<KeyValuePair<string, IJobTarget>> Targets => _targets;
 

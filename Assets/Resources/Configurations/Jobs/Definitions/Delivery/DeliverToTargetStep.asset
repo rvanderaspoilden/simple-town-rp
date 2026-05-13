@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8eb14ad517ec6d43b563d29a75074e4, type: 3}
   m_Name: DeliverToTargetStep
   m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.DeliverToTargetStepDefinition
-  promptKey: "Livre \xE0 Toto"
+  promptKey: Donner le colis
   interactionRadius: 1.75
   handoverSeconds: 1.2
-  targetKey: secondary
+  targetKey: 1

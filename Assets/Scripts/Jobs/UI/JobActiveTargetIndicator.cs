@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Sim.Jobs {
     /// <summary>
-    /// Allume/éteint l'indicateur visuel sur le JobDeliveryPoint correspondant
+    /// Allume/éteint l'indicateur visuel sur le JobPoint correspondant
     /// à la cible primaire de la mission active du joueur local. Singleton
     /// scene-scoped — drop ce composant sur un GameObject persistant de la UI.
     /// </summary>
@@ -67,14 +67,14 @@ namespace Sim.Jobs {
             ClearIndicator();
             _currentTargetId = newTargetId;
             if (!string.IsNullOrEmpty(newTargetId)
-                && JobDeliveryPoint.ByPointId.TryGetValue(newTargetId, out var point)) {
+                && JobPoint.ByPointId.TryGetValue(newTargetId, out var point)) {
                 point.SetIndicator(true);
             }
         }
 
         private void ClearIndicator() {
             if (string.IsNullOrEmpty(_currentTargetId)) return;
-            if (JobDeliveryPoint.ByPointId.TryGetValue(_currentTargetId, out var point)) {
+            if (JobPoint.ByPointId.TryGetValue(_currentTargetId, out var point)) {
                 point.SetIndicator(false);
             }
             _currentTargetId = null;

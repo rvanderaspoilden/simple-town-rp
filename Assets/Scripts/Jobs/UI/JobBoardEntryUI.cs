@@ -31,7 +31,7 @@ namespace Sim.Jobs {
             _onTake = onTake;
 
             var def = JobDatabase.GetById(entry.jobId);
-            titleText.text = def != null ? def.JobId : entry.jobId;
+            titleText.text = def != null ? def.DisplayNameKey : entry.jobId;
 
             bool available = entry.Status == JobStatus.Available;
             statusText.text = available ? "Disponible" : $"En cours · étape {entry.currentStepIndex + 1}";

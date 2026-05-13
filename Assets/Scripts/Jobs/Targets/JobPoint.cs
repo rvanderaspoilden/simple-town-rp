@@ -4,9 +4,10 @@ using UnityEngine;
 
 namespace Sim.Jobs {
     /// <summary>
-    /// Point statique de livraison/cible posé dans la scène. Implémente
-    /// IJobTarget : côté serveur il s'enregistre auprès de JobTargetRegistry
-    /// pour que les providers puissent le choisir comme cible.
+    /// Point statique cible posé dans la scène. Implémente IJobTarget :
+    /// côté serveur il s'enregistre auprès de JobTargetRegistry pour que
+    /// les providers puissent le choisir comme cible (pickup, delivery,
+    /// trash, cart, …).
     ///
     /// Visuel : assigne un GameObject enfant dans `indicator`. Il sera
     /// activé uniquement quand le joueur local a une mission qui cible ce
@@ -16,13 +17,16 @@ namespace Sim.Jobs {
     /// (serveur ET clients) pour que la résolution par id fonctionne. Les
     /// scènes partagent les mêmes scene objects → un id par instance suffit.
     /// </summary>
-    public class JobDeliveryPoint : MonoBehaviour, IJobTarget {
+    public class JobPoint : MonoBehaviour, IJobTarget {
         [Header("Identification")]
         [Tooltip("Id stable du point. Doit être unique dans la map.")]
         [SerializeField] private string pointId;
 
         [Tooltip("Catégorie de mission pour laquelle ce point est éligible.")]
         [SerializeField] private JobCategory category = JobCategory.Delivery;
+
+        [Tooltip("Rôle du point — utilisé par les providers pour le tirage (pickup vs delivery, etc.).")]
+        [SerializeField] private PointRole role = PointRole.Any;
 
         [Tooltip("Nom affiché dans le HUD et le board (ex. 'Parc central', 'Boîte aux lettres n°12').")]
         [SerializeField] private string displayName;
@@ -31,11 +35,15 @@ namespace Sim.Jobs {
         [Tooltip("GameObject enfant à activer quand ce point est la cible de la mission du joueur local.")]
         [SerializeField] private GameObject indicator;
 
-        public static IReadOnlyDictionary<string, JobDeliveryPoint> ByPointId => _byPointId;
-        private static readonly Dictionary<string, JobDeliveryPoint> _byPointId = new Dictionary<string, JobDeliveryPoint>();
+        public static IReadOnlyDictionary<string, JobPoint> ByPointId => _byPointId;
+        private static readonly Dictionary<string, JobPoint> _byPointId = new Dictionary<string, JobPoint>();
 
         public string PointId => pointId;
         public JobCategory Category => category;
+        public PointRole Role => role;
+
+        public bool MatchesRole(PointRole required)
+            => required == PointRole.Any || role == PointRole.Any || role == required;
 
         // ── IJobTarget ────────────────────────────────────────────────
         public string TargetId => pointId;
@@ -46,11 +54,11 @@ namespace Sim.Jobs {
 
         private void Awake() {
             if (string.IsNullOrEmpty(pointId)) {
-                Debug.LogError($"[JobDeliveryPoint] '{name}' has empty pointId — fix it in the Inspector.");
+                Debug.LogError($"[JobPoint] '{name}' has empty pointId — fix it in the Inspector.");
                 return;
             }
             if (_byPointId.ContainsKey(pointId)) {
-                Debug.LogError($"[JobDeliveryPoint] duplicate pointId '{pointId}' on '{name}'.");
+                Debug.LogError($"[JobPoint] duplicate pointId '{pointId}' on '{name}'.");
                 return;
             }
             _byPointId[pointId] = this;

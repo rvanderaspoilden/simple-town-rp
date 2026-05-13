@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e7ceb327f49b42c4ebb37858d834fff1, type: 3}
-  m_Name: ReachTargetStep_Secondary
-  m_EditorClassIdentifier:
-  promptKey: jobs.step.deliver.reach
+  m_Name: ReachPickupStep
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.ReachTargetStepDefinition
+  promptKey: "R\xE9cup\xE8re le colis"
   arrivalRadius: 2
-  targetKey: secondary
+  targetKey: 0

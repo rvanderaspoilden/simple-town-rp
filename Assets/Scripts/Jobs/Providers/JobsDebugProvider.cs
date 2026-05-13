@@ -5,11 +5,13 @@ using UnityEngine;
 
 namespace Sim.Jobs {
     /// <summary>
-    /// Provider de debug. Drop ce MonoBehaviour dans une scène (serveur).
-    ///   offerKey   → Offer direct au premier joueur connecté (mission Offered)
-    ///   publishKey → Publish sur le board (mission Available, prenable par tous)
-    /// Une cible primaire est choisie au hasard parmi les JobDeliveryPoint
-    /// présents en scène et compatibles avec la catégorie de la mission.
+    /// Provider de debug pour le métier Livreur.
+    ///   offerKey   → Offer direct au premier joueur connecté (Offered)
+    ///   publishKey → Publish sur le board (Available, prenable par tous)
+    ///
+    /// Tirage : un pickup point (Role=Pickup) + un delivery point (Role=Delivery)
+    /// parmi les JobPoint actifs dans la scène et compatibles avec la
+    /// catégorie de la mission.
     /// </summary>
     public class JobsDebugProvider : MonoBehaviour {
         [Tooltip("Définition de mission à offrir / publier.")]
@@ -37,12 +39,12 @@ namespace Sim.Jobs {
                 GameLogger.System.Warning("JobsDebugProvider_NoPlayer");
                 return;
             }
-            if (!TryBuildContext(out var ctx, out var primary)) return;
+            if (!TryBuildContext(out var ctx, out var pickup, out var delivery)) return;
 
             var job = JobServerManager.Instance.Offer(jobDefinition, owner, ctx);
             if (job != null) {
-                GameLogger.System.Info("JobsDebugProvider_Offered {JobId} {NetId} {TargetId}",
-                    jobDefinition.JobId, owner, primary?.TargetId ?? "<none>");
+                GameLogger.System.Info("JobsDebugProvider_Offered {JobId} {NetId} {Pickup} {Delivery}",
+                    jobDefinition.JobId, owner, pickup.TargetId, delivery.TargetId);
             }
         }
 
@@ -51,39 +53,35 @@ namespace Sim.Jobs {
                 GameLogger.System.Warning("JobsDebugProvider_NoDefinition");
                 return;
             }
-            if (!TryBuildContext(out var ctx, out var primary)) return;
+            if (!TryBuildContext(out var ctx, out var pickup, out var delivery)) return;
 
             var job = JobServerManager.Instance.Publish(jobDefinition, ctx);
             if (job != null) {
-                GameLogger.System.Info("JobsDebugProvider_Published {JobId} {Category} {TargetId}",
-                    jobDefinition.JobId, jobDefinition.Category, primary?.TargetId ?? "<none>");
+                GameLogger.System.Info("JobsDebugProvider_Published {JobId} {Category} {Pickup} {Delivery}",
+                    jobDefinition.JobId, jobDefinition.Category, pickup.TargetId, delivery.TargetId);
             }
         }
 
-        private bool TryBuildContext(out JobContext ctx, out IJobTarget primary) {
-            primary = null;
+        private bool TryBuildContext(out JobContext ctx, out IJobTarget pickup, out IJobTarget delivery) {
             ctx = null;
+            pickup = null;
+            delivery = null;
 
-            var candidates = new List<JobDeliveryPoint>();
-            foreach (var p in JobDeliveryPoint.ByPointId.Values) {
-                if (p == null || !p.IsAvailable) continue;
-                if (p.Category != jobDefinition.Category) continue;
-                candidates.Add(p);
-            }
-            if (candidates.Count < 2) {
-                GameLogger.System.Warning("JobsDebugProvider_NotEnoughDeliveryPoints {Category} {Count}",
-                    jobDefinition.Category, candidates.Count);
+            pickup = PickRandomPoint(jobDefinition.Category, PointRole.Pickup, except: null);
+            if (pickup == null) {
+                GameLogger.System.Warning("JobsDebugProvider_NoPickup {Category}", jobDefinition.Category);
                 return false;
             }
 
-            int pickupIdx = Random.Range(0, candidates.Count);
-            int deliveryIdx;
-            do { deliveryIdx = Random.Range(0, candidates.Count); }
-            while (deliveryIdx == pickupIdx);
+            delivery = PickRandomPoint(jobDefinition.Category, PointRole.Delivery, except: pickup);
+            if (delivery == null) {
+                GameLogger.System.Warning("JobsDebugProvider_NoDelivery {Category}", jobDefinition.Category);
+                return false;
+            }
 
-            primary = candidates[pickupIdx];
-            var secondary = candidates[deliveryIdx];
-            ctx = new JobContext { primaryTarget = primary, secondaryTarget = secondary };
+            ctx = new JobContext();
+            ctx.SetTarget(JobTargetKey.Pickup, pickup);
+            ctx.SetTarget(JobTargetKey.Delivery, delivery);
             return true;
         }
 
@@ -93,6 +91,19 @@ namespace Sim.Jobs {
                 return conn.identity.netId;
             }
             return 0u;
+        }
+
+        private static IJobTarget PickRandomPoint(JobCategory category, PointRole role, IJobTarget except) {
+            var candidates = new List<JobPoint>();
+            foreach (var p in JobPoint.ByPointId.Values) {
+                if (p == null || !p.IsAvailable) continue;
+                if (p.Category != category) continue;
+                if (!p.MatchesRole(role)) continue;
+                if (except != null && p.TargetId == except.TargetId) continue;
+                candidates.Add(p);
+            }
+            if (candidates.Count == 0) return null;
+            return candidates[Random.Range(0, candidates.Count)];
         }
     }
 }

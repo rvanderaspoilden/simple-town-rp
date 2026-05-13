@@ -89,7 +89,7 @@ namespace Sim.Jobs {
         private void Render(JobClientState state) {
             if (titleText != null) {
                 titleText.text = state.Definition != null
-                    ? state.Definition.JobId
+                    ? state.Definition.DisplayNameKey
                     : state.InstanceId;
             }
 
