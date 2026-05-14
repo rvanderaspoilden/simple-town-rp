@@ -79,8 +79,8 @@ namespace Sim.Jobs {
             JobEvents.RaiseJobPublished(job);
 
             // Only notify players whose active career matches this job's
-            // category — the others are not employed for it and shouldn't see
-            // the toast (matches the board gating model).
+            // category AND who opted in to new-mission notifications (Settings
+            // app → notificationsNewMission). Matches the board gating model.
             var label = JobLabel(def);
             var notif = new JobNotificationMessage { text = $"Nouvelle mission : {label}" };
             foreach (var conn in NetworkServer.connections.Values) {
@@ -88,6 +88,7 @@ namespace Sim.Jobs {
                 var player = conn.identity.GetComponent<Sim.PlayerController>();
                 if (player == null || player.CharacterData == null) continue;
                 if (player.CharacterData.CurrentJobCategory != def.Category) continue;
+                if (player.UserSettings != null && !player.UserSettings.NotificationsNewMission) continue;
                 conn.Send(notif);
             }
             return job;

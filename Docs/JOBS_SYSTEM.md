@@ -246,6 +246,19 @@ category → reject + `JobNotificationMessage` toast. Log:
 status is `Available` or `Active`. Expired/Completed/Failed jobs drop out
 automatically.
 
+`JobServerManager.Publish` also broadcasts a "Nouvelle mission : …" toast, but
+filters by two gates :
+
+1. The recipient's `CharacterData.CurrentJobCategory == def.Category` (career
+   match — non-matching players are not concerned).
+2. The recipient's `PlayerController.UserSettings.NotificationsNewMission`
+   (opt-in driven by the Settings phone app, persisted in
+   `user_settings.data`).
+
+A player who turned off the notification in Settings simply doesn't receive
+the toast — they can still walk to the board and see the new mission listed
+when they open it. See `PERSISTENCE.md` §6c for the storage model.
+
 ### `JobAutoPublisher` (scene MonoBehaviour)
 File: `Assets/Scripts/Jobs/Providers/JobAutoPublisher.cs`. Server-only,
 spawns offers on the board at random intervals.

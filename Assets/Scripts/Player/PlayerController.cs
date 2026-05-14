@@ -91,6 +91,16 @@ namespace Sim {
         [SyncVar]
         private PlayerState _playerState;
 
+        // Server-only cache of the user's preferences. Hydrated by the server
+        // in SetupCharacterCoroutine and updated via UserSettingsSyncMessage.
+        // Lives outside SyncVar — only the server consults it (notif gate,
+        // future server-side toggles).
+        [System.NonSerialized] private UserSettingsData _userSettings = new UserSettingsData();
+        public UserSettingsData UserSettings {
+            get => _userSettings;
+            set => _userSettings = value ?? new UserSettingsData();
+        }
+
         private PlayerAnimator animator;
 
         private PlayerHands playerHands;

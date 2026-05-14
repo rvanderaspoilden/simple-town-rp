@@ -1,63 +1,63 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Interaction;
 using Mirror;
 using Sim.Enums;
+using Sim.SubGames.Packaging;
 using UnityEngine;
 using Action = Sim.Interactables.Action;
 
 namespace Sim.Jobs {
     /// <summary>
-    /// Machine à emballer / poste de travail à poser dans la scène. Implémente
-    /// IInteractable comme JobBoard — drag l'action USE.asset dans la liste
-    /// pour que le radial menu propose "Utiliser".
-    ///
-    /// À l'exécution de l'action côté client, envoie JobUseMachineMessage au
-    /// serveur. Le serveur route vers le UseMachineStep actif du joueur
-    /// (s'il y en a un) et fait spawn le colis dans les mains. Sinon, no-op.
+    /// Machine à emballer / poste de travail à poser dans la scène. Hérite de
+    /// CareerInteractableBase pour le gate métier (toast si pas le bon job).
+    /// À l'exécution de l'action USE/OPEN côté client, lance le mini-jeu
+    /// d'emballage (PackagingSubGame). Une fois le colis validé, envoie
+    /// JobUseMachineMessage au serveur ; le serveur route vers le
+    /// UseMachineStep actif du joueur et fait spawn le colis dans les mains.
     /// </summary>
-    public class PackagingMachineBehaviour : MonoBehaviour, IInteractable {
+    public class PackagingMachineBehaviour : CareerInteractableBase {
         [Header("Identification")]
         [Tooltip("Id stable de la machine (envoyé au serveur pour logs / futurs filtres).")]
         [SerializeField] private string machineId;
 
-        [Header("Interaction")]
-        [Tooltip("Drag USE.asset (Resources/Configurations/Actions/USE.asset).")]
-        [SerializeField] private List<Action> actionTemplates = new List<Action>();
+        [Header("Packaging mini-game")]
+        [Tooltip("Config du mini-jeu d'emballage à lancer. Si null, la machine envoie directement JobUseMachineMessage (legacy).")]
+        [SerializeField] private PackagingSubGameConfig packagingConfig;
 
-        [SerializeField] private float interactionRange = 3f;
-
-        private Action[] _actions = Array.Empty<Action>();
+        private bool _miniGameInFlight;
 
         public string MachineId => machineId;
 
-        private void Awake() {
-            _actions = actionTemplates.Where(a => a != null).Select(Instantiate).ToArray();
-            foreach (var a in _actions) a.OnExecute += OnActionExecuted;
-        }
+        protected override void HandleAction(Action action) {
+            if (action.Type != ActionTypeEnum.USE && action.Type != ActionTypeEnum.OPEN) return;
+            if (!NetworkClient.isConnected) return;
+            if (_miniGameInFlight) return;
 
-        private void OnDestroy() {
-            foreach (var a in _actions) {
-                if (a != null) a.OnExecute -= OnActionExecuted;
+            if (packagingConfig == null || SubGameController.Instance == null) {
+                // Legacy direct flow.
+                NetworkClient.Send(new JobUseMachineMessage { machineId = machineId ?? string.Empty });
+                return;
             }
+
+            _miniGameInFlight = true;
+            PackagingSubGameManager.PendingConfig = packagingConfig;
+            PackagingSubGameManager.OnPackageValidated += HandlePackageValidated;
+            SubGameController.Instance.LaunchSubGame(packagingConfig, true);
         }
 
-        private void OnActionExecuted(Action action) {
-            switch (action.Type) {
-                case ActionTypeEnum.USE:
-                case ActionTypeEnum.OPEN:
-                    if (!NetworkClient.isConnected) return;
-                    NetworkClient.Send(new JobUseMachineMessage { machineId = machineId ?? string.Empty });
-                    break;
+        private void HandlePackageValidated(PackageScore? score) {
+            PackagingSubGameManager.OnPackageValidated -= HandlePackageValidated;
+            PackagingSubGameManager.PendingConfig = null;
+            _miniGameInFlight = false;
+
+            if (!score.HasValue) {
+                // Joueur a annulé — pas de spawn.
+                return;
             }
+            NetworkClient.Send(new JobUseMachineMessage { machineId = machineId ?? string.Empty });
         }
 
-        // ── IInteractable ────────────────────────────────────────────────
-        public float GetRange() => interactionRange;
-        public bool IsInteractable() => true;
-        public bool IsRightClickOnly() => false;
-        public Action[] GetActions(bool withPriority = false) => _actions;
-        public void StopInteraction() { }
+        protected override void OnDestroy() {
+            base.OnDestroy();
+            PackagingSubGameManager.OnPackageValidated -= HandlePackageValidated;
+        }
     }
 }

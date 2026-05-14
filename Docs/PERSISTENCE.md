@@ -1,6 +1,6 @@
 # PERSISTENCE.md — Relational Migration & Target Architecture
 
-> Last updated: 2026-05-14 — Career salary column added (`09_city_salary_period.sql`).
+> Last updated: 2026-05-14 — Career salary column + user_settings table.
 
 This doc is the single source of truth for **how gameplay state is persisted**.
 It covers the legacy JSONB blob, the target relational schema, the migration
@@ -423,6 +423,62 @@ NetworkBehaviour.
 
 ---
 
+## 6c. Per-user settings
+
+Migration `10_user_settings.sql` — single row per user, JSONB blob for
+extensibility.
+
+```sql
+CREATE TABLE user_settings (
+    user_id    UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    data       JSONB NOT NULL DEFAULT '{}'::JSONB,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+### Conventions
+
+- One row per user — composite key naturally enforced by the FK PK.
+- All settings live inside `data` (notifications, audio, graphics, …). Adding
+  a new client setting requires no migration; the server only inspects the
+  fields it actually uses (today: `notificationsNewMission`).
+- The row is lazily upserted on the first GET if missing (defaults below).
+
+### Defaults (set on lazy create)
+
+```json
+{
+  "notificationsNewMission": true,
+  "audioMaster": 1.0,
+  "audioMusic": 1.0,
+  "audioSfx": 1.0,
+  "graphicsQuality": 2
+}
+```
+
+### Routes
+
+| Route | Purpose |
+|---|---|
+| `GET /user-settings/by-user/:userId` | Returns the row (auto-creates with defaults on first call) |
+| `PUT /user-settings/by-user/:userId` body `{ data: UserSettingsData }` | Upserts the whole blob |
+
+### Sync model
+
+- The Unity **client** caches `UserSettings` on `ApiManager` after the auth
+  flow (`LoadUserSettings(userId)` fires right after `/auth/profile`). The
+  Settings phone app (`SettingsUI`) reads from + writes back through
+  `ApiManager.SaveUserSettings`.
+- The Unity **server** hydrates a per-player copy on `PlayerController` from
+  `SetupCharacterCoroutine` (REST GET on connect). Server-side gates read
+  from `PlayerController.UserSettings` (currently: the `Publish` notif filter
+  in `JobServerManager`).
+- After a client save, `SettingsSyncBridge.NotifyServer(data)` sends a
+  `UserSettingsSyncMessage` (C2S) so the server cache stays current without a
+  REST round-trip.
+
+---
+
 ## 7. What's left
 
 ### Phase 2 follow-ups (before Phase 3)
@@ -476,6 +532,9 @@ See §4 above.
 | `migrations/05_deliveries_prop_id.sql` | Link deliveries → props |
 | `migrations/08_career.sql` | `characters.current_job` column + `character_jobs` table |
 | `migrations/09_city_salary_period.sql` | `cities.salary_period_seconds` column (default 600s) for the periodic salary ticker |
+| `migrations/10_user_settings.sql` | `user_settings` (user_id PK, data JSONB) — per-user prefs blob |
+| `src/user-settings/` | UserSettings module (schema, controller, request) |
+| `src/shared/services/user-settings.service.ts` | `findByUserId` (lazy upsert with defaults), `upsert` |
 | `src/character-job/` | Career module (schema, service via SharedModule, controller, requests, responses) |
 | `src/shared/services/character-job.service.ts` | `findByCharacter`, `startOrResume`, `addXp` |
 | `src/shared/services/character.service.ts` | `updateCurrentJob` + `mapRow`/`update` -1↔NULL sentinel |

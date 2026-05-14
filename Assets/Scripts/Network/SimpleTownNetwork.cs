@@ -237,7 +237,8 @@ public class SimpleTownNetwork : NetworkManager
         NetworkServer.RegisterHandler<CreateCharacterMessage>(OnCreateCharacter);
         NetworkServer.RegisterHandler<CreateDeliveryRequest>(OnCreateDelivery);
         NetworkServer.RegisterHandler<TeleportMessage>(OnPlayerTeleportTo);
-        GameLogger.Network.Debug("HandlersRegistered {Count} handlers", 3);
+        NetworkServer.RegisterHandler<UserSettingsSyncMessage>(OnUserSettingsSync);
+        GameLogger.Network.Debug("HandlersRegistered {Count} handlers", 4);
 
         PropSystemBootstrap.OnServerStart();
         NpcSystemBootstrap.OnServerStart();
@@ -383,6 +384,16 @@ public class SimpleTownNetwork : NetworkManager
             conn.connectionId, conn.identity?.gameObject.name ?? "unknown", request.destination, request.NewRoomId);
         conn.Send(request);
         GameLogger.Network.Debug("TeleportSent {ConnectionId}", conn.connectionId);
+    }
+
+    [ServerCallback]
+    private void OnUserSettingsSync(NetworkConnectionToClient conn, UserSettingsSyncMessage msg)
+    {
+        if (conn?.identity == null || string.IsNullOrEmpty(msg.dataJson)) return;
+        var player = conn.identity.GetComponent<Sim.PlayerController>();
+        if (player == null) return;
+        var data = JsonUtility.FromJson<UserSettingsData>(msg.dataJson);
+        if (data != null) player.UserSettings = data;
     }
 
 
@@ -646,6 +657,21 @@ public class SimpleTownNetwork : NetworkManager
         GameObject go = Instantiate(this.playerPrefab, startPositions[0].transform.position, Quaternion.identity);
         PlayerController player = go.GetComponent<PlayerController>();
         player.SetRawCharacterData(JsonUtility.ToJson(characterResponse.Characters[0]));
+
+        // Hydrate the user's preferences (notif opt-ins, audio, graphics, …)
+        // so server-side gates (e.g. JobServerManager.Publish notif filter)
+        // can read them. Missing or failed fetch → leave defaults.
+        UnityWebRequest settingsRequest = ApiManager.Instance.RetrieveUserSettingsRequest(userId);
+        yield return settingsRequest.SendWebRequest();
+        if (settingsRequest.responseCode == 200) {
+            var settings = JsonUtility.FromJson<UserSettings>(settingsRequest.downloadHandler.text);
+            if (settings != null && settings.Data != null) {
+                player.UserSettings = settings.Data;
+            }
+        } else {
+            GameLogger.Network.Warning("UserSettingsRetrievalFailed {UserId} {ResponseCode}",
+                userId, settingsRequest.responseCode);
+        }
         go.name = $"Player [conn={conn.connectionId}] [{characterResponse.Characters[0].Identity.FullName}]";
 
         // Provision the character's pocket + hand_left + hand_right places in DB

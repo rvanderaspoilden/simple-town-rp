@@ -68,14 +68,22 @@ namespace Sim.Jobs {
 
             if (!_waiting.TryGetValue(netId, out var step)) {
                 GameLogger.System.Debug("UseMachine_NoActiveStep {NetId} {MachineId}", netId, machineId);
+                conn.Send(new JobNotificationMessage {
+                    text = "Aucune mission ne te demande d'utiliser cette machine."
+                });
                 return;
             }
-            step.HandleMachineUsed();
+            step.HandleMachineUsed(conn);
         }
 
-        private void HandleMachineUsed() {
+        private void HandleMachineUsed(NetworkConnectionToClient conn) {
             // Vérifie qu'on n'a pas déjà spawné (anti double-clic).
-            if (_spawnedEntityId >= 0) return;
+            if (_spawnedEntityId >= 0) {
+                conn?.Send(new JobNotificationMessage {
+                    text = "Tu as déjà ton colis."
+                });
+                return;
+            }
 
             int entityId = ServerItemManager.Instance.SpawnItemInHand(
                 def.RoomId, def.ItemConfig.ID,
@@ -84,6 +92,9 @@ namespace Sim.Jobs {
             if (entityId < 0) {
                 GameLogger.System.Warning("UseMachine_NoFreeHand {NetId} {JobId}",
                     job.OwnerNetId, job.Definition.JobId);
+                conn?.Send(new JobNotificationMessage {
+                    text = "Tes mains sont pleines."
+                });
                 return;
             }
 
