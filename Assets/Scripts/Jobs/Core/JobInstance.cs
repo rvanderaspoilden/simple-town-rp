@@ -51,6 +51,7 @@ namespace Sim.Jobs {
         public void Accept() {
             if (Status != JobStatus.Offered) return;
             Status = JobStatus.Active;
+            ElapsedSeconds = 0f;
             EnterCurrentStep();
             JobEvents.RaiseJobAccepted(this);
         }
@@ -59,12 +60,21 @@ namespace Sim.Jobs {
             if (Status != JobStatus.Available || newOwnerNetId == 0u) return false;
             OwnerNetId = newOwnerNetId;
             Status = JobStatus.Active;
+            ElapsedSeconds = 0f;
             EnterCurrentStep();
             JobEvents.RaiseJobTaken(this);
             return true;
         }
 
         public void Tick(float dt) {
+            if (Status == JobStatus.Available) {
+                ElapsedSeconds += dt;
+                if (Definition.BoardExpirationSeconds > 0f && ElapsedSeconds > Definition.BoardExpirationSeconds) {
+                    FinalizeFail(JobFailureReason.Expired, JobStatus.Expired);
+                }
+                return;
+            }
+
             if (Status != JobStatus.Active) return;
 
             ElapsedSeconds += dt;

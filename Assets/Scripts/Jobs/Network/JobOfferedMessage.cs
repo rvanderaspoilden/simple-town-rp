@@ -24,5 +24,10 @@ public struct JobOfferedMessage : NetworkMessage {
 
     public string payloadItemId;
 
+    // Elapsed time on the active timer at the moment the server sent this
+    // message. The client tracks its own clock from receipt to compute the
+    // remaining time without an active SyncVar. 0 when status is Offered.
+    public float elapsedSeconds;
+
     public JobStatus Status => (JobStatus)statusByte;
 }

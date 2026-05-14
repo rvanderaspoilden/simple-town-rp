@@ -21,8 +21,8 @@ namespace Sim.Jobs {
         }
 
         public override void OnEnter() {
-            if (def.ItemConfigId <= 0) {
-                GameLogger.System.Error("PickupPackageStep_InvalidItemConfigId {JobId}", job.Definition.JobId);
+            if (def.ItemConfig == null || def.ItemConfig.ID <= 0) {
+                GameLogger.System.Error("PickupPackageStep_InvalidItemConfig {JobId}", job.Definition.JobId);
                 Fail(JobFailureReason.None);
                 return;
             }
@@ -35,7 +35,7 @@ namespace Sim.Jobs {
 
             var pos = target.Transform.position + def.SpawnOffset;
             _spawnedEntityId = ServerItemManager.Instance.SpawnItem(
-                def.RoomId, def.ItemConfigId, pos, Quaternion.identity);
+                def.RoomId, def.ItemConfig.ID, pos, Quaternion.identity);
 
             // Anti-vol : seul le owner de la mission peut pick le colis.
             ServerItemManager.Instance.SetAuthorizedHolder(def.RoomId, _spawnedEntityId, job.OwnerNetId);

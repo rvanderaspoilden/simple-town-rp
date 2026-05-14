@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AI;
@@ -8,12 +9,14 @@ using Interaction;
 using Mirror;
 using Sim.Entities;
 using Sim.Enums;
+using Sim.Jobs;
 using Sim.Logging;
 using Sim.Scriptables;
 using Sim.UI;
 using Sim.Utils;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Networking;
 using Action = Sim.Interactables.Action;
 using Random = UnityEngine.Random;
 
@@ -346,6 +349,107 @@ namespace Sim {
             this.playerBankAccount.Init(this.characterData.Money);
         }
 
+        /// <summary>
+        /// Server-only career change. newJob=-1 means resign (currentJob → null).
+        /// Persists to backend (start_or_resume + update_current_job) then
+        /// rebroadcasts CharacterData. Active mission, if any, is abandoned.
+        /// </summary>
+        [Server]
+        public void StartCareerChange(int newJob) {
+            StartCoroutine(CareerChangeCoroutine(newJob));
+        }
+
+        [Server]
+        private IEnumerator CareerChangeCoroutine(int newJob) {
+            if (characterData == null || string.IsNullOrEmpty(characterData.Id)) {
+                GameLogger.Network.Warning("CareerChangeSkipped_NoCharacter {NetId}", netId);
+                yield break;
+            }
+
+            // Abandon any in-flight job; rewards system / cleanup handle the rest.
+            JobServerManager.Instance.OnPlayerDisconnected(netId);
+
+            // Upsert the destination row when applying to a job (skip on resign).
+            if (newJob >= 0) {
+                var startBody = new CharacterJobStartRequest {
+                    characterId = characterData.Id,
+                    category = newJob,
+                };
+                UnityWebRequest startReq = ApiManager.Instance.StartCharacterJobRequest(startBody);
+                yield return startReq.SendWebRequest();
+                if (startReq.responseCode != 200 && startReq.responseCode != 201) {
+                    GameLogger.Network.Error(null, "CareerStartFailed {CharacterId} {Category} {Code}",
+                        characterData.Id, newJob, startReq.responseCode);
+                    yield break;
+                }
+                CharacterJobData row = JsonUtility.FromJson<CharacterJobData>(startReq.downloadHandler.text);
+                if (row != null) MergeJob(row);
+            }
+
+            var updateBody = new CharacterUpdateCurrentJobRequest { currentJob = newJob };
+            UnityWebRequest updateReq = ApiManager.Instance.UpdateCharacterCurrentJobRequest(characterData.Id, updateBody);
+            yield return updateReq.SendWebRequest();
+            if (updateReq.responseCode != 200) {
+                GameLogger.Network.Error(null, "CareerUpdateCurrentJobFailed {CharacterId} {NewJob} {Code}",
+                    characterData.Id, newJob, updateReq.responseCode);
+                yield break;
+            }
+
+            characterData.CurrentJobRaw = newJob;
+            SetRawCharacterData(JsonUtility.ToJson(characterData));
+        }
+
+        [Server]
+        private void MergeJob(CharacterJobData row) {
+            var list = characterData.Jobs;
+            for (int i = 0; i < list.Count; i++) {
+                if (list[i].Category == row.Category) {
+                    list[i] = row;
+                    return;
+                }
+            }
+            list.Add(row);
+        }
+
+        /// <summary>
+        /// Server-only XP bump. Increments xp on the CharacterJob row for the
+        /// given category (creating it if missing), rebroadcasts CharacterData,
+        /// and persists via PUT /character-jobs/add-xp.
+        /// </summary>
+        [Server]
+        public void AddJobXp(int category, int delta) {
+            if (delta == 0 || characterData == null || string.IsNullOrEmpty(characterData.Id)) return;
+
+            CharacterJobData row = null;
+            var list = characterData.Jobs;
+            for (int i = 0; i < list.Count; i++) {
+                if (list[i].Category == category) { row = list[i]; break; }
+            }
+            if (row == null) {
+                row = new CharacterJobData { Category = category };
+                list.Add(row);
+            }
+            row.Xp += delta;
+
+            SetRawCharacterData(JsonUtility.ToJson(characterData));
+            StartCoroutine(PersistJobXp(category, delta));
+        }
+
+        [Server]
+        private IEnumerator PersistJobXp(int category, int delta) {
+            var body = new CharacterJobAddXpRequest {
+                characterId = characterData.Id,
+                category = category,
+                delta = delta,
+            };
+            UnityWebRequest req = ApiManager.Instance.AddCharacterJobXpRequest(body);
+            yield return req.SendWebRequest();
+            if (req.responseCode != 200) {
+                GameLogger.Network.Error(null, "JobXpPersistFailed {CharacterId} {Category} {Delta} {Code}",
+                    characterData.Id, category, delta, req.responseCode);
+            }
+        }
+
         [Server]
         public void SetRawCharacterHome(string data) {
             this.rawCharacterHome = data;
@@ -355,6 +459,7 @@ namespace Sim {
         public void ParseCharacterData(string old, string newValue) {
             this.characterData = JsonUtility.FromJson<CharacterData>(newValue);
             this.characterStyleSetup.ApplyStyle(this.CharacterData.Style);
+            OnCharacterDataChanged?.Invoke(this.characterData);
         }
 
         public string RawCharacterHome {

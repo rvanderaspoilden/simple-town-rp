@@ -55,6 +55,19 @@ namespace Sim.Jobs {
         }
 
         public void Open() {
+            // Local career pre-check: avoid sending JobBoardOpenMessage if the
+            // player isn't the right job. Server still enforces the same check
+            // in JobBoardServer.OpenBoard — this is purely for UX feedback.
+            var localPlayer = Sim.PlayerController.Local;
+            var playerJob = localPlayer != null && localPlayer.CharacterData != null
+                ? localPlayer.CharacterData.CurrentJobCategory
+                : null;
+            if (playerJob != category) {
+                NotificationManager.Instance?.AddNotification(
+                    "Tu n'es pas employé pour ce métier.", NotificationType.JOB);
+                return;
+            }
+
             var ui = JobBoardUI.Instance;
             if (ui == null) {
                 Debug.LogWarning("[JobBoard] JobBoardUI.Instance is null — UI not initialized in scene.");

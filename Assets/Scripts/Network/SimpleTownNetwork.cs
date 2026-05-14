@@ -620,6 +620,24 @@ public class SimpleTownNetwork : NetworkManager
         GameLogger.Network.Info("CharacterRetrieved {ConnectionId} {UserId} {CharacterName}",
             conn.connectionId, userId, characterResponse.Characters[0].Identity.FullName);
 
+        // Hydrate the career rows (character_jobs) onto the CharacterData *before*
+        // the SyncVar broadcast — clients then receive currentJob + jobs[] in one
+        // shot through ParseCharacterData. Missing jobs (404/empty) is fine for
+        // unemployed characters.
+        UnityWebRequest jobsRequest =
+            ApiManager.Instance.RetrieveCharacterJobsRequest(characterResponse.Characters[0].Id);
+        yield return jobsRequest.SendWebRequest();
+        if (jobsRequest.responseCode == 200) {
+            CharacterJobResponse jobsResponse =
+                JsonUtility.FromJson<CharacterJobResponse>(jobsRequest.downloadHandler.text);
+            characterResponse.Characters[0].Jobs = jobsResponse?.CharacterJobs != null
+                ? new List<CharacterJobData>(jobsResponse.CharacterJobs)
+                : new List<CharacterJobData>();
+        } else {
+            GameLogger.Network.Warning("CharacterJobsRetrievalFailed {CharacterId} {ResponseCode}",
+                characterResponse.Characters[0].Id, jobsRequest.responseCode);
+        }
+
         // Prepare the player GO server-side but do NOT call AddPlayerForConnection yet.
         // The correct lifecycle is:
         //   LoadFloorData → BuildHall → RegisterEntities → AddPlayerForConnection → TeleportMessage

@@ -268,8 +268,53 @@ namespace Sim {
 
         public UnityWebRequest UpdateCharacterMoneyRequest(string characterId, CharacterUpdateMoneyRequest moneyRequest) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(moneyRequest));
-            
+
             UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/update-money", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer(),
+            };
+
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
+
+        // ── Career endpoints ──────────────────────────────────────────────────
+
+        public UnityWebRequest UpdateCharacterCurrentJobRequest(string characterId, CharacterUpdateCurrentJobRequest body) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/update-current-job", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer(),
+            };
+
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
+
+        public UnityWebRequest RetrieveCharacterJobsRequest(string characterId) {
+            return UnityWebRequest.Get($"{this.uri}/character-jobs/by-character/{characterId}");
+        }
+
+        public UnityWebRequest StartCharacterJobRequest(CharacterJobStartRequest body) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/character-jobs/start", "POST") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer(),
+            };
+
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
+
+        public UnityWebRequest AddCharacterJobXpRequest(CharacterJobAddXpRequest body) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/character-jobs/add-xp", "PUT") {
                 uploadHandler = new UploadHandlerRaw(encodedPayload),
                 downloadHandler = new DownloadHandlerBuffer(),
             };

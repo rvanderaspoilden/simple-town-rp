@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Mirror;
+using UnityEngine;
 
 namespace Sim.Jobs {
     /// <summary>
@@ -85,7 +86,9 @@ namespace Sim.Jobs {
                 SecondaryTargetId = msg.secondaryTargetId,
                 SecondaryTargetName = msg.secondaryTargetName,
                 PayloadItemId = msg.payloadItemId,
-                Status = msg.Status
+                Status = msg.Status,
+                ElapsedSecondsAtSync = msg.elapsedSeconds,
+                SyncedAtUnscaled = Time.unscaledTime,
             };
             _states[msg.instanceId] = state;
             JobOffered?.Invoke(state);
@@ -128,5 +131,11 @@ namespace Sim.Jobs {
         public string SecondaryTargetId;
         public string SecondaryTargetName;
         public string PayloadItemId;
+
+        // Server's elapsed time when JobOfferedMessage was sent, plus the local
+        // Time.unscaledTime at which we received it. The HUD computes the
+        // remaining mission time by extrapolating from these two values.
+        public float ElapsedSecondsAtSync;
+        public float SyncedAtUnscaled;
     }
 }

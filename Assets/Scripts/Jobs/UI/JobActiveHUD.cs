@@ -24,6 +24,8 @@ namespace Sim.Jobs {
         [SerializeField] private TMP_Text stepText;
         [SerializeField] private TMP_Text targetText;
         [SerializeField] private TMP_Text distanceText;
+        [Tooltip("Optional countdown label (mm:ss) of the remaining mission time. Hidden when the job has no expiration.")]
+        [SerializeField] private TMP_Text remainingTimeText;
 
         [Header("Buttons")]
         [SerializeField] private Button acceptButton;
@@ -37,6 +39,7 @@ namespace Sim.Jobs {
         private string _currentTargetId;
         private bool _subscribed;
         private float _nextDistanceUpdate;
+        private JobClientState _currentState;
 
         private void Awake() {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -80,6 +83,7 @@ namespace Sim.Jobs {
         private void OnJobOffered(JobClientState state) {
             _currentInstanceId = state.InstanceId;
             _currentTargetId = state.CurrentTargetId;
+            _currentState = state;
             Render(state);
             Show(true);
         }
@@ -87,6 +91,7 @@ namespace Sim.Jobs {
         private void OnJobStepAdvanced(JobClientState state) {
             if (state.InstanceId != _currentInstanceId) return;
             _currentTargetId = state.CurrentTargetId;
+            _currentState = state;
             Render(state);
         }
 
@@ -94,6 +99,7 @@ namespace Sim.Jobs {
             if (state.InstanceId != _currentInstanceId) return;
             _currentInstanceId = null;
             _currentTargetId = null;
+            _currentState = null;
             Show(false);
         }
 
@@ -126,11 +132,33 @@ namespace Sim.Jobs {
         }
 
         private void Update() {
-            if (distanceText == null) return;
             if (root != null && !root.activeSelf) return;
+
+            RefreshRemainingTime();
+
+            if (distanceText == null) return;
             if (Time.unscaledTime < _nextDistanceUpdate) return;
             _nextDistanceUpdate = Time.unscaledTime + distanceRefreshInterval;
             RefreshDistance();
+        }
+
+        private void RefreshRemainingTime() {
+            if (remainingTimeText == null) return;
+            if (_currentState == null || _currentState.Status != JobStatus.Active || _currentState.Definition == null) {
+                remainingTimeText.text = string.Empty;
+                return;
+            }
+            float expiration = _currentState.Definition.ExpirationSeconds;
+            if (expiration <= 0f) {
+                remainingTimeText.text = string.Empty;
+                return;
+            }
+            float localElapsed = Time.unscaledTime - _currentState.SyncedAtUnscaled;
+            float remaining = Mathf.Max(0f, expiration - (_currentState.ElapsedSecondsAtSync + localElapsed));
+            int total = Mathf.CeilToInt(remaining);
+            int minutes = total / 60;
+            int seconds = total % 60;
+            remainingTimeText.text = $"{minutes:00}:{seconds:00}";
         }
 
         private void RefreshDistance() {

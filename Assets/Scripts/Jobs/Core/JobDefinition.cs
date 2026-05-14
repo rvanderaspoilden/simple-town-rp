@@ -32,11 +32,18 @@ namespace Sim.Jobs {
         [Tooltip("Récompenses additives appliquées à la complétion.")]
         [SerializeField] private List<RewardDefinition> rewards = new List<RewardDefinition>();
 
-        [Tooltip("Durée maximale avant expiration (secondes). 0 = pas d'expiration.")]
+        [Tooltip("Durée maximale avant expiration (secondes) une fois la mission active. 0 = pas d'expiration.")]
         [SerializeField] private float expirationSeconds = 600f;
+
+        [Tooltip("Durée pendant laquelle l'offre reste affichée sur le board avant expiration (secondes). 0 = pas d'expiration de l'offre.")]
+        [SerializeField] private float boardExpirationSeconds = 180f;
 
         [Tooltip("Nombre maximal de copies actives simultanément par joueur.")]
         [SerializeField] private int maxConcurrentPerPlayer = 1;
+
+        [Tooltip("Salaire versé périodiquement aux joueurs qui ont ce métier comme métier actif. Le délai entre deux versements est configuré sur la City (salary_period_seconds).")]
+        [Min(0)]
+        [SerializeField] private int salaryAmount = 100;
 
         public string JobId => jobId;
         public string DisplayNameKey => displayNameKey;
@@ -45,6 +52,8 @@ namespace Sim.Jobs {
         public IReadOnlyList<JobStepDefinition> Steps => steps;
         public IReadOnlyList<RewardDefinition> Rewards => rewards;
         public float ExpirationSeconds => expirationSeconds;
+        public float BoardExpirationSeconds => boardExpirationSeconds;
         public int MaxConcurrentPerPlayer => maxConcurrentPerPlayer;
+        public int SalaryAmount => salaryAmount;
     }
 }

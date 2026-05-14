@@ -57,6 +57,10 @@
 | `NpcSpawnManager` | `Assets/Scripts/NPC/Server/NpcSpawnManager.cs` | NPC spawn-point lifecycle, pool management |
 | `RoomActivityController` | `Assets/Scripts/NPC/Server/RoomActivityController.cs` | Tracks player count per room; suspends NPC AI in empty rooms |
 | `ServerItemManager` | `Assets/Scripts/Items/Server/ServerItemManager.cs` | Server-side world item state; pickup/drop/swap |
+| `JobServerManager` | `Assets/Scripts/Jobs/Runtime/JobServerManager.cs` | Authoritative mission store; Offer/Publish/Accept/TakeFromBoard/Abandon + Tick (board+active expiration) |
+| `JobBoardServer` | `Assets/Scripts/Jobs/Runtime/JobBoardServer.cs` | Per-category board subscribers; career-gate on OpenBoard; snapshot broadcast on JobEvents |
+| `JobClientManager` | `Assets/Scripts/Jobs/Runtime/JobClientManager.cs` | Singleton client mission state; events for HUD |
+| `JobDatabase` | `Assets/Scripts/Jobs/Runtime/JobDatabase.cs` | Loads all `JobDefinition` SOs at boot from `Resources/Configurations/Jobs/Definitions` |
 
 ---
 
@@ -73,6 +77,7 @@
 | `Sim.NPC` | NPC identity and scriptables |
 | `Sim.Logging` | `GameLogger`, `ClientLogger` |
 | `Sim.Utils` | `SaveUtils` |
+| `Sim.Jobs` | Jobs / missions / career framework (`JobDefinition`, `JobInstance`, `JobBoard`, `RewardDefinition` subclasses, `JobAutoPublisher`, `JobCategoryLabels`, …) |
 | `Network.Messages` | Only `CreateBuildingMessage` (legacy, to be moved to global) |
 | *(global)* | All `NetworkMessage` structs (C2S_*, S2C_*, etc.), `SimpleTownNetwork`, `BuildingBehavior`, `HallController`, `ApartmentController` |
 
@@ -86,3 +91,15 @@
 - `CharacterUpdateMoneyRequest` — plain C# struct with no Mirror handler registration; not a live message
 - `useSpectusAccount`, `useElbloodyAccount` toggles on `SimpleTownNetwork` — dev shortcuts, never committed to scenes
 - The `local` checkbox on `ApiManager` — always overrides `uri` to localhost in `Awake()`; must be un-ticked for remote
+- `JobsDebugProvider` F9 binding — removed (only `F10` publish-on-board remains for debug)
+- `Identity.job` (backend `Identity` model field, `JobEnum`) — legacy/cosmetic, **not** the career system; `Character.currentJob` + `character_jobs` collection are the live ones (see `JOBS_SYSTEM.md`)
+
+---
+
+## Career / Jobs Quick Notes
+
+- Players pick one job at a time via the phone Career app (`CareerUI`). `currentJob = -1` means unemployed (mirrors backend SQL `NULL`).
+- Each (character × job) has a persisted `character_jobs` row carrying `xp` and `started_at`. The row survives resign/re-apply — multi-career is built in by default.
+- Job boards (`JobBoard`) are gated by category. A non-Livreur cannot even open a Delivery board (client toast + server refusal — defense in depth).
+- All career-relevant data is broadcast through the existing `PlayerController.rawCharacterData` SyncVar — no new SyncVar / no new NetworkBehaviour.
+- XP gain pipes through `RewardSystem` like money/social credit: drag a `JobXpReward` SO into `JobDefinition.rewards`. See `JOBS_SYSTEM.md` for the full architecture.

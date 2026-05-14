@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PickupPackageStep
   m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.PickupPackageStepDefinition
   promptKey: Prendre le colis
-  itemConfigId: 6
+  itemConfig: {fileID: 11400000, guid: 039d73aec79bdce46b228c6d9ef12288, type: 2}
   roomId: city
   spawnAtKey: 0
   spawnOffset: {x: 0, y: 0.5, z: 0}

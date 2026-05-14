@@ -47,12 +47,32 @@ namespace Sim.Jobs {
 
         public void OpenBoard(NetworkConnectionToClient conn, JobCategory category) {
             if (conn == null) return;
+
+            // Career gate: only workers of the right job may subscribe to a
+            // category's board. The check is also enforced on Take (defense in
+            // depth) — see JobServerManager.TakeFromBoard.
+            if (!HasJob(conn, category)) {
+                GameLogger.System.Debug("JobBoardOpenDenied_WrongJob {NetId} {Category}",
+                    conn.identity != null ? conn.identity.netId : 0u, category);
+                conn.Send(new JobNotificationMessage {
+                    text = "Tu n'es pas employé pour ce métier."
+                });
+                return;
+            }
+
             if (!_subscribers.TryGetValue(category, out var set)) {
                 set = new HashSet<NetworkConnectionToClient>();
                 _subscribers[category] = set;
             }
             set.Add(conn);
             SendSnapshot(conn, category);
+        }
+
+        private static bool HasJob(NetworkConnectionToClient conn, JobCategory category) {
+            if (conn?.identity == null) return false;
+            var player = conn.identity.GetComponent<Sim.PlayerController>();
+            if (player == null || player.CharacterData == null) return false;
+            return player.CharacterData.CurrentJobCategory == category;
         }
 
         public void CloseBoard(NetworkConnectionToClient conn, JobCategory category) {

@@ -51,6 +51,16 @@
 │     │  ITEM SYSTEM                                                │  │
 │     │  ServerItemManager  →  ClientItemManager                   │  │
 │     └────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│     ┌────────────────────────────────────────────────────────────┐  │
+│     │  JOBS / CAREER SYSTEM                                       │  │
+│     │  JobServerManager  ←→  JobBoardServer (per-category gate)   │  │
+│     │  JobAutoPublisher (random arrivals + cap on Available)     │  │
+│     │  RewardSystem  ←→  MoneyReward / SocialCreditReward /       │  │
+│     │                    JobXpReward                              │  │
+│     │  JobClientManager  →  JobActiveHUD, JobBoardUI, CareerUI    │  │
+│     │  Persisted: characters.current_job + character_jobs table  │  │
+│     └────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
              │ TCP/IP (Mirror KCP or TCP)
              │ (Mirror network messages — gameplay)
@@ -70,6 +80,9 @@
 
 > **Persistence model:** see `PERSISTENCE.md` for the full schema, the
 > migration phases (0 → 3), and the runtime int-propId ↔ DB-UUID bridge.
+>
+> **Jobs / Career model:** see `JOBS_SYSTEM.md` for the full mission framework,
+> board layer, career persistence, network catalog, and end-to-end flows.
 
 ---
 
@@ -83,7 +96,7 @@ Two families of messages (see `NETWORK_FLOW.md` for full catalog):
 - **C2S_*** — client sends to server (room entry, prop interactions, build/edit/remove, teleporter use, save)
 - **S2C_*** — server sends to client (snapshots, prop state, room state, hall/apartment spawn, teleport, NPC, items)
 
-Handler registration happens in `SimpleTownNetwork.OnStartServer`/`OnStartClient` and the three bootstrap classes (`PropSystemBootstrap`, `NpcSystemBootstrap`, `ItemSystemBootstrap`).
+Handler registration happens in `SimpleTownNetwork.OnStartServer`/`OnStartClient` and the four bootstrap classes (`PropSystemBootstrap`, `NpcSystemBootstrap`, `ItemSystemBootstrap`, `JobSystemBootstrap`).
 
 ### Room System Layer
 Rooms are logical groupings identified by a string ID (see `ROOM_SYSTEM.md`). The server tracks which connection is in which room via `PlayerRoomTracker`. All prop broadcasts, NPC broadcasts, and item broadcasts are scoped to room members only. The room entry handshake (`C2S_EnterRoom` → snapshot) is the foundation for all late-join correctness.
@@ -96,6 +109,9 @@ Two registries: `ServerPropManager` (server authority) and `ClientPropManager` (
 
 ### UI Layer
 `HUDManager` is the central UI hub. The phone is the main UI entry point for missions, shop, covers, etc. `BuildManager` owns the build/edit mode UI. All UI is non-blocking overlay.
+
+### Jobs / Career Layer
+Data-driven mission framework (`JobDefinition` SOs + step/reward sub-SOs). Server authority via `JobServerManager` (plain C# singleton, ticked by `JobServerTicker` MonoBehaviour). Per-category `JobBoardServer` gates board access by the player's `CharacterData.CurrentJobCategory`. `JobAutoPublisher` (scene MonoBehaviour) spawns offers at random intervals up to a cap on simultaneous `Available` offers. Persistence is split: `characters.current_job` (active category pointer) + dedicated `character_jobs` table (one row per career, `xp` + `started_at`). The phone Career app (`CareerUI`) sends `JobChangeCareerMessage` to apply/resign; `PlayerController.StartCareerChange` does the REST upsert + rebroadcast. See `JOBS_SYSTEM.md`.
 
 ---
 
@@ -118,6 +134,13 @@ Two registries: `ServerPropManager` (server authority) and `ClientPropManager` (
 | `NpcSpawnManager` | Plain C# (reset on server stop) | NPC pool/spawn lifecycle |
 | `RoomActivityController` | Plain C# (reset on server stop) | Room player count; NPC AI gating |
 | `ServerItemManager` | Plain C# (reset on server stop) | World item state + hand tracking |
+| `JobServerManager` | Plain C# (reset on server stop) | Authoritative mission store + tick (board/active expirations) |
+| `JobBoardServer` | Plain C# (reset on server stop) | Per-category board subscribers + career gate on OpenBoard |
+| `JobClientManager` | Plain C# (cleared on client stop) | Client mission state + events for HUD |
+| `JobBoardClient` | Plain C# (cleared on client stop) | Client-side board snapshot consumption |
+| `JobDatabase` | Plain C# static | Loads all `JobDefinition` SOs at boot |
+| `RewardSystem` | Plain C# static (subscribed via JobEvents) | Applies each `RewardDefinition` on JobCompleted |
+| `JobItemCleanup` | Plain C# static (subscribed via JobEvents) | Despawns mission items on JobFailed |
 | `ClientNpcManager` | DontDestroyOnLoad MonoBehaviour | Client NPC view management |
 | `NpcPool` | Plain C# (disposed on server stop) | GameObject pool for NpcAIController |
 | `InterestPointRegistry` | Plain C# (reset on server stop) | NPC wander targets |

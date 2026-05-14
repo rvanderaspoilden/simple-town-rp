@@ -27,10 +27,13 @@ namespace Sim.Jobs {
             NetworkServer.RegisterHandler<JobBoardOpenMessage>(OnBoardOpenFromClient);
             NetworkServer.RegisterHandler<JobBoardCloseMessage>(OnBoardCloseFromClient);
             NetworkServer.RegisterHandler<JobBoardTakeMessage>(OnBoardTakeFromClient);
+            NetworkServer.RegisterHandler<JobUseMachineMessage>(OnUseMachineFromClient);
+            NetworkServer.RegisterHandler<JobChangeCareerMessage>(OnChangeCareerFromClient);
 
             _tickerGO = new GameObject("JobServerTicker");
             Object.DontDestroyOnLoad(_tickerGO);
             _tickerGO.AddComponent<JobServerTicker>();
+            _tickerGO.AddComponent<PlayerCareerSalaryTicker>();
 
             GameLogger.System.Info("JobSystemServerStarted");
         }
@@ -43,6 +46,8 @@ namespace Sim.Jobs {
             NetworkServer.UnregisterHandler<JobBoardOpenMessage>();
             NetworkServer.UnregisterHandler<JobBoardCloseMessage>();
             NetworkServer.UnregisterHandler<JobBoardTakeMessage>();
+            NetworkServer.UnregisterHandler<JobUseMachineMessage>();
+            NetworkServer.UnregisterHandler<JobChangeCareerMessage>();
 
             if (_tickerGO != null) {
                 Object.Destroy(_tickerGO);
@@ -71,6 +76,16 @@ namespace Sim.Jobs {
 
         private static void OnBoardTakeFromClient(NetworkConnectionToClient conn, JobBoardTakeMessage msg)
             => JobServerManager.Instance.TakeFromBoard(msg.instanceId, conn);
+
+        private static void OnUseMachineFromClient(NetworkConnectionToClient conn, JobUseMachineMessage msg)
+            => UseMachineStepInstance.TryUseMachineFor(conn, msg.machineId);
+
+        private static void OnChangeCareerFromClient(NetworkConnectionToClient conn, JobChangeCareerMessage msg) {
+            if (conn?.identity == null) return;
+            var player = conn.identity.GetComponent<Sim.PlayerController>();
+            if (player == null) return;
+            player.StartCareerChange(msg.newJob);
+        }
 
         // ── Client ────────────────────────────────────────────────────────────
 

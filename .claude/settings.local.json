@@ -41,7 +41,9 @@
       "Bash(grep -E \"\\\\.\\(cs\\)$\")",
       "Bash(unity-mcp-cli run-system-tool *)",
       "PowerShell(unity-mcp-cli run-system-tool ping --input '{\"message\":\"jobs setup\"}')",
-      "PowerShell(npx unity-mcp-cli run-system-tool ping --input '{\\\\\"message\\\\\":\\\\\"jobs setup\\\\\"}')"
+      "PowerShell(npx unity-mcp-cli run-system-tool ping --input '{\\\\\"message\\\\\":\\\\\"jobs setup\\\\\"}')",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(\"D:/Workspace/Unity/TheBroz/simple-town-ws/node_modules/.bin/tsc\" --noEmit --project \"D:/Workspace/Unity/TheBroz/simple-town-ws/tsconfig.json\")"
     ]
   },
   "enableAllProjectMcpServers": true,

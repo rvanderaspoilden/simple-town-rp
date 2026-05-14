@@ -1,6 +1,7 @@
 ﻿using System;
 using DG.Tweening;
 using Sim.Entities;
+using Sim.Jobs;
 using Sim.Scriptables;
 using TMPro;
 using UnityEngine;
@@ -85,7 +86,7 @@ namespace Sim.UI {
 
         public void Setup(CharacterData characterData) {
             this.SetText(this.nameText, characterData.Identity.FullName);
-            this.SetText(this.jobText, "CHÔMEUR");
+            this.SetText(this.jobText, JobCategoryLabels.DisplayUpper(characterData.CurrentJobCategory));
             this.SetMood(DatabaseManager.GetMoodConfigByEnum(characterData.Mood));
         }
 

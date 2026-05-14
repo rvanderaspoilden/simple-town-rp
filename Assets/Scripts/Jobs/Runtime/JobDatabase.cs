@@ -38,5 +38,18 @@ namespace Sim.Jobs {
         }
 
         public static IEnumerable<JobDefinition> All => _byId.Values;
+
+        /// <summary>
+        /// Salary lookup for the career system. Resolves the first JobDefinition
+        /// whose category matches and returns its SalaryAmount. Returns 0 if no
+        /// definition exists for that category. POC compromise: if multiple
+        /// definitions share a category, only the first one's salary is used.
+        /// </summary>
+        public static int GetSalaryForCategory(JobCategory category) {
+            foreach (var def in _byId.Values) {
+                if (def != null && def.Category == category) return def.SalaryAmount;
+            }
+            return 0;
+        }
     }
 }

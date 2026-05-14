@@ -6,7 +6,6 @@ using UnityEngine;
 namespace Sim.Jobs {
     /// <summary>
     /// Provider de debug pour le métier Livreur.
-    ///   offerKey   → Offer direct au premier joueur connecté (Offered)
     ///   publishKey → Publish sur le board (Available, prenable par tous)
     ///
     /// Tirage : un pickup point (Role=Pickup) + un delivery point (Role=Delivery)
@@ -14,38 +13,15 @@ namespace Sim.Jobs {
     /// catégorie de la mission.
     /// </summary>
     public class JobsDebugProvider : MonoBehaviour {
-        [Tooltip("Définition de mission à offrir / publier.")]
+        [Tooltip("Définition de mission à publier.")]
         [SerializeField] private JobDefinition jobDefinition;
-
-        [Tooltip("Touche d'offre directe au premier joueur (Offered).")]
-        [SerializeField] private KeyCode offerKey = KeyCode.F9;
 
         [Tooltip("Touche de publication sur le board (Available).")]
         [SerializeField] private KeyCode publishKey = KeyCode.F10;
 
         private void Update() {
             if (!NetworkServer.active) return;
-            if (Input.GetKeyDown(offerKey)) OfferToFirstPlayer();
-            else if (Input.GetKeyDown(publishKey)) PublishOnBoard();
-        }
-
-        public void OfferToFirstPlayer() {
-            if (jobDefinition == null) {
-                GameLogger.System.Warning("JobsDebugProvider_NoDefinition");
-                return;
-            }
-            var owner = FindFirstPlayerNetId();
-            if (owner == 0u) {
-                GameLogger.System.Warning("JobsDebugProvider_NoPlayer");
-                return;
-            }
-            if (!TryBuildContext(out var ctx, out var pickup, out var delivery)) return;
-
-            var job = JobServerManager.Instance.Offer(jobDefinition, owner, ctx);
-            if (job != null) {
-                GameLogger.System.Info("JobsDebugProvider_Offered {JobId} {NetId} {Pickup} {Delivery}",
-                    jobDefinition.JobId, owner, pickup.TargetId, delivery.TargetId);
-            }
+            if (Input.GetKeyDown(publishKey)) PublishOnBoard();
         }
 
         public void PublishOnBoard() {
@@ -83,14 +59,6 @@ namespace Sim.Jobs {
             ctx.SetTarget(JobTargetKey.Pickup, pickup);
             ctx.SetTarget(JobTargetKey.Delivery, delivery);
             return true;
-        }
-
-        private static uint FindFirstPlayerNetId() {
-            foreach (var conn in NetworkServer.connections.Values) {
-                if (conn?.identity == null) continue;
-                return conn.identity.netId;
-            }
-            return 0u;
         }
 
         private static IJobTarget PickRandomPoint(JobCategory category, PointRole role, IJobTarget except) {

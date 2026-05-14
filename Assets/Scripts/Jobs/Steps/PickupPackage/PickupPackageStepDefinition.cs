@@ -12,8 +12,8 @@ namespace Sim.Jobs {
     /// </summary>
     [CreateAssetMenu(menuName = "Sim/Jobs/Steps/Pickup Package", fileName = "PickupPackageStep")]
     public class PickupPackageStepDefinition : JobStepDefinition {
-        [Tooltip("ID de l'ItemConfig à spawner (ex. 9001 pour 'Colis livreur').")]
-        [SerializeField] private int itemConfigId;
+        [Tooltip("ItemConfig du colis à spawner au sol.")]
+        [SerializeField] private ItemConfig itemConfig;
 
         [Tooltip("RoomId du ServerItemManager. POC = 'city'.")]
         [SerializeField] private string roomId = "city";
@@ -24,7 +24,7 @@ namespace Sim.Jobs {
         [Tooltip("Offset local appliqué à la position du target pour le spawn.")]
         [SerializeField] private Vector3 spawnOffset = new Vector3(0, 0.5f, 0);
 
-        public int ItemConfigId => itemConfigId;
+        public ItemConfig ItemConfig => itemConfig;
         public string RoomId => roomId;
         public JobTargetKey SpawnAtKey => spawnAtKey;
         public Vector3 SpawnOffset => spawnOffset;

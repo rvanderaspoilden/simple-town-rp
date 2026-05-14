@@ -268,6 +268,17 @@ public static class PropInteractionRouter {
                 return;
             }
 
+            // Bloque l'achat tant que le joueur porte un item de mission (colis, etc.).
+            if (ServerItemManager.Instance.IsHoldingEphemeralItem(conn.identity.netId)) {
+                Debug.Log($"[Dispenser] Purchase rejected: mission item held player={conn.connectionId} item={itemId}");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                conn.Send(new ToastNotificationMessage {
+                    text = "Termine ta mission avant d'acheter.",
+                    typeByte = (byte)NotificationType.BANK
+                });
+                return;
+            }
+
             // Vérifie l'espace en main AVANT de débiter le joueur. TWO_HAND exige
             // les deux mains libres ; ONE_HAND exige au moins une main libre.
             if (!ServerItemManager.Instance.CanFitInHand(conn.identity.netId, itemPrice.item)) {

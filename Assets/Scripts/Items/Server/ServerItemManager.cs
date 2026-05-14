@@ -587,6 +587,29 @@ public class ServerItemManager
         return ResolveHand(config, state).HasValue;
     }
 
+    /// <summary>
+    /// Vrai si le joueur porte au moins un item éphémère (Persistent=false),
+    /// typiquement un colis de mission. Utilisé pour bloquer certaines
+    /// interactions (achat shop, etc.) tant que la mission est en cours.
+    /// </summary>
+    public bool IsHoldingEphemeralItem(uint playerNetId)
+    {
+        if (!_playerHands.TryGetValue(playerNetId, out var state)) return false;
+        return HeldEntityIsEphemeral(state.LeftEntityId)
+            || HeldEntityIsEphemeral(state.RightEntityId);
+    }
+
+    private bool HeldEntityIsEphemeral(int entityId)
+    {
+        if (entityId < 0) return false;
+        foreach (var room in _rooms.Values)
+        {
+            if (room.TryGetValue(entityId, out var entity))
+                return !entity.Persistent;
+        }
+        return false;
+    }
+
     private void ClearHolderHandState(ItemEntity entity)
     {
         if (!entity.IsHeld) return;

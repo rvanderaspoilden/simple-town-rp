@@ -1,13 +1,14 @@
 # PERSISTENCE.md — Relational Migration & Target Architecture
 
-> Last updated: 2026-05-12 — Phase 2 (read switch) shipped.
+> Last updated: 2026-05-14 — Career salary column added (`09_city_salary_period.sql`).
 
 This doc is the single source of truth for **how gameplay state is persisted**.
 It covers the legacy JSONB blob, the target relational schema, the migration
 roadmap, and the runtime bridge between Mirror's int prop IDs and DB UUIDs.
 
 Cross-refs: `PROP_SYSTEM.md` (runtime prop registry), `ARCHITECTURE.md`
-(system map), `NETWORK_FLOW.md` (Mirror messages).
+(system map), `NETWORK_FLOW.md` (Mirror messages), `JOBS_SYSTEM.md` (career +
+mission framework).
 
 ---
 
@@ -342,6 +343,86 @@ doors). For now they stay as fixtures.
 
 ---
 
+## 6b. Career persistence (jobs)
+
+The career layer is a separate concern from the prop/place migration above —
+it touches `characters` and adds one new table. Migration:
+`migrations/08_career.sql`. Full architecture in `JOBS_SYSTEM.md`.
+
+```
+characters                                     character_jobs
+─────────                                      ──────────────
+id                UUID PK                       id            UUID PK
+…                                               character_id  UUID FK → characters.id (ON DELETE CASCADE)
+current_job       SMALLINT (nullable)           category      SMALLINT
+                  ↑                             xp            INT       DEFAULT 0
+                  active job pointer            started_at    TIMESTAMPTZ DEFAULT now()
+                  NULL = unemployed
+                                                UNIQUE (character_id, category)
+```
+
+### Conventions
+
+- **Sentinel mapping** Unity ↔ SQL : `CharacterData.currentJob = -1` ⇔ SQL
+  `current_job = NULL`. The mapping lives in `character.service.ts`
+  (`mapRow` coerces `NULL → -1`, `update` coerces `-1 | null → NULL`).
+  Reason : `JsonUtility` cannot deserialize JSON `null` into a primitive
+  `int` field — using `-1` as the unemployed sentinel keeps the wire format
+  symmetric and round-trippable.
+- **Upsert semantics** : `POST /character-jobs/start { characterId, category }`
+  is idempotent — if the (character, category) row exists, it returns
+  unchanged (xp + started_at preserved). Only fresh rows get `xp=0,
+  started_at=now()`. Re-applying to the same career resumes progression.
+- **No row deletion on resign**. Setting `current_job = NULL` does **not**
+  delete the corresponding `character_jobs` row — historical XP is retained
+  forever.
+
+### Routes
+
+| Route | Purpose |
+|---|---|
+| `PUT /characters/:id/update-current-job` body `{ currentJob: number \| null }` | Switch the active career pointer (or clear it) |
+| `GET /character-jobs/by-character/:characterId` | List career rows for one character (`{ characterJobs: CharacterJob[] }` — JsonUtility wrapper) |
+| `POST /character-jobs/start` body `{ characterId, category }` | Idempotent upsert; returns the row |
+| `PUT /character-jobs/add-xp` body `{ characterId, category, delta }` | startOrResume + `xp += delta` |
+
+### Periodic salary (city-wide config)
+
+Migration `09_city_salary_period.sql`:
+
+```sql
+ALTER TABLE cities
+    ADD COLUMN salary_period_seconds INTEGER NOT NULL DEFAULT 600;
+```
+
+- The amount paid is **per category**, configured on the corresponding
+  `JobDefinition.salaryAmount` (Unity SO). The DB only carries the *interval*.
+- Default period is 600s (10 min real time). Tune per-city in Supabase as
+  needed.
+- The pre-existing `cities.unemployed_income` column (NUMERIC, default 0) is
+  reused as the **unemployment fallback** — the same ticker pays this amount
+  to any online player without an active job.
+- Read once by the Unity server in `RetrieveCityData` (alongside
+  `last_timestamp`), then consumed by `PlayerCareerSalaryTicker` at every
+  tick (`SimpleTownNetwork.singleton.CityData.SalaryPeriodSeconds`). Updating
+  the column at runtime requires a server reboot to take effect (no live
+  hot-reload yet).
+- Payments cycle online players only in the POC — see `JOBS_SYSTEM.md`
+  "Periodic salary (PlayerCareerSalaryTicker)" for the variant that adds
+  `character_jobs.last_payout_at` to handle offline accrual.
+
+### Sync to clients
+
+`CharacterData.jobs` is hydrated **server-side at connect** in
+`SimpleTownNetwork.SetupCharacterCoroutine` (REST GET right after the
+character fetch), then broadcast to all clients via the existing
+`PlayerController.rawCharacterData` SyncVar. Mid-session mutations
+(`AddJobXp`, `StartCareerChange`) update `CharacterData` locally and re-broadcast
+via `SetRawCharacterData(JsonUtility.ToJson(...))`. No new SyncVar / no new
+NetworkBehaviour.
+
+---
+
 ## 7. What's left
 
 ### Phase 2 follow-ups (before Phase 3)
@@ -369,10 +450,14 @@ See §4 above.
 - Extend the model to halls, city, shop places (same schema, different
   `places.type`).
 - **Enrich `deliveries` with lifecycle + timing** (status, scheduled_at,
-  carrier_id, …) in parallel with a future "Livreur" job system. Design
-  captured in `plans/wobbly-wobbling-clarke.md` (Phase 4 — deferred). The
-  earlier idea of absorbing `deliveries` into `props` was dropped: a delivery
-  is a transaction (who/when/status), distinct from the prop (object identity).
+  carrier_id, …) in parallel with the Livreur job system. The job framework
+  itself shipped (`JobDefinition`/`JobInstance` SOs, board, career table — see
+  `JOBS_SYSTEM.md` + §6b). Linking the existing prop-delivery flow to job
+  missions (a delivered prop completing a `Delivery_*` mission) is still
+  pending. Design captured in `plans/wobbly-wobbling-clarke.md` (Phase 4 —
+  deferred). The earlier idea of absorbing `deliveries` into `props` was
+  dropped: a delivery is a transaction (who/when/status), distinct from the
+  prop (object identity).
 - Per-player inventory: `places` with `type='inventory'` and a `properties.slot`
   field. Props move there on pickup, back to apt on drop.
 - Container nesting: already supported via `props.container_prop_id`. A chest
@@ -389,6 +474,11 @@ See §4 above.
 | `migrations/03_places_props_covers.sql` | Foundation schema |
 | `migrations/04_backfill_from_homes.sql` | One-shot backfill from `homes.scene_data` |
 | `migrations/05_deliveries_prop_id.sql` | Link deliveries → props |
+| `migrations/08_career.sql` | `characters.current_job` column + `character_jobs` table |
+| `migrations/09_city_salary_period.sql` | `cities.salary_period_seconds` column (default 600s) for the periodic salary ticker |
+| `src/character-job/` | Career module (schema, service via SharedModule, controller, requests, responses) |
+| `src/shared/services/character-job.service.ts` | `findByCharacter`, `startOrResume`, `addXp` |
+| `src/shared/services/character.service.ts` | `updateCurrentJob` + `mapRow`/`update` -1↔NULL sentinel |
 | `src/shared/services/place.service.ts` | Place CRUD, idempotent findOrCreate |
 | `src/shared/services/prop.service.ts` | Prop CRUD with optimistic locking |
 | `src/shared/services/cover.service.ts` | Cover bulk upsert |
@@ -409,6 +499,15 @@ See §4 above.
 | `Props/Server/PropInteractionDispatcher.cs` | `SyncPropTransform`, `SyncPropState`, `SyncPropBuilt`, `SyncPropRemove`, `SyncCovers`, `BuildPropCoroutine` (UUID extraction + PATCH) |
 | `Props/Server/PropInteractionRouter.cs` | Dual-write wiring (calls sync helpers + `apt.Save()`) |
 | `Managers/ApartmentController.cs` | `LoadPlaceStateOrFallback`, `InstantiateLevelFromPlaceState`, `PlaceStateIsHydrated`, `RestoreFrontDoorFromPlaceEntry`, `SpawnInnerDoorsFromPreset`, `SpawnLightsFromPreset`, `SpawnDeliveryBoxFromPreset` |
+| `Entities/CharacterData.cs` | `currentJob` (int, -1 = unemployed) + `List<CharacterJobData> jobs` + helpers |
+| `Entities/CharacterJobData.cs` | Mirror of `character_jobs` row |
+| `Entities/Responses/CharacterJobResponse.cs` | JsonUtility-friendly wrapper for `GET /character-jobs/by-character/:id` |
+| `Entities/Requests/CharacterUpdateCurrentJobRequest.cs` | Body for `PUT /characters/:id/update-current-job` |
+| `Entities/Requests/CharacterJobStartRequest.cs` | Body for `POST /character-jobs/start` |
+| `Entities/Requests/CharacterJobAddXpRequest.cs` | Body for `PUT /character-jobs/add-xp` |
+| `Managers/ApiManager.cs` | `UpdateCharacterCurrentJobRequest`, `RetrieveCharacterJobsRequest`, `StartCharacterJobRequest`, `AddCharacterJobXpRequest` |
+| `Player/PlayerController.cs` | `[Server] StartCareerChange(int)`, `[Server] AddJobXp(int, int)`, `MergeJob`, `PersistJobXp` |
+| `Network/SimpleTownNetwork.cs` | `SetupCharacterCoroutine` hydrates `CharacterData.Jobs` before `SetRawCharacterData` |
 
 ---
 

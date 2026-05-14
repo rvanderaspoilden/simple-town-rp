@@ -55,6 +55,20 @@ All C2S messages are plain C# structs implementing `NetworkMessage`. All are in 
 | `C2S_RequestSwapHands` | *(empty)* | `PlayerHands` (client) | `ServerItemManager.HandleSwap()`: swap left/right, broadcast `S2C_ItemAttachedToHand` twice |
 | `C2S_AdminSpawnItem` | `ItemConfigId: int`, `Position: Vector3` | Debug/admin UI | `ServerItemManager.HandleAdminSpawn()`: `SpawnItem()` in player's current room |
 
+### Jobs / Career
+
+All Jobs messages are plain C# structs implementing `NetworkMessage`, in the global namespace. Handlers are registered in `JobSystemBootstrap.OnServerStart`. See `JOBS_SYSTEM.md` for the full architecture.
+
+| Message | Fields | Sender | Server Action |
+|---|---|---|---|
+| `JobAcceptedMessage` | `instanceId: string` | `JobClientManager` (HUD Accept) | `JobServerManager.Accept` — promotes Offered → Active and broadcasts to owner |
+| `JobAbandonRequestMessage` | `instanceId: string` | HUD Abandon button | `JobServerManager.Abandon` — terminates the mission as `Abandoned`; `JobItemCleanup` despawns the mission item |
+| `JobBoardOpenMessage` | `category: JobCategory` | `JobBoardClient` when opening the board UI | `JobBoardServer.OpenBoard` — **career gate**: rejects if the player's `CurrentJobCategory` ≠ requested category (toast back). Otherwise subscribes the connection and sends a snapshot |
+| `JobBoardCloseMessage` | `category: JobCategory` | UI close | `JobBoardServer.CloseBoard` — unsubscribe |
+| `JobBoardTakeMessage` | `instanceId: string` | Board entry "Prendre" click | `JobServerManager.TakeFromBoard` — career gate + `MaxConcurrentPerPlayer` check + flips Available → Active for the sender |
+| `JobUseMachineMessage` | `machineId: string` | `PackagingMachineBehaviour` USE action | `UseMachineStepInstance.TryUseMachineFor` — advances active UseMachine step + spawns the package item directly in hand |
+| `JobChangeCareerMessage` | `newJob: int` (-1 = resign) | Phone Career app (Postuler / Démissionner) | `PlayerController.StartCareerChange` — abandons active mission, upserts `character_jobs` row, PUT `/characters/:id/update-current-job`, rebroadcasts CharacterData |
+
 ### Player Commands (Mirror Commands — not custom messages)
 
 | Command | Server Action |
@@ -121,6 +135,18 @@ All C2S messages are plain C# structs implementing `NetworkMessage`. All are in 
 | `S2C_ItemDetachedFromHand` | `EntityId: int`, `WorldPosition: Vector3`, `WorldRotation: Quaternion` | All in room | Detach item from hand, drop at world position |
 | `S2C_DropResult` | `Success: bool`, `Hand: HandType`, `ErrorMessage: string` | One connection | Confirm/reject drop |
 
+### Jobs / Career
+
+| Message | Fields | Recipient | Client Action |
+|---|---|---|---|
+| `JobOfferedMessage` | `instanceId, jobId, statusByte, currentStepIndex, currentPromptKey, currentTargetId, currentTargetName, primaryTarget{Kind,Id,Name}, secondaryTarget{Kind,Id,Name}, payloadItemId` | Mission owner | `JobClientManager.HandleOffered` — caches the active mission state and fires `OnJobOffered` (drives `JobActiveHUD`) |
+| `JobStepAdvancedMessage` | `instanceId, newStepIndex, promptKey, currentTargetId, currentTargetName` | Owner | `JobClientManager.HandleStepAdvanced` — updates HUD prompt + active target indicator |
+| `JobFinishedMessage` | `instanceId, terminalStatus, failureReason` | Owner | `JobClientManager.HandleFinished` — hides HUD, fires terminal event |
+| `JobBoardSnapshotMessage` | `categoryByte, entries: JobBoardEntry[]` | Per-category subscribers | `JobBoardClient.OnSnapshot` — rebuilds `JobBoardUI` rows. Filtered to `Available` + `Active` jobs server-side |
+| `JobRewardNotificationMessage` | `amount: int, label: string` | Owner | `NotificationManager` BANK toast (e.g. "+25 €") |
+| `JobNotificationMessage` | `text: string` | Owner or broadcast | `NotificationManager` JOB toast (publish announce, career-gate refusal, XP reward label, …) |
+| `ToastNotificationMessage` | `text: string, typeByte: byte` | One connection | Generic toast — used by shop refusal, career gate variants, etc. (`NotificationType.BANK/HOSPITAL/JOB`) |
+
 ---
 
 ## Connection Handshake Sequence (Step by Step)
@@ -134,10 +160,14 @@ CLIENT                                   SERVER
   │── CreateCharacterMessage ──────────>    │
   │   { userId, characterId }               │  OnCreateCharacter handler
   │                                         │  SetupCharacterCoroutine starts:
-  │                                         │  1. REST GET /characters?userId=...
-  │                                         │  2. REST GET /homes?characterId=...
-  │                                         │  3. Instantiate playerPrefab (NOT yet spawned)
-  │                                         │  4. player.SetRawCharacterData(json)
+  │                                         │  1. REST GET /characters/by-user-id/...
+  │                                         │  2. REST GET /character-jobs/by-character/...   (career hydration)
+  │                                         │  3. REST GET /characters/:id/homes
+  │                                         │  4. Instantiate playerPrefab (NOT yet spawned)
+  │                                         │  5. character.Jobs = jobsResponse.CharacterJobs
+  │                                         │  6. player.SetRawCharacterData(json) ── SyncVar
+  │                                         │     fires ParseCharacterData on all clients →
+  │                                         │     CharacterInfoPanelUI.Setup + CareerUI.Refresh
   │                                         │
   │                          if home found  │
   │                                         │  BuildingBehavior.TeleportToApartment()
@@ -297,4 +327,87 @@ CLIENT                                   SERVER
   │<── S2C_SpawnNpc ×K ─────────────────   │  NPC snapshot
   │<── S2C_UpdateNpcTransform ×K ───────   │  NPC initial transforms
   │<── S2C_SpawnItem ×J ────────────────   │  Item snapshot
+```
+
+---
+
+## Jobs / Career Flow Sequences
+
+### Career change (Postuler / Démissionner)
+
+```
+CLIENT (phone Career app)                SERVER
+  │                                         │
+  │  [User taps "Postuler — Livreur"]       │
+  │── JobChangeCareerMessage ──────────>   │  { newJob: 0 }
+  │                                         │  OnChangeCareerFromClient
+  │                                         │  → player.StartCareerChange(0)
+  │                                         │
+  │                                         │  JobServerManager.OnPlayerDisconnected(netId)
+  │                                         │  (abandons any active mission; JobItemCleanup
+  │                                         │   despawns its mission item)
+  │                                         │
+  │                                         │  POST /character-jobs/start { characterId, category }
+  │                                         │  ← CharacterJob row (xp/started_at preserved)
+  │                                         │  characterData.Jobs ← MergeJob(row)
+  │                                         │
+  │                                         │  PUT /characters/:id/update-current-job { currentJob: 0 }
+  │                                         │  ← 200
+  │                                         │
+  │                                         │  characterData.CurrentJobRaw = 0
+  │                                         │  player.SetRawCharacterData(JsonUtility.ToJson(...))
+  │                                         │  (SyncVar fires on all clients)
+  │
+  │  [ParseCharacterData hook fires]        │
+  │  → OnCharacterDataChanged event         │
+  │     ├─ CharacterInfoPanelUI.Setup       │  HUD label "LIVREUR"
+  │     └─ CareerUI.Refresh                 │  Phone app switches to career view
+```
+
+### Job board open (with career gate)
+
+```
+CLIENT (in front of a JobBoard)          SERVER
+  │                                         │
+  │  [Player triggers OPEN on JobBoard]     │
+  │  JobBoard.Open() local pre-check:       │
+  │  if currentJob != board.category →      │
+  │     NotificationManager toast, abort.   │
+  │                                         │
+  │── JobBoardOpenMessage ─────────────>   │  { category }
+  │                                         │  JobBoardServer.OpenBoard:
+  │                                         │  if currentJob != category →
+  │                                         │     JobNotificationMessage refusal, abort.
+  │                                         │  Else subscribe + SendSnapshot.
+  │<── JobBoardSnapshotMessage ─────────   │  { categoryByte, entries[] }
+  │
+  │  [Click "Prendre" on an entry]          │
+  │── JobBoardTakeMessage ─────────────>   │  { instanceId }
+  │                                         │  JobServerManager.TakeFromBoard:
+  │                                         │  - career match (defense in depth)
+  │                                         │  - MaxConcurrentPerPlayer
+  │                                         │  - JobInstance.Take(netId) flips Available → Active
+  │<── JobOfferedMessage ──────────────-   │  status=Active, currentStep details
+  │<── JobNotificationMessage ─────────-   │  "Mission prise : …"
+```
+
+### XP / money reward on completion
+
+```
+SERVER (mission terminal)                 CLIENT (owner)
+  │                                         │
+  │  JobInstance.Complete()                 │
+  │  → JobEvents.RaiseJobCompleted          │
+  │     RewardSystem subscriber:            │
+  │       MoneyReward.Apply(job)            │
+  │         bank.GiveMoney(amount)          │
+  │           → PUT /update-money           │
+  │         conn.Send(JobRewardNotification)│──> NotificationManager BANK "+25 €"
+  │       JobXpReward.Apply(job)            │
+  │         player.AddJobXp(category, n)    │
+  │           characterData.jobs[..].Xp += n│
+  │           SetRawCharacterData (SyncVar) │──> ParseCharacterData → CareerUI redraw
+  │           StartCoroutine PUT /add-xp    │
+  │         conn.Send(JobNotificationMessage)│──> NotificationManager JOB "+10 XP Livreur"
+  │  JobFinishedMessage to owner            │──> JobActiveHUD hides
 ```

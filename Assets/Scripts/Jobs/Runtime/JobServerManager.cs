@@ -78,10 +78,18 @@ namespace Sim.Jobs {
             _byInstanceId[job.InstanceId] = job;
             JobEvents.RaiseJobPublished(job);
 
+            // Only notify players whose active career matches this job's
+            // category — the others are not employed for it and shouldn't see
+            // the toast (matches the board gating model).
             var label = JobLabel(def);
-            NetworkServer.SendToAll(new JobNotificationMessage {
-                text = $"Nouvelle mission : {label}"
-            });
+            var notif = new JobNotificationMessage { text = $"Nouvelle mission : {label}" };
+            foreach (var conn in NetworkServer.connections.Values) {
+                if (conn?.identity == null) continue;
+                var player = conn.identity.GetComponent<Sim.PlayerController>();
+                if (player == null || player.CharacterData == null) continue;
+                if (player.CharacterData.CurrentJobCategory != def.Category) continue;
+                conn.Send(notif);
+            }
             return job;
         }
 
@@ -91,6 +99,21 @@ namespace Sim.Jobs {
             if (!job.IsAvailable) return false;
 
             uint netId = sender.identity.netId;
+
+            // Career gate (defense in depth, mirror of JobBoardServer.OpenBoard).
+            var player = sender.identity.GetComponent<Sim.PlayerController>();
+            var playerJob = player != null && player.CharacterData != null
+                ? player.CharacterData.CurrentJobCategory
+                : null;
+            if (playerJob != job.Definition.Category) {
+                GameLogger.System.Debug("JobTakeDenied_WrongCategory {JobId} {NetId} {PlayerJob} {Required}",
+                    job.Definition.JobId, netId, playerJob, job.Definition.Category);
+                sender.Send(new JobNotificationMessage {
+                    text = "Cette mission n'est pas pour ton métier."
+                });
+                return false;
+            }
+
             int active = ActiveCountForOwner(netId);
             if (active >= job.Definition.MaxConcurrentPerPlayer) {
                 GameLogger.System.Debug("JobTakeDenied_MaxConcurrent {JobId} {NetId} {Active}",
@@ -160,7 +183,7 @@ namespace Sim.Jobs {
             if (!NetworkServer.active) return;
 
             foreach (var job in _byInstanceId.Values) {
-                if (job.Status == JobStatus.Active) job.Tick(dt);
+                if (job.Status == JobStatus.Active || job.Status == JobStatus.Available) job.Tick(dt);
             }
 
             if (_toRemove.Count > 0) {
@@ -241,7 +264,8 @@ namespace Sim.Jobs {
                 secondaryTargetKind = ctx.secondaryTarget?.Kind ?? JobTargetKind.Zone,
                 secondaryTargetId   = ctx.secondaryTarget?.TargetId ?? string.Empty,
                 secondaryTargetName = ctx.secondaryTarget?.DisplayName ?? string.Empty,
-                payloadItemId = ctx.payloadItemId ?? string.Empty
+                payloadItemId = ctx.payloadItemId ?? string.Empty,
+                elapsedSeconds = job.ElapsedSeconds,
             };
             SendToOwner(job.OwnerNetId, msg);
         }
