@@ -25,7 +25,8 @@ namespace Sim.SubGames.Packaging {
             for (int i = 0; i < items.Count; i++) {
                 var inst = items[i];
                 var view = Instantiate(itemViewPrefab, trayContainer);
-                view.Bind(inst, trayCellSize);
+                view.Bind(inst);
+                view.SetTrayLayout(trayCellSize);
                 _views[inst.Id] = view;
             }
         }
@@ -45,16 +46,16 @@ namespace Sim.SubGames.Packaging {
             return null;
         }
 
-        public void HideView(int itemId) {
-            if (_views.TryGetValue(itemId, out var view) && view != null) {
-                view.gameObject.SetActive(false);
-            }
-        }
-
+        /// <summary>
+        /// Replace l'item dans le tray (utilisé après un drag depuis le tray
+        /// qui a échoué, ou un retrait depuis la grille). Réapplique le layout
+        /// 1×1 du tray.
+        /// </summary>
         public void RestoreView(int itemId) {
             if (_views.TryGetValue(itemId, out var view) && view != null) {
                 view.transform.SetParent(trayContainer, false);
                 view.gameObject.SetActive(true);
+                view.SetTrayLayout(trayCellSize);
             }
         }
     }

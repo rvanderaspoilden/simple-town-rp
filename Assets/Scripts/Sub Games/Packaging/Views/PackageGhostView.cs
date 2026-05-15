@@ -17,12 +17,29 @@ namespace Sim.SubGames.Packaging {
 
         public void Show(PackageItemInstance item, int rotation, float cellSize) {
             gameObject.SetActive(true);
-            var bounds = item.GetRotatedShape(rotation).Bounds();
-            Rect.sizeDelta = new Vector2(bounds.width * cellSize, bounds.height * cellSize);
+
+            // Root = bounds de la forme rotée × cellSize (= zone d'occupation réelle
+            // sur la grille). bgImage (stretched) suit le root.
+            var rotatedBounds = item.GetRotatedShape(rotation).Bounds();
+            Rect.sizeDelta = new Vector2(rotatedBounds.width * cellSize, rotatedBounds.height * cellSize);
+
             if (iconImage != null) {
                 iconImage.sprite = item.Definition.icon;
                 iconImage.color = item.Definition.tint;
-                iconImage.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -90f * rotation);
+                iconImage.preserveAspect = false;
+
+                // Icône stretched au root (= zone d'occupation rotée). Rotation
+                // visuelle appliquée au sprite via localRotation, mais le rect
+                // reste contenu dans le parent → jamais d'overflow.
+                var ir = iconImage.rectTransform;
+                ir.anchorMin = Vector2.zero;
+                ir.anchorMax = Vector2.one;
+                ir.pivot = new Vector2(0.5f, 0.5f);
+                ir.offsetMin = Vector2.zero;
+                ir.offsetMax = Vector2.zero;
+                ir.anchoredPosition = Vector2.zero;
+                ir.localScale = Vector3.one;
+                ir.localRotation = Quaternion.Euler(0f, 0f, -90f * rotation);
             }
         }
 

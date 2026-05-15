@@ -37,7 +37,7 @@ namespace Sim.SubGames.Packaging {
 
         public bool CanPlace(PackageItemInstance item, Vector2Int origin, int rotation) {
             var shape = item.GetRotatedShape(rotation);
-            if (shape.cells == null) return false;
+            if (shape.cells == null || shape.cells.Length == 0) return false;
 
             for (int i = 0; i < shape.cells.Length; i++) {
                 var p = origin + shape.cells[i];

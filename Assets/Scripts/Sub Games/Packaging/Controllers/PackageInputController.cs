@@ -9,6 +9,7 @@ namespace Sim.SubGames.Packaging {
     /// </summary>
     public class PackageInputController : MonoBehaviour {
         public event Action<PackageItemInstance> OnItemPlaced;
+        public event Action<PackageItemInstance> OnItemReturned;
 
         [SerializeField] private KeyCode rotateKey = KeyCode.R;
         [SerializeField] private PackageGhostView ghost;
@@ -98,7 +99,10 @@ namespace Sim.SubGames.Packaging {
             _draggedOriginalOrigin = origOrigin;
             _draggedOriginalRotation = origRotation;
 
-            if (fromGrid) _grid.Remove(_dragged);
+            if (fromGrid) {
+                _grid.Remove(_dragged);
+                OnItemReturned?.Invoke(_dragged);
+            }
 
             view.SetAlpha(0f);
             view.SetInteractable(false);

@@ -3,8 +3,9 @@ using UnityEngine.UI;
 
 namespace Sim.SubGames.Packaging {
     /// <summary>
-    /// Représentation visuelle d'un PackageItemInstance, soit dans la grille
-    /// soit dans le tray. Pose les cellules sous forme d'Image enfants.
+    /// Représentation visuelle d'un PackageItemInstance. Deux modes :
+    ///   - Tray (slot 1x1 fixe, peu importe la forme)
+    ///   - Grid (forme × cellSize, avec rotation visuelle)
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class PackageItemView : MonoBehaviour {
@@ -16,28 +17,64 @@ namespace Sim.SubGames.Packaging {
 
         public PackageItemInstance Instance { get; private set; }
 
-        public void Bind(PackageItemInstance instance, float cellSize) {
+        /// <summary>
+        /// Lie la définition de l'item à la vue. N'applique pas de layout —
+        /// appelle SetTrayLayout / SetGridLayout selon le contexte.
+        /// </summary>
+        public void Bind(PackageItemInstance instance) {
             Instance = instance;
             if (iconImage != null) {
                 iconImage.sprite = instance.Definition.icon;
                 iconImage.color = instance.Definition.tint;
+                iconImage.preserveAspect = false;
             }
-            ResizeToShape(instance.GetRotatedShape(0), cellSize);
         }
 
-        public void SetRotationVisual(int rotation, float cellSize) {
-            ResizeToShape(Instance.GetRotatedShape(rotation), cellSize);
-            // Visual angle for the icon (the shape itself is already pre-rotated
-            // in cells, so we only rotate the sprite for visual coherence).
+        /// <summary>
+        /// Mode tray : slot carré fixe (1×1 logique). L'icône s'étire au
+        /// parent avec Preserve Aspect pour garder la silhouette.
+        /// </summary>
+        public void SetTrayLayout(float slotSize) {
+            Rect.sizeDelta = new Vector2(slotSize, slotSize);
             if (iconImage != null) {
-                iconImage.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -90f * rotation);
+                var ir = iconImage.rectTransform;
+                ir.anchorMin = Vector2.zero;
+                ir.anchorMax = Vector2.one;
+                ir.pivot = new Vector2(0.5f, 0.5f);
+                ir.offsetMin = Vector2.zero;
+                ir.offsetMax = Vector2.zero;
+                ir.localRotation = Quaternion.identity;
             }
         }
 
-        private void ResizeToShape(PackageShape shape, float cellSize) {
-            var bounds = shape.Bounds();
-            Rect.sizeDelta = new Vector2(bounds.width * cellSize, bounds.height * cellSize);
+        /// <summary>
+        /// Mode grille : taille = bounds de la forme rotée × cellSize.
+        /// L'icône garde sa taille de base (rotation 0) au centre, et est
+        /// pivotée visuellement. Ainsi un objet 1×2 reste à l'échelle quand
+        /// on le couche en 2×1 — le sprite n'est jamais étiré/écrasé.
+        /// </summary>
+        public void SetGridLayout(int rotation, float cellSize) {
+            var rotatedBounds = Instance.GetRotatedShape(rotation).Bounds();
+            Rect.sizeDelta = new Vector2(rotatedBounds.width * cellSize, rotatedBounds.height * cellSize);
+
+            if (iconImage != null) {
+                // Icône stretched au root → jamais d'overflow visuel ou de raw rect
+                // qui dépasse. La rotation visuelle est appliquée au sprite (pivot
+                // centre), donc la silhouette tourne dans le même rect.
+                var ir = iconImage.rectTransform;
+                ir.anchorMin = Vector2.zero;
+                ir.anchorMax = Vector2.one;
+                ir.pivot = new Vector2(0.5f, 0.5f);
+                ir.offsetMin = Vector2.zero;
+                ir.offsetMax = Vector2.zero;
+                ir.anchoredPosition = Vector2.zero;
+                ir.localScale = Vector3.one;
+                ir.localRotation = Quaternion.Euler(0f, 0f, -90f * rotation);
+            }
         }
+
+        // Alias rétro-compatible avec PackageInputController.
+        public void SetRotationVisual(int rotation, float cellSize) => SetGridLayout(rotation, cellSize);
 
         public void SetAlpha(float a) {
             if (canvasGroup != null) canvasGroup.alpha = a;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Sim.SubGames.Packaging {
     /// <summary>
@@ -27,6 +28,7 @@ namespace Sim.SubGames.Packaging {
         [SerializeField] private Canvas uiCanvas;
         [SerializeField] private PackageGridView gridView;
         [SerializeField] private PackageItemTrayView trayView;
+        [SerializeField] private PackageOrderPanelView orderPanel;
         [SerializeField] private PackageInputController input;
         [SerializeField] private PackagingFeedback feedback;
         [SerializeField] private PackagingSubGameConfig fallbackConfig;
@@ -35,6 +37,17 @@ namespace Sim.SubGames.Packaging {
         private PackageGrid _grid;
         private readonly List<PackageItemInstance> _instances = new List<PackageItemInstance>();
         private bool _validated;
+
+        private void Start() {
+            // Test direct : si la scène a été lancée seule (Play depuis Packaging.unity)
+            // au lieu d'être chargée additivement par SubGameController, on auto-démarre
+            // avec la fallbackConfig pour pouvoir itérer sans passer par toute la chaîne job.
+            if (_gameStarted) return;
+            if (gameObject.scene != SceneManager.GetActiveScene()) return;
+            if (fallbackConfig == null) return;
+            Init(null, null);
+            StartGame();
+        }
 
         public override void StartGame() {
             base.StartGame();
@@ -58,8 +71,13 @@ namespace Sim.SubGames.Packaging {
 
             gridView.Build(_grid, uiCamera);
             trayView.Build(_instances);
+            if (orderPanel != null) {
+                orderPanel.Build(_config.order);
+                orderPanel.UpdateProgress(_grid.Items);
+            }
             input.Bind(_grid, gridView, trayView, feedback, uiCamera);
             input.OnItemPlaced += HandleItemPlaced;
+            input.OnItemReturned += HandleItemReturned;
 
             if (feedback != null) feedback.HideResultPanel();
             _gameStarted = true;
@@ -69,6 +87,7 @@ namespace Sim.SubGames.Packaging {
         public override void StopGame() {
             if (input != null) {
                 input.OnItemPlaced -= HandleItemPlaced;
+                input.OnItemReturned -= HandleItemReturned;
                 input.Unbind();
             }
             // Si on quitte sans avoir validé, on prévient les abonnés.
@@ -78,7 +97,11 @@ namespace Sim.SubGames.Packaging {
 
         private void HandleItemPlaced(PackageItemInstance item) {
             feedback?.PlayPlaceFeedback(item);
-            if (trayView != null) trayView.HideView(item.Id);
+            if (orderPanel != null) orderPanel.UpdateProgress(_grid.Items);
+        }
+
+        private void HandleItemReturned(PackageItemInstance item) {
+            if (orderPanel != null) orderPanel.UpdateProgress(_grid.Items);
         }
 
         /// <summary>
