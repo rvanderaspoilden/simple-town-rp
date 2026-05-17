@@ -33,6 +33,7 @@ namespace Sim.SubGames.Packaging {
         [SerializeField] private PackageOrderPanelView orderPanel;
         [SerializeField] private PackageInputController input;
         [SerializeField] private PackagingFeedback feedback;
+        [SerializeField] private PackagingHintPanelView hintPanel;
         [SerializeField] private PackagingSubGameConfig fallbackConfig;
 
         private PackagingSubGameConfig _config;
@@ -83,6 +84,7 @@ namespace Sim.SubGames.Packaging {
             input.OnItemReturned += HandleItemReturned;
 
             if (feedback != null) feedback.HideResultPanel();
+            hintPanel?.Show();
             _gameStarted = true;
             _validated = false;
             _pendingSnapshot = null;
@@ -120,6 +122,7 @@ namespace Sim.SubGames.Packaging {
             var previewScore = PackageScoringSystem.Evaluate(_grid, _config, _instances.Count);
             _validated = true;
             _pendingSnapshot = BuildSnapshot();
+            hintPanel?.Hide();
             feedback?.PlayValidationFeedback(previewScore);
         }
 

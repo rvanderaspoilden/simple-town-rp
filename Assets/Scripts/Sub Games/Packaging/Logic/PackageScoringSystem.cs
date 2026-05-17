@@ -14,15 +14,20 @@ namespace Sim.SubGames.Packaging {
         public readonly bool fragileOk;
         public readonly bool heavyOk;
         public readonly bool allItemsPlaced;
+        public readonly int placedCount;
+        public readonly int totalCount;
 
         public PackageScore(int total, PackageRating rating, float spaceRatio,
-                            bool fragileOk, bool heavyOk, bool allItemsPlaced) {
+                            bool fragileOk, bool heavyOk, bool allItemsPlaced,
+                            int placedCount = 0, int totalCount = 0) {
             this.total = total;
             this.rating = rating;
             this.spaceRatio = spaceRatio;
             this.fragileOk = fragileOk;
             this.heavyOk = heavyOk;
             this.allItemsPlaced = allItemsPlaced;
+            this.placedCount = placedCount;
+            this.totalCount = totalCount;
         }
     }
 
@@ -68,7 +73,8 @@ namespace Sim.SubGames.Packaging {
             else if (total >= 700) rating = PackageRating.Good;
             else rating = PackageRating.Correct;
 
-            return new PackageScore(total, rating, spaceRatio, fragileOk, heavyOk, allPlaced);
+            return new PackageScore(total, rating, spaceRatio, fragileOk, heavyOk, allPlaced,
+                                    grid.Items.Count, itemsInOrder);
         }
 
         /// <summary>

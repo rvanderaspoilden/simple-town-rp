@@ -12,6 +12,8 @@ namespace Sim.SubGames.Packaging {
         [SerializeField] private Image bgImage;
         [SerializeField] private Image iconImage;
         [SerializeField] private CanvasGroup canvasGroup;
+        [SerializeField] private GameObject heavyBadge;
+        [SerializeField] private GameObject fragileBadge;
 
         private RectTransform _rect;
         public RectTransform Rect => _rect != null ? _rect : (_rect = GetComponent<RectTransform>());
@@ -32,6 +34,8 @@ namespace Sim.SubGames.Packaging {
             if (bgImage != null) {
                 bgImage.color = instance.Definition.bgColor;
             }
+            if (heavyBadge != null) heavyBadge.SetActive(instance.Definition.heavy);
+            if (fragileBadge != null) fragileBadge.SetActive(instance.Definition.fragile);
         }
 
         /// <summary>

@@ -24,6 +24,12 @@ namespace Sim.SubGames.Packaging {
         [SerializeField] private Sprite goodIcon;
         [SerializeField] private Sprite perfectIcon;
 
+        [Header("Score breakdown (optionnel)")]
+        [SerializeField] private TextMeshProUGUI spaceBreakdownLabel;
+        [SerializeField] private TextMeshProUGUI fragileBreakdownLabel;
+        [SerializeField] private TextMeshProUGUI heavyBreakdownLabel;
+        [SerializeField] private TextMeshProUGUI itemsBreakdownLabel;
+
         public void PlayPlaceFeedback(PackageItemInstance item) {
             var clip = item != null && item.Definition != null && item.Definition.placeSound != null
                 ? item.Definition.placeSound
@@ -45,6 +51,22 @@ namespace Sim.SubGames.Packaging {
                     PackageRating.Good    => goodIcon,
                     _                     => correctIcon
                 };
+            }
+
+            if (spaceBreakdownLabel != null)
+                spaceBreakdownLabel.text = $"📦 Espace : {Mathf.RoundToInt(score.spaceRatio * 100)}%";
+            if (fragileBreakdownLabel != null)
+                fragileBreakdownLabel.text = score.fragileOk
+                    ? "🥚 Fragiles protégés : ✓"
+                    : "🥚 Fragiles protégés : ✗";
+            if (heavyBreakdownLabel != null)
+                heavyBreakdownLabel.text = score.heavyOk
+                    ? "⚖ Lourds bien posés : ✓"
+                    : "⚖ Lourds bien posés : ✗";
+            if (itemsBreakdownLabel != null) {
+                itemsBreakdownLabel.text = score.allItemsPlaced
+                    ? $"Items placés : {score.totalCount} / {score.totalCount} ✓"
+                    : $"Items placés : {score.placedCount} / {score.totalCount}";
             }
         }
 
