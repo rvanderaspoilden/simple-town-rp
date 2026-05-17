@@ -46,7 +46,10 @@
       "Bash(\"D:/Workspace/Unity/TheBroz/simple-town-ws/node_modules/.bin/tsc\" --noEmit --project \"D:/Workspace/Unity/TheBroz/simple-town-ws/tsconfig.json\")",
       "Bash(\"/c/Program Files/nodejs/npx.cmd\" unity-mcp-cli run-tool assets-refresh --input-file -)",
       "Bash(\"/c/Program Files/nodejs/npx.cmd\" unity-mcp-cli run-tool console-get-logs --input-file -)",
-      "Bash(\"/c/Program Files/nodejs/npx.cmd\" unity-mcp-cli run-tool editor-application-get-state --input-file -)"
+      "Bash(\"/c/Program Files/nodejs/npx.cmd\" unity-mcp-cli run-tool editor-application-get-state --input-file -)",
+      "Bash(grep -n \"--- !u!114 &242201207\" \"Assets/Scenes/SubGames/Packaging.unity\")",
+      "Bash(python3 -c ' *)",
+      "Bash(node -e ' *)"
     ]
   },
   "enableAllProjectMcpServers": true,
