@@ -43,16 +43,19 @@ namespace Sim.Jobs {
             SubGameController.Instance.LaunchSubGame(packagingConfig, true);
         }
 
-        private void HandlePackageValidated(PackageScore? score) {
+        private void HandlePackageValidated(PackagePlacementSnapshot? snapshot) {
             PackagingSubGameManager.OnPackageValidated -= HandlePackageValidated;
             PackagingSubGameManager.PendingConfig = null;
             _miniGameInFlight = false;
 
-            if (!score.HasValue) {
+            if (!snapshot.HasValue) {
                 // Joueur a annulé — pas de spawn.
                 return;
             }
-            NetworkClient.Send(new JobUseMachineMessage { machineId = machineId ?? string.Empty });
+            NetworkClient.Send(new JobUseMachineMessage {
+                machineId = machineId ?? string.Empty,
+                snapshot  = snapshot.Value
+            });
         }
 
         protected override void OnDestroy() {

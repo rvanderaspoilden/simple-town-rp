@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Mirror;
 using Sim.Logging;
+using Sim.SubGames.Packaging;
 
 namespace Sim.Jobs {
     /// <summary>
@@ -12,6 +13,8 @@ namespace Sim.Jobs {
     public sealed class UseMachineStepInstance : JobStepInstance {
         public const string CtxEntityIdKey = "packageEntityId";
         public const string CtxRoomIdKey   = "packageRoomId";
+        public const string CtxScoreKey    = "packageScore";
+        public const string CtxRatingKey   = "packageRating";
 
         private static readonly Dictionary<uint, UseMachineStepInstance> _waiting =
             new Dictionary<uint, UseMachineStepInstance>();
@@ -59,10 +62,13 @@ namespace Sim.Jobs {
 
         /// <summary>
         /// Appelé par JobSystemBootstrap quand le client envoie JobUseMachineMessage.
-        /// Spawn le colis dans les mains du joueur, marque l'item comme éphémère
-        /// + restreint au owner, et succeed.
+        /// Si le step a une PackagingSubGameConfig attachée, le serveur recalcule
+        /// le score à partir du snapshot envoyé par le client (anti-triche). Le
+        /// score sert pour les logs / futurs rewards modulés ; le spawn reste
+        /// indépendant pour rester cozy (jamais bloqué).
         /// </summary>
-        public static void TryUseMachineFor(NetworkConnectionToClient conn, string machineId) {
+        public static void TryUseMachineFor(NetworkConnectionToClient conn, string machineId,
+                                            PackagePlacementSnapshot snapshot) {
             if (conn == null || conn.identity == null) return;
             uint netId = conn.identity.netId;
 
@@ -73,6 +79,21 @@ namespace Sim.Jobs {
                 });
                 return;
             }
+
+            // Validation serveur autoritaire : on rejoue le placement contre
+            // NOTRE PackageOrderDefinition (jamais celle envoyée par le client).
+            var cfg = step.def.PackagingConfig;
+            if (cfg != null && cfg.order != null) {
+                var serverScore = PackageScoringSystem.EvaluateFromSnapshot(snapshot, cfg.order, cfg);
+                GameLogger.System.Info(
+                    "PackagingScore_Server {NetId} {JobId} {Total} {Rating} {Space} {FragileOk} {HeavyOk} {AllPlaced}",
+                    netId, step.job.Definition.JobId, serverScore.total, serverScore.rating,
+                    serverScore.spaceRatio, serverScore.fragileOk, serverScore.heavyOk,
+                    serverScore.allItemsPlaced);
+                step.job.Context.Set(CtxScoreKey,  serverScore.total);
+                step.job.Context.Set(CtxRatingKey, (int)serverScore.rating);
+            }
+
             step.HandleMachineUsed(conn);
         }
 

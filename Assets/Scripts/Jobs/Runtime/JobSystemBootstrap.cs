@@ -78,7 +78,7 @@ namespace Sim.Jobs {
             => JobServerManager.Instance.TakeFromBoard(msg.instanceId, conn);
 
         private static void OnUseMachineFromClient(NetworkConnectionToClient conn, JobUseMachineMessage msg)
-            => UseMachineStepInstance.TryUseMachineFor(conn, msg.machineId);
+            => UseMachineStepInstance.TryUseMachineFor(conn, msg.machineId, msg.snapshot);
 
         private static void OnChangeCareerFromClient(NetworkConnectionToClient conn, JobChangeCareerMessage msg) {
             if (conn?.identity == null) return;

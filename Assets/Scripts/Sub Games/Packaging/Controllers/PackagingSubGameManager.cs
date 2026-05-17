@@ -20,9 +20,11 @@ namespace Sim.SubGames.Packaging {
 
         /// <summary>
         /// Délivré côté caller (machine) après la fermeture du mini-jeu.
-        /// Receive null si le joueur annule sans valider.
+        /// Reçoit null si le joueur annule sans valider. Le snapshot est ce que
+        /// le caller envoie au serveur — le serveur recalcule son score
+        /// autoritaire à partir de là, le client ne fait que prévisualiser.
         /// </summary>
-        public static event Action<PackageScore?> OnPackageValidated;
+        public static event Action<PackagePlacementSnapshot?> OnPackageValidated;
 
         [Header("Scene refs")]
         [SerializeField] private Canvas uiCanvas;
@@ -37,6 +39,7 @@ namespace Sim.SubGames.Packaging {
         private PackageGrid _grid;
         private readonly List<PackageItemInstance> _instances = new List<PackageItemInstance>();
         private bool _validated;
+        private PackagePlacementSnapshot? _pendingSnapshot;
 
         private void Start() {
             // Test direct : si la scène a été lancée seule (Play depuis Packaging.unity)
@@ -82,6 +85,7 @@ namespace Sim.SubGames.Packaging {
             if (feedback != null) feedback.HideResultPanel();
             _gameStarted = true;
             _validated = false;
+            _pendingSnapshot = null;
         }
 
         public override void StopGame() {
@@ -106,24 +110,49 @@ namespace Sim.SubGames.Packaging {
 
         /// <summary>
         /// Câblable sur le bouton "Valider le colis" de l'UI.
+        /// Affiche la modale de résultat (score prévisualisé côté client). Le
+        /// snapshot est envoyé au serveur à la fermeture pour validation autoritaire.
         /// </summary>
         public void ValidatePackage() {
             if (_validated || _grid == null) return;
             // Permettre la validation même si tous les items ne sont pas placés —
             // wholesome : on ne bloque pas. Le score sera juste plus bas.
-            var score = PackageScoringSystem.Evaluate(_grid, _config, _instances.Count);
+            var previewScore = PackageScoringSystem.Evaluate(_grid, _config, _instances.Count);
             _validated = true;
-            feedback?.PlayValidationFeedback(score);
-            OnPackageValidated?.Invoke(score);
-            // Laisse le panel de résultat visible un court instant. Un bouton
-            // "Continuer" sur le panel devra appeler StopGame() via une UnityEvent.
+            _pendingSnapshot = BuildSnapshot();
+            feedback?.PlayValidationFeedback(previewScore);
         }
 
         /// <summary>
-        /// À câbler sur le bouton "Continuer" / "Parfait !" du panel de résultat.
+        /// À câbler sur le bouton de fermeture de la modale de résultat.
+        /// Envoie le snapshot aux abonnés (machine → serveur), puis décharge le mini-jeu.
         /// </summary>
         public void CloseAfterValidation() {
+            if (_pendingSnapshot.HasValue) {
+                OnPackageValidated?.Invoke(_pendingSnapshot.Value);
+                _pendingSnapshot = null;
+            }
             StopGame();
+        }
+
+        private PackagePlacementSnapshot BuildSnapshot() {
+            var placements = new PackagePlacement[_grid.Items.Count];
+            int i = 0;
+            foreach (var kvp in _grid.Items) {
+                var item = kvp.Value;
+                placements[i++] = new PackagePlacement {
+                    instanceIndex = (byte)item.Id,
+                    originX       = (byte)item.Origin.x,
+                    originY       = (byte)item.Origin.y,
+                    rotation      = (byte)item.Rotation
+                };
+            }
+            return new PackagePlacementSnapshot {
+                orderId    = _config.order != null ? _config.order.orderId : string.Empty,
+                gridWidth  = (byte)_config.gridWidth,
+                gridHeight = (byte)_config.gridHeight,
+                placements = placements
+            };
         }
     }
 }

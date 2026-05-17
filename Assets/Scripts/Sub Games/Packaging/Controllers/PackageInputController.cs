@@ -115,11 +115,15 @@ namespace Sim.SubGames.Packaging {
             _hoverValid = _grid.IsInside(_hoverCell) && _grid.CanPlace(_dragged, _hoverCell, _dragRotation);
 
             if (ghost != null) {
+                ghost.gameObject.SetActive(true);
                 if (_grid.IsInside(_hoverCell)) {
+                    // Snap sur la cellule survolée, couleur valid/invalid.
                     ghost.UpdatePosition(_gridView.CellToLocal(_hoverCell), _hoverValid);
-                    ghost.gameObject.SetActive(true);
                 } else {
-                    ghost.gameObject.SetActive(false);
+                    // Hors grille : centré sur le curseur dans l'espace de la grille,
+                    // même référentiel que CellToLocal → pas de décalage de pivot/ancrage.
+                    var cursorLocal = _gridView.ScreenToLocalUnclamped(Input.mousePosition);
+                    ghost.UpdatePosition(cursorLocal - ghost.Rect.sizeDelta * 0.5f, false);
                 }
             }
         }

@@ -28,6 +28,8 @@ namespace Sim.SubGames.Packaging {
 
     /// <summary>
     /// Scoring cozy : jamais punitif. Le minimum est toujours "Correct".
+    /// Pure logique (Vector2Int seulement comme dépendance Unity) → tourne
+    /// tel quel côté serveur Mirror pour la validation anti-triche.
     /// </summary>
     public static class PackageScoringSystem {
         public static PackageScore Evaluate(PackageGrid grid, PackagingSubGameConfig cfg, int itemsInOrder) {
@@ -54,6 +56,11 @@ namespace Sim.SubGames.Packaging {
                 +  fragileWeight * (fragileOk ? 1f : 0.5f)
                 +  heavyWeight   * (heavyOk   ? 1f : 0.5f)) / normalized;
 
+            // Un colis incomplet ne peut pas atteindre Perfect : facteur 0.7
+            // sur le score total. Reste cozy (jamais < Correct grâce aux 0.5
+            // de fragile/heavy).
+            if (!allPlaced) score *= 0.7f;
+
             int total = Mathf.RoundToInt(score * 1000f);
 
             PackageRating rating;
@@ -62,6 +69,38 @@ namespace Sim.SubGames.Packaging {
             else rating = PackageRating.Correct;
 
             return new PackageScore(total, rating, spaceRatio, fragileOk, heavyOk, allPlaced);
+        }
+
+        /// <summary>
+        /// Calcule le score à partir d'un snapshot réseau. Utilisé côté serveur
+        /// avec la PackageOrderDefinition autoritaire (jamais celle envoyée par
+        /// le client). Si la commande est introuvable, renvoie un score nul.
+        /// </summary>
+        public static PackageScore EvaluateFromSnapshot(PackagePlacementSnapshot snapshot,
+                                                       PackageOrderDefinition order,
+                                                       PackagingSubGameConfig cfg) {
+            if (order == null || order.items == null || order.items.Length == 0) {
+                return new PackageScore(0, PackageRating.Correct, 0f, true, true, false);
+            }
+
+            int width  = cfg != null ? cfg.gridWidth  : snapshot.gridWidth;
+            int height = cfg != null ? cfg.gridHeight : snapshot.gridHeight;
+            var grid = new PackageGrid(width, height);
+
+            if (snapshot.placements != null) {
+                for (int i = 0; i < snapshot.placements.Length; i++) {
+                    var p = snapshot.placements[i];
+                    if (p.instanceIndex >= order.items.Length) continue;
+                    var def = order.items[p.instanceIndex];
+                    if (def == null) continue;
+                    var instance = new PackageItemInstance(p.instanceIndex, def);
+                    // Place ignore les placements invalides (hors grille / chevauchement)
+                    // — autre garde anti-triche.
+                    grid.Place(instance, new Vector2Int(p.originX, p.originY), p.rotation);
+                }
+            }
+
+            return Evaluate(grid, cfg, order.items.Length);
         }
 
         private static bool HasHeavyAbove(PackageGrid grid, PackageItemInstance item) {

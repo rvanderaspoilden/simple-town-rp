@@ -1,3 +1,4 @@
+using Sim.SubGames.Packaging;
 using UnityEngine;
 
 namespace Sim.Jobs {
@@ -21,9 +22,14 @@ namespace Sim.Jobs {
         [Tooltip("Cible géographique où la machine est censée se trouver (pour l'indicateur HUD).")]
         [SerializeField] private JobTargetKey aimTargetKey = JobTargetKey.Pickup;
 
+        [Tooltip("Config du mini-jeu d'emballage utilisée par le serveur pour calculer le score (anti-triche). " +
+                 "Doit être la même SO que celle référencée par la PackagingMachineBehaviour côté client.")]
+        [SerializeField] private PackagingSubGameConfig packagingConfig;
+
         public ItemConfig ItemConfig => itemConfig;
         public string RoomId => roomId;
         public JobTargetKey AimTargetKey => aimTargetKey;
+        public PackagingSubGameConfig PackagingConfig => packagingConfig;
 
         public override JobStepInstance CreateInstance(JobInstance owner)
             => new UseMachineStepInstance(owner, this);

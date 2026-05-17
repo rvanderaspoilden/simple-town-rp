@@ -69,6 +69,17 @@ namespace Sim.SubGames.Packaging {
             return new Vector2Int(cx, cy);
         }
 
+        /// <summary>
+        /// Convertit position écran -> coordonnées locales dans l'espace de cellsContainer,
+        /// sans clamper à la grille. Utilisé pour positionner le ghost hors grille dans le
+        /// même système de coordonnées que CellToLocal.
+        /// </summary>
+        public Vector2 ScreenToLocalUnclamped(Vector2 screenPos) {
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                cellsContainer, screenPos, _uiCamera, out var local);
+            return local;
+        }
+
         public void PlaceItemView(PackageItemView view, Vector2Int origin) {
             view.Rect.SetParent(itemsContainer, false);
             view.Rect.anchorMin = view.Rect.anchorMax = new Vector2(0f, 0f);

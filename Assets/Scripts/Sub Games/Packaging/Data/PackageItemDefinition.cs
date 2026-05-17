@@ -32,6 +32,7 @@ namespace Sim.SubGames.Packaging {
         [Header("Feedback")]
         public AudioClip placeSound;
         public Color tint = Color.white;
+        public Color bgColor = new Color(1f, 1f, 1f, 0.35f);
 
 #if UNITY_EDITOR
         private void OnValidate() {

@@ -9,6 +9,7 @@ namespace Sim.SubGames.Packaging {
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class PackageItemView : MonoBehaviour {
+        [SerializeField] private Image bgImage;
         [SerializeField] private Image iconImage;
         [SerializeField] private CanvasGroup canvasGroup;
 
@@ -27,6 +28,9 @@ namespace Sim.SubGames.Packaging {
                 iconImage.sprite = instance.Definition.icon;
                 iconImage.color = instance.Definition.tint;
                 iconImage.preserveAspect = false;
+            }
+            if (bgImage != null) {
+                bgImage.color = instance.Definition.bgColor;
             }
         }
 
