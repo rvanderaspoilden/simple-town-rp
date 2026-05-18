@@ -119,6 +119,9 @@ namespace Sim.Jobs {
             if (active >= job.Definition.MaxConcurrentPerPlayer) {
                 GameLogger.System.Debug("JobTakeDenied_MaxConcurrent {JobId} {NetId} {Active}",
                     job.Definition.JobId, netId, active);
+                sender.Send(new JobNotificationMessage {
+                    text = "Tu as déjà une mission en cours."
+                });
                 return false;
             }
 

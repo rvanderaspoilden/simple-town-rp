@@ -134,6 +134,11 @@ namespace Sim.SubGames.Packaging {
             _pendingSnapshot = BuildSnapshot();
             hintPanel?.Hide();
             feedback?.ShowValidationResult(previewScore);
+            if (input != null) {
+                input.OnItemPlaced -= HandleItemPlaced;
+                input.OnItemReturned -= HandleItemReturned;
+                input.Unbind();
+            }
         }
 
         /// <summary>

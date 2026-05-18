@@ -60,7 +60,19 @@
       "mcp__ai-game-developer__assets-prefab-open",
       "Bash(npm install *)",
       "Bash(grep -oE '\"Message\": \"\\\\\\\\[Support\\\\\\\\][^\"]+\"')",
-      "Bash(grep -oE '\"Message\": \"\\\\\\\\[PkgModal\\\\\\\\][^\"]+\"')"
+      "Bash(grep -oE '\"Message\": \"\\\\\\\\[PkgModal\\\\\\\\][^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\(\\\\\\\\[Btn\\\\\\\\]|\\\\\\\\[RP\\\\\\\\]|Total\\)[^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\(\\\\\\\\[Btn\\\\\\\\]|\\\\\\\\[RP\\\\\\\\]|\\\\\\\\[Total\\\\\\\\]\\)[^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\(\\\\\\\\[Mgr\\\\\\\\]|\\\\\\\\[Content\\\\\\\\]|  \\\\\\\\[[0-9]+\\\\\\\\]\\)[^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\(\\\\\\\\[Test\\\\\\\\]|\\\\\\\\[Canvas\\\\\\\\]\\)[^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\\\\\\\[\\(State|After[^]]+\\)\\\\\\\\][^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\\\\\\\[State\\\\\\\\][^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\\\\\\\[\\(Method|Prop\\)\\\\\\\\][^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\(\\\\\\\\[Force\\\\\\\\]|Exception\\)[^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\\\\\\\[Btn\\\\\\\\][^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\(\\\\\\\\[Btn\\\\\\\\]|\\\\\\\\[Overlap\\\\\\\\]\\)[^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\\\\\\\[Overlap\\\\\\\\][^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\\\\\\\[Reset\\\\\\\\][^\"]+\"')"
     ]
   },
   "enableAllProjectMcpServers": true,

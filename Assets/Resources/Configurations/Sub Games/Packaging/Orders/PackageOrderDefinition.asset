@@ -12,7 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7a608e1ced193a42864ee1921066ec2, type: 3}
   m_Name: PackageOrderDefinition
   m_EditorClassIdentifier: Assembly-CSharp::Sim.SubGames.Packaging.PackageOrderDefinition
+  orderId: PackageOrderDefinition
   customerName: Mila
   items:
   - {fileID: 11400000, guid: f91d6aa9961bdda41a40862adbdf5bb6, type: 2}
   - {fileID: 11400000, guid: a3b6854fc37d81a498644e739827d1b2, type: 2}
+  - {fileID: 11400000, guid: 2d9532e689b54d0479ff7aed5d802f12, type: 2}
+  - {fileID: 11400000, guid: 21f98bd59dd55a143a0a7fa1be3b9ec5, type: 2}
+  - {fileID: 11400000, guid: 10b97a3238b7e1844990e4c45c274441, type: 2}

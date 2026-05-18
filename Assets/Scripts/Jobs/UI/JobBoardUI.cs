@@ -39,10 +39,14 @@ namespace Sim.Jobs {
 
         private void OnEnable() {
             JobBoardClient.Instance.BoardUpdated += OnBoardUpdated;
+            JobClientManager.Instance.JobOffered  += OnJobStateChanged;
+            JobClientManager.Instance.JobFinished += OnJobStateChanged;
         }
 
         private void OnDisable() {
             JobBoardClient.Instance.BoardUpdated -= OnBoardUpdated;
+            JobClientManager.Instance.JobOffered  -= OnJobStateChanged;
+            JobClientManager.Instance.JobFinished -= OnJobStateChanged;
         }
 
         public void Open(JobBoard board) {
@@ -69,6 +73,11 @@ namespace Sim.Jobs {
         private void OnBoardUpdated(JobCategory category, JobBoardEntry[] entries) {
             if (_currentBoard == null || _currentBoard.Category != category) return;
             Render(entries);
+        }
+
+        private void OnJobStateChanged(JobClientState _) {
+            if (!IsOpen || _currentBoard == null) return;
+            Render(JobBoardClient.Instance.GetEntries(_currentBoard.Category));
         }
 
         private void Render(JobBoardEntry[] entries) {

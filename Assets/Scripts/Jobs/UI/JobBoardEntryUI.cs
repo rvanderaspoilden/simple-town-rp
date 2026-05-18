@@ -47,9 +47,10 @@ namespace Sim.Jobs {
 
             if (rewardText != null) rewardText.text = BuildRewardSummary(def);
 
-            takeButton.gameObject.SetActive(available);
+            bool hasActiveJob = JobClientManager.Instance.States.Count > 0;
+            takeButton.gameObject.SetActive(available && !hasActiveJob);
             takeButton.onClick.RemoveAllListeners();
-            if (available) takeButton.onClick.AddListener(OnTakeClicked);
+            if (available && !hasActiveJob) takeButton.onClick.AddListener(OnTakeClicked);
         }
 
         private string BuildRewardSummary(JobDefinition def) {
