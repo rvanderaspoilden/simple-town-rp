@@ -211,12 +211,15 @@ namespace Sim {
                 ClientPropManager.Instance.EnterRoom("city");
                 ClientLogger.Player("PlayerEnteredRoom {RoomId} {NetId}", "city", netId);
             }
+
+            GetComponentInChildren<VoiceRoomAdapter>()?.OnLocalPlayerStart();
         }
 
         public override void OnStopClient() {
             if (isLocalPlayer) {
                 ClientLogger.Player("LocalPlayerStop {NetId}", netId);
                 this.UnSubscribeActions(this.actions);
+                GetComponentInChildren<VoiceRoomAdapter>()?.OnLocalPlayerStop();
             }
         }
 

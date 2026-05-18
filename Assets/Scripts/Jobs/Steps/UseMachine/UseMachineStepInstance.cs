@@ -108,7 +108,7 @@ namespace Sim.Jobs {
 
             int entityId = ServerItemManager.Instance.SpawnItemInHand(
                 def.RoomId, def.ItemConfig.ID,
-                FindOwnerConn(), def.ItemConfig);
+                FindOwnerConn(), def.ItemConfig, persistent: false);
 
             if (entityId < 0) {
                 GameLogger.System.Warning("UseMachine_NoFreeHand {NetId} {JobId}",
@@ -121,7 +121,6 @@ namespace Sim.Jobs {
 
             _spawnedEntityId = entityId;
             ServerItemManager.Instance.SetAuthorizedHolder(def.RoomId, entityId, job.OwnerNetId);
-            ServerItemManager.Instance.SetPersistent(def.RoomId, entityId, false);
 
             job.Context.Set(CtxEntityIdKey, entityId);
             job.Context.Set(CtxRoomIdKey,   def.RoomId);

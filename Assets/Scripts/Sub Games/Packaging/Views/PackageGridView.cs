@@ -21,13 +21,27 @@ namespace Sim.SubGames.Packaging {
         private PackageGrid _grid;
         private Image[,] _cellViews;
         private Camera _uiCamera;
+        private float _effectiveCellSize;
+        private Vector2 _cellsOffset;
 
-        public float CellSize => cellSize;
+        public float CellSize => _effectiveCellSize > 0f ? _effectiveCellSize : cellSize;
+        public Vector2 CellsOffset => _cellsOffset;
         public RectTransform ItemsContainer => itemsContainer;
 
         public void Build(PackageGrid grid, Camera uiCamera = null) {
             _grid = grid;
             _uiCamera = uiCamera;
+
+            Canvas.ForceUpdateCanvases();
+            var viewRect = ((RectTransform)transform).rect;
+            _effectiveCellSize = Mathf.Floor(Mathf.Min(viewRect.width / grid.Width, viewRect.height / grid.Height));
+            _effectiveCellSize = Mathf.Min(_effectiveCellSize, cellSize);
+            _cellsOffset = new Vector2(
+                (viewRect.width  - grid.Width  * _effectiveCellSize) * 0.5f,
+                (viewRect.height - grid.Height * _effectiveCellSize) * 0.5f);
+
+            cellsContainer.anchoredPosition = _cellsOffset;
+            itemsContainer.anchoredPosition = _cellsOffset;
 
             if (_cellViews != null) {
                 for (int x = 0; x < _cellViews.GetLength(0); x++)
@@ -36,7 +50,7 @@ namespace Sim.SubGames.Packaging {
             }
 
             _cellViews = new Image[grid.Width, grid.Height];
-            cellsContainer.sizeDelta = new Vector2(grid.Width * cellSize, grid.Height * cellSize);
+            cellsContainer.sizeDelta = new Vector2(grid.Width * CellSize, grid.Height * CellSize);
 
             for (int y = 0; y < grid.Height; y++) {
                 for (int x = 0; x < grid.Width; x++) {
@@ -45,7 +59,7 @@ namespace Sim.SubGames.Packaging {
                     var r = img.rectTransform;
                     r.anchorMin = r.anchorMax = new Vector2(0f, 0f);
                     r.pivot = new Vector2(0f, 0f);
-                    r.sizeDelta = new Vector2(cellSize, cellSize);
+                    r.sizeDelta = new Vector2(CellSize, CellSize);
                     r.anchoredPosition = CellToLocal(new Vector2Int(x, y));
                     _cellViews[x, y] = img;
                 }
@@ -53,7 +67,7 @@ namespace Sim.SubGames.Packaging {
         }
 
         public Vector2 CellToLocal(Vector2Int cell) {
-            return new Vector2(cell.x * cellSize, cell.y * cellSize);
+            return new Vector2(cell.x * CellSize, cell.y * CellSize);
         }
 
         /// <summary>
@@ -64,8 +78,8 @@ namespace Sim.SubGames.Packaging {
             Vector2 local;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 cellsContainer, screenPos, _uiCamera, out local);
-            int cx = Mathf.FloorToInt(local.x / cellSize);
-            int cy = Mathf.FloorToInt(local.y / cellSize);
+            int cx = Mathf.FloorToInt(local.x / CellSize);
+            int cy = Mathf.FloorToInt(local.y / CellSize);
             return new Vector2Int(cx, cy);
         }
 

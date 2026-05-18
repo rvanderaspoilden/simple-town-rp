@@ -69,6 +69,7 @@ public class ClientPropManager : MonoBehaviour {
 
     public static event System.Action<bool>           OnBuildAckReceived;
     public static event System.Action<string, byte[]> OnRoomStateReceived;
+    public static event System.Action<string>         OnLocalRoomChanged;
 
     // ── Room entry / exit ─────────────────────────────────────────────────────
 
@@ -94,6 +95,7 @@ public class ClientPropManager : MonoBehaviour {
         IndexSceneProps(roomId);
 
         NetworkClient.Send(new C2S_EnterRoom { RoomId = roomId });
+        OnLocalRoomChanged?.Invoke(roomId);
         ClientLogger.Network("EnterRoomRequest {RoomId} {OldRoomId} {ScenePropCount}", roomId, oldRoomId ?? "none", _props.Count);
     }
 

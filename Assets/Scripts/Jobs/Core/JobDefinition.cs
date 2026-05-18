@@ -32,6 +32,9 @@ namespace Sim.Jobs {
         [Tooltip("Récompenses additives appliquées à la complétion.")]
         [SerializeField] private List<RewardDefinition> rewards = new List<RewardDefinition>();
 
+        [Tooltip("Règle de scoring optionnelle utilisée par ScoreModulatedMoneyReward. Null = rating Perfect (récompense pleine).")]
+        [SerializeField] private JobScoringDefinition scoringDefinition;
+
         [Tooltip("Durée maximale avant expiration (secondes) une fois la mission active. 0 = pas d'expiration.")]
         [SerializeField] private float expirationSeconds = 600f;
 
@@ -51,6 +54,7 @@ namespace Sim.Jobs {
         public JobCategory Category => category;
         public IReadOnlyList<JobStepDefinition> Steps => steps;
         public IReadOnlyList<RewardDefinition> Rewards => rewards;
+        public JobScoringDefinition ScoringDefinition => scoringDefinition;
         public float ExpirationSeconds => expirationSeconds;
         public float BoardExpirationSeconds => boardExpirationSeconds;
         public int MaxConcurrentPerPlayer => maxConcurrentPerPlayer;

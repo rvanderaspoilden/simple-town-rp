@@ -52,6 +52,8 @@ public class InventoryUI : MonoBehaviour
 
     private void Update()
     {
+        if (SubGameController.IsActive) return;
+
         if (Input.GetKeyDown(KeyCode.Escape))
             HUDManager.Instance.CloseInventory();
     }

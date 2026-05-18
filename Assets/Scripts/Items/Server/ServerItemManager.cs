@@ -121,7 +121,7 @@ public class ServerItemManager
     /// Returns the entityId, or -1 if the player has no free hand.
     /// </summary>
     public int SpawnItemInHand(string roomId, int itemConfigId, NetworkConnectionToClient conn,
-        ItemConfig config = null)
+        ItemConfig config = null, bool persistent = true)
     {
         if (conn.identity == null) return -1;
         uint playerNetId = conn.identity.netId;
@@ -145,7 +145,8 @@ public class ServerItemManager
             HolderNetId  = playerNetId,
             HolderHand   = hand.Value,
             LocalPosition = Vector3.zero,
-            LocalRotation = Quaternion.identity
+            LocalRotation = Quaternion.identity,
+            Persistent    = persistent
         };
 
         if (!_rooms.TryGetValue(roomId, out var roomItems))

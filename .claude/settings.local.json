@@ -49,7 +49,16 @@
       "Bash(\"/c/Program Files/nodejs/npx.cmd\" unity-mcp-cli run-tool editor-application-get-state --input-file -)",
       "Bash(grep -n \"--- !u!114 &242201207\" \"Assets/Scenes/SubGames/Packaging.unity\")",
       "Bash(python3 -c ' *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(Get-Content \"C:\\\\Users\\\\rodol\\\\.claude\\\\projects\\\\D--Workspace-Unity-TheBroz-simple-town-rp\\\\2dda1cdb-144b-493f-bf2e-057d3344743f\\\\tool-results\\\\mcp-ai-game-developer-console-get-logs-1779038485056.txt\")",
+      "Bash(python -c \"import sys,json; logs=json.load\\(sys.stdin\\)['result']; filtered=[l for l in logs if 'FixPackagingCanvas' in l.get\\('message',''\\) or 'Canvas]' in l.get\\('message',''\\) or 'EventSystem]' in l.get\\('message',''\\)]; print\\(json.dumps\\(filtered, indent=2\\)\\)\")",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\rodol\\\\.claude\\\\projects\\\\D--Workspace-Unity-TheBroz-simple-town-rp\\\\2dda1cdb-144b-493f-bf2e-057d3344743f\\\\tool-results\\\\mcp-ai-game-developer-console-get-logs-1779038485056.txt\" -Raw | ConvertFrom-Json; $filtered = $content.result | Where-Object { $_.message -match '\\\\[Canvas\\\\]|\\\\[EventSystem\\\\]|\\\\[FixPackaging' }; $filtered | ForEach-Object { $_.message })",
+      "PowerShell(Select-String -Path \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-rp\\\\Assets\\\\Scenes\\\\City.unity\" -Pattern \"m_SortingOrder|EventSystem\" | Select-Object -First 30 | ForEach-Object { $_.LineNumber.ToString\\(\\) + \": \" + $_.Line.Trim\\(\\) })",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\rodol\\\\.claude\\\\projects\\\\D--Workspace-Unity-TheBroz-simple-town-rp\\\\2dda1cdb-144b-493f-bf2e-057d3344743f\\\\tool-results\\\\mcp-ai-game-developer-console-get-logs-1779038789236.txt\" -Raw | ConvertFrom-Json; $filtered = $content.result | Where-Object { $_.message -match '\\\\[Fix\\\\]|Guard|ScreenSpace|sortingOrder' }; $filtered | ForEach-Object { $_.message })",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\rodol\\\\.claude\\\\projects\\\\D--Workspace-Unity-TheBroz-simple-town-rp\\\\2dda1cdb-144b-493f-bf2e-057d3344743f\\\\tool-results\\\\mcp-ai-game-developer-console-get-logs-1779038823926.txt\" -Raw | ConvertFrom-Json; $filtered = $content.result | Where-Object { $_.message -match '\\\\[Canvas\\\\]|\\\\[EventSystem\\\\]' } | Select-Object -Last 10; $filtered | ForEach-Object { $_.message })",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\rodol\\\\.claude\\\\projects\\\\D--Workspace-Unity-TheBroz-simple-town-rp\\\\2dda1cdb-144b-493f-bf2e-057d3344743f\\\\tool-results\\\\mcp-ai-game-developer-console-get-logs-1779039325623.txt\" -Raw | ConvertFrom-Json; $errs = $content.result | Where-Object { $_.message -match 'error CS|SubGameController|IsActive|PhoneController|InventoryUI|CameraManager' } | Select-Object -Last 15; $errs | ForEach-Object { $_.message })",
+      "mcp__ai-game-developer__assets-prefab-open",
+      "Bash(npm install *)"
     ]
   },
   "enableAllProjectMcpServers": true,

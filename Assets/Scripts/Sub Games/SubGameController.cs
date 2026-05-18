@@ -12,6 +12,10 @@ public class SubGameController : NetworkBehaviour {
 
     public static SubGameController Instance;
 
+    // Used by main-scene input listeners (PhoneControllerUI, InventoryUI, CameraManager…)
+    // to ignore keyboard/world clicks while a sub-game scene is loaded.
+    public static bool IsActive => Instance != null && Instance._activeSubGame != null;
+
     private void Awake() {
         if (Instance != null && Instance != this) {
             Destroy(this.gameObject);
