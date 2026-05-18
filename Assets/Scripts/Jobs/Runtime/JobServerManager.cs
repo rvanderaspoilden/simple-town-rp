@@ -235,10 +235,25 @@ namespace Sim.Jobs {
         }
 
         private void OnJobFinished(JobInstance job) {
+            byte rating = 0;
+            byte variant = (byte)JobResultVariant.Default;
+            var scoring = job.Definition?.ScoringDefinition;
+            if (job.Status == JobStatus.Completed) {
+                rating = (byte)(scoring != null ? scoring.Evaluate(job) : JobRating.Perfect);
+            }
+            if (scoring != null) variant = (byte)scoring.ResultVariant;
+            job.Context.TryGetStruct<int>(SortItemsStepInstance.CtxCorrectKey, out int sortCorrect);
+            job.Context.TryGetStruct<int>(SortItemsStepInstance.CtxTotalKey,   out int sortTotal);
             var msg = new JobFinishedMessage {
-                instanceId = job.InstanceId,
+                instanceId     = job.InstanceId,
                 terminalStatus = job.Status,
-                failureReason = job.FailureReason
+                failureReason  = job.FailureReason,
+                rating         = rating,
+                elapsedSeconds = job.ElapsedSeconds,
+                correctCount   = sortCorrect,
+                totalCount     = sortTotal,
+                resultVariant  = variant,
+                moneyEarned    = job.MoneyEarned,
             };
             SendToOwner(job.OwnerNetId, msg);
             _toRemove.Add(job.InstanceId);

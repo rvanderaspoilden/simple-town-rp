@@ -12,20 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5aeb5419686b2554b9e64ad4e60d550f, type: 3}
   m_Name: Delivery_Test
   m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.JobDefinition
-  jobId: delivery.test
-  displayNameKey: Livreur
+  jobId: delivery
+  displayNameKey: Livraison
   icon: {fileID: 0}
   category: 0
   steps:
   - {fileID: 11400000, guid: c7a9c4c9ba4b3154fb3b73320270ac2f, type: 2}
-  - {fileID: 11400000, guid: 868387db7ff1ed54790cc385df34a292, type: 2}
+  - {fileID: 11400000, guid: 5daeb3bbebf52184fbb1fa8c8e7656d2, type: 2}
   - {fileID: 11400000, guid: abcd000100000000000000000000a020, type: 2}
   - {fileID: 11400000, guid: 0495a2483c7180a448860790351f0a6e, type: 2}
   rewards:
   - {fileID: 11400000, guid: 7b230861d0f34bc4288cba283ef462bc, type: 2}
   - {fileID: 11400000, guid: a0c454ab1eddcf8499f82e70d28d7944, type: 2}
   - {fileID: 11400000, guid: 6fbca41c389dca841b2ff45867dba4c5, type: 2}
-  scoringDefinition: {fileID: 0}
+  scoringDefinition: {fileID: 11400000, guid: a1b2c3d4e5f60000a1b2c3d4e5f60001, type: 2}
   expirationSeconds: 600
   boardExpirationSeconds: 60
   maxConcurrentPerPlayer: 5

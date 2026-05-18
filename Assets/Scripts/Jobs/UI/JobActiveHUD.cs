@@ -27,6 +27,12 @@ namespace Sim.Jobs {
         [Tooltip("Optional countdown label (mm:ss) of the remaining mission time. Hidden when the job has no expiration.")]
         [SerializeField] private TMP_Text remainingTimeText;
 
+        [Header("Sort Progress")]
+        [Tooltip("Container (parent GO) à afficher/masquer quand un SortItemsStep est actif.")]
+        [SerializeField] private GameObject sortProgressRoot;
+        [Tooltip("Label 'X / Y colis' mis à jour à chaque dépôt.")]
+        [SerializeField] private TMP_Text sortProgressText;
+
         [Header("Buttons")]
         [SerializeField] private Button acceptButton;
         [SerializeField] private Button abandonButton;
@@ -68,6 +74,7 @@ namespace Sim.Jobs {
             c.JobOffered      += OnJobOffered;
             c.JobStepAdvanced += OnJobStepAdvanced;
             c.JobFinished     += OnJobFinished;
+            c.SortProgress    += OnSortProgress;
             _subscribed = true;
         }
 
@@ -77,7 +84,27 @@ namespace Sim.Jobs {
             c.JobOffered      -= OnJobOffered;
             c.JobStepAdvanced -= OnJobStepAdvanced;
             c.JobFinished     -= OnJobFinished;
+            c.SortProgress    -= OnSortProgress;
             _subscribed = false;
+        }
+
+        private void OnSortProgress(JobClientState state, JobSortProgressMessage msg) {
+            if (msg.instanceId != _currentInstanceId) return;
+
+            if (msg.finished) {
+                HideSortProgress();
+                return;
+            }
+
+            if (sortProgressRoot != null) sortProgressRoot.SetActive(true);
+
+            if (sortProgressText != null)
+                sortProgressText.text = $"{msg.resolvedCount} / {msg.totalCount} colis";
+        }
+
+        private void HideSortProgress() {
+            if (sortProgressRoot != null) sortProgressRoot.SetActive(false);
+            if (sortProgressText  != null) sortProgressText.text = string.Empty;
         }
 
         private void OnJobOffered(JobClientState state) {
@@ -125,6 +152,8 @@ namespace Sim.Jobs {
             bool offered = state.Status == JobStatus.Offered;
             if (acceptButton != null) acceptButton.gameObject.SetActive(offered);
             if (abandonButton != null) abandonButton.gameObject.SetActive(!offered);
+
+            HideSortProgress();
         }
 
         private void Show(bool visible) {

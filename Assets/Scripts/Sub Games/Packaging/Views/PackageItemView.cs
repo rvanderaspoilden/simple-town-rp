@@ -29,7 +29,7 @@ namespace Sim.SubGames.Packaging {
             if (iconImage != null) {
                 iconImage.sprite = instance.Definition.icon;
                 iconImage.color = instance.Definition.tint;
-                iconImage.preserveAspect = false;
+                iconImage.preserveAspect = true;
             }
             if (bgImage != null) {
                 bgImage.color = instance.Definition.bgColor;

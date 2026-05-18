@@ -83,7 +83,13 @@ namespace Sim.SubGames.Packaging {
             input.OnItemPlaced += HandleItemPlaced;
             input.OnItemReturned += HandleItemReturned;
 
-            if (feedback != null) feedback.HideResultPanel();
+            if (feedback != null) {
+                feedback.HideResultPanel();
+                if (feedback.CloseButton != null) {
+                    feedback.CloseButton.onClick.RemoveListener(OnResultCloseClicked);
+                    feedback.CloseButton.onClick.AddListener(OnResultCloseClicked);
+                }
+            }
             hintPanel?.Show();
             _gameStarted = true;
             _validated = false;
@@ -95,6 +101,9 @@ namespace Sim.SubGames.Packaging {
                 input.OnItemPlaced -= HandleItemPlaced;
                 input.OnItemReturned -= HandleItemReturned;
                 input.Unbind();
+            }
+            if (feedback != null && feedback.CloseButton != null) {
+                feedback.CloseButton.onClick.RemoveListener(OnResultCloseClicked);
             }
             // Si on quitte sans avoir validé, on prévient les abonnés.
             if (!_validated) OnPackageValidated?.Invoke(null);
@@ -112,8 +121,9 @@ namespace Sim.SubGames.Packaging {
 
         /// <summary>
         /// Câblable sur le bouton "Valider le colis" de l'UI.
-        /// Affiche la modale de résultat (score prévisualisé côté client). Le
-        /// snapshot est envoyé au serveur à la fermeture pour validation autoritaire.
+        /// Affiche la modale de score (avec le détail des règles de calcul).
+        /// La fermeture du mini-jeu est déclenchée par le bouton Close de la
+        /// modale (voir OnResultCloseClicked), pas immédiatement ici.
         /// </summary>
         public void ValidatePackage() {
             if (_validated || _grid == null) return;
@@ -123,14 +133,15 @@ namespace Sim.SubGames.Packaging {
             _validated = true;
             _pendingSnapshot = BuildSnapshot();
             hintPanel?.Hide();
-            feedback?.PlayValidationFeedback(previewScore);
+            feedback?.ShowValidationResult(previewScore);
         }
 
         /// <summary>
-        /// À câbler sur le bouton de fermeture de la modale de résultat.
-        /// Envoie le snapshot aux abonnés (machine → serveur), puis décharge le mini-jeu.
+        /// Câblé en interne sur le bouton Close de la modale de résultat.
+        /// Envoie le snapshot aux abonnés (machine → serveur) puis ferme le
+        /// mini-jeu.
         /// </summary>
-        public void CloseAfterValidation() {
+        private void OnResultCloseClicked() {
             if (_pendingSnapshot.HasValue) {
                 OnPackageValidated?.Invoke(_pendingSnapshot.Value);
                 _pendingSnapshot = null;

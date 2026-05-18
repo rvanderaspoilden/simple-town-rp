@@ -26,7 +26,7 @@ namespace Sim.SubGames.Packaging {
             if (iconImage != null) {
                 iconImage.sprite = item.Definition.icon;
                 iconImage.color = item.Definition.tint;
-                iconImage.preserveAspect = false;
+                iconImage.preserveAspect = true;
 
                 // Icône stretched au root (= zone d'occupation rotée). Rotation
                 // visuelle appliquée au sprite via localRotation, mais le rect

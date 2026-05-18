@@ -31,6 +31,15 @@ namespace Sim.Jobs {
             if (!NetworkClient.isConnected) return;
             if (_miniGameInFlight) return;
 
+            if (!HasActiveUseMachineStep()) {
+                if (NotificationManager.Instance != null) {
+                    NotificationManager.Instance.AddNotification(
+                        "Aucune mission ne te demande d'utiliser cette machine.",
+                        NotificationType.JOB);
+                }
+                return;
+            }
+
             if (packagingConfig == null || SubGameController.Instance == null) {
                 // Legacy direct flow.
                 NetworkClient.Send(new JobUseMachineMessage { machineId = machineId ?? string.Empty });
@@ -56,6 +65,25 @@ namespace Sim.Jobs {
                 machineId = machineId ?? string.Empty,
                 snapshot  = snapshot.Value
             });
+        }
+
+        /// <summary>
+        /// Vérifie que le joueur local a au moins une mission active dont le step
+        /// courant est un UseMachineStepDefinition. Sans ça, le serveur rejetterait
+        /// l'action mais le client aurait déjà lancé le mini-jeu pour rien.
+        /// </summary>
+        private static bool HasActiveUseMachineStep() {
+            var states = JobClientManager.Instance?.States;
+            if (states == null) return false;
+            foreach (var state in states.Values) {
+                if (state.Status != JobStatus.Active) continue;
+                var def = state.Definition;
+                if (def == null) continue;
+                int idx = state.CurrentStepIndex;
+                if (idx < 0 || idx >= def.Steps.Count) continue;
+                if (def.Steps[idx] is UseMachineStepDefinition) return true;
+            }
+            return false;
         }
 
         protected override void OnDestroy() {

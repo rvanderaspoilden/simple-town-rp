@@ -17,9 +17,12 @@ namespace Sim.Jobs {
             GameLogger.System.Info("JobSystemServerStarting");
 
             JobDatabase.Load();
+            // RewardSystem must subscribe BEFORE JobServerManager so rewards
+            // apply (and accumulate on JobInstance.MoneyEarned) before the
+            // JobFinishedMessage is built and sent.
+            RewardSystem.Subscribe();
             JobServerManager.Instance.Subscribe();
             JobBoardServer.Instance.Subscribe();
-            RewardSystem.Subscribe();
             JobItemCleanup.Subscribe();
 
             NetworkServer.RegisterHandler<JobAcceptedMessage>(OnAcceptedFromClient);
@@ -28,6 +31,7 @@ namespace Sim.Jobs {
             NetworkServer.RegisterHandler<JobBoardCloseMessage>(OnBoardCloseFromClient);
             NetworkServer.RegisterHandler<JobBoardTakeMessage>(OnBoardTakeFromClient);
             NetworkServer.RegisterHandler<JobUseMachineMessage>(OnUseMachineFromClient);
+            NetworkServer.RegisterHandler<JobSortDepositMessage>(OnSortDepositFromClient);
             NetworkServer.RegisterHandler<JobChangeCareerMessage>(OnChangeCareerFromClient);
 
             _tickerGO = new GameObject("JobServerTicker");
@@ -47,6 +51,7 @@ namespace Sim.Jobs {
             NetworkServer.UnregisterHandler<JobBoardCloseMessage>();
             NetworkServer.UnregisterHandler<JobBoardTakeMessage>();
             NetworkServer.UnregisterHandler<JobUseMachineMessage>();
+            NetworkServer.UnregisterHandler<JobSortDepositMessage>();
             NetworkServer.UnregisterHandler<JobChangeCareerMessage>();
 
             if (_tickerGO != null) {
@@ -79,6 +84,9 @@ namespace Sim.Jobs {
 
         private static void OnUseMachineFromClient(NetworkConnectionToClient conn, JobUseMachineMessage msg)
             => UseMachineStepInstance.TryUseMachineFor(conn, msg.machineId, msg.snapshot);
+
+        private static void OnSortDepositFromClient(NetworkConnectionToClient conn, JobSortDepositMessage msg)
+            => SortItemsStepInstance.TryDepositFor(conn, msg.binId);
 
         private static void OnChangeCareerFromClient(NetworkConnectionToClient conn, JobChangeCareerMessage msg) {
             if (conn?.identity == null) return;

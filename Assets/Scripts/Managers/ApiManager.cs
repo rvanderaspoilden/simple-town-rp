@@ -144,6 +144,30 @@ namespace Sim {
             return request;
         }
 
+        public void CreateBugReport(string message, string characterId, Action<bool> onComplete) {
+            StartCoroutine(this.CreateBugReportCoroutine(message, characterId, onComplete));
+        }
+
+        private IEnumerator CreateBugReportCoroutine(string message, string characterId, Action<bool> onComplete) {
+            var payload = new CreateBugReportRequest { message = message, characterId = characterId ?? string.Empty };
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(payload));
+
+            UnityWebRequest request = new UnityWebRequest(this.uri + "/bug-reports", "POST") {
+                uploadHandler   = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+            request.SetRequestHeader("Content-type", "application/json");
+            request.SetRequestHeader("Accept", "application/json");
+
+            yield return request.SendWebRequest();
+
+            bool ok = request.responseCode == 201 || request.responseCode == 200;
+            if (!ok) Debug.LogWarning($"[ApiManager] CreateBugReport failed: {ExtractErrorMessage(request)}");
+            onComplete?.Invoke(ok);
+        }
+
         public void CreateCharacter(CharacterCreationRequest data) {
             StartCoroutine(this.CreateCharacterCoroutine(data));
         }
@@ -259,6 +283,19 @@ namespace Sim {
             UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/update-health", "PUT") {
                 uploadHandler = new UploadHandlerRaw(encodedPayload),
                 downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
+
+        public UnityWebRequest UpdateCharacterOnlineStateRequest(string characterId, bool online) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(new CharacterUpdateOnlineStateRequest { online = online }));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/online-state", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer(),
             };
 
             request.SetRequestHeader("Content-type", "application/json");

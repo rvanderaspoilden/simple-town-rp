@@ -4,8 +4,11 @@ using UnityEngine.UI;
 
 namespace Sim.SubGames.Packaging {
     /// <summary>
-    /// Feedback audio/visuel cozy. Aucune logique gameplay ici : tout est
-    /// purement présentation. Reste minimal côté MVP.
+    /// Feedback audio/visuel cozy + modale de prévisualisation du score à la
+    /// validation. La modale détaille les règles de calcul (espace, fragiles,
+    /// lourds, items placés, total/1000) et expose un bouton Close qui ferme
+    /// le mini-jeu (le PackagingSubGameManager écoute closeButton.onClick et
+    /// déclenche StopGame + dispatch OnPackageValidated).
     /// </summary>
     public class PackagingFeedback : MonoBehaviour {
         [Header("Audio")]
@@ -24,11 +27,17 @@ namespace Sim.SubGames.Packaging {
         [SerializeField] private Sprite goodIcon;
         [SerializeField] private Sprite perfectIcon;
 
-        [Header("Score breakdown (optionnel)")]
+        [Header("Score breakdown (calculation rules)")]
         [SerializeField] private TextMeshProUGUI spaceBreakdownLabel;
         [SerializeField] private TextMeshProUGUI fragileBreakdownLabel;
         [SerializeField] private TextMeshProUGUI heavyBreakdownLabel;
         [SerializeField] private TextMeshProUGUI itemsBreakdownLabel;
+
+        [Header("Close")]
+        [SerializeField] private Button closeButton;
+
+        /// <summary>Le close button du résultat. Le manager s'y abonne pour fermer le mini-jeu.</summary>
+        public Button CloseButton => closeButton;
 
         public void PlayPlaceFeedback(PackageItemInstance item) {
             var clip = item != null && item.Definition != null && item.Definition.placeSound != null
@@ -40,11 +49,14 @@ namespace Sim.SubGames.Packaging {
         public void PlayRotateFeedback() => PlayOne(rotateClip);
         public void PlayRejectFeedback() => PlayOne(rejectClip);
 
-        public void PlayValidationFeedback(PackageScore score) {
+        public void ShowValidationResult(PackageScore score) {
             PlayOne(validateClip);
+
             if (resultPanel != null) resultPanel.SetActive(true);
+
             if (ratingLabel != null) ratingLabel.text = RatingText(score.rating);
-            if (scoreLabel != null) scoreLabel.text = $"{score.total} / 1000";
+            if (scoreLabel != null)  scoreLabel.text  = $"{score.total} / 1000";
+
             if (ratingIcon != null) {
                 ratingIcon.sprite = score.rating switch {
                     PackageRating.Perfect => perfectIcon,
@@ -54,18 +66,18 @@ namespace Sim.SubGames.Packaging {
             }
 
             if (spaceBreakdownLabel != null)
-                spaceBreakdownLabel.text = $"📦 Espace : {Mathf.RoundToInt(score.spaceRatio * 100)}%";
+                spaceBreakdownLabel.text = $"Espace : {Mathf.RoundToInt(score.spaceRatio * 100)}%";
             if (fragileBreakdownLabel != null)
                 fragileBreakdownLabel.text = score.fragileOk
-                    ? "🥚 Fragiles protégés : ✓"
-                    : "🥚 Fragiles protégés : ✗";
+                    ? "Fragiles protégés : OK"
+                    : "Fragiles protégés : KO";
             if (heavyBreakdownLabel != null)
                 heavyBreakdownLabel.text = score.heavyOk
-                    ? "⚖ Lourds bien posés : ✓"
-                    : "⚖ Lourds bien posés : ✗";
+                    ? "Lourds bien posés : OK"
+                    : "Lourds bien posés : KO";
             if (itemsBreakdownLabel != null) {
                 itemsBreakdownLabel.text = score.allItemsPlaced
-                    ? $"Items placés : {score.totalCount} / {score.totalCount} ✓"
+                    ? $"Items placés : {score.totalCount} / {score.totalCount}"
                     : $"Items placés : {score.placedCount} / {score.totalCount}";
             }
         }

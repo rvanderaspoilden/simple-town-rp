@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c54f7a2e2b2e584dbb397658a9cce6f, type: 3}
+  m_Name: TimeScorer_Delivery
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.TimeBasedScorer
+  perfectSeconds: 60
+  goodSeconds: 120
+  okSeconds: 200

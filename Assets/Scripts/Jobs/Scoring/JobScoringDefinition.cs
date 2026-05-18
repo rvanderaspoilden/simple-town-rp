@@ -7,5 +7,11 @@ namespace Sim.Jobs {
     /// </summary>
     public abstract class JobScoringDefinition : ScriptableObject {
         public abstract JobRating Evaluate(JobInstance job);
+
+        /// <summary>
+        /// UI variant à afficher pour ce scorer. Le panneau client sélectionne
+        /// la sous-view correspondante.
+        /// </summary>
+        public abstract JobResultVariant ResultVariant { get; }
     }
 }

@@ -35,7 +35,10 @@ public class AdminPanelManager : MonoBehaviour {
             Button button = Instantiate(this.buttonPrefab, this.teleportContentTransform);
             button.GetComponentInChildren<TextMeshProUGUI>().text = teleportPosition.DisplayName;
             button.onClick.AddListener((() => {
-                PlayerController.Local.connectionToServer.Send(new TeleportMessage() { destination = teleportPosition.GetPosition() });
+                PlayerController.Local.connectionToServer.Send(new TeleportMessage() {
+                    destination = teleportPosition.GetPosition(),
+                    NewRoomId = teleportPosition.RoomId ?? string.Empty,
+                });
             }));
 
             this._buttons.Add(button);

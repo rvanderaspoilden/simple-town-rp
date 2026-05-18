@@ -16,6 +16,8 @@ namespace Sim.Jobs {
         [Tooltip("Durée max (secondes) pour obtenir Ok. Au-delà : Poor.")]
         [Min(1f)] [SerializeField] private float okSeconds = 200f;
 
+        public override JobResultVariant ResultVariant => JobResultVariant.Time;
+
         public override JobRating Evaluate(JobInstance job) {
             float t = job.ElapsedSeconds;
             if (t <= perfectSeconds) return JobRating.Perfect;

@@ -47,6 +47,7 @@ public class NotificationManager : MonoBehaviour {
         }
         
         LayoutRebuilder.ForceRebuildLayoutImmediate(notification.RectTransform);
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)this.notificationContainer);
     }
 
     public void RemoveNotification(NotificationUI notification) {
@@ -87,5 +88,6 @@ public class NotificationManager : MonoBehaviour {
 public enum NotificationType {
     BANK,
     HOSPITAL,
-    JOB
+    JOB,
+    SUPPORT
 }

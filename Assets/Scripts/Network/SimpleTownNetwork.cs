@@ -159,8 +159,31 @@ public class SimpleTownNetwork : NetworkManager
     {
         GameLogger.Network.Info("ServerDisconnect {ConnectionId} {Address} {IdentityNetId}",
             conn.connectionId, conn.address, conn.identity?.netId ?? 0);
+
+        // Mark the character offline. Read the id before the identity GO is torn
+        // down by base.OnServerDisconnect — fire-and-forget so a slow/missing API
+        // doesn't block the disconnect.
+        if (conn.identity != null) {
+            var player = conn.identity.GetComponent<Sim.PlayerController>();
+            string characterId = player != null && player.CharacterData != null ? player.CharacterData.Id : null;
+            if (!string.IsNullOrEmpty(characterId)) {
+                StartCoroutine(UpdateOnlineStateCoroutine(characterId, false));
+            }
+        }
+
         OnPlayerDisconnected?.Invoke(conn);
         base.OnServerDisconnect(conn);
+    }
+
+    private IEnumerator UpdateOnlineStateCoroutine(string characterId, bool online) {
+        UnityWebRequest req = ApiManager.Instance.UpdateCharacterOnlineStateRequest(characterId, online);
+        yield return req.SendWebRequest();
+        if (req.responseCode != 200) {
+            GameLogger.Network.Warning("UpdateOnlineStateFailed {CharacterId} {Online} {ResponseCode}",
+                characterId, online, req.responseCode);
+        } else {
+            GameLogger.Network.Debug("UpdateOnlineState {CharacterId} {Online}", characterId, online);
+        }
     }
 
     #endregion
@@ -592,6 +615,7 @@ public class SimpleTownNetwork : NetworkManager
         if (!string.IsNullOrEmpty(message.NewRoomId))
         {
             ClientPropManager.Instance?.EnterRoom(message.NewRoomId);
+            BuildingBehavior.ClientDespawnHallsExcept(message.NewRoomId);
         }
 
         StartCoroutine(this.TeleportCoroutine(message.destination));
@@ -682,6 +706,9 @@ public class SimpleTownNetwork : NetworkManager
         string characterId = characterResponse.Characters[0].Id;
         if (!string.IsNullOrEmpty(characterId)) {
             yield return inventory.EnsurePlaces(characterId);
+            // Mark the character as online once we own the player GO server-side.
+            // Fire-and-forget — failure shouldn't block the connection flow.
+            StartCoroutine(UpdateOnlineStateCoroutine(characterId, true));
         } else {
             GameLogger.Network.Warning("EnsurePlaces skipped — character id missing {ConnectionId}", conn.connectionId);
         }

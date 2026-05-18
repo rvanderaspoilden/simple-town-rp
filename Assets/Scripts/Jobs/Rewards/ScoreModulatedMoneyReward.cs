@@ -43,6 +43,7 @@ namespace Sim.Jobs {
             if (amount <= 0) return;
 
             bank.GiveMoney(amount);
+            job.AddMoneyEarned(amount);
 
             var conn = identity.connectionToClient;
             if (conn != null) {

@@ -58,7 +58,9 @@
       "PowerShell($content = Get-Content \"C:\\\\Users\\\\rodol\\\\.claude\\\\projects\\\\D--Workspace-Unity-TheBroz-simple-town-rp\\\\2dda1cdb-144b-493f-bf2e-057d3344743f\\\\tool-results\\\\mcp-ai-game-developer-console-get-logs-1779038823926.txt\" -Raw | ConvertFrom-Json; $filtered = $content.result | Where-Object { $_.message -match '\\\\[Canvas\\\\]|\\\\[EventSystem\\\\]' } | Select-Object -Last 10; $filtered | ForEach-Object { $_.message })",
       "PowerShell($content = Get-Content \"C:\\\\Users\\\\rodol\\\\.claude\\\\projects\\\\D--Workspace-Unity-TheBroz-simple-town-rp\\\\2dda1cdb-144b-493f-bf2e-057d3344743f\\\\tool-results\\\\mcp-ai-game-developer-console-get-logs-1779039325623.txt\" -Raw | ConvertFrom-Json; $errs = $content.result | Where-Object { $_.message -match 'error CS|SubGameController|IsActive|PhoneController|InventoryUI|CameraManager' } | Select-Object -Last 15; $errs | ForEach-Object { $_.message })",
       "mcp__ai-game-developer__assets-prefab-open",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(grep -oE '\"Message\": \"\\\\\\\\[Support\\\\\\\\][^\"]+\"')",
+      "Bash(grep -oE '\"Message\": \"\\\\\\\\[PkgModal\\\\\\\\][^\"]+\"')"
     ]
   },
   "enableAllProjectMcpServers": true,

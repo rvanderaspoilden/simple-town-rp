@@ -8,6 +8,8 @@ namespace Sim.Jobs {
     /// </summary>
     [CreateAssetMenu(menuName = "Sim/Jobs/Scoring/MiniGame Passthrough", fileName = "MiniGamePassthroughScorer")]
     public class MiniGamePassthroughScorer : JobScoringDefinition {
+        public override JobResultVariant ResultVariant => JobResultVariant.MiniGame;
+
         public override JobRating Evaluate(JobInstance job) {
             if (!job.Context.TryGetStruct<int>(UseMachineStepInstance.CtxRatingKey, out var ratingInt))
                 return JobRating.Ok;

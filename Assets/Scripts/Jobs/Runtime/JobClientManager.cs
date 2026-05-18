@@ -21,6 +21,7 @@ namespace Sim.Jobs {
         public event Action<JobClientState> JobOffered;
         public event Action<JobClientState> JobStepAdvanced;
         public event Action<JobClientState> JobFinished;
+        public event Action<JobClientState, JobSortProgressMessage> SortProgress;
 
         public void RegisterHandlers() {
             if (_handlersRegistered) return;
@@ -29,6 +30,7 @@ namespace Sim.Jobs {
             NetworkClient.RegisterHandler<JobFinishedMessage>(OnFinished);
             NetworkClient.RegisterHandler<JobRewardNotificationMessage>(OnRewardNotification);
             NetworkClient.RegisterHandler<JobNotificationMessage>(OnJobNotification);
+            NetworkClient.RegisterHandler<JobSortProgressMessage>(OnSortProgress);
             _handlersRegistered = true;
         }
 
@@ -39,6 +41,7 @@ namespace Sim.Jobs {
             NetworkClient.UnregisterHandler<JobFinishedMessage>();
             NetworkClient.UnregisterHandler<JobRewardNotificationMessage>();
             NetworkClient.UnregisterHandler<JobNotificationMessage>();
+            NetworkClient.UnregisterHandler<JobSortProgressMessage>();
             _handlersRegistered = false;
         }
 
@@ -104,10 +107,21 @@ namespace Sim.Jobs {
             JobStepAdvanced?.Invoke(state);
         }
 
+        private void OnSortProgress(JobSortProgressMessage msg) {
+            _states.TryGetValue(msg.instanceId, out var state);
+            SortProgress?.Invoke(state, msg);
+        }
+
         private void OnFinished(JobFinishedMessage msg) {
             if (!_states.TryGetValue(msg.instanceId, out var state)) return;
             state.Status = msg.terminalStatus;
             state.FailureReason = msg.failureReason;
+            state.CompletionRating = msg.rating;
+            state.CompletionElapsedSeconds = msg.elapsedSeconds;
+            state.CompletionCorrectCount = msg.correctCount;
+            state.CompletionTotalCount = msg.totalCount;
+            state.CompletionVariant = (JobResultVariant)msg.resultVariant;
+            state.CompletionMoneyEarned = msg.moneyEarned;
             JobFinished?.Invoke(state);
             _states.Remove(msg.instanceId);
         }
@@ -137,5 +151,13 @@ namespace Sim.Jobs {
         // remaining mission time by extrapolating from these two values.
         public float ElapsedSecondsAtSync;
         public float SyncedAtUnscaled;
+
+        // Populated on JobFinished (Completed status only).
+        public byte CompletionRating;
+        public float CompletionElapsedSeconds;
+        public int CompletionCorrectCount;
+        public int CompletionTotalCount;
+        public JobResultVariant CompletionVariant;
+        public int CompletionMoneyEarned;
     }
 }

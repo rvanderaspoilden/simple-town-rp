@@ -273,6 +273,27 @@ public class BuildingBehavior : MonoBehaviour {
         hall.ClientSpawnApartment(msg);
     }
 
+    /// <summary>
+    /// Destroys all client-side halls whose roomId does not match <paramref name="keepRoomId"/>.
+    /// Called on teleport so stale ApartmentController GOs are cleaned up when
+    /// the player leaves a building.
+    /// </summary>
+    public static void ClientDespawnHallsExcept(string keepRoomId) {
+        var toRemove = new System.Collections.Generic.List<(string, int)>();
+        foreach (var kv in _clientHalls) {
+            if (kv.Value != null && kv.Value.RoomId != keepRoomId)
+                toRemove.Add(kv.Key);
+        }
+        foreach (var key in toRemove) {
+            if (!_clientHalls.TryGetValue(key, out var hall) || hall == null) continue;
+            if (!NetworkServer.active) {
+                hall.ClientDespawn();
+                UnityEngine.Object.Destroy(hall.gameObject);
+            }
+            _clientHalls.Remove(key);
+        }
+    }
+
     // ── Utility ───────────────────────────────────────────────────────────────
 
     // Layout: 9 columns × N rows, each cell 100 units apart.

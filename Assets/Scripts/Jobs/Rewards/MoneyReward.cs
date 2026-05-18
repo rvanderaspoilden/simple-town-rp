@@ -29,6 +29,7 @@ namespace Sim.Jobs {
             }
 
             bank.GiveMoney(amount);
+            job.AddMoneyEarned(amount);
 
             var conn = identity.connectionToClient;
             if (conn != null) {

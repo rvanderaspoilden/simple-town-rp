@@ -31,16 +31,11 @@ namespace Sim.Jobs {
         [Tooltip("Espacement horizontal entre les items spawnés.")]
         [SerializeField] private float itemSpacing = 0.6f;
 
-        [Tooltip("Rayon max (mètres) dans lequel un drop est attribué à un bac.")]
-        [Min(0.5f)]
-        [SerializeField] private float binDropRadius = 2.5f;
-
         public IReadOnlyList<SortTask> Tasks => tasks;
         public string RoomId => roomId;
         public JobTargetKey SpawnAtKey => spawnAtKey;
         public Vector3 BaseSpawnOffset => baseSpawnOffset;
         public float ItemSpacing => itemSpacing;
-        public float BinDropRadius => binDropRadius;
 
         public override JobStepInstance CreateInstance(JobInstance owner)
             => new SortItemsStepInstance(owner, this);

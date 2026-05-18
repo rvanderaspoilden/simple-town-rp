@@ -18,6 +18,18 @@ namespace Sim.Jobs {
         public int CurrentStepIndex { get; private set; }
         public float ElapsedSeconds { get; private set; }
 
+        /// <summary>
+        /// Argent total versé au joueur pour cette mission, accumulé par les
+        /// RewardDefinition au moment où JobCompleted est dispatch. Lu par
+        /// JobServerManager au moment d'envoyer le JobFinishedMessage —
+        /// nécessite que RewardSystem soit abonné AVANT JobServerManager.
+        /// </summary>
+        public int MoneyEarned { get; private set; }
+
+        public void AddMoneyEarned(int amount) {
+            if (amount > 0) MoneyEarned += amount;
+        }
+
         private readonly List<JobStepInstance> steps;
 
         public JobStepInstance CurrentStep =>
