@@ -29,7 +29,7 @@ public class PaintBucketBehaviour : PropBehaviourBase {
     public Color GetColor()    => _state.Color;
 
     public CoverConfig GetPaintConfig() =>
-        DatabaseManager.PaintDatabase?.GetPaintById(_state.PaintConfigId);
+        DatabaseManager.GetPaintById(_state.PaintConfigId);
 
     public CoverSettings GetCoverSettings() =>
         new CoverSettings { paintConfigId = _state.PaintConfigId, additionalColor = _state.Color };

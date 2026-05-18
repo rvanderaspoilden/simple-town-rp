@@ -17,8 +17,8 @@ namespace Sim {
         [SerializeField]
         private Material errorMaterial;
 
-        public static PropsDatabaseConfig PropsDatabase;
-        public static PaintDatabaseConfig PaintDatabase;
+        public static List<PropsConfig> PropsConfigs;
+        public static List<CoverConfig> PaintConfigs;
         public static List<MoodConfig> MoodConfigs;
         public static List<ShopCategoryConfig> ShopCategoryConfigs;
         public static List<ItemConfig> ItemConfigs;
@@ -26,6 +26,11 @@ namespace Sim {
         public static List<NotificationTemplateConfig> NotificationTemplateConfigs;
         public static List<SubGameConfiguration> SubGameConfigurations;
         public static List<BuildingConfig> BuildingConfigurations;
+
+        // Lookups O(1) construits au chargement.
+        private static Dictionary<int, PropsConfig> _propsById;
+        private static Dictionary<int, CoverConfig> _paintsById;
+        private static Dictionary<int, ItemConfig> _itemsById;
 
         public static DatabaseManager Instance;
 
@@ -36,36 +41,54 @@ namespace Sim {
                 Instance = this;
             }
 
-            PropsDatabase = Resources.Load<PropsDatabaseConfig>("Configurations/Databases/Props Database");
-            Debug.Log("Props database loaded");
+            PropsConfigs = Resources.LoadAll<PropsConfig>("Configurations/Props").ToList();
+            _propsById = BuildIndex(PropsConfigs, p => p.GetId());
+            Debug.Log("Props configs loaded : " + PropsConfigs.Count);
 
-            PaintDatabase = Resources.Load<PaintDatabaseConfig>("Configurations/Databases/Paint Database");
-            Debug.Log("Paint database loaded");
+            PaintConfigs = Resources.LoadAll<CoverConfig>("Configurations/Covers").ToList();
+            _paintsById = BuildIndex(PaintConfigs, p => p.GetId());
+            Debug.Log("Paint configs loaded : " + PaintConfigs.Count);
 
             MoodConfigs = Resources.LoadAll<MoodConfig>("Configurations/Moods").ToList();
             Debug.Log("Mood Configs loaded : " + MoodConfigs.Count);
-            
+
             NotificationTemplateConfigs = Resources.LoadAll<NotificationTemplateConfig>("Configurations/Notifications").ToList();
             Debug.Log("Notification Template Configs loaded : " + NotificationTemplateConfigs.Count);
-            
+
             SubGameConfigurations = Resources.LoadAll<SubGameConfiguration>("Configurations/Sub Games").ToList();
             Debug.Log("Sub Game Configs loaded : " + SubGameConfigurations.Count);
-            
+
             ShopCategoryConfigs = Resources.LoadAll<ShopCategoryConfig>("Configurations/Shop/Categories").ToList();
             Debug.Log("Shop Category Configs loaded : " + ShopCategoryConfigs.Count);
-            
+
             ItemConfigs = Resources.LoadAll<ItemConfig>("Configurations/Items").ToList();
+            _itemsById = BuildIndex(ItemConfigs, c => c.ID);
             Debug.Log("Item Configs loaded : " + ItemConfigs.Count);
-            
+
             GameConfiguration = Resources.Load<GameConfiguration>("Configurations/Game Configuration");
             Debug.Log($"Game configuration loaded : 1");
-            
+
             BuildingConfigurations = Resources.LoadAll<BuildingConfig>("Configurations/Buildings").ToList();
             Debug.Log($"Building configurations loaded : {BuildingConfigurations.Count}");
 
             RegisterPrefabs();
 
             DontDestroyOnLoad(this.gameObject);
+        }
+
+        private static Dictionary<int, T> BuildIndex<T>(IEnumerable<T> list, System.Func<T, int> idSelector) where T : class {
+            var dict = new Dictionary<int, T>();
+            foreach (var item in list) {
+                if (item == null) continue;
+                int id = idSelector(item);
+                if (id <= 0) continue;
+                if (dict.ContainsKey(id)) {
+                    Debug.LogWarning($"[DatabaseManager] Duplicate id {id} for {typeof(T).Name}");
+                    continue;
+                }
+                dict[id] = item;
+            }
+            return dict;
         }
 
         private static void RegisterPrefabs() {
@@ -76,6 +99,22 @@ namespace Sim {
             foreach (BuildingConfig config in BuildingConfigurations) {
                 NetworkManager.singleton.spawnPrefabs.Add(config.Prefab.gameObject);
             }
+        }
+
+        // ── Lookups ──────────────────────────────────────────────────────────────
+
+        public static PropsConfig GetPropsById(int id)
+            => _propsById != null && _propsById.TryGetValue(id, out var p) ? p : null;
+
+        public static CoverConfig GetPaintById(int id)
+            => _paintsById != null && _paintsById.TryGetValue(id, out var p) ? p : null;
+
+        public static ItemConfig GetItemConfigById(int id)
+            => _itemsById != null && _itemsById.TryGetValue(id, out var c) ? c : null;
+
+        public static GameObject GetItemPrefab(int itemConfigId) {
+            var cfg = GetItemConfigById(itemConfigId);
+            return cfg != null && cfg.Prefab != null ? cfg.Prefab.gameObject : null;
         }
 
         public static MoodConfig GetMoodConfigByEnum(MoodEnum moodEnum) {

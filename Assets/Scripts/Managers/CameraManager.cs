@@ -123,6 +123,8 @@ namespace Sim {
         }
 
         private void ManageInteraction() {
+            if (SubGameController.IsActive) return;
+
             bool leftMouseClick = Input.GetMouseButtonUp(0);
             bool leftMousePressed = Input.GetMouseButton(0);
             bool rightMouseClick = Input.GetMouseButtonUp(1);

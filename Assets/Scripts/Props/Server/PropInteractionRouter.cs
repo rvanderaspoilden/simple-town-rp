@@ -225,7 +225,7 @@ public static class PropInteractionRouter {
             // Resolve DispenserConfiguration from registered PrefabId
             DispenserConfiguration dispenserConfig = null;
             if (state.PrefabId > 0) {
-                PropsConfig propsConfig = DatabaseManager.PropsDatabase?.GetPropsById(state.PrefabId);
+                PropsConfig propsConfig = DatabaseManager.GetPropsById(state.PrefabId);
                 dispenserConfig = propsConfig as DispenserConfiguration;
             }
 
@@ -268,26 +268,37 @@ public static class PropInteractionRouter {
                 return;
             }
 
+            // Bloque l'achat tant que le joueur porte un item de mission (colis, etc.).
+            if (ServerItemManager.Instance.IsHoldingEphemeralItem(conn.identity.netId)) {
+                Debug.Log($"[Dispenser] Purchase rejected: mission item held player={conn.connectionId} item={itemId}");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                conn.Send(new ToastNotificationMessage {
+                    text = "Termine ta mission avant d'acheter.",
+                    typeByte = (byte)NotificationType.BANK
+                });
+                return;
+            }
+
+            // Vérifie l'espace en main AVANT de débiter le joueur. TWO_HAND exige
+            // les deux mains libres ; ONE_HAND exige au moins une main libre.
+            if (!ServerItemManager.Instance.CanFitInHand(conn.identity.netId, itemPrice.item)) {
+                Debug.Log($"[Dispenser] Purchase rejected: hands full player={conn.connectionId} item={itemId}");
+                conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
+                conn.Send(new ToastNotificationMessage {
+                    text = "Mains pleines : impossible d'acheter cet objet.",
+                    typeByte = (byte)NotificationType.BANK
+                });
+                return;
+            }
+
             Debug.Log($"[Dispenser] Purchase validated player={conn.connectionId} item={itemId} price={itemPrice.price}");
 
             bank.TakeMoney(itemPrice.price);
 
             string roomId = PlayerRoomTracker.Instance.GetRoom(conn) ?? "city";
 
-            // Try to place item directly into a free hand (right first, then left)
             int entityId = ServerItemManager.Instance.SpawnItemInHand(roomId, itemPrice.item.ID, conn, itemPrice.item);
-
-            if (entityId >= 0)
-            {
-                Debug.Log($"[Dispenser] Assigning purchased item to hand entity={entityId} item={itemId}");
-            }
-            else
-            {
-                // Fallback: no free hand — spawn item at player's feet
-                Vector3 spawnPos = conn.identity.transform.position;
-                entityId = ServerItemManager.Instance.SpawnItem(roomId, itemPrice.item.ID, spawnPos, Quaternion.identity);
-                Debug.Log($"[Dispenser] No free hands — spawning item in world entity={entityId} item={itemId} pos={spawnPos}");
-            }
+            Debug.Log($"[Dispenser] Assigning purchased item to hand entity={entityId} item={itemId}");
 
             conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = true, ItemId = itemId });
             Debug.Log($"[Dispenser] Purchase success item={itemId} entity={entityId}");

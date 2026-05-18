@@ -66,7 +66,7 @@ namespace Sim.Building {
 
         [Client]
         public void HoverApply(CoverSettings settings) {
-            CoverConfig coverConfig = DatabaseManager.PaintDatabase?.GetPaintById(settings.paintConfigId);
+            CoverConfig coverConfig = DatabaseManager.GetPaintById(settings.paintConfigId);
             if (coverConfig == null) return;
             Material mat = new Material(coverConfig.GetMaterial());
             if (coverConfig.AllowCustomColor()) mat.color = settings.additionalColor;
@@ -108,7 +108,7 @@ namespace Sim.Building {
         }
         
         private void ApplyPaint() {
-            CoverConfig coverConfig = DatabaseManager.PaintDatabase.GetPaintById(this.currentCover.paintConfigId);
+            CoverConfig coverConfig = DatabaseManager.GetPaintById(this.currentCover.paintConfigId);
 
             if (coverConfig) {
                 Material materialToApply = new Material(coverConfig.GetMaterial());

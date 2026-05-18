@@ -17,14 +17,7 @@ public class ClientItemManager
     // entityId → client-side ItemBehaviour
     private readonly Dictionary<int, ItemBehaviour> _items = new Dictionary<int, ItemBehaviour>();
 
-    private ItemPrefabDatabase _prefabDatabase;
-
-    private ClientItemManager()
-    {
-        _prefabDatabase = Resources.Load<ItemPrefabDatabase>("Configurations/Databases/Item Prefab Database");
-        if (_prefabDatabase == null)
-            Debug.LogWarning("[ClientItemManager] ItemPrefabDatabase not found at Resources/Configurations/Items/ItemPrefabDatabase");
-    }
+    private ClientItemManager() { }
 
     // ── Handler registration ───────────────────────────────────────────────────
 
@@ -79,7 +72,7 @@ public class ClientItemManager
             return;
         }
 
-        GameObject prefab = _prefabDatabase?.GetPrefab(msg.ItemConfigId);
+        GameObject prefab = DatabaseManager.GetItemPrefab(msg.ItemConfigId);
         if (prefab == null)
         {
             Debug.LogError($"[ClientItemManager] No prefab for itemConfigId={msg.ItemConfigId}");
@@ -127,6 +120,10 @@ public class ClientItemManager
         if (!_items.TryGetValue(msg.EntityId, out var behaviour)) return;
 
         _items.Remove(msg.EntityId);
+
+        // Si l'item était tenu par le joueur local, libérer la main (sinon
+        // hand state reste bloqué sur un entityId fantôme — bug "mains pleines").
+        UpdateLocalPlayerHands(msg.EntityId, clearHand: true, hand: default);
 
         if (behaviour != null)
             Object.Destroy(behaviour.gameObject);

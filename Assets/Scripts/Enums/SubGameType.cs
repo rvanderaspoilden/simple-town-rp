@@ -1,3 +1,4 @@
 public enum SubGameType {
-    DREAM
+    DREAM,
+    PACKAGING
 }

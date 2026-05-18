@@ -8,6 +8,8 @@ public struct City {
     public long last_timestamp;
     public long money;
     public int tax_by_month;
+    public int unemployed_income;
+    public int salary_period_seconds;
 
     public string ID {
         get => _id;
@@ -37,5 +39,15 @@ public struct City {
     public int TaxByMonth {
         get => tax_by_month;
         set => tax_by_month = value;
+    }
+
+    public int UnemployedIncome {
+        get => unemployed_income;
+        set => unemployed_income = value;
+    }
+
+    public int SalaryPeriodSeconds {
+        get => salary_period_seconds;
+        set => salary_period_seconds = value;
     }
 }

@@ -926,19 +926,19 @@ namespace Sim {
         public bool OwnsProp(int propId) => _ownedPropIds.Contains(propId);
 
         [Header("Prop Config")]
-        [SerializeField, Tooltip("PropsConfig of the front door prefab. Must be in PropsDatabase.")]
+        [SerializeField, Tooltip("PropsConfig of the front door prefab. Must be under Resources/Configurations/Props with a unique ID.")]
         private PropsConfig frontDoorPrefabConfig;
 
-        [SerializeField, Tooltip("PropsConfig of the inner (simple) door prefab. Must be in PropsDatabase.")]
+        [SerializeField, Tooltip("PropsConfig of the inner (simple) door prefab. Must be under Resources/Configurations/Props with a unique ID.")]
         private PropsConfig simpleDoorPrefabConfig;
 
         public int DeliveryBoxPropId => deliveryBoxPropId;
         private int deliveryBoxPropId;
 
-        [SerializeField, Tooltip("PropsConfig of the delivery box prefab. Must be in PropsDatabase.")]
+        [SerializeField, Tooltip("PropsConfig of the delivery box prefab. Must be under Resources/Configurations/Props with a unique ID.")]
         private PropsConfig deliveryBoxPrefabConfig;
 
-        [SerializeField, Tooltip("PropsConfig of the ceiling light prefab. Must be in PropsDatabase.")]
+        [SerializeField, Tooltip("PropsConfig of the ceiling light prefab. Must be under Resources/Configurations/Props with a unique ID.")]
         private PropsConfig lightPrefabConfig;
 
         // Tracks light prop ids — used by ApartmentController's cover/visibility

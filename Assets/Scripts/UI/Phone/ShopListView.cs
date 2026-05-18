@@ -33,13 +33,13 @@ public class ShopListView : MonoBehaviour {
         }
 
         if (config.CategoryType == ShopCategoryType.PROPS) {
-            DatabaseManager.PropsDatabase.GetProps().Where(x => x.GetPropsType().Equals(config.PropsType) && x.IsBuyable()).ToList().ForEach(x => {
+            DatabaseManager.PropsConfigs.Where(x => x.GetPropsType().Equals(config.PropsType) && x.IsBuyable()).ToList().ForEach(x => {
                 PhoneArticleCardUI card = Instantiate(this.articleCardPrefab, this.verticalLayoutGroup.transform);
                 card.Setup(x);
                 items.Add(card);
             });
         } else {
-            DatabaseManager.PaintDatabase.GetPaints().Where(x => x.GetSurface().Equals(config.CoverType) && x.IsBuyable()).ToList().ForEach(x => {
+            DatabaseManager.PaintConfigs.Where(x => x.GetSurface().Equals(config.CoverType) && x.IsBuyable()).ToList().ForEach(x => {
                 PhoneCoverCardUI card = Instantiate(this.coverCardPrefab, this.verticalLayoutGroup.transform);
                 card.Setup(x);
                 items.Add(card);

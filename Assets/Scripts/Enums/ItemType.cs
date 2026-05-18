@@ -1,3 +1,4 @@
 public enum ItemType {
-    CONSUMABLE
+    CONSUMABLE,
+    PACKAGE
 }

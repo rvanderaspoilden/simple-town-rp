@@ -162,7 +162,7 @@ namespace Sim {
         }
 
         public void Init(Delivery delivery) {
-            PropsConfig propsConfig = DatabaseManager.PropsDatabase.GetPropsById(delivery.PropsConfigId);
+            PropsConfig propsConfig = DatabaseManager.GetPropsById(delivery.PropsConfigId);
 
             this.currentPropBehaviour = PropsManager.Instance.InstantiateProps(propsConfig, delivery.PropsPresetId);
             this.currentPropsCollider = this.currentPropBehaviour.GetComponent<BoxCollider>();

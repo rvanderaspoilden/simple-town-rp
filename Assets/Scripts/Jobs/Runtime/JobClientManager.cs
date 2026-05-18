@@ -1,0 +1,141 @@
+using System;
+using System.Collections.Generic;
+using Mirror;
+using UnityEngine;
+
+namespace Sim.Jobs {
+    /// <summary>
+    /// Miroir client des missions actives du joueur local. Souscrit aux
+    /// messages serveur et expose des events C# que le HUD (à venir) peut
+    /// écouter — même pattern que ApiManager / ClientNpcManager.
+    /// </summary>
+    public class JobClientManager {
+        private static JobClientManager _instance;
+        public static JobClientManager Instance => _instance ??= new JobClientManager();
+
+        private readonly Dictionary<string, JobClientState> _states = new Dictionary<string, JobClientState>();
+        private bool _handlersRegistered;
+
+        public IReadOnlyDictionary<string, JobClientState> States => _states;
+
+        public event Action<JobClientState> JobOffered;
+        public event Action<JobClientState> JobStepAdvanced;
+        public event Action<JobClientState> JobFinished;
+
+        public void RegisterHandlers() {
+            if (_handlersRegistered) return;
+            NetworkClient.RegisterHandler<JobOfferedMessage>(OnOffered);
+            NetworkClient.RegisterHandler<JobStepAdvancedMessage>(OnStepAdvanced);
+            NetworkClient.RegisterHandler<JobFinishedMessage>(OnFinished);
+            NetworkClient.RegisterHandler<JobRewardNotificationMessage>(OnRewardNotification);
+            NetworkClient.RegisterHandler<JobNotificationMessage>(OnJobNotification);
+            _handlersRegistered = true;
+        }
+
+        public void UnregisterHandlers() {
+            if (!_handlersRegistered) return;
+            NetworkClient.UnregisterHandler<JobOfferedMessage>();
+            NetworkClient.UnregisterHandler<JobStepAdvancedMessage>();
+            NetworkClient.UnregisterHandler<JobFinishedMessage>();
+            NetworkClient.UnregisterHandler<JobRewardNotificationMessage>();
+            NetworkClient.UnregisterHandler<JobNotificationMessage>();
+            _handlersRegistered = false;
+        }
+
+        private void OnJobNotification(JobNotificationMessage msg) {
+            if (NotificationManager.Instance == null) return;
+            if (string.IsNullOrEmpty(msg.text)) return;
+            NotificationManager.Instance.AddNotification(msg.text, NotificationType.JOB);
+        }
+
+        private void OnRewardNotification(JobRewardNotificationMessage msg) {
+            if (NotificationManager.Instance == null) return;
+            var text = string.IsNullOrEmpty(msg.label)
+                ? $"+{msg.amount} €"
+                : $"{msg.label} : +{msg.amount} €";
+            NotificationManager.Instance.AddNotification(text, NotificationType.BANK);
+        }
+
+        public void ClearAll() {
+            _states.Clear();
+        }
+
+        public void SendAccept(string instanceId) {
+            if (!NetworkClient.isConnected) return;
+            NetworkClient.Send(new JobAcceptedMessage { instanceId = instanceId });
+        }
+
+        public void SendAbandon(string instanceId) {
+            if (!NetworkClient.isConnected) return;
+            NetworkClient.Send(new JobAbandonRequestMessage { instanceId = instanceId });
+        }
+
+        private void OnOffered(JobOfferedMessage msg) {
+            var def = JobDatabase.GetById(msg.jobId);
+            var state = new JobClientState {
+                InstanceId = msg.instanceId,
+                Definition = def,
+                CurrentStepIndex = msg.currentStepIndex,
+                CurrentPromptKey = msg.currentPromptKey,
+                CurrentTargetId = msg.currentTargetId,
+                CurrentTargetName = msg.currentTargetName,
+                PrimaryTargetKind = msg.primaryTargetKind,
+                PrimaryTargetId = msg.primaryTargetId,
+                PrimaryTargetName = msg.primaryTargetName,
+                SecondaryTargetKind = msg.secondaryTargetKind,
+                SecondaryTargetId = msg.secondaryTargetId,
+                SecondaryTargetName = msg.secondaryTargetName,
+                PayloadItemId = msg.payloadItemId,
+                Status = msg.Status,
+                ElapsedSecondsAtSync = msg.elapsedSeconds,
+                SyncedAtUnscaled = Time.unscaledTime,
+            };
+            _states[msg.instanceId] = state;
+            JobOffered?.Invoke(state);
+        }
+
+        private void OnStepAdvanced(JobStepAdvancedMessage msg) {
+            if (!_states.TryGetValue(msg.instanceId, out var state)) return;
+            state.CurrentStepIndex = msg.newStepIndex;
+            state.CurrentPromptKey = msg.promptKey;
+            state.CurrentTargetId = msg.currentTargetId;
+            state.CurrentTargetName = msg.currentTargetName;
+            state.Status = JobStatus.Active;
+            JobStepAdvanced?.Invoke(state);
+        }
+
+        private void OnFinished(JobFinishedMessage msg) {
+            if (!_states.TryGetValue(msg.instanceId, out var state)) return;
+            state.Status = msg.terminalStatus;
+            state.FailureReason = msg.failureReason;
+            JobFinished?.Invoke(state);
+            _states.Remove(msg.instanceId);
+        }
+    }
+
+    /// <summary>État local d'une mission tel que vu par le client.</summary>
+    public class JobClientState {
+        public string InstanceId;
+        public JobDefinition Definition;
+        public int CurrentStepIndex;
+        public string CurrentPromptKey;
+        public string CurrentTargetId;
+        public string CurrentTargetName;
+        public JobStatus Status;
+        public JobFailureReason FailureReason;
+
+        public JobTargetKind PrimaryTargetKind;
+        public string PrimaryTargetId;
+        public string PrimaryTargetName;
+        public JobTargetKind SecondaryTargetKind;
+        public string SecondaryTargetId;
+        public string SecondaryTargetName;
+        public string PayloadItemId;
+
+        // Server's elapsed time when JobOfferedMessage was sent, plus the local
+        // Time.unscaledTime at which we received it. The HUD computes the
+        // remaining mission time by extrapolating from these two values.
+        public float ElapsedSecondsAtSync;
+        public float SyncedAtUnscaled;
+    }
+}

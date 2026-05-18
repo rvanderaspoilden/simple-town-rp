@@ -86,5 +86,6 @@ public class NotificationManager : MonoBehaviour {
 
 public enum NotificationType {
     BANK,
-    HOSPITAL
+    HOSPITAL,
+    JOB
 }

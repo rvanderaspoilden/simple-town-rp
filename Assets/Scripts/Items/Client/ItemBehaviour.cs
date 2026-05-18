@@ -6,6 +6,7 @@ using Sim;
 using Sim.Enums;
 using Sim.Interactables;
 using UnityEngine;
+using UnityEngine.AI;
 using Action = Sim.Interactables.Action;
 
 /// <summary>
@@ -17,6 +18,7 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
 {
     private ItemIdentity _identity;
     private ItemConfig   _config;
+    private NavMeshObstacle _navObstacle;
 
     private bool    _isHeld;
     private uint    _holderNetId;
@@ -28,12 +30,13 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    private void Awake()
+    protected virtual void Awake()
     {
         _identity = GetComponent<ItemIdentity>();
+        _navObstacle = GetComponentInChildren<NavMeshObstacle>(true);
     }
 
-    private void OnDestroy()
+    protected virtual void OnDestroy()
     {
         UnsubscribeActions(_groundActions);
         UnsubscribeActions(_heldActions);
@@ -49,17 +52,19 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
 
     // ── Hand state (set by ClientItemManager) ─────────────────────────────────
 
-    public void OnAttachedToHand(uint holderNetId, HandType hand)
+    public virtual void OnAttachedToHand(uint holderNetId, HandType hand)
     {
         _isHeld      = true;
         _holderNetId = holderNetId;
         _holderHand  = hand;
+        if (_navObstacle != null) _navObstacle.enabled = false;
     }
 
-    public void OnDetachedFromHand()
+    public virtual void OnDetachedFromHand()
     {
         _isHeld      = false;
         _holderNetId = 0;
+        if (_navObstacle != null) _navObstacle.enabled = true;
     }
 
     // ── IInteractable ─────────────────────────────────────────────────────────

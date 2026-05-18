@@ -65,6 +65,8 @@ namespace Sim {
         }
 
         private void Update() {
+            if (SubGameController.IsActive) return;
+
             this.Swipe();
 
             if (Input.GetKeyDown(KeyCode.Escape)) {

@@ -182,6 +182,8 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         _npcId = NpcServerManager.Instance.Register(
             roomId, prefabId, transform.position, transform.rotation, styleJson, _identity);
 
+        Sim.Jobs.JobTargetHooks.RegisterNpc(this, _npcId);
+
         _visitTarget = Random.Range(minVisitsBeforeReturn, maxVisitsBeforeReturn + 1);
         BuildStateMachine();
 
@@ -198,6 +200,8 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
         // Libère tout siège tenu par ce NPC.
         SeatService.ReleaseAllSeats(this, roomId);
+
+        Sim.Jobs.JobTargetHooks.UnregisterNpc(this);
 
         // Désenregistre (broadcast S2C_DestroyNpc aux clients).
         NpcServerManager.Instance.Unregister(_npcId);

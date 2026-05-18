@@ -172,7 +172,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
         string propUuid = ExtractPropIdFromDeliveryResponse(deleteReq.downloadHandler?.text);
 
         // 2. Build initial payload — header carries presetId + isBuilt
-        PropsConfig config = DatabaseManager.PropsDatabase.GetPropsById(msg.PropConfigId);
+        PropsConfig config = DatabaseManager.GetPropsById(msg.PropConfigId);
         if (config == null) {
             Debug.LogError($"[PropInteractionDispatcher] Unknown PropsConfig id={msg.PropConfigId}");
             conn.Send(new S2C_BuildAck { Success = false });

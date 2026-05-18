@@ -18,7 +18,7 @@ namespace Sim {
         }
 
         private void Start() {
-            this.propsConfigs = DatabaseManager.PropsDatabase.GetProps().ToDictionary(config => config.GetId(), config => config);
+            this.propsConfigs = DatabaseManager.PropsConfigs.ToDictionary(config => config.GetId(), config => config);
         }
 
         public PropBehaviourBase InstantiateProps(PropsConfig config, int presetId, Vector3 position, Quaternion rotation) {

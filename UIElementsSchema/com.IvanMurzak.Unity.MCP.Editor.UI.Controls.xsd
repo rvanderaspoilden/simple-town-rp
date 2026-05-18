@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="com.IvanMurzak.Unity.MCP.Editor.UI.Controls" elementFormDefault="qualified" targetNamespace="com.IvanMurzak.Unity.MCP.Editor.UI.Controls" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="UnityEngine.UIElements.xsd" namespace="UnityEngine.UIElements" />
+  <xs:complexType name="SegmentedControlType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q1="UnityEngine.UIElements" base="q1:VisualElementType">
+        <xs:choice />
+        <xs:attribute name="choices" type="xs:string" />
+        <xs:attribute default="0" name="default-index" type="xs:int" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="SegmentedControl" xmlns:q2="UnityEngine.UIElements" substitutionGroup="q2:VisualElement" type="tns:SegmentedControlType" />
+</xs:schema>

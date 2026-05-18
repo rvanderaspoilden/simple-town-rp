@@ -268,7 +268,7 @@ namespace Sim {
 
         public UnityWebRequest UpdateCharacterMoneyRequest(string characterId, CharacterUpdateMoneyRequest moneyRequest) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(moneyRequest));
-            
+
             UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/update-money", "PUT") {
                 uploadHandler = new UploadHandlerRaw(encodedPayload),
                 downloadHandler = new DownloadHandlerBuffer(),
@@ -277,6 +277,132 @@ namespace Sim {
             request.SetRequestHeader("Content-type", "application/json");
 
             return request;
+        }
+
+        // ── Career endpoints ──────────────────────────────────────────────────
+
+        public UnityWebRequest UpdateCharacterCurrentJobRequest(string characterId, CharacterUpdateCurrentJobRequest body) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/update-current-job", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer(),
+            };
+
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
+
+        public UnityWebRequest RetrieveCharacterJobsRequest(string characterId) {
+            return UnityWebRequest.Get($"{this.uri}/character-jobs/by-character/{characterId}");
+        }
+
+        public UnityWebRequest StartCharacterJobRequest(CharacterJobStartRequest body) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/character-jobs/start", "POST") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer(),
+            };
+
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
+
+        public UnityWebRequest AddCharacterJobXpRequest(CharacterJobAddXpRequest body) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/character-jobs/add-xp", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer(),
+            };
+
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
+
+        // ── User Settings endpoints ───────────────────────────────────────────
+
+        // Local cache of the current user's settings. Populated on demand by
+        // RetrieveUserSettingsCoroutine, mutated via SaveUserSettings.
+        private UserSettings _userSettings;
+        public UserSettings UserSettings => _userSettings;
+        public static event Action<UserSettings> OnUserSettingsLoaded;
+
+        public UnityWebRequest RetrieveUserSettingsRequest(string userId) {
+            return UnityWebRequest.Get($"{this.uri}/user-settings/by-user/{userId}");
+        }
+
+        public UnityWebRequest UpdateUserSettingsRequest(string userId, UserSettingsUpdateRequest body) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/user-settings/by-user/{userId}", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer(),
+            };
+            request.SetRequestHeader("Content-type", "application/json");
+            return request;
+        }
+
+        public void LoadUserSettings(string userId) {
+            StartCoroutine(LoadUserSettingsCoroutine(userId));
+        }
+
+        private IEnumerator LoadUserSettingsCoroutine(string userId) {
+            UnityWebRequest req = RetrieveUserSettingsRequest(userId);
+            yield return req.SendWebRequest();
+
+            if (req.responseCode == 200) {
+                _userSettings = JsonUtility.FromJson<UserSettings>(req.downloadHandler.text);
+                if (_userSettings == null) _userSettings = new UserSettings { UserId = userId };
+                OnUserSettingsLoaded?.Invoke(_userSettings);
+            } else {
+                Debug.LogWarning($"[ApiManager] UserSettings load failed: {req.responseCode}");
+                _userSettings = new UserSettings { UserId = userId };
+                OnUserSettingsLoaded?.Invoke(_userSettings);
+            }
+        }
+
+        public void SaveUserSettings(UserSettingsData data, Action<bool> onComplete = null) {
+            string userId = ResolveLocalUserId();
+            if (string.IsNullOrEmpty(userId)) {
+                Debug.LogWarning("[ApiManager] SaveUserSettings aborted: no userId (UserSettings not loaded, no authenticated user, no local PlayerController.CharacterData).");
+                onComplete?.Invoke(false);
+                return;
+            }
+            StartCoroutine(SaveUserSettingsCoroutine(userId, data, onComplete));
+        }
+
+        // Picks the userId from whichever client-side source is available. The
+        // normal REST login path populates `this.user`, but the dev shortcuts in
+        // SimpleTownNetwork (useSpectus/useElbloody) bypass AuthenticationCoroutine
+        // — in that case the only authoritative client-side source of the userId
+        // is the locally-owned PlayerController's CharacterData (set via SyncVar).
+        public string ResolveLocalUserId() {
+            if (_userSettings != null && !string.IsNullOrEmpty(_userSettings.UserId)) return _userSettings.UserId;
+            if (!string.IsNullOrEmpty(this.user?.Id)) return this.user.Id;
+            var localPlayerObj = Mirror.NetworkClient.localPlayer;
+            if (localPlayerObj != null) {
+                var controller = localPlayerObj.GetComponent<PlayerController>();
+                if (controller != null && controller.CharacterData != null) return controller.CharacterData.UserId;
+            }
+            return null;
+        }
+
+        private IEnumerator SaveUserSettingsCoroutine(string userId, UserSettingsData data, Action<bool> onComplete) {
+            UnityWebRequest req = UpdateUserSettingsRequest(userId, new UserSettingsUpdateRequest(data));
+            yield return req.SendWebRequest();
+            bool ok = req.responseCode == 200;
+            if (ok) {
+                if (_userSettings == null) _userSettings = new UserSettings { UserId = userId };
+                _userSettings.Data = data;
+            } else {
+                Debug.LogWarning($"[ApiManager] SaveUserSettings failed: status={req.responseCode} result={req.result} error='{req.error}' body='{req.downloadHandler?.text}'");
+            }
+            onComplete?.Invoke(ok);
         }
 
         public void RetrieveHomesByCharacter(CharacterData characterData) {
@@ -332,6 +458,9 @@ namespace Sim {
                 if (profileRequest.responseCode == 200) {
                     ProfileResponse profileResponse = JsonUtility.FromJson<ProfileResponse>(profileRequest.downloadHandler.text);
                     this.user = profileResponse.User;
+                    // Fire-and-forget: load user preferences once we know the
+                    // user id. SettingsUI and the notif gate read from cache.
+                    LoadUserSettings(this.user.Id);
                     OnAuthenticationSucceeded?.Invoke();
                 } else {
                     OnAuthenticationFailed?.Invoke(ExtractErrorMessage(profileRequest));

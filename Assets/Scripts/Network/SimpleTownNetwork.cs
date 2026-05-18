@@ -237,11 +237,13 @@ public class SimpleTownNetwork : NetworkManager
         NetworkServer.RegisterHandler<CreateCharacterMessage>(OnCreateCharacter);
         NetworkServer.RegisterHandler<CreateDeliveryRequest>(OnCreateDelivery);
         NetworkServer.RegisterHandler<TeleportMessage>(OnPlayerTeleportTo);
-        GameLogger.Network.Debug("HandlersRegistered {Count} handlers", 3);
+        NetworkServer.RegisterHandler<UserSettingsSyncMessage>(OnUserSettingsSync);
+        GameLogger.Network.Debug("HandlersRegistered {Count} handlers", 4);
 
         PropSystemBootstrap.OnServerStart();
         NpcSystemBootstrap.OnServerStart();
         ItemSystemBootstrap.OnServerStart();
+        Sim.Jobs.JobSystemBootstrap.OnServerStart();
 
         // Initialize all BuildingBehavior instances (scene objects, possibly inactive).
         // Replaces the former NetworkBehaviour.OnStartServer hook on each building.
@@ -271,6 +273,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.RegisterHandler<ShopResponseMessage>(OnShopResponse);
         NetworkClient.RegisterHandler<UpdateCityDataMessage>(OnCityDataUpdatedResponse);
         NetworkClient.RegisterHandler<NotificationMessage>(OnNotificationReceived);
+        NetworkClient.RegisterHandler<ToastNotificationMessage>(OnToastNotificationReceived);
         NetworkClient.RegisterHandler<S2C_HallSpawn>(OnHallSpawn);
         NetworkClient.RegisterHandler<S2C_HallDespawn>(OnHallDespawn);
         NetworkClient.RegisterHandler<S2C_ApartmentSpawn>(OnApartmentSpawn);
@@ -279,6 +282,7 @@ public class SimpleTownNetwork : NetworkManager
         PropSystemBootstrap.OnClientStart();
         NpcSystemBootstrap.OnClientStart();
         ItemSystemBootstrap.OnClientStart();
+        Sim.Jobs.JobSystemBootstrap.OnClientStart();
         ClientLogger.Network("ClientStarted {Active}", NetworkClient.active);
     }
 
@@ -300,6 +304,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkServer.UnregisterHandler<CreateDeliveryRequest>();
         NetworkServer.UnregisterHandler<TeleportMessage>();
 
+        Sim.Jobs.JobSystemBootstrap.OnServerStop();
         ItemSystemBootstrap.OnServerStop();
         NpcSystemBootstrap.OnServerStop();
         PropSystemBootstrap.OnServerStop();
@@ -324,10 +329,12 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.UnregisterHandler<ShopResponseMessage>();
         NetworkClient.UnregisterHandler<UpdateCityDataMessage>();
         NetworkClient.UnregisterHandler<NotificationMessage>();
+        NetworkClient.UnregisterHandler<ToastNotificationMessage>();
         NetworkClient.UnregisterHandler<S2C_HallSpawn>();
         NetworkClient.UnregisterHandler<S2C_HallDespawn>();
         NetworkClient.UnregisterHandler<S2C_ApartmentSpawn>();
 
+        Sim.Jobs.JobSystemBootstrap.OnClientStop();
         ItemSystemBootstrap.OnClientStop();
         NpcSystemBootstrap.OnClientStop();
         PropSystemBootstrap.OnClientStop();
@@ -377,6 +384,16 @@ public class SimpleTownNetwork : NetworkManager
             conn.connectionId, conn.identity?.gameObject.name ?? "unknown", request.destination, request.NewRoomId);
         conn.Send(request);
         GameLogger.Network.Debug("TeleportSent {ConnectionId}", conn.connectionId);
+    }
+
+    [ServerCallback]
+    private void OnUserSettingsSync(NetworkConnectionToClient conn, UserSettingsSyncMessage msg)
+    {
+        if (conn?.identity == null || string.IsNullOrEmpty(msg.dataJson)) return;
+        var player = conn.identity.GetComponent<Sim.PlayerController>();
+        if (player == null) return;
+        var data = JsonUtility.FromJson<UserSettingsData>(msg.dataJson);
+        if (data != null) player.UserSettings = data;
     }
 
 
@@ -502,6 +519,14 @@ public class SimpleTownNetwork : NetworkManager
     }
 
     [ClientCallback]
+    private void OnToastNotificationReceived(ToastNotificationMessage message)
+    {
+        if (NotificationManager.Instance == null) return;
+        if (string.IsNullOrEmpty(message.text)) return;
+        NotificationManager.Instance.AddNotification(message.text, message.Type);
+    }
+
+    [ClientCallback]
     public void OnCityDataUpdatedResponse(UpdateCityDataMessage message)
     {
         ClientLogger.Network("CityDataUpdated {CityId} {Timestamp} {ShouldHideLoading}",
@@ -606,6 +631,24 @@ public class SimpleTownNetwork : NetworkManager
         GameLogger.Network.Info("CharacterRetrieved {ConnectionId} {UserId} {CharacterName}",
             conn.connectionId, userId, characterResponse.Characters[0].Identity.FullName);
 
+        // Hydrate the career rows (character_jobs) onto the CharacterData *before*
+        // the SyncVar broadcast — clients then receive currentJob + jobs[] in one
+        // shot through ParseCharacterData. Missing jobs (404/empty) is fine for
+        // unemployed characters.
+        UnityWebRequest jobsRequest =
+            ApiManager.Instance.RetrieveCharacterJobsRequest(characterResponse.Characters[0].Id);
+        yield return jobsRequest.SendWebRequest();
+        if (jobsRequest.responseCode == 200) {
+            CharacterJobResponse jobsResponse =
+                JsonUtility.FromJson<CharacterJobResponse>(jobsRequest.downloadHandler.text);
+            characterResponse.Characters[0].Jobs = jobsResponse?.CharacterJobs != null
+                ? new List<CharacterJobData>(jobsResponse.CharacterJobs)
+                : new List<CharacterJobData>();
+        } else {
+            GameLogger.Network.Warning("CharacterJobsRetrievalFailed {CharacterId} {ResponseCode}",
+                characterResponse.Characters[0].Id, jobsRequest.responseCode);
+        }
+
         // Prepare the player GO server-side but do NOT call AddPlayerForConnection yet.
         // The correct lifecycle is:
         //   LoadFloorData → BuildHall → RegisterEntities → AddPlayerForConnection → TeleportMessage
@@ -614,6 +657,21 @@ public class SimpleTownNetwork : NetworkManager
         GameObject go = Instantiate(this.playerPrefab, startPositions[0].transform.position, Quaternion.identity);
         PlayerController player = go.GetComponent<PlayerController>();
         player.SetRawCharacterData(JsonUtility.ToJson(characterResponse.Characters[0]));
+
+        // Hydrate the user's preferences (notif opt-ins, audio, graphics, …)
+        // so server-side gates (e.g. JobServerManager.Publish notif filter)
+        // can read them. Missing or failed fetch → leave defaults.
+        UnityWebRequest settingsRequest = ApiManager.Instance.RetrieveUserSettingsRequest(userId);
+        yield return settingsRequest.SendWebRequest();
+        if (settingsRequest.responseCode == 200) {
+            var settings = JsonUtility.FromJson<UserSettings>(settingsRequest.downloadHandler.text);
+            if (settings != null && settings.Data != null) {
+                player.UserSettings = settings.Data;
+            }
+        } else {
+            GameLogger.Network.Warning("UserSettingsRetrievalFailed {UserId} {ResponseCode}",
+                userId, settingsRequest.responseCode);
+        }
         go.name = $"Player [conn={conn.connectionId}] [{characterResponse.Characters[0].Identity.FullName}]";
 
         // Provision the character's pocket + hand_left + hand_right places in DB

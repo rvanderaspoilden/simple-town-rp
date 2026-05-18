@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using Sim.Enums;
+using Sim.Jobs;
 using UnityEngine;
 
 namespace Sim.Entities {
@@ -25,6 +27,17 @@ namespace Sim.Entities {
 
         [SerializeField]
         private MoodEnum mood = MoodEnum.HAPPY;
+
+        // -1 = unemployed, otherwise a JobCategory value. Backed by the
+        // characters.current_job column (nullable smallint on the backend).
+        [SerializeField]
+        private int currentJob = -1;
+
+        // Mirror of the character_jobs collection for this character. Hydrated
+        // server-side before SetRawCharacterData; broadcast to all clients via
+        // the existing JSON SyncVar pipeline.
+        [SerializeField]
+        private List<CharacterJobData> jobs = new List<CharacterJobData>();
 
         public MoodEnum Mood {
             get => mood;
@@ -59,6 +72,29 @@ namespace Sim.Entities {
         public Health Health {
             get => health;
             set => health = value;
+        }
+
+        public int CurrentJobRaw {
+            get => currentJob;
+            set => currentJob = value;
+        }
+
+        public JobCategory? CurrentJobCategory {
+            get => currentJob < 0 ? (JobCategory?)null : (JobCategory)currentJob;
+            set => currentJob = value.HasValue ? (int)value.Value : -1;
+        }
+
+        public List<CharacterJobData> Jobs {
+            get => jobs ??= new List<CharacterJobData>();
+            set => jobs = value ?? new List<CharacterJobData>();
+        }
+
+        public CharacterJobData GetJob(JobCategory category) {
+            var list = Jobs;
+            for (int i = 0; i < list.Count; i++) {
+                if (list[i].Category == (int)category) return list[i];
+            }
+            return null;
         }
     }
 }
