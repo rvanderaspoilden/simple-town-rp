@@ -49,6 +49,14 @@ public class SimpleTownNetwork : NetworkManager
 
     public City CityData => cityData;
 
+    /// <summary>
+    /// User IDs whose SetupCharacterCoroutine is in flight (player GO not yet
+    /// added to a NetworkConnection). Used together with NetworkServer.connections
+    /// to reject a duplicate connect from the same account before either side
+    /// has a spawned identity.
+    /// </summary>
+    private readonly HashSet<string> connectingUserIds = new HashSet<string>();
+
     #region Unity Callbacks
 
     public override void OnValidate()
@@ -186,6 +194,17 @@ public class SimpleTownNetwork : NetworkManager
         }
     }
 
+    private IEnumerator ResetAllOnlineStatesCoroutine() {
+        UnityWebRequest req = ApiManager.Instance.ResetAllOnlineStateRequest();
+        yield return req.SendWebRequest();
+        if (req.responseCode != 200 && req.responseCode != 201) {
+            GameLogger.Network.Warning("ResetAllOnlineStatesFailed {ResponseCode} {Body}",
+                req.responseCode, req.downloadHandler.text);
+        } else {
+            GameLogger.Network.Info("ResetAllOnlineStates {Body}", req.downloadHandler.text);
+        }
+    }
+
     #endregion
 
     #region Client System Callbacks
@@ -281,6 +300,12 @@ public class SimpleTownNetwork : NetworkManager
         // can POST /props with placeId = TransitPlaceId. Idempotent — runs once
         // per server boot.
         StartCoroutine(Sim.ApiManager.Instance.EnsureTransitPlace());
+
+        // Recover from stale online flags left by a previous crash. The login
+        // endpoint refuses to issue a JWT while any of the user's characters
+        // is flagged online, so without this step a crashed session locks
+        // users out until manual intervention.
+        StartCoroutine(ResetAllOnlineStatesCoroutine());
 
         GameLogger.Network.Info("ServerStarted {Active}", NetworkServer.active);
     }
@@ -638,6 +663,50 @@ public class SimpleTownNetwork : NetworkManager
     {
         GameLogger.Network.Debug("SetupCharacterStart {ConnectionId} {UserId}", conn.connectionId, userId);
 
+        // Anti-cheat: only one live session per user. Reject if another
+        // connection already owns a PlayerController for this userId, or if
+        // another SetupCharacterCoroutine for the same userId is in flight
+        // (race window between two CreateCharacterMessages arriving in the
+        // same frame, before either has called AddPlayerForConnection).
+        if (IsUserAlreadyConnected(userId, conn, out int otherConnectionId)) {
+            GameLogger.Network.Warning("DuplicateUserConnectionRejected {ConnectionId} {UserId} {ExistingConnectionId}",
+                conn.connectionId, userId, otherConnectionId);
+            conn.Disconnect();
+            yield break;
+        }
+        connectingUserIds.Add(userId);
+
+        try {
+            yield return SetupCharacterCoroutineInner(conn, userId);
+        } finally {
+            connectingUserIds.Remove(userId);
+        }
+    }
+
+    private bool IsUserAlreadyConnected(string userId, NetworkConnectionToClient self, out int existingConnectionId) {
+        existingConnectionId = 0;
+        if (string.IsNullOrEmpty(userId)) return false;
+
+        if (connectingUserIds.Contains(userId)) {
+            existingConnectionId = -1; // -1 = in-progress, no connection id yet
+            return true;
+        }
+
+        foreach (NetworkConnectionToClient existing in NetworkServer.connections.Values) {
+            if (existing == null || existing == self) continue;
+            if (existing.identity == null) continue;
+            Sim.PlayerController player = existing.identity.GetComponent<Sim.PlayerController>();
+            if (player?.CharacterData != null && player.CharacterData.UserId == userId) {
+                existingConnectionId = existing.connectionId;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    [Server]
+    private IEnumerator SetupCharacterCoroutineInner(NetworkConnectionToClient conn, string userId)
+    {
         UnityWebRequest characterRequest = ApiManager.Instance.RetrieveCharacterByUserIdRequest(userId);
         yield return characterRequest.SendWebRequest();
 

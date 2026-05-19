@@ -303,6 +303,18 @@ namespace Sim {
             return request;
         }
 
+        /// <summary>POST /characters/reset-online-state — clears every character.online flag.
+        /// Called by the Unity server at boot to recover from stale flags left over
+        /// by a previous crash; the login flow refuses JWT issuance while any
+        /// character is online so missing this step locks users out.</summary>
+        public UnityWebRequest ResetAllOnlineStateRequest() {
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/reset-online-state", "POST") {
+                downloadHandler = new DownloadHandlerBuffer(),
+            };
+            request.SetRequestHeader("Content-type", "application/json");
+            return request;
+        }
+
         public UnityWebRequest UpdateCharacterMoneyRequest(string characterId, CharacterUpdateMoneyRequest moneyRequest) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(moneyRequest));
 
