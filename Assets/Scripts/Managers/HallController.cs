@@ -60,7 +60,6 @@ public class HallController : MonoBehaviour {
         this.elevator = Instantiate(this.elevatorPrefab, this.elevatorSpawn.position, this.elevatorSpawn.rotation);
         this.elevator.transform.parent   = this.transform;
         this.elevator.HallController     = this;
-        this.elevator.InitServerSide(RoomId);
 
         for (int i = 0; i < this.apartmentSpawnPoints.Length; i++) {
             Address address = new Address {

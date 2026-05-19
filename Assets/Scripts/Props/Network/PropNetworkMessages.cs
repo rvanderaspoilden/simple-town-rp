@@ -147,7 +147,9 @@ public struct C2S_RemoveProp : NetworkMessage {
 
 /// <summary>
 /// Le client demande au serveur d'utiliser l'ascenseur dans sa room courante.
-/// Pas de PropId — le serveur route via PlayerRoomTracker → TeleporterBehaviour.TryGetByRoom.
+/// Pas de PropId — le serveur route via PlayerRoomTracker.GetRoom(conn) +
+/// PropInteractionDispatcher.HandleTeleporterUse, qui résout (building, originFloor)
+/// directement depuis le roomId.
 /// </summary>
 public struct C2S_TeleporterUse : NetworkMessage {
     public int FloorDestination;

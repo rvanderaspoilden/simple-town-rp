@@ -95,16 +95,13 @@ public class BuildingBehavior : MonoBehaviour {
     public void ServerInit() {
         if (this.mainElevator == null) {
             Debug.LogError($"[Building] ServerInit street={streetName}: mainElevator is null");
-            return;
         }
-        this.mainElevator.InitServerSide("city");
-        this.mainElevator.OnUse += TeleportToFloor;
+        // Elevator routing is now handled by PropInteractionDispatcher directly
+        // from the player's roomId — no per-instance wiring needed here.
     }
 
     public void ServerShutdown() {
-        if (this.mainElevator != null) {
-            this.mainElevator.OnUse -= TeleportToFloor;
-        }
+        // Intentionally empty — kept for symmetry with ServerInit.
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -202,7 +199,6 @@ public class BuildingBehavior : MonoBehaviour {
         Debug.Log($"[Hall] Building runtime hall for room hall:{streetName}:{targetFloor} at {spawnPos}");
 
         newHall.Init(streetName, targetFloor, this);
-        newHall.Elevator.OnUse += TeleportToFloor;
 
         hallControllerByFloor.Add(targetFloor, newHall);
 
@@ -216,7 +212,6 @@ public class BuildingBehavior : MonoBehaviour {
 
     public void TryToCleanHall(HallController hallController) {
         if (!hallController.ContainPlayers()) {
-            hallController.Elevator.OnUse -= TeleportToFloor;
             hallControllerByFloor.Remove(hallController.FloorNumber);
 
             NetworkServer.SendToAll(new S2C_HallDespawn {

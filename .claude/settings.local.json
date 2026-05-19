@@ -75,7 +75,8 @@
       "Bash(grep -oE '\"Message\": \"\\\\\\\\[Reset\\\\\\\\][^\"]+\"')",
       "PowerShell(unity-mcp-cli run-tool assets-refresh --input '{\\\\\"options\\\\\":\\\\\"ForceUpdate\\\\\"}')",
       "PowerShell(npx unity-mcp-cli run-tool assets-refresh --input '{\\\\\"options\\\\\":\\\\\"ForceUpdate\\\\\"}')",
-      "Bash(git worktree *)"
+      "Bash(git worktree *)",
+      "Bash(git branch *)"
     ]
   },
   "enableAllProjectMcpServers": true,

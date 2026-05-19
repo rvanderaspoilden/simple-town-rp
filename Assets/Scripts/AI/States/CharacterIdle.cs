@@ -29,7 +29,7 @@ namespace AI.States {
         }
 
         public void Tick() {
-            this.player.Animator.SetVelocity(this.player.NavMeshAgent.velocity.magnitude);
+            this.player.Animator.SetVelocity(this.player.NavMeshAgent.desiredVelocity.magnitude);
         }
 
         public void OnExit() {

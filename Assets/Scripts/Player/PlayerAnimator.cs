@@ -8,12 +8,14 @@ namespace Sim {
         private int velocityHash;
         private int moodHash;
         private int actionHash;
+        private int carryPoseHash;
 
         private void Awake() {
             this.animator = GetComponent<Animator>();
             this.velocityHash = Animator.StringToHash("Velocity");
             this.moodHash = Animator.StringToHash("MoodType");
             this.actionHash = Animator.StringToHash("Action");
+            this.carryPoseHash = Animator.StringToHash("CarryPose");
         }
 
         public void SetVelocity(float value) {
@@ -26,6 +28,10 @@ namespace Sim {
 
         public void SetAction(CharacterAnimatorAction action) {
             this.animator.SetFloat(actionHash, (float)action);
+        }
+
+        public void SetCarryPose(CarryPose pose) {
+            this.animator.SetInteger(carryPoseHash, (int)pose);
         }
     }
 }

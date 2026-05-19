@@ -121,9 +121,10 @@ public class ClientItemManager
 
         _items.Remove(msg.EntityId);
 
-        // Si l'item était tenu par le joueur local, libérer la main (sinon
-        // hand state reste bloqué sur un entityId fantôme — bug "mains pleines").
-        UpdateLocalPlayerHands(msg.EntityId, clearHand: true, hand: default);
+        // Libère la main du joueur (local OU distant) qui tenait l'entité,
+        // sinon le hand state resterait bloqué sur un entityId fantôme et la
+        // pose d'animation ne reviendrait pas à NONE.
+        ClearHoldingPlayer(msg.EntityId);
 
         if (behaviour != null)
             Object.Destroy(behaviour.gameObject);
@@ -158,8 +159,8 @@ public class ClientItemManager
         behaviour.transform.SetPositionAndRotation(msg.WorldPosition, msg.WorldRotation);
         behaviour.OnDetachedFromHand();
 
-        // Update local PlayerHands if this player holds it
-        UpdateLocalPlayerHands(msg.EntityId, clearHand: true, hand: default);
+        // Free the holding player's hand slot (local or remote).
+        ClearHoldingPlayer(msg.EntityId);
     }
 
     private void OnDropResult(S2C_DropResult msg)
@@ -214,33 +215,54 @@ public class ClientItemManager
         }
 
         behaviour.transform.SetParent(handTransform, worldPositionStays: false);
-        behaviour.transform.localPosition = localPos;
-        behaviour.transform.localRotation = localRot;
+
+        // ItemConfig grip override prevails over the network message values when set —
+        // each item declares its own resting pos/rot in the hand bone. Falls back to
+        // the message values (legacy / non-configured items) when no override is provided.
+        ItemConfig config = behaviour.Configuration;
+        if (config != null && config.HasGripOverride)
+        {
+            behaviour.transform.localPosition = config.GripPosition;
+            behaviour.transform.localRotation = Quaternion.Euler(config.GripEuler);
+        }
+        else
+        {
+            behaviour.transform.localPosition = localPos;
+            behaviour.transform.localRotation = localRot;
+        }
+
         behaviour.OnAttachedToHand(playerNetId, hand);
 
-        // Update local PlayerHands UI state
-        UpdateLocalPlayerHands(entityId, clearHand: false, hand: hand, behaviour: behaviour, playerNetId: playerNetId);
+        // Update PlayerHands state on the actual holder (local OR remote) so the
+        // animator pose driver in PlayerHands.NotifyChanged runs on every instance.
+        playerHands.SetHand(hand, behaviour, entityId);
+        Debug.Log($"[PlayerHands] netId={playerNetId} hand={hand} entity={entityId}");
     }
 
-    private void UpdateLocalPlayerHands(int entityId, bool clearHand, HandType hand,
-        ItemBehaviour behaviour = null, uint playerNetId = 0)
+    /// <summary>
+    /// Scans every spawned PlayerHands and clears whichever slot was holding
+    /// the given entityId. Used on detach / destroy events that don't carry the
+    /// holder's netId in the payload.
+    /// </summary>
+    private void ClearHoldingPlayer(int entityId)
     {
-        if (PlayerController.Local == null) return;
-        var localNetId = NetworkClient.connection?.identity?.netId ?? 0;
+        foreach (var kvp in NetworkClient.spawned)
+        {
+            var identity = kvp.Value;
+            if (identity == null) continue;
+            var hands = identity.GetComponent<PlayerHands>();
+            if (hands == null) continue;
 
-        if (clearHand)
-        {
-            // Find which hand held this entity
-            var hands = PlayerController.Local.PlayerHands;
             if (hands.LeftEntityId == entityId)
+            {
                 hands.ClearHand(HandType.Left);
-            else if (hands.RightEntityId == entityId)
+                return;
+            }
+            if (hands.RightEntityId == entityId)
+            {
                 hands.ClearHand(HandType.Right);
-        }
-        else if (playerNetId == localNetId)
-        {
-            Debug.Log($"[PlayerHands] Updated {hand} hand with entity={entityId}");
-            PlayerController.Local.PlayerHands.SetHand(hand, behaviour, entityId);
+                return;
+            }
         }
     }
 }

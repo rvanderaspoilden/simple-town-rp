@@ -20,8 +20,15 @@ public class PlayerHands : MonoBehaviour
     [SerializeField] private int leftEntityId  = -1;
     [SerializeField] private int rightEntityId = -1;
 
+    private PlayerAnimator playerAnimator;
+
     public delegate void HandChanged();
     public static event HandChanged OnHandChanged;
+
+    private void Awake()
+    {
+        playerAnimator = GetComponent<PlayerAnimator>();
+    }
 
     // ── State API (called by ClientItemManager) ───────────────────────────────
 
@@ -126,6 +133,15 @@ public class PlayerHands : MonoBehaviour
 
     private void NotifyChanged()
     {
+        // Pose driver runs for every PlayerHands instance (local + remotes) so
+        // remote players display the correct carry animation as well.
+        if (playerAnimator != null)
+        {
+            CarryPose pose = HandPoseResolver.Resolve(leftHandItem, rightHandItem);
+            playerAnimator.SetCarryPose(pose);
+        }
+
+        // UI event is scoped to the local player only (inventory panel listens once).
         if (PlayerController.Local != null && PlayerController.Local.PlayerHands == this)
         {
             Debug.Log("[InventoryUI] Refresh hands display");

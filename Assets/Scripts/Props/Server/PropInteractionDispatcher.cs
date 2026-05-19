@@ -99,6 +99,13 @@ public class PropInteractionDispatcher : MonoBehaviour {
 
     // ── Teleporter ────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Routes an elevator use to the right BuildingBehavior based on the player's
+    /// current roomId — no static registry, no event subscriptions. The roomId
+    /// itself encodes the origin floor:
+    ///   - "city"             → originFloor=0
+    ///   - "hall:{street}:{n}" → originFloor=n, building looked up by street
+    /// </summary>
     public void HandleTeleporterUse(NetworkConnectionToClient conn, int floorDestination) {
         string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
         if (string.IsNullOrEmpty(roomId)) {
@@ -106,12 +113,43 @@ public class PropInteractionDispatcher : MonoBehaviour {
             return;
         }
 
-        if (!TeleporterBehaviour.TryGetByRoom(roomId, out TeleporterBehaviour teleporter)) {
-            GameLogger.Network.Warning("TeleporterUseNoTeleporter {ConnectionId} {RoomId}", conn.connectionId, roomId);
+        if (!TryResolveElevatorContext(roomId, out BuildingBehavior building, out int originFloor)) {
+            GameLogger.Network.Warning("TeleporterUseUnresolvedRoom {ConnectionId} {RoomId}", conn.connectionId, roomId);
             return;
         }
 
-        teleporter.ServerHandleUse(floorDestination, conn);
+        if (originFloor == floorDestination) return; // no-op (also guarded client-side)
+        building.TeleportToFloor(originFloor, floorDestination, conn);
+    }
+
+    /// <summary>
+    /// Maps a player's current roomId onto (building, originFloor). For "city"
+    /// we pick the first BuildingBehavior in the scene — multi-building cities
+    /// would need a building hint inside C2S_TeleporterUse.
+    /// </summary>
+    private static bool TryResolveElevatorContext(string roomId, out BuildingBehavior building, out int originFloor) {
+        building = null;
+        originFloor = 0;
+
+        if (roomId == "city") {
+            foreach (var bb in UnityEngine.Object.FindObjectsByType<BuildingBehavior>(
+                    FindObjectsInactive.Include, FindObjectsSortMode.None)) {
+                building = bb;
+                return true;
+            }
+            return false;
+        }
+
+        if (roomId.StartsWith("hall:")) {
+            string[] parts = roomId.Split(':');
+            if (parts.Length >= 3
+                && BuildingBehavior.TryGetBuilding(parts[1], out building)
+                && int.TryParse(parts[2], out originFloor)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // ── Apartment covers ──────────────────────────────────────────────────────

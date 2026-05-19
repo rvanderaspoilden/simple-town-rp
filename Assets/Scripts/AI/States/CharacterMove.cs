@@ -16,10 +16,14 @@ namespace AI.States {
         public void Tick() {
             MarkerController.Instance.ShowAt(this.player.NavMeshAgent.pathEndPosition);
 
-            this.player.Animator.SetVelocity(this.player.NavMeshAgent.velocity.magnitude);
+            // desiredVelocity (target velocity along the path) instead of velocity (smoothed by
+            // agent acceleration): the animator parameter snaps 0 ↔ speed so the blend tree picks
+            // exactly one of idle/walk/run instead of mixing all three during accel/decel.
+            Vector3 desired = this.player.NavMeshAgent.desiredVelocity;
+            this.player.Animator.SetVelocity(desired.magnitude);
 
-            if (this.player.NavMeshAgent.velocity.normalized != Vector3.zero) {
-                this.player.transform.rotation = Quaternion.LookRotation(this.player.NavMeshAgent.velocity.normalized);
+            if (desired.sqrMagnitude > 0.0001f) {
+                this.player.transform.rotation = Quaternion.LookRotation(desired.normalized);
             }
         }
 
