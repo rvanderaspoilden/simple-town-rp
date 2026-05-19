@@ -39,6 +39,11 @@ public class DoorBehaviour : PropBehaviourBase {
     [SerializeField] private AudioClip   unlockClip;
     [SerializeField] private AudioClip   ringClip;
 
+    [Header("Roof Reveal")]
+    [Tooltip("Optional. If set, the trigger is opened whenever the door is open (front doors only). " +
+             "Standing in its volume hides the parent building's Roof, even from outside.")]
+    [SerializeField] private RoofRevealTrigger roofRevealTrigger;
+
     private bool          _isOpen;
     private DoorLockState _lockState = DoorLockState.UNLOCKED;
     private int           _displayedNumber = -1;
@@ -105,6 +110,12 @@ public class DoorBehaviour : PropBehaviourBase {
 
         if (navMeshObstacle != null) {
             navMeshObstacle.enabled = _lockState == DoorLockState.LOCKED || !_isOpen;
+        }
+
+        // Front doors (_displayedNumber > 0) reveal the apartment roof while open.
+        // Inner doors keep the gate closed regardless of their open state.
+        if (roofRevealTrigger != null) {
+            roofRevealTrigger.GateOpen = _isOpen && _displayedNumber > 0;
         }
     }
 

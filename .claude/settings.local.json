@@ -76,7 +76,9 @@
       "PowerShell(unity-mcp-cli run-tool assets-refresh --input '{\\\\\"options\\\\\":\\\\\"ForceUpdate\\\\\"}')",
       "PowerShell(npx unity-mcp-cli run-tool assets-refresh --input '{\\\\\"options\\\\\":\\\\\"ForceUpdate\\\\\"}')",
       "Bash(git worktree *)",
-      "Bash(git branch *)"
+      "Bash(git branch *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-rp\\\\Assets\" -Filter \"*Editor*\" -Directory)",
+      "Bash(Select-Object -ExpandProperty Name)"
     ]
   },
   "enableAllProjectMcpServers": true,

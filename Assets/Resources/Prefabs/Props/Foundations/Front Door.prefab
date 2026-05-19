@@ -218,6 +218,7 @@ GameObject:
   - component: {fileID: 3963872367271934335}
   - component: {fileID: 3882929773458843960}
   - component: {fileID: 4048183342026063404}
+  - component: {fileID: 8472205236437133146}
   m_Layer: 10
   m_Name: Front Door
   m_TagString: Untagged
@@ -331,6 +332,21 @@ MonoBehaviour:
   lockClip: {fileID: 8300000, guid: c2dc6a4ee70e4344e8e25bf44f538f9e, type: 3}
   unlockClip: {fileID: 8300000, guid: 26ba141b9d89e4644b5e00f1cf484701, type: 3}
   ringClip: {fileID: 8300000, guid: 933967666cf08f948b930cf5b66f99ae, type: 3}
+  roofRevealTrigger: {fileID: 8472205236437133146}
+--- !u!114 &8472205236437133146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2833636661058039448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd3adbc138cdf0e4a9a0c356b4db74ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoofRevealTrigger
+  targetRoof: {fileID: 0}
+  gateOpen: 1
 --- !u!1 &4005046755810259179
 GameObject:
   m_ObjectHideFlags: 0
