@@ -52,11 +52,20 @@ public class SeatBehaviour : PropBehaviourBase, ISeatBehavior {
         _registeredPropId = id.PropId;
     }
 
-    private void OnEnable()  => RegisterIfReady();
+    private void OnEnable() {
+        var id = GetComponent<PropIdentity>();
+        if (id != null) id.OnAssigned += OnPropIdentityAssigned;
+        RegisterIfReady();
+    }
+
     private void OnDisable() {
+        var id = GetComponent<PropIdentity>();
+        if (id != null) id.OnAssigned -= OnPropIdentityAssigned;
         if (_registeredPropId > 0) _byPropId.Remove(_registeredPropId);
         _registeredPropId = -1;
     }
+
+    private void OnPropIdentityAssigned(int id, string room) => RegisterIfReady();
 
     private SeatState _state;
 

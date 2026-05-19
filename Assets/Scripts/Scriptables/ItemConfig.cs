@@ -36,9 +36,9 @@ public class ItemConfig : ScriptableObject {
     private Sprite icon;
 
     [Header("Carry pose")]
-    [Tooltip("Override the generic 1H/2H pose with a specific one (TRAY, MUG, …). Leave NONE to fall back on HandleType-driven generic pose.")]
+    [Tooltip("Hand-agnostic carry style (TRAY, MUG, BOX…). Leave NONE for the default 1H/2H grip. The resolver combines this with the runtime hand assignment to pick the animator pose.")]
     [SerializeField]
-    private CarryPose pose = CarryPose.NONE;
+    private CarryShape poseShape = CarryShape.NONE;
 
     [Tooltip("Local position of the item relative to the hand bone it is parented to.")]
     [SerializeField]
@@ -68,7 +68,7 @@ public class ItemConfig : ScriptableObject {
 
     public Sprite Icon => icon;
 
-    public CarryPose Pose => pose;
+    public CarryShape PoseShape => poseShape;
 
     public Vector3 GripPosition => gripPosition;
 

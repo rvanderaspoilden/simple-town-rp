@@ -134,11 +134,15 @@ public class PlayerHands : MonoBehaviour
     private void NotifyChanged()
     {
         // Pose driver runs for every PlayerHands instance (local + remotes) so
-        // remote players display the correct carry animation as well.
+        // remote players display the correct carry animation as well. Per-arm
+        // composition: each arm picks its own pose, and a 2H item overrides
+        // both via the Two Hand layer.
         if (playerAnimator != null)
         {
-            CarryPose pose = HandPoseResolver.Resolve(leftHandItem, rightHandItem);
-            playerAnimator.SetCarryPose(pose);
+            ResolvedPose pose = HandPoseResolver.Resolve(leftHandItem, rightHandItem);
+            playerAnimator.SetRightHandPose(pose.Right);
+            playerAnimator.SetLeftHandPose(pose.Left);
+            playerAnimator.SetTwoHandPose(pose.TwoHand);
         }
 
         // UI event is scoped to the local player only (inventory panel listens once).

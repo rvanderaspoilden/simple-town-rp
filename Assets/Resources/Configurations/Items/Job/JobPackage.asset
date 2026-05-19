@@ -16,6 +16,7 @@ MonoBehaviour:
   label: Colis
   type: 1
   handleType: 1
+  sortingCategory: 0
   unEquippedActions:
   - {fileID: 11400000, guid: fa73a1da35281ac4794f59016aab77cd, type: 2}
   equippedActions:
@@ -23,3 +24,6 @@ MonoBehaviour:
   prefab: {fileID: 2149621387852668879, guid: fad8229b741c81f4faf2884c72c897d0, type: 3}
   cursor: {fileID: 2800000, guid: b642424dd84566a4faa0d7cfadc2ac5f, type: 3}
   icon: {fileID: 21300000, guid: 250daae67ccb7d7409babffaba77fa1d, type: 3}
+  poseShape: 0
+  gripPosition: {x: 0, y: 0, z: 0}
+  gripEuler: {x: 0, y: 0, z: 0}
