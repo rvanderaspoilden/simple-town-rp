@@ -94,6 +94,9 @@ namespace Sim {
         [SyncVar(hook = nameof(OnTalkingStateChanged))]
         private bool isTalking;
 
+        [SyncVar(hook = nameof(OnWritingStateChanged))]
+        private bool isWriting;
+
         [SyncVar]
         private PlayerState _playerState;
 
@@ -254,6 +257,12 @@ namespace Sim {
         public void OnTalkingStateChanged(bool old, bool newValue) {
             this.isTalking = newValue;
             this.bubbleUI.SetVoiceBubbleVisibility(this.isTalking);
+        }
+
+        [Client]
+        public void OnWritingStateChanged(bool old, bool newValue) {
+            this.isWriting = newValue;
+            if (this.bubbleUI != null) this.bubbleUI.SetWriting(this.isWriting);
         }
 
         public void PlayStepSound() {
@@ -503,6 +512,12 @@ namespace Sim {
                 this.CmdSetTalk(false);
                 this.bubbleUI.SetVoiceBubbleVisibility(false);
             }
+
+            // T opens the text-chat panel. HUDManager.ShowChatInput already gates
+            // on IsOpen so pressing T while typing is a no-op.
+            if (Input.GetKeyDown(KeyCode.T) && HUDManager.Instance != null) {
+                HUDManager.Instance.ShowChatInput();
+            }
         }
 
         [Command]
@@ -510,6 +525,49 @@ namespace Sim {
             if (this.isTalking != value) {
                 GameLogger.Network.Debug("CmdSetTalk {PlayerNetId} {Value}", netId, value);
                 this.isTalking = value;
+            }
+        }
+
+        // Real-time text chat — message is broadcast to every client and displayed
+        // above the sender's head via BubbleUI.chatText. Nothing is persisted.
+        private const int MaxChatLength = 120;
+
+        /// <summary>Local-player typing indicator. Mirrored to all clients so the
+        /// Write Bubble appears above the head while the user has the chat panel
+        /// open.</summary>
+        public void SetLocalWriting(bool writing) {
+            if (this.bubbleUI != null) this.bubbleUI.SetWriting(writing);
+            this.CmdSetWriting(writing);
+        }
+
+        [Command]
+        private void CmdSetWriting(bool value) {
+            if (this.isWriting != value) {
+                this.isWriting = value;
+            }
+        }
+
+        public void SendChatMessage(string message) {
+            if (string.IsNullOrWhiteSpace(message)) return;
+            this.CmdSendChat(message);
+        }
+
+        [Command]
+        private void CmdSendChat(string message) {
+            if (string.IsNullOrWhiteSpace(message)) return;
+            message = message.Trim();
+            if (message.Length > MaxChatLength) message = message.Substring(0, MaxChatLength);
+            GameLogger.Network.Debug("CmdSendChat {PlayerNetId} {Length}", netId, message.Length);
+            // Stop the typing indicator on every client (the SyncVar hook will
+            // flip writeBubble off) before showing the message bubble.
+            this.isWriting = false;
+            this.RpcShowChatBubble(message);
+        }
+
+        [ClientRpc]
+        private void RpcShowChatBubble(string message) {
+            if (this.bubbleUI != null) {
+                this.bubbleUI.ShowChatMessage(message);
             }
         }
 

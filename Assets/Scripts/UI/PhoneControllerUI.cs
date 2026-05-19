@@ -70,6 +70,9 @@ namespace Sim {
             this.Swipe();
 
             if (Input.GetKeyDown(KeyCode.Escape)) {
+                // Laisser le tchat consommer Escape en priorité.
+                if (Sim.UI.ChatInputUI.Instance != null && Sim.UI.ChatInputUI.Instance.IsOpen) return;
+
                 if (this.phoneOpened) {
                     this.ClosePhone();
                 } else {

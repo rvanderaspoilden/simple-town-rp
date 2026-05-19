@@ -21,6 +21,9 @@ namespace Sim {
         private HelpPanel helpPanel;
 
         [SerializeField]
+        private ChatInputUI chatInputUI;
+
+        [SerializeField]
         private AudioSource audioSource;
 
         [SerializeField]
@@ -103,6 +106,14 @@ namespace Sim {
 
         public void CloseInventory() {
             this.inventoryUI.gameObject.SetActive(false);
+        }
+
+        public void ShowChatInput() {
+            if (this.chatInputUI != null && !this.chatInputUI.IsOpen) this.chatInputUI.Show();
+        }
+
+        public void ToggleChatInput() {
+            if (this.chatInputUI != null) this.chatInputUI.Toggle();
         }
     }
 }
