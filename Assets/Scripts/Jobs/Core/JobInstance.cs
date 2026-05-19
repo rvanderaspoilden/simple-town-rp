@@ -30,6 +30,18 @@ namespace Sim.Jobs {
             if (amount > 0) MoneyEarned += amount;
         }
 
+        /// <summary>
+        /// XP métier total versé au joueur via les JobXpReward de la mission.
+        /// Même contrainte d'ordre que MoneyEarned : RewardSystem doit être
+        /// abonné AVANT JobServerManager pour que ce champ soit peuplé quand
+        /// le JobFinishedMessage est construit.
+        /// </summary>
+        public int XpEarned { get; private set; }
+
+        public void AddXpEarned(int amount) {
+            if (amount > 0) XpEarned += amount;
+        }
+
         private readonly List<JobStepInstance> steps;
 
         public JobStepInstance CurrentStep =>

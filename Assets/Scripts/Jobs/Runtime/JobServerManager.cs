@@ -257,6 +257,7 @@ namespace Sim.Jobs {
                 totalCount     = sortTotal,
                 resultVariant  = variant,
                 moneyEarned    = job.MoneyEarned,
+                xpEarned       = job.XpEarned,
             };
             SendToOwner(job.OwnerNetId, msg);
             _toRemove.Add(job.InstanceId);

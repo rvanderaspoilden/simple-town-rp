@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Sim.SubGames.Packaging {
@@ -16,10 +17,11 @@ namespace Sim.SubGames.Packaging {
         public readonly bool allItemsPlaced;
         public readonly int placedCount;
         public readonly int totalCount;
+        public readonly int decoyCount;
 
         public PackageScore(int total, PackageRating rating, float spaceRatio,
                             bool fragileOk, bool heavyOk, bool allItemsPlaced,
-                            int placedCount = 0, int totalCount = 0) {
+                            int placedCount = 0, int totalCount = 0, int decoyCount = 0) {
             this.total = total;
             this.rating = rating;
             this.spaceRatio = spaceRatio;
@@ -28,6 +30,7 @@ namespace Sim.SubGames.Packaging {
             this.allItemsPlaced = allItemsPlaced;
             this.placedCount = placedCount;
             this.totalCount = totalCount;
+            this.decoyCount = decoyCount;
         }
     }
 
@@ -35,19 +38,67 @@ namespace Sim.SubGames.Packaging {
     /// Scoring cozy : jamais punitif. Le minimum est toujours "Correct".
     /// Pure logique (Vector2Int seulement comme dépendance Unity) → tourne
     /// tel quel côté serveur Mirror pour la validation anti-triche.
+    ///
+    /// Matching par définition (pas par instance) : si la commande demande
+    /// 1 Sandwich, n'importe quelle instance de Sandwich placée compte —
+    /// l'instance flag "decoy" du tray n'a aucune influence. Les placements
+    /// qui dépassent la quantité requise (ou dont la définition n'est pas
+    /// dans la commande) sont des "extras" et déclenchent la pénalité.
     /// </summary>
     public static class PackageScoringSystem {
-        public static PackageScore Evaluate(PackageGrid grid, PackagingSubGameConfig cfg, int itemsInOrder) {
-            float spaceRatio = grid.OccupiedCells() / (float)(grid.Width * grid.Height);
-            bool allPlaced = grid.Items.Count == itemsInOrder;
+        public static PackageScore Evaluate(PackageGrid grid, PackagingSubGameConfig cfg,
+                                            IReadOnlyList<PackageItemDefinition> requiredItems) {
+            int gridSize = grid.Width * grid.Height;
+
+            // Build "quantité demandée par définition".
+            var requiredByDef = new Dictionary<PackageItemDefinition, int>();
+            int requiredTotal = 0;
+            if (requiredItems != null) {
+                for (int i = 0; i < requiredItems.Count; i++) {
+                    var def = requiredItems[i];
+                    if (def == null) continue;
+                    requiredByDef.TryGetValue(def, out int c);
+                    requiredByDef[def] = c + 1;
+                    requiredTotal++;
+                }
+            }
+
+            int requiredPlaced = 0;
+            int extraItems = 0;
+            int extraCells = 0;
+            int requiredCells = 0;
 
             bool fragileOk = true;
             bool heavyOk = true;
+
+            var placedSoFar = new Dictionary<PackageItemDefinition, int>();
+
             foreach (var kvp in grid.Items) {
                 var item = kvp.Value;
-                if (item.Definition.heavy && item.Origin.y > grid.Height / 2) heavyOk = false;
-                if (item.Definition.fragile && HasHeavyAbove(grid, item)) fragileOk = false;
+                var def = item.Definition;
+                int cells = CellCount(item);
+
+                int already = placedSoFar.TryGetValue(def, out var p) ? p : 0;
+                int needed  = requiredByDef.TryGetValue(def, out var r) ? r : 0;
+                if (already < needed) {
+                    requiredPlaced++;
+                    requiredCells += cells;
+                } else {
+                    extraItems++;
+                    extraCells += cells;
+                }
+                placedSoFar[def] = already + 1;
+
+                // Physics rules apply to ALL placed items, extras included.
+                if (def.heavy && item.Origin.y > grid.Height / 2) heavyOk = false;
+                if (def.fragile && HasHeavyAbove(grid, item)) fragileOk = false;
             }
+
+            // L'espace utile = cellules occupées par les items utiles à la
+            // commande. Les extras ne comptent pas (ils ne remplissent pas le
+            // colis pour rien).
+            float spaceRatio = gridSize > 0 ? requiredCells / (float)gridSize : 0f;
+            bool allPlaced = requiredPlaced >= requiredTotal;
 
             float spaceWeight   = cfg != null ? cfg.spaceWeight   : 0.5f;
             float fragileWeight = cfg != null ? cfg.fragileWeight : 0.25f;
@@ -61,10 +112,15 @@ namespace Sim.SubGames.Packaging {
                 +  fragileWeight * (fragileOk ? 1f : 0.5f)
                 +  heavyWeight   * (heavyOk   ? 1f : 0.5f)) / normalized;
 
-            // Un colis incomplet ne peut pas atteindre Perfect : facteur 0.7
-            // sur le score total. Reste cozy (jamais < Correct grâce aux 0.5
-            // de fragile/heavy).
+            // Un colis incomplet ne peut pas atteindre Perfect : facteur 0.7.
+            // Reste cozy (jamais < Correct grâce aux 0.5 de fragile/heavy).
             if (!allPlaced) score *= 0.7f;
+
+            // Malus extras : -X% par cellule excédentaire. Score reste >= 0.
+            float decoyPenalty = cfg != null ? cfg.decoyPenaltyPerCell : 0.05f;
+            if (extraCells > 0 && decoyPenalty > 0f) {
+                score = Mathf.Max(0f, score - extraCells * decoyPenalty);
+            }
 
             int total = Mathf.RoundToInt(score * 1000f);
 
@@ -74,18 +130,24 @@ namespace Sim.SubGames.Packaging {
             else rating = PackageRating.Correct;
 
             return new PackageScore(total, rating, spaceRatio, fragileOk, heavyOk, allPlaced,
-                                    grid.Items.Count, itemsInOrder);
+                                    requiredPlaced, requiredTotal, extraItems);
         }
 
         /// <summary>
         /// Calcule le score à partir d'un snapshot réseau. Utilisé côté serveur
-        /// avec la PackageOrderDefinition autoritaire (jamais celle envoyée par
-        /// le client). Si la commande est introuvable, renvoie un score nul.
+        /// avec l'ordre régénéré depuis la même seed (anti-triche léger).
+        /// L'index dans le snapshot pointe dans une liste concaténée
+        /// required + decoys — on déréférence en PackageItemDefinition puis on
+        /// passe à Evaluate qui matche par définition.
         /// </summary>
         public static PackageScore EvaluateFromSnapshot(PackagePlacementSnapshot snapshot,
-                                                       PackageOrderDefinition order,
+                                                       PackageOrder order,
                                                        PackagingSubGameConfig cfg) {
-            if (order == null || order.items == null || order.items.Length == 0) {
+            int requiredCount = order != null && order.requiredItems != null
+                ? order.requiredItems.Count : 0;
+            int decoyCount = order != null && order.decoys != null
+                ? order.decoys.Count : 0;
+            if (requiredCount == 0) {
                 return new PackageScore(0, PackageRating.Correct, 0f, true, true, false);
             }
 
@@ -93,20 +155,32 @@ namespace Sim.SubGames.Packaging {
             int height = cfg != null ? cfg.gridHeight : snapshot.gridHeight;
             var grid = new PackageGrid(width, height);
 
+            // Flat lookup : required puis decoys, dans l'ordre où le client les
+            // a buildés. L'instanceIndex du placement adresse cette liste.
+            var allDefs = new List<PackageItemDefinition>(requiredCount + decoyCount);
+            allDefs.AddRange(order.requiredItems);
+            allDefs.AddRange(order.decoys);
+
             if (snapshot.placements != null) {
                 for (int i = 0; i < snapshot.placements.Length; i++) {
                     var p = snapshot.placements[i];
-                    if (p.instanceIndex >= order.items.Length) continue;
-                    var def = order.items[p.instanceIndex];
+                    int idx = p.instanceIndex;
+                    if (idx < 0 || idx >= allDefs.Count) continue;
+                    var def = allDefs[idx];
                     if (def == null) continue;
-                    var instance = new PackageItemInstance(p.instanceIndex, def);
-                    // Place ignore les placements invalides (hors grille / chevauchement)
-                    // — autre garde anti-triche.
+                    var instance = new PackageItemInstance(idx, def);
+                    // Place ignore les placements invalides (hors grille /
+                    // chevauchement) — garde anti-triche supplémentaire.
                     grid.Place(instance, new Vector2Int(p.originX, p.originY), p.rotation);
                 }
             }
 
-            return Evaluate(grid, cfg, order.items.Length);
+            return Evaluate(grid, cfg, order.requiredItems);
+        }
+
+        private static int CellCount(PackageItemInstance item) {
+            var shape = item.GetRotatedShape(item.Rotation);
+            return shape.cells != null ? shape.cells.Length : 0;
         }
 
         private static bool HasHeavyAbove(PackageGrid grid, PackageItemInstance item) {

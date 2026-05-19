@@ -305,6 +305,43 @@ public class HallController : MonoBehaviour {
         this.isGenerated = false;
     }
 
+    /// <summary>
+    /// Replays the hall + apartment spawn messages to a single connection.
+    /// Used when a player joins a floor whose HallController was already
+    /// created for an earlier player — without this catch-up, the late client
+    /// never gets S2C_HallSpawn (because CreateHall is skipped on cache hit)
+    /// and ends up with no local hall GameObject. Props sync independently
+    /// through ClientPropManager, which is why they were still visible.
+    /// </summary>
+    [Server]
+    public void SendSnapshotTo(NetworkConnectionToClient conn) {
+        if (conn == null) return;
+
+        conn.Send(new S2C_HallSpawn {
+            Street      = this.street,
+            FloorNumber = this.floorNumber,
+            Position    = this.transform.position
+        });
+
+        // Only replay apartment spawns once the hall has finished generating.
+        // If not generated yet, CheckGenerationState will broadcast to all
+        // clients (including this one) when it's done.
+        if (!this.isGenerated) return;
+        foreach (ApartmentController apt in this.generatedApartments) {
+            string preset = (apt.State == ApartmentState.GENERATED && !string.IsNullOrEmpty(apt.PresetName))
+                ? apt.PresetName
+                : "";
+            conn.Send(new S2C_ApartmentSpawn {
+                Street      = this.street,
+                FloorNumber = this.floorNumber,
+                DoorNumber  = apt.Address.doorNumber,
+                PresetName  = preset,
+                Position    = apt.transform.position,
+                Rotation    = apt.transform.rotation
+            });
+        }
+    }
+
     public void RemovePlayer(NetworkIdentity networkIdentity) {
         if (networkIdentity?.connectionToClient != null)
             this.playersInside.Remove(networkIdentity.connectionToClient);

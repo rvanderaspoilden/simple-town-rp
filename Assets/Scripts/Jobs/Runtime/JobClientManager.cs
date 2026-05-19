@@ -122,6 +122,7 @@ namespace Sim.Jobs {
             state.CompletionTotalCount = msg.totalCount;
             state.CompletionVariant = (JobResultVariant)msg.resultVariant;
             state.CompletionMoneyEarned = msg.moneyEarned;
+            state.CompletionXpEarned = msg.xpEarned;
             JobFinished?.Invoke(state);
             _states.Remove(msg.instanceId);
         }
@@ -159,5 +160,6 @@ namespace Sim.Jobs {
         public int CompletionTotalCount;
         public JobResultVariant CompletionVariant;
         public int CompletionMoneyEarned;
+        public int CompletionXpEarned;
     }
 }

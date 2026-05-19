@@ -20,19 +20,19 @@ namespace Sim.SubGames.Packaging {
         private readonly Dictionary<PackageItemDefinition, PackageOrderItemRow> _rows =
             new Dictionary<PackageItemDefinition, PackageOrderItemRow>();
 
-        public void Build(PackageOrderDefinition order) {
+        public void Build(PackageOrder order) {
             // Reset
             foreach (var r in _rows.Values) if (r != null) Destroy(r.gameObject);
             _rows.Clear();
             _totals.Clear();
 
-            if (order == null) return;
+            if (order == null || order.requiredItems == null) return;
 
             if (customerLabel != null) customerLabel.text = order.customerName;
 
             // Aggrege les doublons (2 peluches -> "2x")
-            for (int i = 0; i < order.items.Length; i++) {
-                var def = order.items[i];
+            for (int i = 0; i < order.requiredItems.Count; i++) {
+                var def = order.requiredItems[i];
                 if (def == null) continue;
                 if (!_totals.ContainsKey(def)) _totals[def] = 0;
                 _totals[def]++;
@@ -49,7 +49,11 @@ namespace Sim.SubGames.Packaging {
         /// Met à jour les coches selon les instances actuellement posées dans la grille.
         /// </summary>
         public void UpdateProgress(IReadOnlyDictionary<int, PackageItemInstance> placedItems) {
-            // Comptage placé par définition
+            // Comptage placé par définition — n'importe quelle instance d'une
+            // définition demandée coche la ligne correspondante (cap à la
+            // quantité requise). Le tray "decoy" n'a aucune influence : si le
+            // joueur a deux Sandwich visuellement identiques et qu'il en pose
+            // un, ça compte — peu importe quel slot il a pris.
             var counts = new Dictionary<PackageItemDefinition, int>();
             foreach (var kvp in placedItems) {
                 var def = kvp.Value.Definition;
@@ -58,8 +62,8 @@ namespace Sim.SubGames.Packaging {
             }
 
             foreach (var kvp in _rows) {
-                int placed = counts.TryGetValue(kvp.Key, out var c) ? c : 0;
                 int total = _totals.TryGetValue(kvp.Key, out var t) ? t : 0;
+                int placed = counts.TryGetValue(kvp.Key, out var c) ? Mathf.Min(c, total) : 0;
                 kvp.Value.SetPlacedCount(placed, total);
             }
         }

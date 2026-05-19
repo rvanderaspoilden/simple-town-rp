@@ -18,4 +18,6 @@ public struct JobFinishedMessage : NetworkMessage {
     public byte resultVariant;
     /// <summary>Argent gagné par le joueur pour cette mission (somme des MoneyReward / ScoreModulatedMoneyReward).</summary>
     public int moneyEarned;
+    /// <summary>XP métier gagné pour cette mission (somme des JobXpReward).</summary>
+    public int xpEarned;
 }

@@ -58,6 +58,12 @@ namespace Sim {
         [SerializeField]
         private BubbleUI bubbleUI;
 
+        [Header("Movement")]
+        [Tooltip("Vitesse de marche normale (m/s) — appliquée au NavMeshAgent à chaque MoveTo non-running.")]
+        [SerializeField] private float walkSpeed = 1.5f;
+        [Tooltip("Vitesse de course (m/s) — appliquée quand MoveTo est appelée avec isRunning=true (double clic sur le sol).")]
+        [SerializeField] private float runSpeed = 3.0f;
+
         [Header("Only for debug")]
         [SerializeField]
         private NavMeshAgent navMeshAgent;
@@ -583,8 +589,9 @@ namespace Sim {
             MoveTo(targetPoint);
         }
 
-        public void MoveTo(Vector3 targetPoint) {
+        public void MoveTo(Vector3 targetPoint, bool isRunning = false) {
             this.stateMachine.SetState(moveState);
+            this.navMeshAgent.speed = isRunning ? runSpeed : walkSpeed;
             this.navMeshAgent.SetDestination(targetPoint);
 
             HUDManager.Instance.CloseInventory();

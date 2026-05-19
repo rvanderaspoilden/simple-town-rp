@@ -29,6 +29,7 @@ namespace Sim.Jobs {
             }
 
             player.AddJobXp((int)job.Definition.Category, amount);
+            job.AddXpEarned(amount);
 
             var conn = identity.connectionToClient;
             if (conn != null) {

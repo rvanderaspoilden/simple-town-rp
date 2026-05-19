@@ -40,11 +40,7 @@ namespace Sim.Jobs {
                     : $"Précision : {pct}%   |   Sans erreur !";
             }
 
-            if (earningsLabel != null) {
-                earningsLabel.text = state.CompletionMoneyEarned > 0
-                    ? $"Gagné : +{state.CompletionMoneyEarned} €"
-                    : string.Empty;
-            }
+            if (earningsLabel != null) earningsLabel.text = FormatEarnings(state);
 
             if (ratingIcon != null) {
                 ratingIcon.sprite = rating switch {

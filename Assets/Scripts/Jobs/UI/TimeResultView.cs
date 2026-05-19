@@ -32,11 +32,7 @@ namespace Sim.Jobs {
                 durationLabel.text = $"Durée : {minutes:00}:{seconds:00}";
             }
 
-            if (earningsLabel != null) {
-                earningsLabel.text = state.CompletionMoneyEarned > 0
-                    ? $"Gagné : +{state.CompletionMoneyEarned} €"
-                    : string.Empty;
-            }
+            if (earningsLabel != null) earningsLabel.text = FormatEarnings(state);
 
             if (ratingIcon != null) {
                 ratingIcon.sprite = rating switch {

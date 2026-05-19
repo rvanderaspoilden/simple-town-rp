@@ -17,7 +17,15 @@ MonoBehaviour:
   hasIntermediateValidatorButton: 0
   gridWidth: 6
   gridHeight: 3
-  order: {fileID: 11400000, guid: bf052ee0e82cdfc44a002be17123900f, type: 2}
+  catalog:
+  - {fileID: 11400000, guid: a3b6854fc37d81a498644e739827d1b2, type: 2}
+  - {fileID: 11400000, guid: 10b97a3238b7e1844990e4c45c274441, type: 2}
+  - {fileID: 11400000, guid: 21f98bd59dd55a143a0a7fa1be3b9ec5, type: 2}
+  - {fileID: 11400000, guid: 2d9532e689b54d0479ff7aed5d802f12, type: 2}
+  - {fileID: 11400000, guid: f91d6aa9961bdda41a40862adbdf5bb6, type: 2}
+  decoyCount: 3
+  customerName: Client
   spaceWeight: 0.5
   fragileWeight: 0.25
   heavyWeight: 0.25
+  decoyPenaltyPerCell: 0.05

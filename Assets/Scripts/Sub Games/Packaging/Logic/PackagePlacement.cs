@@ -3,7 +3,7 @@ using System;
 namespace Sim.SubGames.Packaging {
     /// <summary>
     /// Placement d'un item dans un colis, sérialisable par Mirror.
-    /// instanceIndex = index dans PackageOrderDefinition.items côté serveur,
+    /// instanceIndex = index dans PackageOrder (required puis decoys) côté serveur,
     /// jamais une référence d'asset → le serveur ne peut être trompé sur
     /// l'identité de l'item.
     /// </summary>
@@ -17,13 +17,14 @@ namespace Sim.SubGames.Packaging {
 
     /// <summary>
     /// Snapshot envoyé au serveur pour validation anti-triche. Le serveur
-    /// utilise son propre PackageOrderDefinition (via PackagagingSubGameConfig
-    /// attaché au step) et ses propres poids — le client ne peut influer que
-    /// sur les placements.
+    /// rejoue PackageOrderGenerator avec la même seed et le catalog autoritaire
+    /// (via la PackagingSubGameConfig attachée au step) pour reconstruire
+    /// l'ordre, puis recalcule le score à partir des placements du client.
     /// </summary>
     [Serializable]
     public struct PackagePlacementSnapshot {
         public string orderId;
+        public int seed;
         public byte gridWidth;
         public byte gridHeight;
         public PackagePlacement[] placements;

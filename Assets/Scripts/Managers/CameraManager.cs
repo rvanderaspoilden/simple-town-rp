@@ -22,6 +22,13 @@ namespace Sim {
         [SerializeField]
         private GameObject fpsCamera;
 
+        [Header("Run on double click")]
+        [Tooltip("Fenêtre temporelle entre deux mouseDown gauche pour qu'ils soient considérés comme un double clic et déclenchent la course.")]
+        [SerializeField] private float doubleClickWindow = 0.3f;
+
+        private float _lastLeftDownTime = -10f;
+        private bool _pendingRunRequest;
+
         private BuildCamera buildCamera;
         
         private ThirdPersonCamera tpsCamera;
@@ -131,6 +138,14 @@ namespace Sim {
 
             if (Input.GetMouseButtonDown(0)) {
                 this.startLeftClickValid = !EventSystem.current.IsPointerOverGameObject();
+                if (this.startLeftClickValid) {
+                    // Détection double clic : le 2e mouseDown dans la fenêtre arme
+                    // _pendingRunRequest. Un simple clic le remet à false — le flag
+                    // se réarme proprement à chaque nouveau cycle de clic.
+                    bool isDouble = (Time.unscaledTime - _lastLeftDownTime) <= doubleClickWindow;
+                    _pendingRunRequest = isDouble;
+                    _lastLeftDownTime = Time.unscaledTime;
+                }
             }
 
             if (((leftMouseClick || leftMousePressed) && !this.startLeftClickValid) || EventSystem.current.IsPointerOverGameObject()) {
@@ -191,7 +206,7 @@ namespace Sim {
                         PlayerController.Local.SetTarget(hit.point, interactable);
                     }
                 } else if (interactable == null && leftMousePressed && hit.collider.gameObject.layer.Equals(LayerMask.NameToLayer("Ground"))) {
-                    PlayerController.Local.MoveTo(hit.point);
+                    PlayerController.Local.MoveTo(hit.point, _pendingRunRequest);
                 } else if (rightMouseClick && player) {
                     if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
                         PlayerController.Local.CurrentState().GetType() == typeof(CharacterInteract)) {

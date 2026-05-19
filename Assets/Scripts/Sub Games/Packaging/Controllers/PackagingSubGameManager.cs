@@ -10,6 +10,11 @@ namespace Sim.SubGames.Packaging {
     /// posée par le caller (PackagingMachineBehaviour) avant le LaunchSubGame.
     /// Sur validation, expose le score via OnPackageValidated et appelle
     /// StopGame() pour que le SubGameController déclenche l'unload.
+    ///
+    /// L'ordre est généré à la volée (PackageOrderGenerator) à chaque
+    /// StartGame avec une seed aléatoire. La seed est embarquée dans le
+    /// snapshot — le serveur rejoue la génération avec la même seed pour
+    /// valider le placement.
     /// </summary>
     public class PackagingSubGameManager : AbstractSubGameManager {
         /// <summary>
@@ -37,8 +42,10 @@ namespace Sim.SubGames.Packaging {
         [SerializeField] private PackagingSubGameConfig fallbackConfig;
 
         private PackagingSubGameConfig _config;
+        private PackageOrder _order;
         private PackageGrid _grid;
         private readonly List<PackageItemInstance> _instances = new List<PackageItemInstance>();
+        private int _requiredCount;
         private bool _validated;
         private PackagePlacementSnapshot? _pendingSnapshot;
 
@@ -57,16 +64,33 @@ namespace Sim.SubGames.Packaging {
             base.StartGame();
 
             _config = PendingConfig != null ? PendingConfig : fallbackConfig;
-            if (_config == null || _config.order == null || _config.order.items == null) {
-                Debug.LogError("[PackagingSubGameManager] Missing config/order.");
+            if (_config == null || _config.catalog == null || _config.catalog.Length == 0) {
+                Debug.LogError("[PackagingSubGameManager] Missing config/catalog.");
                 StopGame();
                 return;
             }
 
+            int seed = UnityEngine.Random.Range(int.MinValue + 1, int.MaxValue);
+            _order = PackageOrderGenerator.Generate(
+                _config.catalog,
+                _config.gridWidth, _config.gridHeight,
+                _config.decoyCount,
+                seed,
+                _config.customerName);
+
             _grid = new PackageGrid(_config.gridWidth, _config.gridHeight);
             _instances.Clear();
-            for (int i = 0; i < _config.order.items.Length; i++) {
-                _instances.Add(new PackageItemInstance(i, _config.order.items[i]));
+
+            // Indices : required[0..N-1] puis decoys[N..N+D-1]. L'ordre est
+            // strict — le serveur décode le snapshot par ce schéma pour retrouver
+            // la PackageItemDefinition de chaque placement.
+            _requiredCount = _order.requiredItems.Count;
+            for (int i = 0; i < _requiredCount; i++) {
+                _instances.Add(new PackageItemInstance(i, _order.requiredItems[i]));
+            }
+            for (int i = 0; i < _order.decoys.Count; i++) {
+                int id = _requiredCount + i;
+                _instances.Add(new PackageItemInstance(id, _order.decoys[i]));
             }
 
             var uiCamera = uiCanvas != null && uiCanvas.renderMode != RenderMode.ScreenSpaceOverlay
@@ -74,9 +98,12 @@ namespace Sim.SubGames.Packaging {
                 : null;
 
             gridView.Build(_grid, uiCamera);
-            trayView.Build(_instances);
+
+            // Tray : on shuffle pour mélanger required et decoys visuellement
+            // (sans toucher aux Id, qui restent stables pour le serveur).
+            trayView.Build(ShuffledForDisplay(_instances, seed));
             if (orderPanel != null) {
-                orderPanel.Build(_config.order);
+                orderPanel.Build(_order);
                 orderPanel.UpdateProgress(_grid.Items);
             }
             input.Bind(_grid, gridView, trayView, feedback, uiCamera);
@@ -129,7 +156,7 @@ namespace Sim.SubGames.Packaging {
             if (_validated || _grid == null) return;
             // Permettre la validation même si tous les items ne sont pas placés —
             // wholesome : on ne bloque pas. Le score sera juste plus bas.
-            var previewScore = PackageScoringSystem.Evaluate(_grid, _config, _instances.Count);
+            var previewScore = PackageScoringSystem.Evaluate(_grid, _config, _order.requiredItems);
             _validated = true;
             _pendingSnapshot = BuildSnapshot();
             hintPanel?.Hide();
@@ -167,11 +194,23 @@ namespace Sim.SubGames.Packaging {
                 };
             }
             return new PackagePlacementSnapshot {
-                orderId    = _config.order != null ? _config.order.orderId : string.Empty,
+                orderId    = _order != null ? _order.orderId : string.Empty,
+                seed       = _order != null ? _order.seed    : 0,
                 gridWidth  = (byte)_config.gridWidth,
                 gridHeight = (byte)_config.gridHeight,
                 placements = placements
             };
+        }
+
+        private static List<PackageItemInstance> ShuffledForDisplay(
+            List<PackageItemInstance> source, int seed) {
+            var copy = new List<PackageItemInstance>(source);
+            var rng = new System.Random(seed ^ 0x5F3759DF);
+            for (int i = copy.Count - 1; i > 0; i--) {
+                int j = rng.Next(i + 1);
+                (copy[i], copy[j]) = (copy[j], copy[i]);
+            }
+            return copy;
         }
     }
 }

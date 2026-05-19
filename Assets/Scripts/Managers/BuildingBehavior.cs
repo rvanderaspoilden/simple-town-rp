@@ -131,6 +131,10 @@ public class BuildingBehavior : MonoBehaviour {
 
         if (!hallControllerByFloor.ContainsKey(targetFloor)) {
             CreateHall(targetFloor);
+        } else {
+            // Hall already cached for an earlier player — replay the spawn
+            // snapshot to this connection so it gets its local HallController.
+            hallControllerByFloor[targetFloor].SendSnapshotTo(conn);
         }
 
         HallController hallController = hallControllerByFloor[targetFloor];
@@ -149,6 +153,8 @@ public class BuildingBehavior : MonoBehaviour {
 
         if (!hallControllerByFloor.ContainsKey(targetFloor)) {
             CreateHall(targetFloor);
+        } else {
+            hallControllerByFloor[targetFloor].SendSnapshotTo(conn);
         }
 
         HallController hallController = hallControllerByFloor[targetFloor];
@@ -177,6 +183,7 @@ public class BuildingBehavior : MonoBehaviour {
                 CreateHall(targetFloor);
             } else {
                 Debug.Log($"[Building] TeleportToFloor: reusing existing hall floor={targetFloor}");
+                hallControllerByFloor[targetFloor].SendSnapshotTo(conn);
             }
             // Existing player using elevator — no playerGo needed (already spawned).
             hallControllerByFloor[targetFloor].MoveToSpawn(conn);

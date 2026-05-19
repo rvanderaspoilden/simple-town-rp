@@ -80,16 +80,22 @@ namespace Sim.Jobs {
                 return;
             }
 
-            // Validation serveur autoritaire : on rejoue le placement contre
-            // NOTRE PackageOrderDefinition (jamais celle envoyée par le client).
+            // Validation serveur autoritaire : on régénère l'ordre depuis la
+            // seed envoyée + le catalog autoritaire du step, puis on rejoue
+            // le placement contre cet ordre. Le client peut choisir sa seed
+            // mais pas l'algo ni le catalog — un cheat éventuel se limite à
+            // re-roll des seeds jusqu'à tomber sur un ordre facile.
             var cfg = step.def.PackagingConfig;
-            if (cfg != null && cfg.order != null) {
-                var serverScore = PackageScoringSystem.EvaluateFromSnapshot(snapshot, cfg.order, cfg);
+            if (cfg != null && cfg.catalog != null && cfg.catalog.Length > 0) {
+                var serverOrder = PackageOrderGenerator.Generate(
+                    cfg.catalog, cfg.gridWidth, cfg.gridHeight,
+                    cfg.decoyCount, snapshot.seed, cfg.customerName);
+                var serverScore = PackageScoringSystem.EvaluateFromSnapshot(snapshot, serverOrder, cfg);
                 GameLogger.System.Info(
-                    "PackagingScore_Server {NetId} {JobId} {Total} {Rating} {Space} {FragileOk} {HeavyOk} {AllPlaced}",
+                    "PackagingScore_Server {NetId} {JobId} {Total} {Rating} {Space} {FragileOk} {HeavyOk} {AllPlaced} {Decoys}",
                     netId, step.job.Definition.JobId, serverScore.total, serverScore.rating,
                     serverScore.spaceRatio, serverScore.fragileOk, serverScore.heavyOk,
-                    serverScore.allItemsPlaced);
+                    serverScore.allItemsPlaced, serverScore.decoyCount);
                 step.job.Context.Set(CtxScoreKey,  serverScore.total);
                 step.job.Context.Set(CtxRatingKey, (int)serverScore.rating);
             }
