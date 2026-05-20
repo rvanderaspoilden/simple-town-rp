@@ -42,6 +42,11 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     [SerializeField]
     private bool randomizeStyleOnSpawn = true;
 
+    [Header("Movement settings")]
+    [Tooltip("Vitesse de déplacement de l'agent. Doit rester <= 1.5 pour conserver " +
+             "l'animation Walk (au-delà le blend tree passe en Run).")]
+    [SerializeField] private float walkSpeed = 1.5f;
+
     [Header("Wander settings")]
     [SerializeField] private float minIdleSeconds        = 1.5f;
     [SerializeField] private float maxIdleSeconds        = 4f;
@@ -160,6 +165,9 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private void Awake() {
         _agent      = GetComponent<NavMeshAgent>();
         _styleSetup = GetComponent<CharacterStyleSetup>();
+
+        // Plafonne la vitesse pour rester dans l'animation Walk (cf. blend tree "Velocity").
+        if (_agent != null) _agent.speed = walkSpeed;
     }
 
     /// <summary>
