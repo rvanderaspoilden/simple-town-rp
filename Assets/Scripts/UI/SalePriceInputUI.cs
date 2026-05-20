@@ -5,8 +5,7 @@ using UnityEngine.UI;
 namespace Sim.UI {
     /// <summary>
     /// Lightweight, non-blocking panel to set a price when the owner lists a prop
-    /// for sale. Subscribes to PropBehaviourBase.OnListForSaleRequest (priced case
-    /// only — gifts are handled directly by PlayerInteraction as price 0) and emits
+    /// for sale. Subscribes to PropBehaviourBase.OnListForSaleRequest and emits
     /// C2S_SetPropForSale via ClientPropManager on confirm.
     /// </summary>
     public class SalePriceInputUI : MonoBehaviour {
@@ -45,8 +44,7 @@ namespace Sim.UI {
             if (Instance == this) Instance = null;
         }
 
-        private void OnListForSaleRequest(PropBehaviourBase prop, bool isGift) {
-            if (isGift) return; // gift (price 0) is sent directly by PlayerInteraction
+        private void OnListForSaleRequest(PropBehaviourBase prop) {
             this.Show(prop);
         }
 

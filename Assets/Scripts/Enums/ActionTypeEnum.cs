@@ -21,8 +21,7 @@
         UNLOCK,
         LIST_FOR_SALE,
         UNLIST,
-        BUY,
-        GIVE
+        BUY
     }
 
 }

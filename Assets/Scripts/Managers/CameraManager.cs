@@ -89,6 +89,38 @@ namespace Sim {
 
             if (this.currentMode == CameraModeEnum.FREE) {
                 this.ManageInteraction();
+                this.ManageHover();
+            } else if (this._hoveredOutline != null) {
+                this._hoveredOutline.Hide();
+                this._hoveredOutline = null;
+            }
+        }
+
+        private PropHoverOutline _hoveredOutline;
+
+        /// <summary>
+        /// Per-frame hover highlight: raycasts under the cursor and outlines the prop
+        /// being pointed at (toggling the outline as the hovered prop changes).
+        /// </summary>
+        private void ManageHover() {
+            PropHoverOutline target = null;
+
+            bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            if (!overUI) {
+                Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
+                if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.layerMaskInFreeMode, QueryTriggerInteraction.Ignore)) {
+                    PropBehaviourBase prop = h.collider.GetComponentInParent<PropBehaviourBase>();
+                    if (prop != null) {
+                        target = prop.GetComponent<PropHoverOutline>();
+                        if (target == null) target = prop.gameObject.AddComponent<PropHoverOutline>();
+                    }
+                }
+            }
+
+            if (target != this._hoveredOutline) {
+                if (this._hoveredOutline != null) this._hoveredOutline.Hide();
+                this._hoveredOutline = target;
+                if (this._hoveredOutline != null) this._hoveredOutline.Show();
             }
         }
 

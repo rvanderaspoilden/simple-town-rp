@@ -9,7 +9,7 @@ namespace Sim.Scriptables {
     /// Loaded once at runtime from Resources. Create the asset at
     /// <c>Assets/Resources/Configurations/Sale/SaleActionsConfig.asset</c> and
     /// assign the four Action ScriptableObjects (each with its icon/label and the
-    /// matching ActionTypeEnum: LIST_FOR_SALE, GIVE, UNLIST, BUY).
+    /// matching ActionTypeEnum: LIST_FOR_SALE, UNLIST, BUY).
     ///
     /// If the asset is absent, sale actions simply aren't injected (the rest of the
     /// prop system keeps working) — so this degrades gracefully until the designer
@@ -21,9 +21,6 @@ namespace Sim.Scriptables {
 
         [Tooltip("Owner action: list a placed prop for sale (opens the price input UI).")]
         public Action listForSale;
-
-        [Tooltip("Owner action: give the prop away (lists it at price 0).")]
-        public Action give;
 
         [Tooltip("Owner action: remove the prop from sale.")]
         public Action unlist;

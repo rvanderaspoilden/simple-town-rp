@@ -449,6 +449,8 @@ public class PropInteractionDispatcher : MonoBehaviour {
         int    configId = state.PrefabId;
         int    presetId = PropStateHeader.ReadFrom(state.Payload).PresetId;
         string buyerName = buyer.CharacterData.Identity.FullName ?? "";
+        string propName  = DatabaseManager.GetPropsById(configId)?.GetDisplayName();
+        if (string.IsNullOrEmpty(propName)) propName = "l'objet";
 
         // Atomic reservation — guards the async window below against a second buyer.
         if (!ServerPropManager.Instance.TryReserve(roomId, msg.PropId, buyerCharId, buyerName, ReservationSeconds)) {
@@ -456,10 +458,11 @@ public class PropInteractionDispatcher : MonoBehaviour {
             yield break;
         }
 
-        // Funds check (gifts are free).
+        // Funds check.
         PlayerBankAccount buyerBank = conn.identity.GetComponent<PlayerBankAccount>();
         if (price > 0 && (buyerBank == null || buyerBank.Money < price)) {
             ServerPropManager.Instance.ClearReservation(roomId, msg.PropId);
+            SendToast(conn, $"Fonds insuffisants pour acheter {propName} ({price}).");
             SendBuyResult(conn, msg.PropId, false, 2);
             yield break;
         }
@@ -514,9 +517,9 @@ public class PropInteractionDispatcher : MonoBehaviour {
         }
 
         // 3. Payment — debit buyer, credit seller (online via bank, offline via REST).
+        PlayerBankAccount sellerBank = FindOnlineBankAccount(sellerCharId);
         if (price > 0) {
             buyerBank.TakeMoney(price);
-            PlayerBankAccount sellerBank = FindOnlineBankAccount(sellerCharId);
             if (sellerBank != null) {
                 sellerBank.GiveMoney(price);
             } else if (!string.IsNullOrEmpty(sellerCharId)) {
@@ -548,6 +551,12 @@ public class PropInteractionDispatcher : MonoBehaviour {
 
         SendBuyResult(conn, msg.PropId, true, 0);
 
+        // 5b. Notify both parties (the seller only if online).
+        SendToast(conn, price > 0 ? $"Tu as acheté {propName} pour {price}." : $"Tu as reçu {propName}.");
+        if (sellerBank != null)
+            SendToast(sellerBank.connectionToClient,
+                price > 0 ? $"Tu as vendu {propName} pour {price}." : $"Tu as donné {propName}.");
+
         // 6. Refresh the buyer's delivery box if their apartment is currently loaded.
         if (ServerApartmentRegistry.Instance.TryGetByTenant(buyerCharId, out ApartmentController buyerApt)
             && buyerApt.DeliveryBoxPropId > 0)
@@ -559,6 +568,11 @@ public class PropInteractionDispatcher : MonoBehaviour {
     private static void SendBuyResult(NetworkConnectionToClient conn, int propId, bool success, byte reason) {
         if (conn != null && conn.isReady)
             conn.Send(new S2C_BuyPropResult { PropId = propId, Success = success, ReasonCode = reason });
+    }
+
+    private static void SendToast(NetworkConnectionToClient conn, string text) {
+        if (conn != null && conn.isReady)
+            conn.Send(new ToastNotificationMessage { text = text, typeByte = (byte)NotificationType.BANK });
     }
 
     /// <summary>Finds the bank account of an online character by id, or null if offline.</summary>

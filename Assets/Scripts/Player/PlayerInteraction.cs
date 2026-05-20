@@ -29,7 +29,6 @@ namespace Sim {
             BuildManager.OnValidatePaintModification += OnValidatePaintModification;
             PropBehaviourBase.OnMoveRequest          += OnMoveRequest;
             PropBehaviourBase.OnSellRequest          += OnSellRequest;
-            PropBehaviourBase.OnListForSaleRequest   += OnListForSaleRequest;
             PropBehaviourBase.OnUnlistRequest        += OnUnlistRequest;
             PaintBucketBehaviour.OnOpened            += OpenBucket;
             DeliveryBoxBehaviour.OnOpened            += OnDeliveryBoxOpened;
@@ -51,7 +50,6 @@ namespace Sim {
                 BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
                 PropBehaviourBase.OnMoveRequest          -= OnMoveRequest;
                 PropBehaviourBase.OnSellRequest          -= OnSellRequest;
-                PropBehaviourBase.OnListForSaleRequest   -= OnListForSaleRequest;
                 PropBehaviourBase.OnUnlistRequest        -= OnUnlistRequest;
                 PaintBucketBehaviour.OnOpened            -= OpenBucket;
                 DeliveryBoxBehaviour.OnOpened            -= OnDeliveryBoxOpened;
@@ -72,19 +70,6 @@ namespace Sim {
             PropIdentity id = behaviour.GetComponent<PropIdentity>();
             if (id == null || id.PropId <= 0) return;
             NetworkClient.Send(new C2S_RemoveProp { RoomId = id.RoomId, PropId = id.PropId });
-        }
-
-        /// <summary>
-        /// Owner listed a prop for sale. A gift (isGift) lists at price 0 immediately;
-        /// a regular sale needs a price, so the price-input UI subscribes to the same
-        /// PropBehaviourBase.OnListForSaleRequest event and calls
-        /// ClientPropManager.RequestSetForSale with the entered amount.
-        /// </summary>
-        private void OnListForSaleRequest(PropBehaviourBase behaviour, bool isGift) {
-            if (!isGift) return; // priced listing handled by the price-input UI
-            PropIdentity id = behaviour.GetComponent<PropIdentity>();
-            if (id == null || id.PropId <= 0) return;
-            ClientPropManager.Instance?.RequestSetForSale(id.PropId, 0);
         }
 
         private void OnUnlistRequest(PropBehaviourBase behaviour) {

@@ -49,11 +49,10 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     public static event System.Action<PropBehaviourBase> OnMoveRequest;
 
     /// <summary>
-    /// Fired when the owner triggers LIST_FOR_SALE / GIVE. The bool is true for a
-    /// gift (price forced to 0). PlayerInteraction opens the price UI (or sends a
-    /// price-0 listing) and emits C2S_SetPropForSale.
+    /// Fired when the owner triggers LIST_FOR_SALE. The price-input UI subscribes,
+    /// collects a price and emits C2S_SetPropForSale.
     /// </summary>
-    public static event System.Action<PropBehaviourBase, bool> OnListForSaleRequest;
+    public static event System.Action<PropBehaviourBase> OnListForSaleRequest;
 
     /// <summary>Fired when the owner triggers UNLIST. PlayerInteraction sends C2S_UnlistProp.</summary>
     public static event System.Action<PropBehaviourBase> OnUnlistRequest;
@@ -88,7 +87,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
     // Sale Actions injected dynamically (see SaleActionsConfig). Instantiated once
     // in SetupActions and subscribed to DoAction like the config actions.
-    private Action _actListForSale, _actGive, _actUnlist, _actBuy;
+    private Action _actListForSale, _actUnlist, _actBuy;
 
     public int DefaultPresetId => defaultPresetId;
 
@@ -112,7 +111,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     {
         UnsubscribeActions(_builtActions);
         UnsubscribeActions(_unbuiltActions);
-        UnsubscribeActions(new[] { _actListForSale, _actGive, _actUnlist, _actBuy });
+        UnsubscribeActions(new[] { _actListForSale, _actUnlist, _actBuy });
     }
 
     // ── IPropBehaviour ────────────────────────────────────────────────────────
@@ -245,7 +244,6 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         else if (isOwner)
         {
             if (_actListForSale != null) yield return _actListForSale;
-            if (_actGive != null)        yield return _actGive;
         }
     }
 
@@ -387,7 +385,6 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         if (cfg == null) return;
 
         _actListForSale = InstantiateSaleAction(cfg.listForSale);
-        _actGive        = InstantiateSaleAction(cfg.give);
         _actUnlist      = InstantiateSaleAction(cfg.unlist);
         _actBuy         = InstantiateSaleAction(cfg.buy);
     }
@@ -430,11 +427,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
                 break;
 
             case ActionTypeEnum.LIST_FOR_SALE:
-                OnListForSaleRequest?.Invoke(this, false);
-                break;
-
-            case ActionTypeEnum.GIVE:
-                OnListForSaleRequest?.Invoke(this, true);
+                OnListForSaleRequest?.Invoke(this);
                 break;
 
             case ActionTypeEnum.UNLIST:
