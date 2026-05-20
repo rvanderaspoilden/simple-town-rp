@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb28dfc69734e904aaa40e395a20dcea, type: 3}
+  m_Name: SaleActionsConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Scriptables.SaleActionsConfig
+  listForSale: {fileID: 11400000, guid: b0a45dd41e7fd1c46b2f98c93333f929, type: 2}
+  give: {fileID: 11400000, guid: ce1ad55b9969d464e897958a6ad9ff9c, type: 2}
+  unlist: {fileID: 11400000, guid: 38bc27e02169370408525a85651d4ecd, type: 2}
+  buy: {fileID: 11400000, guid: c88cd9f3016eabe42885e5a7fbdfb270, type: 2}
+  billboardPrefab: {fileID: 7775974117851328634, guid: aa7d057e0037edf4c9b173d488b1a09d,
+    type: 3}

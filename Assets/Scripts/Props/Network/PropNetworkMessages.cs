@@ -24,6 +24,7 @@ public struct S2C_PropSpawn : NetworkMessage {
     public Quaternion Rotation;
     public PropType   Type;
     public byte[]     Payload;   // état initial (sérialisé selon PropType)
+    public string     OwnerCharId; // propriétaire (tenant) — gère la visibilité des actions owner-only côté client ("" si aucun)
 }
 
 /// <summary>Ordonne au client d'appliquer un nouvel état à un prop existant.</summary>
@@ -87,6 +88,31 @@ public struct S2C_DoorRing : NetworkMessage {
     public string RoomId;
 }
 
+/// <summary>
+/// État de vente d'un prop (orthogonal au PropType — n'importe quel meuble peut
+/// être mis en vente). Diffusé à la room sur changement et rejoué dans le snapshot.
+/// ReservedByName est vide tant que personne n'a cliqué Acheter.
+/// </summary>
+public struct S2C_PropSaleState : NetworkMessage {
+    public int    PropId;
+    public string RoomId;
+    public bool   ForSale;
+    public int    Price;
+    public string ReservedByName;   // "" = non réservé
+    public string OwnerCharId;      // propriétaire (tenant) — le client masque BUY pour lui
+}
+
+/// <summary>
+/// Réponse ciblée à l'acheteur après tentative d'achat d'un prop en vente.
+/// ReasonCode : 0 = succès ; 1 = plus en vente / réservé ; 2 = fonds insuffisants ;
+/// 3 = mains pleines / item de mission en main ; 4 = erreur serveur.
+/// </summary>
+public struct S2C_BuyPropResult : NetworkMessage {
+    public int  PropId;
+    public bool Success;
+    public byte ReasonCode;
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 //  Client → Server
 // ═════════════════════════════════════════════════════════════════════════════
@@ -141,6 +167,32 @@ public struct C2S_EditProp : NetworkMessage {
 
 /// <summary>Demande de suppression d'un prop (vente).</summary>
 public struct C2S_RemoveProp : NetworkMessage {
+    public string RoomId;
+    public int    PropId;
+}
+
+/// <summary>
+/// Le propriétaire (tenant) met un prop placé en vente. Price = 0 → don ("Donner").
+/// Le serveur valide la propriété puis diffuse S2C_PropSaleState + persiste forSale/price.
+/// </summary>
+public struct C2S_SetPropForSale : NetworkMessage {
+    public string RoomId;
+    public int    PropId;
+    public int    Price;
+}
+
+/// <summary>Le propriétaire retire un prop de la vente.</summary>
+public struct C2S_UnlistProp : NetworkMessage {
+    public string RoomId;
+    public int    PropId;
+}
+
+/// <summary>
+/// Un visiteur (non-propriétaire) confirme l'achat d'un prop en vente.
+/// Envoyé après la mini-confirmation côté client. Le serveur réserve, débite,
+/// transfère la propriété et génère une livraison. Réponse : S2C_BuyPropResult.
+/// </summary>
+public struct C2S_BuyProp : NetworkMessage {
     public string RoomId;
     public int    PropId;
 }

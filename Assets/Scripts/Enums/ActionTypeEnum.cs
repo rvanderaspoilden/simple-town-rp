@@ -18,7 +18,11 @@
         DRINK,
         USE,
         RING,
-        UNLOCK
+        UNLOCK,
+        LIST_FOR_SALE,
+        UNLIST,
+        BUY,
+        GIVE
     }
 
 }

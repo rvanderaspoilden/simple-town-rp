@@ -581,7 +581,8 @@ namespace Sim {
                         initialPayloadOverride: payload,
                         headerOverride:         payload == null ? (PropStateHeader?) header : null,
                         propUuid:               p.Id,
-                        propVersion:            p.version
+                        propVersion:            p.version,
+                        ownerCharId:            this.tenantId
                     );
                     if (propId < 0) continue;
 
@@ -590,6 +591,10 @@ namespace Sim {
                         _lightPropIds.Add(propId);
                         savedLightsSpawned++;
                     }
+
+                    // Restore the for-sale listing so visitors see it on entry.
+                    if (p.forSale)
+                        ServerPropManager.Instance.SetSaleState(this.RoomId, propId, true, p.price, this.tenantId);
 
                     GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(propId);
                     if (go != null && this.propsContainer != null) {
@@ -923,6 +928,7 @@ namespace Sim {
         // only this apt's props (the room is shared with the rest of the hall).
         private readonly HashSet<int> _ownedPropIds = new HashSet<int>();
         public void TrackProp(int propId) { if (propId > 0) _ownedPropIds.Add(propId); }
+        public void UntrackProp(int propId) { _ownedPropIds.Remove(propId); }
         public bool OwnsProp(int propId) => _ownedPropIds.Contains(propId);
 
         [Header("Prop Config")]

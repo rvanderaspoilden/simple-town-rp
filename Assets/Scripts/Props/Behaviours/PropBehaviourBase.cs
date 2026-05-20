@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using Interaction;
@@ -47,6 +48,48 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     /// </summary>
     public static event System.Action<PropBehaviourBase> OnMoveRequest;
 
+    /// <summary>
+    /// Fired when the owner triggers LIST_FOR_SALE / GIVE. The bool is true for a
+    /// gift (price forced to 0). PlayerInteraction opens the price UI (or sends a
+    /// price-0 listing) and emits C2S_SetPropForSale.
+    /// </summary>
+    public static event System.Action<PropBehaviourBase, bool> OnListForSaleRequest;
+
+    /// <summary>Fired when the owner triggers UNLIST. PlayerInteraction sends C2S_UnlistProp.</summary>
+    public static event System.Action<PropBehaviourBase> OnUnlistRequest;
+
+    /// <summary>Fired when a visitor triggers BUY. PlayerInteraction opens the confirm fiche.</summary>
+    public static event System.Action<PropBehaviourBase> OnBuyRequest;
+
+    // ── Client-side sale state (mirrors the server's S2C_PropSaleState) ─────────
+    private bool   _forSale;
+    private int    _price;
+    private string _reservedByName;
+    private string _ownerCharId;
+    private PropSaleBillboard _saleBillboard;
+
+    public bool   ForSale        => _forSale;
+    public int    Price          => _price;
+    public string ReservedByName => _reservedByName;
+    public bool   IsReserved     => !string.IsNullOrEmpty(_reservedByName);
+
+    /// <summary>True when the local player owns this prop (matches the broadcast owner id).</summary>
+    private bool IsOwnedByLocal =>
+        !string.IsNullOrEmpty(_ownerCharId)
+        && PlayerController.Local?.CharacterData?.Id == _ownerCharId;
+
+    /// <summary>Owner (apartment tenant) broadcast by the server with the prop spawn. "" for city/unowned.</summary>
+    public void SetOwner(string ownerCharId) {
+        if (!string.IsNullOrEmpty(ownerCharId)) _ownerCharId = ownerCharId;
+    }
+
+    private bool IsApartmentRoom() =>
+        _identity != null && _identity.RoomId != "city";
+
+    // Sale Actions injected dynamically (see SaleActionsConfig). Instantiated once
+    // in SetupActions and subscribed to DoAction like the config actions.
+    private Action _actListForSale, _actGive, _actUnlist, _actBuy;
+
     public int DefaultPresetId => defaultPresetId;
 
     public void SetDefaultPresetId(int id) { defaultPresetId = id; }
@@ -69,6 +112,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     {
         UnsubscribeActions(_builtActions);
         UnsubscribeActions(_unbuiltActions);
+        UnsubscribeActions(new[] { _actListForSale, _actGive, _actUnlist, _actBuy });
     }
 
     // ── IPropBehaviour ────────────────────────────────────────────────────────
@@ -87,8 +131,57 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     public virtual bool IsInteractable()
     {
         if (!enabled || !gameObject.activeInHierarchy) return false;
-        Action[] acts = _isBuilt ? _builtActions : _unbuiltActions;
-        return acts != null && acts.Length > 0;
+        // Sale actions can make an otherwise action-less prop interactable for a
+        // visitor (Buy) or owner (List/Unlist), so consider the full set.
+        return GetActions().Length > 0;
+    }
+
+    /// <summary>
+    /// Applies the network sale state (S2C_PropSaleState) on the client. Drives the
+    /// optional price billboard and refreshes which contextual actions are offered.
+    /// </summary>
+    public virtual void ApplySaleState(bool forSale, int price, string reservedByName, string ownerCharId)
+    {
+        _forSale        = forSale;
+        _price          = price;
+        _reservedByName = reservedByName;
+        if (!string.IsNullOrEmpty(ownerCharId)) _ownerCharId = ownerCharId;
+
+        // Floating "À vendre" billboard above the prop. Created lazily the first
+        // time the prop becomes for-sale; kept hidden / range-gated otherwise.
+        if (forSale && _saleBillboard == null)
+            _saleBillboard = SpawnSaleBillboard();
+        if (_saleBillboard != null)
+            _saleBillboard.SetState(forSale, price, reservedByName);
+
+        OnSaleStateChanged(forSale, price, reservedByName);
+    }
+
+    /// <summary>
+    /// Hook for visuals beyond the built-in billboard. Default no-op — subclasses or
+    /// a sibling component can override/listen.
+    /// </summary>
+    protected virtual void OnSaleStateChanged(bool forSale, int price, string reservedByName) { }
+
+    /// <summary>
+    /// Instantiates the sale billboard: the prefab from SaleActionsConfig if assigned,
+    /// otherwise a procedurally-built one. Parented under this prop and bound to it.
+    /// </summary>
+    private PropSaleBillboard SpawnSaleBillboard()
+    {
+        GameObject prefab = SaleActionsConfig.Get()?.billboardPrefab;
+        GameObject go;
+        if (prefab != null) {
+            go = Instantiate(prefab, transform);
+        } else {
+            go = new GameObject("SaleBillboard");
+            go.transform.SetParent(transform, false);
+        }
+
+        PropSaleBillboard billboard = go.GetComponent<PropSaleBillboard>();
+        if (billboard == null) billboard = go.AddComponent<PropSaleBillboard>();
+        billboard.Init(this);
+        return billboard;
     }
 
     public virtual bool IsRightClickOnly() =>
@@ -97,15 +190,63 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     public virtual Action[] GetActions(bool withPriority = false)
     {
         Action[] acts = _isBuilt ? _builtActions : _unbuiltActions;
-        if (acts == null || acts.Length == 0) return System.Array.Empty<Action>();
+        acts ??= System.Array.Empty<Action>();
 
-        bool hasPerm = _apartment == null
-                       || _apartment.IsTenant(PlayerController.Local?.CharacterData);
+        // Owner-only actions (NeedPermission, e.g. MOVE) are gated by the broadcast
+        // owner id: in an apartment, only the owner sees them. City props and props
+        // whose owner is unknown (fixtures with no owner set) stay lenient as before.
+        bool hasPerm = !IsApartmentRoom()
+                       || string.IsNullOrEmpty(_ownerCharId)
+                       || IsOwnedByLocal;
 
-        return acts.Where(a =>
+        IEnumerable<Action> result = acts.Where(a =>
             (!a.NeedPermission || hasPerm) &&
             (!withPriority || (a.Type != ActionTypeEnum.SELL && a.Type != ActionTypeEnum.MOVE))
-        ).ToArray();
+        );
+
+        // Inject cross-cutting sale actions on sellable furniture inside apartments
+        // (never on city scene props, doors, lights, boxes, packages…). Authority
+        // (owner vs visitor) is enforced server-side, mirroring how SELL/MOVE already
+        // work — _apartment is null on clients for runtime props.
+        if (_isBuilt && IsSellableApartmentProp())
+            result = result.Concat(GetSaleActions(withPriority));
+
+        return result.ToArray();
+    }
+
+    /// <summary>True for sellable furniture living in an apartment/hall room.</summary>
+    private bool IsSellableApartmentProp() =>
+        configuration != null && configuration.IsSellable()
+        && _identity != null && _identity.RoomId != "city";
+
+    /// <summary>
+    /// Contextual sale actions, gated by the broadcast owner id:
+    ///   for-sale     → owner sees Unlist, others see Buy (if not reserved);
+    ///   not-for-sale → owner sees List + Give; others see nothing.
+    /// Hidden under withPriority (left-click) — sale is a deliberate right-click act.
+    /// </summary>
+    private IEnumerable<Action> GetSaleActions(bool withPriority)
+    {
+        if (withPriority) yield break;
+
+        bool isOwner = IsOwnedByLocal;
+
+        if (_forSale)
+        {
+            if (isOwner)
+            {
+                if (_actUnlist != null) yield return _actUnlist;
+            }
+            else if (!IsReserved && _actBuy != null)
+            {
+                yield return _actBuy;
+            }
+        }
+        else if (isOwner)
+        {
+            if (_actListForSale != null) yield return _actListForSale;
+            if (_actGive != null)        yield return _actGive;
+        }
     }
 
     public virtual void StopInteraction()
@@ -232,6 +373,31 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
         foreach (var a in _builtActions) a.OnExecute += DoAction;
         foreach (var a in _unbuiltActions) a.OnExecute += DoAction;
+
+        SetupSaleActions();
+    }
+
+    /// <summary>
+    /// Instantiates per-instance copies of the shared sale Actions and wires them to
+    /// DoAction. No-op if the SaleActionsConfig asset isn't present yet.
+    /// </summary>
+    private void SetupSaleActions()
+    {
+        SaleActionsConfig cfg = SaleActionsConfig.Get();
+        if (cfg == null) return;
+
+        _actListForSale = InstantiateSaleAction(cfg.listForSale);
+        _actGive        = InstantiateSaleAction(cfg.give);
+        _actUnlist      = InstantiateSaleAction(cfg.unlist);
+        _actBuy         = InstantiateSaleAction(cfg.buy);
+    }
+
+    private Action InstantiateSaleAction(Action source)
+    {
+        if (source == null) return null;
+        Action copy = Instantiate(source);
+        copy.OnExecute += DoAction;
+        return copy;
     }
 
     private void UnsubscribeActions(Action[] actions)
@@ -261,6 +427,22 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
             case ActionTypeEnum.MOVE:
                 OnMoveRequest?.Invoke(this);
+                break;
+
+            case ActionTypeEnum.LIST_FOR_SALE:
+                OnListForSaleRequest?.Invoke(this, false);
+                break;
+
+            case ActionTypeEnum.GIVE:
+                OnListForSaleRequest?.Invoke(this, true);
+                break;
+
+            case ActionTypeEnum.UNLIST:
+                OnUnlistRequest?.Invoke(this);
+                break;
+
+            case ActionTypeEnum.BUY:
+                OnBuyRequest?.Invoke(this);
                 break;
 
             default:

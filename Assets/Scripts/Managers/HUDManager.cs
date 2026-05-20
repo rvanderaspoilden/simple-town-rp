@@ -24,6 +24,12 @@ namespace Sim {
         private ChatInputUI chatInputUI;
 
         [SerializeField]
+        private SalePriceInputUI salePriceInputUI;
+
+        [SerializeField]
+        private BuyConfirmUI buyConfirmUI;
+
+        [SerializeField]
         private AudioSource audioSource;
 
         [SerializeField]
@@ -107,6 +113,10 @@ namespace Sim {
         public void CloseInventory() {
             this.inventoryUI.gameObject.SetActive(false);
         }
+
+        public SalePriceInputUI SalePriceInputUI => salePriceInputUI;
+
+        public BuyConfirmUI BuyConfirmUI => buyConfirmUI;
 
         public void ShowChatInput() {
             if (this.chatInputUI != null && !this.chatInputUI.IsOpen) this.chatInputUI.Show();

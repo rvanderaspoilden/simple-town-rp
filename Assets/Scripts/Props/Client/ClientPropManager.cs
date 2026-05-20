@@ -50,7 +50,9 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_BuildAck>               (OnBuildAck);
         NetworkClient.RegisterHandler<S2C_RoomState>              (OnRoomState);
         NetworkClient.RegisterHandler<S2C_DoorRing>               (OnDoorRing);
-        ClientLogger.NetworkDebug("ClientPropHandlersRegistered {Count}", 10);
+        NetworkClient.RegisterHandler<S2C_PropSaleState>          (OnPropSaleState);
+        NetworkClient.RegisterHandler<S2C_BuyPropResult>          (OnBuyPropResult);
+        ClientLogger.NetworkDebug("ClientPropHandlersRegistered {Count}", 12);
     }
 
     public void UnregisterHandlers() {
@@ -64,12 +66,17 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.UnregisterHandler<S2C_BuildAck>();
         NetworkClient.UnregisterHandler<S2C_RoomState>();
         NetworkClient.UnregisterHandler<S2C_DoorRing>();
+        NetworkClient.UnregisterHandler<S2C_PropSaleState>();
+        NetworkClient.UnregisterHandler<S2C_BuyPropResult>();
         ClientLogger.NetworkDebug("ClientPropHandlersUnregistered");
     }
 
     public static event System.Action<bool>           OnBuildAckReceived;
     public static event System.Action<string, byte[]> OnRoomStateReceived;
     public static event System.Action<string>         OnLocalRoomChanged;
+
+    /// <summary>Fired on the buyer's client after a buy attempt. (propId, success, reasonCode).</summary>
+    public static event System.Action<int, bool, byte> OnBuyResultReceived;
 
     // ── Room entry / exit ─────────────────────────────────────────────────────
 
@@ -116,6 +123,23 @@ public class ClientPropManager : MonoBehaviour {
         });
     }
 
+    // ── Sale requests ─────────────────────────────────────────────────────────
+
+    public void RequestSetForSale(int propId, int price) {
+        if (string.IsNullOrEmpty(_currentRoomId)) return;
+        NetworkClient.Send(new C2S_SetPropForSale { RoomId = _currentRoomId, PropId = propId, Price = Mathf.Max(0, price) });
+    }
+
+    public void RequestUnlist(int propId) {
+        if (string.IsNullOrEmpty(_currentRoomId)) return;
+        NetworkClient.Send(new C2S_UnlistProp { RoomId = _currentRoomId, PropId = propId });
+    }
+
+    public void RequestBuy(int propId) {
+        if (string.IsNullOrEmpty(_currentRoomId)) return;
+        NetworkClient.Send(new C2S_BuyProp { RoomId = _currentRoomId, PropId = propId });
+    }
+
     // ── S2C handlers ──────────────────────────────────────────────────────────
 
     private void OnRoomSnapshot(S2C_RoomSnapshot msg) {
@@ -135,6 +159,7 @@ public class ClientPropManager : MonoBehaviour {
         }
         if (_props.ContainsKey(msg.PropId)) {
             // Already indexed (scene props or previously spawned). Apply the authoritative state.
+            if (_props[msg.PropId] is PropBehaviourBase pbExisting) pbExisting.SetOwner(msg.OwnerCharId);
             _props[msg.PropId].ApplyState(msg.Type, msg.Payload);
             ClientLogger.NetworkDebug("PropSpawnExistingStateApplied {PropId} {RoomId}", msg.PropId, msg.RoomId);
             return;
@@ -149,6 +174,7 @@ public class ClientPropManager : MonoBehaviour {
                 if (hostBehaviour != null) {
                     _props[msg.PropId] = hostBehaviour;
                     _spawnedGOs[msg.PropId] = hostGo;
+                    if (hostBehaviour is PropBehaviourBase pbHost) pbHost.SetOwner(msg.OwnerCharId);
                     PropStateHeader hostHeader = PropStateHeader.ReadFrom(msg.Payload);
                     Debug.Log($"[PropSpawn] (host) Reusing server GO propId={msg.PropId} prefabId={msg.PrefabId} presetId={hostHeader.PresetId} isBuilt={hostHeader.IsBuilt}");
                     hostBehaviour.ApplyState(msg.Type, msg.Payload);
@@ -174,6 +200,7 @@ public class ClientPropManager : MonoBehaviour {
         IPropBehaviour behaviour = go.GetComponent<IPropBehaviour>();
         if (behaviour != null) {
             _props[msg.PropId] = behaviour;
+            if (behaviour is PropBehaviourBase pbNew) pbNew.SetOwner(msg.OwnerCharId);
             PropStateHeader header = PropStateHeader.ReadFrom(msg.Payload);
             Debug.Log($"[PropSpawn] Received prop propId={msg.PropId} prefabId={msg.PrefabId} presetId={header.PresetId} isBuilt={header.IsBuilt}");
             behaviour.ApplyState(msg.Type, msg.Payload);
@@ -240,6 +267,19 @@ public class ClientPropManager : MonoBehaviour {
         if (_props.TryGetValue(msg.PropId, out var behaviour) && behaviour is DeliveryBoxBehaviour box) {
             box.OnDeliveryBoxOpened(msg.Deliveries);
         }
+    }
+
+    private void OnPropSaleState(S2C_PropSaleState msg) {
+        if (msg.RoomId != _currentRoomId) return;
+        if (_props.TryGetValue(msg.PropId, out var behaviour) && behaviour is PropBehaviourBase prop) {
+            prop.ApplySaleState(msg.ForSale, msg.Price, msg.ReservedByName, msg.OwnerCharId);
+            ClientLogger.NetworkDebug("PropSaleState {PropId} {ForSale} {Price}", msg.PropId, msg.ForSale, msg.Price);
+        }
+    }
+
+    private void OnBuyPropResult(S2C_BuyPropResult msg) {
+        ClientLogger.Network("BuyPropResult {PropId} {Success} {Reason}", msg.PropId, msg.Success, msg.ReasonCode);
+        OnBuyResultReceived?.Invoke(msg.PropId, msg.Success, msg.ReasonCode);
     }
 
     private void OnDispenserPurchaseResult(S2C_DispenserPurchaseResult msg) {

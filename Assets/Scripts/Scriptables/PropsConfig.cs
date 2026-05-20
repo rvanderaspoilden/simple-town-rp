@@ -19,10 +19,10 @@ namespace Sim.Scriptables {
         private PropsType propsType;
 
         [SerializeField]
-        private bool buyable;
-
-        [SerializeField]
         private int price;
+
+        [SerializeField, Tooltip("Can this prop be sold? Drives BOTH its availability in the phone shop AND player-to-player listing. Tick on furniture; leave off for doors, lights, delivery boxes, packages, etc.")]
+        private bool sellable;
 
         [SerializeField]
         private PropBehaviourBase prefab;
@@ -94,8 +94,8 @@ namespace Sim.Scriptables {
             return this.posableOnProps;
         }
 
-        public bool IsBuyable() {
-            return this.buyable;
+        public bool IsSellable() {
+            return this.sellable;
         }
 
         public int Price => price;

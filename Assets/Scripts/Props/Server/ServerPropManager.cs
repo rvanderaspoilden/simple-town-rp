@@ -159,7 +159,8 @@ public class ServerPropManager {
         byte[]             initialPayloadOverride = null,
         PropStateHeader?   headerOverride         = null,
         string             propUuid               = null,
-        int                propVersion            = 1
+        int                propVersion            = 1,
+        string             ownerCharId            = null
     ) {
         if (!NetworkServer.active) {
             GameLogger.Network.Warning("SpawnPropNotServer {PrefabId} {RoomId}", prefabId, roomId);
@@ -210,7 +211,7 @@ public class ServerPropManager {
                 propId, headerOverride.Value.IsBuilt, headerOverride.Value.PresetId);
         }
 
-        RegisterInternal(roomId, propId, prefabId, position, rotation, type, payload, isScene: false);
+        RegisterInternal(roomId, propId, prefabId, position, rotation, type, payload, isScene: false, ownerCharId: ownerCharId);
         _spawnedGOs[propId] = instance;
 
         // Auto-bridge with the persistent UUID when the caller knows it (loading
@@ -219,7 +220,7 @@ public class ServerPropManager {
             AssociateUuid(propId, propUuid, propVersion);
         }
 
-        BroadcastToRoom(roomId, BuildSpawnMessage(roomId, propId, prefabId, position, rotation, type, payload));
+        BroadcastToRoom(roomId, BuildSpawnMessage(roomId, propId, prefabId, position, rotation, type, payload, ownerCharId));
 
         GameLogger.Network.Info("PropSpawned {PropId} {PrefabId} {RoomId} {Position} {PresetId}",
             propId, prefabId, roomId, position,
@@ -277,6 +278,73 @@ public class ServerPropManager {
         });
         GameLogger.Network.Debug("PropTransformUpdated {PropId} {RoomId} {Position}", propId, roomId, position);
     }
+
+    // ── Sale state (player-to-player) ─────────────────────────────────────────
+
+    /// <summary>
+    /// Sets/clears the for-sale flag + price on a prop and broadcasts S2C_PropSaleState.
+    /// Pure runtime — persistence to the props row is done separately by the dispatcher.
+    /// Clearing the sale also drops any pending reservation.
+    /// </summary>
+    public void SetSaleState(string roomId, int propId, bool forSale, int price, string ownerCharId = null) {
+        if (!TryGetState(roomId, propId, out var state)) {
+            GameLogger.Network.Warning("SetSaleStateNotFound {PropId} {RoomId}", propId, roomId);
+            return;
+        }
+        state.ForSale = forSale;
+        state.Price   = forSale ? price : 0;
+        if (!string.IsNullOrEmpty(ownerCharId)) state.OwnerCharId = ownerCharId;
+        if (!forSale) {
+            state.ReservedByCharId  = null;
+            state.ReservedByName    = null;
+            state.ReservedUntilUnix = 0;
+        }
+        BroadcastToRoom(roomId, BuildSaleMessage(state));
+    }
+
+    /// <summary>
+    /// Atomically reserves a for-sale prop for a buyer, guarding the async buy window
+    /// against simultaneous buyers. Fails if the prop isn't for sale or is already
+    /// reserved by someone else (and the reservation hasn't expired).
+    /// </summary>
+    public bool TryReserve(string roomId, int propId, string buyerCharId, string buyerName, double durationSeconds) {
+        if (!TryGetState(roomId, propId, out var state)) return false;
+        if (!state.ForSale) return false;
+
+        double now = NowUnix();
+        bool reservedByOther = !string.IsNullOrEmpty(state.ReservedByCharId)
+                               && state.ReservedByCharId != buyerCharId
+                               && now < state.ReservedUntilUnix;
+        if (reservedByOther) return false;
+
+        state.ReservedByCharId  = buyerCharId;
+        state.ReservedByName    = buyerName;
+        state.ReservedUntilUnix = now + durationSeconds;
+        BroadcastToRoom(roomId, BuildSaleMessage(state));
+        return true;
+    }
+
+    /// <summary>Clears a pending reservation (buy failed/cancelled) and rebroadcasts.</summary>
+    public void ClearReservation(string roomId, int propId) {
+        if (!TryGetState(roomId, propId, out var state)) return;
+        state.ReservedByCharId  = null;
+        state.ReservedByName    = null;
+        state.ReservedUntilUnix = 0;
+        BroadcastToRoom(roomId, BuildSaleMessage(state));
+    }
+
+    private static double NowUnix() =>
+        System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0;
+
+    private static S2C_PropSaleState BuildSaleMessage(ServerPropState s) => new S2C_PropSaleState {
+        PropId         = s.PropId,
+        RoomId         = s.RoomId,
+        ForSale        = s.ForSale,
+        Price          = s.Price,
+        ReservedByName = (!string.IsNullOrEmpty(s.ReservedByCharId) && NowUnix() < s.ReservedUntilUnix)
+                         ? (s.ReservedByName ?? "") : "",
+        OwnerCharId    = s.OwnerCharId ?? ""
+    };
 
     // ── Remove ────────────────────────────────────────────────────────────────
 
@@ -339,8 +407,11 @@ public class ServerPropManager {
                     Payload = s.Payload
                 });
             } else {
-                conn.Send(BuildSpawnMessage(s.RoomId, s.PropId, s.PrefabId, s.Position, s.Rotation, s.Type, s.Payload));
+                conn.Send(BuildSpawnMessage(s.RoomId, s.PropId, s.PrefabId, s.Position, s.Rotation, s.Type, s.Payload, s.OwnerCharId));
             }
+
+            // Resend sale state so late joiners see currently-listed props.
+            if (s.ForSale) conn.Send(BuildSaleMessage(s));
         }
 
         if (_roomStates.TryGetValue(roomId, out var roomStatePayload))
@@ -401,21 +472,23 @@ public class ServerPropManager {
 
     private void RegisterInternal(
         string roomId, int propId, int prefabId,
-        Vector3 position, Quaternion rotation, PropType type, byte[] payload, bool isScene
+        Vector3 position, Quaternion rotation, PropType type, byte[] payload, bool isScene,
+        string ownerCharId = null
     ) {
         if (!_rooms.TryGetValue(roomId, out var room)) {
             room = new Dictionary<int, ServerPropState>();
             _rooms[roomId] = room;
         }
         room[propId] = new ServerPropState {
-            PropId   = propId,
-            PrefabId = prefabId,
-            RoomId   = roomId,
-            Position = position,
-            Rotation = rotation,
-            Type     = type,
-            Payload  = payload ?? Array.Empty<byte>(),
-            IsScene  = isScene
+            PropId      = propId,
+            PrefabId    = prefabId,
+            RoomId      = roomId,
+            Position    = position,
+            Rotation    = rotation,
+            Type        = type,
+            Payload     = payload ?? Array.Empty<byte>(),
+            IsScene     = isScene,
+            OwnerCharId = ownerCharId
         };
     }
 
@@ -426,15 +499,16 @@ public class ServerPropManager {
 
     private static S2C_PropSpawn BuildSpawnMessage(
         string roomId, int propId, int prefabId,
-        Vector3 position, Quaternion rotation, PropType type, byte[] payload
+        Vector3 position, Quaternion rotation, PropType type, byte[] payload, string ownerCharId = null
     ) => new S2C_PropSpawn {
-        PropId   = propId,
-        PrefabId = prefabId,
-        RoomId   = roomId,
-        Position = position,
-        Rotation = rotation,
-        Type     = type,
-        Payload  = payload ?? Array.Empty<byte>()
+        PropId      = propId,
+        PrefabId    = prefabId,
+        RoomId      = roomId,
+        Position    = position,
+        Rotation    = rotation,
+        Type        = type,
+        Payload     = payload ?? Array.Empty<byte>(),
+        OwnerCharId = ownerCharId ?? ""
     };
 
     private static void BroadcastToRoom<T>(string roomId, T message) where T : struct, NetworkMessage {

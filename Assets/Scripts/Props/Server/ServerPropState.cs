@@ -18,4 +18,17 @@ public class ServerPropState {
     public PropType   Type;
     public byte[]     Payload;
     public bool       IsScene;
+
+    // ── Sale state (player-to-player) ─────────────────────────────────────────
+    // Orthogonal to the typed Payload. Persisted to the props row's for_sale/price
+    // columns; the runtime mirrors them here so SendRoomSnapshot can rebroadcast.
+    public bool   ForSale;
+    public int    Price;
+    public string OwnerCharId;   // apartment tenant — lets clients hide BUY from the owner
+
+    // Reservation is transient (in-memory only) — it just guards the async buy
+    // window against simultaneous buyers. Not persisted.
+    public string ReservedByCharId;   // null = not reserved
+    public string ReservedByName;     // display name for "Réservé à X"
+    public double ReservedUntilUnix;  // unix seconds; reservation expires after this
 }

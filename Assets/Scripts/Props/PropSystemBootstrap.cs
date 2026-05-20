@@ -30,6 +30,9 @@ public static class PropSystemBootstrap {
         NetworkServer.RegisterHandler<C2S_BuildProp>      (Server_OnBuildProp);
         NetworkServer.RegisterHandler<C2S_EditProp>       (Server_OnEditProp);
         NetworkServer.RegisterHandler<C2S_RemoveProp>     (Server_OnRemoveProp);
+        NetworkServer.RegisterHandler<C2S_SetPropForSale> (Server_OnSetPropForSale);
+        NetworkServer.RegisterHandler<C2S_UnlistProp>     (Server_OnUnlistProp);
+        NetworkServer.RegisterHandler<C2S_BuyProp>        (Server_OnBuyProp);
         NetworkServer.RegisterHandler<C2S_TeleporterUse>  (Server_OnTeleporterUse);
         NetworkServer.RegisterHandler<C2S_ApplyWallCovers>(Server_OnApplyWallCovers);
         NetworkServer.RegisterHandler<C2S_ApplyGroundCovers>(Server_OnApplyGroundCovers);
@@ -48,6 +51,9 @@ public static class PropSystemBootstrap {
         NetworkServer.UnregisterHandler<C2S_BuildProp>();
         NetworkServer.UnregisterHandler<C2S_EditProp>();
         NetworkServer.UnregisterHandler<C2S_RemoveProp>();
+        NetworkServer.UnregisterHandler<C2S_SetPropForSale>();
+        NetworkServer.UnregisterHandler<C2S_UnlistProp>();
+        NetworkServer.UnregisterHandler<C2S_BuyProp>();
         NetworkServer.UnregisterHandler<C2S_TeleporterUse>();
         NetworkServer.UnregisterHandler<C2S_ApplyWallCovers>();
         NetworkServer.UnregisterHandler<C2S_ApplyGroundCovers>();
@@ -170,6 +176,42 @@ public static class PropSystemBootstrap {
         GameLogger.Network.Info("RemoveProp {ConnectionId} {RoomId} {PropId}",
             conn.connectionId, msg.RoomId, msg.PropId);
         PropInteractionRouter.HandleRemoveProp(conn, msg);
+    }
+
+    private static void Server_OnSetPropForSale(NetworkConnectionToClient conn, C2S_SetPropForSale msg) {
+        string playerRoom = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (playerRoom != msg.RoomId) {
+            GameLogger.Network.Warning("SetForSaleRoomMismatch {ConnectionId} {ClaimedRoom} {ActualRoom} {PropId}",
+                conn.connectionId, msg.RoomId, playerRoom ?? "none", msg.PropId);
+            return;
+        }
+        GameLogger.Network.Info("SetPropForSale {ConnectionId} {RoomId} {PropId} {Price}",
+            conn.connectionId, msg.RoomId, msg.PropId, msg.Price);
+        PropInteractionRouter.HandleSetForSale(conn, msg);
+    }
+
+    private static void Server_OnUnlistProp(NetworkConnectionToClient conn, C2S_UnlistProp msg) {
+        string playerRoom = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (playerRoom != msg.RoomId) {
+            GameLogger.Network.Warning("UnlistRoomMismatch {ConnectionId} {ClaimedRoom} {ActualRoom} {PropId}",
+                conn.connectionId, msg.RoomId, playerRoom ?? "none", msg.PropId);
+            return;
+        }
+        GameLogger.Network.Info("UnlistProp {ConnectionId} {RoomId} {PropId}",
+            conn.connectionId, msg.RoomId, msg.PropId);
+        PropInteractionRouter.HandleUnlist(conn, msg);
+    }
+
+    private static void Server_OnBuyProp(NetworkConnectionToClient conn, C2S_BuyProp msg) {
+        string playerRoom = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (playerRoom != msg.RoomId) {
+            GameLogger.Network.Warning("BuyPropRoomMismatch {ConnectionId} {ClaimedRoom} {ActualRoom} {PropId}",
+                conn.connectionId, msg.RoomId, playerRoom ?? "none", msg.PropId);
+            return;
+        }
+        GameLogger.Network.Info("BuyProp {ConnectionId} {RoomId} {PropId}",
+            conn.connectionId, msg.RoomId, msg.PropId);
+        PropInteractionRouter.HandleBuyProp(conn, msg);
     }
 
     private static void Server_OnTeleporterUse(NetworkConnectionToClient conn, C2S_TeleporterUse msg) {

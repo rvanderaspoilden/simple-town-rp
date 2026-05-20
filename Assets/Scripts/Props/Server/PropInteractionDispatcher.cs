@@ -237,7 +237,8 @@ public class PropInteractionDispatcher : MonoBehaviour {
         int newPropId = ServerPropManager.Instance.SpawnProp(
             apt.RoomId, msg.PropConfigId, msg.Position, msg.Rotation,
             initialPayloadOverride: initialPayload,
-            headerOverride:         header
+            headerOverride:         header,
+            ownerCharId:            apt.TenantId
         );
         if (newPropId < 0) {
             conn.Send(new S2C_BuildAck { Success = false });
@@ -298,9 +299,11 @@ public class PropInteractionDispatcher : MonoBehaviour {
     }
 
     /// <summary>
-    /// Move the bought-then-built prop from the transit place to the apartment
-    /// place via PATCH /props/:id. expectedVersion is 1 — the prop hasn't been
-    /// modified between buy and build under the current flow.
+    /// Move the bought-then-built prop from the transit place to the apartment place
+    /// via PATCH /props/:id. The prop's current DB version is read first: a prop that
+    /// reached transit via a player-to-player sale already has version > 1 (the sale
+    /// transfer PATCHed it), so a hardcoded expectedVersion=1 would 409 and leave the
+    /// bridge stale — breaking any later list/buy on the prop.
     /// </summary>
     private IEnumerator PatchBuiltPropLocation(string propUuid, ApartmentController apt, C2S_BuildProp msg, bool isBuilt) {
         string aptPlaceId = apt.HomeData?.Id;
@@ -309,8 +312,25 @@ public class PropInteractionDispatcher : MonoBehaviour {
             yield break;
         }
 
+        // Read the authoritative current version.
+        int currentVersion = 1;
+        UnityWebRequest getReq = ApiManager.Instance.GetPropRequest(propUuid);
+        yield return getReq.SendWebRequest();
+        if (getReq.responseCode == 200) {
+            try {
+                PropJson cur = JsonConvert.DeserializeObject<PropJson>(getReq.downloadHandler.text);
+                if (cur != null && cur.version > 0) currentVersion = cur.version;
+            } catch { /* fall back to 1 */ }
+        } else {
+            Debug.LogWarning($"[PropInteractionDispatcher] GET /props/{propUuid} failed code={getReq.responseCode} — assuming version 1");
+        }
+
+        // Keep the bridge in sync with the real version before the PATCH.
+        int runtimeId = FindRuntimeIdForUuid(propUuid);
+        if (runtimeId > 0) ServerPropManager.Instance.AssociateUuid(runtimeId, propUuid, currentVersion);
+
         UpdatePropBody body = new UpdatePropBody {
-            expectedVersion = 1,
+            expectedVersion = currentVersion,
             placeId  = aptPlaceId,
             position = new Vector3Body(msg.Position),
             rotation = new Vector3Body(msg.Rotation.eulerAngles),
@@ -325,12 +345,9 @@ public class PropInteractionDispatcher : MonoBehaviour {
             yield break;
         }
 
-        // Build flow: this is the very first PATCH for this prop (version 1 → 2).
-        // The bridge was just associated in BuildPropCoroutine with version 1.
         // Update to the new server-reported version so subsequent PATCHes match.
-        int newPropIdRuntime = FindRuntimeIdForUuid(propUuid);
-        TrackVersionFromResponse(newPropIdRuntime, req.downloadHandler.text);
-        Debug.Log($"[PropInteractionDispatcher] Prop {propUuid} moved from transit to apt={apt.ApartmentKey}");
+        TrackVersionFromResponse(runtimeId, req.downloadHandler.text);
+        Debug.Log($"[PropInteractionDispatcher] Prop {propUuid} moved from transit to apt={apt.ApartmentKey} (version {currentVersion} → +1)");
     }
 
     // ── Public DB-sync helpers (called from runtime state handlers) ───────────
@@ -378,6 +395,181 @@ public class PropInteractionDispatcher : MonoBehaviour {
         ServerPropManager.PropDbBridge bridge = ServerPropManager.Instance.GetBridge(propId);
         if (bridge == null) return;
         StartCoroutine(DeletePropCoroutine(propId, bridge.Uuid));
+    }
+
+    /// <summary>Persists the for-sale flag + price on the props row (list/unlist).</summary>
+    public void SyncPropSale(int propId, bool forSale, int price) {
+        ServerPropManager.PropDbBridge bridge = ServerPropManager.Instance.GetBridge(propId);
+        if (bridge == null) return;
+        StartCoroutine(PatchPropCoroutine(propId, bridge, new UpdatePropBody {
+            expectedVersion = bridge.Version,
+            forSale         = forSale,
+            price           = price,
+        }));
+    }
+
+    // ── Buy (player-to-player sale) ───────────────────────────────────────────
+
+    private const double ReservationSeconds = 15.0;
+
+    public void BuyProp(NetworkConnectionToClient conn, C2S_BuyProp msg) {
+        StartCoroutine(BuyPropCoroutine(conn, msg));
+    }
+
+    private IEnumerator BuyPropCoroutine(NetworkConnectionToClient conn, C2S_BuyProp msg) {
+        // Resolve the buyer.
+        PlayerController buyer = conn.identity != null ? conn.identity.GetComponent<PlayerController>() : null;
+        string buyerCharId = buyer?.CharacterData?.Id;
+        if (buyer == null || string.IsNullOrEmpty(buyerCharId)) {
+            SendBuyResult(conn, msg.PropId, false, 4);
+            yield break;
+        }
+
+        // Resolve the owning apartment (seller). Props placed in an apartment are
+        // owned by its tenant; the apt's room is the authoritative room for the prop.
+        ApartmentController sellerApt = ServerApartmentRegistry.Instance.FindOwnerOfProp(msg.PropId);
+        if (sellerApt == null) {
+            Debug.LogWarning($"[Buy] No owning apartment for prop {msg.PropId}");
+            SendBuyResult(conn, msg.PropId, false, 1);
+            yield break;
+        }
+        string roomId       = sellerApt.RoomId;
+        string sellerCharId = sellerApt.TenantId;
+
+        if (!ServerPropManager.Instance.TryGetPropState(roomId, msg.PropId, out var state) || !state.ForSale) {
+            SendBuyResult(conn, msg.PropId, false, 1);
+            yield break;
+        }
+        if (buyerCharId == sellerCharId) {       // can't buy your own prop
+            SendBuyResult(conn, msg.PropId, false, 1);
+            yield break;
+        }
+
+        int    price   = state.Price;
+        int    configId = state.PrefabId;
+        int    presetId = PropStateHeader.ReadFrom(state.Payload).PresetId;
+        string buyerName = buyer.CharacterData.Identity.FullName ?? "";
+
+        // Atomic reservation — guards the async window below against a second buyer.
+        if (!ServerPropManager.Instance.TryReserve(roomId, msg.PropId, buyerCharId, buyerName, ReservationSeconds)) {
+            SendBuyResult(conn, msg.PropId, false, 1);
+            yield break;
+        }
+
+        // Funds check (gifts are free).
+        PlayerBankAccount buyerBank = conn.identity.GetComponent<PlayerBankAccount>();
+        if (price > 0 && (buyerBank == null || buyerBank.Money < price)) {
+            ServerPropManager.Instance.ClearReservation(roomId, msg.PropId);
+            SendBuyResult(conn, msg.PropId, false, 2);
+            yield break;
+        }
+
+        // Need the persistent UUID to transfer ownership. Apartment props loaded from
+        // DB (and props built this session) are bridged; bail out otherwise.
+        ServerPropManager.PropDbBridge bridge = ServerPropManager.Instance.GetBridge(msg.PropId);
+        if (bridge == null) {
+            Debug.LogWarning($"[Buy] Prop {msg.PropId} has no DB bridge — cannot transfer ownership");
+            ServerPropManager.Instance.ClearReservation(roomId, msg.PropId);
+            SendBuyResult(conn, msg.PropId, false, 4);
+            yield break;
+        }
+        string propUuid = bridge.Uuid;
+
+        // 1. Transfer ownership: move the prop to the transit place, owned by the buyer,
+        //    no longer for sale. Position is left stale (harmless — transit is never
+        //    loaded as a room); the build flow sets a fresh position at placement.
+        UnityWebRequest patch = ApiManager.Instance.UpdatePropRequest(propUuid, new UpdatePropBody {
+            expectedVersion = bridge.Version,
+            placeId         = ApiManager.Instance.TransitPlaceId,
+            ownedBy         = buyerCharId,
+            forSale         = false,
+            price           = 0,
+        });
+        yield return patch.SendWebRequest();
+        if (patch.responseCode < 200 || patch.responseCode >= 300) {
+            Debug.LogWarning($"[Buy] PATCH /props/{propUuid} failed ({patch.responseCode}) {patch.downloadHandler?.text}");
+            ServerPropManager.Instance.ClearReservation(roomId, msg.PropId);
+            SendBuyResult(conn, msg.PropId, false, 4);
+            yield break;
+        }
+
+        // 2. Generate the buyer's delivery (links the existing prop UUID — the build
+        //    flow PATCHes it into the apartment, no new prop row).
+        CreateDeliveryRequest deliveryReq = new CreateDeliveryRequest {
+            recipientId   = buyerCharId,
+            type          = DeliveryType.PROPS,
+            propsConfigId = configId,
+            propsPresetId = presetId,
+            paintConfigId = -1,
+            color         = System.Array.Empty<float>(),
+            propId        = propUuid,
+        };
+        UnityWebRequest delReq = ApiManager.Instance.CreateDeliveryRequest(deliveryReq);
+        yield return delReq.SendWebRequest();
+        if (delReq.responseCode != 200 && delReq.responseCode != 201) {
+            // The ownership PATCH already committed; the buyer still owns the prop in
+            // transit and can recover it later. Log and continue with payment so the
+            // money side stays consistent with the ownership transfer.
+            Debug.LogWarning($"[Buy] POST /deliveries failed ({delReq.responseCode}) — prop {propUuid} owned by buyer in transit without delivery");
+        }
+
+        // 3. Payment — debit buyer, credit seller (online via bank, offline via REST).
+        if (price > 0) {
+            buyerBank.TakeMoney(price);
+            PlayerBankAccount sellerBank = FindOnlineBankAccount(sellerCharId);
+            if (sellerBank != null) {
+                sellerBank.GiveMoney(price);
+            } else if (!string.IsNullOrEmpty(sellerCharId)) {
+                UnityWebRequest credit = ApiManager.Instance.CreditCharacterMoneyRequest(sellerCharId, price);
+                yield return credit.SendWebRequest();
+                if (credit.responseCode < 200 || credit.responseCode >= 300)
+                    Debug.LogWarning($"[Buy] Offline seller credit failed ({credit.responseCode}) seller={sellerCharId} amount={price}");
+            }
+        }
+
+        // 4. History (best-effort).
+        UnityWebRequest tx = ApiManager.Instance.CreateTransactionRequest(new CreateTransactionBody {
+            propId   = propUuid,
+            configId = configId,
+            sellerId = sellerCharId,
+            buyerId  = buyerCharId,
+            price    = price,
+            type     = price == 0 ? "gift" : "sale",
+        });
+        yield return tx.SendWebRequest();
+
+        // 5. Remove the prop from the seller's room (runtime only — the DB row was
+        //    transferred, NOT deleted). Clear the seller-side runtime→UUID bridge so a
+        //    later FindPropIdByUuid can't resolve to this dead id (which would corrupt
+        //    version tracking when the buyer rebuilds the same prop → 409 on re-buy).
+        sellerApt.UntrackProp(msg.PropId);
+        ServerPropManager.Instance.RemoveProp(roomId, msg.PropId);
+        ServerPropManager.Instance.ClearBridge(msg.PropId);
+
+        SendBuyResult(conn, msg.PropId, true, 0);
+
+        // 6. Refresh the buyer's delivery box if their apartment is currently loaded.
+        if (ServerApartmentRegistry.Instance.TryGetByTenant(buyerCharId, out ApartmentController buyerApt)
+            && buyerApt.DeliveryBoxPropId > 0)
+            RefreshDeliveryBoxCount(buyerApt.DeliveryBoxPropId, buyerApt.RoomId, buyerCharId);
+
+        Debug.Log($"[Buy] Prop {propUuid} sold: seller={sellerCharId} buyer={buyerCharId} price={price}");
+    }
+
+    private static void SendBuyResult(NetworkConnectionToClient conn, int propId, bool success, byte reason) {
+        if (conn != null && conn.isReady)
+            conn.Send(new S2C_BuyPropResult { PropId = propId, Success = success, ReasonCode = reason });
+    }
+
+    /// <summary>Finds the bank account of an online character by id, or null if offline.</summary>
+    private static PlayerBankAccount FindOnlineBankAccount(string charId) {
+        if (string.IsNullOrEmpty(charId)) return null;
+        foreach (var kv in NetworkServer.spawned) {
+            PlayerController pc = kv.Value != null ? kv.Value.GetComponent<PlayerController>() : null;
+            if (pc != null && pc.CharacterData?.Id == charId)
+                return pc.GetComponent<PlayerBankAccount>();
+        }
+        return null;
     }
 
     public void SyncCovers(string placeId, IEnumerable<CoverApplyEntry> covers) {

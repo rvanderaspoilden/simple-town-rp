@@ -589,6 +589,9 @@ namespace Sim {
         public UnityWebRequest CreatePropRequest(CreatePropBody body) =>
             BuildJsonRequest($"{this.uri}/props", "POST", body);
 
+        public UnityWebRequest GetPropRequest(string propId) =>
+            BuildJsonRequest($"{this.uri}/props/{propId}", "GET", null);
+
         public UnityWebRequest UpdatePropRequest(string propId, UpdatePropBody body) =>
             BuildJsonRequest($"{this.uri}/props/{propId}", "PATCH", body);
 
@@ -601,6 +604,19 @@ namespace Sim {
             if (!string.IsNullOrEmpty(ownedBy)) qs += $"ownedBy={UnityWebRequest.EscapeURL(ownedBy)}";
             return BuildJsonRequest($"{this.uri}/props{qs.TrimEnd('&', '?')}", "GET", null);
         }
+
+        // ── Transactions ────────────────────────────────────────────────────────
+
+        /// <summary>POST /transactions — record a completed player-to-player sale/gift.
+        /// Called server-side by the buy flow after payment + ownership transfer.</summary>
+        public UnityWebRequest CreateTransactionRequest(CreateTransactionBody body) =>
+            BuildJsonRequest($"{this.uri}/transactions", "POST", body);
+
+        /// <summary>PUT /characters/:id/credit-money — atomic balance increment.
+        /// Used to pay an OFFLINE seller during a sale (online sellers go through
+        /// PlayerBankAccount.GiveMoney instead).</summary>
+        public UnityWebRequest CreditCharacterMoneyRequest(string characterId, int delta) =>
+            BuildJsonRequest($"{this.uri}/characters/{characterId}/credit-money", "PUT", new { delta });
 
         // ── Items ─────────────────────────────────────────────────────────────
 

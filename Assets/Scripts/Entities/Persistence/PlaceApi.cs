@@ -69,6 +69,12 @@ namespace Sim.Entities.Persistence {
         public Dictionary<string, object> stateData;
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool? forSale;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? price;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string ownedBy;
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -96,6 +102,12 @@ namespace Sim.Entities.Persistence {
         public Dictionary<string, object> stateData;
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool? forSale;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? price;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string ownedBy;
     }
 
@@ -109,10 +121,28 @@ namespace Sim.Entities.Persistence {
         public bool isBuilt;
         public int presetIndex;
         public Dictionary<string, object> stateData;
+        public bool forSale;
+        public int price;
         public string ownedBy;
         public string containerPropId;
         public string builtBy;
         public int version;
+    }
+
+    // ── Transaction (POST /transactions) ────────────────────────────────────
+
+    /// <summary>Body for POST /transactions — written by the server buy flow
+    /// once payment + ownership transfer succeed.</summary>
+    [Serializable]
+    public class CreateTransactionBody {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string propId;
+
+        public int configId;
+        public string sellerId;
+        public string buyerId;
+        public int price;
+        public string type;   // "sale" | "gift"
     }
 
     // ── Cover ───────────────────────────────────────────────────────────────

@@ -33,7 +33,7 @@ public class ShopListView : MonoBehaviour {
         }
 
         if (config.CategoryType == ShopCategoryType.PROPS) {
-            DatabaseManager.PropsConfigs.Where(x => x.GetPropsType().Equals(config.PropsType) && x.IsBuyable()).ToList().ForEach(x => {
+            DatabaseManager.PropsConfigs.Where(x => x.GetPropsType().Equals(config.PropsType) && x.IsSellable()).ToList().ForEach(x => {
                 PhoneArticleCardUI card = Instantiate(this.articleCardPrefab, this.verticalLayoutGroup.transform);
                 card.Setup(x);
                 items.Add(card);

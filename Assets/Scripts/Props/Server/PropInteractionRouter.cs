@@ -178,6 +178,51 @@ public static class PropInteractionRouter {
         ServerPropManager.Instance.RemoveProp(apt.RoomId, msg.PropId);
     }
 
+    // ── Sale: list / unlist / buy (player-to-player) ──────────────────────────
+
+    public static void HandleSetForSale(NetworkConnectionToClient conn, C2S_SetPropForSale msg) {
+        ApartmentController apt = FindApartmentByConn(conn);
+        if (apt == null) {
+            Debug.LogWarning($"[PropInteractionRouter] SetForSale denied: conn={conn.connectionId} owns no apartment");
+            return;
+        }
+        if (!apt.OwnsProp(msg.PropId)) {
+            Debug.LogWarning($"[PropInteractionRouter] SetForSale denied: prop {msg.PropId} not owned by tenant {apt.TenantId}");
+            return;
+        }
+
+        // Guard: only furniture flagged sellable in its PropsConfig can be listed.
+        if (ServerPropManager.Instance.TryGetPropState(apt.RoomId, msg.PropId, out var saleState)) {
+            PropsConfig cfg = DatabaseManager.GetPropsById(saleState.PrefabId);
+            if (cfg == null || !cfg.IsSellable()) {
+                Debug.LogWarning($"[PropInteractionRouter] SetForSale denied: prop {msg.PropId} (config {saleState.PrefabId}) is not sellable");
+                return;
+            }
+        }
+
+        int price = Mathf.Max(0, msg.Price);
+        ServerPropManager.Instance.SetSaleState(apt.RoomId, msg.PropId, true, price, apt.TenantId);
+        PropInteractionDispatcher.Instance?.SyncPropSale(msg.PropId, true, price);
+    }
+
+    public static void HandleUnlist(NetworkConnectionToClient conn, C2S_UnlistProp msg) {
+        ApartmentController apt = FindApartmentByConn(conn);
+        if (apt == null) return;
+        if (!apt.OwnsProp(msg.PropId)) {
+            Debug.LogWarning($"[PropInteractionRouter] Unlist denied: prop {msg.PropId} not owned by tenant {apt.TenantId}");
+            return;
+        }
+
+        ServerPropManager.Instance.SetSaleState(apt.RoomId, msg.PropId, false, 0, apt.TenantId);
+        PropInteractionDispatcher.Instance?.SyncPropSale(msg.PropId, false, 0);
+    }
+
+    public static void HandleBuyProp(NetworkConnectionToClient conn, C2S_BuyProp msg) {
+        // The whole flow is async (REST: transfer ownership, create delivery, record
+        // transaction, optionally credit an offline seller) → delegate to the dispatcher.
+        PropInteractionDispatcher.Instance?.BuyProp(conn, msg);
+    }
+
     // ── PaintBucket ───────────────────────────────────────────────────────────
     // L'interaction OPEN est client-local (ouvre l'UI de peinture).
     // Le serveur ne reçoit une interaction que si le joueur applique une peinture.
