@@ -1,9 +1,19 @@
 ---
 name: animation-create
-description: Create Unity's Animation asset files (AnimationClip). Creates folders recursively if they do not exist. Each path should start with 'Assets/' and end with '.anim'.
+description: Create empty Unity `AnimationClip` assets at the given project paths. Each path must start with `Assets/` and end with `.anim`. Missing intermediate folders are created recursively. Pair with 'animation-modify' to populate curves and events.
 ---
 
 # Animation / Create
+
+Create empty Unity `AnimationClip` assets at the given project paths. Each path must start with `Assets/` and end with `.anim`. Missing intermediate folders are created recursively, then `AssetDatabase.Refresh()` runs and the Editor windows repaint. Pair with 'animation-modify' to populate curves and events afterwards.
+
+## Inputs
+
+- `sourcePaths` — array of project-relative `.anim` paths to create.
+
+## Behavior
+
+Each path is validated independently: empty / non-`Assets/` / non-`.anim` paths are skipped and appended to `errors` instead of aborting the whole batch. Successfully created clips are returned in `createdAssets` with their path, instance ID, and name.
 
 ## How to Call
 

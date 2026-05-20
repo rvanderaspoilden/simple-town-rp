@@ -1,9 +1,23 @@
 ---
 name: particle-system-get
-description: Get detailed information about a ParticleSystem component on a GameObject. Returns particle system state and optionally serialized data for each module. Use the boolean flags to request specific modules. Use this to inspect ParticleSystem data before modifying it.
+description: Inspect a `UnityEngine.ParticleSystem` component on a GameObject — runtime state (playing/paused/emitting/stopped, particle count, time) plus opt-in serialized data for any of the ~24 particle modules (Main, Emission, Shape, Velocity, Noise, Collision, Trails, Renderer, etc.). Pair with 'particle-system-modify' to write changes back.
 ---
 
 # ParticleSystem / Get
+
+Inspect a `UnityEngine.ParticleSystem` component on a GameObject. Returns runtime state (`isPlaying`, `isPaused`, `isEmitting`, `isStopped`, `particleCount`, `time`) plus opt-in serialized data for any of the particle modules. Use 'particle-system-modify' afterwards to write changes back.
+
+## Inputs
+
+- `gameObjectRef` — the GameObject hosting the `ParticleSystem` component (required).
+- `componentRef` — optional. Resolves a specific `ParticleSystem` when the GameObject has more than one; otherwise the first `ParticleSystem` found is used.
+- `includeMain`, `includeEmission`, `includeShape`, `includeVelocityOverLifetime`, `includeLimitVelocityOverLifetime`, `includeInheritVelocity`, `includeLifetimeByEmitterSpeed`, `includeForceOverLifetime`, `includeColorOverLifetime`, `includeColorBySpeed`, `includeSizeOverLifetime`, `includeSizeBySpeed`, `includeRotationOverLifetime`, `includeRotationBySpeed`, `includeExternalForces`, `includeNoise`, `includeCollision`, `includeTrigger`, `includeSubEmitters`, `includeTextureSheetAnimation`, `includeLights`, `includeTrails`, `includeCustomData`, `includeRenderer` — per-module toggles. `includeMain` defaults to `true`; everything else defaults to `false`.
+- `includeAll` — when `true`, overrides every per-module flag and emits all modules.
+- `deepSerialization` — when `true`, recurses through nested objects via ReflectorNet; otherwise only top-level members are serialized (cheaper, smaller payload).
+
+## Behavior
+
+Only the modules whose include-flags resolve to `true` are serialized — this keeps responses small when you only need one or two modules. `includeRenderer` reads the sibling `UnityEngine.ParticleSystemRenderer` component on the same GameObject and is skipped silently when no renderer is present. The whole call runs on the Unity main thread.
 
 ## How to Call
 

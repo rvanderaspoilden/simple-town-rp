@@ -550,6 +550,16 @@ namespace Sim {
         public void SendChatMessage(string message) {
             if (string.IsNullOrWhiteSpace(message)) return;
             this.CmdSendChat(message);
+
+            // Persist the message for moderation tracking (fire-and-forget). The
+            // in-world display goes through Mirror above; this only stores it,
+            // attributed to the local player's character.
+            if (ApiManager.Instance != null && this.characterData != null) {
+                ApiManager.Instance.CreateChatMessage(
+                    message.Trim(),
+                    this.characterData.Id,
+                    this.characterData.Identity.FullName);
+            }
         }
 
         [Command]

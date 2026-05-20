@@ -1,9 +1,22 @@
 ---
 name: animation-get-data
-description: Get data about a Unity AnimationClip asset file. Returns information such as name, length, frame rate, wrap mode, animation curves, and events.
+description: Inspect a Unity `AnimationClip` asset — name, length, frame rate, wrap mode, looping/legacy/humanMotion flags, local bounds, and the full set of float curves, object-reference curves, and events. Pair with 'animation-modify' to write changes back.
 ---
 
 # Animation / Get Data
+
+Inspect a Unity `AnimationClip` asset. Returns the high-level clip metadata plus the complete set of float curve bindings, object-reference curve bindings, and animation events. Pair with 'animation-modify' to write changes back.
+
+## Inputs
+
+- `animRef` — reference to the `AnimationClip` asset (path must start with `Assets/` and end with `.anim`).
+
+## Returned fields
+
+- `name`, `length`, `frameRate`, `wrapMode`, `isLooping`, `hasGenericRootTransform`, `hasMotionCurves`, `hasMotionFloatCurves`, `hasRootCurves`, `humanMotion`, `legacy`, `localBounds`, `empty`.
+- `curveBindings` — float curve bindings (`path`, `propertyName`, `type`, `isPPtrCurve`, `isDiscreteCurve`, `keyframeCount`).
+- `objectReferenceBindings` — object-reference curve bindings (same shape as `curveBindings`).
+- `events` — animation events (`time`, `functionName`, `intParameter`, `floatParameter`, `stringParameter`).
 
 ## How to Call
 

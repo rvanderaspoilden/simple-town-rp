@@ -168,6 +168,38 @@ namespace Sim {
             onComplete?.Invoke(ok);
         }
 
+        /// <summary>
+        /// Fire-and-forget persistence of a chat message for moderation tracking.
+        /// The instant in-world display is handled separately via Mirror; this call
+        /// only stores the message and never blocks or gates the chat.
+        /// </summary>
+        public void CreateChatMessage(string message, string characterId, string characterName) {
+            StartCoroutine(this.CreateChatMessageCoroutine(message, characterId, characterName));
+        }
+
+        private IEnumerator CreateChatMessageCoroutine(string message, string characterId, string characterName) {
+            var payload = new CreateChatMessageRequest {
+                message       = message,
+                characterId   = characterId ?? string.Empty,
+                characterName = characterName ?? string.Empty,
+            };
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(payload));
+
+            UnityWebRequest request = new UnityWebRequest(this.uri + "/chat-messages", "POST") {
+                uploadHandler   = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Authorization", "Bearer " + this.accessToken);
+            request.SetRequestHeader("Content-type", "application/json");
+            request.SetRequestHeader("Accept", "application/json");
+
+            yield return request.SendWebRequest();
+
+            bool ok = request.responseCode == 201 || request.responseCode == 200;
+            if (!ok) Debug.LogWarning($"[ApiManager] CreateChatMessage failed: {ExtractErrorMessage(request)}");
+        }
+
         public void CreateCharacter(CharacterCreationRequest data) {
             StartCoroutine(this.CreateCharacterCoroutine(data));
         }

@@ -1,9 +1,23 @@
 ---
 name: animator-get-data
-description: Get data about a Unity AnimatorController asset file. Returns information such as name, layers, parameters, and states.
+description: Inspect a Unity `AnimatorController` asset — controller name, every parameter (name, type, defaults), every layer with its state machine, every state, and every transition. Pair with 'animator-modify' to write changes back.
 ---
 
 # Animator / Get Data
+
+Inspect a Unity `AnimatorController` asset. Returns the controller's name plus the full set of parameters, layers, states, and transitions — enough to drive a follow-up 'animator-modify' call with valid names.
+
+## Inputs
+
+- `animatorRef` — reference to the `AnimatorController` asset (path must start with `Assets/` and end with `.controller`).
+
+## Returned fields
+
+- `name` — controller asset name.
+- `parameters` — every parameter (name, type, default value).
+- `layers` — every layer with its state machine, default state, and weight.
+- `states` — every state across all layers (name, speed, motion).
+- `transitions` — every transition with its conditions, source, and destination.
 
 ## How to Call
 
