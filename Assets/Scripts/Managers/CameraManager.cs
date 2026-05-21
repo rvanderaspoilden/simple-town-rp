@@ -97,6 +97,22 @@ namespace Sim {
         }
 
         private PropHoverOutline _hoveredOutline;
+        private int _outlineLayerBit = -1;
+
+        /// <summary>
+        /// Interaction raycast mask, plus the "Outline" layer bit. While a prop is
+        /// hovered its renderers sit on the Outline layer, so we must keep that layer
+        /// hittable or the hover/click would flicker as the prop changes layer.
+        /// </summary>
+        private LayerMask InteractionMask {
+            get {
+                if (_outlineLayerBit < 0) {
+                    int l = LayerMask.NameToLayer(PropHoverOutline.OutlineLayerName);
+                    _outlineLayerBit = l >= 0 ? (1 << l) : 0;
+                }
+                return this.layerMaskInFreeMode | _outlineLayerBit;
+            }
+        }
 
         /// <summary>
         /// Per-frame hover highlight: raycasts under the cursor and outlines the prop
@@ -108,7 +124,7 @@ namespace Sim {
             bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             if (!overUI) {
                 Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
-                if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.layerMaskInFreeMode, QueryTriggerInteraction.Ignore)) {
+                if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
                     PropBehaviourBase prop = h.collider.GetComponentInParent<PropBehaviourBase>();
                     if (prop != null) {
                         target = prop.GetComponent<PropHoverOutline>();
@@ -144,6 +160,14 @@ namespace Sim {
             this.SetCurrentMode(CameraModeEnum.FPS);
         }
 
+        // The Outline layer must always be in the camera culling mask so that props
+        // moved to that layer by PropHoverOutline.Show() remain visible while outlined.
+        private LayerMask WithOutlineLayer(LayerMask mask) {
+            int l = LayerMask.NameToLayer(PropHoverOutline.OutlineLayerName);
+            if (l >= 0) mask |= (1 << l);
+            return mask;
+        }
+
         public void SetCurrentMode(CameraModeEnum mode) {
             this.currentMode = mode;
             this.buildCamera.enabled = mode == CameraModeEnum.BUILD;
@@ -152,10 +176,10 @@ namespace Sim {
 
             if (this.currentMode == CameraModeEnum.BUILD) {
                 this.buildCamera.Setup(this.tpsCamera.GetVirtualCamera());
-                this.camera.cullingMask = this.defaultCullingMask;
+                this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
             } else if (this.currentMode == CameraModeEnum.FREE) {
                 this.tpsCamera.Setup(this.buildCamera.GetVirtualCamera());
-                this.camera.cullingMask = this.defaultCullingMask;
+                this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
             } else {
                 this.camera.cullingMask = this.fpsCullingMask;
             }
@@ -190,7 +214,7 @@ namespace Sim {
 
             // Ignore trigger colliders: props can host triggers for occupancy detection (e.g. DoorPropSource)
             // and we don't want those to intercept the click — only solid geometry should be hit.
-            RaycastHit[] hits = Physics.RaycastAll(ray.origin, ray.direction, 100, this.layerMaskInFreeMode, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = Physics.RaycastAll(ray.origin, ray.direction, 100, this.InteractionMask, QueryTriggerInteraction.Ignore);
             if (hits.Length == 0) return;
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 

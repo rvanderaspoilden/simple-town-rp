@@ -1,43 +1,32 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Adds a hover outline to a prop by appending a shared inverted-hull outline material
-/// (Custom/PropHoverOutline) to each of its renderers while hovered, and removing it
-/// when the hover ends. Added/driven at runtime by CameraManager's hover raycast — no
-/// per-prop setup required.
+/// Hover outline driver: moves the prop's renderer GameObjects onto the "Outline"
+/// layer while hovered so the OutlineRendererFeature draws a screen-space silhouette
+/// around them, and restores their original layers when the hover ends.
 ///
-/// Uses sharedMaterials (not materials) so the prop's real materials aren't instanced.
+/// Added/driven at runtime by CameraManager's hover raycast — no per-prop setup.
+/// Requires a layer named "Outline" (Project Settings ▸ Tags and Layers) + the
+/// OutlineRendererFeature on the active URP Renderer.
 /// </summary>
 public class PropHoverOutline : MonoBehaviour {
-    private static Material _outlineMaterial;
+    public const string OutlineLayerName = "Outline";
 
-    private Renderer[]   _renderers;
-    private Material[][]  _originalMaterials;
-    private bool          _shown;
+    private Renderer[] _renderers;
+    private int[]      _originalLayers;
+    private bool       _shown;
 
     public void Show() {
         if (_shown) return;
-        Material outline = GetOutlineMaterial();
-        if (outline == null) return;
+        int layer = LayerMask.NameToLayer(OutlineLayerName);
+        if (layer < 0) return; // layer not created yet — no-op
 
         _renderers = GetComponentsInChildren<Renderer>();
-        _originalMaterials = new Material[_renderers.Length][];
-
+        _originalLayers = new int[_renderers.Length];
         for (int i = 0; i < _renderers.Length; i++) {
-            Renderer r = _renderers[i];
-            // Skip renderers that can't show an outline meaningfully (UI, particles…).
-            if (r is MeshRenderer == false && r is SkinnedMeshRenderer == false) {
-                _originalMaterials[i] = null;
-                continue;
-            }
-            Material[] original = r.sharedMaterials;
-            _originalMaterials[i] = original;
-
-            Material[] withOutline = new Material[original.Length + 1];
-            original.CopyTo(withOutline, 0);
-            withOutline[original.Length] = outline;
-            r.sharedMaterials = withOutline;
+            GameObject go = _renderers[i].gameObject;
+            _originalLayers[i] = go.layer;
+            go.layer = layer;
         }
         _shown = true;
     }
@@ -46,22 +35,13 @@ public class PropHoverOutline : MonoBehaviour {
         if (!_shown) return;
         if (_renderers != null) {
             for (int i = 0; i < _renderers.Length; i++) {
-                if (_renderers[i] == null || _originalMaterials[i] == null) continue;
-                _renderers[i].sharedMaterials = _originalMaterials[i];
+                if (_renderers[i] != null) _renderers[i].gameObject.layer = _originalLayers[i];
             }
         }
         _renderers = null;
-        _originalMaterials = null;
+        _originalLayers = null;
         _shown = false;
     }
 
     private void OnDisable() => Hide();
-
-    private static Material GetOutlineMaterial() {
-        if (_outlineMaterial == null) {
-            Shader shader = Shader.Find("Custom/PropHoverOutline");
-            if (shader != null) _outlineMaterial = new Material(shader) { name = "PropHoverOutline (Runtime)" };
-        }
-        return _outlineMaterial;
-    }
 }
