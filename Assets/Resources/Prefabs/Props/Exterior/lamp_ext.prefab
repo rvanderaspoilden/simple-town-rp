@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 4227313288918934862}
   - component: {fileID: 1774922842365747195}
   - component: {fileID: 3543336864287840803}
-  - component: {fileID: 6740805861342456698}
+  - component: {fileID: 10301466433793611}
   m_Layer: 10
   m_Name: lamp_ext
   m_TagString: Untagged
@@ -151,7 +151,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
---- !u!114 &6740805861342456698
+--- !u!114 &10301466433793611
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -160,11 +160,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 3445256586421143117}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
+  m_Script: {fileID: 11500000, guid: 1595cfcb1f4d93c448a2fbcf7986c1b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
+  m_EditorClassIdentifier: Assembly-CSharp::ExteriorLightBehaviour
   configuration: {fileID: 11400000, guid: 287955e095f68ba4dafbea94368de953, type: 2}
   defaultPresetId: -1
+  emissiveRenderers:
+  - {fileID: 7767912052115564152}
+  onHour: 20
+  offHour: 6
+  overrideNightColor: 0
+  nightEmission: {r: 0, g: 0, b: 0, a: 1}
+  debugForceHour: -1
 --- !u!1 &5027613256631183664
 GameObject:
   m_ObjectHideFlags: 0
@@ -231,7 +238,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: b7a0d1adf665eee4c8fe7de78bc21935, type: 2}
+  - {fileID: 2100000, guid: 1a8e7e7798ae6284688cf1768631a68b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
