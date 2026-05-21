@@ -1,4 +1,4 @@
-﻿using AI.States;
+using AI.States;
 using Interaction;
 using Sim.Enums;
 using Sim.Interactables;
@@ -181,7 +181,7 @@ namespace Sim {
                 this.tpsCamera.Setup(this.buildCamera.GetVirtualCamera());
                 this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
             } else {
-                this.camera.cullingMask = this.fpsCullingMask;
+                this.camera.cullingMask = this.WithOutlineLayer(this.fpsCullingMask);
             }
         }
 

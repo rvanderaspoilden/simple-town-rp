@@ -226,7 +226,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 827191
+    m_Bits: 5021495
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -2057,14 +2057,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   layerMaskInFreeMode:
     serializedVersion: 2
-    m_Bits: 2922240
+    m_Bits: 7116544
   defaultCullingMask:
     serializedVersion: 2
-    m_Bits: 2924343
+    m_Bits: 7118647
   fpsCullingMask:
     serializedVersion: 2
-    m_Bits: 826935
+    m_Bits: 5021239
   fpsCamera: {fileID: 3631374244889326648}
+  doubleClickWindow: 0.3
 --- !u!114 &8619417789000670540
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2081,8 +2082,12 @@ MonoBehaviour:
   propsStepSize: 0.02
   magneticRange: 0.2
   magneticPropsMargin: 0.02
+  paintSound: {fileID: 0}
+  paintSoundVolume: 0.6
+  gridSize: 1
   magnetismActivated: 0
   instantMagnetismActivated: 0
+  gridModeActivated: 0
 --- !u!114 &2049593766679326412
 MonoBehaviour:
   m_ObjectHideFlags: 0
