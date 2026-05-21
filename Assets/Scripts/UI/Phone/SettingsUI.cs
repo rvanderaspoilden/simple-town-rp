@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Sim;
 using Sim.Entities;
 using TMPro;
@@ -19,6 +20,8 @@ public class SettingsUI : PhoneApplicationUI {
     [SerializeField] private Slider audioMasterSlider;
     [SerializeField] private Slider audioMusicSlider;
     [SerializeField] private Slider audioSfxSlider;
+    [Tooltip("Voice capture device. Filled at runtime with Microphone.devices; index 0 is the system default.")]
+    [SerializeField] private TMP_Dropdown audioInputDropdown;
 
     [Header("Graphics")]
     [Tooltip("Dropdown filled at runtime with QualitySettings.names.")]
@@ -30,9 +33,16 @@ public class SettingsUI : PhoneApplicationUI {
 
     private UserSettingsData _working;
 
+    // Parallel to audioInputDropdown options. Index 0 is the system default
+    // (empty string); the rest mirror Microphone.devices by name.
+    private readonly List<string> _inputDeviceValues = new List<string>();
+
+    private const string DefaultInputLabel = "Défaut (système)";
+
     private void OnEnable() {
         ApiManager.OnUserSettingsLoaded += OnSettingsLoaded;
         PopulateGraphicsDropdown();
+        PopulateInputDropdown();
         WireButtons();
         HydrateFromCache();
         EnsureLoaded();
@@ -70,6 +80,13 @@ public class SettingsUI : PhoneApplicationUI {
         if (graphicsQualityDropdown != null) {
             graphicsQualityDropdown.value = Mathf.Clamp(_working.GraphicsQuality, 0, QualitySettings.names.Length - 1);
         }
+        if (audioInputDropdown != null) {
+            // Fall back to "system default" (index 0) when the saved device is
+            // no longer present (e.g. mic unplugged since last session).
+            int idx = _inputDeviceValues.IndexOf(_working.MicrophoneDevice);
+            audioInputDropdown.SetValueWithoutNotify(idx >= 0 ? idx : 0);
+            audioInputDropdown.RefreshShownValue();
+        }
         if (saveFeedbackText != null) saveFeedbackText.text = string.Empty;
     }
 
@@ -77,8 +94,25 @@ public class SettingsUI : PhoneApplicationUI {
         if (graphicsQualityDropdown == null) return;
         graphicsQualityDropdown.ClearOptions();
         var names = QualitySettings.names;
-        var options = new System.Collections.Generic.List<string>(names);
+        var options = new List<string>(names);
         graphicsQualityDropdown.AddOptions(options);
+    }
+
+    private void PopulateInputDropdown() {
+        if (audioInputDropdown == null) return;
+        audioInputDropdown.ClearOptions();
+        _inputDeviceValues.Clear();
+
+        // Index 0: system default (stored as an empty device name).
+        var labels = new List<string> { DefaultInputLabel };
+        _inputDeviceValues.Add(string.Empty);
+
+        foreach (var device in Microphone.devices) {
+            labels.Add(device);
+            _inputDeviceValues.Add(device);
+        }
+
+        audioInputDropdown.AddOptions(labels);
     }
 
     private void WireButtons() {
@@ -89,6 +123,8 @@ public class SettingsUI : PhoneApplicationUI {
         if (audioSfxSlider != null) audioSfxSlider.onValueChanged.AddListener(v => _working.AudioSfx = v);
         if (graphicsQualityDropdown != null)
             graphicsQualityDropdown.onValueChanged.AddListener(v => _working.GraphicsQuality = v);
+        if (audioInputDropdown != null)
+            audioInputDropdown.onValueChanged.AddListener(OnInputDeviceChanged);
         if (saveButton != null) saveButton.onClick.AddListener(OnSaveClicked);
     }
 
@@ -98,11 +134,18 @@ public class SettingsUI : PhoneApplicationUI {
         if (audioMusicSlider != null) audioMusicSlider.onValueChanged.RemoveAllListeners();
         if (audioSfxSlider != null) audioSfxSlider.onValueChanged.RemoveAllListeners();
         if (graphicsQualityDropdown != null) graphicsQualityDropdown.onValueChanged.RemoveAllListeners();
+        if (audioInputDropdown != null) audioInputDropdown.onValueChanged.RemoveAllListeners();
         if (saveButton != null) saveButton.onClick.RemoveAllListeners();
     }
 
     private void OnToggleNotif(bool value) {
         _working.NotificationsNewMission = value;
+    }
+
+    private void OnInputDeviceChanged(int index) {
+        _working.MicrophoneDevice = index >= 0 && index < _inputDeviceValues.Count
+            ? _inputDeviceValues[index]
+            : string.Empty;
     }
 
     private void OnSaveClicked() {
@@ -125,6 +168,7 @@ public class SettingsUI : PhoneApplicationUI {
         if (QualitySettings.GetQualityLevel() != qualityIdx) {
             QualitySettings.SetQualityLevel(qualityIdx, applyExpensiveChanges: true);
         }
+        AudioDeviceSettings.ApplyMicrophone(data.MicrophoneDevice);
     }
 
     private static UserSettingsData CloneData(UserSettingsData src) {
@@ -135,6 +179,7 @@ public class SettingsUI : PhoneApplicationUI {
             AudioMusic = src.AudioMusic,
             AudioSfx = src.AudioSfx,
             GraphicsQuality = src.GraphicsQuality,
+            MicrophoneDevice = src.MicrophoneDevice,
         };
     }
 }

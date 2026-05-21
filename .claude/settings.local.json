@@ -79,7 +79,9 @@
       "Bash(git branch *)",
       "Bash(Get-ChildItem -Path \"D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-rp\\\\Assets\" -Filter \"*Editor*\" -Directory)",
       "Bash(Select-Object -ExpandProperty Name)",
-      "mcp__unity-mcp__Unity_GetConsoleLogs"
+      "mcp__unity-mcp__Unity_GetConsoleLogs",
+      "mcp__unity-mcp__Unity_ValidateScript",
+      "mcp__unity-mcp__Unity_ManageEditor"
     ]
   },
   "enableAllProjectMcpServers": true,

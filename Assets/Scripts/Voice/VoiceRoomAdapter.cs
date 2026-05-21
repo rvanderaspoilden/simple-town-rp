@@ -21,6 +21,12 @@ namespace Sim {
             _receipt   = GetComponent<VoiceReceiptTrigger>();
             ClientPropManager.OnLocalRoomChanged += SwitchRoom;
             SwitchRoom("city");
+            ApplySavedMicrophone();
+        }
+
+        private static void ApplySavedMicrophone() {
+            var settings = ApiManager.Instance != null ? ApiManager.Instance.UserSettings : null;
+            if (settings != null) AudioDeviceSettings.ApplyMicrophone(settings.Data.MicrophoneDevice);
         }
 
         public void OnLocalPlayerStop() {

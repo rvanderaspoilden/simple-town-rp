@@ -32,6 +32,8 @@ namespace Sim.Entities {
         [SerializeField, Range(0f, 1f)] private float audioSfx = 1f;
         [Tooltip("Unity quality level index (matches QualitySettings.SetQualityLevel).")]
         [SerializeField] private int graphicsQuality = 2;
+        [Tooltip("Voice capture device name (matches UnityEngine.Microphone.devices / Dissonance MicrophoneName). Empty = system default.")]
+        [SerializeField] private string microphoneDevice = string.Empty;
 
         public bool NotificationsNewMission {
             get => notificationsNewMission;
@@ -56,6 +58,11 @@ namespace Sim.Entities {
         public int GraphicsQuality {
             get => graphicsQuality;
             set => graphicsQuality = value;
+        }
+
+        public string MicrophoneDevice {
+            get => microphoneDevice ?? string.Empty;
+            set => microphoneDevice = value ?? string.Empty;
         }
     }
 }
