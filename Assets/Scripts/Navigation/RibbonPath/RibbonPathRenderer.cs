@@ -18,12 +18,12 @@ namespace TheBroz.Navigation
 
         private Mesh _mesh;
         private MeshFilter _meshFilter;
-        private List<Vector3> _pathPoints = new List<Vector3>();
+        private readonly List<Vector3> _pathPoints = new List<Vector3>(256);
 
-        private List<Vector3> _vertices = new List<Vector3>();
-        private List<int> _triangles = new List<int>();
-        private List<Vector2> _uvs = new List<Vector2>();
-        private List<Color> _colors = new List<Color>();
+        private readonly List<Vector3> _vertices = new List<Vector3>(512);
+        private readonly List<int> _triangles = new List<int>(1536);
+        private readonly List<Vector2> _uvs = new List<Vector2>(512);
+        private readonly List<Color> _colors = new List<Color>(512);
 
         private void OnEnable()
         {
@@ -55,13 +55,24 @@ namespace TheBroz.Navigation
 
             InitMesh();
             _pathPoints.Clear();
-            SmoothPath(rawPoints, _pathPoints);
+            
+            // Dynamic smoothing: less subdivisions for longer paths
+            int actualSubdivisions = smoothingSubdivisions;
+            if (rawPoints.Length > 20) actualSubdivisions = Mathf.Max(1, smoothingSubdivisions / 2);
+            if (rawPoints.Length > 50) actualSubdivisions = 1;
+
+            SmoothPath(rawPoints, _pathPoints, actualSubdivisions);
             GenerateMesh();
         }
 
-        private void SmoothPath(Vector3[] input, List<Vector3> output)
+        private void SmoothPath(Vector3[] input, List<Vector3> output, int subdivisions)
         {
             if (input.Length < 2) return;
+            if (subdivisions <= 1)
+            {
+                output.AddRange(input);
+                return;
+            }
 
             // Catmull-Rom smoothing
             for (int i = 0; i < input.Length - 1; i++)
@@ -71,9 +82,9 @@ namespace TheBroz.Navigation
                 Vector3 p2 = input[i + 1];
                 Vector3 p3 = i + 2 >= input.Length ? input[input.Length - 1] : input[i + 2];
 
-                for (int j = 0; j < smoothingSubdivisions; j++)
+                for (int j = 0; j < subdivisions; j++)
                 {
-                    float t = j / (float)smoothingSubdivisions;
+                    float t = j / (float)subdivisions;
                     output.Add(GetCatmullRomPoint(p0, p1, p2, p3, t));
                 }
             }
@@ -100,31 +111,38 @@ namespace TheBroz.Navigation
             _uvs.Clear();
             _colors.Clear();
 
+            int pointCount = _pathPoints.Count;
+            if (pointCount < 2) return;
+
             float totalDist = 0;
             Vector3 up = Vector3.up;
+            float halfWidth = width * 0.5f;
 
-            for (int i = 0; i < _pathPoints.Count; i++)
+            for (int i = 0; i < pointCount; i++)
             {
                 Vector3 current = _pathPoints[i];
                 Vector3 forward;
 
-                if (i < _pathPoints.Count - 1)
+                if (i < pointCount - 1)
                 {
                     forward = (_pathPoints[i + 1] - current).normalized;
-                    if (forward == Vector3.zero && i > 0) forward = (current - _pathPoints[i - 1]).normalized;
+                    if (forward.sqrMagnitude < 0.001f && i > 0) forward = (current - _pathPoints[i - 1]).normalized;
                 }
                 else
                 {
                     forward = (current - _pathPoints[i - 1]).normalized;
                 }
                 
-                if (forward == Vector3.zero) forward = Vector3.forward;
+                if (forward.sqrMagnitude < 0.001f) forward = Vector3.forward;
 
                 Vector3 right = Vector3.Cross(up, forward).normalized;
-                if (right == Vector3.zero) right = Vector3.right;
+                if (right.sqrMagnitude < 0.001f) right = Vector3.right;
                 
-                Vector3 leftPos = current + (right * -width * 0.5f) + (up * heightOffset);
-                Vector3 rightPos = current + (right * width * 0.5f) + (up * heightOffset);
+                Vector3 scaledRight = right * halfWidth;
+                Vector3 heightVec = up * heightOffset;
+                
+                Vector3 leftPos = current - scaledRight + heightVec;
+                Vector3 rightPos = current + scaledRight + heightVec;
 
                 _vertices.Add(transform.InverseTransformPoint(leftPos));
                 _vertices.Add(transform.InverseTransformPoint(rightPos));
@@ -140,22 +158,22 @@ namespace TheBroz.Navigation
 
                 float alpha = 1.0f;
                 // Fade at start and end only if path is long enough
-                if (_pathPoints.Count > 10)
+                if (pointCount > 10)
                 {
                     if (i < 5) alpha = i / 5.0f;
-                    else if (i > _pathPoints.Count - 6) alpha = Mathf.Clamp01((_pathPoints.Count - 1 - i) / 5.0f);
+                    else if (i > pointCount - 6) alpha = Mathf.Clamp01((pointCount - 1 - i) / 5.0f);
                 }
-                else if (_pathPoints.Count > 2)
+                else if (pointCount > 2)
                 {
-                    // For short paths, just fade very first and very last points
-                    if (i == 0 || i == _pathPoints.Count - 1) alpha = 0f;
-                    else if (i == 1 || i == _pathPoints.Count - 2) alpha = 0.5f;
+                    if (i == 0 || i == pointCount - 1) alpha = 0f;
+                    else if (i == 1 || i == pointCount - 2) alpha = 0.5f;
                 }
+                
+                Color col = new Color(1, 1, 1, alpha);
+                _colors.Add(col);
+                _colors.Add(col);
 
-                _colors.Add(new Color(1, 1, 1, alpha));
-                _colors.Add(new Color(1, 1, 1, alpha));
-
-                if (i < _pathPoints.Count - 1)
+                if (i < pointCount - 1)
                 {
                     int baseIdx = i * 2;
                     _triangles.Add(baseIdx);
@@ -173,7 +191,7 @@ namespace TheBroz.Navigation
             _mesh.SetTriangles(_triangles, 0);
             _mesh.SetUVs(0, _uvs);
             _mesh.SetColors(_colors);
-            _mesh.RecalculateNormals();
+            // No need for normals for unlit stylized ribbon
             _mesh.RecalculateBounds();
         }
 

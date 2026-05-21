@@ -1,8 +1,11 @@
 {
   "mcpServers": {
-    "unity-mcp": {
-      "command": "C:\\Users\\rodol\\.unity/relay\\relay_win.exe",
-      "args": ["--mcp"]
+    "ai-game-developer": {
+      "headers": {
+        "Authorization": "Bearer x08N9pyLxQ-McvfpWUoog8hzOghZghfIhwQdE291e7Y"
+      },
+      "type": "http",
+      "url": "https://ai-game.dev/mcp"
     }
   }
 }
