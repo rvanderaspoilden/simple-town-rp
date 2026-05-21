@@ -115,8 +115,10 @@ namespace Sim {
         }
 
         /// <summary>
-        /// Per-frame hover highlight: raycasts under the cursor and outlines the prop
-        /// being pointed at (toggling the outline as the hovered prop changes).
+        /// Per-frame hover highlight: raycasts under the cursor and outlines the
+        /// IInteractable being pointed at (toggling the outline as the hovered target
+        /// changes). Works for any IInteractable — props, doors, NPCs, items, job
+        /// boards… — not just PropBehaviourBase.
         /// </summary>
         private void ManageHover() {
             PropHoverOutline target = null;
@@ -125,10 +127,11 @@ namespace Sim {
             if (!overUI) {
                 Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
                 if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
-                    PropBehaviourBase prop = h.collider.GetComponentInParent<PropBehaviourBase>();
-                    if (prop != null) {
-                        target = prop.GetComponent<PropHoverOutline>();
-                        if (target == null) target = prop.gameObject.AddComponent<PropHoverOutline>();
+                    IInteractable interactable = h.collider.GetComponentInParent<IInteractable>();
+                    if (interactable != null && interactable.IsInteractable()) {
+                        GameObject host = interactable.transform.gameObject;
+                        target = host.GetComponent<PropHoverOutline>();
+                        if (target == null) target = host.AddComponent<PropHoverOutline>();
                     }
                 }
             }
