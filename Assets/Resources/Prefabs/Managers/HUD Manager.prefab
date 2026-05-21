@@ -14647,6 +14647,7 @@ GameObject:
   - component: {fileID: 3195671962943172038}
   - component: {fileID: 4856767445958965784}
   - component: {fileID: 5318852606903693481}
+  - component: {fileID: -3797272740964570565}
   m_Layer: 0
   m_Name: HUD Manager
   m_TagString: Untagged
@@ -14958,6 +14959,20 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &-3797272740964570565
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3195671962943172045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5b91c33d10d81f4a977de80b4ce6140, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.UI.JobRibbonController
+  ribbonPrefab: {fileID: 8846868730046268147, guid: 4ad267a1e4d5d2c4d880340cab2900fe,
+    type: 3}
 --- !u!1 &3327203755436703622
 GameObject:
   m_ObjectHideFlags: 0
