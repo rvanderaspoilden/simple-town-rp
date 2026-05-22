@@ -173,6 +173,22 @@ namespace Sim.Jobs {
         private static string JobLabel(JobDefinition def)
             => string.IsNullOrEmpty(def.DisplayNameKey) ? def.JobId : def.DisplayNameKey;
 
+        /// <summary>
+        /// Termine toutes les missions actives/offertes d'un joueur lorsqu'il s'évanouit
+        /// (mort). Chaque job échoue → JobItemCleanup despawn l'éventuel item de mission
+        /// porté, et OnJobFinished notifie le client owner pour nettoyer son UI de mission.
+        /// </summary>
+        public void AbandonAllForOwner(uint netId) {
+            if (netId == 0u) return;
+            if (!_byOwner.TryGetValue(netId, out var list)) return;
+            // Copie : Abandon() lève des events qui peuvent muter _byOwner.
+            foreach (var job in new List<JobInstance>(list)) {
+                if (job.Status == JobStatus.Offered || job.Status == JobStatus.Active) {
+                    job.Abandon();
+                }
+            }
+        }
+
         // Appelé par SimpleTownNetwork quand un joueur se déconnecte (à wirer).
         public void OnPlayerDisconnected(uint netId) {
             if (!_byOwner.TryGetValue(netId, out var list)) return;

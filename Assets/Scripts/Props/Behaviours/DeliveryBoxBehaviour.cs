@@ -64,7 +64,8 @@ public class DeliveryBoxBehaviour : PropBehaviourBase {
 
     // ── IInteractable ─────────────────────────────────────────────────────────
 
-    public override bool IsInteractable() => base.IsInteractable();
+    // Only the box owner (the apartment tenant) can interact with it.
+    public override bool IsInteractable() => IsOwnedByLocal && base.IsInteractable();
 
     public override Action[] GetActions(bool withPriority = false) =>
         base.GetActions(withPriority);

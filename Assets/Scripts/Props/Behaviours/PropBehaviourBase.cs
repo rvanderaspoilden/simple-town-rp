@@ -73,7 +73,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     public bool   IsReserved     => !string.IsNullOrEmpty(_reservedByName);
 
     /// <summary>True when the local player owns this prop (matches the broadcast owner id).</summary>
-    private bool IsOwnedByLocal =>
+    protected bool IsOwnedByLocal =>
         !string.IsNullOrEmpty(_ownerCharId)
         && PlayerController.Local?.CharacterData?.Id == _ownerCharId;
 

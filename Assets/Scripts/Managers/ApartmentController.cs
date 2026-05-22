@@ -738,7 +738,8 @@ namespace Sim {
                 this.RoomId,
                 this.deliveryBoxPrefabConfig.GetId(),
                 this.currentConfiguration.deliveryBoxSpawn.position,
-                this.currentConfiguration.deliveryBoxSpawn.rotation
+                this.currentConfiguration.deliveryBoxSpawn.rotation,
+                ownerCharId: this.tenantId
             );
             if (boxId < 0) return;
             TrackProp(boxId);

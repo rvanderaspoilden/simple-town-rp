@@ -16,12 +16,27 @@ namespace Sim {
         private VoiceBroadcastTrigger _broadcast;
         private VoiceReceiptTrigger   _receipt;
 
+        [Tooltip("Push-to-talk key — voice is only transmitted while this key is held.")]
+        [SerializeField] private KeyCode pushToTalkKey = KeyCode.V;
+
+        private bool _isLocal;
+
         public void OnLocalPlayerStart() {
             _broadcast = GetComponent<VoiceBroadcastTrigger>();
             _receipt   = GetComponent<VoiceReceiptTrigger>();
+            // Push-to-talk: start muted; Update() opens the channel only while the key is held.
+            if (_broadcast != null) _broadcast.Mode = CommActivationMode.None;
+            _isLocal = true;
             ClientPropManager.OnLocalRoomChanged += SwitchRoom;
             SwitchRoom("city");
             ApplySavedMicrophone();
+        }
+
+        private void Update() {
+            if (!_isLocal || _broadcast == null) return;
+            _broadcast.Mode = Input.GetKey(this.pushToTalkKey)
+                ? CommActivationMode.Open
+                : CommActivationMode.None;
         }
 
         private static void ApplySavedMicrophone() {

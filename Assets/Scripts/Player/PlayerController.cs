@@ -100,6 +100,28 @@ namespace Sim {
         [SyncVar]
         private PlayerState _playerState;
 
+        // Hidden on every client while the player teleports, so remote clients don't see
+        // the NetworkTransform interpolate the position jump (the player slides). Toggled
+        // around the reposition in SimpleTownNetwork.TeleportCoroutine.
+        [SyncVar(hook = nameof(OnTeleportingChanged))]
+        private bool _teleporting;
+
+        [Command]
+        public void CmdSetTeleporting(bool value) {
+            this._teleporting = value;
+        }
+
+        private void OnTeleportingChanged(bool _, bool hidden) {
+            this.SetVisualHidden(hidden);
+        }
+
+        /// <summary>Show/hide the character visuals without disabling GameObjects (keeps
+        /// NetworkTransform, scripts and the NavMeshAgent running).</summary>
+        private void SetVisualHidden(bool hidden) {
+            foreach (Renderer r in GetComponentsInChildren<Renderer>(false)) r.enabled = !hidden;
+            foreach (Canvas c in GetComponentsInChildren<Canvas>(false)) c.enabled = !hidden;
+        }
+
         // Server-only cache of the user's preferences. Hydrated by the server
         // in SetupCharacterCoroutine and updated via UserSettingsSyncMessage.
         // Lives outside SyncVar — only the server consults it (notif gate,
@@ -505,19 +527,32 @@ namespace Sim {
 
             this.stateMachine.Tick();
 
-            if (!this.isTalking && Input.GetAxis("GlobalChat") != 0f) {
+            // Voice push-to-talk indicator: the talking bubble follows the same "V" key
+            // used by VoiceRoomAdapter to transmit voice.
+            bool talkKeyHeld = Input.GetKey(KeyCode.V);
+            if (!this.isTalking && talkKeyHeld) {
                 this.CmdSetTalk(true);
                 this.bubbleUI.SetVoiceBubbleVisibility(true);
-            } else if (this.isTalking && Input.GetAxis("GlobalChat") == 0f) {
+            } else if (this.isTalking && !talkKeyHeld) {
                 this.CmdSetTalk(false);
                 this.bubbleUI.SetVoiceBubbleVisibility(false);
             }
 
-            // T opens the text-chat panel. HUDManager.ShowChatInput already gates
-            // on IsOpen so pressing T while typing is a no-op.
-            if (Input.GetKeyDown(KeyCode.T) && HUDManager.Instance != null) {
+            // T opens the text-chat panel — but not while the player is typing in a text
+            // field (chat, shop search, price input…), otherwise typing "t" would open chat.
+            if (Input.GetKeyDown(KeyCode.T) && !IsTypingInInputField() && HUDManager.Instance != null) {
                 HUDManager.Instance.ShowChatInput();
             }
+        }
+
+        /// <summary>True when a UI text input field currently has keyboard focus.</summary>
+        private static bool IsTypingInInputField() {
+            UnityEngine.EventSystems.EventSystem es = UnityEngine.EventSystems.EventSystem.current;
+            GameObject sel = es != null ? es.currentSelectedGameObject : null;
+            if (sel == null) return false;
+            if (sel.TryGetComponent(out TMPro.TMP_InputField tmp)) return tmp.isFocused;
+            if (sel.TryGetComponent(out UnityEngine.UI.InputField legacy)) return legacy.isFocused;
+            return false;
         }
 
         [Command]
@@ -700,6 +735,9 @@ namespace Sim {
         [Server]
         public void Kill() {
             GameLogger.Player.Warning("PlayerKilled {PlayerNetId}", netId);
+            // End any in-progress mission. Failing the job also despawns a held mission item
+            // (via JobItemCleanup) and clears the owner's mission UI (via OnJobFinished).
+            Sim.Jobs.JobServerManager.Instance.AbandonAllForOwner(this.netId);
             this.Die();
             this.TargetKill(this.netIdentity.connectionToClient);
             Invoke(nameof(Revive), 4f);
