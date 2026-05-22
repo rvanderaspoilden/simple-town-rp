@@ -22,10 +22,10 @@ namespace Sim.Jobs {
         public const string CtxTotalKey       = "sortTotalCount";
 
         private sealed class ItemTaskState {
-            public int        entityId = -1;
-            public bool       resolved;
-            public bool       correct;
-            public ItemConfig itemConfig;
+            public int             entityId = -1;
+            public bool            resolved;
+            public bool            correct;
+            public SortingCategory category;
         }
 
         private static readonly Dictionary<uint, SortItemsStepInstance> _active =
@@ -52,29 +52,43 @@ namespace Sim.Jobs {
                 return;
             }
 
+            var packageConfig = def.PackageConfig;
+            if (packageConfig == null || packageConfig.ID <= 0) {
+                GameLogger.System.Error("SortItemsStep_InvalidPackageConfig {JobId}", job.Definition.JobId);
+                Fail(JobFailureReason.None);
+                return;
+            }
+
             var origin = spawnTarget.Transform.position + def.BaseSpawnOffset;
             _states = new ItemTaskState[tasks.Count];
 
+            var entityIds  = new int[tasks.Count];
+            var categories = new SortingCategory[tasks.Count];
+
             for (int i = 0; i < tasks.Count; i++) {
-                var cfg = tasks[i].itemConfig;
-                if (cfg == null || cfg.ID <= 0) {
-                    GameLogger.System.Error("SortItemsStep_InvalidItemConfig {Index} {JobId}", i, job.Definition.JobId);
-                    Fail(JobFailureReason.None);
-                    return;
-                }
+                var category = tasks[i].sortingCategory;
 
                 var spawnPos = origin + Vector3.right * (i * def.ItemSpacing);
                 int entityId = ServerItemManager.Instance.SpawnItem(
-                    def.RoomId, cfg.ID, spawnPos, Quaternion.identity);
+                    def.RoomId, packageConfig.ID, spawnPos, Quaternion.identity);
 
                 ServerItemManager.Instance.SetAuthorizedHolder(def.RoomId, entityId, job.OwnerNetId);
                 ServerItemManager.Instance.SetPersistent(def.RoomId, entityId, false);
 
-                _states[i] = new ItemTaskState { entityId = entityId, itemConfig = cfg };
+                _states[i]    = new ItemTaskState { entityId = entityId, category = category };
+                entityIds[i]  = entityId;
+                categories[i] = category;
 
                 GameLogger.System.Info("SortItemsStep_Spawned {EntityId} {Category} {JobId}",
-                    entityId, cfg.SortingCategory, job.Definition.JobId);
+                    entityId, category, job.Definition.JobId);
             }
+
+            // Catégorie = donnée métier : transmise hors du pipeline d'items générique,
+            // par message job dédié, à l'owner (après les S2C_SpawnItem → item déjà présent).
+            FindOwnerConn()?.Send(new JobSortItemsSpawnedMessage {
+                entityIds  = entityIds,
+                categories = categories,
+            });
 
             _active[job.OwnerNetId] = this;
             PushProgress(finished: false);
@@ -147,14 +161,14 @@ namespace Sim.Jobs {
             }
 
             heldState.resolved = true;
-            heldState.correct  = bin.AcceptedCategory == heldState.itemConfig.SortingCategory;
+            heldState.correct  = bin.AcceptedCategory == heldState.category;
 
             ServerItemManager.Instance.DespawnItem(def.RoomId, heldState.entityId);
 
             if (!heldState.correct) {
                 conn.Send(new JobNotificationMessage { text = "Mauvais bac !" });
                 GameLogger.System.Info("SortItemsStep_WrongBin {EntityId} {Category} {BinCategory} {JobId}",
-                    heldState.entityId, heldState.itemConfig.SortingCategory,
+                    heldState.entityId, heldState.category,
                     bin.AcceptedCategory, job.Definition.JobId);
             }
 

@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: SortItemsStep
   m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.SortItemsStepDefinition
   promptKey: Trier les colis
+  packageConfig: {fileID: 11400000, guid: 039d73aec79bdce46b228c6d9ef12288, type: 2}
   tasks:
-  - itemConfig: {fileID: 11400000, guid: 11ab22cd33ef44ab55cd66ef77ab88cd, type: 2}
-  - itemConfig: {fileID: 11400000, guid: 22bc33de44fa55bc66de77fa88bc99de, type: 2}
+  - sortingCategory: 1
+  - sortingCategory: 2
   roomId: city
   spawnAtKey: 0
   baseSpawnOffset: {x: 0, y: 0.5, z: 0}

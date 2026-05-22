@@ -5,8 +5,8 @@ using UnityEngine;
 namespace Sim.Jobs {
     [Serializable]
     public struct SortTask {
-        [Tooltip("Item à trier. Sa SortingCategory détermine le bon bac.")]
-        public ItemConfig itemConfig;
+        [Tooltip("Catégorie du colis à trier. Détermine le bon bac. Assignée au colis au spawn.")]
+        public SortingCategory sortingCategory;
     }
 
     /// <summary>
@@ -16,7 +16,10 @@ namespace Sim.Jobs {
     /// </summary>
     [CreateAssetMenu(menuName = "Sim/Jobs/Steps/Sort Items", fileName = "SortItemsStep")]
     public class SortItemsStepDefinition : JobStepDefinition {
-        [Tooltip("Liste des items à trier.")]
+        [Tooltip("Config unique du colis spawné pour le tri (prefab Job Package). La catégorie n'est PAS lue ici — elle vient de chaque SortTask.")]
+        [SerializeField] private ItemConfig packageConfig;
+
+        [Tooltip("Liste des colis à trier (une catégorie par colis).")]
         [SerializeField] private List<SortTask> tasks = new List<SortTask>();
 
         [Tooltip("RoomId du ServerItemManager. POC = 'city'.")]
@@ -31,6 +34,7 @@ namespace Sim.Jobs {
         [Tooltip("Espacement horizontal entre les items spawnés.")]
         [SerializeField] private float itemSpacing = 0.6f;
 
+        public ItemConfig PackageConfig => packageConfig;
         public IReadOnlyList<SortTask> Tasks => tasks;
         public string RoomId => roomId;
         public JobTargetKey SpawnAtKey => spawnAtKey;

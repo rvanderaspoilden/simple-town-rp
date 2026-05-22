@@ -31,6 +31,7 @@ namespace Sim.Jobs {
             NetworkClient.RegisterHandler<JobRewardNotificationMessage>(OnRewardNotification);
             NetworkClient.RegisterHandler<JobNotificationMessage>(OnJobNotification);
             NetworkClient.RegisterHandler<JobSortProgressMessage>(OnSortProgress);
+            NetworkClient.RegisterHandler<JobSortItemsSpawnedMessage>(OnSortItemsSpawned);
             _handlersRegistered = true;
         }
 
@@ -42,6 +43,7 @@ namespace Sim.Jobs {
             NetworkClient.UnregisterHandler<JobRewardNotificationMessage>();
             NetworkClient.UnregisterHandler<JobNotificationMessage>();
             NetworkClient.UnregisterHandler<JobSortProgressMessage>();
+            NetworkClient.UnregisterHandler<JobSortItemsSpawnedMessage>();
             _handlersRegistered = false;
         }
 
@@ -110,6 +112,19 @@ namespace Sim.Jobs {
         private void OnSortProgress(JobSortProgressMessage msg) {
             _states.TryGetValue(msg.instanceId, out var state);
             SortProgress?.Invoke(state, msg);
+        }
+
+        // Applique la catégorie de tri (donnée métier) aux colis déjà spawnés, pour
+        // piloter leur étiquette. Le PackageJobItemBehaviour porte le mapping → sprite.
+        private void OnSortItemsSpawned(JobSortItemsSpawnedMessage msg) {
+            if (msg.entityIds == null || msg.categories == null) return;
+            int count = Mathf.Min(msg.entityIds.Length, msg.categories.Length);
+            for (int i = 0; i < count; i++) {
+                var item = ClientItemManager.Instance.GetItem(msg.entityIds[i]);
+                if (item == null) continue;
+                var package = item.GetComponent<PackageJobItemBehaviour>();
+                if (package != null) package.SetSortingCategory(msg.categories[i]);
+            }
         }
 
         private void OnFinished(JobFinishedMessage msg) {
