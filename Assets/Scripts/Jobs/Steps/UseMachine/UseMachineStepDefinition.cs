@@ -35,5 +35,7 @@ namespace Sim.Jobs {
             => new UseMachineStepInstance(owner, this);
 
         public override string GetActiveTargetKey() => aimTargetKey.ToKey();
+
+        public override MissionHighlightKind GetHighlightKinds() => MissionHighlightKind.PackagingMachine;
     }
 }

@@ -33,5 +33,7 @@ namespace Sim.Jobs {
             => new PickupPackageStepInstance(owner, this);
 
         public override string GetActiveTargetKey() => spawnAtKey.ToKey();
+
+        public override MissionHighlightKind GetHighlightKinds() => MissionHighlightKind.Colis;
     }
 }

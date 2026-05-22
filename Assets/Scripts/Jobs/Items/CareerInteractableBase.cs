@@ -33,8 +33,17 @@ namespace Sim.Jobs {
 
         public JobCategory RequiredJob => requiredJob;
 
-        /// <summary>Subclass hook: return the stable ID (machineId, binId, etc.) to enable mission highlighting.</summary>
-        public virtual string GetTargetId() => null;
+        /// <summary>
+        /// Subclass hook : type de highlight de mission de ce prop (PackagingMachine,
+        /// SortingBin, …). None = pas de highlight. L'id précis utilisé pour la voie
+        /// "ciblage exact" vient de <see cref="GetHighlightId"/>.
+        /// </summary>
+        public virtual MissionHighlightKind HighlightKind => MissionHighlightKind.None;
+
+        /// <summary>Id stable du prop (machineId, binId) réutilisé pour la voie de ciblage précis.</summary>
+        protected virtual string GetHighlightId() => null;
+
+        private MissionHighlightEffect _highlightEffect;
 
         protected virtual void Awake() {
             _actions = actionTemplates.Where(a => a != null).Select(Instantiate).ToArray();
@@ -42,20 +51,15 @@ namespace Sim.Jobs {
         }
 
         protected virtual void Start() {
-            string id = GetTargetId();
-            if (!string.IsNullOrEmpty(id)) {
-                var effect = GetComponent<MissionHighlightEffect>();
-                if (effect == null) effect = gameObject.AddComponent<MissionHighlightEffect>();
-                MissionHighlightManager.Register(id, effect);
+            if (HighlightKind != MissionHighlightKind.None) {
+                _highlightEffect = GetComponent<MissionHighlightEffect>();
+                if (_highlightEffect == null) _highlightEffect = gameObject.AddComponent<MissionHighlightEffect>();
+                MissionHighlightManager.Register(HighlightKind, GetHighlightId(), _highlightEffect, requiredJob);
             }
         }
 
         protected virtual void OnDestroy() {
-            string id = GetTargetId();
-            if (!string.IsNullOrEmpty(id)) {
-                var effect = GetComponent<MissionHighlightEffect>();
-                if (effect != null) MissionHighlightManager.Unregister(id, effect);
-            }
+            if (_highlightEffect != null) MissionHighlightManager.Unregister(_highlightEffect);
 
             foreach (var a in _actions) {
                 if (a != null) a.OnExecute -= OnActionExecutedInternal;

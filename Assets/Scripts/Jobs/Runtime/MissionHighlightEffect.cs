@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Sim.Jobs {
     /// <summary>
-    /// Swaps the object's renderers to the "MissionHighlight" layer while active.
-    /// Used by MissionHighlightManager to highlight current mission targets.
+    /// Swaps the object's mesh renderers to the "MissionHighlight" layer while active.
+    /// Piloté soit par MissionHighlightManager (props de carrière, selon le step),
+    /// soit directement par MissionItemBehaviour (colis : visible tant qu'au sol).
     /// </summary>
     public class MissionHighlightEffect : MonoBehaviour {
         public const string LayerName = "MissionHighlight";
@@ -23,7 +25,17 @@ namespace Sim.Jobs {
             int layer = LayerMask.NameToLayer(LayerName);
             if (layer < 0) return;
 
-            _renderers = GetComponentsInChildren<Renderer>();
+            // On ne surligne que les meshes (MeshRenderer / SkinnedMeshRenderer).
+            // Les ParticleSystemRenderer, TrailRenderer, LineRenderer… ne doivent
+            // jamais passer sur la couche outline (sinon les particules d'un éventuel
+            // halo se retrouvent contourées, ce qui est moche).
+            var all = GetComponentsInChildren<Renderer>();
+            var meshes = new List<Renderer>(all.Length);
+            for (int i = 0; i < all.Length; i++) {
+                if (all[i] is MeshRenderer || all[i] is SkinnedMeshRenderer) meshes.Add(all[i]);
+            }
+
+            _renderers = meshes.ToArray();
             _originalLayers = new int[_renderers.Length];
             for (int i = 0; i < _renderers.Length; i++) {
                 GameObject go = _renderers[i].gameObject;

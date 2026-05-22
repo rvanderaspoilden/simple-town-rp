@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Sim.Jobs {
@@ -21,5 +23,21 @@ namespace Sim.Jobs {
         /// Override dans les step definitions qui ont un targetKey serialisé.
         /// </summary>
         public virtual string GetActiveTargetKey() => "primary";
+
+        // ── Mission highlight (outline monde) ─────────────────────────────────
+        /// <summary>
+        /// Types d'objets à mettre en évidence pendant ce step (voie "tous les
+        /// objets de ce kind", filtrés par la carrière de la mission). None par
+        /// défaut → aucun highlight monde (ex. steps de zone : Reach/Deliver,
+        /// gérés par le GPS).
+        /// </summary>
+        public virtual MissionHighlightKind GetHighlightKinds() => MissionHighlightKind.None;
+
+        /// <summary>
+        /// Ids d'objets précis à mettre en évidence (voie "ciblage exact",
+        /// bypass du filtre carrière). Vide par défaut. À overrider seulement
+        /// quand un step doit pointer un objet unique plutôt que tout un kind.
+        /// </summary>
+        public virtual IReadOnlyList<string> GetHighlightTargetIds() => Array.Empty<string>();
     }
 }

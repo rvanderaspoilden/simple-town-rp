@@ -25,6 +25,14 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
         [ColorUsage(true, true)] public Color outlineColor = new Color(0.25f, 0.8f, 1f, 1f);
         [Range(1, 8)] public int thickness = 2;
         public bool usePulse = false;
+
+        [Header("Moving gradient (mission highlight)")]
+        [Tooltip("Anime une bande lumineuse qui balaie la silhouette pour attirer l'œil.")]
+        public bool useGradient = false;
+        [ColorUsage(true, true)] public Color gradientColor = new Color(1f, 1f, 1f, 1f);
+        public float gradientSpeed = 2f;
+        public float gradientFrequency = 6f;
+
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
     }
 
@@ -66,6 +74,10 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
         private static readonly int MaskTexId    = Shader.PropertyToID("_OutlineMaskTex");
         private static readonly int OutlineColorId = Shader.PropertyToID("_OutlineColor");
         private static readonly int ThicknessId  = Shader.PropertyToID("_Thickness");
+        private static readonly int UseGradientId    = Shader.PropertyToID("_UseGradient");
+        private static readonly int GradientColorId  = Shader.PropertyToID("_GradientColor");
+        private static readonly int GradientSpeedId  = Shader.PropertyToID("_GradientSpeed");
+        private static readonly int GradientFreqId   = Shader.PropertyToID("_GradientFrequency");
 
         private static readonly List<ShaderTagId> ShaderTags = new List<ShaderTagId> {
             new ShaderTagId("SRPDefaultUnlit"),
@@ -163,6 +175,10 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
 
                     d.material.SetColor(OutlineColorId, _settings.outlineColor);
                     d.material.SetFloat(ThicknessId, _settings.thickness * pulse);
+                    d.material.SetFloat(UseGradientId, _settings.useGradient ? 1f : 0f);
+                    d.material.SetColor(GradientColorId, _settings.gradientColor);
+                    d.material.SetFloat(GradientSpeedId, _settings.gradientSpeed);
+                    d.material.SetFloat(GradientFreqId, _settings.gradientFrequency);
                     ctx.cmd.SetGlobalTexture(MaskTexId, d.mask);
                     Blitter.BlitTexture(ctx.cmd, d.source, new Vector4(1, 1, 0, 0), d.material, 0);
                 });

@@ -46,6 +46,10 @@ MonoBehaviour:
     outlineColor: {r: 0.25, g: 0.8, b: 1, a: 1}
     thickness: 2
     usePulse: 0
+    useGradient: 1
+    gradientColor: {r: 0.9622642, g: 0.41535896, b: 0, a: 1}
+    gradientSpeed: 2
+    gradientFrequency: 6
     renderPassEvent: 500
 --- !u!114 &-40433759470989155
 MonoBehaviour:
@@ -67,6 +71,10 @@ MonoBehaviour:
     outlineColor: {r: 1, g: 0.8, b: 0.2, a: 1}
     thickness: 4
     usePulse: 1
+    useGradient: 1
+    gradientColor: {r: 1, g: 1, b: 0.75, a: 1}
+    gradientSpeed: 2.5
+    gradientFrequency: 6
     renderPassEvent: 500
 --- !u!114 &11400000
 MonoBehaviour:

@@ -25,7 +25,8 @@ namespace Sim.Jobs {
 
         public string BinId => binId;
         public SortingCategory AcceptedCategory => acceptedCategory;
-        public override string GetTargetId() => binId;
+        public override MissionHighlightKind HighlightKind => MissionHighlightKind.SortingBin;
+        protected override string GetHighlightId() => binId;
 
         protected override void Awake() {
             base.Awake();
