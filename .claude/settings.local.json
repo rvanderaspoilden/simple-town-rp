@@ -82,7 +82,10 @@
       "mcp__unity-mcp__Unity_GetConsoleLogs",
       "mcp__unity-mcp__Unity_ValidateScript",
       "mcp__unity-mcp__Unity_ManageEditor",
-      "mcp__ai-game-developer__editor-application-get-state"
+      "mcp__ai-game-developer__editor-application-get-state",
+      "Bash(npm run *)",
+      "Bash(echo \"EXIT=$?\")",
+      "mcp__ai-game-developer__console-clear-logs"
     ]
   },
   "enableAllProjectMcpServers": true,

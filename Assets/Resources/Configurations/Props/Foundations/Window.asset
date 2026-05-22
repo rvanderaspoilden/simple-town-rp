@@ -14,12 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 16
   displayName: "Fen\xEAtre"
+  sprite: {fileID: 0}
   propsType: 1
-  buyable: 0
-  prefab: {fileID: 7521129292653811777, guid: 5d79902b15be89d45a2e43ae85522d01, type: 3}
+  price: 500
+  sellable: 0
+  prefab: {fileID: 0}
   packageConfig: {fileID: 0}
   surfaceToPose: 0
+  posableOnProps: 0
+  hasPosableSurface: 0
+  connectedToWall: 0
   toBuild: 0
   rangeToInteract: 1
+  rightClickOnly: 0
   actions: []
   unbuiltActions: []
+  cursor: {fileID: 0}
+  presets: []
+  buildSound: {fileID: 0}

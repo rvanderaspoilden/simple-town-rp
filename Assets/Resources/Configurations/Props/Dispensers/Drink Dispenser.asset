@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: Distributeur de boisson
   sprite: {fileID: 21300000, guid: a53ea1fd7171cbb439be2746de62bd4a, type: 3}
   propsType: 0
-  buyable: 0
-  price: 0
+  price: 750
+  sellable: 0
   prefab: {fileID: 5261821073512327770, guid: 7adc0940cc3f8924ea2f58a3c837bbe5, type: 3}
   packageConfig: {fileID: 0}
   surfaceToPose: 0
@@ -26,6 +26,7 @@ MonoBehaviour:
   connectedToWall: 0
   toBuild: 0
   rangeToInteract: 1
+  rightClickOnly: 0
   actions:
   - {fileID: 11400000, guid: b9dab5efe24ed7e478a5549ec5c52858, type: 2}
   unbuiltActions: []

@@ -516,30 +516,36 @@ public class PropInteractionDispatcher : MonoBehaviour {
             Debug.LogWarning($"[Buy] POST /deliveries failed ({delReq.responseCode}) — prop {propUuid} owned by buyer in transit without delivery");
         }
 
-        // 3. Payment — debit buyer, credit seller (online via bank, offline via REST).
+        // 3. Payment + history in one step — post a ledger entry on each side. The
+        //    ledger is the single source of money history (no separate transactions
+        //    row). Each side records the other character as its counterparty. Gifts
+        //    (price 0) still get a 0-amount entry for traceability of the transfer.
         PlayerBankAccount sellerBank = FindOnlineBankAccount(sellerCharId);
-        if (price > 0) {
-            buyerBank.TakeMoney(price);
-            if (sellerBank != null) {
-                sellerBank.GiveMoney(price);
-            } else if (!string.IsNullOrEmpty(sellerCharId)) {
-                UnityWebRequest credit = ApiManager.Instance.CreditCharacterMoneyRequest(sellerCharId, price);
-                yield return credit.SendWebRequest();
-                if (credit.responseCode < 200 || credit.responseCode >= 300)
-                    Debug.LogWarning($"[Buy] Offline seller credit failed ({credit.responseCode}) seller={sellerCharId} amount={price}");
-            }
-        }
+        bool isGift = price == 0;
 
-        // 4. History (best-effort).
-        UnityWebRequest tx = ApiManager.Instance.CreateTransactionRequest(new CreateTransactionBody {
-            propId   = propUuid,
-            configId = configId,
-            sellerId = sellerCharId,
-            buyerId  = buyerCharId,
-            price    = price,
-            type     = price == 0 ? "gift" : "sale",
-        });
-        yield return tx.SendWebRequest();
+        // Buyer side (online — this is the connection that initiated the buy).
+        buyerBank.PostLedger(isGift ? 0 : -price,
+            isGift ? LedgerReason.GiftReceived : LedgerReason.P2pPurchase,
+            LedgerCounterparty.Player, sellerCharId, propUuid, configId);
+
+        // Seller side — online via its bank component, offline via direct REST post.
+        if (sellerBank != null) {
+            sellerBank.PostLedger(isGift ? 0 : price,
+                isGift ? LedgerReason.GiftSent : LedgerReason.P2pSale,
+                LedgerCounterparty.Player, buyerCharId, propUuid, configId);
+        } else if (!string.IsNullOrEmpty(sellerCharId)) {
+            UnityWebRequest credit = ApiManager.Instance.PostLedgerEntryRequest(sellerCharId, new PostLedgerBody {
+                amount           = isGift ? 0 : price,
+                reason           = isGift ? LedgerReason.GiftSent : LedgerReason.P2pSale,
+                counterpartyType = LedgerCounterparty.Player,
+                counterpartyId   = buyerCharId,
+                propId           = propUuid,
+                configId         = configId,
+            });
+            yield return credit.SendWebRequest();
+            if (credit.responseCode < 200 || credit.responseCode >= 300)
+                Debug.LogWarning($"[Buy] Offline seller ledger post failed ({credit.responseCode}) seller={sellerCharId} amount={price}");
+        }
 
         // 5. Remove the prop from the seller's room (runtime only — the DB row was
         //    transferred, NOT deleted). Clear the seller-side runtime→UUID bridge so a

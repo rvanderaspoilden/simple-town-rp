@@ -347,18 +347,15 @@ namespace Sim {
             return request;
         }
 
-        public UnityWebRequest UpdateCharacterMoneyRequest(string characterId, CharacterUpdateMoneyRequest moneyRequest) {
-            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(moneyRequest));
+        /// <summary>POST /characters/:id/ledger — single chokepoint for every money
+        /// movement. Posts a signed amount + reason; the backend updates the balance
+        /// AND records a ledger entry atomically, returning the new balance.</summary>
+        public UnityWebRequest PostLedgerEntryRequest(string characterId, PostLedgerBody body) =>
+            BuildJsonRequest($"{this.uri}/characters/{characterId}/ledger", "POST", body);
 
-            UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/update-money", "PUT") {
-                uploadHandler = new UploadHandlerRaw(encodedPayload),
-                downloadHandler = new DownloadHandlerBuffer(),
-            };
-
-            request.SetRequestHeader("Content-type", "application/json");
-
-            return request;
-        }
+        /// <summary>GET /characters/:id/ledger — full money history, newest first.</summary>
+        public UnityWebRequest RetrieveLedgerRequest(string characterId) =>
+            BuildJsonRequest($"{this.uri}/characters/{characterId}/ledger", "GET", null);
 
         // ── Career endpoints ──────────────────────────────────────────────────
 
@@ -604,19 +601,6 @@ namespace Sim {
             if (!string.IsNullOrEmpty(ownedBy)) qs += $"ownedBy={UnityWebRequest.EscapeURL(ownedBy)}";
             return BuildJsonRequest($"{this.uri}/props{qs.TrimEnd('&', '?')}", "GET", null);
         }
-
-        // ── Transactions ────────────────────────────────────────────────────────
-
-        /// <summary>POST /transactions — record a completed player-to-player sale/gift.
-        /// Called server-side by the buy flow after payment + ownership transfer.</summary>
-        public UnityWebRequest CreateTransactionRequest(CreateTransactionBody body) =>
-            BuildJsonRequest($"{this.uri}/transactions", "POST", body);
-
-        /// <summary>PUT /characters/:id/credit-money — atomic balance increment.
-        /// Used to pay an OFFLINE seller during a sale (online sellers go through
-        /// PlayerBankAccount.GiveMoney instead).</summary>
-        public UnityWebRequest CreditCharacterMoneyRequest(string characterId, int delta) =>
-            BuildJsonRequest($"{this.uri}/characters/{characterId}/credit-money", "PUT", new { delta });
 
         // ── Items ─────────────────────────────────────────────────────────────
 

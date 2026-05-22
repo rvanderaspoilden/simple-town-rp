@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: Distributeur de nourriture
   sprite: {fileID: 21300000, guid: d2e3244039c635d4ea55bdb3f01a3578, type: 3}
   propsType: 0
-  buyable: 0
-  price: 0
+  price: 1000
+  sellable: 0
   prefab: {fileID: 80092171085595795, guid: f79d45afcd9c9d042b77af6af041af3e, type: 3}
   packageConfig: {fileID: 0}
   surfaceToPose: 0
@@ -26,6 +26,7 @@ MonoBehaviour:
   connectedToWall: 0
   toBuild: 0
   rangeToInteract: 1
+  rightClickOnly: 0
   actions:
   - {fileID: 11400000, guid: b9dab5efe24ed7e478a5549ec5c52858, type: 2}
   unbuiltActions: []

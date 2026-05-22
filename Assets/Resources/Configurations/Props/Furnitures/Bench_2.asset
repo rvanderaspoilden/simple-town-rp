@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: Bench without backrest
   sprite: {fileID: 0}
   propsType: 0
-  buyable: 0
-  price: 0
+  price: 700
+  sellable: 0
   prefab: {fileID: 6726884999074729605, guid: e0a9fabb41767a64ba8d73b1d40dfe62, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
@@ -26,6 +26,7 @@ MonoBehaviour:
   connectedToWall: 0
   toBuild: 0
   rangeToInteract: 1
+  rightClickOnly: 0
   actions:
   - {fileID: 11400000, guid: 7e0cdd3d63813974a95eeb645612607b, type: 2}
   unbuiltActions: []

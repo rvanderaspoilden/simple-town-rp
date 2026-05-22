@@ -14,12 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 17
   displayName: Mur en intersection
+  sprite: {fileID: 0}
   propsType: 1
-  buyable: 0
-  prefab: {fileID: 3122935269353603125, guid: 33b501628ee43664eb641003b1111e77, type: 3}
+  price: 500
+  sellable: 0
+  prefab: {fileID: 0}
   packageConfig: {fileID: 0}
   surfaceToPose: 0
+  posableOnProps: 0
+  hasPosableSurface: 0
+  connectedToWall: 0
   toBuild: 0
   rangeToInteract: 2
+  rightClickOnly: 0
   actions: []
   unbuiltActions: []
+  cursor: {fileID: 0}
+  presets: []
+  buildSound: {fileID: 0}

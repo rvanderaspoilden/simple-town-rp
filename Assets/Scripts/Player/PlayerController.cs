@@ -8,6 +8,7 @@ using DG.Tweening;
 using Interaction;
 using Mirror;
 using Sim.Entities;
+using Sim.Entities.Persistence;
 using Sim.Enums;
 using Sim.Jobs;
 using Sim.Logging;
@@ -752,7 +753,7 @@ namespace Sim {
                 GameLogger.Player.Info("PlayerRevived {PlayerNetId} {BuildingStreet}", netId, this.characterHome.Address.street);
                 buildingBehavior.TeleportExistingPlayerToApartment(this.characterHome.Address.doorNumber, this.netIdentity.connectionToClient);
                 this.playerHealth.ResetAll();
-                this.playerBankAccount.TakeMoney(50);
+                this.playerBankAccount.PostLedger(-50, LedgerReason.DeathPenalty, LedgerCounterparty.System, LedgerCounterparty.Bank);
                 this.TargetRevive(this.netIdentity.connectionToClient);
             } else {
                 GameLogger.Network.Error(null, "ReviveBuildingNotFound {PlayerNetId} {Street}", netId, this.characterHome.Address.street);

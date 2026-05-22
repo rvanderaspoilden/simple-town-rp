@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using Mirror;
+using Newtonsoft.Json;
 using Sim;
+using Sim.Entities.Persistence;
 using Sim.UI;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -24,22 +26,26 @@ public class PlayerBankAccount : NetworkBehaviour {
         this.money = amount;
     }
 
+    /// <summary>
+    /// Single chokepoint for EVERY money movement on this account (shop, dispenser,
+    /// job reward, salary, death penalty, p2p sale/gift). Posts a signed amount
+    /// (+credit / -debit) + reason to the ledger; the backend updates the balance
+    /// AND records the entry atomically, then we sync the authoritative balance it
+    /// returns. Funds must be validated by the caller before debiting.
+    /// </summary>
     [Server]
-    public void TakeMoney(int amount) {
-        CharacterUpdateMoneyRequest request = new CharacterUpdateMoneyRequest() {
-            money = (this.money - amount > 0) ? (this.money - amount) : 0
+    public void PostLedger(int signedAmount, string reason, string counterpartyType, string counterpartyId,
+                           string propId = null, int? configId = null) {
+        PostLedgerBody body = new PostLedgerBody {
+            amount = signedAmount,
+            reason = reason,
+            counterpartyType = counterpartyType,
+            counterpartyId = counterpartyId,
+            propId = propId,
+            configId = configId,
         };
 
-        StartCoroutine(this.SaveCharacterMoney(request));
-    }
-    
-    [Server]
-    public void GiveMoney(int amount) {
-        CharacterUpdateMoneyRequest request = new CharacterUpdateMoneyRequest() {
-            money = this.money + amount
-        };
-
-        StartCoroutine(this.SaveCharacterMoney(request));
+        StartCoroutine(this.PostLedgerCoroutine(body));
     }
 
     [ClientCallback]
@@ -48,16 +54,21 @@ public class PlayerBankAccount : NetworkBehaviour {
 
         CharacterInfoPanelUI.Instance.UpdateMoney(this.money);
     }
-    
-    private IEnumerator SaveCharacterMoney(CharacterUpdateMoneyRequest moneyRequest) {
-        UnityWebRequest request = ApiManager.Instance.UpdateCharacterMoneyRequest(this._playerController.CharacterData.Id, moneyRequest);
+
+    private IEnumerator PostLedgerCoroutine(PostLedgerBody body) {
+        UnityWebRequest request = ApiManager.Instance.PostLedgerEntryRequest(this._playerController.CharacterData.Id, body);
 
         yield return request.SendWebRequest();
 
-        if (request.responseCode == 200) {
-            this.money = moneyRequest.money;
+        if (request.responseCode == 200 || request.responseCode == 201) {
+            try {
+                LedgerPostResponse response = JsonConvert.DeserializeObject<LedgerPostResponse>(request.downloadHandler.text);
+                if (response != null) this.money = response.money;
+            } catch (Exception e) {
+                Debug.LogError($"[PlayerBankAccount] Cannot parse ledger response for [name={this.name}]: {e.Message}");
+            }
         } else {
-            Debug.LogError($"[PlayerBankAccount] Cannot save bank account in database for [name={this.name}]");
+            Debug.LogError($"[PlayerBankAccount] Ledger post failed for [name={this.name}] reason={body.reason} code={request.responseCode}");
         }
     }
 }

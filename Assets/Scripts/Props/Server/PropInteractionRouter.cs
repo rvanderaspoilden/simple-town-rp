@@ -1,6 +1,7 @@
 using Mirror;
 using Sim;
 using Sim.Building;
+using Sim.Entities.Persistence;
 using Sim.Enums;
 using Sim.Scriptables;
 using UnityEngine;
@@ -338,7 +339,8 @@ public static class PropInteractionRouter {
 
             Debug.Log($"[Dispenser] Purchase validated player={conn.connectionId} item={itemId} price={itemPrice.price}");
 
-            bank.TakeMoney(itemPrice.price);
+            bank.PostLedger(-itemPrice.price, LedgerReason.DispenserPurchase, LedgerCounterparty.System,
+                LedgerCounterparty.Dispenser, configId: itemPrice.item.ID);
 
             string roomId = PlayerRoomTracker.Instance.GetRoom(conn) ?? "city";
 

@@ -129,22 +129,6 @@ namespace Sim.Entities.Persistence {
         public int version;
     }
 
-    // ── Transaction (POST /transactions) ────────────────────────────────────
-
-    /// <summary>Body for POST /transactions — written by the server buy flow
-    /// once payment + ownership transfer succeed.</summary>
-    [Serializable]
-    public class CreateTransactionBody {
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string propId;
-
-        public int configId;
-        public string sellerId;
-        public string buyerId;
-        public int price;
-        public string type;   // "sale" | "gift"
-    }
-
     // ── Cover ───────────────────────────────────────────────────────────────
 
     [Serializable]

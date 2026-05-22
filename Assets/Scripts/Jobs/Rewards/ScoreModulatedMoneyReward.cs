@@ -1,5 +1,6 @@
 using Mirror;
 using Sim;
+using Sim.Entities.Persistence;
 using Sim.Logging;
 using UnityEngine;
 
@@ -42,7 +43,7 @@ namespace Sim.Jobs {
 
             if (amount <= 0) return;
 
-            bank.GiveMoney(amount);
+            bank.PostLedger(amount, LedgerReason.JobReward, LedgerCounterparty.System, LedgerCounterparty.Job);
             job.AddMoneyEarned(amount);
 
             var conn = identity.connectionToClient;

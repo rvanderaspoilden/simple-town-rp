@@ -458,6 +458,29 @@ public class SimpleTownNetwork : NetworkManager
         GameLogger.Network.Debug("CreateDeliveryStart {ConnectionId} {RecipientId}", conn.connectionId,
             request.recipientId);
 
+        // Shop purchases are paid. Resolve the item price and verify the buyer's
+        // funds up front (the buyer is the connection that sent the request).
+        // The actual debit happens once the prop + delivery are committed below.
+        int price = ResolveShopPrice(request);
+        PlayerBankAccount buyerBank = conn?.identity != null ? conn.identity.GetComponent<PlayerBankAccount>() : null;
+        GameLogger.Network.Info("ShopPurchasePrice {ConnectionId} {Type} {PropsConfigId} {PaintConfigId} {Price} {Money}",
+            conn.connectionId, request.type, request.propsConfigId, request.paintConfigId, price,
+            buyerBank != null ? buyerBank.Money : -1);
+        if (price > 0 && (buyerBank == null || buyerBank.Money < price))
+        {
+            GameLogger.Network.Info("ShopPurchaseInsufficientFunds {ConnectionId} {Price} {Money}",
+                conn.connectionId, price, buyerBank != null ? buyerBank.Money : -1);
+            if (conn != null && conn.isReady)
+            {
+                conn.Send(new ToastNotificationMessage {
+                    text = $"Fonds insuffisants ({price} €).",
+                    typeByte = (byte)NotificationType.BANK,
+                });
+                conn.Send(new ShopResponseMessage { isSuccess = false });
+            }
+            yield break;
+        }
+
         // Phase 1: materialize the bought prop in DB at buy time. The prop sits in
         // the system "transit" place until the recipient consumes its delivery and
         // builds it into their apartment. The returned UUID is stored on the
@@ -485,10 +508,33 @@ public class SimpleTownNetwork : NetworkManager
             yield break;
         }
 
+        // Payment: debit the buyer now that the prop + delivery are committed, and
+        // record it in the ledger (counterparty = SHOP). Always recorded — even a
+        // price-0 purchase writes a shop_purchase line (amount 0) for traceability.
+        if (buyerBank != null)
+            buyerBank.PostLedger(-price, LedgerReason.ShopPurchase, LedgerCounterparty.System,
+                LedgerCounterparty.Shop,
+                configId: request.type == DeliveryType.COVER ? request.paintConfigId : request.propsConfigId);
+
         if (ServerApartmentRegistry.Instance.TryGetByTenant(request.recipientId, out ApartmentController apt) &&
             apt.DeliveryBoxPropId > 0)
             PropInteractionDispatcher.Instance?.RefreshDeliveryBoxCount(apt.DeliveryBoxPropId, apt.RoomId,
                 request.recipientId);
+    }
+
+    /// <summary>Resolve the catalog price of a shop purchase: cover deliveries are
+    /// priced by their CoverConfig, all other props by their PropsConfig. Returns 0
+    /// when the config can't be resolved (treated as free, never blocks the buy).</summary>
+    private static int ResolveShopPrice(CreateDeliveryRequest request)
+    {
+        if (request.type == DeliveryType.COVER)
+        {
+            var cover = DatabaseManager.GetPaintById(request.paintConfigId);
+            return cover != null ? cover.Price : 0;
+        }
+
+        var prop = DatabaseManager.GetPropsById(request.propsConfigId);
+        return prop != null ? prop.Price : 0;
     }
 
     /// <summary>

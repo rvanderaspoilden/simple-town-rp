@@ -1,12 +1,13 @@
 using Mirror;
 using Sim;
+using Sim.Entities.Persistence;
 using Sim.Logging;
 using UnityEngine;
 
 namespace Sim.Jobs {
     /// <summary>
-    /// Récompense argent. Appliquée serveur via PlayerBankAccount.GiveMoney
-    /// (qui round-trip via l'API REST — la persistance backend est gratuite).
+    /// Récompense argent. Appliquée serveur via PlayerBankAccount.PostLedger
+    /// (round-trip REST : crédit du solde + écriture au registre, raison job_reward).
     /// </summary>
     [CreateAssetMenu(menuName = "Sim/Jobs/Rewards/Money", fileName = "MoneyReward")]
     public class MoneyReward : RewardDefinition {
@@ -28,7 +29,7 @@ namespace Sim.Jobs {
                 return;
             }
 
-            bank.GiveMoney(amount);
+            bank.PostLedger(amount, LedgerReason.JobReward, LedgerCounterparty.System, LedgerCounterparty.Job);
             job.AddMoneyEarned(amount);
 
             var conn = identity.connectionToClient;

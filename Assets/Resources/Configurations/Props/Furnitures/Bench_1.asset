@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: Bench_1
   sprite: {fileID: 0}
   propsType: 0
-  buyable: 0
-  price: 0
+  price: 850
+  sellable: 0
   prefab: {fileID: 88430761921340440, guid: e79e0e33d77e82943b6d40891c3d1315, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
@@ -26,6 +26,7 @@ MonoBehaviour:
   connectedToWall: 0
   toBuild: 0
   rangeToInteract: 1
+  rightClickOnly: 0
   actions:
   - {fileID: 11400000, guid: 7e0cdd3d63813974a95eeb645612607b, type: 2}
   unbuiltActions: []

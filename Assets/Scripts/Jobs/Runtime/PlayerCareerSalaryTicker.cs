@@ -1,4 +1,5 @@
 using Mirror;
+using Sim.Entities.Persistence;
 using Sim.Logging;
 using UnityEngine;
 
@@ -66,7 +67,7 @@ namespace Sim.Jobs {
                 }
                 if (amount <= 0) continue;
 
-                bank.GiveMoney(amount);
+                bank.PostLedger(amount, LedgerReason.Salary, LedgerCounterparty.System, LedgerCounterparty.Job);
 
                 conn.Send(new ToastNotificationMessage {
                     text = $"{label} : +{amount} €",
