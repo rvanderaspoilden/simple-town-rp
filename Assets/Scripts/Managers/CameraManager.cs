@@ -98,11 +98,12 @@ namespace Sim {
 
         private PropHoverOutline _hoveredOutline;
         private int _outlineLayerBit = -1;
+        private int _missionLayerBit = -1;
 
         /// <summary>
-        /// Interaction raycast mask, plus the "Outline" layer bit. While a prop is
-        /// hovered its renderers sit on the Outline layer, so we must keep that layer
-        /// hittable or the hover/click would flicker as the prop changes layer.
+        /// Interaction raycast mask, plus the "Outline" and "MissionHighlight" layer bits.
+        /// While a prop is highlighted, its renderers sit on those layers, so we must
+        /// keep them hittable or the interaction would flicker.
         /// </summary>
         private LayerMask InteractionMask {
             get {
@@ -110,7 +111,11 @@ namespace Sim {
                     int l = LayerMask.NameToLayer(PropHoverOutline.OutlineLayerName);
                     _outlineLayerBit = l >= 0 ? (1 << l) : 0;
                 }
-                return this.layerMaskInFreeMode | _outlineLayerBit;
+                if (_missionLayerBit < 0) {
+                    int l = LayerMask.NameToLayer("MissionHighlight");
+                    _missionLayerBit = l >= 0 ? (1 << l) : 0;
+                }
+                return this.layerMaskInFreeMode | _outlineLayerBit | _missionLayerBit;
             }
         }
 
@@ -166,8 +171,10 @@ namespace Sim {
         // The Outline layer must always be in the camera culling mask so that props
         // moved to that layer by PropHoverOutline.Show() remain visible while outlined.
         private LayerMask WithOutlineLayer(LayerMask mask) {
-            int l = LayerMask.NameToLayer(PropHoverOutline.OutlineLayerName);
-            if (l >= 0) mask |= (1 << l);
+            int l1 = LayerMask.NameToLayer(PropHoverOutline.OutlineLayerName);
+            if (l1 >= 0) mask |= (1 << l1);
+            int l2 = LayerMask.NameToLayer("MissionHighlight");
+            if (l2 >= 0) mask |= (1 << l2);
             return mask;
         }
 

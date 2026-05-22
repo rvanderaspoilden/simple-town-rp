@@ -45,6 +45,28 @@ MonoBehaviour:
       m_Bits: 4194304
     outlineColor: {r: 0.25, g: 0.8, b: 1, a: 1}
     thickness: 2
+    usePulse: 0
+    renderPassEvent: 500
+--- !u!114 &-40433759470989155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c40d6ddfd2f136f4fb0bc0603c9addc0, type: 3}
+  m_Name: Mission Outline
+  m_EditorClassIdentifier: Assembly-CSharp::OutlineRendererFeature
+  m_Active: 1
+  settings:
+    outlineLayer:
+      serializedVersion: 2
+      m_Bits: 8388608
+    outlineColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+    thickness: 4
+    usePulse: 1
     renderPassEvent: 500
 --- !u!114 &11400000
 MonoBehaviour:
@@ -75,6 +97,7 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: -9136311304891116996}
   - {fileID: -3884568817346638990}
+  - {fileID: -40433759470989155}
   m_RendererFeatureMap: 3c529442464d358134f2ffffffffffff
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}

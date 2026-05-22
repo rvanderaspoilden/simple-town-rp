@@ -24,6 +24,7 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
         public LayerMask outlineLayer = 0;
         [ColorUsage(true, true)] public Color outlineColor = new Color(0.25f, 0.8f, 1f, 1f);
         [Range(1, 8)] public int thickness = 2;
+        public bool usePulse = false;
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
     }
 
@@ -157,8 +158,11 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
                 builder.AllowPassCulling(false);
                 builder.AllowGlobalStateModification(true); // required: we SetGlobalTexture below
                 builder.SetRenderFunc((CompositePassData d, RasterGraphContext ctx) => {
+                    float pulse = _settings.usePulse ? Shader.GetGlobalFloat("_MissionOutlinePulse") : 1.0f;
+                    if (pulse <= 0.01f) pulse = 1.0f; // Handle uninitialized or zero
+
                     d.material.SetColor(OutlineColorId, _settings.outlineColor);
-                    d.material.SetFloat(ThicknessId, _settings.thickness);
+                    d.material.SetFloat(ThicknessId, _settings.thickness * pulse);
                     ctx.cmd.SetGlobalTexture(MaskTexId, d.mask);
                     Blitter.BlitTexture(ctx.cmd, d.source, new Vector4(1, 1, 0, 0), d.material, 0);
                 });

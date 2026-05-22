@@ -1,4 +1,5 @@
 using UnityEngine;
+using Sim.Jobs;
 
 /// <summary>
 /// Hover outline driver: moves the prop's renderer GameObjects onto the "Outline"
@@ -18,6 +19,10 @@ public class PropHoverOutline : MonoBehaviour {
 
     public void Show() {
         if (_shown) return;
+
+        var mission = GetComponent<MissionHighlightEffect>();
+        if (mission != null && mission.IsHighlighted) return;
+
         int layer = LayerMask.NameToLayer(OutlineLayerName);
         if (layer < 0) return; // layer not created yet — no-op
 

@@ -65,6 +65,14 @@ namespace Sim.Jobs {
             SetIndicator(false);
         }
 
+        private void Start() {
+            if (!string.IsNullOrEmpty(pointId)) {
+                var effect = GetComponent<MissionHighlightEffect>();
+                if (effect == null) effect = gameObject.AddComponent<MissionHighlightEffect>();
+                MissionHighlightManager.Register(pointId, effect);
+            }
+        }
+
         private void OnEnable() {
             if (NetworkServer.active && !string.IsNullOrEmpty(pointId)) {
                 JobTargetRegistry.Instance.Register(this);
@@ -79,7 +87,11 @@ namespace Sim.Jobs {
         }
 
         private void OnDestroy() {
-            if (!string.IsNullOrEmpty(pointId)) _byPointId.Remove(pointId);
+            if (!string.IsNullOrEmpty(pointId)) {
+                _byPointId.Remove(pointId);
+                var effect = GetComponent<MissionHighlightEffect>();
+                if (effect != null) MissionHighlightManager.Unregister(pointId, effect);
+            }
         }
 
         public void SetIndicator(bool visible) {

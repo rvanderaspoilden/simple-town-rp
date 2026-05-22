@@ -33,12 +33,30 @@ namespace Sim.Jobs {
 
         public JobCategory RequiredJob => requiredJob;
 
+        /// <summary>Subclass hook: return the stable ID (machineId, binId, etc.) to enable mission highlighting.</summary>
+        public virtual string GetTargetId() => null;
+
         protected virtual void Awake() {
             _actions = actionTemplates.Where(a => a != null).Select(Instantiate).ToArray();
             foreach (var a in _actions) a.OnExecute += OnActionExecutedInternal;
         }
 
+        protected virtual void Start() {
+            string id = GetTargetId();
+            if (!string.IsNullOrEmpty(id)) {
+                var effect = GetComponent<MissionHighlightEffect>();
+                if (effect == null) effect = gameObject.AddComponent<MissionHighlightEffect>();
+                MissionHighlightManager.Register(id, effect);
+            }
+        }
+
         protected virtual void OnDestroy() {
+            string id = GetTargetId();
+            if (!string.IsNullOrEmpty(id)) {
+                var effect = GetComponent<MissionHighlightEffect>();
+                if (effect != null) MissionHighlightManager.Unregister(id, effect);
+            }
+
             foreach (var a in _actions) {
                 if (a != null) a.OnExecute -= OnActionExecutedInternal;
             }

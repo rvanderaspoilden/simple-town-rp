@@ -25,6 +25,7 @@ namespace Sim.Jobs {
         private bool _miniGameInFlight;
 
         public string MachineId => machineId;
+        public override string GetTargetId() => machineId;
 
         protected override void HandleAction(Action action) {
             if (action.Type != ActionTypeEnum.USE && action.Type != ActionTypeEnum.OPEN) return;
