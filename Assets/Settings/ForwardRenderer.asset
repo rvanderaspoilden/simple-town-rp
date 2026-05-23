@@ -46,7 +46,7 @@ MonoBehaviour:
     outlineColor: {r: 0.25, g: 0.8, b: 1, a: 1}
     thickness: 2
     usePulse: 0
-    useGradient: 1
+    useGradient: 0
     gradientColor: {r: 0.9622642, g: 0.41535896, b: 0, a: 1}
     gradientSpeed: 2
     gradientFrequency: 6
@@ -69,7 +69,7 @@ MonoBehaviour:
       serializedVersion: 2
       m_Bits: 8388608
     outlineColor: {r: 1, g: 0.8, b: 0.2, a: 1}
-    thickness: 4
+    thickness: 2
     usePulse: 1
     useGradient: 1
     gradientColor: {r: 1, g: 1, b: 0.75, a: 1}

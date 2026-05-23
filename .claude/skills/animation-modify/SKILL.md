@@ -71,7 +71,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
       "$ref": "#/$defs/AIGD.AssetObjectRef"
     },
     "modifications": {
-      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationModification[]"
+      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationModification%5B%5D"
     }
   },
   "$defs": {
@@ -133,7 +133,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
           "description": "Property to animate (e.g., 'localPosition.x', 'm_LocalScale.y'). Required for: SetCurve, RemoveCurve."
         },
         "keyframes": {
-          "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationKeyframe[]",
+          "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationKeyframe%5B%5D",
           "description": "Keyframes for the curve. Required for: SetCurve."
         },
         "frameRate": {
@@ -253,7 +253,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
   "type": "object",
   "properties": {
     "result": {
-      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools+ModifyAnimationResponse"
+      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BModifyAnimationResponse"
     }
   },
   "$defs": {
@@ -284,10 +284,10 @@ Read the /unity-initial-setup skill for detailed installation instructions.
       "type": "object",
       "properties": {
         "modifiedAsset": {
-          "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools+ModifyAnimationInfo"
+          "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BModifyAnimationInfo"
         },
         "errors": {
-          "$ref": "#/$defs/System.Collections.Generic.List<System.String>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3CSystem.String%3E"
         }
       }
     }

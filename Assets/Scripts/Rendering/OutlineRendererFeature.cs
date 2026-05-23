@@ -110,9 +110,9 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
 
             var camDesc = cameraData.cameraTargetDescriptor;
 
-            // Mask texture (solid white where the outline-layer objects are).
+            // Mask texture. R = silhouette complète du prop, G = visibilité (0 si occludé).
             var maskDesc = new TextureDesc(camDesc.width, camDesc.height) {
-                colorFormat     = GraphicsFormat.R8_UNorm,
+                colorFormat     = GraphicsFormat.R8G8_UNorm,
                 name            = "OutlineMask",
                 clearBuffer     = true,
                 clearColor      = Color.clear,
@@ -134,6 +134,11 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
                 passData.rendererList = rlHandle;
                 builder.UseRendererList(rlHandle);
                 builder.SetRenderAttachment(maskTex, 0);
+                // Le mask shader échantillonne _CameraDepthTexture pour écarter les fragments
+                // occludés (ex. derrière le perso local). On déclare la dépendance pour que
+                // RenderGraph garde la depth texture vivante et liée comme global.
+                if (resourceData.cameraDepthTexture.IsValid())
+                    builder.UseTexture(resourceData.cameraDepthTexture, AccessFlags.Read);
                 builder.AllowPassCulling(false);
                 builder.AllowGlobalStateModification(true);
                 builder.SetRenderFunc((MaskPassData d, RasterGraphContext ctx) =>

@@ -105,14 +105,14 @@ Read the /unity-initial-setup skill for detailed installation instructions.
   "type": "object",
   "properties": {
     "result": {
-      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools+GetDataResponse"
+      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BGetDataResponse"
     }
   },
   "$defs": {
     "System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimationTools+CurveBindingInfo>": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools+CurveBindingInfo"
+        "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BCurveBindingInfo"
       }
     },
     "com.IvanMurzak.Unity.MCP.Animation.AnimationTools+CurveBindingInfo": {
@@ -146,7 +146,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
     "System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimationTools+AnimationEventInfo>": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools+AnimationEventInfo"
+        "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BAnimationEventInfo"
       }
     },
     "com.IvanMurzak.Unity.MCP.Animation.AnimationTools+AnimationEventInfo": {
@@ -217,13 +217,13 @@ Read the /unity-initial-setup skill for detailed installation instructions.
           "type": "boolean"
         },
         "curveBindings": {
-          "$ref": "#/$defs/System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimationTools+CurveBindingInfo>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BCurveBindingInfo%3E"
         },
         "objectReferenceBindings": {
-          "$ref": "#/$defs/System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimationTools+CurveBindingInfo>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BCurveBindingInfo%3E"
         },
         "events": {
-          "$ref": "#/$defs/System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimationTools+AnimationEventInfo>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BAnimationEventInfo%3E"
         }
       },
       "required": [

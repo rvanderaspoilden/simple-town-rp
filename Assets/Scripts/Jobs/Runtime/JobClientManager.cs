@@ -115,7 +115,7 @@ namespace Sim.Jobs {
         }
 
         // Applique la catégorie de tri (donnée métier) aux colis déjà spawnés, pour
-        // piloter leur étiquette. Le PackageJobItemBehaviour porte le mapping → sprite.
+        // teinter leur étiquette de la couleur du bac correspondant (PackageJobItemBehaviour).
         private void OnSortItemsSpawned(JobSortItemsSpawnedMessage msg) {
             if (msg.entityIds == null || msg.categories == null) return;
             int count = Mathf.Min(msg.entityIds.Length, msg.categories.Length);

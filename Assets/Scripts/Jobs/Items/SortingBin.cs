@@ -18,6 +18,17 @@ namespace Sim.Jobs {
         [Tooltip("Catégorie d'item acceptée par ce bac.")]
         [SerializeField] private SortingCategory acceptedCategory;
 
+        [Header("Couleur de catégorie")]
+        [Tooltip("Couleur représentant la catégorie acceptée. Appliquée au matériau du bac " +
+                 "à l'instanciation et reprise par l'étiquette des colis de cette catégorie : " +
+                 "le joueur n'a qu'à déposer le colis de la même couleur dans ce bac.")]
+        [SerializeField] private Color categoryColor = Color.white;
+
+        [Tooltip("Renderer du bac à teinter. Vide = premier Renderer trouvé dans les enfants.")]
+        [SerializeField] private Renderer targetRenderer;
+
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+
         private static readonly Dictionary<string, SortingBin> _all =
             new Dictionary<string, SortingBin>();
 
@@ -25,6 +36,7 @@ namespace Sim.Jobs {
 
         public string BinId => binId;
         public SortingCategory AcceptedCategory => acceptedCategory;
+        public Color CategoryColor => categoryColor;
         public override MissionHighlightKind HighlightKind => MissionHighlightKind.SortingBin;
         protected override string GetHighlightId() => binId;
 
@@ -37,6 +49,36 @@ namespace Sim.Jobs {
             if (_all.ContainsKey(binId))
                 Debug.LogWarning($"[SortingBin] duplicate binId '{binId}' on '{name}'.");
             _all[binId] = this;
+
+            ApplyCategoryColor();
+        }
+
+        /// <summary>
+        /// Teinte le matériau du bac avec <see cref="categoryColor"/>. Crée une instance
+        /// de matériau propre à ce renderer (pas de partage entre bacs).
+        /// </summary>
+        private void ApplyCategoryColor() {
+            var rend = targetRenderer != null ? targetRenderer : GetComponentInChildren<Renderer>();
+            if (rend == null) return;
+
+            var mat = rend.material; // instance per-renderer
+            if (mat.HasProperty(BaseColorId)) mat.SetColor(BaseColorId, categoryColor);
+            else mat.color = categoryColor;
+        }
+
+        /// <summary>
+        /// Couleur associée à une catégorie, lue depuis le bac de la scène qui l'accepte.
+        /// Sert au colis pour teinter son étiquette de la même couleur que le bon bac.
+        /// </summary>
+        public static bool TryGetCategoryColor(SortingCategory category, out Color color) {
+            foreach (var bin in _all.Values) {
+                if (bin != null && bin.acceptedCategory == category) {
+                    color = bin.categoryColor;
+                    return true;
+                }
+            }
+            color = Color.white;
+            return false;
         }
 
         protected override void OnDestroy() {

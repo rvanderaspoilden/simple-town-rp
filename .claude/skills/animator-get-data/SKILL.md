@@ -106,7 +106,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
   "type": "object",
   "properties": {
     "result": {
-      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimatorTools+GetAnimatorDataResponse"
+      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimatorTools%2BGetAnimatorDataResponse"
     }
   },
   "$defs": {
@@ -169,13 +169,13 @@ Read the /unity-initial-setup skill for detailed installation instructions.
           "type": "string"
         },
         "states": {
-          "$ref": "#/$defs/System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimatorStateInfo>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimatorStateInfo%3E"
         },
         "subStateMachines": {
-          "$ref": "#/$defs/System.Collections.Generic.List<System.String>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3CSystem.String%3E"
         },
         "anyStateTransitions": {
-          "$ref": "#/$defs/System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimatorTransitionInfo>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimatorTransitionInfo%3E"
         }
       },
       "required": [
@@ -233,7 +233,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
           "type": "string"
         },
         "transitions": {
-          "$ref": "#/$defs/System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimatorTransitionInfo>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimatorTransitionInfo%3E"
         }
       },
       "required": [
@@ -277,7 +277,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
           "type": "boolean"
         },
         "conditions": {
-          "$ref": "#/$defs/System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimatorConditionInfo>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimatorConditionInfo%3E"
         }
       },
       "required": [
@@ -325,10 +325,10 @@ Read the /unity-initial-setup skill for detailed installation instructions.
           "type": "string"
         },
         "parameters": {
-          "$ref": "#/$defs/System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimatorParameterInfo>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimatorParameterInfo%3E"
         },
         "layers": {
-          "$ref": "#/$defs/System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimatorLayerInfo>"
+          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimatorLayerInfo%3E"
         }
       }
     }

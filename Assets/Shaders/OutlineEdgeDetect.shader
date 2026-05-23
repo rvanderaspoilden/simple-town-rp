@@ -40,9 +40,10 @@ Shader "Hidden/OutlineEdgeDetect"
             float  _GradientSpeed;
             float  _GradientFrequency;
 
-            float SampleMask(float2 uv)
+            // .r = silhouette complète du prop, .g = visibilité (0 si occludé).
+            float2 SampleMask(float2 uv)
             {
-                return SAMPLE_TEXTURE2D(_OutlineMaskTex, sampler_LinearClamp, uv).r;
+                return SAMPLE_TEXTURE2D(_OutlineMaskTex, sampler_LinearClamp, uv).rg;
             }
 
             half4 frag (Varyings input) : SV_Target
@@ -50,22 +51,29 @@ Shader "Hidden/OutlineEdgeDetect"
                 float2 uv = input.texcoord;
                 half4 sceneColor = SAMPLE_TEXTURE2D(_BlitTexture, sampler_LinearClamp, uv);
 
-                float center = SampleMask(uv);
+                float center = SampleMask(uv).r;
                 float2 t = _OutlineMaskTex_TexelSize.xy * _Thickness;
 
-                // Max of 8 neighbours — outline appears where the centre is outside the
-                // mask but a neighbour is inside (the outer border of the silhouette).
-                float n = 0;
-                n = max(n, SampleMask(uv + float2( t.x, 0)));
-                n = max(n, SampleMask(uv + float2(-t.x, 0)));
-                n = max(n, SampleMask(uv + float2(0,  t.y)));
-                n = max(n, SampleMask(uv + float2(0, -t.y)));
-                n = max(n, SampleMask(uv + float2( t.x,  t.y)));
-                n = max(n, SampleMask(uv + float2(-t.x,  t.y)));
-                n = max(n, SampleMask(uv + float2( t.x, -t.y)));
-                n = max(n, SampleMask(uv + float2(-t.x, -t.y)));
+                // Max sur 8 voisins, pour deux canaux :
+                //   nFull = silhouette COMPLÈTE → forme du bord (aucun trou personnage).
+                //   nVis  = VISIBILITÉ → 1 si au moins un prop bordant est visible.
+                float nFull = 0;
+                float nVis  = 0;
+                #define ACCUM(o) { float2 m = SampleMask(uv + (o)); nFull = max(nFull, m.r); nVis = max(nVis, m.g); }
+                ACCUM(float2( t.x, 0))
+                ACCUM(float2(-t.x, 0))
+                ACCUM(float2(0,  t.y))
+                ACCUM(float2(0, -t.y))
+                ACCUM(float2( t.x,  t.y))
+                ACCUM(float2(-t.x,  t.y))
+                ACCUM(float2( t.x, -t.y))
+                ACCUM(float2(-t.x, -t.y))
+                #undef ACCUM
 
-                float edge = saturate(n - center);
+                // Bord extérieur de la silhouette pleine, gardé UNIQUEMENT là où le prop
+                // bordant est visible → l'outline est coupé devant le personnage (G=0)
+                // sans jamais le contourer (la forme pleine n'a pas de trou).
+                float edge = saturate(nFull - center) * step(0.5, nVis);
 
                 // Couleur d'outline : soit plate (_OutlineColor), soit une bande
                 // lumineuse qui balaie la silhouette en diagonale pour attirer l'œil.
