@@ -219,6 +219,14 @@ public static class PropInteractionRouter {
     }
 
     public static void HandleBuyProp(NetworkConnectionToClient conn, C2S_BuyProp msg) {
+        // Magasin physique : un prop d'expo (ShopDisplay) crée une COPIE livrée à
+        // l'acheteur et reste en place — c'est le flux du phone shop, pas le transfert
+        // P2P. On branche ici avant de résoudre l'appartement vendeur (inexistant en City).
+        if (ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out var state) && state.IsShopDisplay) {
+            PropInteractionDispatcher.Instance?.BuyShopDisplay(conn, msg);
+            return;
+        }
+
         // The whole flow is async (REST: transfer ownership, create delivery, record
         // transaction, optionally credit an offline seller) → delegate to the dispatcher.
         PropInteractionDispatcher.Instance?.BuyProp(conn, msg);

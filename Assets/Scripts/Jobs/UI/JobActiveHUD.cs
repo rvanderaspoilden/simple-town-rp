@@ -19,19 +19,16 @@ namespace Sim.Jobs {
         [Header("Root (enfant à masquer/afficher, PAS ce GameObject)")]
         [SerializeField] private GameObject root;
 
-        [Header("Texts")]
+        [Header("Main Content")]
+        [SerializeField] private Image iconImage;
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text stepText;
-        [SerializeField] private TMP_Text targetText;
-        [SerializeField] private TMP_Text distanceText;
-        [Tooltip("Optional countdown label (mm:ss) of the remaining mission time. Hidden when the job has no expiration.")]
-        [SerializeField] private TMP_Text remainingTimeText;
 
-        [Header("Sort Progress")]
-        [Tooltip("Container (parent GO) à afficher/masquer quand un SortItemsStep est actif.")]
-        [SerializeField] private GameObject sortProgressRoot;
-        [Tooltip("Label 'X / Y colis' mis à jour à chaque dépôt.")]
-        [SerializeField] private TMP_Text sortProgressText;
+        [Header("Dynamic Progress Group")]
+        [Tooltip("The group containing the slider and/or text.")]
+        [SerializeField] private GameObject progressGroup;
+        [SerializeField] private Slider progressBar;
+        [SerializeField] private TMP_Text progressText;
 
         [Header("Buttons")]
         [SerializeField] private Button acceptButton;
@@ -41,6 +38,9 @@ namespace Sim.Jobs {
         [Tooltip("Intervalle de recalcul de la distance NavMesh (secondes).")]
         [SerializeField] private float distanceRefreshInterval = 0.25f;
 
+        private enum ProgressMode { None, Distance, Timer, Counter }
+        private ProgressMode _currentMode = ProgressMode.None;
+
         private string _currentInstanceId;
         private string _currentTargetId;
         private bool _subscribed;
@@ -48,7 +48,7 @@ namespace Sim.Jobs {
         private JobClientState _currentState;
 
         private void Awake() {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
 
             if (root == this.gameObject) {
@@ -92,19 +92,21 @@ namespace Sim.Jobs {
             if (msg.instanceId != _currentInstanceId) return;
 
             if (msg.finished) {
-                HideSortProgress();
+                _currentMode = ProgressMode.None;
+                UpdateProgressDisplay();
                 return;
             }
 
-            if (sortProgressRoot != null) sortProgressRoot.SetActive(true);
+            _currentMode = ProgressMode.Counter;
+            UpdateProgressDisplay();
 
-            if (sortProgressText != null)
-                sortProgressText.text = $"{msg.resolvedCount} / {msg.totalCount} colis";
-        }
+            if (progressBar != null) {
+                progressBar.maxValue = msg.totalCount;
+                progressBar.value = msg.resolvedCount;
+            }
 
-        private void HideSortProgress() {
-            if (sortProgressRoot != null) sortProgressRoot.SetActive(false);
-            if (sortProgressText  != null) sortProgressText.text = string.Empty;
+            if (progressText != null)
+                progressText.text = $"{msg.resolvedCount} / {msg.totalCount}";
         }
 
         private void OnJobOffered(JobClientState state) {
@@ -143,17 +145,30 @@ namespace Sim.Jobs {
                     : state.CurrentPromptKey;
             }
 
-            if (targetText != null) {
-                targetText.text = string.IsNullOrEmpty(state.CurrentTargetName)
-                    ? "—"
-                    : state.CurrentTargetName;
+            if (iconImage != null && state.Definition != null) {
+                iconImage.sprite = state.Definition.Icon;
+                iconImage.gameObject.SetActive(iconImage.sprite != null);
             }
 
             bool offered = state.Status == JobStatus.Offered;
             if (acceptButton != null) acceptButton.gameObject.SetActive(offered);
             if (abandonButton != null) abandonButton.gameObject.SetActive(!offered);
 
-            HideSortProgress();
+            // Determine mode
+            if (state.Definition != null && state.Definition.ExpirationSeconds > 0) {
+                _currentMode = ProgressMode.Timer;
+            } else if (state.Status == JobStatus.Active && !string.IsNullOrEmpty(_currentTargetId)) {
+                _currentMode = ProgressMode.Distance;
+            } else {
+                _currentMode = ProgressMode.None;
+            }
+
+            UpdateProgressDisplay();
+        }
+
+        private void UpdateProgressDisplay() {
+            if (progressGroup != null) progressGroup.SetActive(_currentMode != ProgressMode.None);
+            if (progressBar != null) progressBar.gameObject.SetActive(_currentMode == ProgressMode.Timer || _currentMode == ProgressMode.Counter);
         }
 
         private void Show(bool visible) {
@@ -163,45 +178,50 @@ namespace Sim.Jobs {
         private void Update() {
             if (root != null && !root.activeSelf) return;
 
-            RefreshRemainingTime();
-
-            if (distanceText == null) return;
-            if (Time.unscaledTime < _nextDistanceUpdate) return;
-            _nextDistanceUpdate = Time.unscaledTime + distanceRefreshInterval;
-            RefreshDistance();
+            if (_currentMode == ProgressMode.Timer) {
+                RefreshRemainingTime();
+            } else if (_currentMode == ProgressMode.Distance) {
+                if (Time.unscaledTime >= _nextDistanceUpdate) {
+                    _nextDistanceUpdate = Time.unscaledTime + distanceRefreshInterval;
+                    RefreshDistance();
+                }
+            }
         }
 
         private void RefreshRemainingTime() {
-            if (remainingTimeText == null) return;
             if (_currentState == null || _currentState.Status != JobStatus.Active || _currentState.Definition == null) {
-                remainingTimeText.text = string.Empty;
                 return;
             }
             float expiration = _currentState.Definition.ExpirationSeconds;
-            if (expiration <= 0f) {
-                remainingTimeText.text = string.Empty;
-                return;
-            }
+            if (expiration <= 0f) return;
+
             float localElapsed = Time.unscaledTime - _currentState.SyncedAtUnscaled;
             float remaining = Mathf.Max(0f, expiration - (_currentState.ElapsedSecondsAtSync + localElapsed));
-            int total = Mathf.CeilToInt(remaining);
-            int minutes = total / 60;
-            int seconds = total % 60;
-            remainingTimeText.text = $"{minutes:00}:{seconds:00}";
+            
+            if (progressBar != null) {
+                progressBar.maxValue = expiration;
+                progressBar.value = remaining;
+            }
+
+            if (progressText != null) {
+                int total = Mathf.CeilToInt(remaining);
+                int minutes = total / 60;
+                int seconds = total % 60;
+                progressText.text = $"{minutes:00}:{seconds:00}";
+            }
         }
 
         private void RefreshDistance() {
-            if (distanceText == null) return;
             if (string.IsNullOrEmpty(_currentTargetId) || PlayerController.Local == null) {
-                distanceText.text = string.Empty;
+                if (progressText != null) progressText.text = string.Empty;
                 return;
             }
             if (!JobPoint.ByPointId.TryGetValue(_currentTargetId, out var point) || point == null) {
-                distanceText.text = string.Empty;
+                if (progressText != null) progressText.text = string.Empty;
                 return;
             }
             float d = JobDistanceUtil.Compute(PlayerController.Local.transform.position, point.transform.position);
-            distanceText.text = JobDistanceUtil.FormatMeters(d);
+            if (progressText != null) progressText.text = JobDistanceUtil.FormatMeters(d);
         }
 
         private void OnAcceptClicked() {

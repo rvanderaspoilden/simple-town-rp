@@ -127,7 +127,24 @@ public class ServerPropManager {
             payload:  source.GetInitialState(),
             isScene:  true
         );
-        
+
+        // Magasin physique : un prop d'expo marqué ShopDisplay est toujours en vente
+        // au prix de son PropsConfig (remisé). On le marque ForSale ici pour que le
+        // billboard "À VENDRE {prix}" parte dans le snapshot de room (SendRoomSnapshot
+        // rejoue déjà BuildSaleMessage quand ForSale). OwnerCharId reste vide : tout
+        // le monde peut acheter, l'achat crée une copie sans toucher à l'expo.
+        ShopDisplay shopDisplay = source.GetComponent<ShopDisplay>();
+        if (shopDisplay != null && behaviour != null && behaviour.GetConfiguration() != null
+            && TryGetState(source.RoomId, source.PropId, out var scState)) {
+            int price = shopDisplay.EffectivePrice(behaviour.GetConfiguration().Price);
+            scState.IsShopDisplay = true;
+            scState.ForSale       = true;
+            scState.Price         = price;
+            scState.OwnerCharId   = "";
+            GameLogger.Network.Info("ShopDisplayRegistered {PropId} {RoomId} {PrefabId} {Price}",
+                source.PropId, source.RoomId, prefabId, price);
+        }
+
         GameLogger.Network.Debug("ScenePropRegistered {PropId} {RoomId} {PrefabId}", source.PropId, source.RoomId, prefabId);
     }
 

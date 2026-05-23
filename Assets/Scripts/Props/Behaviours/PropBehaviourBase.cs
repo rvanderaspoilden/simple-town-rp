@@ -34,6 +34,10 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
     private bool _isBuilt = true;
 
+    // Magasin physique : prop d'expo (City) avec un composant ShopDisplay. Mis en
+    // cache au Awake pour injecter l'action BUY sans check de propriété.
+    private bool _isShopDisplay;
+
     protected int PropId => _identity.PropId;
 
     /// <summary>
@@ -99,6 +103,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     {
         _identity = GetComponent<PropIdentity>();
         _renderer = GetComponent<PropsRenderer>();
+        _isShopDisplay = GetComponent<ShopDisplay>() != null;
         SetupActions();
     }
 
@@ -188,6 +193,15 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
     public virtual Action[] GetActions(bool withPriority = false)
     {
+        // Magasin physique : un prop d'expo ne propose QUE l'action BUY (clic droit).
+        // On court-circuite les actions du config (LOOK, etc.) — l'autorité reste serveur.
+        if (_isShopDisplay)
+        {
+            return (_isBuilt && _forSale && !withPriority && _actBuy != null)
+                ? new[] { _actBuy }
+                : System.Array.Empty<Action>();
+        }
+
         Action[] acts = _isBuilt ? _builtActions : _unbuiltActions;
         acts ??= System.Array.Empty<Action>();
 

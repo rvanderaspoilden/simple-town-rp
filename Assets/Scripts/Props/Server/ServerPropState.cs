@@ -26,6 +26,11 @@ public class ServerPropState {
     public int    Price;
     public string OwnerCharId;   // apartment tenant — lets clients hide BUY from the owner
 
+    // Magasin physique : prop d'exposition (City) marqué ShopDisplay. L'achat crée
+    // une COPIE livrée à l'acheteur au lieu de transférer ce prop — l'expo reste en
+    // place (stock infini). Distingue le flux shop du flux de vente P2P côté serveur.
+    public bool   IsShopDisplay;
+
     // Reservation is transient (in-memory only) — it just guards the async buy
     // window against simultaneous buyers. Not persisted.
     public string ReservedByCharId;   // null = not reserved

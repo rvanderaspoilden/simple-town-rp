@@ -552,17 +552,10 @@ public class SimpleTownNetwork : NetworkManager
             yield break;
         }
 
-        CreatePropBody body = new CreatePropBody {
-            placeId     = transitId,
-            configId    = request.propsConfigId,
-            ownedBy     = request.recipientId,
-            builtBy     = request.recipientId,
-            presetIndex = request.propsPresetId,
-            position    = null,                              // in transit → no physical placement
-            rotation    = null,
-            // isBuilt is left to the backend default (true); the build-mode flow
-            // will adjust it via PATCH at placement time for "toBuild" prop configs.
-        };
+        // isBuilt is left to the backend default (true); the build-mode flow
+        // will adjust it via PATCH at placement time for "toBuild" prop configs.
+        CreatePropBody body = ShopPurchaseHelper.BuildTransitPropBody(
+            transitId, request.propsConfigId, request.recipientId, request.propsPresetId);
 
         // Cover deliveries (paint buckets) carry their paint config + color — bake
         // those into state_data so the bucket prop is fully specified at buy.

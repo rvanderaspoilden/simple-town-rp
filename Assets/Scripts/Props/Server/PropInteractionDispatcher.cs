@@ -571,6 +571,101 @@ public class PropInteractionDispatcher : MonoBehaviour {
         Debug.Log($"[Buy] Prop {propUuid} sold: seller={sellerCharId} buyer={buyerCharId} price={price}");
     }
 
+    // ── Buy (magasin physique — copie, l'expo reste) ──────────────────────────
+
+    public void BuyShopDisplay(NetworkConnectionToClient conn, C2S_BuyProp msg) {
+        StartCoroutine(BuyShopDisplayCoroutine(conn, msg));
+    }
+
+    /// <summary>
+    /// Achat d'un prop d'exposition d'un magasin physique : on crée une COPIE livrée
+    /// à l'acheteur (flux phone shop : POST /props transit + POST /deliveries + ledger)
+    /// et le prop d'expo reste en place (stock infini). Pas de réservation ni de transfert.
+    /// </summary>
+    private IEnumerator BuyShopDisplayCoroutine(NetworkConnectionToClient conn, C2S_BuyProp msg) {
+        // Acheteur.
+        PlayerController buyer = conn.identity != null ? conn.identity.GetComponent<PlayerController>() : null;
+        string buyerCharId = buyer?.CharacterData?.Id;
+        if (buyer == null || string.IsNullOrEmpty(buyerCharId)) {
+            SendBuyResult(conn, msg.PropId, false, 4);
+            yield break;
+        }
+
+        // Le prop d'expo doit exister, être un ShopDisplay et en vente.
+        if (!ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out var state)
+            || !state.IsShopDisplay || !state.ForSale) {
+            SendBuyResult(conn, msg.PropId, false, 1);
+            yield break;
+        }
+
+        int    price    = state.Price;            // déjà remisé à l'enregistrement
+        int    configId = state.PrefabId;
+        int    presetId = PropStateHeader.ReadFrom(state.Payload).PresetId;
+        string propName = DatabaseManager.GetPropsById(configId)?.GetDisplayName();
+        if (string.IsNullOrEmpty(propName)) propName = "l'objet";
+
+        // Fonds.
+        PlayerBankAccount buyerBank = conn.identity.GetComponent<PlayerBankAccount>();
+        if (price > 0 && (buyerBank == null || buyerBank.Money < price)) {
+            SendToast(conn, $"Fonds insuffisants pour acheter {propName} ({price}).");
+            SendBuyResult(conn, msg.PropId, false, 2);
+            yield break;
+        }
+
+        // 1. Matérialiser une COPIE en transit, possédée par l'acheteur.
+        string transitId = ApiManager.Instance.TransitPlaceId;
+        if (string.IsNullOrEmpty(transitId)) {
+            Debug.LogWarning("[ShopBuy] transit place not ready");
+            SendBuyResult(conn, msg.PropId, false, 4);
+            yield break;
+        }
+        CreatePropBody body = ShopPurchaseHelper.BuildTransitPropBody(transitId, configId, buyerCharId, presetId);
+        UnityWebRequest createReq = ApiManager.Instance.CreatePropRequest(body);
+        yield return createReq.SendWebRequest();
+        if (createReq.responseCode != 200 && createReq.responseCode != 201) {
+            Debug.LogWarning($"[ShopBuy] POST /props failed ({createReq.responseCode}) {createReq.downloadHandler?.text}");
+            SendBuyResult(conn, msg.PropId, false, 4);
+            yield break;
+        }
+        string propUuid = null;
+        try {
+            PropJson created = JsonConvert.DeserializeObject<PropJson>(createReq.downloadHandler.text);
+            propUuid = created?.Id;
+        } catch { /* propUuid null toléré : la livraison sera créée sans lien */ }
+
+        // 2. Générer la livraison vers l'acheteur (le build flow PATCHera la copie en place).
+        CreateDeliveryRequest deliveryReq = new CreateDeliveryRequest {
+            recipientId   = buyerCharId,
+            type          = DeliveryType.PROPS,
+            propsConfigId = configId,
+            propsPresetId = presetId,
+            paintConfigId = -1,
+            color         = System.Array.Empty<float>(),
+            propId        = propUuid,
+        };
+        UnityWebRequest delReq = ApiManager.Instance.CreateDeliveryRequest(deliveryReq);
+        yield return delReq.SendWebRequest();
+        if (delReq.responseCode != 200 && delReq.responseCode != 201) {
+            Debug.LogWarning($"[ShopBuy] POST /deliveries failed ({delReq.responseCode}) — prop {propUuid} possédé en transit sans livraison");
+        }
+
+        // 3. Débit acheteur (counterparty = SHOP) — même chokepoint que le phone shop.
+        if (buyerBank != null)
+            buyerBank.PostLedger(-price, LedgerReason.ShopPurchase, LedgerCounterparty.System,
+                LedgerCounterparty.Shop, configId: configId);
+
+        // 4. L'expo reste en place : aucune réservation, aucun RemoveProp.
+        SendBuyResult(conn, msg.PropId, true, 0);
+        SendToast(conn, price > 0 ? $"Tu as acheté {propName} pour {price}." : $"Tu as reçu {propName}.");
+
+        // 5. Rafraîchir la delivery box de l'acheteur si son appart est chargé.
+        if (ServerApartmentRegistry.Instance.TryGetByTenant(buyerCharId, out ApartmentController buyerApt)
+            && buyerApt.DeliveryBoxPropId > 0)
+            RefreshDeliveryBoxCount(buyerApt.DeliveryBoxPropId, buyerApt.RoomId, buyerCharId);
+
+        Debug.Log($"[ShopBuy] Copie créée prop={propUuid} config={configId} buyer={buyerCharId} price={price}");
+    }
+
     private static void SendBuyResult(NetworkConnectionToClient conn, int propId, bool success, byte reason) {
         if (conn != null && conn.isReady)
             conn.Send(new S2C_BuyPropResult { PropId = propId, Success = success, ReasonCode = reason });
