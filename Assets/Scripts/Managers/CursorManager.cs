@@ -125,6 +125,11 @@ namespace Sim {
             PropBehaviourBase behaviour = hit.collider.GetComponentInParent<PropBehaviourBase>();
 
             if (behaviour != null) {
+                // Magasin physique : pas de curseur custom sur les props d'expo → curseur par défaut.
+                if (behaviour.IsShopDisplay) {
+                    this.SetCursor(null);
+                    return true;
+                }
                 PropsConfig cfg = behaviour.GetConfiguration();
                 this.SetCursor(behaviour.IsBuilt() ? cfg?.GetCursor() : this.buildCursor);
                 return true;

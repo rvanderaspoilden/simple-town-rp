@@ -38,6 +38,9 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     // cache au Awake pour injecter l'action BUY sans check de propriété.
     private bool _isShopDisplay;
 
+    /// <summary>True si ce prop est un article d'exposition d'un magasin physique (composant ShopDisplay).</summary>
+    public bool IsShopDisplay => _isShopDisplay;
+
     protected int PropId => _identity.PropId;
 
     /// <summary>
@@ -93,6 +96,25 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     // in SetupActions and subscribed to DoAction like the config actions.
     private Action _actListForSale, _actUnlist, _actBuy;
 
+    // Generic owner actions (BUILD / MOVE / SELL) injected dynamically — same idea as
+    // the sale actions, so they no longer have to be hand-added to every PropsConfig.
+    // Visible only to the prop owner (IsOwnedByLocal). Per-instance copies wired to DoAction.
+    private Action _actBuild, _actMove, _actSell;
+
+    // Shared Action "prototypes" loaded once from Resources (assets live under
+    // Assets/Resources/Configurations/Actions/). Instantiated per prop instance.
+    private static Action _protoBuild, _protoMove, _protoSell;
+    private static bool   _genericProtosLoaded;
+
+    private static void LoadGenericActionPrototypes()
+    {
+        if (_genericProtosLoaded) return;
+        _protoBuild = Resources.Load<Action>("Configurations/Actions/BUILD");
+        _protoMove  = Resources.Load<Action>("Configurations/Actions/MOVE");
+        _protoSell  = Resources.Load<Action>("Configurations/Actions/SELL");
+        _genericProtosLoaded = true;
+    }
+
     public int DefaultPresetId => defaultPresetId;
 
     public void SetDefaultPresetId(int id) { defaultPresetId = id; }
@@ -117,6 +139,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         UnsubscribeActions(_builtActions);
         UnsubscribeActions(_unbuiltActions);
         UnsubscribeActions(new[] { _actListForSale, _actUnlist, _actBuy });
+        UnsubscribeActions(new[] { _actBuild, _actMove, _actSell });
     }
 
     // ── IPropBehaviour ────────────────────────────────────────────────────────
@@ -224,6 +247,13 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         if (_isBuilt && IsSellableApartmentProp())
             result = result.Concat(GetSaleActions(withPriority));
 
+        // Inject generic owner actions (BUILD / MOVE / SELL). Single rule: the local
+        // player must own the prop → excludes City / shop / unowned props automatically.
+        //   BUILD : non-built state only, gated on the toBuild flag (action primaire, clic gauche ok)
+        //   MOVE + SELL : built state only, clic droit (cohérent avec le filtre withPriority)
+        if (IsOwnedByLocal)
+            result = result.Concat(GetGenericOwnerActions(withPriority));
+
         return result.ToArray();
     }
 
@@ -259,6 +289,27 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         {
             if (_actListForSale != null) yield return _actListForSale;
         }
+    }
+
+    /// <summary>
+    /// Generic owner actions injected without any PropsConfig entry. Caller already
+    /// checked IsOwnedByLocal.
+    ///   non-built + toBuild → BUILD (also offered on left-click, it's the primary act);
+    ///   built               → MOVE + SELL (right-click only, like the sale actions).
+    /// </summary>
+    private IEnumerable<Action> GetGenericOwnerActions(bool withPriority)
+    {
+        if (!_isBuilt)
+        {
+            if (configuration != null && configuration.MustBeBuilt() && _actBuild != null)
+                yield return _actBuild;
+            yield break;
+        }
+
+        if (withPriority) yield break; // MOVE/SELL are deliberate right-click acts
+
+        if (_actMove != null) yield return _actMove;
+        if (_actSell != null) yield return _actSell;
     }
 
     public virtual void StopInteraction()
@@ -387,6 +438,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         foreach (var a in _unbuiltActions) a.OnExecute += DoAction;
 
         SetupSaleActions();
+        SetupGenericActions();
     }
 
     /// <summary>
@@ -401,6 +453,19 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         _actListForSale = InstantiateSaleAction(cfg.listForSale);
         _actUnlist      = InstantiateSaleAction(cfg.unlist);
         _actBuy         = InstantiateSaleAction(cfg.buy);
+    }
+
+    /// <summary>
+    /// Instantiates per-instance copies of the generic owner Actions (BUILD/MOVE/SELL)
+    /// and wires them to DoAction. They're injected in GetActions, not stored in any
+    /// PropsConfig. No-op for actions whose Resources asset is missing.
+    /// </summary>
+    private void SetupGenericActions()
+    {
+        LoadGenericActionPrototypes();
+        _actBuild = InstantiateSaleAction(_protoBuild);
+        _actMove  = InstantiateSaleAction(_protoMove);
+        _actSell  = InstantiateSaleAction(_protoSell);
     }
 
     private Action InstantiateSaleAction(Action source)

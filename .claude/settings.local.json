@@ -85,7 +85,10 @@
       "mcp__ai-game-developer__editor-application-get-state",
       "Bash(npm run *)",
       "Bash(echo \"EXIT=$?\")",
-      "mcp__ai-game-developer__console-clear-logs"
+      "mcp__ai-game-developer__console-clear-logs",
+      "Bash(xargs -0 sed -i -e /311933ce8dd17294ab54f062123cb09b/d -e /3e1f7b140e8e1c5419783ee5a990b41d/d -e /47c6a5d5aa9e25b459b00e437d4ebca1/d)",
+      "Bash(ls -1 Assets/Scripts/Props/Editor/)",
+      "Bash(ls Assets/Scripts/Props/Editor/*.asmdef)"
     ]
   },
   "enableAllProjectMcpServers": true,
