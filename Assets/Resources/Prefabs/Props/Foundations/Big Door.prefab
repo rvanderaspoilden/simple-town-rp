@@ -195,6 +195,7 @@ GameObject:
   - component: {fileID: 975819828688044169}
   - component: {fileID: 6978581883802052402}
   - component: {fileID: 4828494440327246209}
+  - component: {fileID: 4303856900811287426}
   m_Layer: 2
   m_Name: Big Door
   m_TagString: Untagged
@@ -257,6 +258,10 @@ MonoBehaviour:
   audioSource: {fileID: 2836253158400630825}
   openClip: {fileID: 8300000, guid: 4f8aa9e57a7a5ed4295faa1a774724d0, type: 3}
   closeClip: {fileID: 8300000, guid: 952e8d12e090ef744a71c6f912f460d0, type: 3}
+  lockClip: {fileID: 0}
+  unlockClip: {fileID: 0}
+  ringClip: {fileID: 0}
+  roofRevealTrigger: {fileID: 0}
 --- !u!114 &975819828688044169
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -305,6 +310,27 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 143.06764, y: 148.1347, z: 203.00867}
   m_Center: {x: -128.1984, y: -4.227207, z: -101.835075}
+--- !u!114 &4303856900811287426
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7270386787659575197}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Building.PropsRenderer
+  renderersToModify:
+  - {fileID: 8261327056860142918}
+  - {fileID: 5994037820949162554}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
+  hideable: 1
+  interactWithCameraDistance: 0
+  foundationObj: {fileID: 0}
 --- !u!1 &8023061869970411827
 GameObject:
   m_ObjectHideFlags: 0

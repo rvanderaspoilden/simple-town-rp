@@ -13,6 +13,10 @@ GameObject:
   - component: {fileID: 2378722334674362451}
   - component: {fileID: 3580289154145731703}
   - component: {fileID: 6422665031599048609}
+  - component: {fileID: 6451210880050551966}
+  - component: {fileID: 4822982493121651359}
+  - component: {fileID: 6333738564570004324}
+  - component: {fileID: 1031948647078431196}
   m_Layer: 0
   m_Name: trash
   m_TagString: Untagged
@@ -129,3 +133,63 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.39000002, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &6451210880050551966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1170379416308905757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &4822982493121651359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1170379416308905757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
+--- !u!114 &6333738564570004324
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1170379416308905757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
+  configuration: {fileID: 0}
+  defaultPresetId: -1
+--- !u!114 &1031948647078431196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1170379416308905757}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Building.PropsRenderer
+  renderersToModify:
+  - {fileID: 2378722334674362451}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
+  hideable: 1
+  interactWithCameraDistance: 0
+  foundationObj: {fileID: 0}

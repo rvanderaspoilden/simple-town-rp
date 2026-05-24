@@ -219,6 +219,7 @@ GameObject:
   - component: {fileID: 3882929773458843960}
   - component: {fileID: 4048183342026063404}
   - component: {fileID: 8472205236437133146}
+  - component: {fileID: 6861858789462821613}
   m_Layer: 10
   m_Name: Front Door
   m_TagString: Untagged
@@ -347,6 +348,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoofRevealTrigger
   targetRoof: {fileID: 0}
   gateOpen: 1
+--- !u!114 &6861858789462821613
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2833636661058039448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Building.PropsRenderer
+  renderersToModify:
+  - {fileID: 5961911287069129278}
+  - {fileID: 322291302365957247}
+  - {fileID: 2756158921833503131}
+  - {fileID: 397727228306799723}
+  primaryStyleMeshRenderers: []
+  secondaryStyleMeshRenderers: []
+  tertiaryStyleMeshRenderers: []
+  hideable: 1
+  interactWithCameraDistance: 0
+  foundationObj: {fileID: 0}
 --- !u!1 &4005046755810259179
 GameObject:
   m_ObjectHideFlags: 0

@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 158653375197822347}
   - component: {fileID: 8346880411121705338}
   - component: {fileID: 9183628207398814159}
+  - component: {fileID: 7292990971553424517}
   m_Layer: 10
   m_Name: Photo_frame
   m_TagString: Untagged
@@ -233,6 +234,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
   configuration: {fileID: 11400000, guid: a21fd06878382e04f8d11893703996a2, type: 2}
   defaultPresetId: -1
+--- !u!114 &7292990971553424517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1642919910190817879}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
 --- !u!1 &3984352727748727481
 GameObject:
   m_ObjectHideFlags: 0
