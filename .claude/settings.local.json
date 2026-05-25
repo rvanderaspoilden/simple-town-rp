@@ -98,7 +98,11 @@
       "mcp__ai-game-developer__assets-prefab-close",
       "mcp__ai-game-developer__assets-prefab-create",
       "mcp__ai-game-developer__gameobject-destroy",
-      "Bash(node -e \"const s=require\\('./package.json'\\).scripts||{};for\\(const k in s\\)console.log\\(k+': '+s[k]\\)\")"
+      "Bash(node -e \"const s=require\\('./package.json'\\).scripts||{};for\\(const k in s\\)console.log\\(k+': '+s[k]\\)\")",
+      "mcp__ai-game-developer__gameobject-set-parent",
+      "mcp__ai-game-developer__scene-unload",
+      "mcp__ai-game-developer__assets-move",
+      "mcp__ai-game-developer__assets-delete"
     ]
   },
   "enableAllProjectMcpServers": true,

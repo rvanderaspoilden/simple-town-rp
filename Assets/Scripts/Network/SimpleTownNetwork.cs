@@ -49,6 +49,20 @@ public class SimpleTownNetwork : NetworkManager
 
     public City CityData => cityData;
 
+#if UNITY_EDITOR
+    /// <summary>
+    /// Dev-only: force one of the hardcoded accounts so OnClientConnect auto-sends the
+    /// CreateCharacterMessage without going through the Main Menu login. Used by DevQuickPlay
+    /// to launch + auto-connect from any scene. Editor-only — never shipped in builds.
+    /// </summary>
+    /// <param name="spectus">true → Spectus, false → Elbloody.</param>
+    public void EditorSetDevAccount(bool spectus)
+    {
+        useSpectusAccount  = spectus;
+        useElbloodyAccount = !spectus;
+    }
+#endif
+
     /// <summary>
     /// User IDs whose SetupCharacterCoroutine is in flight (player GO not yet
     /// added to a NetworkConnection). Used together with NetworkServer.connections
