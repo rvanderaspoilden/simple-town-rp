@@ -1,6 +1,6 @@
 # PERSISTENCE.md — Relational Migration & Target Architecture
 
-> Last updated: 2026-05-14 — Career salary column + user_settings table.
+> Last updated: 2026-05-25 — Item persistence (§6d): world-persistent items (`toPersist`) for debris/waste.
 
 This doc is the single source of truth for **how gameplay state is persisted**.
 It covers the legacy JSONB blob, the target relational schema, the migration
@@ -479,6 +479,60 @@ CREATE TABLE user_settings (
 
 ---
 
+## 6d. Item persistence (items table)
+
+Items are the **stackable / fungible** counterpart to props (wood, food, consumables,
+job packages, debris…). Migrations: `07_items.sql` (table) + `19_items_world_position.sql`
+(world `position`/`rotation`). Like props, items use a runtime `entityId` ↔ DB `UUID`
+bridge (`ServerItemManager.ItemDbBridge`) and optimistic locking (`version`).
+
+### Two modes
+
+1. **Inventory items** (original model) — live **inside a `place`** (hand, pocket,
+   chest, transit). `position`/`rotation` are **NULL**. Stack-aware (`quantity`,
+   merge via `upsert`). Restored on room entry from the hand places.
+2. **Persistent world items** (migration 19) — lie on the ground with a world
+   `position`/`rotation`, attached to the **room's place** (apartment = `homes.id`).
+   They **survive a server restart**. First use: **debris** left by a destroyed prop
+   (DESTROY action). Planned: city litter for the cleaner job.
+
+> **Ephemeral vs persisted**: items spawned/dropped on the map *without* a DB row are
+> runtime-only (`ServerItemManager`), lost on restart. Only rows in `items` persist.
+> **Discriminator**: `position != null` ⇒ world item, re-spawned at its coords on load;
+> `position == null` ⇒ inventory item.
+
+### Eligibility flag — `ItemConfig.ToPersist` (Unity-side)
+
+Whether an item *type* may be persisted in the world is a **Unity config flag**,
+`ItemConfig.toPersist` — there is **no flag in the DB** (the DB only stores
+`position`/`rotation`). A world spawn persists iff the config is `ToPersist` **AND** a
+`placeId` is supplied. Gameplay concepts like **"Déchet"** (cleaner-job target) sit on
+top of this and are **decoupled** from the persistence mechanism.
+
+### Flows (`ServerItemManager`)
+
+| Action | Path |
+|---|---|
+| Spawn persistent world item | `SpawnPersistentWorldItem(roomId, placeId, configId, pos, rot, owner)` → `POST /items { placeId, configId, position, rotation, ownedBy }` → bridge. No-op-persist (ephemeral) if `!config.ToPersist`. |
+| Load on room hydrate | `ApartmentController.InstantiateLevelFromPlaceState` step 5 → `SpawnPersistentWorldFromDb(...)` for each `state.items` with `position != null` (re-bridge, **no POST**). |
+| Pickup a world item | `HandlePickup`: a **bridged** entity (a collected world item) → `DELETE /items/:id` + clear bridge → becomes ephemeral in hand. |
+| Inventory pickup / drop / move | `POST /items/upsert` (stack-aware) / `DELETE /items/:id` / `PATCH /items/:id { placeId }` — unchanged. |
+
+### Endpoints (`ItemController`, `/items`)
+
+| Route | Purpose |
+|---|---|
+| `POST /items` | `CreateItemDto` — insert a new row, **no merge** (used for world items, carries `position`/`rotation`) |
+| `POST /items/upsert` | `UpsertItemDto` — stack-aware merge into a place |
+| `PATCH /items/:id` | `UpdateItemDto` (`expectedVersion`) — move / modify (e.g. change `place_id`) |
+| `DELETE /items/:id` | destroy the stack (drop / consume / collect) |
+| `GET /items?placeId=…&ownedBy=…` | list; `items[]` is also returned by `GET /places/:id/state` |
+
+Single-writer rule: the Unity server is the only writer, which is what makes the
+non-transactional `upsert` race-safe (same assumption as props).
+
+---
+
 ## 7. What's left
 
 ### Phase 2 follow-ups (before Phase 3)
@@ -540,6 +594,10 @@ See §4 above.
 | `src/shared/services/character.service.ts` | `updateCurrentJob` + `mapRow`/`update` -1↔NULL sentinel |
 | `src/shared/services/place.service.ts` | Place CRUD, idempotent findOrCreate |
 | `src/shared/services/prop.service.ts` | Prop CRUD with optimistic locking |
+| `migrations/07_items.sql` | `items` table (stackable, place-bound) |
+| `migrations/19_items_world_position.sql` | `items.position`/`rotation` JSONB — world-persistent items |
+| `src/shared/services/item.service.ts` | Item CRUD + stack-aware `upsert` (handles `position`/`rotation`) |
+| `src/item/` | Item module (controller, model, create/update/upsert DTOs) |
 | `src/shared/services/cover.service.ts` | Cover bulk upsert |
 | `src/place/dto/*.ts` | DTOs with class-validator decorators |
 | `src/shared/services/home.service.ts` | `assignApartment` ensures `places` row |
@@ -557,7 +615,9 @@ See §4 above.
 | `Props/Server/ServerPropManager.cs` | `PropDbBridge` map + `AssociateUuid` / `GetBridge` / `UpdateVersion` / `FindPropIdByUuid` |
 | `Props/Server/PropInteractionDispatcher.cs` | `SyncPropTransform`, `SyncPropState`, `SyncPropBuilt`, `SyncPropRemove`, `SyncCovers`, `BuildPropCoroutine` (UUID extraction + PATCH) |
 | `Props/Server/PropInteractionRouter.cs` | Dual-write wiring (calls sync helpers + `apt.Save()`) |
-| `Managers/ApartmentController.cs` | `LoadPlaceStateOrFallback`, `InstantiateLevelFromPlaceState`, `PlaceStateIsHydrated`, `RestoreFrontDoorFromPlaceEntry`, `SpawnInnerDoorsFromPreset`, `SpawnLightsFromPreset`, `SpawnDeliveryBoxFromPreset` |
+| `Managers/ApartmentController.cs` | `LoadPlaceStateOrFallback`, `InstantiateLevelFromPlaceState` (step 5 loads persistent world items), `PlaceStateIsHydrated`, `RestoreFrontDoorFromPlaceEntry`, `SpawnInnerDoorsFromPreset`, `SpawnLightsFromPreset`, `SpawnDeliveryBoxFromPreset` |
+| `Items/Server/ServerItemManager.cs` | Item runtime store + `ItemDbBridge`; `SpawnPersistentWorldItem` / `SpawnPersistentWorldFromDb`, pickup deletes bridged world items |
+| `Scriptables/ItemConfig.cs` | `toPersist` flag (world-persistence eligibility) |
 | `Entities/CharacterData.cs` | `currentJob` (int, -1 = unemployed) + `List<CharacterJobData> jobs` + helpers |
 | `Entities/CharacterJobData.cs` | Mirror of `character_jobs` row |
 | `Entities/Responses/CharacterJobResponse.cs` | JsonUtility-friendly wrapper for `GET /character-jobs/by-character/:id` |

@@ -16,6 +16,9 @@ using UnityEngine;
 ///   2. Écrire un HandleXxx() ou déléguer au dispatcher
 /// </summary>
 public static class PropInteractionRouter {
+    /// <summary>ItemConfig id of the debris item spawned when a prop is destroyed.</summary>
+    private const int DebrisItemConfigId = 100;
+
     public static void Route(NetworkConnectionToClient conn, C2S_PropInteraction msg) {
         switch (msg.Type) {
             case PropType.Generic:      HandleGeneric     (conn, msg); break;
@@ -177,6 +180,41 @@ public static class PropInteractionRouter {
         // the UUID bridge from ServerPropManager, which RemoveProp clears.
         PropInteractionDispatcher.Instance?.SyncPropRemove(msg.PropId);
         ServerPropManager.Instance.RemoveProp(apt.RoomId, msg.PropId);
+    }
+
+    /// <summary>
+    /// Destruction définitive d'un prop construit. Comme RemoveProp (DELETE en base +
+    /// retrait runtime), mais laisse un item de débris à l'emplacement du prop.
+    /// </summary>
+    public static void HandleDestroyProp(NetworkConnectionToClient conn, C2S_DestroyProp msg) {
+        ApartmentController apt = FindApartmentByConn(conn);
+        if (apt == null) return;
+        if (!apt.OwnsProp(msg.PropId)) {
+            Debug.LogWarning($"[PropInteractionRouter] DestroyProp denied: prop {msg.PropId} not owned by tenant {apt.TenantId}");
+            return;
+        }
+
+        // 1. Capture la position/rotation AVANT de retirer le prop du runtime.
+        GameObject go  = ServerPropManager.Instance.GetSpawnedGameObject(msg.PropId);
+        Vector3    pos = go != null ? go.transform.position : Vector3.zero;
+        Quaternion rot = go != null ? go.transform.rotation : Quaternion.identity;
+
+        // 2. DELETE en base (avant le wipe runtime : le dispatcher lit le bridge UUID).
+        PropInteractionDispatcher.Instance?.SyncPropRemove(msg.PropId);
+
+        // 3. Retrait runtime + broadcast S2C_DestroyProp aux clients de la pièce.
+        ServerPropManager.Instance.RemoveProp(apt.RoomId, msg.PropId);
+
+        // 4. Laisse un débris (item persistant) à la place. Persistant si l'appart a une
+        //    place DB et que la config est ToPersist (survit au redémarrage → force le
+        //    nettoyage) ; sinon éphémère en repli.
+        if (go != null) {
+            string placeId = apt.HomeData?.Id;
+            if (!string.IsNullOrEmpty(placeId))
+                ServerItemManager.Instance.SpawnPersistentWorldItem(apt.RoomId, placeId, DebrisItemConfigId, pos, rot, apt.TenantId);
+            else
+                ServerItemManager.Instance.SpawnItem(apt.RoomId, DebrisItemConfigId, pos, rot);
+        }
     }
 
     // ── Sale: list / unlist / buy (player-to-player) ──────────────────────────

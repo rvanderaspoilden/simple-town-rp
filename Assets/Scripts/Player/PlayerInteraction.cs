@@ -28,7 +28,6 @@ namespace Sim {
             BuildManager.OnValidatePropEdit          += OnValidatePropEdit;
             BuildManager.OnValidatePaintModification += OnValidatePaintModification;
             PropBehaviourBase.OnMoveRequest          += OnMoveRequest;
-            PropBehaviourBase.OnSellRequest          += OnSellRequest;
             PropBehaviourBase.OnUnlistRequest        += OnUnlistRequest;
             PaintBucketBehaviour.OnOpened            += OpenBucket;
             DeliveryBoxBehaviour.OnOpened            += OnDeliveryBoxOpened;
@@ -49,7 +48,6 @@ namespace Sim {
                 BuildManager.OnValidatePropEdit          -= OnValidatePropEdit;
                 BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
                 PropBehaviourBase.OnMoveRequest          -= OnMoveRequest;
-                PropBehaviourBase.OnSellRequest          -= OnSellRequest;
                 PropBehaviourBase.OnUnlistRequest        -= OnUnlistRequest;
                 PaintBucketBehaviour.OnOpened            -= OpenBucket;
                 DeliveryBoxBehaviour.OnOpened            -= OnDeliveryBoxOpened;
@@ -63,13 +61,6 @@ namespace Sim {
         private void OnMoveRequest(PropBehaviourBase behaviour) {
             this.player.SetState(StateType.MOVING_PROPS);
             BuildManager.Instance.Edit(behaviour);
-        }
-
-        private void OnSellRequest(PropBehaviourBase behaviour) {
-            // New system: prop has propId/roomId on its PropIdentity
-            PropIdentity id = behaviour.GetComponent<PropIdentity>();
-            if (id == null || id.PropId <= 0) return;
-            NetworkClient.Send(new C2S_RemoveProp { RoomId = id.RoomId, PropId = id.PropId });
         }
 
         private void OnUnlistRequest(PropBehaviourBase behaviour) {

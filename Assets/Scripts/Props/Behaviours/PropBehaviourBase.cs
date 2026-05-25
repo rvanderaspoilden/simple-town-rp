@@ -44,10 +44,10 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     protected int PropId => _identity.PropId;
 
     /// <summary>
-    /// Fired when the local player triggers a SELL action on a new-system prop.
-    /// PlayerInteraction subscribes and sends C2S_RemoveProp.
+    /// Fired when the owner triggers DESTROY on a built toBuild prop. The confirmation
+    /// dialog (DestroyConfirmUI) subscribes, asks for confirmation, then sends C2S_DestroyProp.
     /// </summary>
-    public static event System.Action<PropBehaviourBase> OnSellRequest;
+    public static event System.Action<PropBehaviourBase> OnDestroyRequest;
 
     /// <summary>
     /// Fired when the local player triggers a MOVE action on a new-system prop.
@@ -96,22 +96,24 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     // in SetupActions and subscribed to DoAction like the config actions.
     private Action _actListForSale, _actUnlist, _actBuy;
 
-    // Generic owner actions (BUILD / MOVE / SELL) injected dynamically — same idea as
+    // Generic owner actions (BUILD / MOVE / DESTROY) injected dynamically — same idea as
     // the sale actions, so they no longer have to be hand-added to every PropsConfig.
     // Visible only to the prop owner (IsOwnedByLocal). Per-instance copies wired to DoAction.
-    private Action _actBuild, _actMove, _actSell;
+    // NB: selling is handled exclusively by the P2P LIST_FOR_SALE flow (GetSaleActions),
+    // which is gated on PropsConfig.IsSellable(); there is no generic "sell/remove" action.
+    private Action _actBuild, _actMove, _actDestroy;
 
     // Shared Action "prototypes" loaded once from Resources (assets live under
     // Assets/Resources/Configurations/Actions/). Instantiated per prop instance.
-    private static Action _protoBuild, _protoMove, _protoSell;
+    private static Action _protoBuild, _protoMove, _protoDestroy;
     private static bool   _genericProtosLoaded;
 
     private static void LoadGenericActionPrototypes()
     {
         if (_genericProtosLoaded) return;
-        _protoBuild = Resources.Load<Action>("Configurations/Actions/BUILD");
-        _protoMove  = Resources.Load<Action>("Configurations/Actions/MOVE");
-        _protoSell  = Resources.Load<Action>("Configurations/Actions/SELL");
+        _protoBuild   = Resources.Load<Action>("Configurations/Actions/BUILD");
+        _protoMove    = Resources.Load<Action>("Configurations/Actions/MOVE");
+        _protoDestroy = Resources.Load<Action>("Configurations/Actions/DESTROY");
         _genericProtosLoaded = true;
     }
 
@@ -139,7 +141,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         UnsubscribeActions(_builtActions);
         UnsubscribeActions(_unbuiltActions);
         UnsubscribeActions(new[] { _actListForSale, _actUnlist, _actBuy });
-        UnsubscribeActions(new[] { _actBuild, _actMove, _actSell });
+        UnsubscribeActions(new[] { _actBuild, _actMove, _actDestroy });
     }
 
     // ── IPropBehaviour ────────────────────────────────────────────────────────
@@ -295,7 +297,8 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     /// Generic owner actions injected without any PropsConfig entry. Caller already
     /// checked IsOwnedByLocal.
     ///   non-built + toBuild → BUILD (also offered on left-click, it's the primary act);
-    ///   built               → MOVE + SELL (right-click only, like the sale actions).
+    ///   built               → MOVE + DESTROY (right-click only, like the sale actions).
+    /// Selling is NOT here — it's the P2P LIST_FOR_SALE flow, gated on IsSellable().
     /// </summary>
     private IEnumerable<Action> GetGenericOwnerActions(bool withPriority)
     {
@@ -306,10 +309,16 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
             yield break;
         }
 
-        if (withPriority) yield break; // MOVE/SELL are deliberate right-click acts
+        if (withPriority) yield break; // MOVE/DESTROY are deliberate right-click acts
 
-        if (_actMove != null) yield return _actMove;
-        if (_actSell != null) yield return _actSell;
+        // MOVE: on by default; fixtures (delivery box, doors…) untick PropsConfig.movable.
+        if (_actMove != null && (configuration == null || configuration.IsMovable()))
+            yield return _actMove;
+
+        // DESTROY: only on buildable props (toBuild) once built. Irreversible — gated by
+        // a confirmation dialog client-side and re-checked (OwnsProp) server-side.
+        if (configuration != null && configuration.MustBeBuilt() && _actDestroy != null)
+            yield return _actDestroy;
     }
 
     public virtual void StopInteraction()
@@ -463,9 +472,9 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     private void SetupGenericActions()
     {
         LoadGenericActionPrototypes();
-        _actBuild = InstantiateSaleAction(_protoBuild);
-        _actMove  = InstantiateSaleAction(_protoMove);
-        _actSell  = InstantiateSaleAction(_protoSell);
+        _actBuild   = InstantiateSaleAction(_protoBuild);
+        _actMove    = InstantiateSaleAction(_protoMove);
+        _actDestroy = InstantiateSaleAction(_protoDestroy);
     }
 
     private Action InstantiateSaleAction(Action source)
@@ -497,8 +506,9 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
                 SendPropInteraction(PropType.Generic, GenericPropInteraction.BuildRequest);
                 break;
 
-            case ActionTypeEnum.SELL:
-                OnSellRequest?.Invoke(this);
+            case ActionTypeEnum.DESTROY:
+                // No direct network send: the confirmation dialog emits C2S_DestroyProp on confirm.
+                OnDestroyRequest?.Invoke(this);
                 break;
 
             case ActionTypeEnum.MOVE:

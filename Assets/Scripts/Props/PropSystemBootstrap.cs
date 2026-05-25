@@ -30,6 +30,7 @@ public static class PropSystemBootstrap {
         NetworkServer.RegisterHandler<C2S_BuildProp>      (Server_OnBuildProp);
         NetworkServer.RegisterHandler<C2S_EditProp>       (Server_OnEditProp);
         NetworkServer.RegisterHandler<C2S_RemoveProp>     (Server_OnRemoveProp);
+        NetworkServer.RegisterHandler<C2S_DestroyProp>    (Server_OnDestroyProp);
         NetworkServer.RegisterHandler<C2S_SetPropForSale> (Server_OnSetPropForSale);
         NetworkServer.RegisterHandler<C2S_UnlistProp>     (Server_OnUnlistProp);
         NetworkServer.RegisterHandler<C2S_BuyProp>        (Server_OnBuyProp);
@@ -51,6 +52,7 @@ public static class PropSystemBootstrap {
         NetworkServer.UnregisterHandler<C2S_BuildProp>();
         NetworkServer.UnregisterHandler<C2S_EditProp>();
         NetworkServer.UnregisterHandler<C2S_RemoveProp>();
+        NetworkServer.UnregisterHandler<C2S_DestroyProp>();
         NetworkServer.UnregisterHandler<C2S_SetPropForSale>();
         NetworkServer.UnregisterHandler<C2S_UnlistProp>();
         NetworkServer.UnregisterHandler<C2S_BuyProp>();
@@ -176,6 +178,19 @@ public static class PropSystemBootstrap {
         GameLogger.Network.Info("RemoveProp {ConnectionId} {RoomId} {PropId}",
             conn.connectionId, msg.RoomId, msg.PropId);
         PropInteractionRouter.HandleRemoveProp(conn, msg);
+    }
+
+    private static void Server_OnDestroyProp(NetworkConnectionToClient conn, C2S_DestroyProp msg) {
+        string playerRoom = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (playerRoom != msg.RoomId) {
+            GameLogger.Network.Warning("DestroyPropRoomMismatch {ConnectionId} {ClaimedRoom} {ActualRoom} {PropId}",
+                conn.connectionId, msg.RoomId, playerRoom ?? "none", msg.PropId);
+            return;
+        }
+
+        GameLogger.Network.Info("DestroyProp {ConnectionId} {RoomId} {PropId}",
+            conn.connectionId, msg.RoomId, msg.PropId);
+        PropInteractionRouter.HandleDestroyProp(conn, msg);
     }
 
     private static void Server_OnSetPropForSale(NetworkConnectionToClient conn, C2S_SetPropForSale msg) {

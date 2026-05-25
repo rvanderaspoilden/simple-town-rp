@@ -45,6 +45,9 @@ namespace Sim.Scriptables {
         [SerializeField]
         private bool toBuild;
 
+        [SerializeField, Tooltip("Can the owner move this prop once built (generic MOVE action)? On by default; untick for fixtures like the delivery box, doors, lights.")]
+        private bool movable = true;
+
         [SerializeField]
         private float rangeToInteract;
 
@@ -134,6 +137,10 @@ namespace Sim.Scriptables {
 
         public bool MustBeBuilt() {
             return this.toBuild;
+        }
+
+        public bool IsMovable() {
+            return this.movable;
         }
     }
 }

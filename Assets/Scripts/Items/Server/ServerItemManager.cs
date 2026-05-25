@@ -224,6 +224,79 @@ public class ServerItemManager
         return entityId;
     }
 
+    // ── Persistent world items ──────────────────────────────────────────────────
+    // Unlike ordinary world items (ephemeral), a persistent world item lies on the
+    // ground AND is backed by a DB row carrying its world position, so it survives a
+    // server restart. It is removed from the DB the moment a player collects it (see
+    // HandlePickup). Eligibility is driven by ItemConfig.ToPersist; gameplay concepts
+    // (e.g. "Déchet" for the cleaner job) sit on top and are decoupled from this layer.
+
+    /// <summary>
+    /// Spawns a persistent world item: a normal world entity PLUS a DB row in
+    /// <paramref name="placeId"/> carrying its position/rotation. Persistence requires
+    /// BOTH a placeId AND a config flagged ToPersist — otherwise it falls back to a
+    /// plain ephemeral world item.
+    /// </summary>
+    public int SpawnPersistentWorldItem(string roomId, string placeId, int itemConfigId,
+        Vector3 position, Quaternion rotation, string ownerCharId)
+    {
+        int entityId = SpawnItem(roomId, itemConfigId, position, rotation);
+
+        ItemConfig config = DatabaseManager.ItemConfigs.Find(x => x.ID == itemConfigId);
+        if (config == null || !config.ToPersist) {
+            Debug.LogWarning($"[ServerItemManager] SpawnPersistentWorldItem: config {itemConfigId} is not ToPersist — spawning ephemeral");
+            return entityId;
+        }
+
+        if (!string.IsNullOrEmpty(placeId) && ApiManager.Instance != null)
+            ApiManager.Instance.StartCoroutine(
+                CreateWorldItemCoroutine(entityId, placeId, itemConfigId, position, rotation, ownerCharId));
+
+        return entityId;
+    }
+
+    private IEnumerator CreateWorldItemCoroutine(int entityId, string placeId, int itemConfigId,
+        Vector3 position, Quaternion rotation, string ownerCharId)
+    {
+        CreateItemBody body = new CreateItemBody {
+            placeId  = placeId,
+            configId = itemConfigId,
+            quantity = 1,
+            ownedBy  = string.IsNullOrEmpty(ownerCharId) ? null : ownerCharId,
+            position = new Vector3Body(position),
+            rotation = new Vector3Body(rotation.eulerAngles),
+        };
+
+        UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+        yield return req.SendWebRequest();
+
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] Create waste item failed code={req.responseCode} body={req.downloadHandler?.text}");
+            yield break;
+        }
+
+        try {
+            ItemJson item = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
+            if (item != null && !string.IsNullOrEmpty(item.Id))
+                AssociateUuid(entityId, item.Id, item.version, placeId);
+        } catch (System.Exception e) {
+            Debug.LogWarning($"[ServerItemManager] Create waste response parse error: {e.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Re-spawns a persisted world item loaded from the DB (existing UUID/version),
+    /// re-bridging it so a later pickup deletes the right row. No POST — the row already exists.
+    /// </summary>
+    public int SpawnPersistentWorldFromDb(string roomId, int itemConfigId, Vector3 position, Quaternion rotation,
+        string uuid, int version, string placeId)
+    {
+        int entityId = SpawnItem(roomId, itemConfigId, position, rotation);
+        if (!string.IsNullOrEmpty(uuid))
+            AssociateUuid(entityId, uuid, version, placeId);
+        return entityId;
+    }
+
     /// <summary>
     /// Removes a world item from the room and tells all room clients to destroy it.
     /// Also drops the item from its holder's hand if currently held.
@@ -321,7 +394,13 @@ public class ServerItemManager
             LocalRotation = entity.LocalRotation
         });
 
-        if (entity.Persistent) PersistPickupAsync(conn, msg.EntityId, entity.ItemConfigId, assignedHand.Value);
+        // A bridged world item — e.g. a Déchet (Waste) collected from the ground — is
+        // removed from the DB on pickup so it never re-spawns; it becomes an ephemeral
+        // held item. Other items persist into the player's hand place as before.
+        if (GetBridge(msg.EntityId) != null)
+            PersistDropAsync(msg.EntityId);
+        else if (entity.Persistent)
+            PersistPickupAsync(conn, msg.EntityId, entity.ItemConfigId, assignedHand.Value);
     }
 
     public void HandleDrop(NetworkConnectionToClient conn, C2S_RequestDropItem msg)

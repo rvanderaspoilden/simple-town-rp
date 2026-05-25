@@ -88,7 +88,17 @@
       "mcp__ai-game-developer__console-clear-logs",
       "Bash(xargs -0 sed -i -e /311933ce8dd17294ab54f062123cb09b/d -e /3e1f7b140e8e1c5419783ee5a990b41d/d -e /47c6a5d5aa9e25b459b00e437d4ebca1/d)",
       "Bash(ls -1 Assets/Scripts/Props/Editor/)",
-      "Bash(ls Assets/Scripts/Props/Editor/*.asmdef)"
+      "Bash(ls Assets/Scripts/Props/Editor/*.asmdef)",
+      "Bash(awk '/^--- !u!1 &418656932511982950$/{found=1} found{print NR\": \"$0} found&&/m_Name:/{print NR\": \"$0; exit}' \"Assets/Resources/Prefabs/Managers/HUD Manager.prefab\")",
+      "mcp__ai-game-developer__gameobject-duplicate",
+      "mcp__ai-game-developer__gameobject-modify",
+      "mcp__ai-game-developer__gameobject-component-destroy",
+      "mcp__ai-game-developer__gameobject-component-get",
+      "mcp__ai-game-developer__assets-prefab-save",
+      "mcp__ai-game-developer__assets-prefab-close",
+      "mcp__ai-game-developer__assets-prefab-create",
+      "mcp__ai-game-developer__gameobject-destroy",
+      "Bash(node -e \"const s=require\\('./package.json'\\).scripts||{};for\\(const k in s\\)console.log\\(k+': '+s[k]\\)\")"
     ]
   },
   "enableAllProjectMcpServers": true,

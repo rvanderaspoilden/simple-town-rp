@@ -29,6 +29,10 @@ public class ItemConfig : ScriptableObject {
     [SerializeField]
     private ItemBehaviour prefab;
 
+    [Tooltip("Item persisté dans le monde : sauvegardé au sol avec sa position, rechargé à l'entrée de pièce, survit au redémarrage. Supprimé au ramassage. Ex : débris d'un prop détruit, futurs détritus de ville.")]
+    [SerializeField]
+    private bool toPersist;
+
     [SerializeField]
     private Texture2D cursor;
 
@@ -63,6 +67,8 @@ public class ItemConfig : ScriptableObject {
     public List<Action> EquippedActions => equippedActions;
 
     public ItemBehaviour Prefab => prefab;
+
+    public bool ToPersist => toPersist;
 
     public Texture2D Cursor => cursor;
 

@@ -172,6 +172,16 @@ public struct C2S_RemoveProp : NetworkMessage {
 }
 
 /// <summary>
+/// Destruction définitive d'un prop construit (toBuild). Envoyé après la dialog de
+/// confirmation côté client. Le serveur valide la propriété, supprime la ligne props
+/// en base (DELETE) et spawn un item de débris à l'emplacement du prop.
+/// </summary>
+public struct C2S_DestroyProp : NetworkMessage {
+    public string RoomId;
+    public int    PropId;
+}
+
+/// <summary>
 /// Le propriétaire (tenant) met un prop placé en vente. Price = 0 → don ("Donner").
 /// Le serveur valide la propriété puis diffuse S2C_PropSaleState + persiste forSale/price.
 /// </summary>

@@ -607,6 +607,22 @@ namespace Sim {
 
             // 4. Lights from preset if state.props had none (user never moved them).
             if (savedLightsSpawned == 0) SpawnLightsFromPreset();
+
+            // 5. Persistent world items lying on the ground (e.g. debris left by a destroyed
+            // prop). Identified by a non-null position; inventory/hand items have none.
+            // Re-bridged so picking them up deletes the right DB row.
+            if (state.items != null) {
+                foreach (Sim.Entities.Persistence.ItemJson it in state.items) {
+                    if (it.position == null) continue;
+                    if (it.placeId != state.place?.Id) continue;
+
+                    Vector3    wpos = it.position.ToVector3();
+                    Quaternion wrot = Quaternion.Euler(it.rotation != null ? it.rotation.ToVector3() : Vector3.zero);
+
+                    ServerItemManager.Instance.SpawnPersistentWorldFromDb(
+                        this.RoomId, it.configId, wpos, wrot, it.Id, it.version, state.place.Id);
+                }
+            }
         }
 
         /// <summary>

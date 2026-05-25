@@ -156,6 +156,13 @@ namespace Sim.Entities.Persistence {
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string ownedBy;
+
+        // World "Déchet" (Waste) coordinates. Null for inventory/hand items.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Vector3Body position;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Vector3Body rotation;
     }
 
     /// <summary>Body for POST /items/upsert — stack-aware add. Increments an
@@ -190,6 +197,13 @@ namespace Sim.Entities.Persistence {
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string ownedBy;
+
+        // World "Déchet" (Waste) coordinates. Null for inventory/hand items.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Vector3Body position;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Vector3Body rotation;
     }
 
     [Serializable]
@@ -200,6 +214,9 @@ namespace Sim.Entities.Persistence {
         public int    quantity;
         public Dictionary<string, object> stateData;
         public string ownedBy;
+        // Non-null only for world "Déchet" (Waste) items lying on the ground.
+        public Vector3Body position;
+        public Vector3Body rotation;
         public int    version;
     }
 
