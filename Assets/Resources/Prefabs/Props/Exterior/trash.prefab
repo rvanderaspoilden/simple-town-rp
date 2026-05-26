@@ -129,7 +129,7 @@ NavMeshObstacle:
   m_Shape: 1
   m_Extents: {x: 0.2, y: 0.39000002, z: 0.2}
   m_MoveThreshold: 0.1
-  m_Carve: 0
+  m_Carve: 1
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.39000002, z: 0}
   m_TimeToStationary: 0.5
@@ -169,10 +169,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a5b9c1d2e3f40516273849506a7b8c9, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashBehaviour
   configuration: {fileID: 11400000, guid: bb5bc096ad079cf41929f4d69d719e25, type: 2}
   defaultPresetId: -1
+  throwVfxPrefab: {fileID: 0}
+  vfxLocalOffset: {x: 0, y: 0.7, z: 0}
 --- !u!114 &1031948647078431196
 MonoBehaviour:
   m_ObjectHideFlags: 0

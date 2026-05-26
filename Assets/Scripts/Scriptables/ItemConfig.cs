@@ -18,9 +18,6 @@ public class ItemConfig : ScriptableObject {
     private ItemHandleType handleType;
 
     [SerializeField]
-    private SortingCategory sortingCategory;
-
-    [SerializeField]
     private List<Action> unEquippedActions;
 
     [SerializeField]
@@ -59,8 +56,6 @@ public class ItemConfig : ScriptableObject {
     public ItemType Type => type;
 
     public ItemHandleType HandleType => handleType;
-
-    public SortingCategory SortingCategory => sortingCategory;
 
     public List<Action> UnEquippedActions => unEquippedActions;
 

@@ -30,7 +30,11 @@ public class DispenserBehaviour : PropBehaviourBase {
     public void HandlePurchaseResult(bool success, int itemId) {
         if (success) {
             _audio?.PlayOneShot(useSound, .3f);
-            NotificationManager.Instance?.AddNotification("Vous avez acheté un item", NotificationType.BANK);
+            // Achat au distributeur = résultat instantané de l'action du joueur (item en
+            // main tout de suite) → toast flottant, pas une notification (réservée aux
+            // résultats asynchrones/différés, ex. livraison à domicile).
+            ItemConfig cfg = DatabaseManager.GetItemConfigById(itemId);
+            WorldToastManager.Show(cfg != null ? $"{cfg.Label} acheté" : "Objet acheté");
         }
         OnPurchaseResult?.Invoke(itemId, success);
     }

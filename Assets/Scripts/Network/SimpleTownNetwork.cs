@@ -336,6 +336,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.RegisterHandler<UpdateCityDataMessage>(OnCityDataUpdatedResponse);
         NetworkClient.RegisterHandler<NotificationMessage>(OnNotificationReceived);
         NetworkClient.RegisterHandler<ToastNotificationMessage>(OnToastNotificationReceived);
+        NetworkClient.RegisterHandler<S2C_WorldToast>(OnWorldToastReceived);
         NetworkClient.RegisterHandler<S2C_HallSpawn>(OnHallSpawn);
         NetworkClient.RegisterHandler<S2C_HallDespawn>(OnHallDespawn);
         NetworkClient.RegisterHandler<S2C_ApartmentSpawn>(OnApartmentSpawn);
@@ -392,6 +393,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.UnregisterHandler<UpdateCityDataMessage>();
         NetworkClient.UnregisterHandler<NotificationMessage>();
         NetworkClient.UnregisterHandler<ToastNotificationMessage>();
+        NetworkClient.UnregisterHandler<S2C_WorldToast>();
         NetworkClient.UnregisterHandler<S2C_HallSpawn>();
         NetworkClient.UnregisterHandler<S2C_HallDespawn>();
         NetworkClient.UnregisterHandler<S2C_ApartmentSpawn>();
@@ -635,6 +637,15 @@ public class SimpleTownNetwork : NetworkManager
             // Messages persistants / périodiques (salaire, etc.) → notification coin d'écran.
             NotificationManager.Instance.AddNotification(message.text, message.Type);
         }
+    }
+
+    [ClientCallback]
+    private void OnWorldToastReceived(S2C_WorldToast message)
+    {
+        // Toast world-space synchronisé (option) : affiché au-dessus du joueur ciblé,
+        // visible par tous les clients qui reçoivent ce message.
+        if (string.IsNullOrEmpty(message.title)) return;
+        WorldToastManager.ShowAbove(message.anchorNetId, message.title, message.subtitle, message.delay);
     }
 
     [ClientCallback]
