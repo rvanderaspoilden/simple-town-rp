@@ -111,7 +111,9 @@
       "Bash(jq -r .result[].Message C:/Users/rodol/.claude/projects/D--Workspace-Unity-TheBroz-simple-town-rp/d7f0f8f7-c58e-4984-8eea-e4524ac96168/tool-results/mcp-ai-game-developer-console-get-logs-1779784509373.txt)",
       "Bash(jq --version)",
       "Bash(echo \"jq version: $\\(jq --version 2>&1\\)\")",
-      "Bash(jq -r .result[0].Message C:/Users/rodol/.claude/projects/D--Workspace-Unity-TheBroz-simple-town-rp/d7f0f8f7-c58e-4984-8eea-e4524ac96168/tool-results/mcp-ai-game-developer-console-get-logs-1779784509373.txt)"
+      "Bash(jq -r .result[0].Message C:/Users/rodol/.claude/projects/D--Workspace-Unity-TheBroz-simple-town-rp/d7f0f8f7-c58e-4984-8eea-e4524ac96168/tool-results/mcp-ai-game-developer-console-get-logs-1779784509373.txt)",
+      "mcp__ai-game-developer__object-get-data",
+      "mcp__ai-game-developer__screenshot-scene-view"
     ]
   },
   "enableAllProjectMcpServers": true,

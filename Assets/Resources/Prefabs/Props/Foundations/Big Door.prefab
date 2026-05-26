@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4115072283353728248}
   - component: {fileID: 8101442390116748057}
   - component: {fileID: 5994037820949162554}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Frame_door
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -275,7 +275,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
-  propId: 0
+  propId: -1
   roomId: city
 --- !u!114 &6978581883802052402
 MonoBehaviour:

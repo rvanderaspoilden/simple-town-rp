@@ -190,7 +190,9 @@ GameObject:
   m_Component:
   - component: {fileID: 8761058867768419165}
   - component: {fileID: 4814475832641832254}
-  m_Layer: 0
+  - component: {fileID: 8076314803806090105}
+  - component: {fileID: 7801340261771816999}
+  m_Layer: 2
   m_Name: Door_exit
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -235,3 +237,40 @@ MonoBehaviour:
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
+--- !u!208 &8076314803806090105
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8277150144964540903}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.5, y: 1.002178, z: 0.105}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: -0.5020185, y: 0.9968139, z: -0.05183959}
+  m_TimeToStationary: 0.5
+--- !u!65 &7801340261771816999
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8277150144964540903}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 2.0043561, z: 1.67}
+  m_Center: {x: -0.50201845, y: 0.9968139, z: -0.05183959}

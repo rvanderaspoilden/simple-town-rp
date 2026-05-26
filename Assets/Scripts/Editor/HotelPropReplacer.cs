@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using Sim.Scriptables;
 
 /// <summary>
 /// Outil éditeur : remplace les "old" props (GameObjects cassés, souvent avec un script
@@ -104,6 +105,66 @@ public static class HotelPropReplacer
         Debug.Log("[HotelPropReplacer] REMPLACÉS:\n" + repLog);
         Debug.Log("[HotelPropReplacer] NON REMPLACÉS (aucun prefab correspondant — géométrie/à voir):\n" + skipLog);
         Debug.Log("[HotelPropReplacer] Vérifie le résultat puis sauvegarde la scène (Ctrl+S). Ctrl+Z pour annuler.");
+    }
+
+    /// <summary>
+    /// Assigne un presetId ALÉATOIRE à chaque prop sous "Hotel" dont la PropsConfig
+    /// définit au moins un preset. Le presetId est lu par les ServerPropSource au moment
+    /// du snapshot et rediffusé à tous les clients (S2C_PropSpawn), donc le régler dans la
+    /// scène suffit — pas besoin d'appliquer le visuel en édition.
+    ///
+    /// Parcourt toute la hiérarchie (props imbriqués dans les pièces inclus). Les props
+    /// sans config ou sans preset sont ignorés. Undo géré, scène marquée dirty mais PAS
+    /// sauvegardée : vérifier puis Ctrl+S.
+    ///
+    /// Menu : Tools ▸ Hotel ▸ Apply Random Presets
+    /// </summary>
+    [MenuItem("Tools/Hotel/Apply Random Presets")]
+    public static void ApplyRandomPresets()
+    {
+        var hotel = GameObject.Find(HotelName);
+        if (hotel == null)
+        {
+            Debug.LogError($"[HotelPropReplacer] '{HotelName}' introuvable dans la scène active.");
+            return;
+        }
+
+        var behaviours = hotel.GetComponentsInChildren<PropBehaviourBase>(true);
+        var rng = new System.Random();
+
+        Undo.IncrementCurrentGroup();
+        Undo.SetCurrentGroupName("Apply Hotel Random Presets");
+        int group = Undo.GetCurrentGroup();
+
+        int applied = 0, skipped = 0;
+        var log = new StringBuilder();
+
+        foreach (var behaviour in behaviours)
+        {
+            PropsConfig config = behaviour.GetConfiguration();
+            PropsPreset[] presets = config != null ? config.Presets : null;
+            if (presets == null || presets.Length == 0) { skipped++; continue; }
+
+            int presetId = presets[rng.Next(presets.Length)].ID;
+
+            // SerializedObject : persiste le champ protégé dans la scène + Undo propre.
+            var so = new SerializedObject(behaviour);
+            SerializedProperty prop = so.FindProperty("defaultPresetId");
+            if (prop == null) { skipped++; continue; }
+
+            Undo.RecordObject(behaviour, "Apply random preset");
+            prop.intValue = presetId;
+            so.ApplyModifiedProperties();
+            applied++;
+            log.AppendLine($"{behaviour.name} ({config.name}) → presetId={presetId}");
+        }
+
+        Undo.CollapseUndoOperations(group);
+        EditorSceneManager.MarkSceneDirty(hotel.scene);
+
+        Debug.Log($"[HotelPropReplacer] presets appliqués={applied} ignorés(no preset/config)={skipped}");
+        Debug.Log("[HotelPropReplacer] PRESETS APPLIQUÉS:\n" + log);
+        Debug.Log("[HotelPropReplacer] Vérifie puis sauvegarde la scène (Ctrl+S). Ctrl+Z pour annuler.");
     }
 
     private static string StripCopySuffix(string name) =>

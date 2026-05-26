@@ -108,8 +108,11 @@ public class DoorBehaviour : PropBehaviourBase {
             }
         }
 
+        // The obstacle only blocks pathing while the door is locked. Once unlocked the
+        // door is walk-through (players navigate past it), so disable it regardless of
+        // its open/closed visual state.
         if (navMeshObstacle != null) {
-            navMeshObstacle.enabled = _lockState == DoorLockState.LOCKED || !_isOpen;
+            navMeshObstacle.enabled = _lockState == DoorLockState.LOCKED;
         }
 
         // Front doors (_displayedNumber > 0) reveal the apartment roof while open.
