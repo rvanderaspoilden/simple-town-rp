@@ -673,7 +673,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
 
     private static void SendToast(NetworkConnectionToClient conn, string text) {
         if (conn != null && conn.isReady)
-            conn.Send(new ToastNotificationMessage { text = text, typeByte = (byte)NotificationType.BANK });
+            conn.Send(new ToastNotificationMessage { text = text, typeByte = (byte)NotificationType.BANK, worldToast = true });
     }
 
     /// <summary>Finds the bank account of an online character by id, or null if offline.</summary>

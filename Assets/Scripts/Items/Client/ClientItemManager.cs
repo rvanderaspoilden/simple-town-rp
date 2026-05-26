@@ -132,12 +132,23 @@ public class ClientItemManager
 
     private void OnPickupResult(S2C_PickupResult msg)
     {
-        if (!msg.Success)
-        {
-            Debug.LogWarning($"[Item] Pickup rejected entity={msg.EntityId}: {msg.ErrorMessage}");
-            return;
-        }
-        // Visual outcome arrives via S2C_ItemAttachedToHand — nothing else needed here
+        if (msg.Success) return; // Visual outcome arrives via S2C_ItemAttachedToHand
+
+        Debug.LogWarning($"[Item] Pickup rejected entity={msg.EntityId}: {msg.ErrorMessage}");
+
+        // Feedback d'action banal → toast au-dessus du joueur (ex. mains pleines).
+        string toast = MapPickupError(msg.ErrorMessage);
+        if (!string.IsNullOrEmpty(toast)) WorldToastManager.Show(toast);
+    }
+
+    /// <summary>Traduit les motifs de rejet de pickup pertinents pour le joueur (sinon null = pas de toast).</summary>
+    private static string MapPickupError(string error)
+    {
+        if (string.IsNullOrEmpty(error)) return null;
+        if (error.Contains("Hands full")) return "Mains pleines";
+        if (error.Contains("Too far"))    return "Trop loin";
+        if (error.Contains("Not yours"))  return "Cet objet ne vous appartient pas";
+        return null; // erreurs internes (item introuvable, hors room…) → silencieux
     }
 
     private void OnItemAttachedToHand(S2C_ItemAttachedToHand msg)

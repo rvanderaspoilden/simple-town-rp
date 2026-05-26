@@ -20,9 +20,6 @@ namespace Sim.Jobs {
         [Tooltip("Career the player must be employed in to use this object.")]
         [SerializeField] protected JobCategory requiredJob = JobCategory.Delivery;
 
-        [Tooltip("Toast shown when the local player's career doesn't match. Use {job} as a placeholder for the human-readable label.")]
-        [SerializeField] private string wrongJobMessage = "Réservé aux {job}.";
-
         [Header("Interaction")]
         [Tooltip("Drag the Action SO templates (USE, OPEN, …) that the radial menu should expose.")]
         [SerializeField] protected List<Action> actionTemplates = new List<Action>();
@@ -67,36 +64,33 @@ namespace Sim.Jobs {
         }
 
         private void OnActionExecutedInternal(Action action) {
-            if (!IsLocalPlayerEmployedHere()) {
-                NotifyWrongJob();
-                return;
-            }
+            // La cible est déjà filtrée au niveau de la visibilité des actions
+            // (GetActions / IsInteractable) : si on arrive ici, c'est une cible de mission active.
             HandleAction(action);
         }
 
-        private bool IsLocalPlayerEmployedHere() {
-            var local = Sim.PlayerController.Local;
-            if (local == null || local.CharacterData == null) return false;
-            return local.CharacterData.CurrentJobCategory == requiredJob;
-        }
+        /// <summary>
+        /// Vrai si ce prop est la cible d'un step de mission ACTIF du joueur local —
+        /// c.-à-d. exactement quand il est mis en surbrillance par MissionHighlightManager
+        /// (filtrage carrière + ciblage kind/id inclus). Hors d'une mission le nécessitant,
+        /// l'objet n'est pas highlighté → pas interactif.
+        /// </summary>
+        private bool IsActiveMissionTarget() =>
+            _highlightEffect != null && _highlightEffect.IsHighlighted;
 
-        private void NotifyWrongJob() {
-            if (NotificationManager.Instance == null) return;
-            var label = JobCategoryLabels.Display(requiredJob);
-            var text = string.IsNullOrEmpty(wrongJobMessage)
-                ? $"Réservé aux {label}."
-                : wrongJobMessage.Replace("{job}", label);
-            NotificationManager.Instance.AddNotification(text, NotificationType.JOB);
-        }
-
-        /// <summary>Subclass hook. Career gate already passed when this runs.</summary>
+        /// <summary>Subclass hook. Mission-target gate already passed when this runs.</summary>
         protected abstract void HandleAction(Action action);
 
         // ── IInteractable ────────────────────────────────────────────────
+        // Logique uniforme avec les autres props : pas d'actions disponibles → pas
+        // d'interaction. Les actions ne sont exposées que si une mission active du joueur
+        // cible ce prop (il est highlighté) ; sinon GetActions est vide et IsInteractable
+        // est false (ni curseur ni menu au survol), sans notification.
         public float GetRange() => interactionRange;
-        public bool IsInteractable() => true;
+        public bool IsInteractable() => GetActions().Length > 0;
         public bool IsRightClickOnly() => false;
-        public Action[] GetActions(bool withPriority = false) => _actions;
+        public Action[] GetActions(bool withPriority = false) =>
+            IsActiveMissionTarget() ? _actions : Array.Empty<Action>();
         public virtual void StopInteraction() { }
     }
 }

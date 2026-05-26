@@ -489,6 +489,7 @@ public class SimpleTownNetwork : NetworkManager
                 conn.Send(new ToastNotificationMessage {
                     text = $"Fonds insuffisants ({price} €).",
                     typeByte = (byte)NotificationType.BANK,
+                    worldToast = true,
                 });
                 conn.Send(new ShopResponseMessage { isSuccess = false });
             }
@@ -622,9 +623,18 @@ public class SimpleTownNetwork : NetworkManager
     [ClientCallback]
     private void OnToastNotificationReceived(ToastNotificationMessage message)
     {
-        if (NotificationManager.Instance == null) return;
         if (string.IsNullOrEmpty(message.text)) return;
-        NotificationManager.Instance.AddNotification(message.text, message.Type);
+
+        if (message.worldToast)
+        {
+            // Feedback d'action banal (mains pleines, fonds insuffisants…) → toast flottant.
+            WorldToastManager.Show(message.text);
+        }
+        else if (NotificationManager.Instance != null)
+        {
+            // Messages persistants / périodiques (salaire, etc.) → notification coin d'écran.
+            NotificationManager.Instance.AddNotification(message.text, message.Type);
+        }
     }
 
     [ClientCallback]

@@ -344,6 +344,12 @@ public class TrashEcoVfx : MonoBehaviour
         var go = new GameObject(childName);
         go.transform.SetParent(transform, false);
         var ps = go.AddComponent<ParticleSystem>();
+
+        // Un ParticleSystem démarre en lecture dès l'ajout ; or modifier main.duration
+        // pendant la lecture lève une exception. On l'arrête complètement avant de le
+        // configurer ; chaque Build appelle ps.Play() à la fin.
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
         var main = ps.main;
         main.playOnAwake = false;                 // we Play() explicitly after config
         var emission = ps.emission;

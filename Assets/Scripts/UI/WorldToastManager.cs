@@ -35,6 +35,13 @@ public class WorldToastManager : MonoBehaviour
         _instance.StartCoroutine(_instance.ShowRoutine(title, subtitle, delay, accent ?? DefaultAccent));
     }
 
+    /// <summary>
+    /// Toast simple ligne (une seule phrase) — pour le feedback d'action banal
+    /// (ex. « Mains pleines », « Fonds insuffisants »). Pas de sous-titre accentué.
+    /// </summary>
+    public static void Show(string message, float delay = 0f, Color? accent = null)
+        => Show(message, null, delay, accent);
+
     private static void Ensure()
     {
         if (_instance != null) return;

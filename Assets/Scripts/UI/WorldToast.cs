@@ -80,8 +80,16 @@ public class WorldToast : MonoBehaviour
         label.richText = true;
         label.fontSize = 26f;
         label.color = OffWhite;
-        string accentHex = ColorUtility.ToHtmlStringRGB(accent);
-        label.text = $"<size=22>{title}</size>\n<size=30><b><color=#{accentHex}>{subtitle}</color></b></size>";
+        if (string.IsNullOrEmpty(subtitle))
+        {
+            // Toast simple ligne (ex. feedback d'action : "Mains pleines").
+            label.text = $"<size=26>{title}</size>";
+        }
+        else
+        {
+            string accentHex = ColorUtility.ToHtmlStringRGB(accent);
+            label.text = $"<size=22>{title}</size>\n<size=30><b><color=#{accentHex}>{subtitle}</color></b></size>";
+        }
 
         // Auto-size the panel to hug the text (+ padding) so the rounded background always
         // wraps the content cleanly, whatever the message length.

@@ -408,7 +408,8 @@ public static class PropInteractionRouter {
                 conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
                 conn.Send(new ToastNotificationMessage {
                     text = "Termine ta mission avant d'acheter.",
-                    typeByte = (byte)NotificationType.BANK
+                    typeByte = (byte)NotificationType.BANK,
+                    worldToast = true
                 });
                 return;
             }
@@ -420,7 +421,8 @@ public static class PropInteractionRouter {
                 conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
                 conn.Send(new ToastNotificationMessage {
                     text = "Mains pleines : impossible d'acheter cet objet.",
-                    typeByte = (byte)NotificationType.BANK
+                    typeByte = (byte)NotificationType.BANK,
+                    worldToast = true
                 });
                 return;
             }

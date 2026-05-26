@@ -9,5 +9,12 @@ public struct ToastNotificationMessage : NetworkMessage {
     public string text;
     public byte typeByte;
 
+    /// <summary>
+    /// true → affiché en toast flottant au-dessus du joueur (feedback d'action banal :
+    /// mains pleines, fonds insuffisants…). false (défaut) → notification coin d'écran
+    /// via NotificationManager (ex. salaire périodique, messages persistants).
+    /// </summary>
+    public bool worldToast;
+
     public NotificationType Type => (NotificationType)typeByte;
 }
