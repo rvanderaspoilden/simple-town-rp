@@ -18,13 +18,14 @@ MonoBehaviour:
   propsType: 0
   price: 500
   sellable: 0
-  prefab: {fileID: 0}
+  prefab: {fileID: 5733816212496428669, guid: fbe365bb133ae0f4cb94dca53b99dbab, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
+  movable: 1
   rangeToInteract: 1
   rightClickOnly: 0
   actions:

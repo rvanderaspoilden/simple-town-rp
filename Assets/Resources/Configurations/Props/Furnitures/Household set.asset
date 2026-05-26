@@ -18,18 +18,19 @@ MonoBehaviour:
   propsType: 0
   price: 650
   sellable: 1
-  prefab: {fileID: 0}
+  prefab: {fileID: 1827366189422990724, guid: 0b358b00f06531741ad6ae29f2396e07, type: 3}
   packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
   hasPosableSurface: 0
   connectedToWall: 1
   toBuild: 1
+  movable: 1
   rangeToInteract: 1
   rightClickOnly: 0
   actions:
   - {fileID: 11400000, guid: eb2c51e8927332c40abe1682f0e39009, type: 2}
-  unbuiltActions:
+  unbuiltActions: []
   cursor: {fileID: 0}
   presets: []
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}

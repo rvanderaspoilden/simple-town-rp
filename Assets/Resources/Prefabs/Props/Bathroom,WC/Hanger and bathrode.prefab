@@ -100,11 +100,12 @@ GameObject:
   m_Component:
   - component: {fileID: 8924627357541089553}
   - component: {fileID: 3570171263957831069}
-  - component: {fileID: 636680456264104653}
   - component: {fileID: 909888215843421700}
   - component: {fileID: 6017308768872906385}
-  - component: {fileID: 3069445405203444945}
   - component: {fileID: -2183858670411104611}
+  - component: {fileID: 7896352739686917629}
+  - component: {fileID: 7655222037290159359}
+  - component: {fileID: 569965398718195407}
   m_Layer: 10
   m_Name: Hanger and bathrode
   m_TagString: Untagged
@@ -150,23 +151,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.0193409, y: 1.4184439, z: 0.067769796}
   m_Center: {x: -0.0019341111, y: 0.29958665, z: 0.032879487}
---- !u!114 &636680456264104653
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5090608302141779058}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sceneId: 0
-  _assetId: 3338776675
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
 --- !u!54 &909888215843421700
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -216,23 +200,6 @@ MonoBehaviour:
   hideable: 1
   interactWithCameraDistance: 0
   foundationObj: {fileID: 0}
---- !u!114 &3069445405203444945
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5090608302141779058}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7eaefd4840a9cda4fab0662d261d75d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0.1
-  configuration: {fileID: 11400000, guid: 87bc84af20e39334ca905a5ea532a8bb, type: 2}
-  defaultPresetId: -1
 --- !u!82 &-2183858670411104611
 AudioSource:
   m_ObjectHideFlags: 0
@@ -330,6 +297,46 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &7896352739686917629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5090608302141779058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
+  propId: 0
+  roomId: city
+--- !u!114 &7655222037290159359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5090608302141779058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
+--- !u!114 &569965398718195407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5090608302141779058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
+  configuration: {fileID: 0}
+  defaultPresetId: -1
 --- !u!1 &8261804480230880869
 GameObject:
   m_ObjectHideFlags: 0
