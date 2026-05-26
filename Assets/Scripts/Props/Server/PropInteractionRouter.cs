@@ -19,9 +19,6 @@ public static class PropInteractionRouter {
     /// <summary>ItemConfig id of the debris item spawned when a prop is destroyed.</summary>
     private const int DebrisItemConfigId = 100;
 
-    /// <summary>ItemConfig id of the trash bag thrown into a Trash prop.</summary>
-    private const int TrashBagConfigId = 101;
-
     public static void Route(NetworkConnectionToClient conn, C2S_PropInteraction msg) {
         switch (msg.Type) {
             case PropType.Generic:      HandleGeneric     (conn, msg); break;
@@ -82,9 +79,9 @@ public static class PropInteractionRouter {
         ItemEntity entity = ServerItemManager.Instance.GetEntity(roomId, entityId);
         if (entity == null) return;
         if (entity.HolderNetId != conn.identity.netId) return; // doit tenir l'item
-        if (entity.ItemConfigId != TrashBagConfigId) return;   // doit être un sac poubelle
+        if (entity.AuthorizedNetId != 0) return;               // item de mission : pas jetable
 
-        // Retire le sac (éphémère → pas de ligne DB à supprimer).
+        // Retire l'item jeté (DespawnItem supprime aussi la ligne DB s'il était persisté).
         ServerItemManager.Instance.DespawnItem(roomId, entityId);
 
         // Diffuse le VFX eco à tous les clients de la room (le prop est en msg.RoomId).

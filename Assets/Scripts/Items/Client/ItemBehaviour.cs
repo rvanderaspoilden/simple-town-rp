@@ -73,9 +73,10 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
 
     public bool IsInteractable()
     {
-        if (!_isHeld) return true;
-        // Only let the holder interact with their own item
-        return _holderNetId == NetworkClient.connection?.identity?.netId;
+        // Un item tenu n'est jamais survolable/cliquable dans le monde (pour tous, local
+        // ou distant). Ses actions d'item équipé (DROP, EAT…) passent par le HUD
+        // d'inventaire, pas par le survol du modèle 3D en main.
+        return !_isHeld;
     }
 
     public bool IsRightClickOnly() => false;

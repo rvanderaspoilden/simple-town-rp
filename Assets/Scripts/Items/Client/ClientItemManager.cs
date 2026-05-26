@@ -222,8 +222,21 @@ public class ClientItemManager
         ItemConfig config = behaviour.Configuration;
         if (config != null && config.HasGripOverride)
         {
-            behaviour.transform.localPosition = config.GripPosition;
-            behaviour.transform.localRotation = Quaternion.Euler(config.GripEuler);
+            Vector3    gripPos = config.GripPosition;
+            Quaternion gripRot = Quaternion.Euler(config.GripEuler);
+
+            // Les os de main gauche/droite sont des miroirs l'un de l'autre : appliquer le
+            // même euler local donne un rendu inversé sur une main. Le grip est défini pour
+            // la main DROITE (référence) ; pour la main gauche on le reflète à travers le
+            // plan YZ local (négation de pos.x et miroir de rotation : (x,-y,-z,w)).
+            if (hand == HandType.Left)
+            {
+                gripPos.x = -gripPos.x;
+                gripRot   = new Quaternion(gripRot.x, -gripRot.y, -gripRot.z, gripRot.w);
+            }
+
+            behaviour.transform.localPosition = gripPos;
+            behaviour.transform.localRotation = gripRot;
         }
         else
         {

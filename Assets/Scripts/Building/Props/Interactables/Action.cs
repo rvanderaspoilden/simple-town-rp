@@ -38,5 +38,18 @@ namespace Sim.Interactables {
         public void Execute() {
             OnExecute?.Invoke(this);
         }
+
+        /// <summary>
+        /// Crée une Action runtime (non sérialisée) avec type/label/icône donnés. Utile
+        /// pour des choix dynamiques affichés dans le menu radial (ex. choisir quel item
+        /// jeter dans une poubelle). S'abonner à OnExecute pour le callback.
+        /// </summary>
+        public static Action CreateRuntime(ActionTypeEnum type, string label, Sprite icon) {
+            Action a = CreateInstance<Action>();
+            a.type = type;
+            a.label = label;
+            a.icon = icon;
+            return a;
+        }
     }
 }

@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Sim;
 using Sim.Enums;
@@ -5,14 +7,14 @@ using UnityEngine;
 using Action = Sim.Interactables.Action;
 
 /// <summary>
-/// Poubelle : permet de jeter un sac poubelle (TrashBag, ItemConfig id 101) tenu en main.
-/// L'action THROW n'apparaît que si le joueur local tient un sac. L'autorité reste serveur
-/// (PropInteractionRouter.HandleTrash valide le holder + la config avant de despawn le sac).
+/// Poubelle : permet de jeter dans la poubelle n'importe quel item tenu en main.
+/// L'action THROW apparaît dès que le joueur local tient au moins un item. S'il en tient
+/// deux, un menu radial de choix s'ouvre pour sélectionner lequel jeter. L'autorité reste
+/// serveur (PropInteractionRouter.HandleTrash valide que l'item est bien tenu et n'est pas
+/// un item de mission avant de le despawn).
 /// </summary>
 public class TrashBehaviour : PropBehaviourBase
 {
-    private const int TrashBagConfigId = 101;
-
     [Header("Trash VFX")]
     [Tooltip("VFX eco joué quand un sac est jeté. Optionnel : si vide, chargé depuis Resources/VFX/VFX_TrashEco.")]
     [SerializeField] private GameObject throwVfxPrefab;
@@ -68,8 +70,8 @@ public class TrashBehaviour : PropBehaviourBase
     {
         Action[] acts = base.GetActions(withPriority);
 
-        // THROW visible uniquement quand le joueur tient effectivement un sac poubelle.
-        if (HeldTrashBagEntityId() < 0)
+        // THROW visible dès que le joueur tient au moins un item en main.
+        if (!HasAnyHeldItem())
             acts = acts.Where(a => a.Type != ActionTypeEnum.THROW).ToArray();
 
         return acts;
@@ -79,23 +81,53 @@ public class TrashBehaviour : PropBehaviourBase
     {
         if (action.Type != ActionTypeEnum.THROW) return;
 
-        int entityId = HeldTrashBagEntityId();
-        if (entityId < 0) return;
+        PlayerHands hands = PlayerController.Local?.PlayerHands;
+        if (hands == null) return;
 
+        // Collecte les items tenus (gauche + droite).
+        var held = new List<(int entityId, ItemBehaviour item)>();
+        if (hands.LeftHandItem != null)  held.Add((hands.LeftEntityId,  hands.LeftHandItem));
+        if (hands.RightHandItem != null) held.Add((hands.RightEntityId, hands.RightHandItem));
+
+        if (held.Count == 0) return;
+
+        // Un seul item → on le jette directement.
+        if (held.Count == 1) { SendThrow(held[0].entityId); return; }
+
+        // Plusieurs items → menu radial de choix (réutilise le HUD contextuel). Différé
+        // d'une frame : le menu radial courant se ferme juste après cet Execute, donc on
+        // rouvre le menu de choix à la frame suivante pour qu'il ne soit pas balayé.
+        var choices = new List<Action>();
+        foreach (var h in held)
+        {
+            int eid = h.entityId;
+            ItemConfig cfg = h.item != null ? h.item.Configuration : null;
+            Action choice = Action.CreateRuntime(
+                ActionTypeEnum.THROW,
+                cfg != null ? cfg.Label : "Jeter",
+                cfg != null ? cfg.Icon : null);
+            choice.OnExecute += _ => SendThrow(eid);
+            choices.Add(choice);
+        }
+        StartCoroutine(ShowChoiceMenuNextFrame(choices.ToArray()));
+    }
+
+    private IEnumerator ShowChoiceMenuNextFrame(Action[] choices)
+    {
+        yield return null; // laisse le menu radial courant se fermer
+        if (HUDManager.Instance != null)
+            HUDManager.Instance.ShowContextMenu(choices, transform);
+    }
+
+    private void SendThrow(int entityId)
+    {
         SendPropInteraction(PropType.Trash, TrashInteraction.ThrowRequest(entityId));
     }
 
-    /// <summary>EntityId du sac poubelle tenu (gauche ou droite), ou -1 si aucun.</summary>
-    private int HeldTrashBagEntityId()
+    /// <summary>Vrai si le joueur local tient au moins un item (gauche ou droite).</summary>
+    private bool HasAnyHeldItem()
     {
         PlayerHands hands = PlayerController.Local?.PlayerHands;
-        if (hands == null) return -1;
-
-        if (hands.LeftHandItem != null && hands.LeftHandItem.Configuration.ID == TrashBagConfigId)
-            return hands.LeftEntityId;
-        if (hands.RightHandItem != null && hands.RightHandItem.Configuration.ID == TrashBagConfigId)
-            return hands.RightEntityId;
-
-        return -1;
+        return hands != null && (hands.LeftHandItem != null || hands.RightHandItem != null);
     }
 }
