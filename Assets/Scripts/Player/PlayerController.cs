@@ -326,6 +326,46 @@ namespace Sim {
             this.RpcConsume();
         }
 
+        public void CleanItem(int entityId) {
+            this.CmdCleanItem(entityId);
+        }
+
+        [Command]
+        public void CmdCleanItem(int entityId) {
+            GameLogger.Network.Debug("CmdCleanItem {PlayerNetId} {EntityId}", netId, entityId);
+
+            string roomId = PlayerRoomTracker.Instance.GetRoom(connectionToClient);
+            if (roomId == null) {
+                GameLogger.Network.Warning("CmdCleanItemNoRoom {PlayerNetId}", netId);
+                return;
+            }
+
+            ItemEntity entity = ServerItemManager.Instance.GetEntity(roomId, entityId);
+            if (entity == null) {
+                GameLogger.Network.Warning("CmdCleanItemNotFound {PlayerNetId} {EntityId}", netId, entityId);
+                return;
+            }
+
+            const int TrashBagConfigId = 101;
+            ItemConfig bagCfg = DatabaseManager.GetItemConfigById(TrashBagConfigId);
+
+            // Vérifier une main libre AVANT de supprimer le débris — sinon on perd le
+            // débris sans donner le sac.
+            if (bagCfg == null || !ServerItemManager.Instance.CanFitInHand(netId, bagCfg)) {
+                GameLogger.Network.Warning("CmdCleanItemNoHand {PlayerNetId} {EntityId}", netId, entityId);
+                return;
+            }
+
+            // Retire le débris du monde (+ ligne DB via le bridge), puis spawn un sac
+            // poubelle éphémère dans la main du joueur.
+            ServerItemManager.Instance.DespawnItem(roomId, entityId);
+            ServerItemManager.Instance.SpawnItemInHand(roomId, TrashBagConfigId,
+                connectionToClient, bagCfg, persistent: false);
+
+            GameLogger.Player.Info("PlayerCleanedItem {PlayerNetId} {EntityId} {ItemConfigId}",
+                netId, entityId, entity.ItemConfigId);
+        }
+
         [ClientRpc]
         public void RpcConsume() {
             ClientLogger.NetworkDebug("RpcConsume {PlayerNetId} {IsLocalPlayer}", netId, isLocalPlayer);

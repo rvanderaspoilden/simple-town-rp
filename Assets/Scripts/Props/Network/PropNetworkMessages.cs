@@ -89,6 +89,16 @@ public struct S2C_DoorRing : NetworkMessage {
 }
 
 /// <summary>
+/// Diffuse à tous les clients de la room le jet réussi d'un sac dans une poubelle.
+/// Le client joue le VFX eco sur le TrashBehaviour identifié par PropId.
+/// </summary>
+public struct S2C_TrashThrown : NetworkMessage {
+    public int    PropId;
+    public string RoomId;
+    public uint   ThrowerNetId;   // qui a jeté — le toast local n'apparaît que pour lui
+}
+
+/// <summary>
 /// État de vente d'un prop (orthogonal au PropType — n'importe quel meuble peut
 /// être mis en vente). Diffusé à la room sur changement et rejoué dans le snapshot.
 /// ReservedByName est vide tant que personne n'a cliqué Acheter.

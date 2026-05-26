@@ -154,6 +154,10 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
                 NetworkClient.Send(new C2S_RequestDropItem { Hand = _holderHand });
                 break;
 
+            case ActionTypeEnum.CLEAN:
+                PlayerController.Local?.CleanItem(_identity.EntityId);
+                break;
+
             default:
                 HandleSpecialAction(action);
                 break;

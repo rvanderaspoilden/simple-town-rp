@@ -32,6 +32,18 @@ public class ServerItemManager
     private readonly Dictionary<uint, PlayerHandState> _playerHands
         = new Dictionary<uint, PlayerHandState>();
 
+    // Items éphémères (Persistent=false, donc sans ligne DB) tenus en main au moment
+    // où le joueur quitte une room. Stockés ici pour être re-spawnés dans la nouvelle
+    // room à l'entrée — sinon ils disparaîtraient (RestoreHandItems ne restaure que
+    // les items persistés en DB). Ex : sac poubelle (config 101), colis de mission.
+    private struct CarriedEphemeralItem {
+        public int      ItemConfigId;
+        public HandType Hand;
+        public uint     AuthorizedNetId;
+    }
+    private readonly Dictionary<uint, List<CarriedEphemeralItem>> _carriedEphemeral
+        = new Dictionary<uint, List<CarriedEphemeralItem>>();
+
     private int _nextEntityId = 1;
 
     // ── DB bridge ─────────────────────────────────────────────────────────────
@@ -109,6 +121,7 @@ public class ServerItemManager
         _rooms.Clear();
         _playerHands.Clear();
         _bridges.Clear();
+        _carriedEphemeral.Clear();
         _nextEntityId = 1;
         GameLogger.Network.Info("ServerItemManagerReset");
     }
@@ -547,8 +560,10 @@ public class ServerItemManager
         // OnPlayerLeaveRoom cleaned up runtime state for this player).
         if (conn.identity == null) return;
         PlayerInventory inv = conn.identity.GetComponent<PlayerInventory>();
-        if (inv == null || !inv.PlacesReady) return;     // EnsurePlaces should have completed before first room entry
 
+        // Always run the restore coroutine: it rebuilds persisted hand items from DB
+        // (when places are ready) AND re-spawns ephemeral items carried over from the
+        // previous room (which have no DB row).
         if (ApiManager.Instance != null) {
             ApiManager.Instance.StartCoroutine(RestoreHandItemsCoroutine(conn, roomId, inv));
         }
@@ -570,9 +585,11 @@ public class ServerItemManager
     public void OnPlayerDisconnect(NetworkConnectionToClient conn)
     {
         // Runtime cleanup is already handled by OnPlayerLeaveRoom (fired earlier
-        // in the disconnect chain via PlayerRoomTracker.OnDisconnect). Nothing
-        // extra to do here — DB rows for the player's held items persist and
-        // will be restored on the next reconnect.
+        // in the disconnect chain via PlayerRoomTracker.OnDisconnect). DB rows for
+        // the player's held items persist and will be restored on the next reconnect.
+        // Discard any carried-over ephemeral items — they are not persisted and the
+        // player isn't going to re-enter a room this session.
+        if (conn?.identity != null) _carriedEphemeral.Remove(conn.identity.netId);
     }
 
     // ── Snapshot ──────────────────────────────────────────────────────────────
@@ -668,24 +685,26 @@ public class ServerItemManager
     }
 
     /// <summary>
-    /// Vrai si le joueur porte au moins un item éphémère (Persistent=false),
-    /// typiquement un colis de mission. Utilisé pour bloquer certaines
+    /// Vrai si le joueur porte au moins un item de **mission** en main. Le critère est
+    /// le verrou propriétaire (AuthorizedNetId != 0), posé uniquement par les steps de
+    /// mission (PickupPackage / SortItems / UseMachine via SetAuthorizedHolder) — PAS par
+    /// les items éphémères ordinaires comme le sac poubelle. Utilisé pour bloquer certaines
     /// interactions (achat shop, etc.) tant que la mission est en cours.
     /// </summary>
-    public bool IsHoldingEphemeralItem(uint playerNetId)
+    public bool IsHoldingMissionItem(uint playerNetId)
     {
         if (!_playerHands.TryGetValue(playerNetId, out var state)) return false;
-        return HeldEntityIsEphemeral(state.LeftEntityId)
-            || HeldEntityIsEphemeral(state.RightEntityId);
+        return HeldEntityIsMissionLocked(state.LeftEntityId)
+            || HeldEntityIsMissionLocked(state.RightEntityId);
     }
 
-    private bool HeldEntityIsEphemeral(int entityId)
+    private bool HeldEntityIsMissionLocked(int entityId)
     {
         if (entityId < 0) return false;
         foreach (var room in _rooms.Values)
         {
             if (room.TryGetValue(entityId, out var entity))
-                return !entity.Persistent;
+                return entity.AuthorizedNetId != 0;
         }
         return false;
     }
@@ -714,14 +733,31 @@ public class ServerItemManager
         if (!_rooms.TryGetValue(roomId, out var roomItems)) return;
 
         List<int> toDestroy = new List<int>();
+        List<CarriedEphemeralItem> carried = null;
         foreach (var entity in roomItems.Values) {
-            if (entity.HolderNetId == playerNetId) toDestroy.Add(entity.EntityId);
+            if (entity.HolderNetId != playerNetId) continue;
+            toDestroy.Add(entity.EntityId);
+
+            // Item éphémère (pas de ligne DB) → on mémorise sa config/main pour le
+            // re-spawner dans la nouvelle room (sinon il serait perdu).
+            if (!entity.Persistent) {
+                carried ??= new List<CarriedEphemeralItem>();
+                carried.Add(new CarriedEphemeralItem {
+                    ItemConfigId    = entity.ItemConfigId,
+                    Hand            = entity.HolderHand,
+                    AuthorizedNetId = entity.AuthorizedNetId,
+                });
+            }
         }
         foreach (int entityId in toDestroy) {
             roomItems.Remove(entityId);
             ClearBridge(entityId);
             BroadcastToRoom(roomId, new S2C_DestroyItem { EntityId = entityId, RoomId = roomId });
         }
+
+        if (carried != null) _carriedEphemeral[playerNetId] = carried;
+        else                 _carriedEphemeral.Remove(playerNetId);
+
         _playerHands.Remove(playerNetId);
     }
     
@@ -842,8 +878,117 @@ public class ServerItemManager
         if (conn?.identity == null) yield break;
         uint playerNetId = conn.identity.netId;
 
-        yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandLeftPlaceId,  HandType.Left);
-        yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandRightPlaceId, HandType.Right);
+        // Idempotence : retire d'abord les items runtime déjà tenus par ce joueur dans
+        // cette room avant de re-restaurer. Sans ça, un OnPlayerEnterRoom rejoué pour la
+        // même room (ou un chevauchement) recréait un 2e exemplaire tenu : "manger"
+        // n'en supprimait qu'un et l'autre restait visible jusqu'au changement de room.
+        DespawnHeldRuntimeForRestore(playerNetId, roomId);
+
+        // Restore persisted hand items from DB (only when the player's hand places exist).
+        if (inv != null && inv.PlacesReady) {
+            yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandLeftPlaceId,  HandType.Left);
+            yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandRightPlaceId, HandType.Right);
+        }
+
+        // Then re-spawn ephemeral items the player carried over from the previous room
+        // (no DB row). Done after the DB restore so hand slots are reconciled first.
+        RespawnCarriedEphemeral(conn, roomId);
+    }
+
+    /// <summary>
+    /// Destroys the player's currently-held runtime entities in the given room WITHOUT
+    /// touching DB rows or the carried-ephemeral stash. Makes hand restore idempotent so
+    /// a repeated/overlapping room-enter can't leave duplicate held entities (one copy
+    /// would survive "consume" and only vanish on the next room change).
+    /// </summary>
+    private void DespawnHeldRuntimeForRestore(uint playerNetId, string roomId) {
+        if (!_rooms.TryGetValue(roomId, out var roomItems)) return;
+
+        List<int> toDestroy = new List<int>();
+        foreach (var entity in roomItems.Values)
+            if (entity.HolderNetId == playerNetId) toDestroy.Add(entity.EntityId);
+
+        foreach (int entityId in toDestroy) {
+            roomItems.Remove(entityId);
+            ClearBridge(entityId);
+            BroadcastToRoom(roomId, new S2C_DestroyItem { EntityId = entityId, RoomId = roomId });
+        }
+
+        if (toDestroy.Count > 0) {
+            _playerHands.Remove(playerNetId);
+            GameLogger.Network.Debug("Item RestoreDedupe player={PlayerNetId} room={RoomId} removed={Count}",
+                playerNetId, roomId, toDestroy.Count);
+        }
+    }
+
+    /// <summary>
+    /// Re-spawns the player's carried-over ephemeral items (e.g. trash bag, mission
+    /// package) in the room they just entered, attached to the same hand when possible.
+    /// These have no DB row, so they wouldn't be restored by RestoreOneHand.
+    /// </summary>
+    private void RespawnCarriedEphemeral(NetworkConnectionToClient conn, string roomId) {
+        if (conn?.identity == null) return;
+        uint playerNetId = conn.identity.netId;
+
+        if (!_carriedEphemeral.TryGetValue(playerNetId, out var carried)) return;
+        _carriedEphemeral.Remove(playerNetId);
+
+        foreach (var c in carried) {
+            var handState = GetOrCreateHandState(playerNetId);
+
+            // Prefer the original hand; fall back to any free hand if it's now taken
+            // (e.g. a persisted item was just restored into it).
+            HandType hand = c.Hand;
+            if (!handState.IsHandFree(hand)) {
+                HandType? free = handState.GetFreeHand();
+                if (!free.HasValue) {
+                    GameLogger.Network.Warning("Item CarryEphemeral dropped (no free hand) configId={ItemConfigId} player={PlayerNetId}",
+                        c.ItemConfigId, playerNetId);
+                    continue;
+                }
+                hand = free.Value;
+            }
+
+            int entityId = _nextEntityId++;
+            var entity = new ItemEntity {
+                EntityId        = entityId,
+                RoomId          = roomId,
+                ItemConfigId    = c.ItemConfigId,
+                Position        = conn.identity.transform.position,
+                Rotation        = Quaternion.identity,
+                HolderNetId     = playerNetId,
+                HolderHand      = hand,
+                LocalPosition   = Vector3.zero,
+                LocalRotation   = Quaternion.identity,
+                Persistent      = false,
+                AuthorizedNetId = c.AuthorizedNetId,
+            };
+
+            if (!_rooms.TryGetValue(roomId, out var roomItems)) {
+                roomItems = new Dictionary<int, ItemEntity>();
+                _rooms[roomId] = roomItems;
+            }
+            roomItems[entityId] = entity;
+
+            handState.Set(hand, entityId);
+            _playerHands[playerNetId] = handState;
+
+            BroadcastToRoom(roomId, new S2C_SpawnItem {
+                EntityId      = entityId,
+                RoomId        = roomId,
+                ItemConfigId  = c.ItemConfigId,
+                Position      = entity.Position,
+                Rotation      = entity.Rotation,
+                IsHeld        = true,
+                HolderNetId   = playerNetId,
+                HolderHand    = hand,
+                LocalPosition = Vector3.zero,
+                LocalRotation = Quaternion.identity,
+            });
+
+            GameLogger.Network.Info("Item CarryEphemeral entity={EntityId} configId={ItemConfigId} player={PlayerNetId} hand={Hand} room={RoomId}",
+                entityId, c.ItemConfigId, playerNetId, hand, roomId);
+        }
     }
 
     private IEnumerator RestoreOneHand(NetworkConnectionToClient conn, string roomId, uint playerNetId, string handPlaceId, HandType hand) {

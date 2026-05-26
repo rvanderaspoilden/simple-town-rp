@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 4822982493121651359}
   - component: {fileID: 6333738564570004324}
   - component: {fileID: 1031948647078431196}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: trash
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -168,10 +168,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1170379416308905757}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
-  configuration: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 7a5b9c1d2e3f40516273849506a7b8c9, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TrashBehaviour
+  configuration: {fileID: 11400000, guid: bb5bc096ad079cf41929f4d69d719e25, type: 2}
   defaultPresetId: -1
 --- !u!114 &1031948647078431196
 MonoBehaviour:

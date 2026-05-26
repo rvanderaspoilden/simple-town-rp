@@ -19,6 +19,9 @@ public static class PropInteractionRouter {
     /// <summary>ItemConfig id of the debris item spawned when a prop is destroyed.</summary>
     private const int DebrisItemConfigId = 100;
 
+    /// <summary>ItemConfig id of the trash bag thrown into a Trash prop.</summary>
+    private const int TrashBagConfigId = 101;
+
     public static void Route(NetworkConnectionToClient conn, C2S_PropInteraction msg) {
         switch (msg.Type) {
             case PropType.Generic:      HandleGeneric     (conn, msg); break;
@@ -28,6 +31,7 @@ public static class PropInteractionRouter {
             case PropType.DeliveryBox:  HandleDeliveryBox (conn, msg); break;
             case PropType.Package:      HandlePackage     (conn, msg); break;
             case PropType.Door:         HandleDoor        (conn, msg); break;
+            case PropType.Trash:        HandleTrash       (conn, msg); break;
             default:
                 Debug.LogWarning($"[PropInteractionRouter] Unhandled PropType={msg.Type} from conn={conn.connectionId}");
                 break;
@@ -60,6 +64,36 @@ public static class PropInteractionRouter {
             // prop as still-to-be-built.
             PropInteractionDispatcher.Instance?.SyncPropBuilt(msg.PropId, true);
         }
+    }
+
+    // ── Trash ─────────────────────────────────────────────────────────────────
+
+    private static void HandleTrash(NetworkConnectionToClient conn, C2S_PropInteraction msg) {
+        if (conn.identity == null) return;
+        if (!ServerPropManager.Instance.TryGetPropState(msg.RoomId, msg.PropId, out _)) {
+            Debug.LogWarning($"[PropInteractionRouter] Trash prop {msg.PropId} not found in room '{msg.RoomId}'");
+            return;
+        }
+
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (roomId == null) return;
+
+        int entityId = TrashInteraction.GetEntityId(msg.Payload);
+        ItemEntity entity = ServerItemManager.Instance.GetEntity(roomId, entityId);
+        if (entity == null) return;
+        if (entity.HolderNetId != conn.identity.netId) return; // doit tenir l'item
+        if (entity.ItemConfigId != TrashBagConfigId) return;   // doit être un sac poubelle
+
+        // Retire le sac (éphémère → pas de ligne DB à supprimer).
+        ServerItemManager.Instance.DespawnItem(roomId, entityId);
+
+        // Diffuse le VFX eco à tous les clients de la room (le prop est en msg.RoomId).
+        var thrown = new S2C_TrashThrown { PropId = msg.PropId, RoomId = msg.RoomId, ThrowerNetId = conn.identity.netId };
+        foreach (var c in PlayerRoomTracker.Instance.GetConnectionsInRoom(msg.RoomId)) {
+            if (c != null && c.isReady) c.Send(thrown);
+        }
+
+        Debug.Log($"[PropInteractionRouter] TrashThrow player={conn.identity.netId} entity={entityId} prop={msg.PropId} room='{roomId}'");
     }
 
     // ── Seat ──────────────────────────────────────────────────────────────────
@@ -198,6 +232,17 @@ public static class PropInteractionRouter {
         GameObject go  = ServerPropManager.Instance.GetSpawnedGameObject(msg.PropId);
         Vector3    pos = go != null ? go.transform.position : Vector3.zero;
         Quaternion rot = go != null ? go.transform.rotation : Quaternion.identity;
+
+        // Prop mural : son origine est en hauteur sur le mur. Le débris doit tomber au
+        // sol — on raycast vers le bas sur le layer sol (9) et on le pose à plat.
+        if (go != null) {
+            PropBehaviourBase beh = go.GetComponent<PropBehaviourBase>();
+            if (beh != null && beh.IsWallProps()) {
+                if (Physics.Raycast(pos + Vector3.up * 0.2f, Vector3.down, out RaycastHit floorHit, 20f, 1 << 9))
+                    pos = floorHit.point;
+                rot = Quaternion.identity;
+            }
+        }
 
         // 2. DELETE en base (avant le wipe runtime : le dispatcher lit le bridge UUID).
         PropInteractionDispatcher.Instance?.SyncPropRemove(msg.PropId);
@@ -361,7 +406,7 @@ public static class PropInteractionRouter {
             }
 
             // Bloque l'achat tant que le joueur porte un item de mission (colis, etc.).
-            if (ServerItemManager.Instance.IsHoldingEphemeralItem(conn.identity.netId)) {
+            if (ServerItemManager.Instance.IsHoldingMissionItem(conn.identity.netId)) {
                 Debug.Log($"[Dispenser] Purchase rejected: mission item held player={conn.connectionId} item={itemId}");
                 conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
                 conn.Send(new ToastNotificationMessage {

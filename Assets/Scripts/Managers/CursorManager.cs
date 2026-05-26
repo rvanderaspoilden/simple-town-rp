@@ -130,6 +130,12 @@ namespace Sim {
                     this.SetCursor(null);
                     return true;
                 }
+                // Pas d'action possible sur ce prop (ex. poubelle sans sac en main) →
+                // curseur par défaut. Le curseur custom n'apparaît que si le prop est interactif.
+                if (!behaviour.IsInteractable()) {
+                    this.SetCursor(null);
+                    return true;
+                }
                 PropsConfig cfg = behaviour.GetConfiguration();
                 this.SetCursor(behaviour.IsBuilt() ? cfg?.GetCursor() : this.buildCursor);
                 return true;

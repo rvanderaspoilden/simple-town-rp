@@ -382,3 +382,15 @@ public static class DoorInteraction
     public static bool IsLockRequest(byte[] d) => d != null && d.Length >= 1 && d[0] == 0;
     public static bool IsRingRequest(byte[] d) => d != null && d.Length >= 1 && d[0] == 1;
 }
+
+/// <summary>
+/// Payload envoyé par le client pour jeter un sac poubelle tenu dans une poubelle.
+/// 4 bytes : entityId (int32 LE) du sac poubelle tenu.
+/// </summary>
+public static class TrashInteraction
+{
+    public static byte[] ThrowRequest(int entityId) => BitConverter.GetBytes(entityId);
+
+    public static int GetEntityId(byte[] data) =>
+        (data != null && data.Length >= 4) ? BitConverter.ToInt32(data, 0) : -1;
+}

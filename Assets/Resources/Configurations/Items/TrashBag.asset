@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e3d6287acd3cc540a2488c818a01378, type: 3}
-  m_Name: Broken Planks
-  m_EditorClassIdentifier: 
-  id: 100
-  label: "D\xE9bris"
+  m_Name: TrashBag
+  m_EditorClassIdentifier:
+  id: 101
+  label: Sac poubelle
   type: 0
   handleType: 0
   sortingCategory: 0
-  unEquippedActions:
-  - {fileID: 11400000, guid: 4d3c2b1a0f9e8d7c6b5a40392817060f, type: 2}
-  equippedActions: []
+  unEquippedActions: []
+  equippedActions:
+  - {fileID: 11400000, guid: 875ebf10bf5a7c24084772ff5e3be913, type: 2}
   prefab: {fileID: 2859411330707159560, guid: ce284ac833c49a7488b504871bc99c00, type: 3}
-  toPersist: 1
+  toPersist: 0
   cursor: {fileID: 0}
   icon: {fileID: 21300000, guid: 0f9775b5d12015445b0e9dd799d22ff3, type: 3}
   poseShape: 0

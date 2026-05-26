@@ -102,7 +102,16 @@
       "mcp__ai-game-developer__gameobject-set-parent",
       "mcp__ai-game-developer__scene-unload",
       "mcp__ai-game-developer__assets-move",
-      "mcp__ai-game-developer__assets-delete"
+      "mcp__ai-game-developer__assets-delete",
+      "mcp__ai-game-developer__assets-create-folder",
+      "mcp__ai-game-developer__screenshot-isolated",
+      "mcp__ai-game-developer__screenshot-camera",
+      "Bash(read f *)",
+      "Bash(grep -h guid: Assets/Resources/Configurations/Actions/__TRACKED_VAR__.meta)",
+      "Bash(jq -r .result[].Message C:/Users/rodol/.claude/projects/D--Workspace-Unity-TheBroz-simple-town-rp/d7f0f8f7-c58e-4984-8eea-e4524ac96168/tool-results/mcp-ai-game-developer-console-get-logs-1779784509373.txt)",
+      "Bash(jq --version)",
+      "Bash(echo \"jq version: $\\(jq --version 2>&1\\)\")",
+      "Bash(jq -r .result[0].Message C:/Users/rodol/.claude/projects/D--Workspace-Unity-TheBroz-simple-town-rp/d7f0f8f7-c58e-4984-8eea-e4524ac96168/tool-results/mcp-ai-game-developer-console-get-logs-1779784509373.txt)"
     ]
   },
   "enableAllProjectMcpServers": true,

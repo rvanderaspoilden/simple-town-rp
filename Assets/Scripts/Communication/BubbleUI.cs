@@ -23,6 +23,14 @@ namespace Sim {
         [SerializeField]
         private float chatMessageDuration = 6f;
 
+        [Tooltip("Largeur max du conteneur de chat (unités locales du canvas). Le conteneur s'élargit avec le texte mais ne dépasse pas cette valeur ; au-delà le texte passe à la ligne (hauteur dynamique).")]
+        [SerializeField]
+        private float maxChatWidth = 2f;
+
+        [Tooltip("Largeur min du conteneur de chat — évite une bulle trop étroite pour un message court.")]
+        [SerializeField]
+        private float minChatWidth = 0.5f;
+
         [Header("Bubble vertical placement")]
         [Tooltip("Position Y locale de la bulle quand la caméra est proche (zoom max).")]
         [SerializeField]
@@ -88,8 +96,22 @@ namespace Sim {
             if (this.chatTextLabel != null) this.chatTextLabel.text = message;
             if (this.chatText != null) {
                 this.chatText.SetActive(true);
+
+                // Largeur dynamique plafonnée : on dimensionne le label à la largeur
+                // préférée du texte (une ligne), bornée par [minChatWidth, maxChatWidth].
+                // Sous le max → bulle juste à la taille du texte (1 ligne) ; au-delà →
+                // largeur figée au max, le texte passe à la ligne (hauteur dynamique).
+                // Le conteneur "Chat Text" suit la largeur du label (VerticalLayoutGroup
+                // + ContentSizeFitter), comme avant pour la hauteur.
+                if (this.chatTextLabel != null) {
+                    float preferredWidth = this.chatTextLabel.GetPreferredValues(message, Mathf.Infinity, Mathf.Infinity).x;
+                    float width = Mathf.Clamp(preferredWidth, this.minChatWidth, this.maxChatWidth);
+                    RectTransform labelRect = this.chatTextLabel.rectTransform;
+                    labelRect.sizeDelta = new Vector2(width, labelRect.sizeDelta.y);
+                }
+
                 // ContentSizeFitter ne recalcule pas automatiquement à l'activation ;
-                // forcer le rebuild pour que la hauteur s'adapte au texte.
+                // forcer le rebuild pour que largeur/hauteur s'adaptent au texte.
                 LayoutRebuilder.ForceRebuildLayoutImmediate(this.chatText.GetComponent<RectTransform>());
             }
 

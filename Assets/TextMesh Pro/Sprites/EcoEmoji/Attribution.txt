@@ -1,0 +1,18 @@
+EcoEmoji TMP Sprite Asset — emoji artwork
+=========================================
+
+Emoji glyphs sourced from Twemoji.
+
+  - 🌱 U+1F331 SEEDLING   (assets/72x72/1f331.png)
+  - ⭐ U+2B50  WHITE MEDIUM STAR (assets/72x72/2b50.png)
+
+Source: https://github.com/jdecked/twemoji  (maintained Twemoji fork)
+Graphics license: CC-BY 4.0  (https://creativecommons.org/licenses/by/4.0/)
+Copyright 2020 Twitter, Inc and other contributors.
+
+Usage in this project:
+  - The two PNGs are composited into Assets/TextMesh Pro/Sprites/EcoEmoji.png (144x72 atlas).
+  - Wrapped by the TMP Sprite Asset Assets/TextMesh Pro/Resources/Sprite Assets/EcoEmoji.asset
+    (Unicode 0x1F331 -> "seedling", 0x2B50 -> "star").
+  - Registered as an Emoji Fallback in TMP Settings (m_EmojiFallbackTextAssets), so raw emoji
+    typed in any TMP text render as these sprites. Add more glyphs by extending the atlas + tables.

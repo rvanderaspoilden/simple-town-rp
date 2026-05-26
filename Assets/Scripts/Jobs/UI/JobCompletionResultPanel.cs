@@ -29,6 +29,12 @@ namespace Sim.Jobs {
 
         private bool _subscribed;
 
+        // Récompenses de la dernière mission complétée, affichées en toast au-dessus du
+        // joueur une fois la modale de recap fermée.
+        private int  _pendingMoney;
+        private int  _pendingXp;
+        private bool _pendingToast;
+
         private void Awake() {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
@@ -69,6 +75,11 @@ namespace Sim.Jobs {
             }
             if (picked != null) picked.Render(state);
 
+            // Mémorise les gains pour le toast affiché à la fermeture de la modale.
+            _pendingMoney = state.CompletionMoneyEarned;
+            _pendingXp    = state.CompletionXpEarned;
+            _pendingToast = _pendingMoney > 0 || _pendingXp > 0;
+
             Show(true);
         }
 
@@ -81,7 +92,25 @@ namespace Sim.Jobs {
             return fallbackView;
         }
 
-        public void Close() => Show(false);
+        public void Close() {
+            Show(false);
+
+            // Une fois la modale fermée, on rappelle les gains via un toast flottant
+            // au-dessus du joueur (même composant que le feedback "Crédit Social").
+            if (_pendingToast) {
+                _pendingToast = false;
+                WorldToastManager.Show("Mission terminée", FormatRewardSubtitle(_pendingMoney, _pendingXp), delay: 0.25f);
+            }
+        }
+
+        /// <summary>Ligne de gains pour le toast : "+1200 €   +30 XP ⭐" (omet ce qui vaut 0).</summary>
+        private static string FormatRewardSubtitle(int money, int xp) {
+            var sb = new System.Text.StringBuilder();
+            if (money > 0) sb.Append('+').Append(money).Append(" €");
+            if (money > 0 && xp > 0) sb.Append("   ");
+            if (xp > 0) sb.Append('+').Append(xp).Append(" XP ⭐");
+            return sb.ToString();
+        }
 
         private void Show(bool visible) {
             if (root != null) root.SetActive(visible);

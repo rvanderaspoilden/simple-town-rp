@@ -11,4 +11,5 @@ public enum PropType : byte {
     DeliveryBox  = 5,   // boîte de livraison : deliveryCount + ouverture via REST
     Package      = 6,   // colis : contient un PropsConfig à déballer, ouverture client-local
     Teleporter   = 7,   // ascenseur : routing par roomId, use via C2S_TeleporterUse
+    Trash        = 8,   // poubelle : jet d'un sac poubelle tenu via C2S (THROW)
 }

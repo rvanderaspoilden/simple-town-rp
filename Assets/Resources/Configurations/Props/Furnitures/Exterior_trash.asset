@@ -10,25 +10,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
-  m_Name: Kitchen_trash_1
+  m_Name: Exterior_trash
   m_EditorClassIdentifier: 
-  id: 88
-  displayName: Poubelle cuisine 30L
+  id: 90
+  displayName: Poubelle exterieur
   sprite: {fileID: 0}
   propsType: 0
-  price: 250
-  sellable: 1
-  prefab: {fileID: -84697626943185380, guid: 7106f0d86e377b04692c7c9f4b84da70, type: 3}
+  price: 400
+  sellable: 0
+  prefab: {fileID: 6333738564570004324, guid: d46d5d809b2418c439a1094f196b4fc6, type: 3}
   packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
   surfaceToPose: 0
   posableOnProps: 0
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
+  movable: 1
   rangeToInteract: 1
   rightClickOnly: 0
   actions:
-  - {fileID: 11400000, guid: eb2c51e8927332c40abe1682f0e39009, type: 2}
   - {fileID: 11400000, guid: 8e7d6c5b4a3f2918e7d6c5b4a3f29180, type: 2}
   unbuiltActions: []
   cursor: {fileID: 2800000, guid: 10c9308c44cef334da9e57fe4c678936, type: 3}

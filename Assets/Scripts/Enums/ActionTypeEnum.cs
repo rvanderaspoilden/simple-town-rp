@@ -22,7 +22,9 @@
         LIST_FOR_SALE,
         UNLIST,
         BUY,
-        DESTROY
+        DESTROY,
+        CLEAN,
+        THROW
     }
 
 }
