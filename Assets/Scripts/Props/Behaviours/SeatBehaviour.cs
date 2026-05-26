@@ -69,12 +69,41 @@ public class SeatBehaviour : PropBehaviourBase, ISeatBehavior {
 
     private SeatState _state;
 
+    // SIT/COUCH are injected dynamically based on the slots authored on the prefab — they
+    // no longer need to be listed in PropsConfig. Loaded once from Resources, instantiated
+    // per-instance and wired to DoAction (→ Execute) like the base sale/generic actions.
+    private static Action _protoSit, _protoCouch;
+    private static bool   _seatProtosLoaded;
+    private Action _actSit, _actCouch;
+
     protected override void Awake() {
         base.Awake();
         _state = new SeatState {
             SeatOccupants  = new uint[SeatSlotCount],
             CouchOccupants = new uint[CouchSlotCount]
         };
+        SetupSeatActions();
+    }
+
+    /// <summary>
+    /// Instantiates SIT when at least one seat slot exists and COUCH when at least one
+    /// couch slot exists. Availability of a free slot is checked at execution time, not here.
+    /// </summary>
+    private void SetupSeatActions() {
+        if (!_seatProtosLoaded) {
+            _protoSit   = Resources.Load<Action>("Configurations/Actions/SIT");
+            _protoCouch = Resources.Load<Action>("Configurations/Actions/COUCH");
+            _seatProtosLoaded = true;
+        }
+
+        if (SeatSlotCount  > 0) _actSit   = InstantiateAction(_protoSit);
+        if (CouchSlotCount > 0) _actCouch = InstantiateAction(_protoCouch);
+    }
+
+    protected override void OnDestroy() {
+        base.OnDestroy();
+        if (_actSit   != null) _actSit.OnExecute   -= DoAction;
+        if (_actCouch != null) _actCouch.OnExecute -= DoAction;
     }
 
     // ── IPropBehaviour ────────────────────────────────────────────────────────
@@ -113,19 +142,21 @@ public class SeatBehaviour : PropBehaviourBase, ISeatBehavior {
     public override bool IsInteractable() {
         if (!base.IsInteractable()) return false;
         uint localNetId = PlayerController.Local?.netId ?? 0;
-        if (IsLocalPlayerOccupying(localNetId)) return false;
-        return HasAvailableSeat() || HasAvailableCouch();
+        // Remain interactable even when every slot is taken: the player can still pick
+        // SIT/COUCH and gets a "no free slot" toast (handled in Execute).
+        return !IsLocalPlayerOccupying(localNetId);
     }
 
     public override Action[] GetActions(bool withPriority = false) {
         uint localNetId = PlayerController.Local?.netId ?? 0;
         if (IsLocalPlayerOccupying(localNetId)) return System.Array.Empty<Action>();
 
-        return base.GetActions(withPriority).Where(a => {
-            if (a.Type == ActionTypeEnum.SIT)   return HasAvailableSeat();
-            if (a.Type == ActionTypeEnum.COUCH)  return HasAvailableCouch();
-            return true;
-        }).ToArray();
+        // SIT/COUCH are shown whenever the corresponding slot type exists on the prop
+        // (regardless of occupancy). Picking a full slot is handled in Execute with a toast.
+        System.Collections.Generic.IEnumerable<Action> result = base.GetActions(withPriority);
+        if (_actSit   != null) result = result.Append(_actSit);
+        if (_actCouch != null) result = result.Append(_actCouch);
+        return result.ToArray();
     }
 
     // ── ISeatBehavior ─────────────────────────────────────────────────────────
@@ -140,11 +171,17 @@ public class SeatBehaviour : PropBehaviourBase, ISeatBehavior {
         if (IsLocalPlayerOccupying(localNetId)) return;
 
         switch (action.Type) {
-            case ActionTypeEnum.SIT when HasAvailableSeat():
-                SendPropInteraction(PropType.Seat, SeatInteraction.SitRequest);
+            case ActionTypeEnum.SIT:
+                if (HasAvailableSeat())
+                    SendPropInteraction(PropType.Seat, SeatInteraction.SitRequest);
+                else
+                    WorldToastManager.Show("Aucune place libre");
                 break;
-            case ActionTypeEnum.COUCH when HasAvailableCouch():
-                SendPropInteraction(PropType.Seat, SeatInteraction.CouchRequest);
+            case ActionTypeEnum.COUCH:
+                if (HasAvailableCouch())
+                    SendPropInteraction(PropType.Seat, SeatInteraction.CouchRequest);
+                else
+                    WorldToastManager.Show("Aucune place libre");
                 break;
         }
     }

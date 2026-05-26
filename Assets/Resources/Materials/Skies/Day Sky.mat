@@ -127,7 +127,7 @@ Material:
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _CloudsCat: 1
-    - _CloudsHeight: 0.232
+    - _CloudsHeight: -0.5
     - _CloudsIntensity: 0.789
     - _CloudsLitbySun: 1
     - _CloudsRotation: 360
@@ -148,12 +148,12 @@ Material:
     - _EnableStarsTwinkling: 1
     - _EnableSun: 1
     - _EnvironmentReflections: 1
-    - _EquatorHeight: 0.569
-    - _EquatorSmoothness: 0.399
+    - _EquatorHeight: 0.108
+    - _EquatorSmoothness: 0.26
     - _FogCat: 1
     - _FogFill: 0
     - _FogHeight: 0
-    - _FogSmoothness: 0
+    - _FogSmoothness: 0.01
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: Desk_admin
+  m_EditorClassIdentifier: 
+  id: 92
+  displayName: Bureau admin
+  sprite: {fileID: 0}
+  propsType: 0
+  price: 550
+  sellable: 0
+  prefab: {fileID: 4228246408647036612, guid: 3b543254c32d0394f9f7d95a62e924d9, type: 3}
+  packageConfig: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
+  surfaceToPose: 0
+  posableOnProps: 0
+  hasPosableSurface: 0
+  connectedToWall: 0
+  toBuild: 1
+  movable: 1
+  rangeToInteract: 1
+  rightClickOnly: 0
+  actions: []
+  unbuiltActions: []
+  cursor: {fileID: 0}
+  presets: []
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}

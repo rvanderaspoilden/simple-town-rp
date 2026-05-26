@@ -316,8 +316,8 @@ GameObject:
   - component: {fileID: 6723892000438684444}
   - component: {fileID: 4115281884627394178}
   - component: {fileID: 7254849845839702509}
-  - component: {fileID: 4473792640048957467}
-  - component: {fileID: 7197346386656005175}
+  - component: {fileID: 1051654289926895213}
+  - component: {fileID: 7529463396457632451}
   m_Layer: 10
   m_Name: Toilet
   m_TagString: Untagged
@@ -541,7 +541,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
   propId: 0
   roomId: city
---- !u!114 &4473792640048957467
+--- !u!114 &1051654289926895213
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -550,20 +550,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 8688653635720199353}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
+  m_Script: {fileID: 11500000, guid: 8ad35feecaa29af458d29d72a0b0d023, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
---- !u!114 &7197346386656005175
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8688653635720199353}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
+  m_EditorClassIdentifier: Assembly-CSharp::SeatBehaviour
   configuration: {fileID: 11400000, guid: 9338a8e1aaa299247a224398e91febd6, type: 2}
   defaultPresetId: -1
+  seatTransforms:
+  - {fileID: 5540298698517833447}
+  couchTransforms: []
+--- !u!114 &7529463396457632451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8688653635720199353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54f9ecb512830054ab54f6df06820ae1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeatPropSource

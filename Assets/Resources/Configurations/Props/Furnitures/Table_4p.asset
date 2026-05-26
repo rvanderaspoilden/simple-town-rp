@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 719e1924ed843de40ae795e0b48bd95c, type: 3}
+  m_Name: Table_4p
+  m_EditorClassIdentifier: 
+  id: 93
+  displayName: Table 4p
+  sprite: {fileID: 0}
+  propsType: 0
+  price: 150
+  sellable: 1
+  prefab: {fileID: 7927448983113012364, guid: d1373b95f96e3cd4a85d7cc732c5d277, type: 3}
+  packageConfig: {fileID: 11400000, guid: 5aa930eb7ca4f9c4fb829df913bf32cc, type: 2}
+  surfaceToPose: 0
+  posableOnProps: 0
+  hasPosableSurface: 1
+  connectedToWall: 0
+  toBuild: 1
+  movable: 1
+  rangeToInteract: 1
+  rightClickOnly: 0
+  actions: []
+  unbuiltActions: []
+  cursor: {fileID: 0}
+  presets:
+  - id: 1
+    label: Metal
+    primary:
+      enabled: 1
+      color: {r: 0, g: 0, b: 0, a: 1}
+      material: {fileID: 2100000, guid: 85ebde6f201696c459449d19821f3ece, type: 2}
+    secondary:
+      enabled: 1
+      color: {r: 0, g: 0, b: 0, a: 1}
+      material: {fileID: 2100000, guid: 85ebde6f201696c459449d19821f3ece, type: 2}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  - id: 2
+    label: White
+    primary:
+      enabled: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      material: {fileID: 0}
+    secondary:
+      enabled: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      material: {fileID: 0}
+    tertiary:
+      enabled: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      material: {fileID: 0}
+  buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}

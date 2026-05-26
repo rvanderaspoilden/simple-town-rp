@@ -88,6 +88,19 @@ GameObject (prop prefab)
 - Delegates type-specific actions to the `Execute(Action)` virtual method
 - `ApplyState()` reads `PropStateHeader`, applies built/unbuilt state and preset to `PropsRenderer`
 
+#### Auto-injected actions (do NOT add these to `PropsConfig`)
+
+Some actions are injected in code instead of being authored in each `PropsConfig.actions` array. They're instantiated from `Resources/Configurations/Actions/` and wired through `DoAction → Execute` via the `protected InstantiateAction(Action)` helper. Don't list them in a config — they'd be duplicated.
+
+| Action(s) | Injected by | Condition |
+|---|---|---|
+| BUILD / MOVE / DESTROY | `PropBehaviourBase.GetGenericOwnerActions` | Local player owns the prop (gated by broadcast owner id); BUILD on unbuilt+`toBuild`, MOVE/DESTROY once built |
+| LIST_FOR_SALE / UNLIST / BUY | `PropBehaviourBase.GetSaleActions` | Sellable apartment prop (`PropsConfig.IsSellable()`); owner vs visitor decided server-side |
+| SIT | `SeatBehaviour.SetupSeatActions` | Prop has ≥1 seat transform (`SeatSlotCount > 0`) |
+| COUCH | `SeatBehaviour.SetupSeatActions` | Prop has ≥1 couch transform (`CouchSlotCount > 0`) |
+
+`SeatBehaviour` shows SIT/COUCH purely based on the authored `seatTransforms` / `couchTransforms` arrays — slot **availability** is only checked when the player picks the action: if every matching slot is taken, `Execute` shows a local `WorldToastManager` toast ("Aucune place libre") instead of sending a request. Seat/couch configs (`Chair`, `Sofa`, `Bed`, `Bench_*`, `Toilet`, etc.) therefore keep `actions: []`.
+
 ### `IPropBehaviour` (`Assets/Scripts/Props/Behaviours/IPropBehaviour.cs`)
 - Interface: `void ApplyState(PropType type, byte[] payload)`
 - `ClientPropManager` stores `Dictionary<int, IPropBehaviour>` — one entry per prop, keyed by propId

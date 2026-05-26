@@ -462,9 +462,9 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         SaleActionsConfig cfg = SaleActionsConfig.Get();
         if (cfg == null) return;
 
-        _actListForSale = InstantiateSaleAction(cfg.listForSale);
-        _actUnlist      = InstantiateSaleAction(cfg.unlist);
-        _actBuy         = InstantiateSaleAction(cfg.buy);
+        _actListForSale = InstantiateAction(cfg.listForSale);
+        _actUnlist      = InstantiateAction(cfg.unlist);
+        _actBuy         = InstantiateAction(cfg.buy);
     }
 
     /// <summary>
@@ -475,12 +475,17 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     private void SetupGenericActions()
     {
         LoadGenericActionPrototypes();
-        _actBuild   = InstantiateSaleAction(_protoBuild);
-        _actMove    = InstantiateSaleAction(_protoMove);
-        _actDestroy = InstantiateSaleAction(_protoDestroy);
+        _actBuild   = InstantiateAction(_protoBuild);
+        _actMove    = InstantiateAction(_protoMove);
+        _actDestroy = InstantiateAction(_protoDestroy);
     }
 
-    private Action InstantiateSaleAction(Action source)
+    /// <summary>
+    /// Instantiates a per-instance copy of a shared Action prototype and wires it to
+    /// <see cref="DoAction"/>. Used for the injected sale/generic actions and exposed to
+    /// subclasses that inject their own type-specific actions (e.g. SeatBehaviour's SIT/COUCH).
+    /// </summary>
+    protected Action InstantiateAction(Action source)
     {
         if (source == null) return null;
         Action copy = Instantiate(source);
@@ -496,7 +501,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
                 a.OnExecute -= DoAction;
     }
 
-    private void DoAction(Action action)
+    protected void DoAction(Action action)
     {
         switch (action.Type)
         {

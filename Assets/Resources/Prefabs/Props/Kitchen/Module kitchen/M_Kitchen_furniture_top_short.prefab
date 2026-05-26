@@ -102,9 +102,6 @@ GameObject:
   - component: {fileID: 8403882191626523443}
   - component: {fileID: 4710932971783009232}
   - component: {fileID: 617978685943718492}
-  - component: {fileID: 8689854319348877166}
-  - component: {fileID: 4144598309436244581}
-  - component: {fileID: 3352643393363910062}
   - component: {fileID: 2669576471854604678}
   m_Layer: 0
   m_Name: M_Kitchen_furniture_top_short
@@ -186,46 +183,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &8689854319348877166
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7348346369157982448}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
-  propId: 0
-  roomId: city
---- !u!114 &4144598309436244581
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7348346369157982448}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
---- !u!114 &3352643393363910062
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7348346369157982448}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
-  configuration: {fileID: 0}
-  defaultPresetId: -1
 --- !u!114 &2669576471854604678
 MonoBehaviour:
   m_ObjectHideFlags: 0

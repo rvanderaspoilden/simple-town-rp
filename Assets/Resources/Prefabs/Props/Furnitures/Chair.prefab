@@ -17,8 +17,8 @@ GameObject:
   - component: {fileID: 4484540916602288562}
   - component: {fileID: -8094602380998389984}
   - component: {fileID: 2395729697098845027}
-  - component: {fileID: 1060134913112640868}
-  - component: {fileID: 8452943409847245735}
+  - component: {fileID: 5767957385902980414}
+  - component: {fileID: 8378972865818547648}
   m_Layer: 10
   m_Name: Chair
   m_TagString: Untagged
@@ -295,7 +295,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
   propId: 0
   roomId: city
---- !u!114 &1060134913112640868
+--- !u!114 &5767957385902980414
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -304,23 +304,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 1950539022405000120}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
+  m_Script: {fileID: 11500000, guid: 8ad35feecaa29af458d29d72a0b0d023, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
---- !u!114 &8452943409847245735
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1950539022405000120}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
+  m_EditorClassIdentifier: Assembly-CSharp::SeatBehaviour
   configuration: {fileID: 11400000, guid: 5850af5709851524dbba8790ec0dec6b, type: 2}
   defaultPresetId: -1
+  seatTransforms:
+  - {fileID: 3999644446818767224}
+  couchTransforms: []
+--- !u!114 &8378972865818547648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1950539022405000120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54f9ecb512830054ab54f6df06820ae1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeatPropSource
 --- !u!1 &8166508940558256813
 GameObject:
   m_ObjectHideFlags: 0

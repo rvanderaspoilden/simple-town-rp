@@ -15,8 +15,8 @@ GameObject:
   - component: {fileID: 8896325259543280382}
   - component: {fileID: 1363138608243982350}
   - component: {fileID: 3691769405487816594}
-  - component: {fileID: 7162075846380677033}
-  - component: {fileID: 6404052556381223512}
+  - component: {fileID: 6243198327569956677}
+  - component: {fileID: 6995613482291898248}
   m_Layer: 10
   m_Name: Bidet
   m_TagString: Untagged
@@ -39,6 +39,7 @@ Transform:
   m_Children:
   - {fileID: 5181163427746750155}
   - {fileID: 7816542359499852967}
+  - {fileID: 6591678739881694775}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2749566814130690555
@@ -237,7 +238,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
   propId: 0
   roomId: city
---- !u!114 &7162075846380677033
+--- !u!114 &6243198327569956677
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -246,23 +247,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 118949682507065865}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 65d89b2e5e3384349b35fefbac87e8f8, type: 3}
+  m_Script: {fileID: 11500000, guid: 8ad35feecaa29af458d29d72a0b0d023, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GenericPropSource
---- !u!114 &6404052556381223512
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 118949682507065865}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c73780b453438041a025935bfa37325, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GenericPropBehaviour
+  m_EditorClassIdentifier: Assembly-CSharp::SeatBehaviour
   configuration: {fileID: 11400000, guid: 701ebf391a5e5ff49b67f8d75df85dcc, type: 2}
   defaultPresetId: -1
+  seatTransforms:
+  - {fileID: 6591678739881694775}
+  couchTransforms: []
+--- !u!114 &6995613482291898248
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 118949682507065865}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54f9ecb512830054ab54f6df06820ae1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeatPropSource
 --- !u!1 &742273446130226868
 GameObject:
   m_ObjectHideFlags: 0
@@ -443,3 +447,34 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &7606139711178188849
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6591678739881694775}
+  m_Layer: 10
+  m_Name: Seat position
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6591678739881694775
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7606139711178188849}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.427, z: 0.088}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 787365463784616115}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
