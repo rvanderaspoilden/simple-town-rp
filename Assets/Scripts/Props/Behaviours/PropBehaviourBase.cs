@@ -315,9 +315,12 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         if (_actMove != null && (configuration == null || configuration.IsMovable()))
             yield return _actMove;
 
-        // DESTROY: only on buildable props (toBuild) once built. Irreversible — gated by
-        // a confirmation dialog client-side and re-checked (OwnsProp) server-side.
-        if (configuration != null && configuration.MustBeBuilt() && _actDestroy != null)
+        // DESTROY: une fois construit, sur les props constructibles (toBuild) ET sur les
+        // props non-constructibles déplaçables (ex. déco murale toBuild=false). Exclut les
+        // fixtures non déplaçables (portes, boîte de livraison, lumières intégrées :
+        // movable=false). Irréversible — confirmé client-side, re-vérifié (OwnsProp) serveur.
+        if (_actDestroy != null && configuration != null
+            && (configuration.MustBeBuilt() || configuration.IsMovable()))
             yield return _actDestroy;
     }
 
