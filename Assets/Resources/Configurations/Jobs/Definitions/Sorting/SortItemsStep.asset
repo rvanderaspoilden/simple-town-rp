@@ -20,6 +20,8 @@ MonoBehaviour:
   - sortingCategory: 1
   roomId: city
   spawnAtKey: 0
-  spawnShelfId: warehouse_shelf_1
+  spawnSlotsId: warehouse_sorting_package
+  randomSlot: 1
+  slotOccupancyRadius: 0.4
   baseSpawnOffset: {x: 0, y: 0.5, z: 0}
   itemSpacing: 0.6

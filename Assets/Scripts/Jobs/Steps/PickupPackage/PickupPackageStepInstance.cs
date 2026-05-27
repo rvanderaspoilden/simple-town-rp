@@ -33,9 +33,40 @@ namespace Sim.Jobs {
                 return;
             }
 
-            var pos = target.Transform.position + def.SpawnOffset;
+            // Si un JobSpawnSlots est configuré (ex. palette de livraison), on pose le
+            // colis sur le slot demandé (position + rotation). Sinon, ancien comportement :
+            // position du target + offset.
+            Vector3 pos;
+            Quaternion rot = Quaternion.identity;
+            var slots = JobSpawnSlots.Get(def.SpawnSlotsId);
+            Transform slot = null;
+            if (slots != null) {
+                if (def.RandomSlot) {
+                    // Tirage d'un slot LIBRE au hasard (aucun item posé dans le rayon).
+                    slot = slots.GetRandomSlot(
+                        t => !ServerItemManager.Instance.IsWorldPositionOccupied(def.RoomId, t.position, def.SlotOccupancyRadius),
+                        out _, out bool wasFree);
+                    if (slot != null && !wasFree) {
+                        GameLogger.System.Warning("PickupPackageStep_NoFreeSlot {SlotsId} {JobId}",
+                            def.SpawnSlotsId, job.Definition.JobId);
+                    }
+                } else {
+                    slot = slots.GetSlot(def.SpawnSlotIndex);
+                }
+            }
+            if (slot != null) {
+                pos = slot.position;
+                rot = slot.rotation;
+            } else {
+                if (!string.IsNullOrEmpty(def.SpawnSlotsId)) {
+                    GameLogger.System.Warning("PickupPackageStep_SlotsNotFound {SlotsId} {Index} {JobId}",
+                        def.SpawnSlotsId, def.SpawnSlotIndex, job.Definition.JobId);
+                }
+                pos = target.Transform.position + def.SpawnOffset;
+            }
+
             _spawnedEntityId = ServerItemManager.Instance.SpawnItem(
-                def.RoomId, def.ItemConfig.ID, pos, Quaternion.identity);
+                def.RoomId, def.ItemConfig.ID, pos, rot);
 
             // Anti-vol : seul le owner de la mission peut pick le colis.
             ServerItemManager.Instance.SetAuthorizedHolder(def.RoomId, _spawnedEntityId, job.OwnerNetId);

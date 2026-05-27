@@ -21,12 +21,33 @@ namespace Sim.Jobs {
         [Tooltip("Cible où spawner le colis (généralement Pickup).")]
         [SerializeField] private JobTargetKey spawnAtKey = JobTargetKey.Pickup;
 
-        [Tooltip("Offset local appliqué à la position du target pour le spawn.")]
+        [Tooltip("Optionnel. Id d'un JobSpawnSlots (ex. palette de livraison) : si renseigné " +
+                 "et trouvé, le colis est posé sur le slot 'spawnSlotIndex' (position + rotation) " +
+                 "au lieu de la position du target. Vide = ancien comportement (target + offset).")]
+        [SerializeField] private string spawnSlotsId;
+
+        [Tooltip("Index du slot à utiliser dans le JobSpawnSlots ci-dessus (ignoré si Random Slot est coché).")]
+        [SerializeField] private int spawnSlotIndex = 0;
+
+        [Tooltip("Si coché : choisit automatiquement un slot LIBRE au hasard parmi tous les slots " +
+                 "(vérifie qu'aucun item n'est déjà posé dessus), au lieu d'utiliser Spawn Slot Index. " +
+                 "Permet de renseigner plusieurs slots et de répartir les spawns.")]
+        [SerializeField] private bool randomSlot = false;
+
+        [Tooltip("Rayon (m) de détection d'occupation d'un slot : un item posé au sol dans ce rayon " +
+                 "rend le slot indisponible pour le tirage aléatoire.")]
+        [SerializeField] private float slotOccupancyRadius = 0.4f;
+
+        [Tooltip("Offset local appliqué à la position du target pour le spawn (fallback sans slots).")]
         [SerializeField] private Vector3 spawnOffset = new Vector3(0, 0.5f, 0);
 
         public ItemConfig ItemConfig => itemConfig;
         public string RoomId => roomId;
         public JobTargetKey SpawnAtKey => spawnAtKey;
+        public string SpawnSlotsId => spawnSlotsId;
+        public int SpawnSlotIndex => spawnSlotIndex;
+        public bool RandomSlot => randomSlot;
+        public float SlotOccupancyRadius => slotOccupancyRadius;
         public Vector3 SpawnOffset => spawnOffset;
 
         public override JobStepInstance CreateInstance(JobInstance owner)

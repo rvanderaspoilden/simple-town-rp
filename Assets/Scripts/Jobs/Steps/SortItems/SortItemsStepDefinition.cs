@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Sim.Jobs {
     [Serializable]
@@ -28,22 +29,33 @@ namespace Sim.Jobs {
         [Tooltip("Cible où spawner les items.")]
         [SerializeField] private JobTargetKey spawnAtKey = JobTargetKey.Pickup;
 
-        [Tooltip("Id d'une SortShelf de la scène. Si renseigné, les colis sont posés sur ses " +
+        [Tooltip("Id d'un JobSpawnSlots de la scène. Si renseigné, les colis sont posés sur ses " +
                  "slots (position + rotation), dans l'ordre. Sinon, repli sur l'alignement " +
                  "linéaire au-dessus du target (baseSpawnOffset + itemSpacing).")]
-        [SerializeField] private string spawnShelfId;
+        [FormerlySerializedAs("spawnShelfId")]
+        [SerializeField] private string spawnSlotsId;
 
-        [Tooltip("[Repli sans étagère] Offset de base appliqué à la position du target pour le spawn (hauteur).")]
+        [Tooltip("Si coché : répartit les colis sur des slots LIBRES DISTINCTS tirés au hasard " +
+                 "(vérifie qu'aucun item n'est déjà posé dessus), au lieu d'utiliser les slots " +
+                 "dans l'ordre. Utile si tu renseignes plus de slots que de colis.")]
+        [SerializeField] private bool randomSlot = false;
+
+        [Tooltip("Rayon (m) de détection d'occupation d'un slot pour le tirage aléatoire.")]
+        [SerializeField] private float slotOccupancyRadius = 0.4f;
+
+        [Tooltip("[Repli sans slots] Offset de base appliqué à la position du target pour le spawn (hauteur).")]
         [SerializeField] private Vector3 baseSpawnOffset = new Vector3(0f, 0.5f, 0f);
 
-        [Tooltip("[Repli sans étagère] Espacement horizontal entre les items spawnés.")]
+        [Tooltip("[Repli sans slots] Espacement horizontal entre les items spawnés.")]
         [SerializeField] private float itemSpacing = 0.6f;
 
         public ItemConfig PackageConfig => packageConfig;
         public IReadOnlyList<SortTask> Tasks => tasks;
         public string RoomId => roomId;
         public JobTargetKey SpawnAtKey => spawnAtKey;
-        public string SpawnShelfId => spawnShelfId;
+        public string SpawnSlotsId => spawnSlotsId;
+        public bool RandomSlot => randomSlot;
+        public float SlotOccupancyRadius => slotOccupancyRadius;
         public Vector3 BaseSpawnOffset => baseSpawnOffset;
         public float ItemSpacing => itemSpacing;
 

@@ -16,4 +16,8 @@ MonoBehaviour:
   itemConfig: {fileID: 11400000, guid: 039d73aec79bdce46b228c6d9ef12288, type: 2}
   roomId: city
   spawnAtKey: 0
+  spawnSlotsId: warehouse_delivery_shelf_1
+  spawnSlotIndex: 0
+  randomSlot: 1
+  slotOccupancyRadius: 0.4
   spawnOffset: {x: 0, y: 0.5, z: 0}

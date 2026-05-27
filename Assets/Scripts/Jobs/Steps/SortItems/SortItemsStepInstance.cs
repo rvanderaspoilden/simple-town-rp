@@ -65,22 +65,30 @@ namespace Sim.Jobs {
             var entityIds  = new int[tasks.Count];
             var categories = new SortingCategory[tasks.Count];
 
-            // Étagère optionnelle : si configurée, chaque colis est posé sur le slot
+            // Slots optionnels : si configurés, chaque colis est posé sur le slot
             // d'index correspondant (position + rotation). Sinon, repli sur
             // l'alignement linéaire au-dessus du target.
-            var shelf = SortShelf.Get(def.SpawnShelfId);
-            if (!string.IsNullOrEmpty(def.SpawnShelfId) && shelf == null) {
-                GameLogger.System.Warning("SortItemsStep_ShelfNotFound {ShelfId} {JobId}",
-                    def.SpawnShelfId, job.Definition.JobId);
-            } else if (shelf != null && shelf.SlotCount < tasks.Count) {
-                GameLogger.System.Warning("SortItemsStep_NotEnoughSlots {ShelfId} {Slots} {Tasks} {JobId}",
-                    def.SpawnShelfId, shelf.SlotCount, tasks.Count, job.Definition.JobId);
+            var spawnSlots = JobSpawnSlots.Get(def.SpawnSlotsId);
+            if (!string.IsNullOrEmpty(def.SpawnSlotsId) && spawnSlots == null) {
+                GameLogger.System.Warning("SortItemsStep_SlotsNotFound {SlotsId} {JobId}",
+                    def.SpawnSlotsId, job.Definition.JobId);
+            } else if (spawnSlots != null && spawnSlots.SlotCount < tasks.Count) {
+                GameLogger.System.Warning("SortItemsStep_NotEnoughSlots {SlotsId} {Slots} {Tasks} {JobId}",
+                    def.SpawnSlotsId, spawnSlots.SlotCount, tasks.Count, job.Definition.JobId);
             }
+
+            // Random : ordre de slots LIBRES distincts au hasard (libres d'abord, occupés en
+            // repli). Sinon, ordre séquentiel (slot i pour le colis i).
+            List<int> slotOrder = (def.RandomSlot && spawnSlots != null)
+                ? spawnSlots.GetShuffledSlotOrder(
+                    t => !ServerItemManager.Instance.IsWorldPositionOccupied(def.RoomId, t.position, def.SlotOccupancyRadius))
+                : null;
 
             for (int i = 0; i < tasks.Count; i++) {
                 var category = tasks[i].sortingCategory;
 
-                var slot = shelf != null ? shelf.GetSlot(i) : null;
+                int slotIndex = slotOrder != null ? (i < slotOrder.Count ? slotOrder[i] : -1) : i;
+                var slot = spawnSlots != null && slotIndex >= 0 ? spawnSlots.GetSlot(slotIndex) : null;
                 Vector3 spawnPos = slot != null
                     ? slot.position
                     : origin + Vector3.right * (i * def.ItemSpacing);
