@@ -38,6 +38,8 @@ namespace Sim.Jobs {
         public SortingCategory AcceptedCategory => acceptedCategory;
         public Color CategoryColor => categoryColor;
         public override MissionHighlightKind HighlightKind => MissionHighlightKind.SortingBin;
+        // Cible de DÉPÔT : surligné uniquement quand le joueur tient un colis à trier.
+        public override MissionHighlightPhase HighlightPhase => MissionHighlightPhase.Holding;
         protected override string GetHighlightId() => binId;
 
         protected override void Awake() {

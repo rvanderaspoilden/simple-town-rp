@@ -22,6 +22,7 @@ namespace Sim.Jobs {
             public MissionHighlightKind   kind;
             public string                 id;
             public JobCategory?           requiredJob;
+            public MissionHighlightPhase  phase;
         }
 
         private static readonly List<Entry> _entries = new List<Entry>();
@@ -29,6 +30,16 @@ namespace Sim.Jobs {
         // Réutilisés à chaque refresh pour éviter les allocations.
         private readonly HashSet<string>       _activeIds      = new HashSet<string>();
         private readonly HashSet<JobCategory>  _activeCareers  = new HashSet<JobCategory>();
+
+        // Colis de mission actuellement tenus par le JOUEUR LOCAL (clé = instanceId
+        // de l'item). Pilote le gating "phase" : mains libres → on montre les colis à
+        // ramasser ; un colis en main → on montre les bacs où le déposer.
+        private static readonly HashSet<int> _localHeldPayloads = new HashSet<int>();
+        public static bool LocalHoldsPayload => _localHeldPayloads.Count > 0;
+
+        /// <summary>Émis quand l'état "le joueur local tient un colis" change. Les
+        /// colis au sol s'y abonnent pour rafraîchir leur propre outline.</summary>
+        public static event System.Action HoldStateChanged;
 
         [Header("Pulse Animation")]
         [SerializeField] private float pulseSpeed = 3f;
@@ -63,9 +74,11 @@ namespace Sim.Jobs {
         /// kind uniquement). <paramref name="requiredJob"/> filtre par carrière pour
         /// la voie kind ; null = pas de filtre (cas des colis).
         /// </summary>
-        public static void Register(MissionHighlightKind kind, string id, MissionHighlightEffect effect, JobCategory? requiredJob) {
+        public static void Register(MissionHighlightKind kind, string id, MissionHighlightEffect effect,
+                                    JobCategory? requiredJob,
+                                    MissionHighlightPhase phase = MissionHighlightPhase.Always) {
             if (effect == null || kind == MissionHighlightKind.None) return;
-            _entries.Add(new Entry { effect = effect, kind = kind, id = id, requiredJob = requiredJob });
+            _entries.Add(new Entry { effect = effect, kind = kind, id = id, requiredJob = requiredJob, phase = phase });
             Instance?.RefreshHighlight();
         }
 
@@ -79,6 +92,19 @@ namespace Sim.Jobs {
 
         /// <summary>Recalcule l'état des highlights (ex. après qu'un colis change de main).</summary>
         public static void RequestRefresh() => Instance?.RefreshHighlight();
+
+        /// <summary>
+        /// Déclaré par les colis de mission (MissionItemBehaviour) quand le JOUEUR
+        /// LOCAL les prend (held=true) ou les lâche/dépose (held=false). Met à jour
+        /// le gating de phase et notifie les colis au sol.
+        /// </summary>
+        public static void SetLocalPayloadHeld(int itemKey, bool held) {
+            bool changed = held ? _localHeldPayloads.Add(itemKey)
+                                 : _localHeldPayloads.Remove(itemKey);
+            if (!changed) return;
+            Instance?.RefreshHighlight();   // (re)cache/montre les bacs
+            HoldStateChanged?.Invoke();      // (re)cache/montre les colis au sol
+        }
 
         // ── Events ────────────────────────────────────────────────────────────
 
@@ -141,6 +167,15 @@ namespace Sim.Jobs {
         }
 
         private bool ShouldShow(Entry e, MissionHighlightKind activeKinds) {
+            // Gating de phase selon l'état des mains du joueur local (générique,
+            // réutilisé par tout métier ramasser→déposer : tri, nettoyage, …).
+            //  • Holding   : cible de dépôt (bac, poubelle) → seulement en portant un colis.
+            //  • HandsFree : cible de ramassage → seulement mains libres.
+            // Une cible de dépôt masquée n'est pas non plus interactable (IsInteractable
+            // dépend de IsHighlighted) → pas de dépôt mains vides.
+            if (e.phase == MissionHighlightPhase.Holding   && !LocalHoldsPayload) return false;
+            if (e.phase == MissionHighlightPhase.HandsFree &&  LocalHoldsPayload) return false;
+
             // Voie ciblage précis : bypass du filtre carrière.
             if (!string.IsNullOrEmpty(e.id) && _activeIds.Contains(e.id)) return true;
 

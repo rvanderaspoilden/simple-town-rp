@@ -17,8 +17,9 @@ MonoBehaviour:
   tasks:
   - sortingCategory: 1
   - sortingCategory: 2
+  - sortingCategory: 1
   roomId: city
   spawnAtKey: 0
+  spawnShelfId: warehouse_shelf_1
   baseSpawnOffset: {x: 0, y: 0.5, z: 0}
   itemSpacing: 0.6
-  binDropRadius: 2.5

@@ -155,9 +155,12 @@ if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             if (abandonButton != null) abandonButton.gameObject.SetActive(!offered);
 
             // Determine mode
+            // Le mode Distance (« X m ») n'est affiché que pour les steps de
+            // navigation (Reach/Deliver), comme le beacon et le ruban GPS.
             if (state.Definition != null && state.Definition.ExpirationSeconds > 0) {
                 _currentMode = ProgressMode.Timer;
-            } else if (state.Status == JobStatus.Active && !string.IsNullOrEmpty(_currentTargetId)) {
+            } else if (state.Status == JobStatus.Active && state.ShowTargetBeacon
+                       && !string.IsNullOrEmpty(_currentTargetId)) {
                 _currentMode = ProgressMode.Distance;
             } else {
                 _currentMode = ProgressMode.None;

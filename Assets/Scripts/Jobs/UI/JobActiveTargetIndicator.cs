@@ -55,8 +55,11 @@ namespace Sim.Jobs {
         }
 
         private void ApplyTarget(JobClientState state) {
-            // Seules les missions Active déclenchent un indicateur (pas Offered).
-            if (state.Status != JobStatus.Active) {
+            // Seules les missions Active déclenchent un indicateur (pas Offered),
+            // et seulement pour les steps de navigation (Reach/Deliver). Les autres
+            // steps (UseMachine, Pickup, Sort…) mettent en évidence leur cible
+            // concrète via le système de highlight monde, pas via ce beacon.
+            if (state.Status != JobStatus.Active || !state.ShowTargetBeacon) {
                 ClearIndicator();
                 return;
             }

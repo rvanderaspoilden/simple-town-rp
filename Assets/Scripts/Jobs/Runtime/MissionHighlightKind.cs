@@ -16,4 +16,18 @@ namespace Sim.Jobs {
         PackagingMachine = 2,
         SortingBin       = 4,
     }
+
+    /// <summary>
+    /// Phase d'affichage d'un highlight selon l'état des mains du joueur local.
+    /// Générique : tout métier réutilise ces phases (tri = colis/bacs ;
+    /// nettoyage = déchets/poubelles ; etc.).
+    ///  • <see cref="Always"/>   : visible dès que le kind est actif (défaut — ex. machine d'emballage).
+    ///  • <see cref="HandsFree"/>: visible seulement mains libres (cible de RAMASSAGE).
+    ///  • <see cref="Holding"/>  : visible seulement en tenant un colis (cible de DÉPÔT).
+    /// </summary>
+    public enum MissionHighlightPhase {
+        Always,
+        HandsFree,
+        Holding,
+    }
 }

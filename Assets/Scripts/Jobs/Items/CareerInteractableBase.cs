@@ -37,6 +37,15 @@ namespace Sim.Jobs {
         /// </summary>
         public virtual MissionHighlightKind HighlightKind => MissionHighlightKind.None;
 
+        /// <summary>
+        /// Phase d'affichage selon l'état des mains du joueur local. Par défaut
+        /// <see cref="MissionHighlightPhase.Always"/> (visible dès que le step cible
+        /// ce kind). Les cibles de DÉPÔT (bac de tri, poubelle de cleaner…) overrident
+        /// en <see cref="MissionHighlightPhase.Holding"/> pour n'apparaître qu'en
+        /// portant un colis.
+        /// </summary>
+        public virtual MissionHighlightPhase HighlightPhase => MissionHighlightPhase.Always;
+
         /// <summary>Id stable du prop (machineId, binId) réutilisé pour la voie de ciblage précis.</summary>
         protected virtual string GetHighlightId() => null;
 
@@ -51,7 +60,7 @@ namespace Sim.Jobs {
             if (HighlightKind != MissionHighlightKind.None) {
                 _highlightEffect = GetComponent<MissionHighlightEffect>();
                 if (_highlightEffect == null) _highlightEffect = gameObject.AddComponent<MissionHighlightEffect>();
-                MissionHighlightManager.Register(HighlightKind, GetHighlightId(), _highlightEffect, requiredJob);
+                MissionHighlightManager.Register(HighlightKind, GetHighlightId(), _highlightEffect, requiredJob, HighlightPhase);
             }
         }
 

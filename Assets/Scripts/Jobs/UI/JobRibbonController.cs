@@ -64,8 +64,10 @@ namespace Sim.Jobs.UI
         {
             _activeInstanceId = state.InstanceId;
 
-            // On ne montre le GPS que pour les missions actives
-            if (state.Status != JobStatus.Active)
+            // On ne montre le GPS que pour les missions actives, et uniquement pour
+            // les steps de navigation (Reach/Deliver). Les autres steps mettent en
+            // évidence leur cible concrète via le highlight monde — pas de flèches.
+            if (state.Status != JobStatus.Active || !state.ShowTargetBeacon)
             {
                 ClearRibbon();
                 return;

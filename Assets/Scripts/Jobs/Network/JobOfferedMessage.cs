@@ -15,6 +15,10 @@ public struct JobOfferedMessage : NetworkMessage {
     public string currentTargetId;
     public string currentTargetName;
 
+    /// <summary>Le beacon monde du JobPoint doit-il s'allumer pour ce step
+    /// (steps de navigation Reach/Deliver uniquement).</summary>
+    public bool showTargetBeacon;
+
     public JobTargetKind primaryTargetKind;
     public string primaryTargetId;
     public string primaryTargetName;

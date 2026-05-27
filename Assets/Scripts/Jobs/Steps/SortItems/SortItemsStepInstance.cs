@@ -65,12 +65,29 @@ namespace Sim.Jobs {
             var entityIds  = new int[tasks.Count];
             var categories = new SortingCategory[tasks.Count];
 
+            // Étagère optionnelle : si configurée, chaque colis est posé sur le slot
+            // d'index correspondant (position + rotation). Sinon, repli sur
+            // l'alignement linéaire au-dessus du target.
+            var shelf = SortShelf.Get(def.SpawnShelfId);
+            if (!string.IsNullOrEmpty(def.SpawnShelfId) && shelf == null) {
+                GameLogger.System.Warning("SortItemsStep_ShelfNotFound {ShelfId} {JobId}",
+                    def.SpawnShelfId, job.Definition.JobId);
+            } else if (shelf != null && shelf.SlotCount < tasks.Count) {
+                GameLogger.System.Warning("SortItemsStep_NotEnoughSlots {ShelfId} {Slots} {Tasks} {JobId}",
+                    def.SpawnShelfId, shelf.SlotCount, tasks.Count, job.Definition.JobId);
+            }
+
             for (int i = 0; i < tasks.Count; i++) {
                 var category = tasks[i].sortingCategory;
 
-                var spawnPos = origin + Vector3.right * (i * def.ItemSpacing);
+                var slot = shelf != null ? shelf.GetSlot(i) : null;
+                Vector3 spawnPos = slot != null
+                    ? slot.position
+                    : origin + Vector3.right * (i * def.ItemSpacing);
+                Quaternion spawnRot = slot != null ? slot.rotation : Quaternion.identity;
+
                 int entityId = ServerItemManager.Instance.SpawnItem(
-                    def.RoomId, packageConfig.ID, spawnPos, Quaternion.identity);
+                    def.RoomId, packageConfig.ID, spawnPos, spawnRot);
 
                 ServerItemManager.Instance.SetAuthorizedHolder(def.RoomId, entityId, job.OwnerNetId);
                 ServerItemManager.Instance.SetPersistent(def.RoomId, entityId, false);
@@ -122,8 +139,10 @@ namespace Sim.Jobs {
             uint netId = conn.identity.netId;
 
             if (!_active.TryGetValue(netId, out var step)) {
-                conn.Send(new JobNotificationMessage {
-                    text = "Aucune mission ne te demande de trier des colis."
+                conn.Send(new ToastNotificationMessage {
+                    text       = "Aucune mission ne te demande de trier des colis.",
+                    typeByte   = (byte)NotificationType.JOB,
+                    worldToast = true,
                 });
                 return;
             }
@@ -148,8 +167,10 @@ namespace Sim.Jobs {
             }
 
             if (heldState == null) {
-                conn.Send(new JobNotificationMessage {
-                    text = "Tu dois tenir un colis à trier pour utiliser ce bac."
+                conn.Send(new ToastNotificationMessage {
+                    text       = "Tu dois tenir un colis à trier pour utiliser ce bac.",
+                    typeByte   = (byte)NotificationType.JOB,
+                    worldToast = true,
                 });
                 return;
             }
@@ -165,8 +186,15 @@ namespace Sim.Jobs {
 
             ServerItemManager.Instance.DespawnItem(def.RoomId, heldState.entityId);
 
+            // Résultat immédiat de l'action du joueur (dépôt dans un bac) → toast flottant,
+            // pas une notification coin d'écran. Voir Docs/FEEDBACK_UI.md.
+            conn.Send(new ToastNotificationMessage {
+                text       = heldState.correct ? "Parfait !" : "Mauvais bac !",
+                typeByte   = (byte)NotificationType.JOB,
+                worldToast = true,
+            });
+
             if (!heldState.correct) {
-                conn.Send(new JobNotificationMessage { text = "Mauvais bac !" });
                 GameLogger.System.Info("SortItemsStep_WrongBin {EntityId} {Category} {BinCategory} {JobId}",
                     heldState.entityId, heldState.category,
                     bin.AcceptedCategory, job.Definition.JobId);

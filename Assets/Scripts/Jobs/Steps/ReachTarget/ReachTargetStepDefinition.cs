@@ -22,5 +22,7 @@ namespace Sim.Jobs {
             => new ReachTargetStepInstance(owner, this);
 
         public override string GetActiveTargetKey() => targetKey.ToKey();
+
+        public override bool ShowsTargetBeacon => true;
     }
 }

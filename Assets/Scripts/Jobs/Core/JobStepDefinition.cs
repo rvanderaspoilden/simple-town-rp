@@ -24,6 +24,15 @@ namespace Sim.Jobs {
         /// </summary>
         public virtual string GetActiveTargetKey() => "primary";
 
+        /// <summary>
+        /// Vrai si la cible de ce step doit afficher le beacon monde du JobPoint
+        /// (la balise « va ici »). Réservé aux steps de navigation pure
+        /// (Reach/Deliver) : pour les autres (UseMachine, Pickup, Sort…), la cible
+        /// concrète est déjà mise en évidence par GetHighlightKinds(), donc le
+        /// beacon ferait double emploi. False par défaut.
+        /// </summary>
+        public virtual bool ShowsTargetBeacon => false;
+
         // ── Mission highlight (outline monde) ─────────────────────────────────
         /// <summary>
         /// Types d'objets à mettre en évidence pendant ce step (voie "tous les

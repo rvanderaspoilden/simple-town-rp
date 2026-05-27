@@ -1,3 +1,4 @@
+using Mirror;
 using UnityEngine;
 using Sim.Jobs;
 
@@ -7,15 +8,24 @@ using Sim.Jobs;
 /// la spécialisation est purement visuelle/UX pour signaler qu'il s'agit
 /// d'une cible de mission.
 ///
-/// Règle : un item de mission est toujours surligné tant qu'il est AU SOL
-/// (pas dans les mains). Contrairement aux props de carrière (machine, bac)
-/// qui sont pilotés par le step courant via MissionHighlightManager, le colis
-/// pilote lui-même son outline sur son état "tenu / posé" — il doit rester
-/// repérable même pendant un step de déplacement (Reach/Deliver).
+/// Outline piloté par deux conditions (et non plus seulement "au sol") :
+///  • l'item est AU SOL (pas dans une main), ET
+///  • le joueur local ne tient PAS déjà un colis de mission.
+/// Ainsi, dès qu'on prend un colis, les autres colis au sol s'éteignent et on
+/// ne voit plus que les bacs où déposer (gérés par MissionHighlightManager).
+/// Mains libres : tous les colis au sol sont surlignés, les bacs masqués.
+///
+/// L'item informe le MissionHighlightManager quand le JOUEUR LOCAL le prend /
+/// le lâche, et s'abonne à HoldStateChanged pour réagir aux changements
+/// provoqués par les AUTRES colis.
 /// </summary>
 public class MissionItemBehaviour : ItemBehaviour
 {
     private MissionHighlightEffect _highlightEffect;
+
+    // Vrai si CET item est actuellement comptabilisé comme "tenu par le joueur
+    // local" auprès du MissionHighlightManager. Évite les double-incréments.
+    private bool _countedAsLocalHeld;
 
     protected override void Awake()
     {
@@ -24,22 +34,48 @@ public class MissionItemBehaviour : ItemBehaviour
         _highlightEffect = GetComponent<MissionHighlightEffect>();
         if (_highlightEffect == null) _highlightEffect = gameObject.AddComponent<MissionHighlightEffect>();
 
-        // État initial : posé au sol → outline visible. Si le serveur le spawn
-        // directement en main, OnAttachedToHand le masquera juste après.
-        _highlightEffect.Show();
+        MissionHighlightManager.HoldStateChanged += RefreshOutline;
+        RefreshOutline();
+    }
+
+    protected override void OnDestroy()
+    {
+        // Despawn alors qu'on le tenait (ex. dépôt dans un bac) : libérer le compteur,
+        // sinon LocalHoldsPayload resterait bloqué à true.
+        ReportLocalHeld(false);
+        MissionHighlightManager.HoldStateChanged -= RefreshOutline;
+        base.OnDestroy();
     }
 
     public override void OnAttachedToHand(uint holderNetId, HandType hand)
     {
         base.OnAttachedToHand(holderNetId, hand);
-        // Item en main → on masque l'outline mission tant qu'il est porté.
-        if (_highlightEffect != null) _highlightEffect.Hide();
+        // Ne compter que si c'est le joueur LOCAL qui tient l'item.
+        ReportLocalHeld(holderNetId == NetworkClient.connection?.identity?.netId);
+        RefreshOutline();
     }
 
     public override void OnDetachedFromHand()
     {
         base.OnDetachedFromHand();
-        // Reposé au sol → on rallume l'outline pour qu'il reste repérable.
-        if (_highlightEffect != null) _highlightEffect.Show();
+        ReportLocalHeld(false);
+        RefreshOutline();
+    }
+
+    private void ReportLocalHeld(bool held)
+    {
+        if (held == _countedAsLocalHeld) return;
+        _countedAsLocalHeld = held;
+        MissionHighlightManager.SetLocalPayloadHeld(GetInstanceID(), held);
+    }
+
+    private void RefreshOutline()
+    {
+        if (_highlightEffect == null) return;
+        // Surligné seulement s'il est au sol ET que le joueur local n'a pas déjà
+        // un colis en main.
+        bool show = !IsHeld && !MissionHighlightManager.LocalHoldsPayload;
+        if (show) _highlightEffect.Show();
+        else _highlightEffect.Hide();
     }
 }

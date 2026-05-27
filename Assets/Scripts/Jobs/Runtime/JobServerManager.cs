@@ -243,7 +243,8 @@ namespace Sim.Jobs {
                 newStepIndex = job.CurrentStepIndex,
                 promptKey = stepDef != null ? stepDef.PromptKey : string.Empty,
                 currentTargetId = activeTarget?.TargetId ?? string.Empty,
-                currentTargetName = activeTarget?.DisplayName ?? string.Empty
+                currentTargetName = activeTarget?.DisplayName ?? string.Empty,
+                showTargetBeacon = stepDef != null && stepDef.ShowsTargetBeacon
             };
             SendToOwner(job.OwnerNetId, msg);
         }
@@ -294,6 +295,7 @@ namespace Sim.Jobs {
                 currentPromptKey = stepDef != null ? stepDef.PromptKey : string.Empty,
                 currentTargetId = activeTarget?.TargetId ?? string.Empty,
                 currentTargetName = activeTarget?.DisplayName ?? string.Empty,
+                showTargetBeacon = stepDef != null && stepDef.ShowsTargetBeacon,
                 primaryTargetKind = ctx.primaryTarget?.Kind ?? JobTargetKind.Zone,
                 primaryTargetId   = ctx.primaryTarget?.TargetId ?? string.Empty,
                 primaryTargetName = ctx.primaryTarget?.DisplayName ?? string.Empty,

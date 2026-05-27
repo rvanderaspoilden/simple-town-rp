@@ -84,6 +84,7 @@ namespace Sim.Jobs {
                 CurrentPromptKey = msg.currentPromptKey,
                 CurrentTargetId = msg.currentTargetId,
                 CurrentTargetName = msg.currentTargetName,
+                ShowTargetBeacon = msg.showTargetBeacon,
                 PrimaryTargetKind = msg.primaryTargetKind,
                 PrimaryTargetId = msg.primaryTargetId,
                 PrimaryTargetName = msg.primaryTargetName,
@@ -105,6 +106,7 @@ namespace Sim.Jobs {
             state.CurrentPromptKey = msg.promptKey;
             state.CurrentTargetId = msg.currentTargetId;
             state.CurrentTargetName = msg.currentTargetName;
+            state.ShowTargetBeacon = msg.showTargetBeacon;
             state.Status = JobStatus.Active;
             JobStepAdvanced?.Invoke(state);
         }
@@ -151,6 +153,7 @@ namespace Sim.Jobs {
         public string CurrentPromptKey;
         public string CurrentTargetId;
         public string CurrentTargetName;
+        public bool ShowTargetBeacon;
         public JobStatus Status;
         public JobFailureReason FailureReason;
 

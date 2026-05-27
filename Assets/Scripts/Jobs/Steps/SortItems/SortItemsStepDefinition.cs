@@ -28,16 +28,22 @@ namespace Sim.Jobs {
         [Tooltip("Cible où spawner les items.")]
         [SerializeField] private JobTargetKey spawnAtKey = JobTargetKey.Pickup;
 
-        [Tooltip("Offset de base appliqué à la position du target pour le spawn (hauteur).")]
+        [Tooltip("Id d'une SortShelf de la scène. Si renseigné, les colis sont posés sur ses " +
+                 "slots (position + rotation), dans l'ordre. Sinon, repli sur l'alignement " +
+                 "linéaire au-dessus du target (baseSpawnOffset + itemSpacing).")]
+        [SerializeField] private string spawnShelfId;
+
+        [Tooltip("[Repli sans étagère] Offset de base appliqué à la position du target pour le spawn (hauteur).")]
         [SerializeField] private Vector3 baseSpawnOffset = new Vector3(0f, 0.5f, 0f);
 
-        [Tooltip("Espacement horizontal entre les items spawnés.")]
+        [Tooltip("[Repli sans étagère] Espacement horizontal entre les items spawnés.")]
         [SerializeField] private float itemSpacing = 0.6f;
 
         public ItemConfig PackageConfig => packageConfig;
         public IReadOnlyList<SortTask> Tasks => tasks;
         public string RoomId => roomId;
         public JobTargetKey SpawnAtKey => spawnAtKey;
+        public string SpawnShelfId => spawnShelfId;
         public Vector3 BaseSpawnOffset => baseSpawnOffset;
         public float ItemSpacing => itemSpacing;
 
