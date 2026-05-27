@@ -22,8 +22,12 @@ namespace AI.States {
             Vector3 desired = this.player.NavMeshAgent.desiredVelocity;
             this.player.Animator.SetVelocity(desired.magnitude);
 
-            if (desired.sqrMagnitude > 0.0001f) {
-                this.player.transform.rotation = Quaternion.LookRotation(desired.normalized);
+            // Flatten on the horizontal plane before LookRotation: desiredVelocity can carry a
+            // vertical (Y) component near NavMesh borders/slopes, and feeding that to LookRotation
+            // pitches the character forward/backward instead of only yawing it.
+            Vector3 flatDesired = new Vector3(desired.x, 0f, desired.z);
+            if (flatDesired.sqrMagnitude > 0.0001f) {
+                this.player.transform.rotation = Quaternion.LookRotation(flatDesired.normalized);
             }
         }
 

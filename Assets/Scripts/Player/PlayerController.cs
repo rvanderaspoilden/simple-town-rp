@@ -724,13 +724,13 @@ namespace Sim {
             }
         }
 
-        public void SetTarget(Vector3 targetPoint, IInteractable interactable, bool showPriorityActions = false) {
+        public void SetTarget(Vector3 targetPoint, IInteractable interactable, bool showPriorityActions = false, bool isRunning = false) {
             string targetName = (interactable as UnityEngine.Object)?.name ?? interactable?.GetType().Name ?? "null";
             Debug.Log($"[Interaction] Started interaction target={targetName}");
             this.interactableTarget = interactable;
             this.interactionOriginPoint = targetPoint;
             this.showRadialMenuWithPriority = showPriorityActions;
-            MoveTo(targetPoint);
+            MoveTo(targetPoint, isRunning);
         }
 
         public void MoveTo(Vector3 targetPoint, bool isRunning = false) {

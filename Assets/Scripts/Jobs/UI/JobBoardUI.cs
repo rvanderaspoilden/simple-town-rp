@@ -64,7 +64,10 @@ namespace Sim.Jobs {
 
         public void Close() {
             if (_currentBoard == null) return;
-            JobBoardClient.Instance.RequestClose(_currentBoard.Category);
+            // NB : on ne RequestClose PAS ici. L'abonnement au snapshot reste actif pour
+            // la session, ce qui alimente l'affichage physique (JobBoardDisplay) en
+            // continu — le push serveur est peu coûteux et le serveur nettoie l'abonné
+            // à la déconnexion. La fermeture de la UI ne masque que le panneau HUD.
             _currentBoard = null;
             if (root != null) root.SetActive(false);
             ClearEntries();

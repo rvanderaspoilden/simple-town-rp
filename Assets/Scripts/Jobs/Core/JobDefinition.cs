@@ -44,6 +44,13 @@ namespace Sim.Jobs {
         [Tooltip("Nombre maximal de copies actives simultanément par joueur.")]
         [SerializeField] private int maxConcurrentPerPlayer = 1;
 
+        [Tooltip("Nombre maximal d'instances VIVANTES (Available/Offered/Active) de cette mission " +
+                 "dans le monde entier, tous joueurs confondus. 0 = illimité. À régler sur le nombre " +
+                 "de spots physiques (ex. 1 machine d'emballage / 1 étagère de tri → 1 ; ajoute des " +
+                 "machines plus tard → augmente la valeur).")]
+        [Min(0)]
+        [SerializeField] private int maxConcurrentGlobal = 0;
+
         [Tooltip("Salaire versé périodiquement aux joueurs qui ont ce métier comme métier actif. Le délai entre deux versements est configuré sur la City (salary_period_seconds).")]
         [Min(0)]
         [SerializeField] private int salaryAmount = 100;
@@ -58,6 +65,7 @@ namespace Sim.Jobs {
         public float ExpirationSeconds => expirationSeconds;
         public float BoardExpirationSeconds => boardExpirationSeconds;
         public int MaxConcurrentPerPlayer => maxConcurrentPerPlayer;
+        public int MaxConcurrentGlobal => maxConcurrentGlobal;
         public int SalaryAmount => salaryAmount;
     }
 }

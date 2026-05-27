@@ -27,5 +27,6 @@ MonoBehaviour:
   scoringDefinition: {fileID: 11400000, guid: b2c4d6e8f01234567890abcdef012345, type: 2}
   expirationSeconds: 600
   boardExpirationSeconds: 60
-  maxConcurrentPerPlayer: 5
+  maxConcurrentPerPlayer: 1
+  maxConcurrentGlobal: 1
   salaryAmount: 100

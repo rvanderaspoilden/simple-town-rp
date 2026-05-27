@@ -266,10 +266,10 @@ namespace Sim {
 
                             HUDManager.Instance.ShowContextMenu(actions, interactable.transform, leftMouseClick);
                         } else {
-                            PlayerController.Local.SetTarget(hit.point, interactable, leftMouseClick);
+                            PlayerController.Local.SetTarget(hit.point, interactable, leftMouseClick, _pendingRunRequest);
                         }
                     } else {
-                        PlayerController.Local.SetTarget(hit.point, interactable);
+                        PlayerController.Local.SetTarget(hit.point, interactable, false, _pendingRunRequest);
                     }
                 } else if (interactable == null && leftMousePressed && hit.collider.gameObject.layer.Equals(LayerMask.NameToLayer("Ground"))) {
                     PlayerController.Local.MoveTo(hit.point, _pendingRunRequest);

@@ -56,6 +56,12 @@ namespace Sim.Jobs {
         public JobInstance Offer(JobDefinition def, uint ownerNetId, JobContext context) {
             if (def == null) return null;
 
+            if (IsGlobalCapReached(def)) {
+                GameLogger.System.Debug("JobOfferDenied_MaxGlobal {JobId} {Cap}",
+                    def.JobId, def.MaxConcurrentGlobal);
+                return null;
+            }
+
             int active = ActiveCountForOwner(ownerNetId);
             if (active >= def.MaxConcurrentPerPlayer) {
                 GameLogger.System.Debug("JobOfferDenied_MaxConcurrent {JobId} {NetId} {Active}",
@@ -74,6 +80,13 @@ namespace Sim.Jobs {
 
         public JobInstance Publish(JobDefinition def, JobContext context) {
             if (def == null) return null;
+
+            if (IsGlobalCapReached(def)) {
+                GameLogger.System.Debug("JobPublishDenied_MaxGlobal {JobId} {Cap}",
+                    def.JobId, def.MaxConcurrentGlobal);
+                return null;
+            }
+
             var job = JobInstance.CreatePublished(def, context);
             _byInstanceId[job.InstanceId] = job;
             JobEvents.RaiseJobPublished(job);
@@ -230,6 +243,28 @@ namespace Sim.Jobs {
                 if (s == JobStatus.Offered || s == JobStatus.Active) n++;
             }
             return n;
+        }
+
+        /// <summary>
+        /// Cap GLOBAL (monde, tous joueurs) par définition : vrai si le nombre
+        /// d'instances vivantes (Available/Offered/Active) de cette mission atteint
+        /// déjà <see cref="JobDefinition.MaxConcurrentGlobal"/>. 0 = illimité. Sert à
+        /// n'avoir qu'une mission par spot physique (1 machine d'emballage, 1 étagère
+        /// de tri…). Les états terminaux ne comptent pas → le compteur se libère dès
+        /// qu'une mission se termine, sans dépendre du nettoyage différé.
+        /// </summary>
+        private bool IsGlobalCapReached(JobDefinition def) {
+            int cap = def.MaxConcurrentGlobal;
+            if (cap <= 0) return false; // illimité
+            int n = 0;
+            foreach (var job in _byInstanceId.Values) {
+                if (job.Definition == null || job.Definition.JobId != def.JobId) continue;
+                var s = job.Status;
+                if (s == JobStatus.Available || s == JobStatus.Offered || s == JobStatus.Active) {
+                    if (++n >= cap) return true;
+                }
+            }
+            return false;
         }
 
         private void OnStepAdvanced(JobInstance job) {
