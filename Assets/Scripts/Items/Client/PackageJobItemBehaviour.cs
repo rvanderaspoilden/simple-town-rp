@@ -25,6 +25,16 @@ public class PackageJobItemBehaviour : MissionItemBehaviour
              "Sprite unique : seule sa couleur change selon la catégorie.")]
     [SerializeField] private SpriteRenderer stickerRenderer;
 
+    protected override void Awake()
+    {
+        base.Awake();
+
+        // Masqué par défaut : seul un spawn de mission de TRI le réactive via
+        // SetSortingCategory (JobSortItemsSpawnedMessage). Pour toute autre mission
+        // le colis ne porte pas d'étiquette.
+        if (stickerRenderer != null) stickerRenderer.enabled = false;
+    }
+
     public void SetSortingCategory(SortingCategory category)
     {
         if (stickerRenderer == null) return;
