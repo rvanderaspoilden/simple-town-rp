@@ -53,7 +53,8 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_TrashThrown>           (OnTrashThrown);
         NetworkClient.RegisterHandler<S2C_PropSaleState>          (OnPropSaleState);
         NetworkClient.RegisterHandler<S2C_BuyPropResult>          (OnBuyPropResult);
-        ClientLogger.NetworkDebug("ClientPropHandlersRegistered {Count}", 13);
+        NetworkClient.RegisterHandler<S2C_ContainerVisualState>   (OnContainerVisualState);
+        ClientLogger.NetworkDebug("ClientPropHandlersRegistered {Count}", 14);
     }
 
     public void UnregisterHandlers() {
@@ -70,6 +71,7 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.UnregisterHandler<S2C_TrashThrown>();
         NetworkClient.UnregisterHandler<S2C_PropSaleState>();
         NetworkClient.UnregisterHandler<S2C_BuyPropResult>();
+        NetworkClient.UnregisterHandler<S2C_ContainerVisualState>();
         ClientLogger.NetworkDebug("ClientPropHandlersUnregistered");
     }
 
@@ -299,6 +301,14 @@ public class ClientPropManager : MonoBehaviour {
         if (_props.TryGetValue(msg.PropId, out var behaviour) && behaviour is DispenserBehaviour disp) {
             disp.HandlePurchaseResult(msg.Success, msg.ItemId);
         }
+    }
+
+    private void OnContainerVisualState(S2C_ContainerVisualState msg) {
+        if (msg.RoomId != _currentRoomId) return;
+        if (_props.TryGetValue(msg.PropId, out var behaviour) && behaviour is StorageContainerBehaviour storage) {
+            storage.SetOpenState(msg.IsOpen);
+        }
+        ClientLogger.NetworkDebug("ContainerVisualState {PropId} {IsOpen}", msg.PropId, msg.IsOpen);
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────

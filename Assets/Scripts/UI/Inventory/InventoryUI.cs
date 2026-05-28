@@ -55,6 +55,7 @@ public class InventoryUI : MonoBehaviour
         DraggableItem.OnRightClick += OnItemRightClicked;
         DraggableItem.OnStartDrag  += OnItemStartDrag;
         ItemSlot.OnItemMove        += OnItemMoved;
+        ItemSlot.OnItemSwap        += OnItemsSwapped;
         PlayerHands.OnHandChanged  += OnPlayerHandChanged;
         ClientItemManager.MoveItemResult += OnMoveItemResultReceived;
     }
@@ -71,6 +72,7 @@ public class InventoryUI : MonoBehaviour
         DraggableItem.OnRightClick -= OnItemRightClicked;
         DraggableItem.OnStartDrag  -= OnItemStartDrag;
         ItemSlot.OnItemMove        -= OnItemMoved;
+        ItemSlot.OnItemSwap        -= OnItemsSwapped;
         PlayerHands.OnHandChanged  -= OnPlayerHandChanged;
         ClientItemManager.MoveItemResult -= OnMoveItemResultReceived;
 
@@ -140,15 +142,8 @@ public class InventoryUI : MonoBehaviour
 
     private void OnItemMoved(ItemSlot originSlot, ItemSlot targetSlot)
     {
-        // 1) Swap hand↔hand local (no réseau, conservé tel quel — synchro via C2S_RequestSwapHands).
-        bool leftToRight = originSlot == leftHandSlot  && targetSlot == rightHandSlot;
-        bool rightToLeft = originSlot == rightHandSlot && targetSlot == leftHandSlot;
-        if (leftToRight || rightToLeft) {
-            PlayerController.Local.PlayerHands.Swap();
-            return;
-        }
-
-        // 2) Drop vers un slot de destination différent : route via C2S_MoveItem.
+        // Drop vers un slot de destination différent : route via C2S_MoveItem.
+        // Le hand↔hand swap est désormais émis via OnItemSwap (OnItemsSwapped).
         string fromPlace = originSlot.PlaceId;
         string toPlace   = targetSlot.PlaceId;
         if (string.IsNullOrEmpty(fromPlace) || string.IsNullOrEmpty(toPlace)) return;
@@ -177,6 +172,42 @@ public class InventoryUI : MonoBehaviour
         // On le rend au pool pour éviter qu'il coexiste avec le draggable de remplacement.
         targetSlot.Clear();
         ReleaseDraggable(placeholder);
+    }
+
+    /// <summary>
+    /// Swap visuel déjà appliqué dans ItemSlot.OnDrop. On route :
+    ///  • hand↔hand   → PlayerHands.Swap() (C2S_RequestSwapHands)
+    ///  • le reste    → C2S_SwapItems (un seul aller-retour serveur, deux PATCH atomiques).
+    /// Sur échec serveur le snapshot S2C_ContainerOpened re-poussé reconciliera le panneau,
+    /// et OnMoveItemResultReceived déclenchera UpdateUI() pour les mains.
+    /// </summary>
+    private void OnItemsSwapped(ItemSlot slotA, DraggableItem itemA, ItemSlot slotB, DraggableItem itemB)
+    {
+        bool isHandPair = (slotA == leftHandSlot  && slotB == rightHandSlot)
+                       || (slotA == rightHandSlot && slotB == leftHandSlot);
+        if (isHandPair) {
+            PlayerController.Local.PlayerHands.Swap();
+            return;
+        }
+
+        if (string.IsNullOrEmpty(slotA.PlaceId) || string.IsNullOrEmpty(slotB.PlaceId)) return;
+        int entityA = itemA != null ? itemA.EntityId : 0;
+        int entityB = itemB != null ? itemB.EntityId : 0;
+        if (entityA <= 0 || entityB <= 0) {
+            Debug.LogWarning("[InventoryUI] OnItemsSwapped : entity ids manquants, refresh UI");
+            UpdateUI();
+            return;
+        }
+        if (!NetworkClient.isConnected) return;
+
+        NetworkClient.Send(new C2S_SwapItems {
+            EntityIdA  = entityA,
+            PlaceIdA   = slotA.PlaceId,
+            SlotIndexA = slotA.SlotIndex,
+            EntityIdB  = entityB,
+            PlaceIdB   = slotB.PlaceId,
+            SlotIndexB = slotB.SlotIndex,
+        });
     }
 
     private void OnMoveItemResultReceived(S2C_MoveItemResult msg) {

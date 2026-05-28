@@ -25,8 +25,17 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler {
     public bool CanSwap { get; set; } = false;
 
     public delegate void ItemMoved(ItemSlot origin, ItemSlot target);
+    public delegate void ItemsSwapped(ItemSlot slotA, DraggableItem itemA, ItemSlot slotB, DraggableItem itemB);
 
     public static event ItemMoved OnItemMove;
+    /// <summary>
+    /// Émis après un swap visuel. Convention : (<paramref name="slotA"/>, <paramref name="itemA"/>)
+    /// décrit l'ORIGINE de l'item draggé (itemA était dans slotA avant le drag),
+    /// (<paramref name="slotB"/>, <paramref name="itemB"/>) décrit l'item déplacé qui occupait la
+    /// cible (itemB était dans slotB). Après swap : itemA est dans slotB, itemB est dans slotA.
+    /// Le handler peut donc envoyer au serveur "déplacer A vers slotB et B vers slotA".
+    /// </summary>
+    public static event ItemsSwapped OnItemSwap;
 
     public void OnDrop(PointerEventData eventData) {
         if (eventData.pointerDrag == null) return;
@@ -40,10 +49,15 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler {
                 // Même slot → re-ancre (drag annulé sur soi-même)
                 this.SetItem(draggableItem);
             } else if (MustSwapWith(draggableItem)) {
-                // Swap hand↔hand uniquement (CanSwap requis sur les deux slots)
-                draggableItem.ItemSlot.SetItem(_item);
+                // CanSwap requis sur les deux slots. hand↔hand est traité localement
+                // (PlayerHands.Swap), hand↔container et container↔container passent par
+                // C2S_SwapItems côté listener.
+                DraggableItem displaced = _item;
+                originSlot.SetItem(displaced);
                 this.SetItem(draggableItem);
-                OnItemMove?.Invoke(originSlot, this);
+                // Convention origine : (originSlot, draggableItem) = item draggé et sa place
+                // d'origine ; (this, displaced) = item qui occupait la cible et sa place d'origine.
+                OnItemSwap?.Invoke(originSlot, draggableItem, this, displaced);
             } else if (!this._item) {
                 // Slot vide → déplace
                 draggableItem.ItemSlot.Clear();

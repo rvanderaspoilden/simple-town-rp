@@ -17,6 +17,7 @@ public static class ItemSystemBootstrap
         NetworkServer.RegisterHandler<C2S_OpenContainer>(ServerItemManager.Instance.HandleOpenContainer);
         NetworkServer.RegisterHandler<C2S_CloseContainer>(ServerItemManager.Instance.HandleCloseContainer);
         NetworkServer.RegisterHandler<C2S_MoveItem>(ServerItemManager.Instance.HandleMoveItem);
+        NetworkServer.RegisterHandler<C2S_SwapItems>(ServerItemManager.Instance.HandleSwapItems);
 
         PlayerRoomTracker.OnPlayerEnterRoom += ServerItemManager.Instance.OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom += ServerItemManager.Instance.OnPlayerLeaveRoom;
@@ -37,6 +38,7 @@ public static class ItemSystemBootstrap
         NetworkServer.UnregisterHandler<C2S_OpenContainer>();
         NetworkServer.UnregisterHandler<C2S_CloseContainer>();
         NetworkServer.UnregisterHandler<C2S_MoveItem>();
+        NetworkServer.UnregisterHandler<C2S_SwapItems>();
 
         PlayerRoomTracker.OnPlayerEnterRoom -= ServerItemManager.Instance.OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom -= ServerItemManager.Instance.OnPlayerLeaveRoom;

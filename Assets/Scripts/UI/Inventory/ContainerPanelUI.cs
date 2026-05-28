@@ -107,6 +107,9 @@ public class ContainerPanelUI : MonoBehaviour
         while (_slots.Count < count) {
             var slot = Instantiate(slotTemplate, slotsContainer);
             slot.gameObject.SetActive(false);
+            // Autorise le swap visuel pour container↔container et container↔main : le
+            // handler ItemSlot.OnItemSwap route ensuite vers C2S_SwapItems.
+            slot.CanSwap = true;
             _slots.Add(slot);
         }
         for (int i = 0; i < _slots.Count; i++) {
@@ -175,6 +178,12 @@ public class ContainerPanelUI : MonoBehaviour
         ReleaseSpawnedItems();
         _currentPlaceId = null;
         _currentPropId  = 0;
+
+        // Ferme aussi l'inventaire pour aligner conteneur et HUD : clic « X »
+        // ⇒ plus aucune interaction prop, HUD complètement repliée. L'OnDisable
+        // de InventoryUI rappellera Close() en cascade, mais les états ci-dessus
+        // sont déjà nettoyés → re-entrée idempotente.
+        if (HUDManager.Instance != null) HUDManager.Instance.CloseInventory();
     }
 
     private void Show(bool visible)

@@ -22,6 +22,10 @@ public class StorageContainerBehaviour : PropBehaviourBase
     private static Action _protoOpen;
     private static bool _protoLoaded;
 
+    [Header("Visual")]
+    [Tooltip("Animateur de porte (optionnel) ; piloté par S2C_ContainerVisualState.")]
+    [SerializeField] private ContainerDoorAnimator doorAnimator;
+
     protected override void Awake()
     {
         base.Awake();
@@ -82,5 +86,13 @@ public class StorageContainerBehaviour : PropBehaviourBase
             return;
         }
         NetworkClient.Send(new C2S_OpenContainer { PropId = PropId });
+    }
+
+    /// <summary>
+    /// Appelé par ClientPropManager sur réception de S2C_ContainerVisualState.
+    /// No-op si aucun animateur n'est posé sur ce prefab (cas d'un conteneur sans porte mobile).
+    /// </summary>
+    public void SetOpenState(bool open) {
+        if (doorAnimator != null) doorAnimator.SetOpen(open);
     }
 }

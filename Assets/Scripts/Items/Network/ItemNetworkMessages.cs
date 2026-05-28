@@ -120,6 +120,19 @@ public struct S2C_ContainerOpenFailed : NetworkMessage
     public string ErrorMessage;
 }
 
+/// <summary>
+/// Server → tous les clients de la room : un conteneur passe en état ouvert/fermé.
+/// Strictement visuel (ouverture de porte) — la session DB est portée par les autres
+/// messages container. Émis quand un joueur réussit l'ouverture et quand la session
+/// se ferme (clic « X », joueur quitte la room, déconnexion).
+/// </summary>
+public struct S2C_ContainerVisualState : NetworkMessage
+{
+    public string RoomId;
+    public int    PropId;
+    public bool   IsOpen;
+}
+
 /// <summary>Client → server : ferme la session conteneur en cours.</summary>
 public struct C2S_CloseContainer : NetworkMessage { }
 
@@ -144,4 +157,20 @@ public struct S2C_MoveItemResult : NetworkMessage
     public bool   Success;
     public int    EntityId;
     public string ErrorMessage;
+}
+
+/// <summary>
+/// Client → server : échange atomique de deux items entre deux places (hand↔container,
+/// container↔container même placeId). Le hand↔hand passe par C2S_RequestSwapHands.
+/// Chaque slot doit être référencé par son place (UUID pour conteneur, "hand_*:charId"
+/// pour mains) et son slotIndex (ignoré pour les mains, mono-slot).
+/// </summary>
+public struct C2S_SwapItems : NetworkMessage
+{
+    public int    EntityIdA;
+    public string PlaceIdA;
+    public int    SlotIndexA;
+    public int    EntityIdB;
+    public string PlaceIdB;
+    public int    SlotIndexB;
 }

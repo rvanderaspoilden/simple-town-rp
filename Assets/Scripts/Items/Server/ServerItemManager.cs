@@ -82,6 +82,9 @@ public class ServerItemManager
         public int    PropId;
         public string PlaceId;
         public string PropUuid;
+        public string RoomId;       // Room du prop au moment de l'ouverture : utilisée pour
+                                    // broadcaster le S2C_ContainerVisualState à la fermeture
+                                    // même quand le joueur a déjà quitté la room (disconnect).
         public uint   OpenedBy;
         public ContainerConfig Config;
         public Dictionary<int, ContainerSessionItem> ItemsByEntityId = new Dictionary<int, ContainerSessionItem>();
@@ -1252,8 +1255,10 @@ public class ServerItemManager
         catch (System.Exception e) { Debug.LogWarning($"[ServerItemManager] OpenContainer state parse: {e.Message}"); }
 
         // 3. Alloue entityId session + bridges + snapshot.
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
         var session = new ContainerSession {
             PropId = propId, PlaceId = placeId, PropUuid = propUuid,
+            RoomId = roomId,
             OpenedBy = netId, Config = containerCfg,
         };
         var snapshot = new List<S2C_ContainerItem>();
@@ -1284,6 +1289,13 @@ public class ServerItemManager
             Items = snapshot.ToArray(),
         });
 
+        // Broadcast visuel : porte/couvercle s'ouvre pour tout le monde dans la room.
+        if (!string.IsNullOrEmpty(roomId)) {
+            BroadcastToRoom(roomId, new S2C_ContainerVisualState {
+                RoomId = roomId, PropId = propId, IsOpen = true,
+            });
+        }
+
         GameLogger.Network.Info("ContainerOpened propId={PropId} placeId={PlaceId} items={Count} netId={NetId}",
             propId, placeId, snapshot.Count, netId);
     }
@@ -1299,6 +1311,15 @@ public class ServerItemManager
         // Libère les bridges session (les entityId allouent à la session ne sont
         // plus valides après close ; un re-open re-allouera des nouveaux ids).
         foreach (var it in session.ItemsByEntityId.Values) _bridges.Remove(it.EntityId);
+
+        // Broadcast visuel : porte/couvercle se referme. session.RoomId est figé
+        // au moment de l'open → fonctionne même si OpenedBy a quitté la room/déco.
+        if (!string.IsNullOrEmpty(session.RoomId)) {
+            BroadcastToRoom(session.RoomId, new S2C_ContainerVisualState {
+                RoomId = session.RoomId, PropId = session.PropId, IsOpen = false,
+            });
+        }
+
         GameLogger.Network.Debug("ContainerClosed netId={NetId} placeId={PlaceId}", netId, session.PlaceId);
     }
 
@@ -1471,6 +1492,239 @@ public class ServerItemManager
         // les états visuels divergents (orphelins du pool main, double-children…).
         if (openContainer != null && (fromKind == PlaceKind.Container || toKind == PlaceKind.Container)) {
             SendContainerSnapshot(conn, openContainer);
+        }
+    }
+
+    // ── Swap items (atomic two-PATCH) ────────────────────────────────────────
+    // Pour hand↔container et container↔container (même placeId).
+    // Le hand↔hand passe par C2S_RequestSwapHands (chemin existant).
+
+    public void HandleSwapItems(NetworkConnectionToClient conn, C2S_SwapItems msg) {
+        if (conn?.identity == null) return;
+        uint netId = conn.identity.netId;
+        var player = conn.identity.GetComponent<Sim.PlayerController>();
+        string charId = player?.CharacterData?.Id;
+        if (string.IsNullOrEmpty(charId)) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdA, ErrorMessage = "Sans caractère" });
+            return;
+        }
+
+        _openContainerByPlayer.TryGetValue(netId, out var openContainer);
+        var kindA = ClassifyPlace(msg.PlaceIdA, charId, openContainer);
+        var kindB = ClassifyPlace(msg.PlaceIdB, charId, openContainer);
+        if (kindA == PlaceKind.Unknown || kindB == PlaceKind.Unknown) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdA, ErrorMessage = "Place inconnue (swap)" });
+            return;
+        }
+
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (!TryResolveSwapItem(conn, netId, openContainer, roomId, msg.EntityIdA, kindA, msg.SlotIndexA, out var ctxA, out var err)) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdA, ErrorMessage = err });
+            return;
+        }
+        if (!TryResolveSwapItem(conn, netId, openContainer, roomId, msg.EntityIdB, kindB, msg.SlotIndexB, out var ctxB, out err)) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdB, ErrorMessage = err });
+            return;
+        }
+
+        // Le serveur ne tente PAS de valider un swap qui changerait les deux mains :
+        // visuellement ce cas est intercepté côté client par PlayerHands.Swap().
+        // Mais on tolère ici un éventuel reroute (filet de sécurité) en l'autorisant.
+
+        // Validation type pour la destination conteneur de chaque item
+        string backendPlaceA = ResolveBackendPlaceId(conn, msg.PlaceIdA, kindA);
+        string backendPlaceB = ResolveBackendPlaceId(conn, msg.PlaceIdB, kindB);
+        if (kindB == PlaceKind.Container && openContainer != null) {
+            var cfg = DatabaseManager.ItemConfigs.Find(x => x.ID == ctxA.ConfigId);
+            if (cfg != null && !openContainer.Config.Accepts(cfg.Type)) {
+                conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdA, ErrorMessage = "Type refusé par ce conteneur" });
+                return;
+            }
+        }
+        if (kindA == PlaceKind.Container && openContainer != null) {
+            var cfg = DatabaseManager.ItemConfigs.Find(x => x.ID == ctxB.ConfigId);
+            if (cfg != null && !openContainer.Config.Accepts(cfg.Type)) {
+                conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdB, ErrorMessage = "Type refusé par ce conteneur" });
+                return;
+            }
+        }
+
+        ApiManager.Instance?.StartCoroutine(
+            SwapItemsCoroutine(conn, netId, roomId, openContainer,
+                ctxA, kindA, backendPlaceA, msg.SlotIndexA,
+                ctxB, kindB, backendPlaceB, msg.SlotIndexB));
+    }
+
+    private struct SwapItemCtx {
+        public int    EntityId;
+        public int    ConfigId;
+        public string ItemUuid;
+        public int    Version;
+    }
+
+    private bool TryResolveSwapItem(NetworkConnectionToClient conn, uint netId, ContainerSession openContainer,
+        string roomId, int entityId, PlaceKind kind, int declaredSlot, out SwapItemCtx ctx, out string error)
+    {
+        ctx = default;
+        error = null;
+        if (kind == PlaceKind.HandLeft || kind == PlaceKind.HandRight) {
+            HandType hand = kind == PlaceKind.HandLeft ? HandType.Left : HandType.Right;
+            if (!_playerHands.TryGetValue(netId, out var hands) || hands.GetEntityId(hand) != entityId) {
+                error = "Item pas dans cette main"; return false;
+            }
+            if (!TryGetEntity(roomId, entityId, out var entity)) {
+                error = "Entity introuvable"; return false;
+            }
+            var bridge = GetBridge(entityId);
+            if (bridge == null || string.IsNullOrEmpty(bridge.Uuid)) {
+                error = "Item sans UUID"; return false;
+            }
+            ctx = new SwapItemCtx { EntityId = entityId, ConfigId = entity.ItemConfigId, ItemUuid = bridge.Uuid, Version = bridge.Version };
+            return true;
+        }
+        if (kind == PlaceKind.Container) {
+            if (openContainer == null) { error = "Pas de conteneur ouvert"; return false; }
+            if (!openContainer.ItemsByEntityId.TryGetValue(entityId, out var si)) {
+                error = "Item conteneur introuvable"; return false;
+            }
+            if (si.SlotIndex != declaredSlot) {
+                error = "Slot conteneur incohérent"; return false;
+            }
+            ctx = new SwapItemCtx { EntityId = entityId, ConfigId = si.ConfigId, ItemUuid = si.ItemUuid, Version = si.Version };
+            return true;
+        }
+        error = "Place inconnue"; return false;
+    }
+
+    private IEnumerator SwapItemsCoroutine(NetworkConnectionToClient conn, uint netId, string roomId, ContainerSession openContainer,
+        SwapItemCtx ctxA, PlaceKind kindA, string backendPlaceA, int slotA,
+        SwapItemCtx ctxB, PlaceKind kindB, string backendPlaceB, int slotB)
+    {
+        // PATCH A → destination de B (placeB / slotB)
+        var bodyA = new UpdateItemBody {
+            expectedVersion = ctxA.Version,
+            placeId         = backendPlaceB,
+            stateData       = kindB == PlaceKind.Container
+                ? new Dictionary<string, object> { { "slotIndex", slotB } }
+                : null,
+        };
+        UnityWebRequest reqA = ApiManager.Instance.UpdateItemRequest(ctxA.ItemUuid, bodyA);
+        yield return reqA.SendWebRequest();
+        if (reqA.responseCode < 200 || reqA.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] SwapItems PATCH A failed code={reqA.responseCode} body={reqA.downloadHandler?.text}");
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = ctxA.EntityId, ErrorMessage = $"Échec persistance A ({reqA.responseCode})" });
+            if (openContainer != null && (kindA == PlaceKind.Container || kindB == PlaceKind.Container))
+                SendContainerSnapshot(conn, openContainer);
+            yield break;
+        }
+        int newVersionA = ctxA.Version + 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(reqA.downloadHandler.text); if (it != null) newVersionA = it.version; } catch { }
+
+        // PATCH B → destination de A (placeA / slotA)
+        var bodyB = new UpdateItemBody {
+            expectedVersion = ctxB.Version,
+            placeId         = backendPlaceA,
+            stateData       = kindA == PlaceKind.Container
+                ? new Dictionary<string, object> { { "slotIndex", slotA } }
+                : null,
+        };
+        UnityWebRequest reqB = ApiManager.Instance.UpdateItemRequest(ctxB.ItemUuid, bodyB);
+        yield return reqB.SendWebRequest();
+        if (reqB.responseCode < 200 || reqB.responseCode >= 300) {
+            // Rollback de A : remet ctxA à sa place d'origine. Si ce rollback échoue
+            // aussi, l'état DB diverge ; le snapshot client le détectera au prochain
+            // open du conteneur via re-fetch /places/:id/state.
+            Debug.LogWarning($"[ServerItemManager] SwapItems PATCH B failed code={reqB.responseCode} body={reqB.downloadHandler?.text} — rollback A");
+            var rollback = new UpdateItemBody {
+                expectedVersion = newVersionA,
+                placeId         = backendPlaceA,
+                stateData       = kindA == PlaceKind.Container
+                    ? new Dictionary<string, object> { { "slotIndex", slotA } }
+                    : null,
+            };
+            UnityWebRequest reqRb = ApiManager.Instance.UpdateItemRequest(ctxA.ItemUuid, rollback);
+            yield return reqRb.SendWebRequest();
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = ctxB.EntityId, ErrorMessage = $"Échec persistance B ({reqB.responseCode})" });
+            if (openContainer != null && (kindA == PlaceKind.Container || kindB == PlaceKind.Container))
+                SendContainerSnapshot(conn, openContainer);
+            yield break;
+        }
+        int newVersionB = ctxB.Version + 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(reqB.downloadHandler.text); if (it != null) newVersionB = it.version; } catch { }
+
+        // ── Runtime state : on tear-down d'abord A et B de leurs origines, puis
+        // on les ré-installe à leurs destinations swap. Cet ordre évite tout conflit
+        // de slot dans openContainer.SlotToEntityId (slots A et B sont libres entre
+        // les deux phases).
+
+        TearDownAtOrigin(roomId, netId, openContainer, ctxA, kindA);
+        TearDownAtOrigin(roomId, netId, openContainer, ctxB, kindB);
+
+        InstallAtDestination(conn, roomId, netId, openContainer, ctxA, kindB, backendPlaceB, slotB, newVersionA);
+        InstallAtDestination(conn, roomId, netId, openContainer, ctxB, kindA, backendPlaceA, slotA, newVersionB);
+
+        conn.Send(new S2C_MoveItemResult { Success = true, EntityId = ctxA.EntityId });
+
+        if (openContainer != null && (kindA == PlaceKind.Container || kindB == PlaceKind.Container))
+            SendContainerSnapshot(conn, openContainer);
+
+        GameLogger.Network.Info("SwapItems ok netId={NetId} A={A}({KA}/{SA}) ↔ B={B}({KB}/{SB})",
+            netId, ctxA.EntityId, kindA, slotA, ctxB.EntityId, kindB, slotB);
+    }
+
+    private void TearDownAtOrigin(string roomId, uint netId, ContainerSession openContainer, SwapItemCtx ctx, PlaceKind kind) {
+        if (kind == PlaceKind.HandLeft || kind == PlaceKind.HandRight) {
+            HandType hand = kind == PlaceKind.HandLeft ? HandType.Left : HandType.Right;
+            if (_playerHands.TryGetValue(netId, out var hands)) {
+                hands.Clear(hand);
+                _playerHands[netId] = hands;
+            }
+            if (_rooms.TryGetValue(roomId, out var roomItems) && roomItems.ContainsKey(ctx.EntityId)) {
+                roomItems.Remove(ctx.EntityId);
+                BroadcastToRoom(roomId, new S2C_DestroyItem { EntityId = ctx.EntityId, RoomId = roomId });
+            }
+        } else if (kind == PlaceKind.Container && openContainer != null) {
+            if (openContainer.ItemsByEntityId.TryGetValue(ctx.EntityId, out var old)) {
+                openContainer.ItemsByEntityId.Remove(ctx.EntityId);
+                if (openContainer.SlotToEntityId.TryGetValue(old.SlotIndex, out var occ) && occ == ctx.EntityId)
+                    openContainer.SlotToEntityId.Remove(old.SlotIndex);
+            }
+        }
+    }
+
+    private void InstallAtDestination(NetworkConnectionToClient conn, string roomId, uint netId, ContainerSession openContainer,
+        SwapItemCtx ctx, PlaceKind kind, string backendPlaceId, int slotIndex, int newVersion)
+    {
+        if (kind == PlaceKind.HandLeft || kind == PlaceKind.HandRight) {
+            HandType hand = kind == PlaceKind.HandLeft ? HandType.Left : HandType.Right;
+            var entity = new ItemEntity {
+                EntityId = ctx.EntityId, RoomId = roomId, ItemConfigId = ctx.ConfigId,
+                Position = conn.identity.transform.position, Rotation = Quaternion.identity,
+                HolderNetId = netId, HolderHand = hand,
+                LocalPosition = Vector3.zero, LocalRotation = Quaternion.identity,
+                Persistent = true,
+            };
+            if (!_rooms.TryGetValue(roomId, out var roomItems)) {
+                roomItems = new Dictionary<int, ItemEntity>(); _rooms[roomId] = roomItems;
+            }
+            roomItems[ctx.EntityId] = entity;
+            var hands = GetOrCreateHandState(netId);
+            hands.Set(hand, ctx.EntityId);
+            _playerHands[netId] = hands;
+            _bridges[ctx.EntityId] = new ItemDbBridge { Uuid = ctx.ItemUuid, Version = newVersion, PlaceId = backendPlaceId };
+            BroadcastToRoom(roomId, new S2C_SpawnItem {
+                EntityId = ctx.EntityId, RoomId = roomId, ItemConfigId = ctx.ConfigId,
+                Position = entity.Position, Rotation = entity.Rotation,
+                IsHeld = true, HolderNetId = netId, HolderHand = hand,
+                LocalPosition = Vector3.zero, LocalRotation = Quaternion.identity,
+            });
+        } else if (kind == PlaceKind.Container && openContainer != null) {
+            openContainer.ItemsByEntityId[ctx.EntityId] = new ContainerSessionItem {
+                EntityId = ctx.EntityId, ConfigId = ctx.ConfigId, SlotIndex = slotIndex,
+                ItemUuid = ctx.ItemUuid, Version = newVersion,
+            };
+            openContainer.SlotToEntityId[slotIndex] = ctx.EntityId;
+            _bridges[ctx.EntityId] = new ItemDbBridge { Uuid = ctx.ItemUuid, Version = newVersion, PlaceId = backendPlaceId };
         }
     }
 
