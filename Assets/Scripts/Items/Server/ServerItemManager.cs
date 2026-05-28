@@ -1142,6 +1142,24 @@ public class ServerItemManager
         return PlaceKind.Unknown;
     }
 
+    /// <summary>
+    /// Mappe le placeKey "hand_left:.../hand_right:..." utilisé côté wire vers l'UUID
+    /// backend stocké dans PlayerInventory.HandLeftPlaceId / HandRightPlaceId. Pour un
+    /// conteneur, msg.ToPlaceId est déjà un UUID (provient du snapshot).
+    /// </summary>
+    private static string ResolveBackendPlaceId(NetworkConnectionToClient conn, string proposedPlaceId, PlaceKind kind) {
+        if (kind == PlaceKind.Container) return proposedPlaceId;
+        var identity = conn?.identity;
+        if (identity == null) return proposedPlaceId;
+        var inv = identity.GetComponent<PlayerInventory>();
+        if (inv == null) return proposedPlaceId;
+        switch (kind) {
+            case PlaceKind.HandLeft:  return inv.HandLeftPlaceId  ?? proposedPlaceId;
+            case PlaceKind.HandRight: return inv.HandRightPlaceId ?? proposedPlaceId;
+            default:                  return proposedPlaceId;
+        }
+    }
+
     private static int ReadSlotIndex(Dictionary<string, object> stateData) {
         if (stateData == null || !stateData.TryGetValue("slotIndex", out var v) || v == null) return 0;
         if (v is long l) return (int)l;
@@ -1363,13 +1381,24 @@ public class ServerItemManager
     private IEnumerator MoveItemCoroutine(NetworkConnectionToClient conn, uint netId, C2S_MoveItem msg,
         string itemUuid, int version, int configId, string roomId, PlaceKind fromKind, PlaceKind toKind)
     {
+        // Résout placeKey ("hand_left:charId" / "hand_right:charId") → placeId UUID
+        // que le backend attend. Pour un conteneur, msg.ToPlaceId est DÉJÀ un UUID
+        // (envoyé par le snapshot S2C_ContainerOpened).
+        string backendPlaceId = ResolveBackendPlaceId(conn, msg.ToPlaceId, toKind);
+        if (string.IsNullOrEmpty(backendPlaceId)) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Place backend non résolue" });
+            yield break;
+        }
+
         var body = new UpdateItemBody {
             expectedVersion = version,
-            placeId = msg.ToPlaceId,
+            placeId = backendPlaceId,
             stateData = toKind == PlaceKind.Container
                 ? new Dictionary<string, object> { { "slotIndex", msg.ToSlotIndex } }
                 : null,
         };
+        GameLogger.Network.Info("MoveItem PATCH start uuid={Uuid} version={Version} from={From} to={To} slot={Slot}",
+            itemUuid, version, msg.FromPlaceId, msg.ToPlaceId, msg.ToSlotIndex);
         UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(itemUuid, body);
         yield return req.SendWebRequest();
         if (req.responseCode < 200 || req.responseCode >= 300) {
@@ -1377,6 +1406,7 @@ public class ServerItemManager
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = $"Échec persistance ({req.responseCode})" });
             yield break;
         }
+        GameLogger.Network.Info("MoveItem PATCH ok uuid={Uuid} body={Body}", itemUuid, req.downloadHandler?.text);
         int newVersion = version + 1;
         try {
             var item = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
@@ -1418,7 +1448,7 @@ public class ServerItemManager
             var hands = GetOrCreateHandState(netId);
             hands.Set(hand, msg.EntityId);
             _playerHands[netId] = hands;
-            _bridges[msg.EntityId] = new ItemDbBridge { Uuid = itemUuid, Version = newVersion, PlaceId = msg.ToPlaceId };
+            _bridges[msg.EntityId] = new ItemDbBridge { Uuid = itemUuid, Version = newVersion, PlaceId = backendPlaceId };
             BroadcastToRoom(roomId, new S2C_SpawnItem {
                 EntityId = msg.EntityId, RoomId = roomId, ItemConfigId = configId,
                 Position = entity.Position, Rotation = entity.Rotation,
@@ -1431,9 +1461,33 @@ public class ServerItemManager
                 ItemUuid = itemUuid, Version = newVersion,
             };
             openContainer.SlotToEntityId[msg.ToSlotIndex] = msg.EntityId;
-            _bridges[msg.EntityId] = new ItemDbBridge { Uuid = itemUuid, Version = newVersion, PlaceId = msg.ToPlaceId };
+            _bridges[msg.EntityId] = new ItemDbBridge { Uuid = itemUuid, Version = newVersion, PlaceId = backendPlaceId };
         }
 
         conn.Send(new S2C_MoveItemResult { Success = true, EntityId = msg.EntityId });
+
+        // Re-pousse l'état du conteneur si le move touche un conteneur ouvert :
+        // le panneau client se reconstruit avec ses propres DraggableItem, évite
+        // les états visuels divergents (orphelins du pool main, double-children…).
+        if (openContainer != null && (fromKind == PlaceKind.Container || toKind == PlaceKind.Container)) {
+            SendContainerSnapshot(conn, openContainer);
+        }
+    }
+
+    private static void SendContainerSnapshot(NetworkConnectionToClient conn, ContainerSession session)
+    {
+        var items = new List<S2C_ContainerItem>(session.ItemsByEntityId.Count);
+        foreach (var it in session.ItemsByEntityId.Values) {
+            items.Add(new S2C_ContainerItem {
+                EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
+            });
+        }
+        conn.Send(new S2C_ContainerOpened {
+            PropId        = session.PropId,
+            PlaceId       = session.PlaceId,
+            SlotCount     = session.Config.SlotCount,
+            AcceptedTypes = session.Config.AcceptedTypes.Select(t => (byte)t).ToArray(),
+            Items         = items.ToArray(),
+        });
     }
 }

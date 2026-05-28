@@ -31,6 +31,13 @@ public class GenericPool<T> where T : MonoBehaviour {
     }
 
     public void Release(T element) {
+        if (element == null) return;
+        // Idempotent : un même élément peut être libéré deux fois par des callers
+        // différents (ex. InventoryUI.OnItemMoved + ContainerPanelUI.ReleaseSpawnedItems
+        // qui le suivait encore dans sa liste interne). Sans ce guard l'élément serait
+        // mis deux fois dans availableElements et les deux prochains Get() rendraient
+        // la même instance, écrasant un slot UI tout en laissant un autre orphelin.
+        if (this.availableElements.Contains(element)) return;
         this._actionOnRelease?.Invoke(element);
         this.availableElements.Add(element);
         this.activeElements.Remove(element);
