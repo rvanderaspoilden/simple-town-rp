@@ -14,8 +14,6 @@ public struct JobFinishedMessage : NetworkMessage {
     public int correctCount;
     /// <summary>Nombre total de colis à trier (SortItems step). 0 si non applicable.</summary>
     public int totalCount;
-    /// <summary>JobResultVariant byte. Sélectionne la vue à afficher côté client.</summary>
-    public byte resultVariant;
     /// <summary>Argent gagné par le joueur pour cette mission (somme des MoneyReward / ScoreModulatedMoneyReward).</summary>
     public int moneyEarned;
     /// <summary>XP métier gagné pour cette mission (somme des JobXpReward).</summary>

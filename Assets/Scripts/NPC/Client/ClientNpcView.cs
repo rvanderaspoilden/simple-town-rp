@@ -21,8 +21,16 @@ using Action = Sim.Interactables.Action;
 /// </summary>
 public class ClientNpcView : MonoBehaviour, IInteractable {
     [Header("Interpolation")]
-    [Tooltip("Délai (s) appliqué au rendu pour absorber le jitter. ~ 1/UpdatesPerSecond.")]
-    [SerializeField] private float interpolationDelay = 0.12f;
+    [Tooltip("Délai (s) appliqué au rendu pour absorber le jitter réseau. Doit couvrir 4-6 " +
+             "snapshots à la cadence d'envoi (sendRate=30 Hz → 33 ms par snapshot → 0.18 à 0.25). " +
+             "Trop bas = micro-pauses dès qu'un snapshot est en retard ; trop haut = NPC visiblement " +
+             "à la traîne.")]
+    [SerializeField] private float interpolationDelay = 0.20f;
+
+    [Tooltip("Durée max (s) pendant laquelle on EXTRAPOLE la position avec la dernière velocity " +
+             "reçue quand aucun nouveau snapshot n'est arrivé. Évite le gel net lors d'un trou " +
+             "réseau ; 0 = pas d'extrapolation (gel immédiat).")]
+    [SerializeField] private float extrapolationLimit = 0.15f;
 
     [Tooltip("Distance au-delà de laquelle on snap (téléport) plutôt qu'interpole.")]
     [SerializeField] private float snapDistance = 8f;
@@ -42,6 +50,9 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     private bool     _hasPrev;
     private bool     _hasNext;
     private float    _displayedSpeed;
+    // Velocity DIRECTIONNELLE du dernier snapshot, utilisée pour extrapoler quand
+    // _next est dépassé sans nouveau snapshot reçu (trou réseau).
+    private Vector3  _lastVelocity;
 
     private NpcStateType _currentState = NpcStateType.Idle;
     private NpcStateType _appliedState = (NpcStateType)255;
@@ -171,6 +182,7 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         }
         _hasPrev = _hasNext = true;
 
+        _lastVelocity   = isSitting ? Vector3.zero : velocity;
         _displayedSpeed = isSitting ? 0f : velocity.magnitude;
     }
 
@@ -186,9 +198,22 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         else {
             float renderTime = Time.time - interpolationDelay;
             float duration   = Mathf.Max(0.0001f, _next.ServerTime - _prev.ServerTime);
-            float t          = Mathf.Clamp01((renderTime - _prev.ServerTime) / duration);
-            transform.position = Vector3.Lerp(_prev.Position, _next.Position, t);
-            transform.rotation = Quaternion.Slerp(_prev.Rotation, _next.Rotation, t);
+            float rawT       = (renderTime - _prev.ServerTime) / duration;
+
+            if (rawT <= 1f) {
+                // Interpolation normale entre _prev et _next.
+                float t = Mathf.Clamp01(rawT);
+                transform.position = Vector3.Lerp(_prev.Position, _next.Position, t);
+                transform.rotation = Quaternion.Slerp(_prev.Rotation, _next.Rotation, t);
+            }
+            else {
+                // _next dépassé sans nouveau snapshot : on EXTRAPOLE avec la dernière
+                // velocity reçue, plafonné par extrapolationLimit pour ne pas dériver.
+                // Évite le gel sec (et donc l'effet "avance / pause / avance") sur jitter.
+                float overshoot = Mathf.Min((renderTime - _next.ServerTime), extrapolationLimit);
+                transform.position = _next.Position + _lastVelocity * overshoot;
+                transform.rotation = _next.Rotation;
+            }
         }
 
         if (_animator != null) {

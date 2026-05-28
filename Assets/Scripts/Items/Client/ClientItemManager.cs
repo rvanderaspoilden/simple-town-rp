@@ -29,6 +29,10 @@ public class ClientItemManager
         NetworkClient.RegisterHandler<S2C_ItemAttachedToHand>(OnItemAttachedToHand);
         NetworkClient.RegisterHandler<S2C_ItemDetachedFromHand>(OnItemDetachedFromHand);
         NetworkClient.RegisterHandler<S2C_DropResult>(OnDropResult);
+
+        NetworkClient.RegisterHandler<S2C_ContainerOpened>(OnContainerOpened);
+        NetworkClient.RegisterHandler<S2C_ContainerOpenFailed>(OnContainerOpenFailed);
+        NetworkClient.RegisterHandler<S2C_MoveItemResult>(OnMoveItemResult);
     }
 
     public void UnregisterHandlers()
@@ -39,6 +43,30 @@ public class ClientItemManager
         NetworkClient.UnregisterHandler<S2C_ItemAttachedToHand>();
         NetworkClient.UnregisterHandler<S2C_ItemDetachedFromHand>();
         NetworkClient.UnregisterHandler<S2C_DropResult>();
+        NetworkClient.UnregisterHandler<S2C_ContainerOpened>();
+        NetworkClient.UnregisterHandler<S2C_ContainerOpenFailed>();
+        NetworkClient.UnregisterHandler<S2C_MoveItemResult>();
+    }
+
+    // ── Container events (consumed par ContainerPanelUI) ──────────────────────
+
+    public static event System.Action<S2C_ContainerOpened> ContainerOpened;
+    public static event System.Action<S2C_ContainerOpenFailed> ContainerOpenFailed;
+    public static event System.Action<S2C_MoveItemResult> MoveItemResult;
+
+    private void OnContainerOpened(S2C_ContainerOpened msg) {
+        Debug.Log($"[Container] Opened propId={msg.PropId} placeId={msg.PlaceId} slots={msg.SlotCount} items={msg.Items?.Length}");
+        ContainerOpened?.Invoke(msg);
+    }
+
+    private void OnContainerOpenFailed(S2C_ContainerOpenFailed msg) {
+        Debug.LogWarning($"[Container] Open failed propId={msg.PropId} reason={msg.ErrorMessage}");
+        ContainerOpenFailed?.Invoke(msg);
+    }
+
+    private void OnMoveItemResult(S2C_MoveItemResult msg) {
+        if (!msg.Success) Debug.LogWarning($"[Container] Move failed entity={msg.EntityId} reason={msg.ErrorMessage}");
+        MoveItemResult?.Invoke(msg);
     }
 
     public void Reset()

@@ -17,8 +17,6 @@ namespace Sim.Jobs {
         [Tooltip("Ratio minimum pour Ok. En-dessous : Poor.")]
         [Range(0f, 1f)] [SerializeField] private float okThreshold = 0.6f;
 
-        public override JobResultVariant ResultVariant => JobResultVariant.Sort;
-
         public override JobRating Evaluate(JobInstance job) {
             if (!job.Context.TryGetStruct<float>(SortItemsStepInstance.CtxAccuracyKey, out var ratio))
                 return JobRating.Perfect;

@@ -81,3 +81,67 @@ public struct C2S_AdminSpawnItem : NetworkMessage
     public int     ItemConfigId;
     public Vector3 Position;
 }
+
+// ── Storage containers ────────────────────────────────────────────────────────
+// Un conteneur (frigo, placard…) = une Place backend identifiée par
+// "container:{propUuid}". Les items du conteneur sont stockés en DB (placeId +
+// stateData.slotIndex) ; pas de ItemEntity dans _rooms. Quand un joueur OPEN
+// un conteneur, le serveur alloue des entityId éphémères pour cette session
+// afin que le client puisse référencer les items dans les requêtes de move.
+
+/// <summary>Une entrée d'item dans la grille du conteneur (snapshot d'ouverture).</summary>
+public struct S2C_ContainerItem
+{
+    public int EntityId;     // id éphémère alloué pour la session
+    public int ConfigId;     // ItemConfig.ID
+    public int SlotIndex;    // position dans la grille
+}
+
+/// <summary>Client → server : le joueur ouvre un conteneur (prop avec PropsConfig.Container.IsContainer).</summary>
+public struct C2S_OpenContainer : NetworkMessage
+{
+    public int PropId;
+}
+
+/// <summary>Server → opener : snapshot du conteneur ouvert.</summary>
+public struct S2C_ContainerOpened : NetworkMessage
+{
+    public int    PropId;
+    public string PlaceId;
+    public int    SlotCount;
+    public byte[] AcceptedTypes;     // valeurs de l'enum ItemType ; vide = tous types
+    public S2C_ContainerItem[] Items;
+}
+
+/// <summary>Server → opener : refus d'ouverture (range, permission, prop introuvable…).</summary>
+public struct S2C_ContainerOpenFailed : NetworkMessage
+{
+    public int    PropId;
+    public string ErrorMessage;
+}
+
+/// <summary>Client → server : ferme la session conteneur en cours.</summary>
+public struct C2S_CloseContainer : NetworkMessage { }
+
+/// <summary>
+/// Client → server : déplace un item d'une place à une autre.
+/// Place IDs canoniques :
+///   - main : "hand_left:{charId}" / "hand_right:{charId}"
+///   - poche : "pocket:{charId}"
+///   - conteneur : retourné par le S2C_ContainerOpened précédent
+/// </summary>
+public struct C2S_MoveItem : NetworkMessage
+{
+    public int    EntityId;
+    public string FromPlaceId;
+    public string ToPlaceId;
+    public int    ToSlotIndex;       // ignoré pour les places sans grille (mains)
+}
+
+/// <summary>Server → requesting client : résultat de la requête de move.</summary>
+public struct S2C_MoveItemResult : NetworkMessage
+{
+    public bool   Success;
+    public int    EntityId;
+    public string ErrorMessage;
+}

@@ -2201,6 +2201,20 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1091815741, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa, type: 3}
+      propertyPath: showSlider
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: networkAddress
+      value: 127.0.0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3481296056184142032, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
+        type: 3}
+      propertyPath: useSpectusAccount
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3481296056184142033, guid: 6767a2d5cd00efd4c8f75bcb2a832bfa,
         type: 3}
       propertyPath: m_LocalPosition.x

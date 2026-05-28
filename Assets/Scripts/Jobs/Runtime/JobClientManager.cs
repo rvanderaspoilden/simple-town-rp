@@ -137,7 +137,6 @@ namespace Sim.Jobs {
             state.CompletionElapsedSeconds = msg.elapsedSeconds;
             state.CompletionCorrectCount = msg.correctCount;
             state.CompletionTotalCount = msg.totalCount;
-            state.CompletionVariant = (JobResultVariant)msg.resultVariant;
             state.CompletionMoneyEarned = msg.moneyEarned;
             state.CompletionXpEarned = msg.xpEarned;
             JobFinished?.Invoke(state);
@@ -176,7 +175,6 @@ namespace Sim.Jobs {
         public float CompletionElapsedSeconds;
         public int CompletionCorrectCount;
         public int CompletionTotalCount;
-        public JobResultVariant CompletionVariant;
         public int CompletionMoneyEarned;
         public int CompletionXpEarned;
     }

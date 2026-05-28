@@ -1,9 +1,34 @@
-﻿using Sim.Building;
+﻿using System.Collections.Generic;
+using Sim.Building;
 using Sim.Enums;
 using Sim.Interactables;
 using UnityEngine;
 
 namespace Sim.Scriptables {
+    /// <summary>
+    /// Configuration de conteneur de stockage. Un prop devient un conteneur dès que
+    /// <see cref="slotCount"/> &gt; 0 : on lui associe alors une Place côté backend
+    /// (placeKey = "container:&lt;propUuid&gt;") où les items glissés sont persistés.
+    /// </summary>
+    [System.Serializable]
+    public class ContainerConfig {
+        [Tooltip("Nombre de slots de la grille. 0 = le prop n'est PAS un conteneur (champ ignoré).")]
+        [Min(0)]
+        [SerializeField] private int slotCount = 0;
+
+        [Tooltip("Types d'items acceptés dans le conteneur. Liste vide = TOUS les types autorisés. " +
+                 "Sert au filtrage côté UI (drop rejeté) et au gating côté serveur (drop ignoré).")]
+        [SerializeField] private List<ItemType> acceptedTypes = new List<ItemType>();
+
+        public int SlotCount => slotCount;
+        public IReadOnlyList<ItemType> AcceptedTypes => acceptedTypes;
+        public bool IsContainer => slotCount > 0;
+
+        /// <summary>True si le conteneur accepte ce type (liste vide = accepte tout).</summary>
+        public bool Accepts(ItemType type)
+            => acceptedTypes == null || acceptedTypes.Count == 0 || acceptedTypes.Contains(type);
+    }
+
     [CreateAssetMenu(fileName = "Props", menuName = "Configurations/Props")]
     public class PropsConfig : ScriptableObject {
         [SerializeField]
@@ -68,6 +93,12 @@ namespace Sim.Scriptables {
 
         [SerializeField]
         private AudioClip buildSound;
+
+        [Header("Storage container")]
+        [SerializeField] private ContainerConfig container = new ContainerConfig();
+
+        /// <summary>Configuration de conteneur (slots, types acceptés). slotCount=0 = pas un conteneur.</summary>
+        public ContainerConfig Container => container;
 
         public PropsPreset[] Presets => presets;
 

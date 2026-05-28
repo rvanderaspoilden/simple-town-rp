@@ -193,6 +193,19 @@ public class SimpleTownNetwork : NetworkManager
             }
         }
 
+        // Cleanup jobs/board DÉTERMINISTE ici, AVANT base.OnServerDisconnect ne
+        // détruise l'identity. Sinon on dépend entièrement de
+        // PlayerController.OnStopServer → JobTargetHooks.UnregisterPlayer, et la
+        // moindre fragilité (timing, exception en amont, identity déjà disposed)
+        // laisse les missions actives et leurs items en monde (sort packages,
+        // pickup, etc.). Les méthodes appelées sont idempotentes : si la chaîne
+        // OnStopServer ré-appelle ces handlers ensuite, c'est un no-op.
+        uint disconnectingNetId = conn.identity != null ? conn.identity.netId : 0u;
+        if (disconnectingNetId != 0u) {
+            Sim.Jobs.JobServerManager.Instance.OnPlayerDisconnected(disconnectingNetId);
+            Sim.Jobs.JobBoardServer.Instance.OnPlayerDisconnected(conn);
+        }
+
         OnPlayerDisconnected?.Invoke(conn);
         base.OnServerDisconnect(conn);
     }

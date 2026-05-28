@@ -67,6 +67,16 @@ public class PlayerBankAccount : NetworkBehaviour {
             } catch (Exception e) {
                 Debug.LogError($"[PlayerBankAccount] Cannot parse ledger response for [name={this.name}]: {e.Message}");
             }
+
+            // Notification banque uniquement sur les DÉPENSES (amount < 0). On affiche
+            // strictement le montant de la dépense (positif, signé '-') côté joueur.
+            if (body.amount < 0 && connectionToClient != null) {
+                connectionToClient.Send(new ToastNotificationMessage {
+                    text       = $"-{-body.amount} BC",
+                    typeByte   = (byte)NotificationType.BANK,
+                    worldToast = false,
+                });
+            }
         } else {
             Debug.LogError($"[PlayerBankAccount] Ledger post failed for [name={this.name}] reason={body.reason} code={request.responseCode}");
         }

@@ -1,50 +1,23 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Sim.Jobs {
     /// <summary>
-    /// Modale unique affichée à la fin de toute mission complétée.
-    /// Le rendu réel est délégué à une JobResultView fille, sélectionnée
-    /// par variant (transmis dans JobFinishedMessage). Chaque variant a
-    /// son propre GameObject avec sa propre mise en page.
+    /// Émet un toast flottant « Mission terminée » avec les gains à la fin d'une
+    /// mission complétée. La modale dédiée a été retirée (redondante avec le toast) ;
+    /// ce composant reste en scène uniquement comme handler d'event.
     ///
-    /// Ce GameObject DOIT rester actif. `root` est un enfant que l'on
-    /// active/désactive.
+    /// Le GameObject porteur DOIT rester actif pour que <c>Awake</c> exécute
+    /// l'abonnement.
     /// </summary>
     public class JobCompletionResultPanel : MonoBehaviour {
         public static JobCompletionResultPanel Instance { get; private set; }
 
-        [Header("Root (enfant à masquer/afficher, PAS ce GameObject)")]
-        [SerializeField] private GameObject root;
-
-        [Header("Vues — une par JobResultVariant")]
-        [Tooltip("Une JobResultView par variant. Auto-rempli au Awake si vide via GetComponentsInChildren.")]
-        [SerializeField] private JobResultView[] views;
-
-        [Tooltip("Vue à afficher quand aucune autre ne matche le variant reçu.")]
-        [SerializeField] private JobResultView fallbackView;
-
-        [Header("Buttons")]
-        [SerializeField] private Button closeButton;
-
         private bool _subscribed;
-
-        // Récompenses de la dernière mission complétée, affichées en toast au-dessus du
-        // joueur une fois la modale de recap fermée.
-        private int  _pendingMoney;
-        private int  _pendingXp;
-        private bool _pendingToast;
 
         private void Awake() {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
-
-            if (views == null || views.Length == 0)
-                views = GetComponentsInChildren<JobResultView>(true);
-
-            if (closeButton != null) closeButton.onClick.AddListener(Close);
             Subscribe();
-            Show(false);
         }
 
         private void OnDestroy() {
@@ -67,40 +40,11 @@ namespace Sim.Jobs {
         private void OnJobFinished(JobClientState state) {
             if (state.Status != JobStatus.Completed) return;
 
-            var picked = PickView(state.CompletionVariant);
-            if (views != null) {
-                foreach (var v in views) {
-                    if (v != null) v.gameObject.SetActive(v == picked);
-                }
-            }
-            if (picked != null) picked.Render(state);
+            int money = state.CompletionMoneyEarned;
+            int xp    = state.CompletionXpEarned;
+            if (money <= 0 && xp <= 0) return;
 
-            // Mémorise les gains pour le toast affiché à la fermeture de la modale.
-            _pendingMoney = state.CompletionMoneyEarned;
-            _pendingXp    = state.CompletionXpEarned;
-            _pendingToast = _pendingMoney > 0 || _pendingXp > 0;
-
-            Show(true);
-        }
-
-        private JobResultView PickView(JobResultVariant variant) {
-            if (views != null) {
-                foreach (var v in views) {
-                    if (v != null && v.Variant == variant) return v;
-                }
-            }
-            return fallbackView;
-        }
-
-        public void Close() {
-            Show(false);
-
-            // Une fois la modale fermée, on rappelle les gains via un toast flottant
-            // au-dessus du joueur (même composant que le feedback "Crédit Social").
-            if (_pendingToast) {
-                _pendingToast = false;
-                WorldToastManager.Show("Mission terminée", FormatRewardSubtitle(_pendingMoney, _pendingXp), delay: 0.25f);
-            }
+            WorldToastManager.Show("Mission terminée", FormatRewardSubtitle(money, xp), delay: 0.25f);
         }
 
         /// <summary>Ligne de gains pour le toast : "+1200 €   +30 XP ⭐" (omet ce qui vaut 0).</summary>
@@ -110,10 +54,6 @@ namespace Sim.Jobs {
             if (money > 0 && xp > 0) sb.Append("   ");
             if (xp > 0) sb.Append('+').Append(xp).Append(" XP ⭐");
             return sb.ToString();
-        }
-
-        private void Show(bool visible) {
-            if (root != null) root.SetActive(visible);
         }
     }
 }

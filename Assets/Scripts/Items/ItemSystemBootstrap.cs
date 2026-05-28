@@ -13,6 +13,11 @@ public static class ItemSystemBootstrap
         NetworkServer.RegisterHandler<C2S_RequestSwapHands>(ServerItemManager.Instance.HandleSwap);
         NetworkServer.RegisterHandler<C2S_AdminSpawnItem>(ServerItemManager.Instance.HandleAdminSpawn);
 
+        // Conteneurs de stockage (frigo, etc.)
+        NetworkServer.RegisterHandler<C2S_OpenContainer>(ServerItemManager.Instance.HandleOpenContainer);
+        NetworkServer.RegisterHandler<C2S_CloseContainer>(ServerItemManager.Instance.HandleCloseContainer);
+        NetworkServer.RegisterHandler<C2S_MoveItem>(ServerItemManager.Instance.HandleMoveItem);
+
         PlayerRoomTracker.OnPlayerEnterRoom += ServerItemManager.Instance.OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom += ServerItemManager.Instance.OnPlayerLeaveRoom;
         SimpleTownNetwork.OnPlayerDisconnected += ServerItemManager.Instance.OnPlayerDisconnect;
@@ -29,6 +34,9 @@ public static class ItemSystemBootstrap
         NetworkServer.UnregisterHandler<C2S_RequestDropItem>();
         NetworkServer.UnregisterHandler<C2S_RequestSwapHands>();
         NetworkServer.UnregisterHandler<C2S_AdminSpawnItem>();
+        NetworkServer.UnregisterHandler<C2S_OpenContainer>();
+        NetworkServer.UnregisterHandler<C2S_CloseContainer>();
+        NetworkServer.UnregisterHandler<C2S_MoveItem>();
 
         PlayerRoomTracker.OnPlayerEnterRoom -= ServerItemManager.Instance.OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom -= ServerItemManager.Instance.OnPlayerLeaveRoom;

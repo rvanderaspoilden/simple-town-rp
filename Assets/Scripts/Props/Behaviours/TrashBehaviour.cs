@@ -69,10 +69,18 @@ public class TrashBehaviour : PropBehaviourBase
     public override Action[] GetActions(bool withPriority = false)
     {
         Action[] acts = base.GetActions(withPriority);
+        bool hasHeld = HasAnyHeldItem();
 
-        // THROW visible dès que le joueur tient au moins un item en main.
-        if (!HasAnyHeldItem())
-            acts = acts.Where(a => a.Type != ActionTypeEnum.THROW).ToArray();
+        // si le joueur tient au moins un item.
+        acts = acts.Where(a => (a.Type != ActionTypeEnum.THROW || hasHeld))
+                   .ToArray();
+
+        // En clic gauche prioritaire : si JETER est disponible, c'est l'action exécutée
+        // directement (pas besoin d'ouvrir le radial pour faire le geste évident).
+        if (withPriority && hasHeld) {
+            Action throwAct = acts.FirstOrDefault(a => a.Type == ActionTypeEnum.THROW);
+            if (throwAct != null) return new[] { throwAct };
+        }
 
         return acts;
     }

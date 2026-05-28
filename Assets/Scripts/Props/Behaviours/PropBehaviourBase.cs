@@ -218,11 +218,14 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
     public virtual Action[] GetActions(bool withPriority = false)
     {
-        // Magasin physique : un prop d'expo ne propose QUE l'action BUY (clic droit).
-        // On court-circuite les actions du config (LOOK, etc.) — l'autorité reste serveur.
+        // Magasin physique : un prop d'expo ne propose QUE l'action BUY (acheter).
+        // Toujours forSale par construction (ShopDisplay = stock infini), donc on ne
+        // dépend pas du flag _forSale. BUY est l'action PRIORITAIRE (clic gauche direct)
+        // ET la seule disponible en radial — court-circuite les actions du config (LOOK…),
+        // l'autorité reste serveur.
         if (_isShopDisplay)
         {
-            return (_isBuilt && _forSale && !withPriority && _actBuy != null)
+            return (_isBuilt && _actBuy != null)
                 ? new[] { _actBuy }
                 : System.Array.Empty<Action>();
         }
