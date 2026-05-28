@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Sim;
 using TMPro;
 using UnityEngine;
@@ -7,6 +8,10 @@ namespace Sim.Jobs {
     /// <summary>
     /// HUD persistant de la mission active du joueur local. Reste visible
     /// tant qu'une mission est Active ou Offered ; se masque sinon.
+    ///
+    /// Affichage simplifié en todo-list : titre + icône + liste des steps avec
+    /// case à cocher (cochée = step complété). Plus de barre de progression,
+    /// plus de timer, plus de distance — la complétion par step suffit.
     ///
     /// IMPORTANT : le GameObject qui porte ce script DOIT rester actif au
     /// démarrage. Le champ `root` référence un ENFANT visuel qui sera
@@ -22,33 +27,25 @@ namespace Sim.Jobs {
         [Header("Main Content")]
         [SerializeField] private Image iconImage;
         [SerializeField] private TMP_Text titleText;
+        [Tooltip("Optionnel : affichage mono-étape, utilisé uniquement si la todo-list n'est pas câblée.")]
         [SerializeField] private TMP_Text stepText;
 
-        [Header("Dynamic Progress Group")]
-        [Tooltip("The group containing the slider and/or text.")]
-        [SerializeField] private GameObject progressGroup;
-        [SerializeField] private Slider progressBar;
-        [SerializeField] private TMP_Text progressText;
+        [Header("Todo-list des steps")]
+        [Tooltip("Conteneur (avec VerticalLayoutGroup) où sont instanciées les lignes de steps.")]
+        [SerializeField] private Transform stepsContainer;
+        [Tooltip("Template d'une ligne de step (gardé INACTIF) ; cloné une fois par step.")]
+        [SerializeField] private JobStepRowUI stepRowTemplate;
 
         [Header("Buttons")]
         [SerializeField] private Button acceptButton;
         [SerializeField] private Button abandonButton;
 
-        [Header("Refresh")]
-        [Tooltip("Intervalle de recalcul de la distance NavMesh (secondes).")]
-        [SerializeField] private float distanceRefreshInterval = 0.25f;
-
-        private enum ProgressMode { None, Distance, Timer, Counter }
-        private ProgressMode _currentMode = ProgressMode.None;
-
         private string _currentInstanceId;
-        private string _currentTargetId;
         private bool _subscribed;
-        private float _nextDistanceUpdate;
-        private JobClientState _currentState;
+        private readonly List<JobStepRowUI> _stepRows = new List<JobStepRowUI>();
 
         private void Awake() {
-if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
 
             if (root == this.gameObject) {
@@ -74,7 +71,6 @@ if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             c.JobOffered      += OnJobOffered;
             c.JobStepAdvanced += OnJobStepAdvanced;
             c.JobFinished     += OnJobFinished;
-            c.SortProgress    += OnSortProgress;
             _subscribed = true;
         }
 
@@ -84,51 +80,23 @@ if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             c.JobOffered      -= OnJobOffered;
             c.JobStepAdvanced -= OnJobStepAdvanced;
             c.JobFinished     -= OnJobFinished;
-            c.SortProgress    -= OnSortProgress;
             _subscribed = false;
-        }
-
-        private void OnSortProgress(JobClientState state, JobSortProgressMessage msg) {
-            if (msg.instanceId != _currentInstanceId) return;
-
-            if (msg.finished) {
-                _currentMode = ProgressMode.None;
-                UpdateProgressDisplay();
-                return;
-            }
-
-            _currentMode = ProgressMode.Counter;
-            UpdateProgressDisplay();
-
-            if (progressBar != null) {
-                progressBar.maxValue = msg.totalCount;
-                progressBar.value = msg.resolvedCount;
-            }
-
-            if (progressText != null)
-                progressText.text = $"{msg.resolvedCount} / {msg.totalCount}";
         }
 
         private void OnJobOffered(JobClientState state) {
             _currentInstanceId = state.InstanceId;
-            _currentTargetId = state.CurrentTargetId;
-            _currentState = state;
             Render(state);
             Show(true);
         }
 
         private void OnJobStepAdvanced(JobClientState state) {
             if (state.InstanceId != _currentInstanceId) return;
-            _currentTargetId = state.CurrentTargetId;
-            _currentState = state;
             Render(state);
         }
 
         private void OnJobFinished(JobClientState state) {
             if (state.InstanceId != _currentInstanceId) return;
             _currentInstanceId = null;
-            _currentTargetId = null;
-            _currentState = null;
             Show(false);
         }
 
@@ -139,11 +107,19 @@ if (Instance != null && Instance != this) { Destroy(gameObject); return; }
                     : state.InstanceId;
             }
 
+            bool useTodoList = stepsContainer != null && stepRowTemplate != null;
+
+            // Ancien affichage mono-étape : conservé en repli si la todo-list n'est pas câblée.
             if (stepText != null) {
-                stepText.text = string.IsNullOrEmpty(state.CurrentPromptKey)
-                    ? $"Étape {state.CurrentStepIndex + 1}"
-                    : state.CurrentPromptKey;
+                stepText.gameObject.SetActive(!useTodoList);
+                if (!useTodoList) {
+                    stepText.text = string.IsNullOrEmpty(state.CurrentPromptKey)
+                        ? $"Étape {state.CurrentStepIndex + 1}"
+                        : state.CurrentPromptKey;
+                }
             }
+
+            if (useTodoList) RebuildSteps(state);
 
             if (iconImage != null && state.Definition != null) {
                 iconImage.sprite = state.Definition.Icon;
@@ -153,78 +129,49 @@ if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             bool offered = state.Status == JobStatus.Offered;
             if (acceptButton != null) acceptButton.gameObject.SetActive(offered);
             if (abandonButton != null) abandonButton.gameObject.SetActive(!offered);
-
-            // Determine mode
-            // Le mode Distance (« X m ») n'est affiché que pour les steps de
-            // navigation (Reach/Deliver), comme le beacon et le ruban GPS.
-            if (state.Definition != null && state.Definition.ExpirationSeconds > 0) {
-                _currentMode = ProgressMode.Timer;
-            } else if (state.Status == JobStatus.Active && state.ShowTargetBeacon
-                       && !string.IsNullOrEmpty(_currentTargetId)) {
-                _currentMode = ProgressMode.Distance;
-            } else {
-                _currentMode = ProgressMode.None;
-            }
-
-            UpdateProgressDisplay();
         }
 
-        private void UpdateProgressDisplay() {
-            if (progressGroup != null) progressGroup.SetActive(_currentMode != ProgressMode.None);
-            if (progressBar != null) progressBar.gameObject.SetActive(_currentMode == ProgressMode.Timer || _currentMode == ProgressMode.Counter);
+        /// <summary>
+        /// (Re)construit la todo-list des steps. Un step est COCHÉ s'il est complété
+        /// (index &lt; étape courante quand la mission est Active), mis en avant s'il est
+        /// l'étape courante, sinon « à faire ». En statut Offered (offre non acceptée),
+        /// aucun step n'est coché.
+        /// </summary>
+        private void RebuildSteps(JobClientState state) {
+            var steps = state.Definition != null ? state.Definition.Steps : null;
+            int count = steps != null ? steps.Count : 0;
+
+            // Pool : on instancie autant de lignes que nécessaire, on réutilise ensuite.
+            while (_stepRows.Count < count) {
+                var row = Instantiate(stepRowTemplate, stepsContainer);
+                _stepRows.Add(row);
+            }
+
+            bool active = state.Status == JobStatus.Active;
+            for (int i = 0; i < _stepRows.Count; i++) {
+                if (i >= count) {
+                    _stepRows[i].gameObject.SetActive(false);
+                    continue;
+                }
+
+                var step = steps[i];
+                string text = (step != null && !string.IsNullOrEmpty(step.PromptKey))
+                    ? step.PromptKey
+                    : $"Étape {i + 1}";
+
+                bool done = active && i < state.CurrentStepIndex;
+                bool current = active && i == state.CurrentStepIndex;
+
+                _stepRows[i].gameObject.SetActive(true);
+                _stepRows[i].Set(text, done, current);
+            }
+
+            // Le template reste toujours masqué.
+            stepRowTemplate.gameObject.SetActive(false);
         }
 
         private void Show(bool visible) {
             if (root != null) root.SetActive(visible);
-        }
-
-        private void Update() {
-            if (root != null && !root.activeSelf) return;
-
-            if (_currentMode == ProgressMode.Timer) {
-                RefreshRemainingTime();
-            } else if (_currentMode == ProgressMode.Distance) {
-                if (Time.unscaledTime >= _nextDistanceUpdate) {
-                    _nextDistanceUpdate = Time.unscaledTime + distanceRefreshInterval;
-                    RefreshDistance();
-                }
-            }
-        }
-
-        private void RefreshRemainingTime() {
-            if (_currentState == null || _currentState.Status != JobStatus.Active || _currentState.Definition == null) {
-                return;
-            }
-            float expiration = _currentState.Definition.ExpirationSeconds;
-            if (expiration <= 0f) return;
-
-            float localElapsed = Time.unscaledTime - _currentState.SyncedAtUnscaled;
-            float remaining = Mathf.Max(0f, expiration - (_currentState.ElapsedSecondsAtSync + localElapsed));
-            
-            if (progressBar != null) {
-                progressBar.maxValue = expiration;
-                progressBar.value = remaining;
-            }
-
-            if (progressText != null) {
-                int total = Mathf.CeilToInt(remaining);
-                int minutes = total / 60;
-                int seconds = total % 60;
-                progressText.text = $"{minutes:00}:{seconds:00}";
-            }
-        }
-
-        private void RefreshDistance() {
-            if (string.IsNullOrEmpty(_currentTargetId) || PlayerController.Local == null) {
-                if (progressText != null) progressText.text = string.Empty;
-                return;
-            }
-            if (!JobPoint.ByPointId.TryGetValue(_currentTargetId, out var point) || point == null) {
-                if (progressText != null) progressText.text = string.Empty;
-                return;
-            }
-            float d = JobDistanceUtil.Compute(PlayerController.Local.transform.position, point.transform.position);
-            if (progressText != null) progressText.text = JobDistanceUtil.FormatMeters(d);
         }
 
         private void OnAcceptClicked() {

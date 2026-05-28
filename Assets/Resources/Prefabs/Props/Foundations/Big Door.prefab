@@ -16,7 +16,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 119
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &4115072283353728248
 Transform:
@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 1486700144083731305}
   - component: {fileID: 4388064871423601452}
   - component: {fileID: 8261327056860142918}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -197,7 +197,7 @@ GameObject:
   - component: {fileID: 4828494440327246209}
   - component: {fileID: 4303856900811287426}
   - component: {fileID: 5729927222894858793}
-  m_Layer: 2
+  m_Layer: 10
   m_Name: Big Door
   m_TagString: Untagged
   m_Icon: {fileID: 0}

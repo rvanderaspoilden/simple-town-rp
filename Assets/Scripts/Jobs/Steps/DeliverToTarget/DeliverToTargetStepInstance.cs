@@ -1,3 +1,5 @@
+using Sim.Logging;
+
 namespace Sim.Jobs {
     /// <summary>
     /// Runtime du DeliverToTargetStep. Le step succeed après handoverSeconds
@@ -22,6 +24,19 @@ namespace Sim.Jobs {
 
         public override void OnEnter() {
             inRangeElapsed = 0f;
+
+            // Override optionnel : si la def fixe un pointId précis, on écrase le target
+            // du JobContext sous la même clé — les steps suivants utilisant la même
+            // TargetKey hériteront aussi de cet override.
+            if (!string.IsNullOrEmpty(def.OverrideTargetPointId)) {
+                if (JobPoint.ByPointId.TryGetValue(def.OverrideTargetPointId, out var p) && p != null) {
+                    job.Context.SetTarget(def.TargetKey, p);
+                } else {
+                    GameLogger.System.Warning("DeliverToTargetStep_OverrideNotFound {PointId} {JobId}",
+                        def.OverrideTargetPointId, job.Definition.JobId);
+                }
+            }
+
             var target = job.Context.TargetByKey(def.TargetKey);
             if (target == null || !target.IsAvailable) {
                 Fail(JobFailureReason.TargetLost);

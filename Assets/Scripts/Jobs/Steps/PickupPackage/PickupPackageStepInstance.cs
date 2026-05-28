@@ -15,6 +15,10 @@ namespace Sim.Jobs {
 
         private readonly PickupPackageStepDefinition def;
         private int _spawnedEntityId = -1;
+        // Réservation de slot active : tant que ces champs sont assignés, le slot
+        // est considéré occupé dans la table d'attribution de JobSpawnSlots.
+        private JobSpawnSlots _slotsRef;
+        private int _reservedSlotIndex = -1;
 
         public PickupPackageStepInstance(JobInstance job, PickupPackageStepDefinition definition) : base(job) {
             def = definition;
@@ -33,40 +37,52 @@ namespace Sim.Jobs {
                 return;
             }
 
-            // Si un JobSpawnSlots est configuré (ex. palette de livraison), on pose le
-            // colis sur le slot demandé (position + rotation). Sinon, ancien comportement :
-            // position du target + offset.
+            // Si un JobSpawnSlots est configuré (ex. palette de livraison), on choisit
+            // un slot LIBRE via la table d'attribution. Sinon (ou si tous les slots sont
+            // déjà réservés), repli sur la position du target + offset.
             Vector3 pos;
             Quaternion rot = Quaternion.identity;
             var slots = JobSpawnSlots.Get(def.SpawnSlotsId);
+            int chosenIndex = -1;
             Transform slot = null;
             if (slots != null) {
                 if (def.RandomSlot) {
-                    // Tirage d'un slot LIBRE au hasard (aucun item posé dans le rayon).
-                    slot = slots.GetRandomSlot(
-                        t => !ServerItemManager.Instance.IsWorldPositionOccupied(def.RoomId, t.position, def.SlotOccupancyRadius),
-                        out _, out bool wasFree);
-                    if (slot != null && !wasFree) {
+                    var free = slots.GetFreeSlotIndices();
+                    if (free.Count > 0) {
+                        chosenIndex = free[Random.Range(0, free.Count)];
+                    } else {
                         GameLogger.System.Warning("PickupPackageStep_NoFreeSlot {SlotsId} {JobId}",
                             def.SpawnSlotsId, job.Definition.JobId);
                     }
                 } else {
-                    slot = slots.GetSlot(def.SpawnSlotIndex);
+                    if (slots.IsSlotFree(def.SpawnSlotIndex)) {
+                        chosenIndex = def.SpawnSlotIndex;
+                    } else {
+                        GameLogger.System.Warning("PickupPackageStep_SlotTaken {SlotsId} {Index} {JobId}",
+                            def.SpawnSlotsId, def.SpawnSlotIndex, job.Definition.JobId);
+                    }
                 }
+                slot = chosenIndex >= 0 ? slots.GetSlot(chosenIndex) : null;
+            } else if (!string.IsNullOrEmpty(def.SpawnSlotsId)) {
+                GameLogger.System.Warning("PickupPackageStep_SlotsNotFound {SlotsId} {JobId}",
+                    def.SpawnSlotsId, job.Definition.JobId);
             }
+
             if (slot != null) {
                 pos = slot.position;
                 rot = slot.rotation;
             } else {
-                if (!string.IsNullOrEmpty(def.SpawnSlotsId)) {
-                    GameLogger.System.Warning("PickupPackageStep_SlotsNotFound {SlotsId} {Index} {JobId}",
-                        def.SpawnSlotsId, def.SpawnSlotIndex, job.Definition.JobId);
-                }
                 pos = target.Transform.position + def.SpawnOffset;
             }
 
             _spawnedEntityId = ServerItemManager.Instance.SpawnItem(
                 def.RoomId, def.ItemConfig.ID, pos, rot);
+
+            // Réservation : marque le slot occupé tant que le step ne libère pas (OnExit).
+            if (slots != null && chosenIndex >= 0 && slots.TryReserve(chosenIndex, _spawnedEntityId)) {
+                _slotsRef = slots;
+                _reservedSlotIndex = chosenIndex;
+            }
 
             // Anti-vol : seul le owner de la mission peut pick le colis.
             ServerItemManager.Instance.SetAuthorizedHolder(def.RoomId, _spawnedEntityId, job.OwnerNetId);
@@ -100,7 +116,15 @@ namespace Sim.Jobs {
         }
 
         public override void OnExit() {
-            // Cleanup uniquement si le step n'a pas succeed (sinon le colis reste
+            // Libère la réservation du slot dans TOUS les cas : succès (le joueur a
+            // ramassé le colis → le slot est vide) comme échec (le colis va être despawn).
+            if (_slotsRef != null && _reservedSlotIndex >= 0) {
+                _slotsRef.Release(_reservedSlotIndex);
+                _slotsRef = null;
+                _reservedSlotIndex = -1;
+            }
+
+            // Cleanup despawn uniquement si le step n'a pas succeed (sinon le colis reste
             // dans les mains du joueur pour les steps suivants).
             if (Status == StepStatus.Succeeded) return;
             if (_spawnedEntityId < 0) return;

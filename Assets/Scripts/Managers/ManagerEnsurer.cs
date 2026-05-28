@@ -17,9 +17,14 @@ public static class ManagerEnsurer
 {
     public static void EnsureCoreManagers()
     {
+        // NetworkManager AVANT DatabaseManager : DatabaseManager.Awake → RegisterPrefabs()
+        // accède à NetworkManager.singleton.spawnPrefabs. Si on instancie DatabaseManager
+        // d'abord (NetworkManager.singleton null), RegisterPrefabs lève une NRE qui remonte
+        // dans Instantiate → EnsureCoreManagers s'interrompt → NetworkManager jamais créé →
+        // serveur jamais démarré (plus de missions, etc.).
         if (ApiManager.Instance == null)      Ensure("Prefabs/Managers/Api Manager",     "Api Manager");
-        if (DatabaseManager.Instance == null) Ensure("Prefabs/Managers/DatabaseManager",  "DatabaseManager");
         if (NetworkManager.singleton == null) Ensure("Prefabs/Managers/Network Manager",  "Network Manager");
+        if (DatabaseManager.Instance == null) Ensure("Prefabs/Managers/DatabaseManager",  "DatabaseManager");
     }
 
     private static void Ensure(string resourcePath, string label)

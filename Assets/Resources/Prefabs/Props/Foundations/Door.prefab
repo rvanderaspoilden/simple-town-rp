@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 771371577863207625}
   - component: {fileID: 2829328395950961896}
   - component: {fileID: 4841964107874673495}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Handle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -230,7 +230,7 @@ GameObject:
   - component: {fileID: 8010329451379658466}
   - component: {fileID: 8811372384429932560}
   - component: {fileID: 1582989099626829078}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -326,7 +326,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 87
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &6674650402318283985
 Transform:
@@ -415,7 +415,7 @@ GameObject:
   - component: {fileID: 6108673226602487419}
   - component: {fileID: 4972500163223285798}
   - component: {fileID: 4934968623694710261}
-  m_Layer: 2
+  m_Layer: 10
   m_Name: Door
   m_TagString: Untagged
   m_Icon: {fileID: 0}

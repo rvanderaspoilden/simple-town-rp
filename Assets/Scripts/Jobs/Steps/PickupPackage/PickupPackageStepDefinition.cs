@@ -29,14 +29,10 @@ namespace Sim.Jobs {
         [Tooltip("Index du slot à utiliser dans le JobSpawnSlots ci-dessus (ignoré si Random Slot est coché).")]
         [SerializeField] private int spawnSlotIndex = 0;
 
-        [Tooltip("Si coché : choisit automatiquement un slot LIBRE au hasard parmi tous les slots " +
-                 "(vérifie qu'aucun item n'est déjà posé dessus), au lieu d'utiliser Spawn Slot Index. " +
-                 "Permet de renseigner plusieurs slots et de répartir les spawns.")]
+        [Tooltip("Si coché : choisit automatiquement un slot LIBRE au hasard parmi les slots non " +
+                 "réservés (table d'attribution tenue par JobSpawnSlots). À utiliser quand tu " +
+                 "renseignes plusieurs slots et que tu veux répartir les spawns sans collision.")]
         [SerializeField] private bool randomSlot = false;
-
-        [Tooltip("Rayon (m) de détection d'occupation d'un slot : un item posé au sol dans ce rayon " +
-                 "rend le slot indisponible pour le tirage aléatoire.")]
-        [SerializeField] private float slotOccupancyRadius = 0.4f;
 
         [Tooltip("Offset local appliqué à la position du target pour le spawn (fallback sans slots).")]
         [SerializeField] private Vector3 spawnOffset = new Vector3(0, 0.5f, 0);
@@ -47,7 +43,6 @@ namespace Sim.Jobs {
         public string SpawnSlotsId => spawnSlotsId;
         public int SpawnSlotIndex => spawnSlotIndex;
         public bool RandomSlot => randomSlot;
-        public float SlotOccupancyRadius => slotOccupancyRadius;
         public Vector3 SpawnOffset => spawnOffset;
 
         public override JobStepInstance CreateInstance(JobInstance owner)

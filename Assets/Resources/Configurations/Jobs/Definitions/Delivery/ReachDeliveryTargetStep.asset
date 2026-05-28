@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7ceb327f49b42c4ebb37858d834fff1, type: 3}
   m_Name: ReachDeliveryTargetStep
   m_EditorClassIdentifier: 
-  promptKey: Aller au point de rdv
+  promptKey: Aller au point de livraison
   arrivalRadius: 2
   targetKey: 1
+  overrideTargetPointId: 

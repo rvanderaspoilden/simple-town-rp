@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f8eb14ad517ec6d43b563d29a75074e4, type: 3}
-  m_Name: DeliverToTargetStep
+  m_Name: DeliverPackageToShelfStep
   m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.DeliverToTargetStepDefinition
-  promptKey: Aller au point de livraison
+  promptKey: "Mettre le colis sur l'\xE9tag\xE8re"
   interactionRadius: 1.75
-  handoverSeconds: 0.3
-  targetKey: 1
-  overrideTargetPointId: 
+  handoverSeconds: 0
+  targetKey: 0
+  overrideTargetPointId: warehouse_pickup_shelf

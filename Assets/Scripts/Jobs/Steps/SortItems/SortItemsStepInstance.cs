@@ -23,6 +23,7 @@ namespace Sim.Jobs {
 
         private sealed class ItemTaskState {
             public int             entityId = -1;
+            public int             slotIndex = -1; // index réservé dans JobSpawnSlots (-1 = pas de slot)
             public bool            resolved;
             public bool            correct;
             public SortingCategory category;
@@ -33,6 +34,7 @@ namespace Sim.Jobs {
 
         private readonly SortItemsStepDefinition def;
         private ItemTaskState[] _states;
+        private JobSpawnSlots _slotsRef; // référence pour libération à OnExit
 
         public SortItemsStepInstance(JobInstance job, SortItemsStepDefinition definition) : base(job) {
             def = definition;
@@ -77,21 +79,44 @@ namespace Sim.Jobs {
                     def.SpawnSlotsId, spawnSlots.SlotCount, tasks.Count, job.Definition.JobId);
             }
 
-            // Random : ordre de slots LIBRES distincts au hasard (libres d'abord, occupés en
-            // repli). Sinon, ordre séquentiel (slot i pour le colis i).
-            List<int> slotOrder = (def.RandomSlot && spawnSlots != null)
-                ? spawnSlots.GetShuffledSlotOrder(
-                    t => !ServerItemManager.Instance.IsWorldPositionOccupied(def.RoomId, t.position, def.SlotOccupancyRadius))
-                : null;
+            _slotsRef = spawnSlots;
+
+            // Source d'indices :
+            //  • Random : pioche dans les slots LIBRES (table d'attribution), mélangés,
+            //    pour répartir les colis sur des slots distincts non réservés.
+            //  • Séquentiel : indices 0..N-1.
+            List<int> slotPool = null;
+            if (spawnSlots != null) {
+                if (def.RandomSlot) {
+                    slotPool = spawnSlots.GetFreeSlotIndices();
+                    Shuffle(slotPool);
+                } else {
+                    slotPool = new List<int>(tasks.Count);
+                    for (int i = 0; i < tasks.Count; i++) slotPool.Add(i);
+                }
+            }
 
             for (int i = 0; i < tasks.Count; i++) {
                 var category = tasks[i].sortingCategory;
 
-                int slotIndex = slotOrder != null ? (i < slotOrder.Count ? slotOrder[i] : -1) : i;
-                var slot = spawnSlots != null && slotIndex >= 0 ? spawnSlots.GetSlot(slotIndex) : null;
-                Vector3 spawnPos = slot != null
-                    ? slot.position
-                    : origin + Vector3.right * (i * def.ItemSpacing);
+                // Pioche le prochain slot CANDIDAT puis tente de le réserver. Si le slot
+                // est null / déjà occupé (séquentiel sur slot pris), on retombe sur la
+                // disposition linéaire au-dessus du target.
+                int slotIndex = -1;
+                Transform slot = null;
+                if (slotPool != null && i < slotPool.Count) {
+                    int candidate = slotPool[i];
+                    var cTr = spawnSlots.GetSlot(candidate);
+                    if (cTr != null && spawnSlots.IsSlotFree(candidate)) {
+                        slotIndex = candidate;
+                        slot = cTr;
+                    } else if (!def.RandomSlot) {
+                        GameLogger.System.Warning("SortItemsStep_SlotTaken {SlotsId} {Index} {JobId}",
+                            def.SpawnSlotsId, candidate, job.Definition.JobId);
+                    }
+                }
+
+                Vector3 spawnPos = slot != null ? slot.position : origin + Vector3.right * (i * def.ItemSpacing);
                 Quaternion spawnRot = slot != null ? slot.rotation : Quaternion.identity;
 
                 int entityId = ServerItemManager.Instance.SpawnItem(
@@ -100,12 +125,17 @@ namespace Sim.Jobs {
                 ServerItemManager.Instance.SetAuthorizedHolder(def.RoomId, entityId, job.OwnerNetId);
                 ServerItemManager.Instance.SetPersistent(def.RoomId, entityId, false);
 
-                _states[i]    = new ItemTaskState { entityId = entityId, category = category };
+                // Réservation du slot dans la table (no-op si slotIndex == -1).
+                if (slot != null && spawnSlots.TryReserve(slotIndex, entityId)) {
+                    _states[i] = new ItemTaskState { entityId = entityId, slotIndex = slotIndex, category = category };
+                } else {
+                    _states[i] = new ItemTaskState { entityId = entityId, category = category };
+                }
                 entityIds[i]  = entityId;
                 categories[i] = category;
 
-                GameLogger.System.Info("SortItemsStep_Spawned {EntityId} {Category} {JobId}",
-                    entityId, category, job.Definition.JobId);
+                GameLogger.System.Info("SortItemsStep_Spawned {EntityId} {Category} {SlotIndex} {JobId}",
+                    entityId, category, _states[i].slotIndex, job.Definition.JobId);
             }
 
             // Catégorie = donnée métier : transmise hors du pipeline d'items générique,
@@ -129,6 +159,19 @@ namespace Sim.Jobs {
         public override void OnExit() {
             if (_active.TryGetValue(job.OwnerNetId, out var active) && active == this)
                 _active.Remove(job.OwnerNetId);
+
+            // Libère toutes les réservations de slot encore actives (à la résolution
+            // d'un colis on les a déjà libérés une à une ; on couvre ici le cas
+            // échec/abandon où des colis non résolus tiennent encore leurs slots).
+            if (_slotsRef != null && _states != null) {
+                foreach (var state in _states) {
+                    if (state != null && state.slotIndex >= 0) {
+                        _slotsRef.Release(state.slotIndex);
+                        state.slotIndex = -1;
+                    }
+                }
+            }
+            _slotsRef = null;
 
             if (Status == StepStatus.Succeeded || _states == null) return;
             foreach (var state in _states) {
@@ -193,6 +236,11 @@ namespace Sim.Jobs {
             heldState.correct  = bin.AcceptedCategory == heldState.category;
 
             ServerItemManager.Instance.DespawnItem(def.RoomId, heldState.entityId);
+            // Libère le slot d'origine du colis : le step le considère « consommé ».
+            if (_slotsRef != null && heldState.slotIndex >= 0) {
+                _slotsRef.Release(heldState.slotIndex);
+                heldState.slotIndex = -1;
+            }
 
             // Résultat immédiat de l'action du joueur (dépôt dans un bac) → toast flottant,
             // pas une notification coin d'écran. Voir Docs/FEEDBACK_UI.md.
@@ -263,6 +311,14 @@ namespace Sim.Jobs {
         private NetworkConnectionToClient FindOwnerConn() {
             if (!NetworkServer.spawned.TryGetValue(job.OwnerNetId, out var identity)) return null;
             return identity != null ? identity.connectionToClient : null;
+        }
+
+        private static void Shuffle(List<int> list) {
+            if (list == null) return;
+            for (int i = list.Count - 1; i > 0; i--) {
+                int j = Random.Range(0, i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
         }
     }
 }

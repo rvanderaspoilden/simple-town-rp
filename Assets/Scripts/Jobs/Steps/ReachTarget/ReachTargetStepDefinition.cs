@@ -15,8 +15,15 @@ namespace Sim.Jobs {
         [Tooltip("Slot de cible à viser dans le JobContext.")]
         [SerializeField] private JobTargetKey targetKey = JobTargetKey.Pickup;
 
+        [Tooltip("Optionnel. PointId d'un JobPoint exact (ex. 'warehouse', 'hotel'). Si renseigné " +
+                 "et trouvé dans la scène, écrase le target du JobContext pour cette mission — " +
+                 "le joueur est envoyé vers CE point précis au lieu du tirage aléatoire du publisher. " +
+                 "L'override s'applique aussi aux steps suivants utilisant la même TargetKey.")]
+        [SerializeField] private string overrideTargetPointId;
+
         public float ArrivalRadius => arrivalRadius;
         public JobTargetKey TargetKey => targetKey;
+        public string OverrideTargetPointId => overrideTargetPointId;
 
         public override JobStepInstance CreateInstance(JobInstance owner)
             => new ReachTargetStepInstance(owner, this);

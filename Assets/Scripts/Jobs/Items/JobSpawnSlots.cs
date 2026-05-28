@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,6 +10,13 @@ namespace Sim.Jobs {
     /// Pose ce composant sur le prop (palette, étagère, table…) et renseigne des
     /// Transforms enfants comme <see cref="slots"/>. Le step lit le slot d'index
     /// voulu et y pose l'item (position ET rotation du Transform).
+    ///
+    /// **Table d'attribution** : un slot est marqué *occupé* dès qu'un item est
+    /// spawné dessus (<see cref="TryReserve"/>) ; il redevient libre quand le step
+    /// libère sa réservation (<see cref="Release"/> / <see cref="ReleaseByEntity"/>),
+    /// typiquement à la sortie du step (ramassage ou nettoyage). Il n'y a AUCUNE
+    /// détection physique : c'est purement une comptabilité serveur tenue par ce
+    /// composant.
     ///
     /// Registre statique par <see cref="slotsId"/>, même pattern que
     /// SortingBin / JobPoint. La scène (City.unity) étant chargée côté serveur,
@@ -29,6 +35,10 @@ namespace Sim.Jobs {
         private static readonly Dictionary<string, JobSpawnSlots> _all =
             new Dictionary<string, JobSpawnSlots>();
 
+        // slotIndex → entityId de l'item posé sur ce slot. Tant qu'une entrée existe,
+        // le slot est considéré OCCUPÉ et ne peut pas accueillir un nouveau spawn.
+        private readonly Dictionary<int, int> _occupied = new Dictionary<int, int>();
+
         public string SlotsId => slotsId;
         public int SlotCount => slots.Count;
 
@@ -36,67 +46,54 @@ namespace Sim.Jobs {
         public Transform GetSlot(int index)
             => index >= 0 && index < slots.Count ? slots[index] : null;
 
-        /// <summary>
-        /// Choisit un slot au hasard. <paramref name="isAvailable"/> filtre les slots
-        /// disponibles (ex. aucun item posé dessus) ; si fourni et qu'au moins un slot
-        /// passe le test, le tirage se fait parmi ceux-là (<paramref name="wasFree"/> = true).
-        /// Si aucun n'est disponible, repli sur un tirage parmi TOUS les slots non-null
-        /// (<paramref name="wasFree"/> = false) pour ne pas bloquer le spawn. Retourne null
-        /// seulement si aucun slot n'est assigné. <paramref name="index"/> = index choisi (ou -1).
-        /// </summary>
-        public Transform GetRandomSlot(Func<Transform, bool> isAvailable, out int index, out bool wasFree) {
-            index = -1;
-            wasFree = false;
-            if (slots == null || slots.Count == 0) return null;
+        /// <summary>Vrai si le slot existe (Transform non null) ET n'est pas réservé.</summary>
+        public bool IsSlotFree(int index)
+            => GetSlot(index) != null && !_occupied.ContainsKey(index);
 
-            var free = new List<int>();
-            var all = new List<int>();
+        /// <summary>
+        /// Liste (re-construite à chaque appel) des indices de slots libres,
+        /// dans l'ordre des slots. Le caller pioche / mélange selon ses besoins.
+        /// </summary>
+        public List<int> GetFreeSlotIndices() {
+            var list = new List<int>(slots.Count);
             for (int i = 0; i < slots.Count; i++) {
-                if (slots[i] == null) continue;
-                all.Add(i);
-                if (isAvailable == null || isAvailable(slots[i])) free.Add(i);
+                if (slots[i] != null && !_occupied.ContainsKey(i)) list.Add(i);
             }
-            if (all.Count == 0) return null;
-
-            if (free.Count > 0) {
-                index = free[UnityEngine.Random.Range(0, free.Count)];
-                wasFree = true;
-            } else {
-                index = all[UnityEngine.Random.Range(0, all.Count)];
-                wasFree = false;
-            }
-            return slots[index];
+            return list;
         }
 
         /// <summary>
-        /// Ordre aléatoire d'indices de slots, **disponibles d'abord** (mélangés) puis les
-        /// occupés (mélangés) en repli. <paramref name="isAvailable"/> filtre la dispo (ex.
-        /// aucun item posé dessus). Sert à répartir N items sur des slots LIBRES DISTINCTS
-        /// au hasard (ex. SortItemsStep avec plus de slots que de colis). La longueur = nombre
-        /// de slots non-null ; le caller prend les N premiers.
+        /// Tente de réserver le slot <paramref name="index"/> pour l'item
+        /// <paramref name="entityId"/>. Retourne false si le slot n'existe pas ou est
+        /// déjà occupé. Le slot reste réservé jusqu'à <see cref="Release"/>
+        /// ou <see cref="ReleaseByEntity"/>.
         /// </summary>
-        public List<int> GetShuffledSlotOrder(Func<Transform, bool> isAvailable) {
-            var available = new List<int>();
-            var occupied = new List<int>();
-            if (slots != null) {
-                for (int i = 0; i < slots.Count; i++) {
-                    if (slots[i] == null) continue;
-                    if (isAvailable == null || isAvailable(slots[i])) available.Add(i);
-                    else occupied.Add(i);
-                }
-            }
-            Shuffle(available);
-            Shuffle(occupied);
-            available.AddRange(occupied); // libres d'abord, occupés en dernier recours
-            return available;
+        public bool TryReserve(int index, int entityId) {
+            if (GetSlot(index) == null) return false;
+            if (_occupied.ContainsKey(index)) return false;
+            _occupied[index] = entityId;
+            return true;
         }
 
-        private static void Shuffle(List<int> list) {
-            for (int i = list.Count - 1; i > 0; i--) {
-                int j = UnityEngine.Random.Range(0, i + 1);
-                (list[i], list[j]) = (list[j], list[i]);
-            }
+        /// <summary>Libère le slot d'index donné (no-op si déjà libre).</summary>
+        public void Release(int index) {
+            _occupied.Remove(index);
         }
+
+        /// <summary>
+        /// Libère le slot qui héberge l'item <paramref name="entityId"/>, peu importe
+        /// son index. Utile quand on ne suit que l'entityId côté caller.
+        /// </summary>
+        public void ReleaseByEntity(int entityId) {
+            int found = -1;
+            foreach (var kv in _occupied) {
+                if (kv.Value == entityId) { found = kv.Key; break; }
+            }
+            if (found >= 0) _occupied.Remove(found);
+        }
+
+        /// <summary>Libère toutes les réservations (safety / reset).</summary>
+        public void ClearReservations() => _occupied.Clear();
 
         private void Awake() {
             if (string.IsNullOrEmpty(slotsId)) {
@@ -122,10 +119,11 @@ namespace Sim.Jobs {
 
 #if UNITY_EDITOR
         // Visualise les slots dans la scène : sphère = position, rayon = orientation (forward).
+        // Couleur indicative selon l'état de réservation EN COURS (utile pour debug en play).
         private void OnDrawGizmos() {
-            Gizmos.color = Color.green;
             for (int i = 0; i < slots.Count; i++) {
                 if (slots[i] == null) continue;
+                Gizmos.color = _occupied.ContainsKey(i) ? Color.red : Color.green;
                 Gizmos.DrawWireSphere(slots[i].position, 0.08f);
                 Gizmos.DrawRay(slots[i].position, slots[i].forward * 0.2f);
             }

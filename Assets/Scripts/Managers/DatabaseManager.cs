@@ -96,7 +96,14 @@ namespace Sim {
             // uses ServerPropManager/ClientPropManager which instantiate prefabs
             // directly without Mirror's NetworkServer.Spawn()
 
+            if (NetworkManager.singleton == null) {
+                Debug.LogWarning("[DatabaseManager] RegisterPrefabs ignoré : NetworkManager.singleton est null " +
+                                 "(ordre d'init). Les prefabs de bâtiments ne seront pas enregistrés.");
+                return;
+            }
+
             foreach (BuildingConfig config in BuildingConfigurations) {
+                if (config == null || config.Prefab == null) continue;
                 NetworkManager.singleton.spawnPrefabs.Add(config.Prefab.gameObject);
             }
         }

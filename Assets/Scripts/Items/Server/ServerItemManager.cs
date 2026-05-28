@@ -628,23 +628,6 @@ public class ServerItemManager
     }
 
     /// <summary>
-    /// Vrai si un item posé au sol (non tenu en main) existe dans <paramref name="radius"/>
-    /// de <paramref name="pos"/> dans la room. Sert à tester la disponibilité d'un slot de
-    /// spawn (JobSpawnSlots) avant d'y poser un nouvel item.
-    /// </summary>
-    public bool IsWorldPositionOccupied(string roomId, Vector3 pos, float radius)
-    {
-        if (!_rooms.TryGetValue(roomId, out var room)) return false;
-        float r2 = radius * radius;
-        foreach (var entity in room.Values)
-        {
-            if (entity.IsHeld) continue;
-            if ((entity.Position - pos).sqrMagnitude <= r2) return true;
-        }
-        return false;
-    }
-
-    /// <summary>
     /// Restreint le pickup à un seul joueur. 0 = aucune restriction (défaut).
     /// Utilisé par le système Jobs pour éviter le vol de colis mission.
     /// </summary>

@@ -36,12 +36,9 @@ namespace Sim.Jobs {
         [SerializeField] private string spawnSlotsId;
 
         [Tooltip("Si coché : répartit les colis sur des slots LIBRES DISTINCTS tirés au hasard " +
-                 "(vérifie qu'aucun item n'est déjà posé dessus), au lieu d'utiliser les slots " +
-                 "dans l'ordre. Utile si tu renseignes plus de slots que de colis.")]
+                 "parmi les slots non réservés (table d'attribution tenue par JobSpawnSlots), " +
+                 "au lieu d'utiliser les slots dans l'ordre. Utile si tu renseignes plus de slots que de colis.")]
         [SerializeField] private bool randomSlot = false;
-
-        [Tooltip("Rayon (m) de détection d'occupation d'un slot pour le tirage aléatoire.")]
-        [SerializeField] private float slotOccupancyRadius = 0.4f;
 
         [Tooltip("[Repli sans slots] Offset de base appliqué à la position du target pour le spawn (hauteur).")]
         [SerializeField] private Vector3 baseSpawnOffset = new Vector3(0f, 0.5f, 0f);
@@ -55,7 +52,6 @@ namespace Sim.Jobs {
         public JobTargetKey SpawnAtKey => spawnAtKey;
         public string SpawnSlotsId => spawnSlotsId;
         public bool RandomSlot => randomSlot;
-        public float SlotOccupancyRadius => slotOccupancyRadius;
         public Vector3 BaseSpawnOffset => baseSpawnOffset;
         public float ItemSpacing => itemSpacing;
 
