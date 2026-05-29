@@ -163,7 +163,7 @@ public class InventoryUI : MonoBehaviour
 
         int targetSlot = container.FindFirstFreeSlot();
         if (targetSlot < 0) {
-            WorldToastManager.Show("Conteneur plein");
+            WorldToastManager.Show(InventoryToasts.ContainerFull);
             return;
         }
         if (string.IsNullOrEmpty(container.PlaceId) || string.IsNullOrEmpty(src.PlaceId)) return;
@@ -195,24 +195,44 @@ public class InventoryUI : MonoBehaviour
         ItemConfig cfg = item != null ? item.ItemConfig : null;
         bool isTwoHand = cfg != null && cfg.HandleType == ItemHandleType.TWO_HAND;
 
+        // Détecte si une main porte déjà un TWO_HAND : dans ce cas les DEUX mains sont
+        // bloquées (cohérent avec HandPlaceContext.ValidateAsTarget côté serveur). Sans
+        // ce check, un single-hand entrant tenterait hand_left → serveur refuse avec
+        // "Vous portez déjà un objet à deux mains" alors qu'une poche libre conviendrait.
+        bool rightHeldIsTwoHand = hands.RightHandItem != null
+            && hands.RightHandItem.Configuration != null
+            && hands.RightHandItem.Configuration.HandleType == ItemHandleType.TWO_HAND;
+        bool leftHeldIsTwoHand  = hands.LeftHandItem  != null
+            && hands.LeftHandItem.Configuration  != null
+            && hands.LeftHandItem.Configuration.HandleType  == ItemHandleType.TWO_HAND;
+        bool handsBlocked = rightHeldIsTwoHand || leftHeldIsTwoHand;
+
         if (isTwoHand) {
-            // TWO_HAND : besoin des DEUX mains libres ; sinon abandonne (les poches ne
-            // peuvent pas accueillir un objet à deux mains).
-            if (hands.RightHandItem == null && hands.LeftHandItem == null) {
+            // TWO_HAND entrant : besoin des DEUX mains libres ; sinon fallback impossible.
+            if (!handsBlocked && hands.RightHandItem == null && hands.LeftHandItem == null) {
                 placeKey = $"hand_right:{charId}";
                 return true;
             }
             return false;
         }
 
-        if (hands.RightHandItem == null) { placeKey = $"hand_right:{charId}"; return true; }
-        if (hands.LeftHandItem  == null) { placeKey = $"hand_left:{charId}";  return true; }
-
-        if (leftPocketSlot != null && leftPocketSlot.Item == null) {
-            placeKey = $"pocket:{charId}"; slotIndex = 0; return true;
+        // Single-hand : tente les mains seulement si pas de TWO_HAND déjà porté.
+        if (!handsBlocked) {
+            if (hands.RightHandItem == null) { placeKey = $"hand_right:{charId}"; return true; }
+            if (hands.LeftHandItem  == null) { placeKey = $"hand_left:{charId}";  return true; }
         }
-        if (rightPocketSlot != null && rightPocketSlot.Item == null) {
-            placeKey = $"pocket:{charId}"; slotIndex = 1; return true;
+
+        // Poches : seulement si l'item est explicitement pocketable. Sinon, on saute
+        // les poches → false retourné → toast "Pas de place dans l'inventaire" plutôt
+        // qu'un MoveItem refusé par le serveur.
+        bool allowedInPocket = cfg != null && cfg.AllowedInPocket;
+        if (allowedInPocket) {
+            if (leftPocketSlot != null && leftPocketSlot.Item == null) {
+                placeKey = $"pocket:{charId}"; slotIndex = 0; return true;
+            }
+            if (rightPocketSlot != null && rightPocketSlot.Item == null) {
+                placeKey = $"pocket:{charId}"; slotIndex = 1; return true;
+            }
         }
         return false;
     }
@@ -307,6 +327,14 @@ public class InventoryUI : MonoBehaviour
         }
 
         if (string.IsNullOrEmpty(slotA.PlaceId) || string.IsNullOrEmpty(slotB.PlaceId)) return;
+        // Belt-and-suspenders : un swap A==B (même place + même slotIndex) ne peut
+        // qu'échouer en backend (409 conflit). ItemSlot.OnDrop a déjà un garde
+        // same-slot, mais on protège ici au cas où un futur path déclencherait
+        // OnItemSwap avec slotA == slotB.
+        if (slotA.PlaceId == slotB.PlaceId && slotA.SlotIndex == slotB.SlotIndex) {
+            Debug.LogWarning("[InventoryUI] OnItemsSwapped : same place+slot, skip C2S_SwapItems");
+            return;
+        }
         int entityA = itemA != null ? itemA.EntityId : 0;
         int entityB = itemB != null ? itemB.EntityId : 0;
         if (entityA <= 0 || entityB <= 0) {
@@ -437,6 +465,8 @@ public class InventoryUI : MonoBehaviour
         if (!string.IsNullOrEmpty(charId)) {
             leftHandSlot.PlaceId   = $"hand_left:{charId}";
             rightHandSlot.PlaceId  = $"hand_right:{charId}";
+            // bothHandSlot.PlaceId est ajusté plus bas en fonction de la main qui porte
+            // effectivement le TWO_HAND (gauche ou droite). Default droite (convention).
             bothHandSlot.PlaceId   = $"hand_right:{charId}";
             if (leftPocketSlot)  leftPocketSlot.PlaceId  = $"pocket:{charId}";
             if (rightPocketSlot) rightPocketSlot.PlaceId = $"pocket:{charId}";
@@ -448,17 +478,33 @@ public class InventoryUI : MonoBehaviour
         int leftEntityId  = hands.LeftEntityId;
         int rightEntityId = hands.RightEntityId;
 
-        if (rightItem != null && rightItem.Configuration.HandleType == ItemHandleType.TWO_HAND)
+        // Détection TWO_HAND sur l'une ou l'autre main : conceptuellement un TWO_HAND
+        // se loge sur la main droite (cf. ResolveHand côté serveur), mais on est
+        // défensif si un état serveur incohérent place un TWO_HAND à gauche → on
+        // active quand même bothHandSlot pour bloquer un second item en main.
+        bool rightIsTwoHand = rightItem != null && rightItem.Configuration.HandleType == ItemHandleType.TWO_HAND;
+        bool leftIsTwoHand  = leftItem  != null && leftItem.Configuration.HandleType  == ItemHandleType.TWO_HAND;
+        if (rightIsTwoHand || leftIsTwoHand)
         {
+            ItemBehaviour twoHand = rightIsTwoHand ? rightItem : leftItem;
+            int twoHandEntityId   = rightIsTwoHand ? rightEntityId : leftEntityId;
+
+            // bothHandSlot.PlaceId DOIT pointer sur la main qui porte réellement le TWO_HAND.
+            // Sinon un drag bothHandSlot→container enverrait FromPlaceId=hand_right alors que
+            // l'item est en main gauche → "Item pas dans cette main" côté serveur.
+            if (!string.IsNullOrEmpty(charId)) {
+                bothHandSlot.PlaceId = rightIsTwoHand ? $"hand_right:{charId}" : $"hand_left:{charId}";
+            }
+
             leftHandSlot.gameObject.SetActive(false);
             rightHandSlot.gameObject.SetActive(false);
             bothHandSlot.gameObject.SetActive(true);
 
             DraggableItem draggable = _draggableItemPool.Get();
-            draggable.SetConfiguration(rightItem.Configuration);
-            draggable.SetEntityId(rightEntityId);
+            draggable.SetConfiguration(twoHand.Configuration);
+            draggable.SetEntityId(twoHandEntityId);
             bothHandSlot.SetItem(draggable);
-            Debug.Log("[InventoryUI] Refresh slot BothHands (two-hand item)");
+            Debug.Log($"[InventoryUI] Refresh slot BothHands (two-hand item, hand={(rightIsTwoHand ? "Right" : "Left")})");
         }
         else
         {

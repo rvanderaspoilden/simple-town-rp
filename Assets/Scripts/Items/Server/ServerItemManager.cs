@@ -1393,7 +1393,7 @@ public class ServerItemManager
         bool isEphemeral = string.IsNullOrEmpty(itemCtx.ItemUuid);
         if (isEphemeral && toCtx.Kind != PlaceKind.HandLeft && toCtx.Kind != PlaceKind.HandRight) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId,
-                ErrorMessage = "Cet item ne peut pas être stocké" });
+                ErrorMessage = InventoryToasts.NotStorable });
             PushSnapshotsFor(conn, fromCtx, toCtx);
             yield break;
         }
@@ -1497,7 +1497,7 @@ public class ServerItemManager
         if (aEphemeralBadTarget || bEphemeralBadTarget) {
             int rejectedEntity = aEphemeralBadTarget ? msg.EntityIdA : msg.EntityIdB;
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = rejectedEntity,
-                ErrorMessage = "Cet item ne peut pas être stocké" });
+                ErrorMessage = InventoryToasts.NotStorable });
             PushSnapshotsFor(conn, ctxA, ctxB);
             return;
         }
@@ -1743,7 +1743,32 @@ public class ServerItemManager
         }
 
         public bool ValidateAsTarget(int slotIndex, int configId, out string err) {
-            err = null; return true;     // mains n'imposent ni type ni borne de slot
+            err = null;
+            // Garde TWO_HAND : un item à deux mains nécessite que l'AUTRE main soit
+            // libre ; et inversement, si l'autre main porte un TWO_HAND, cette main
+            // ne peut accueillir aucun item (cohérence d'état serveur, sinon le
+            // client peut casser le système en équipant un second item).
+            var cfg = DatabaseManager.GetItemConfigById(configId);
+            bool incomingTwoHand = cfg != null && cfg.HandleType == ItemHandleType.TWO_HAND;
+            if (!_mgr._playerHands.TryGetValue(_netId, out var hands)) return true;
+            HandType otherHand = _hand == HandType.Left ? HandType.Right : HandType.Left;
+            int otherHandId = hands.GetEntityId(otherHand);
+            if (incomingTwoHand) {
+                if (otherHandId != -1) {
+                    err = InventoryToasts.OtherHandBusy;
+                    return false;
+                }
+            } else if (otherHandId != -1) {
+                if (_mgr._rooms.TryGetValue(_roomId, out var roomItems)
+                    && roomItems.TryGetValue(otherHandId, out var otherEntity)) {
+                    var otherCfg = DatabaseManager.GetItemConfigById(otherEntity.ItemConfigId);
+                    if (otherCfg != null && otherCfg.HandleType == ItemHandleType.TWO_HAND) {
+                        err = InventoryToasts.AlreadyHoldingTwoHand;
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
 
         public bool IsSlotAvailableFor(int slotIndex, int entityId) {
@@ -1875,7 +1900,7 @@ public class ServerItemManager
             }
             var itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == configId);
             if (itemConfig != null && !itemConfig.AllowedInPocket) {
-                err = "Cet item ne peut pas être stocké en poche"; return false;
+                err = InventoryToasts.NotPocketable; return false;
             }
             return true;
         }

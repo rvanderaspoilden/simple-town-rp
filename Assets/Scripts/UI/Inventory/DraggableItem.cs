@@ -97,7 +97,11 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         EnsureRefs();
         this._canvasGroup.alpha = .6f;
         this._canvasGroup.blocksRaycasts = false;
-        if (this.canvas != null) this.transform.parent = this.canvas.transform;
+        // Reparent au groupe inventaire (ou Canvas en fallback) pour rester au-dessus
+        // de tous les panels frères de l'inventaire ET hors de tout Mask pendant le drag.
+        // Même helper que ItemSlot utilise pour le land/snap-back → cohérence drag + anim.
+        Transform animParent = ItemSlot.ResolveTopLevelAnimParent(this);
+        if (animParent != null) this.transform.SetParent(animParent, worldPositionStays: true);
         this.transform.SetAsLastSibling();
         // Tout tween de position en cours (land/snap-back précédent) doit être stoppé
         // pour ne pas combattre OnDrag qui modifie anchoredPosition à chaque frame.
@@ -148,10 +152,7 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
             transform.SetAsLastSibling();
             var slot = _itemSlot;
             AnimateToWorldPosition(targetWorld, snapBackDuration, snapBackCurve, onComplete: () => {
-                if (slot == null || this == null) return;
-                transform.SetParent(slot.transform, worldPositionStays: false);
-                SetPadding(10, 10, 10, 10);
-                SetAnchoredPosition(Vector2.zero);
+                if (slot != null) slot.TryFinishLand(this);
             });
         }
     }

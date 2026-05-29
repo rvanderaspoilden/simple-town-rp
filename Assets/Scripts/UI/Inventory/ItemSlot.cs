@@ -36,6 +36,12 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     // atomique, et le snap-back évite une divergence visuel/serveur.
     public bool CanSwap { get; set; } = false;
 
+    [Header("Filtre item")]
+    [SerializeField, Tooltip("Si vrai, ce slot rejette tout drop d'un item dont ItemConfig.AllowedInPocket=false. " +
+        "À cocher sur les slots poche : bloque côté client move/swap d'un item non-pocketable (sinon le serveur refuse après round-trip + snap-back retardé).")]
+    private bool rejectsNonPocketable = false;
+    public bool RejectsNonPocketable => rejectsNonPocketable;
+
     public delegate void ItemMoved(ItemSlot origin, ItemSlot target);
     public delegate void ItemsSwapped(ItemSlot slotA, DraggableItem itemA, ItemSlot slotB, DraggableItem itemB);
 
@@ -59,6 +65,40 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
         FadeHighlight(0f);
 
         ItemSlot originSlot = draggableItem.ItemSlot;
+
+        // Same-slot drop : si l'origine et la cible sont LE MÊME slot, on ne fait QUE
+        // re-ancrer (ou libérer un draggable stale). Aucun move/swap réseau.
+        //
+        // Sans ce garde, scénario reproductible en spammant le drag&drop d'un item de
+        // poche sur lui-même : un snapshot serveur arrive pendant le drag, libère
+        // _item et rente un nouveau draggable E sur le slot. Le draggable D en cours
+        // de drag n'est PAS libéré (il est sous InventoryGroup, plus enfant du slot).
+        // OnDrop voit draggableItem=D, _item=E, originSlot=D.ItemSlot=ce slot → entre
+        // dans le branch MustSwapWith → émet C2S_SwapItems avec PlaceIdA==PlaceIdB et
+        // SlotIndexA==SlotIndexB → 409 backend ("erreur de persistance").
+        if (originSlot == this) {
+            if (draggableItem == _item) {
+                this.SetItem(draggableItem, animate: true);
+            } else {
+                // Stale draggable : un snapshot a déjà remplacé _item. On release D
+                // sans toucher au nouveau _item (E). Le pool est partagé InventoryUI.
+                var inv = Sim.HUDManager.Instance != null ? Sim.HUDManager.Instance.InventoryUI : null;
+                if (inv != null) inv.ReleaseDraggable(draggableItem);
+                else { draggableItem.transform.SetParent(transform, false); draggableItem.gameObject.SetActive(false); }
+            }
+            return;
+        }
+
+        // Bloque les drops d'items non-pocketables sur les slots poche (move ET swap).
+        // Symétrique avec PocketPlaceContext.ValidateAsTarget côté serveur : feedback
+        // immédiat sans round-trip réseau, et pas de snap-back retardé après refus.
+        if (rejectsNonPocketable
+            && draggableItem.ItemConfig != null
+            && !draggableItem.ItemConfig.AllowedInPocket) {
+            WorldToastManager.Show(InventoryToasts.NotPocketable);
+            if (originSlot != null) originSlot.SnapBackInto(draggableItem);
+            return;
+        }
 
         if (draggableItem == _item) {
             // Même slot → re-ancre animé (drag annulé sur soi-même).
@@ -110,10 +150,7 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
             item.transform.SetAsLastSibling();
             var targetSlot = this;
             item.AnimateToWorldPosition(targetWorld, item.LandDuration, item.LandCurve, onComplete: () => {
-                if (item == null || targetSlot == null || item.ItemSlot != targetSlot) return;
-                item.transform.SetParent(targetSlot.transform, worldPositionStays: false);
-                item.SetPadding(10, 10, 10, 10);
-                item.SetAnchoredPosition(Vector2.zero);
+                targetSlot.TryFinishLand(item);
             });
         } else {
             item.transform.parent = this.transform;
@@ -123,15 +160,45 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     }
 
     /// <summary>
-    /// Retourne le transform sous lequel placer le draggable pendant un tween land/snap-back :
-    /// la racine du Canvas dont dépend l'item (ou ce slot en fallback). Reparenter au Canvas
-    /// pendant l'animation évite que l'item soit clippé par un Mask présent dans la hiérarchie
-    /// du slot d'origine ou cible, et garantit qu'il reste rendu au-dessus de tous les panels
-    /// frères dans la HUD (Container Panel ↔ Player Inventory Panel).
+    /// Ré-ancre <paramref name="item"/> au slot après un tween land/snap-back. Robuste face
+    /// à un snapshot serveur arrivant pendant l'anim : si le slot a été repris par un autre
+    /// item (ex. nouveau draggable issu de S2C_PocketSync après un swap refusé), on libère
+    /// l'orphelin au pool au lieu de le coller en résidu visuel sur le slot.
+    /// Vérifie : (1) le draggable pointe toujours vers ce slot ; (2) le slot porte toujours
+    /// ce draggable. Sinon il y a divergence d'autorité → release.
     /// </summary>
-    private static Transform ResolveTopLevelAnimParent(DraggableItem item) {
-        Canvas c = item.GetComponentInParent<Canvas>();
-        return c != null ? c.transform : item.transform.parent;
+    public void TryFinishLand(DraggableItem item) {
+        if (item == null || this == null) return;
+        if (item.ItemSlot != this) return;              // item réassigné ailleurs → ne touche rien
+        if (_item != item) {                             // slot pris par un autre item (snapshot) → orphelin
+            var inv = Sim.HUDManager.Instance != null ? Sim.HUDManager.Instance.InventoryUI : null;
+            if (inv != null) inv.ReleaseDraggable(item);
+            else { item.transform.SetParent(transform, false); item.gameObject.SetActive(false); }
+            return;
+        }
+        item.transform.SetParent(this.transform, worldPositionStays: false);
+        item.SetPadding(10, 10, 10, 10);
+        item.SetAnchoredPosition(Vector2.zero);
+    }
+
+    /// <summary>
+    /// Retourne le transform sous lequel placer le draggable pendant un tween land/snap-back.
+    /// Priorité : remonte vers un ancêtre nommé <c>InventoryGroupName</c> (regroupe Container Panel
+    /// et Player Inventory Panel sous un seul parent dédié), sinon fallback sur la racine du
+    /// Canvas. Reparenter pendant l'anim évite que l'item soit clippé par un Mask présent dans
+    /// la hiérarchie du slot d'origine/cible, et garantit qu'il reste rendu au-dessus de tous
+    /// les panels frères dans le groupe inventaire. Le groupe dédié confine en plus le z-order
+    /// au sous-arbre inventaire et n'interfère pas avec les autres panels HUD.
+    /// </summary>
+    public const string InventoryGroupName = "Inventory Group";
+    internal static Transform ResolveTopLevelAnimParent(DraggableItem item) {
+        Transform t = item.transform.parent;
+        while (t != null) {
+            if (t.name == InventoryGroupName) return t;
+            if (t.GetComponent<Canvas>() != null) return t; // fallback : Canvas racine
+            t = t.parent;
+        }
+        return item.transform.parent;
     }
 
     /// <summary>
@@ -150,10 +217,7 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
         item.transform.SetAsLastSibling();
         var targetSlot = this;
         item.AnimateToWorldPosition(targetWorld, item.SnapBackDuration, item.SnapBackCurve, onComplete: () => {
-            if (item == null || targetSlot == null || item.ItemSlot != targetSlot) return;
-            item.transform.SetParent(targetSlot.transform, worldPositionStays: false);
-            item.SetPadding(10, 10, 10, 10);
-            item.SetAnchoredPosition(Vector2.zero);
+            targetSlot.TryFinishLand(item);
         });
     }
 

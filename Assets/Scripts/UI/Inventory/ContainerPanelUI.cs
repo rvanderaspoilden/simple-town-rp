@@ -127,7 +127,7 @@ public class ContainerPanelUI : MonoBehaviour
         var inv = HUDManager.Instance?.InventoryUI;
         if (inv == null) return;
         if (!inv.TryFindQuickMoveTargetForItem(item, out string toPlace, out int toSlot)) {
-            WorldToastManager.Show("Pas de place dans l'inventaire");
+            WorldToastManager.Show(InventoryToasts.NoSpaceInInventory);
             return;
         }
         if (!Mirror.NetworkClient.isConnected) return;
