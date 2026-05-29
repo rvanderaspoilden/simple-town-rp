@@ -28,10 +28,13 @@ public class InventoryUI : MonoBehaviour
         EnsurePool();
 
         // Les slots mains autorisent le swap hand↔hand (prédiction locale via Swap()).
-        // Les slots conteneur gardent CanSwap=false pour éviter la divergence visuel/serveur.
-        if (leftHandSlot)  leftHandSlot.CanSwap  = true;
-        if (rightHandSlot) rightHandSlot.CanSwap = true;
-        if (bothHandSlot)  bothHandSlot.CanSwap  = true;
+        // Les poches aussi (pocket↔pocket, pocket↔hand, pocket↔container).
+        // Les slots conteneur gardent CanSwap=false par défaut (activé dans ContainerPanelUI).
+        if (leftHandSlot)    leftHandSlot.CanSwap    = true;
+        if (rightHandSlot)   rightHandSlot.CanSwap   = true;
+        if (bothHandSlot)    bothHandSlot.CanSwap    = true;
+        if (leftPocketSlot)  { leftPocketSlot.CanSwap  = true; leftPocketSlot.SlotIndex  = 0; }
+        if (rightPocketSlot) { rightPocketSlot.CanSwap = true; rightPocketSlot.SlotIndex = 1; }
     }
 
     /// <summary>
@@ -58,6 +61,12 @@ public class InventoryUI : MonoBehaviour
         ItemSlot.OnItemSwap        += OnItemsSwapped;
         PlayerHands.OnHandChanged  += OnPlayerHandChanged;
         ClientItemManager.MoveItemResult += OnMoveItemResultReceived;
+        ClientItemManager.PocketSync     += OnPocketSyncReceived;
+
+        // Replay du dernier snapshot poche : la session est ouverte serveur-side au
+        // connect ; les opens/closes de la HUD ne re-déclenchent pas de S2C_PocketSync.
+        if (ClientItemManager.LastPocketSnapshot.HasValue)
+            ApplyPocketSnapshot(ClientItemManager.LastPocketSnapshot.Value);
     }
 
     private void OnDisable()
@@ -75,6 +84,7 @@ public class InventoryUI : MonoBehaviour
         ItemSlot.OnItemSwap        -= OnItemsSwapped;
         PlayerHands.OnHandChanged  -= OnPlayerHandChanged;
         ClientItemManager.MoveItemResult -= OnMoveItemResultReceived;
+        ClientItemManager.PocketSync     -= OnPocketSyncReceived;
 
         // Ferme le conteneur avec l'inventaire (même comportement que si le joueur
         // clique le bouton fermer du container ou appuie sur Escape).
@@ -208,6 +218,47 @@ public class InventoryUI : MonoBehaviour
             PlaceIdB   = slotB.PlaceId,
             SlotIndexB = slotB.SlotIndex,
         });
+    }
+
+    private void OnPocketSyncReceived(S2C_PocketSync msg) => ApplyPocketSnapshot(msg);
+
+    /// <summary>
+    /// Reconstruit complètement les slots poche à partir du snapshot serveur :
+    /// libère les anciens draggables, en rente de nouveaux pour chaque item.
+    /// </summary>
+    private void ApplyPocketSnapshot(S2C_PocketSync msg)
+    {
+        // Vide d'abord ce qui occupe les slots poche (release vers le pool partagé) :
+        // robuste face aux états intermédiaires (drag visuel d'un autre slot vers la
+        // poche déjà appliqué mais snapshot pas encore reçu) — l'autorité est le snapshot
+        // serveur, on libère toujours ce qui occupe la poche AVANT de re-peupler.
+        ReleasePocketSlot(leftPocketSlot);
+        ReleasePocketSlot(rightPocketSlot);
+
+        if (msg.Items == null) return;
+        foreach (var entry in msg.Items) {
+            ItemSlot target = entry.SlotIndex == 0 ? leftPocketSlot
+                            : entry.SlotIndex == 1 ? rightPocketSlot
+                            : null;
+            if (target == null) continue;
+            var cfg = DatabaseManager.GetItemConfigById(entry.ConfigId);
+            if (cfg == null) {
+                Debug.LogWarning($"[InventoryUI] Pocket ItemConfig {entry.ConfigId} introuvable, slot {entry.SlotIndex} ignoré.");
+                continue;
+            }
+            DraggableItem d = _draggableItemPool.Get();
+            d.SetConfiguration(cfg);
+            d.SetEntityId(entry.EntityId);
+            target.SetItem(d);
+        }
+    }
+
+    private void ReleasePocketSlot(ItemSlot slot)
+    {
+        if (slot == null || slot.Item == null) return;
+        var d = slot.Item;
+        slot.Clear();
+        _draggableItemPool.Release(d);
     }
 
     private void OnMoveItemResultReceived(S2C_MoveItemResult msg) {

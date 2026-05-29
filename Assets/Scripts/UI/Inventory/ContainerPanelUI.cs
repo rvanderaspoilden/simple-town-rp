@@ -40,6 +40,8 @@ public class ContainerPanelUI : MonoBehaviour
     private string _currentPlaceId;
     private int    _currentPropId;
     private bool   _subscribed;
+    private bool   _loading;
+    private UnityEngine.CanvasGroup _slotsGroup;
 
     private void Awake()
     {
@@ -48,6 +50,14 @@ public class ContainerPanelUI : MonoBehaviour
 
         if (slotTemplate != null) slotTemplate.gameObject.SetActive(false);
         if (closeButton  != null) closeButton.onClick.AddListener(Close);
+
+        // CanvasGroup ciblé sur la GRILLE seulement (pas la racine) : on bloque les
+        // drops sur les slots pendant l'attente du snapshot, sans empêcher le close
+        // button d'être cliquable si le serveur traîne.
+        if (slotsContainer != null) {
+            _slotsGroup = slotsContainer.GetComponent<UnityEngine.CanvasGroup>()
+                       ?? slotsContainer.gameObject.AddComponent<UnityEngine.CanvasGroup>();
+        }
 
         Subscribe();
         Show(false);
@@ -64,6 +74,7 @@ public class ContainerPanelUI : MonoBehaviour
         if (_subscribed) return;
         ClientItemManager.ContainerOpened     += OnContainerOpened;
         ClientItemManager.ContainerOpenFailed += OnContainerOpenFailed;
+        StorageContainerBehaviour.OnOpenRequested += OnOptimisticOpenRequested;
         _subscribed = true;
     }
 
@@ -72,7 +83,38 @@ public class ContainerPanelUI : MonoBehaviour
         if (!_subscribed) return;
         ClientItemManager.ContainerOpened     -= OnContainerOpened;
         ClientItemManager.ContainerOpenFailed -= OnContainerOpenFailed;
+        StorageContainerBehaviour.OnOpenRequested -= OnOptimisticOpenRequested;
         _subscribed = false;
+    }
+
+    /// <summary>
+    /// Ouverture optimiste : le panneau s'affiche immédiatement avec la bonne taille
+    /// de grille, mais les slots bloquent les drops via le CanvasGroup jusqu'à l'arrivée
+    /// du snapshot (qui apporte le PlaceId nécessaire au routage C2S_MoveItem).
+    /// </summary>
+    private void OnOptimisticOpenRequested(int propId, int slotCount)
+    {
+        _currentPropId  = propId;
+        _currentPlaceId = null;     // sera renseigné par le snapshot
+        _loading        = true;
+
+        Show(true);
+        if (HUDManager.Instance != null) HUDManager.Instance.ShowInventory();
+
+        EnsureSlotPool(slotCount);
+        ConfigureSlots(null, slotCount);
+        ReleaseSpawnedItems();
+        if (titleText != null) titleText.text = "Ouverture…";
+
+        SetSlotsInteractive(false);
+    }
+
+    private void SetSlotsInteractive(bool interactive)
+    {
+        if (_slotsGroup == null) return;
+        _slotsGroup.interactable   = interactive;
+        _slotsGroup.blocksRaycasts = interactive;
+        _slotsGroup.alpha          = interactive ? 1f : 0.6f;
     }
 
     private void OnContainerOpened(S2C_ContainerOpened msg)
@@ -83,6 +125,7 @@ public class ContainerPanelUI : MonoBehaviour
         // Show AVANT de spawner : sinon les nouveaux DraggableItem sont instanciés
         // dans une hiérarchie inactive et leur Awake ne tourne pas → _image null
         // → NRE dès SetConfiguration. Show(true) active root + slots.
+        // Idempotent quand on vient d'OpenOptimistic (déjà Show(true) + ShowInventory).
         Show(true);
         if (HUDManager.Instance != null) HUDManager.Instance.ShowInventory();
 
@@ -91,11 +134,20 @@ public class ContainerPanelUI : MonoBehaviour
         ReleaseSpawnedItems();
         if (titleText != null) titleText.text = $"Conteneur ({msg.SlotCount} slots)";
         SpawnItemsFromSnapshot(msg.Items);
+
+        // Snapshot reçu → panneau pleinement interactif.
+        _loading = false;
+        SetSlotsInteractive(true);
     }
 
     private void OnContainerOpenFailed(S2C_ContainerOpenFailed msg)
     {
         Debug.LogWarning($"[ContainerPanelUI] Ouverture refusée propId={msg.PropId} : {msg.ErrorMessage}");
+        // Si le panneau était ouvert optimistement pour ce prop, on referme + toast.
+        if (_loading && _currentPropId == msg.PropId) {
+            if (!string.IsNullOrEmpty(msg.ErrorMessage)) WorldToastManager.Show(msg.ErrorMessage);
+            Close();
+        }
     }
 
     /// <summary>
@@ -178,6 +230,8 @@ public class ContainerPanelUI : MonoBehaviour
         ReleaseSpawnedItems();
         _currentPlaceId = null;
         _currentPropId  = 0;
+        _loading        = false;
+        SetSlotsInteractive(true);
 
         // Ferme aussi l'inventaire pour aligner conteneur et HUD : clic « X »
         // ⇒ plus aucune interaction prop, HUD complètement repliée. L'OnDisable

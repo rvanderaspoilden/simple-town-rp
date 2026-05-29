@@ -136,6 +136,31 @@ public struct S2C_ContainerVisualState : NetworkMessage
 /// <summary>Client → server : ferme la session conteneur en cours.</summary>
 public struct C2S_CloseContainer : NetworkMessage { }
 
+// ── Poches (toujours ouvertes pour le joueur local) ───────────────────────────
+// Modèle identique à un conteneur 2 slots, persisté en DB à la place
+// "pocket:{charId}". Une PocketSession serveur est créée à la connexion (après
+// EnsurePlaces) et tient les entityId éphémères des items en poche le temps
+// de la session réseau.
+
+/// <summary>Une entrée d'item dans la poche (slot 0 = gauche, slot 1 = droite).</summary>
+public struct S2C_PocketItem
+{
+    public int EntityId;
+    public int ConfigId;
+    public int SlotIndex;
+}
+
+/// <summary>
+/// Server → opener : snapshot complet du contenu des poches. Émis à la
+/// connexion puis après chaque move qui touche la poche.
+/// </summary>
+public struct S2C_PocketSync : NetworkMessage
+{
+    public string PlaceId;          // UUID backend de la place pocket
+    public int    SlotCount;        // capacité (2 en MVP)
+    public S2C_PocketItem[] Items;
+}
+
 /// <summary>
 /// Client → server : déplace un item d'une place à une autre.
 /// Place IDs canoniques :

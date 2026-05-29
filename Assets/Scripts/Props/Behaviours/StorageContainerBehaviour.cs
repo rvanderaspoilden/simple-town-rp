@@ -59,7 +59,10 @@ public class StorageContainerBehaviour : PropBehaviourBase
     public override Action[] GetActions(bool withPriority = false)
     {
         Action[] acts = base.GetActions(withPriority);
-        if (_actOpen == null) return acts;
+        // Sur un prop d'expo (ShopDisplay), la base court-circuite déjà à [BUY] :
+        // on ne doit RIEN ajouter, sinon le radial affiche BUY + OPEN. Le contenu
+        // d'un présentoir n'est pas accessible — c'est un stock infini visuel.
+        if (_actOpen == null || IsShopDisplay) return acts;
         // Évite de dupliquer si elle se retrouvait déjà dans la liste.
         for (int i = 0; i < acts.Length; i++) {
             if (acts[i] == _actOpen) return acts;
@@ -79,12 +82,21 @@ public class StorageContainerBehaviour : PropBehaviourBase
         base.Execute(action);
     }
 
+    /// <summary>
+    /// Émis sur le client opener au moment du clic OPEN, AVANT l'aller-retour serveur.
+    /// Permet à <see cref="ContainerPanelUI"/> d'ouvrir le panneau optimistement (perçu instantané)
+    /// pendant que le serveur fait son POST+GET vers le backend (~50-300ms).
+    /// </summary>
+    public static event System.Action<int, int> OnOpenRequested;
+
     private void SendOpenRequest()
     {
         if (!NetworkClient.isConnected) {
             Debug.LogWarning("[StorageContainerBehaviour] OPEN ignoré : client non connecté.");
             return;
         }
+        int slotCount = configuration?.Container != null ? configuration.Container.SlotCount : 0;
+        if (slotCount > 0) OnOpenRequested?.Invoke(PropId, slotCount);
         NetworkClient.Send(new C2S_OpenContainer { PropId = PropId });
     }
 

@@ -867,6 +867,9 @@ public class SimpleTownNetwork : NetworkManager
         string characterId = characterResponse.Characters[0].Id;
         if (!string.IsNullOrEmpty(characterId)) {
             yield return inventory.EnsurePlaces(characterId);
+            // Hydrate la session poche dès que la place existe : alloue des entityId
+            // éphémères pour les items en poche et pousse S2C_PocketSync au client.
+            yield return ServerItemManager.Instance.EnsurePocketSession(conn);
             // Mark the character as online once we own the player GO server-side.
             // Fire-and-forget — failure shouldn't block the connection flow.
             StartCoroutine(UpdateOnlineStateCoroutine(characterId, true));

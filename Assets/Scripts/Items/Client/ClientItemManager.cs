@@ -33,6 +33,7 @@ public class ClientItemManager
         NetworkClient.RegisterHandler<S2C_ContainerOpened>(OnContainerOpened);
         NetworkClient.RegisterHandler<S2C_ContainerOpenFailed>(OnContainerOpenFailed);
         NetworkClient.RegisterHandler<S2C_MoveItemResult>(OnMoveItemResult);
+        NetworkClient.RegisterHandler<S2C_PocketSync>(OnPocketSync);
     }
 
     public void UnregisterHandlers()
@@ -46,6 +47,7 @@ public class ClientItemManager
         NetworkClient.UnregisterHandler<S2C_ContainerOpened>();
         NetworkClient.UnregisterHandler<S2C_ContainerOpenFailed>();
         NetworkClient.UnregisterHandler<S2C_MoveItemResult>();
+        NetworkClient.UnregisterHandler<S2C_PocketSync>();
     }
 
     // ── Container events (consumed par ContainerPanelUI) ──────────────────────
@@ -53,6 +55,13 @@ public class ClientItemManager
     public static event System.Action<S2C_ContainerOpened> ContainerOpened;
     public static event System.Action<S2C_ContainerOpenFailed> ContainerOpenFailed;
     public static event System.Action<S2C_MoveItemResult> MoveItemResult;
+    public static event System.Action<S2C_PocketSync> PocketSync;
+
+    /// <summary>
+    /// Cache du dernier snapshot poche reçu. Permet à InventoryUI de re-peupler
+    /// les slots poche à chaque OnEnable sans demander au serveur un re-sync.
+    /// </summary>
+    public static S2C_PocketSync? LastPocketSnapshot { get; private set; }
 
     private void OnContainerOpened(S2C_ContainerOpened msg) {
         Debug.Log($"[Container] Opened propId={msg.PropId} placeId={msg.PlaceId} slots={msg.SlotCount} items={msg.Items?.Length}");
@@ -69,6 +78,12 @@ public class ClientItemManager
         MoveItemResult?.Invoke(msg);
     }
 
+    private void OnPocketSync(S2C_PocketSync msg) {
+        Debug.Log($"[Pocket] Sync placeId={msg.PlaceId} slots={msg.SlotCount} items={msg.Items?.Length}");
+        LastPocketSnapshot = msg;
+        PocketSync?.Invoke(msg);
+    }
+
     public void Reset()
     {
         foreach (var behaviour in _items.Values)
@@ -77,6 +92,7 @@ public class ClientItemManager
                 Object.Destroy(behaviour.gameObject);
         }
         _items.Clear();
+        LastPocketSnapshot = null;
         _instance = null;
     }
 
