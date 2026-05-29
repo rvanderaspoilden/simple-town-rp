@@ -80,42 +80,49 @@ public class DraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, II
     private Vector2 ClampToCanvas(Vector2 candidate)
     {
         if (_canvasRect == null) return candidate;
-        // Bornes : on garde au minimum la barre de titre (ce GameObject) à l'intérieur
-        // du Canvas. Calcule les half-extents en monde, convertit en local au parent.
         var parentRect = panelRoot.parent as RectTransform;
         if (parentRect == null) return candidate;
 
+        // Canvas world bounds.
         Vector3[] canvasCorners = new Vector3[4];
         _canvasRect.GetWorldCorners(canvasCorners);
+        float canvasMinX = canvasCorners[0].x;
+        float canvasMaxX = canvasCorners[2].x;
+        float canvasMinY = canvasCorners[0].y;
+        float canvasMaxY = canvasCorners[2].y;
+
+        // Centre monde et half-extents du header. On part toujours du CENTRE (calculé
+        // via GetWorldCorners) plutôt que de transform.position qui retourne la position
+        // du pivot — ces deux valeurs diffèrent si le pivot n'est pas au centre du rect,
+        // et c'est exactement ce qui bloquait le drag à mi-écran.
         Vector3[] headerCorners = new Vector3[4];
         ((RectTransform)transform).GetWorldCorners(headerCorners);
-
-        // Décalage actuel entre la position monde du panel et celle du header :
-        // tant que le header reste DANS le canvas, on est OK.
-        Vector3 panelWorld = panelRoot.position;
-        Vector3 headerWorld = transform.position;
-        Vector3 headerToPanel = panelWorld - headerWorld;
-
-        // Plages autorisées pour la position monde du HEADER (centre).
+        Vector3 headerCenter = (headerCorners[0] + headerCorners[2]) * 0.5f;
         float headerHalfW = (headerCorners[2].x - headerCorners[0].x) * 0.5f;
         float headerHalfH = (headerCorners[2].y - headerCorners[0].y) * 0.5f;
-        float minX = canvasCorners[0].x + headerHalfW;
-        float maxX = canvasCorners[2].x - headerHalfW;
-        float minY = canvasCorners[0].y + headerHalfH;
-        float maxY = canvasCorners[2].y - headerHalfH;
 
-        // Convertit la candidate (locale au parent du panneau) en position monde,
-        // clamp dans la zone autorisée, puis re-convertit en locale.
-        Vector3 candidateLocal3 = new Vector3(candidate.x, candidate.y, panelRoot.localPosition.z);
-        Vector3 candidateWorld = parentRect.TransformPoint(candidateLocal3);
-        Vector3 candidateHeaderWorld = candidateWorld - headerToPanel;
+        // Plage autorisée pour le centre du header en monde.
+        float minX = canvasMinX + headerHalfW;
+        float maxX = canvasMaxX - headerHalfW;
+        float minY = canvasMinY + headerHalfH;
+        float maxY = canvasMaxY - headerHalfH;
 
-        candidateHeaderWorld.x = Mathf.Clamp(candidateHeaderWorld.x, minX, maxX);
-        candidateHeaderWorld.y = Mathf.Clamp(candidateHeaderWorld.y, minY, maxY);
+        // Approche par DELTA : on n'essaie pas de convertir directement anchoredPosition
+        // ↔ world (ça dépendrait des anchorMin/Max/pivot du panel, source du bug initial).
+        // À la place : on calcule de combien la candidate fait bouger le panel par rapport
+        // à sa position actuelle, on applique le même delta au header center, on clamp,
+        // puis on traduit le delta clampé en anchoredPosition.
+        Vector2 currentAnchored = panelRoot.anchoredPosition;
+        Vector2 deltaAnchored = candidate - currentAnchored;
+        Vector3 deltaWorld = parentRect.TransformVector(new Vector3(deltaAnchored.x, deltaAnchored.y, 0f));
 
-        Vector3 clampedWorld = candidateHeaderWorld + headerToPanel;
-        Vector3 clampedLocal = parentRect.InverseTransformPoint(clampedWorld);
-        return new Vector2(clampedLocal.x, clampedLocal.y);
+        Vector3 newHeaderCenter = headerCenter + deltaWorld;
+        newHeaderCenter.x = Mathf.Clamp(newHeaderCenter.x, minX, maxX);
+        newHeaderCenter.y = Mathf.Clamp(newHeaderCenter.y, minY, maxY);
+
+        Vector3 clampedDeltaWorld = newHeaderCenter - headerCenter;
+        Vector3 clampedDeltaLocal = parentRect.InverseTransformVector(clampedDeltaWorld);
+        return currentAnchored + new Vector2(clampedDeltaLocal.x, clampedDeltaLocal.y);
     }
 
     private void TryPersistPosition() {

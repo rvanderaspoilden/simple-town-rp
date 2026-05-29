@@ -203,6 +203,11 @@ public class ContainerPanelUI : MonoBehaviour
     /// <summary>
     /// Garantit qu'il y a <paramref name="count"/> slots clonés depuis le template.
     /// Les slots existants en surplus sont désactivés.
+    /// Pour chaque slot actif : libère TOUS les enfants <see cref="DraggableItem"/>
+    /// (et pas juste <c>slot._item</c>). Cela balaie les orphelins issus de swaps
+    /// hand↔container où le draggable d'origine n'était pas dans <c>_spawnedItems</c> :
+    /// sans ce nettoyage, ils s'accumulent dans les transforms des slots et finissent
+    /// par causer le bug "icon figée + drag&drop cassé + introuvable".
     /// </summary>
     private void EnsureSlotPool(int count)
     {
@@ -214,9 +219,29 @@ public class ContainerPanelUI : MonoBehaviour
             slot.CanSwap = true;
             _slots.Add(slot);
         }
+        var inv = HUDManager.Instance != null ? HUDManager.Instance.InventoryUI : null;
         for (int i = 0; i < _slots.Count; i++) {
             _slots[i].gameObject.SetActive(i < count);
-            if (i < count) _slots[i].Clear();
+            if (i < count) {
+                ReleaseAllDraggableChildren(_slots[i], inv);
+                _slots[i].Clear();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Libère au pool TOUS les <see cref="DraggableItem"/> qui sont enfants directs du
+    /// transform du slot. Couvre les orphelins (visual swap hand↔slot qui a reparenté
+    /// un draggable non-tracké dans la slot transform).
+    /// </summary>
+    private static void ReleaseAllDraggableChildren(ItemSlot slot, InventoryUI inv) {
+        if (slot == null || inv == null) return;
+        var t = slot.transform;
+        // Itère en reverse car ReleaseDraggable reparente l'enfant hors du transform
+        // → modifie l'index des suivants.
+        for (int c = t.childCount - 1; c >= 0; c--) {
+            var d = t.GetChild(c).GetComponent<DraggableItem>();
+            if (d != null) inv.ReleaseDraggable(d);
         }
     }
 

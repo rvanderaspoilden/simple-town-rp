@@ -105,10 +105,20 @@ public class InventoryUI : MonoBehaviour
         _draggableItemPool.Release(item);
     }
 
-    /// <summary>Libère le draggable du slot et clear le slot ; no-op si vide.</summary>
+    /// <summary>
+    /// Libère TOUS les <see cref="DraggableItem"/> enfants du transform du slot et
+    /// vide <c>slot._item</c>. On itère les enfants (et pas juste <c>slot.Item</c>)
+    /// pour balayer les orphelins issus de swaps visuels où un draggable a été
+    /// reparenté sans être tracké correctement — sans ce nettoyage les orphelins
+    /// s'empilent au même anchored (0,0) et cassent le drag&drop en pile.
+    /// </summary>
     private void ReleaseSlot(ItemSlot slot) {
-        if (slot == null || slot.Item == null) return;
-        _draggableItemPool.Release(slot.Item);
+        if (slot == null) return;
+        var t = slot.transform;
+        for (int c = t.childCount - 1; c >= 0; c--) {
+            var d = t.GetChild(c).GetComponent<DraggableItem>();
+            if (d != null) _draggableItemPool.Release(d);
+        }
         slot.Clear();
     }
 
@@ -361,10 +371,15 @@ public class InventoryUI : MonoBehaviour
 
     private void ReleasePocketSlot(ItemSlot slot)
     {
-        if (slot == null || slot.Item == null) return;
-        var d = slot.Item;
+        if (slot == null) return;
+        // Même logique défensive que ReleaseSlot : balaie tous les DraggableItem
+        // enfants pour éviter l'accumulation d'orphelins issus de swaps hand↔pocket.
+        var t = slot.transform;
+        for (int c = t.childCount - 1; c >= 0; c--) {
+            var d = t.GetChild(c).GetComponent<DraggableItem>();
+            if (d != null) _draggableItemPool.Release(d);
+        }
         slot.Clear();
-        _draggableItemPool.Release(d);
     }
 
     private void OnMoveItemResultReceived(S2C_MoveItemResult msg) {
