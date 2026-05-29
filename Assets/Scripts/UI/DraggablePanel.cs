@@ -91,36 +91,44 @@ public class DraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, II
         float canvasMinY = canvasCorners[0].y;
         float canvasMaxY = canvasCorners[2].y;
 
-        // Centre monde et half-extents du header. On part toujours du CENTRE (calculé
-        // via GetWorldCorners) plutôt que de transform.position qui retourne la position
-        // du pivot — ces deux valeurs diffèrent si le pivot n'est pas au centre du rect,
-        // et c'est exactement ce qui bloquait le drag à mi-écran.
+        // Centres et half-extents en monde, calculés via GetWorldCorners (centre visuel
+        // réel, indépendant du pivot).
+        // Horizontal : on borne le HEADER (la zone draggable doit toujours rester
+        // attrapable au curseur). Vertical : on borne le PANEL entier (sinon un grand
+        // panneau peut sortir de l'écran haut/bas alors que sa barre de titre est encore
+        // visible).
         Vector3[] headerCorners = new Vector3[4];
         ((RectTransform)transform).GetWorldCorners(headerCorners);
         Vector3 headerCenter = (headerCorners[0] + headerCorners[2]) * 0.5f;
         float headerHalfW = (headerCorners[2].x - headerCorners[0].x) * 0.5f;
-        float headerHalfH = (headerCorners[2].y - headerCorners[0].y) * 0.5f;
 
-        // Plage autorisée pour le centre du header en monde.
+        Vector3[] panelCorners = new Vector3[4];
+        panelRoot.GetWorldCorners(panelCorners);
+        Vector3 panelCenter = (panelCorners[0] + panelCorners[2]) * 0.5f;
+        float panelHalfH = (panelCorners[2].y - panelCorners[0].y) * 0.5f;
+
         float minX = canvasMinX + headerHalfW;
         float maxX = canvasMaxX - headerHalfW;
-        float minY = canvasMinY + headerHalfH;
-        float maxY = canvasMaxY - headerHalfH;
+        float minY = canvasMinY + panelHalfH;
+        float maxY = canvasMaxY - panelHalfH;
 
         // Approche par DELTA : on n'essaie pas de convertir directement anchoredPosition
         // ↔ world (ça dépendrait des anchorMin/Max/pivot du panel, source du bug initial).
         // À la place : on calcule de combien la candidate fait bouger le panel par rapport
-        // à sa position actuelle, on applique le même delta au header center, on clamp,
-        // puis on traduit le delta clampé en anchoredPosition.
+        // à sa position actuelle, on applique le même delta aux deux centres, on clamp X
+        // contre le header et Y contre le panel, puis on traduit le delta clampé en
+        // anchoredPosition.
         Vector2 currentAnchored = panelRoot.anchoredPosition;
         Vector2 deltaAnchored = candidate - currentAnchored;
         Vector3 deltaWorld = parentRect.TransformVector(new Vector3(deltaAnchored.x, deltaAnchored.y, 0f));
 
-        Vector3 newHeaderCenter = headerCenter + deltaWorld;
-        newHeaderCenter.x = Mathf.Clamp(newHeaderCenter.x, minX, maxX);
-        newHeaderCenter.y = Mathf.Clamp(newHeaderCenter.y, minY, maxY);
+        float newHeaderCenterX = Mathf.Clamp(headerCenter.x + deltaWorld.x, minX, maxX);
+        float newPanelCenterY  = Mathf.Clamp(panelCenter.y  + deltaWorld.y, minY, maxY);
 
-        Vector3 clampedDeltaWorld = newHeaderCenter - headerCenter;
+        Vector3 clampedDeltaWorld = new Vector3(
+            newHeaderCenterX - headerCenter.x,
+            newPanelCenterY  - panelCenter.y,
+            0f);
         Vector3 clampedDeltaLocal = parentRect.InverseTransformVector(clampedDeltaWorld);
         return currentAnchored + new Vector2(clampedDeltaLocal.x, clampedDeltaLocal.y);
     }

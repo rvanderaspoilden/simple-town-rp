@@ -1487,6 +1487,21 @@ public class ServerItemManager
             return;
         }
 
+        // Item éphémère (no DB row → no UUID) qui irait vers autre chose qu'une main :
+        // refus en amont. Sinon SwapItemsCoroutine tente une PATCH avec un UUID null
+        // qui foire avec une 4xx et le client voit un toast "Échec persistance A"
+        // au lieu du vrai motif.
+        static bool IsHand(PlaceKind k) => k == PlaceKind.HandLeft || k == PlaceKind.HandRight;
+        bool aEphemeralBadTarget = string.IsNullOrEmpty(itemA.ItemUuid) && !IsHand(ctxB.Kind);
+        bool bEphemeralBadTarget = string.IsNullOrEmpty(itemB.ItemUuid) && !IsHand(ctxA.Kind);
+        if (aEphemeralBadTarget || bEphemeralBadTarget) {
+            int rejectedEntity = aEphemeralBadTarget ? msg.EntityIdA : msg.EntityIdB;
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = rejectedEntity,
+                ErrorMessage = "Cet item ne peut pas être stocké" });
+            PushSnapshotsFor(conn, ctxA, ctxB);
+            return;
+        }
+
         ApiManager.Instance?.StartCoroutine(SwapItemsCoroutine(conn, msg, ctxA, itemA, ctxB, itemB));
     }
 
