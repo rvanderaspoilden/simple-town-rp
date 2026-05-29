@@ -34,6 +34,14 @@ public class ContainerPanelUI : MonoBehaviour
     [SerializeField] private UnityEngine.UI.Button closeButton;
     [SerializeField] private TMPro.TMP_Text titleText;
 
+    [Header("Dynamic sizing")]
+    [Tooltip("RectTransform du panneau visible (typiquement le 'Root') redimensionné en fonction du nombre de slots.")]
+    [SerializeField] private RectTransform panelRect;
+    [Tooltip("LayoutElement du conteneur de slots (ex: 'Slots Scroll View') ajusté à la hauteur de la grille.")]
+    [SerializeField] private UnityEngine.UI.LayoutElement slotsLayoutElement;
+    [Tooltip("Hauteur réservée aux éléments hors grille (titre + bouton de fermeture + paddings verticaux du VerticalLayoutGroup).")]
+    [SerializeField] private float verticalChromeHeight = 140f;
+
     private readonly List<ItemSlot> _slots = new List<ItemSlot>();
     private readonly List<DraggableItem> _spawnedItems = new List<DraggableItem>();
 
@@ -149,6 +157,7 @@ public class ContainerPanelUI : MonoBehaviour
 
         EnsureSlotPool(slotCount);
         ConfigureSlots(null, slotCount);
+        ApplyDynamicHeight(slotCount);
         ReleaseSpawnedItems();
         if (titleText != null) titleText.text = ResolveTitle();
 
@@ -181,6 +190,7 @@ public class ContainerPanelUI : MonoBehaviour
 
         EnsureSlotPool(msg.SlotCount);
         ConfigureSlots(msg.PlaceId, msg.SlotCount);
+        ApplyDynamicHeight(msg.SlotCount);
         ReleaseSpawnedItems();
         if (titleText != null) titleText.text = ResolveTitle();
         SpawnItemsFromSnapshot(msg.Items);
@@ -250,6 +260,41 @@ public class ContainerPanelUI : MonoBehaviour
         for (int i = 0; i < count && i < _slots.Count; i++) {
             _slots[i].PlaceId   = placeId;
             _slots[i].SlotIndex = i;
+        }
+    }
+
+    /// <summary>
+    /// Calcule la hauteur de grille (rows × cellH + spacing + padding) en fonction de la
+    /// configuration du <see cref="UnityEngine.UI.GridLayoutGroup"/> du <see cref="slotsContainer"/>
+    /// puis applique cette hauteur au LayoutElement du conteneur de slots et étire le panneau
+    /// (<see cref="panelRect"/>) du chrome vertical (titre + bouton de fermeture + paddings).
+    /// Tolère l'absence des références sérialisées : skip silencieux.
+    /// </summary>
+    private void ApplyDynamicHeight(int slotCount)
+    {
+        if (slotsContainer == null) return;
+        var grid = slotsContainer.GetComponent<UnityEngine.UI.GridLayoutGroup>();
+        if (grid == null) return;
+
+        int cols = grid.constraint == UnityEngine.UI.GridLayoutGroup.Constraint.FixedColumnCount
+                 ? Mathf.Max(1, grid.constraintCount)
+                 : Mathf.Max(1, slotCount);
+        int rows = Mathf.Max(1, Mathf.CeilToInt(slotCount / (float)cols));
+
+        float gridHeight = rows * grid.cellSize.y
+                         + Mathf.Max(0, rows - 1) * grid.spacing.y
+                         + grid.padding.top
+                         + grid.padding.bottom;
+
+        if (slotsLayoutElement != null) {
+            slotsLayoutElement.minHeight       = gridHeight;
+            slotsLayoutElement.preferredHeight = gridHeight;
+            slotsLayoutElement.flexibleHeight  = -1f;
+        }
+        if (panelRect != null) {
+            Vector2 size = panelRect.sizeDelta;
+            size.y = gridHeight + verticalChromeHeight;
+            panelRect.sizeDelta = size;
         }
     }
 
