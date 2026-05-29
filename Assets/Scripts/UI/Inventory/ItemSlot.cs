@@ -16,6 +16,12 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
 
     private Coroutine _fadeTween;
 
+    // CanvasGroup auto-injecté pour basculer l'acceptation de drop pendant un drag.
+    // Découplé du highlight survol : alpha + blocksRaycasts contrôlent l'éligibilité du slot,
+    // et bloquent l'OnDrop sans qu'aucun calcul snap-back ne se déclenche depuis ce slot.
+    private UnityEngine.CanvasGroup _dropGroup;
+    private const float DimmedAlpha = 0.35f;
+
     // Place backend de ce slot (hand_left:..., hand_right:..., pocket:..., container place id).
     // Sert au routage cross-place via C2S_MoveItem (InventoryUI.OnItemMoved).
     private string _placeId;
@@ -225,6 +231,26 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
 
     public void Clear() {
         this._item = null;
+    }
+
+    /// <summary>
+    /// Active ou désactive ce slot comme cible de drop pendant un drag en cours.
+    /// Quand <paramref name="ok"/> est faux : alpha réduit (feedback visuel "non éligible")
+    /// et <c>blocksRaycasts=false</c> → l'OnDrop ne fire pas, le draggable retombe en
+    /// snap-back vers son origine sans calcul serveur ni tentative de swap visuel.
+    /// Idempotent ; safe à appeler avant Awake (auto-injection du CanvasGroup).
+    /// </summary>
+    public void SetDropAcceptance(bool ok) {
+        EnsureDropGroup();
+        _dropGroup.alpha          = ok ? 1f : DimmedAlpha;
+        _dropGroup.blocksRaycasts = ok;
+        _dropGroup.interactable   = ok;
+    }
+
+    private void EnsureDropGroup() {
+        if (_dropGroup != null) return;
+        _dropGroup = GetComponent<UnityEngine.CanvasGroup>();
+        if (_dropGroup == null) _dropGroup = gameObject.AddComponent<UnityEngine.CanvasGroup>();
     }
 
     private bool MustSwapWith(DraggableItem draggableItem) {

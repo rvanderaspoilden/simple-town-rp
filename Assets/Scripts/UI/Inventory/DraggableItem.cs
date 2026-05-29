@@ -64,6 +64,13 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
 
     public static event Draggable OnStartDrag;
 
+    /// <summary>
+    /// Émis à la fin d'un drag (qu'il soit suivi d'un drop valide, d'un snap-back ou d'une
+    /// annulation). Consommé par les UI d'inventaire pour restaurer le visuel des slots
+    /// désactivés pendant le drag (drop acceptance reset).
+    /// </summary>
+    public static event Draggable OnDragEnded;
+
     private void Awake() {
         EnsureRefs();
     }
@@ -137,6 +144,9 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         this._canvasGroup.alpha = 1;
         this._canvasGroup.blocksRaycasts = true;
         AnimateScale(1f, liftDuration);
+        // Notifie les listeners (InventoryUI, ContainerPanelUI) avant la logique
+        // snap-back pour qu'ils puissent restaurer les slots désactivés pendant le drag.
+        OnDragEnded?.Invoke(this);
 
         // Drop out of any slot → snap-back animé vers l'origine.
         // (ItemSlot.OnDrop gère le cas où le drop tombe SUR un slot ; il fire avant
