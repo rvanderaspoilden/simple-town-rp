@@ -141,12 +141,15 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         if (IsOutOfSlot(eventData) && _itemSlot != null) {
             // Cible monde = centre du slot d'origine.
             Vector3 targetWorld = _itemSlot.transform.position;
-            // Reparent en préservant la position monde courante → le draggable reste
-            // visuellement où il a été lâché, et l'anim glisse depuis là vers le slot.
-            transform.SetParent(_itemSlot.transform, worldPositionStays: true);
+            // On reste au niveau Canvas (déjà le parent grâce à OnBeginDrag) pendant le
+            // tween : reparenter directement sous _itemSlot ferait clipper le draggable
+            // par un éventuel Mask du panel (Container Panel.Slots Scroll View) tant que
+            // l'item n'est pas arrivé à destination. Le reparent final se fait dans onComplete.
+            transform.SetAsLastSibling();
             var slot = _itemSlot;
             AnimateToWorldPosition(targetWorld, snapBackDuration, snapBackCurve, onComplete: () => {
                 if (slot == null || this == null) return;
+                transform.SetParent(slot.transform, worldPositionStays: false);
                 SetPadding(10, 10, 10, 10);
                 SetAnchoredPosition(Vector2.zero);
             });

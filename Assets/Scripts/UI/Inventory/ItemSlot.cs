@@ -100,9 +100,18 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
 
         if (animate) {
             Vector3 targetWorld = this.transform.position;
-            item.transform.SetParent(this.transform, worldPositionStays: true);
+            // Drop cross-panel : si on reparente directement au slot cible AVANT l'anim,
+            // l'item est clippé par le Mask du panel cible (Container Panel.Slots Scroll View),
+            // ou rendu sous le panel d'origine selon l'ordre de hiérarchie. On garde le
+            // draggable au niveau racine du Canvas pendant le tween (dernier sibling = sur
+            // tout), puis on reparente au slot cible dans le onComplete.
+            Transform animParent = ResolveTopLevelAnimParent(item);
+            item.transform.SetParent(animParent, worldPositionStays: true);
+            item.transform.SetAsLastSibling();
+            var targetSlot = this;
             item.AnimateToWorldPosition(targetWorld, item.LandDuration, item.LandCurve, onComplete: () => {
-                if (item == null || this == null || item.ItemSlot != this) return;
+                if (item == null || targetSlot == null || item.ItemSlot != targetSlot) return;
+                item.transform.SetParent(targetSlot.transform, worldPositionStays: false);
                 item.SetPadding(10, 10, 10, 10);
                 item.SetAnchoredPosition(Vector2.zero);
             });
@@ -114,6 +123,18 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     }
 
     /// <summary>
+    /// Retourne le transform sous lequel placer le draggable pendant un tween land/snap-back :
+    /// la racine du Canvas dont dépend l'item (ou ce slot en fallback). Reparenter au Canvas
+    /// pendant l'animation évite que l'item soit clippé par un Mask présent dans la hiérarchie
+    /// du slot d'origine ou cible, et garantit qu'il reste rendu au-dessus de tous les panels
+    /// frères dans la HUD (Container Panel ↔ Player Inventory Panel).
+    /// </summary>
+    private static Transform ResolveTopLevelAnimParent(DraggableItem item) {
+        Canvas c = item.GetComponentInParent<Canvas>();
+        return c != null ? c.transform : item.transform.parent;
+    }
+
+    /// <summary>
     /// Snap-back animé : l'item revient à ce slot (son origine) après un drop invalide.
     /// Utilise <see cref="DraggableItem.SnapBackDuration"/> / <see cref="DraggableItem.SnapBackCurve"/>.
     /// </summary>
@@ -122,9 +143,15 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
         this._item.ItemSlot = this;
 
         Vector3 targetWorld = this.transform.position;
-        item.transform.SetParent(this.transform, worldPositionStays: true);
+        // Même raison que SetItem(animated) : on reste au niveau Canvas pendant le tween pour
+        // éviter le clip/render-under quand on snap-back depuis un panel vers un autre.
+        Transform animParent = ResolveTopLevelAnimParent(item);
+        item.transform.SetParent(animParent, worldPositionStays: true);
+        item.transform.SetAsLastSibling();
+        var targetSlot = this;
         item.AnimateToWorldPosition(targetWorld, item.SnapBackDuration, item.SnapBackCurve, onComplete: () => {
-            if (item == null || this == null || item.ItemSlot != this) return;
+            if (item == null || targetSlot == null || item.ItemSlot != targetSlot) return;
+            item.transform.SetParent(targetSlot.transform, worldPositionStays: false);
             item.SetPadding(10, 10, 10, 10);
             item.SetAnchoredPosition(Vector2.zero);
         });
