@@ -117,7 +117,13 @@
       "mcp__Blender__execute_blender_code",
       "mcp__Blender__get_screenshot_of_window_as_image",
       "mcp__Blender__render_viewport_to_path",
-      "mcp__ai-game-developer__object-modify"
+      "mcp__ai-game-developer__object-modify",
+      "Bash(grep -oE '\"Message\":\"[^\"]{0,200}\"' \"C:/Users/rodol/.claude/projects/D--Workspace-Unity-TheBroz-simple-town-rp/14eca3ad-aa4d-4f2f-b388-4c75ae7ea4f3/tool-results/mcp-ai-game-developer-console-get-logs-1780042685825.txt\")",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" \"http://localhost:3000/places/84b78902-6c9c-40d0-9c34-c65361bab0c6/state\")",
+      "Bash(grep -oE '\"Message\":\"[^\"]{0,300}\"' \"C:/Users/rodol/.claude/projects/D--Workspace-Unity-TheBroz-simple-town-rp/14eca3ad-aa4d-4f2f-b388-4c75ae7ea4f3/tool-results/mcp-ai-game-developer-console-get-logs-1780042685825.txt\")",
+      "Bash(grep -oE '\"Message\":\"[^\"]{0,400}\"' \"C:/Users/rodol/.claude/projects/D--Workspace-Unity-TheBroz-simple-town-rp/14eca3ad-aa4d-4f2f-b388-4c75ae7ea4f3/tool-results/mcp-ai-game-developer-console-get-logs-1780042685825.txt\")",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -H \"Authorization: Bearer null\" \"http://localhost:3000/places/84b78902-6c9c-40d0-9c34-c65361bab0c6/state\")",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -H \"Authorization: Bearer \" \"http://localhost:3000/places/84b78902-6c9c-40d0-9c34-c65361bab0c6/state\")"
     ]
   },
   "enableAllProjectMcpServers": true,

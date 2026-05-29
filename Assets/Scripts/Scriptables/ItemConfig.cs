@@ -30,6 +30,10 @@ public class ItemConfig : ScriptableObject {
     [SerializeField]
     private bool toPersist;
 
+    [Tooltip("Autorise le stockage en poche du joueur. Décocher pour les items qui ne peuvent rester qu'en main (déchets, colis mission, objets encombrants, etc.). Défaut: true.")]
+    [SerializeField]
+    private bool allowedInPocket = true;
+
     [SerializeField]
     private Texture2D cursor;
 
@@ -64,6 +68,8 @@ public class ItemConfig : ScriptableObject {
     public ItemBehaviour Prefab => prefab;
 
     public bool ToPersist => toPersist;
+
+    public bool AllowedInPocket => allowedInPocket;
 
     public Texture2D Cursor => cursor;
 

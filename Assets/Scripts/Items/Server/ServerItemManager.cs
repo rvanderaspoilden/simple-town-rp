@@ -625,6 +625,23 @@ public class ServerItemManager
         if (ApiManager.Instance != null) {
             ApiManager.Instance.StartCoroutine(RestoreHandItemsCoroutine(conn, roomId, inv));
         }
+
+        // Pocket : c'est ICI qu'on hydrate la session (conn.identity est garanti set
+        // après AddPlayerForConnection). Si elle existe déjà, on re-push juste le
+        // snapshot pour rattraper un client dont l'UI n'était pas encore abonnée.
+        // Sinon, on lance EnsurePocketSession qui fetch la DB et populera la session.
+        if (_pocketByPlayer.TryGetValue(conn.identity.netId, out var pocketSession)) {
+            // Cas A : session déjà hydratée (ex. re-entrée après un room change, ou
+            // PocketPlaceContext.Install a créé une session à la volée pendant un move).
+            // Si elle est vide ET qu'on n'a jamais fetch la DB, on refait l'hydratation.
+            if (pocketSession.ItemsByEntityId.Count == 0 && ApiManager.Instance != null) {
+                ApiManager.Instance.StartCoroutine(EnsurePocketSession(conn));
+            } else {
+                SendPocketSnapshot(conn, pocketSession);
+            }
+        } else if (ApiManager.Instance != null) {
+            ApiManager.Instance.StartCoroutine(EnsurePocketSession(conn));
+        }
     }
 
     public void OnPlayerLeaveRoom(NetworkConnectionToClient conn, string roomId)
@@ -1344,16 +1361,18 @@ public class ServerItemManager
             return;
         }
 
-        if (!fromCtx.TryResolveItem(msg.EntityId, declaredSlot: -1, out var itemCtx, out var err)) {
+        if (!fromCtx.TryResolveItem(msg.EntityId, declaredSlot: -1, out var itemCtx, out var err)
+            || !toCtx.ValidateAsTarget(msg.ToSlotIndex, itemCtx.ConfigId, out err)) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = err });
-            return;
-        }
-        if (!toCtx.ValidateAsTarget(msg.ToSlotIndex, itemCtx.ConfigId, out err)) {
-            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = err });
+            // Push les snapshots pour reconcilier le client : il a déjà fait le visual
+            // move dans OnDrop, sans snapshot il garderait un draggable fantôme dans le
+            // slot de destination — qui répondrait ensuite "introuvable" à toute tentative.
+            PushSnapshotsFor(conn, fromCtx, toCtx);
             return;
         }
         if (!toCtx.IsSlotAvailableFor(msg.ToSlotIndex, msg.EntityId)) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Slot occupé" });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
             return;
         }
 
@@ -1368,28 +1387,46 @@ public class ServerItemManager
             yield break;
         }
 
-        var body = new UpdateItemBody {
-            expectedVersion = itemCtx.Version,
-            placeId         = toCtx.PlaceId,
-            stateData       = toCtx.HasSlotIndex
-                ? new Dictionary<string, object> { { "slotIndex", msg.ToSlotIndex } }
-                : null,
-        };
-        GameLogger.Network.Info("MoveItem PATCH start uuid={Uuid} version={Version} from={From} to={To} slot={Slot}",
-            itemCtx.ItemUuid, itemCtx.Version, msg.FromPlaceId, msg.ToPlaceId, msg.ToSlotIndex);
-        UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(itemCtx.ItemUuid, body);
-        yield return req.SendWebRequest();
-        if (req.responseCode < 200 || req.responseCode >= 300) {
-            Debug.LogWarning($"[ServerItemManager] MoveItem PATCH failed code={req.responseCode} body={req.downloadHandler?.text}");
-            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = $"Échec persistance ({req.responseCode})" });
+        // Item éphémère (no DB row → no UUID) : autorisé pour hand↔hand uniquement,
+        // car pocket/container ont une autorité persistante. On le filtre ici plutôt
+        // que dans ValidateAsTarget pour garder l'interface du context simple.
+        bool isEphemeral = string.IsNullOrEmpty(itemCtx.ItemUuid);
+        if (isEphemeral && toCtx.Kind != PlaceKind.HandLeft && toCtx.Kind != PlaceKind.HandRight) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId,
+                ErrorMessage = "Cet item ne peut pas être stocké" });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
             yield break;
         }
-        GameLogger.Network.Info("MoveItem PATCH ok uuid={Uuid} body={Body}", itemCtx.ItemUuid, req.downloadHandler?.text);
+
         int newVersion = itemCtx.Version + 1;
-        try {
-            var item = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
-            if (item != null) newVersion = item.version;
-        } catch { /* tolerate */ }
+        if (!isEphemeral) {
+            // Item persisté : PATCH /items/:id pour refléter le nouveau placement.
+            var body = new UpdateItemBody {
+                expectedVersion = itemCtx.Version,
+                placeId         = toCtx.PlaceId,
+                stateData       = toCtx.HasSlotIndex
+                    ? new Dictionary<string, object> { { "slotIndex", msg.ToSlotIndex } }
+                    : null,
+            };
+            GameLogger.Network.Info("MoveItem PATCH start uuid={Uuid} version={Version} from={From} to={To} slot={Slot}",
+                itemCtx.ItemUuid, itemCtx.Version, msg.FromPlaceId, msg.ToPlaceId, msg.ToSlotIndex);
+            UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(itemCtx.ItemUuid, body);
+            yield return req.SendWebRequest();
+            if (req.responseCode < 200 || req.responseCode >= 300) {
+                Debug.LogWarning($"[ServerItemManager] MoveItem PATCH failed code={req.responseCode} body={req.downloadHandler?.text}");
+                conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = $"Échec persistance ({req.responseCode})" });
+                PushSnapshotsFor(conn, fromCtx, toCtx);
+                yield break;
+            }
+            GameLogger.Network.Info("MoveItem PATCH ok uuid={Uuid} body={Body}", itemCtx.ItemUuid, req.downloadHandler?.text);
+            try {
+                var item = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
+                if (item != null) newVersion = item.version;
+            } catch { /* tolerate */ }
+        } else {
+            GameLogger.Network.Info("MoveItem skip PATCH (éphémère) entity={EntityId} from={From} to={To}",
+                msg.EntityId, msg.FromPlaceId, msg.ToPlaceId);
+        }
 
         // Apply : tear-down origine → install destination. Les contextes encapsulent
         // les détails (broadcast S2C_*, runtime room/hand state, session entries).
@@ -1427,10 +1464,12 @@ public class ServerItemManager
 
         if (!ctxA.TryResolveItem(msg.EntityIdA, msg.SlotIndexA, out var itemA, out var err)) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdA, ErrorMessage = err });
+            PushSnapshotsFor(conn, ctxA, ctxB);
             return;
         }
         if (!ctxB.TryResolveItem(msg.EntityIdB, msg.SlotIndexB, out var itemB, out err)) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdB, ErrorMessage = err });
+            PushSnapshotsFor(conn, ctxA, ctxB);
             return;
         }
 
@@ -1439,10 +1478,12 @@ public class ServerItemManager
         // avant install, donc les slots sont libres au moment du install.
         if (!ctxB.ValidateAsTarget(msg.SlotIndexB, itemA.ConfigId, out err)) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdA, ErrorMessage = err });
+            PushSnapshotsFor(conn, ctxA, ctxB);
             return;
         }
         if (!ctxA.ValidateAsTarget(msg.SlotIndexA, itemB.ConfigId, out err)) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdB, ErrorMessage = err });
+            PushSnapshotsFor(conn, ctxA, ctxB);
             return;
         }
 
@@ -1561,11 +1602,14 @@ public class ServerItemManager
             yield break;
         }
 
+        Debug.Log($"[ServerItemManager] PocketState raw response (place={inv.PocketPlaceId}): {req.downloadHandler.text}");
+
         PlaceStateJson state = null;
         try { state = JsonConvert.DeserializeObject<PlaceStateJson>(req.downloadHandler.text); }
         catch (System.Exception e) { Debug.LogWarning($"[ServerItemManager] PocketState parse: {e.Message}"); yield break; }
 
         var session = new PocketSession { PlaceId = inv.PocketPlaceId };
+        int itemsFromDb = state?.items?.Length ?? 0;
         if (state?.items != null) {
             foreach (var it in state.items) {
                 int slotIndex = ReadSlotIndex(it.stateData);
@@ -1579,16 +1623,17 @@ public class ServerItemManager
                 _bridges[entityId] = new ItemDbBridge {
                     Uuid = it.Id, Version = it.version, PlaceId = inv.PocketPlaceId,
                 };
+                Debug.Log($"[ServerItemManager] Pocket item loaded id={it.Id} cfg={it.configId} slot={slotIndex} entityId={entityId}");
             }
         }
         _pocketByPlayer[netId] = session;
 
         SendPocketSnapshot(conn, session);
-        GameLogger.Network.Info("PocketSessionOpened netId={NetId} place={Place} items={Count}",
-            netId, inv.PocketPlaceId, session.ItemsByEntityId.Count);
+        Debug.Log($"[ServerItemManager] PocketSessionOpened netId={netId} place={inv.PocketPlaceId} itemsFromDb={itemsFromDb} sessionItems={session.ItemsByEntityId.Count}");
     }
 
     private static void SendPocketSnapshot(NetworkConnectionToClient conn, PocketSession session) {
+        Debug.Log($"[ServerItemManager] SendPocketSnapshot place={session.PlaceId} sessionItems={session.ItemsByEntityId.Count} conn={conn?.connectionId}");
         var items = new List<S2C_PocketItem>(session.ItemsByEntityId.Count);
         foreach (var it in session.ItemsByEntityId.Values) {
             items.Add(new S2C_PocketItem {
@@ -1669,11 +1714,16 @@ public class ServerItemManager
             if (!_mgr.TryGetEntity(_roomId, entityId, out var entity)) {
                 err = "Entity introuvable"; return false;
             }
+            // Bridge optionnel : un item éphémère (WASTE collecté, sac poubelle, colis
+            // mission) n'a PAS de ligne DB → bridge null. C'est valide pour un move
+            // hand↔hand, le coroutine de move skip simplement la PATCH quand l'UUID est
+            // vide. Pour des destinations persistantes (pocket, container), la conversion
+            // ephemeral→persistent demanderait un POST /items qu'on ne gère pas encore →
+            // ces moves seront filtrés en amont (ValidateAsTarget côté destination).
             var bridge = _mgr.GetBridge(entityId);
-            if (bridge == null || string.IsNullOrEmpty(bridge.Uuid)) {
-                err = "Item sans UUID"; return false;
-            }
-            ctx = new ItemCtx { ConfigId = entity.ItemConfigId, ItemUuid = bridge.Uuid, Version = bridge.Version };
+            string uuid = bridge?.Uuid;
+            int version = bridge?.Version ?? 0;
+            ctx = new ItemCtx { ConfigId = entity.ItemConfigId, ItemUuid = uuid, Version = version };
             return true;
         }
 
@@ -1807,6 +1857,10 @@ public class ServerItemManager
             err = null;
             if (slotIndex < 0 || slotIndex >= PocketCapacity) {
                 err = "Slot poche hors limites"; return false;
+            }
+            var itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == configId);
+            if (itemConfig != null && !itemConfig.AllowedInPocket) {
+                err = "Cet item ne peut pas être stocké en poche"; return false;
             }
             return true;
         }

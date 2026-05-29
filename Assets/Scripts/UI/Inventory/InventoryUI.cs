@@ -249,12 +249,35 @@ public class InventoryUI : MonoBehaviour
             ToSlotIndex = targetSlot.SlotIndex,
         });
 
-        // Le draggable visuellement présent dans targetSlot après OnDrop n'est qu'un placeholder
-        // (le même objet du pool, juste reparenté). Le panneau autoritaire (Container ou
-        // hand UI) repopulera proprement le slot via le snapshot/S2C_SpawnItem qui suivra.
-        // On le rend au pool pour éviter qu'il coexiste avec le draggable de remplacement.
+        // Le draggable dans targetSlot est un placeholder : le panneau autoritaire
+        // (Container/Pocket/Hand) repopulera proprement via le snapshot/S2C_SpawnItem
+        // qui arrive juste après. On doit le release pour ne pas qu'il coexiste avec
+        // le draggable de remplacement.
+        //
+        // MAIS le release SYNCHRONE tuerait le tween de drop en cours (ResetDragState
+        // → StopCoroutine sur _moveTween). On délaie donc le release de la durée du
+        // land tween, ce qui laisse l'animation se jouer. Le pool.Release étant
+        // idempotent, si le snapshot a déjà libéré le placeholder entre-temps c'est
+        // un no-op safe.
         targetSlot.Clear();
-        ReleaseDraggable(placeholder);
+        if (placeholder != null && placeholder.LandDuration > 0f) {
+            StartCoroutine(DeferredReleaseCoroutine(placeholder, placeholder.LandDuration + 0.02f));
+        } else {
+            ReleaseDraggable(placeholder);
+        }
+    }
+
+    private System.Collections.IEnumerator DeferredReleaseCoroutine(DraggableItem d, float delay)
+    {
+        yield return new UnityEngine.WaitForSecondsRealtime(delay);
+        if (d == null) yield break;
+        // Si entre-temps un snapshot serveur a recyclé ce draggable depuis le pool
+        // pour repeupler un slot (ItemSlot.SetItem affecte d.ItemSlot ET slot._item),
+        // le draggable est désormais utilisé légitimement → on ne le release pas.
+        // Sans ce guard, on kickerait l'item authoritatif hors de son slot juste
+        // après que le snapshot l'a placé.
+        if (d.ItemSlot != null && d.ItemSlot.Item == d) yield break;
+        ReleaseDraggable(d);
     }
 
     /// <summary>
@@ -301,6 +324,13 @@ public class InventoryUI : MonoBehaviour
     /// </summary>
     private void ApplyPocketSnapshot(S2C_PocketSync msg)
     {
+        // Garde-fou : si OnEnable est appelé avant Awake dans un scénario non standard
+        // (cas d'un GameObject inactif dans le prefab puis activé par un autre script),
+        // le pool peut être null. EnsurePool est idempotent.
+        EnsurePool();
+
+        Debug.Log($"[InventoryUI] ApplyPocketSnapshot placeId={msg.PlaceId} slotCount={msg.SlotCount} items={msg.Items?.Length ?? 0}");
+
         // Vide d'abord ce qui occupe les slots poche (release vers le pool partagé) :
         // robuste face aux états intermédiaires (drag visuel d'un autre slot vers la
         // poche déjà appliqué mais snapshot pas encore reçu) — l'autorité est le snapshot
@@ -313,7 +343,10 @@ public class InventoryUI : MonoBehaviour
             ItemSlot target = entry.SlotIndex == 0 ? leftPocketSlot
                             : entry.SlotIndex == 1 ? rightPocketSlot
                             : null;
-            if (target == null) continue;
+            if (target == null) {
+                Debug.LogWarning($"[InventoryUI] Pocket entry slotIndex={entry.SlotIndex} hors range (0-1) ou slot UI non câblé, ignoré.");
+                continue;
+            }
             var cfg = DatabaseManager.GetItemConfigById(entry.ConfigId);
             if (cfg == null) {
                 Debug.LogWarning($"[InventoryUI] Pocket ItemConfig {entry.ConfigId} introuvable, slot {entry.SlotIndex} ignoré.");
@@ -336,10 +369,11 @@ public class InventoryUI : MonoBehaviour
 
     private void OnMoveItemResultReceived(S2C_MoveItemResult msg) {
         if (msg.Success) return;
-        // Server a rejeté le move : ré-affiche l'état authoritatif des mains.
-        // (Le placeholder en target slot a déjà été release, l'origin slot était cleared
-        // par OnDrop. UpdateUI re-rente un draggable depuis PlayerHands si l'item y est encore.)
+        // Server a rejeté le move : feedback joueur via toast + ré-affichage de l'état
+        // authoritatif (le placeholder a déjà été release, l'origin slot était cleared
+        // par OnDrop, UpdateUI re-rente un draggable depuis PlayerHands si l'item y est encore).
         Debug.LogWarning($"[InventoryUI] Move refusé entity={msg.EntityId} reason={msg.ErrorMessage} — refresh UI");
+        if (!string.IsNullOrEmpty(msg.ErrorMessage)) WorldToastManager.Show(msg.ErrorMessage);
         UpdateUI();
     }
 

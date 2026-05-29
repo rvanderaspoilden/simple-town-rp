@@ -21,20 +21,30 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     [Header("Animation — Land au drop valide")]
     [SerializeField, Tooltip("Durée du tween vers le centre du slot après un drop valide.")]
     private float landDuration = 0.14f;
-    [SerializeField, Tooltip("Courbe d'easing du land. EaseOutBack léger donne un effet tactile.")]
-    private AnimationCurve landCurve = new AnimationCurve(
-        new Keyframe(0f, 0f, 0f, 4f),
-        new Keyframe(0.7f, 1.06f),
-        new Keyframe(1f, 1f, 0f, 0f));
+    [SerializeField, Tooltip("Courbe d'easing du land. EaseInOut par défaut ; tu peux la remplacer par une courbe avec léger overshoot pour un effet plus tactile.")]
+    private AnimationCurve landCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Animation — Snap-back drop invalide")]
     [SerializeField, Tooltip("Durée du retour à l'origine quand le drop échoue.")]
     private float snapBackDuration = 0.18f;
-    [SerializeField, Tooltip("Courbe d'easing du snap-back. EaseOutQuad pour décélération propre.")]
+    [SerializeField, Tooltip("Courbe d'easing du snap-back.")]
     private AnimationCurve snapBackCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     public float LandDuration         => landDuration;
     public AnimationCurve LandCurve   => landCurve;
+    public float SnapBackDuration       => snapBackDuration;
+    public AnimationCurve SnapBackCurve => snapBackCurve;
+
+    /// <summary>
+    /// Évalue <paramref name="curve"/> à <paramref name="rawT"/> ∈ [0,1] avec un fallback
+    /// linéaire si la courbe est vide (cas d'un prefab sérialisé avant que les champs
+    /// d'animation existent). Sans ce garde-fou, Evaluate retourne 0 partout et le tween
+    /// ne bouge pas visuellement.
+    /// </summary>
+    private static float SafeEvaluate(AnimationCurve curve, float rawT) {
+        if (curve == null || curve.length == 0) return rawT;
+        return curve.Evaluate(rawT);
+    }
 
     private Coroutine _moveTween;
     private Coroutine _scaleTween;
@@ -129,9 +139,17 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         // OnEndDrag dans l'event order. Si on arrive ici sans qu'aucun slot n'ait
         // attrapé le drop, on revient à l'origine en tween.)
         if (IsOutOfSlot(eventData) && _itemSlot != null) {
-            this.transform.parent = this._itemSlot.transform;
-            this.SetPadding(10, 10, 10, 10);
-            AnimateBackToOrigin();
+            // Cible monde = centre du slot d'origine.
+            Vector3 targetWorld = _itemSlot.transform.position;
+            // Reparent en préservant la position monde courante → le draggable reste
+            // visuellement où il a été lâché, et l'anim glisse depuis là vers le slot.
+            transform.SetParent(_itemSlot.transform, worldPositionStays: true);
+            var slot = _itemSlot;
+            AnimateToWorldPosition(targetWorld, snapBackDuration, snapBackCurve, onComplete: () => {
+                if (slot == null || this == null) return;
+                SetPadding(10, 10, 10, 10);
+                SetAnchoredPosition(Vector2.zero);
+            });
         }
     }
 
@@ -174,21 +192,31 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     }
 
     // ── Tween helpers (coroutine + AnimationCurve, même pattern que ContainerDoorAnimator) ──
+    //
+    // L'animation de position se fait sur transform.position (monde) plutôt que sur
+    // anchoredPosition : robuste face au mode d'ancrage du draggable (stretched ou
+    // pivot-centré), et indépendant de SetPadding qui sinon snape instantanément à 0.
+    // L'appelant doit reparenter AVANT l'anim (avec worldPositionStays:true pour ne
+    // pas teleporter au moment du change-parent), puis demander l'anim vers la position
+    // monde du slot cible, et appliquer SetPadding dans le callback onComplete.
 
-    /// <summary>Anime <c>anchoredPosition</c> de la position courante vers <paramref name="target"/>.
-    /// Stoppe tout tween de mouvement en cours.</summary>
-    public void AnimateToAnchored(Vector2 target, float duration, AnimationCurve curve) {
+    /// <summary>Anime <c>transform.position</c> (coordonnées monde) vers <paramref name="targetWorld"/>.
+    /// Robuste face à n'importe quelle config d'ancrage du RectTransform. À la fin, exécute
+    /// <paramref name="onComplete"/> (typiquement : SetPadding + recentrage propre).</summary>
+    public void AnimateToWorldPosition(Vector3 targetWorld, float duration, AnimationCurve curve,
+        System.Action onComplete = null)
+    {
         EnsureRefs();
         if (_moveTween != null) { StopCoroutine(_moveTween); _moveTween = null; }
         if (duration <= 0f || !isActiveAndEnabled) {
-            _rectTransform.anchoredPosition = target;
+            transform.position = targetWorld;
+            onComplete?.Invoke();
             return;
         }
-        _moveTween = StartCoroutine(MoveCoroutine(target, duration, curve));
+        _moveTween = StartCoroutine(WorldMoveCoroutine(targetWorld, duration, curve, onComplete));
     }
 
-    /// <summary>Anime <c>transform.localScale</c> de manière uniforme vers <paramref name="target"/>.
-    /// Stoppe tout tween d'échelle en cours.</summary>
+    /// <summary>Anime <c>transform.localScale</c> de manière uniforme vers <paramref name="target"/>.</summary>
     public void AnimateScale(float target, float duration) {
         EnsureRefs();
         if (_scaleTween != null) { StopCoroutine(_scaleTween); _scaleTween = null; }
@@ -200,25 +228,21 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         _scaleTween = StartCoroutine(ScaleCoroutine(endScale, duration));
     }
 
-    /// <summary>Snap-back animé vers le centre du slot d'accueil (utilise les params snapBack).
-    /// Appelé par <see cref="ItemSlot.OnDrop"/> (drop dans un slot occupé non swappable) et par
-    /// <see cref="OnEndDrag"/> (drop hors slot).</summary>
-    public void AnimateBackToOrigin() {
-        AnimateToAnchored(Vector2.zero, snapBackDuration, snapBackCurve);
-    }
-
-    private IEnumerator MoveCoroutine(Vector2 target, float duration, AnimationCurve curve) {
-        Vector2 start = _rectTransform.anchoredPosition;
+    private IEnumerator WorldMoveCoroutine(Vector3 target, float duration, AnimationCurve curve,
+        System.Action onComplete)
+    {
+        Vector3 start = transform.position;
         float t = 0f;
         while (t < duration) {
-            // unscaledDeltaTime : indépendant de Time.timeScale (UI ne doit pas geler en pause).
+            // unscaledDeltaTime : indépendant de Time.timeScale (l'UI doit rester animée en pause).
             t += Time.unscaledDeltaTime;
-            float k = curve.Evaluate(Mathf.Clamp01(t / duration));
-            _rectTransform.anchoredPosition = Vector2.LerpUnclamped(start, target, k);
+            float k = SafeEvaluate(curve, Mathf.Clamp01(t / duration));
+            transform.position = Vector3.LerpUnclamped(start, target, k);
             yield return null;
         }
-        _rectTransform.anchoredPosition = target;
+        transform.position = target;
         _moveTween = null;
+        onComplete?.Invoke();
     }
 
     private IEnumerator ScaleCoroutine(Vector3 target, float duration) {

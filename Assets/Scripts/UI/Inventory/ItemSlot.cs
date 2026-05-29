@@ -86,34 +86,48 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
 
     /// <summary>
     /// Place <paramref name="item"/> dans ce slot. Si <paramref name="animate"/> est vrai,
-    /// la position anchorée tween vers le centre du slot (sensation de drop tactile) ;
-    /// sinon snap instantané (utilisé par les reconstructions de snapshot serveur).
-    /// La reparent et le padding sont toujours appliqués instantanément — seul le
-    /// recentrage est animé.
+    /// l'item glisse en monde vers le centre du slot (sensation de drop tactile) ; sinon
+    /// snap instantané (utilisé par les reconstructions de snapshot serveur).
+    ///
+    /// Pour l'anim, on utilise <c>SetParent(…, worldPositionStays:true)</c> pour ne pas
+    /// teleporter au moment du change-parent, puis l'item tween jusqu'à
+    /// <c>this.transform.position</c> ; SetPadding est appliqué dans le callback de fin
+    /// pour ne pas snape avant l'arrivée. Le chemin non animé garde l'ancien comportement.
     /// </summary>
     public void SetItem(DraggableItem item, bool animate) {
         this._item = item;
-        this._item.transform.parent = this.transform;
-        this._item.SetPadding(10, 10, 10, 10);
         this._item.ItemSlot = this;
+
         if (animate) {
-            this._item.AnimateToAnchored(Vector2.zero, this._item.LandDuration, this._item.LandCurve);
+            Vector3 targetWorld = this.transform.position;
+            item.transform.SetParent(this.transform, worldPositionStays: true);
+            item.AnimateToWorldPosition(targetWorld, item.LandDuration, item.LandCurve, onComplete: () => {
+                if (item == null || this == null || item.ItemSlot != this) return;
+                item.SetPadding(10, 10, 10, 10);
+                item.SetAnchoredPosition(Vector2.zero);
+            });
         } else {
-            this._item.SetAnchoredPosition(Vector2.zero);
+            item.transform.parent = this.transform;
+            item.SetPadding(10, 10, 10, 10);
+            item.SetAnchoredPosition(Vector2.zero);
         }
     }
 
     /// <summary>
-    /// Reparent <paramref name="item"/> sur ce slot (qui doit en être l'origine) et joue
-    /// l'anim de snap-back (durée + curve dédiées). Utilisé par OnDrop quand un drop
-    /// invalide doit retourner l'item à sa source sans clignotement.
+    /// Snap-back animé : l'item revient à ce slot (son origine) après un drop invalide.
+    /// Utilise <see cref="DraggableItem.SnapBackDuration"/> / <see cref="DraggableItem.SnapBackCurve"/>.
     /// </summary>
     public void SnapBackInto(DraggableItem item) {
         this._item = item;
-        this._item.transform.parent = this.transform;
-        this._item.SetPadding(10, 10, 10, 10);
         this._item.ItemSlot = this;
-        this._item.AnimateBackToOrigin();
+
+        Vector3 targetWorld = this.transform.position;
+        item.transform.SetParent(this.transform, worldPositionStays: true);
+        item.AnimateToWorldPosition(targetWorld, item.SnapBackDuration, item.SnapBackCurve, onComplete: () => {
+            if (item == null || this == null || item.ItemSlot != this) return;
+            item.SetPadding(10, 10, 10, 10);
+            item.SetAnchoredPosition(Vector2.zero);
+        });
     }
 
     public DraggableItem Item => _item;
