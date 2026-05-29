@@ -39,6 +39,7 @@ public class ContainerPanelUI : MonoBehaviour
 
     private string _currentPlaceId;
     private int    _currentPropId;
+    private string _currentPropName;     // cache pour le titre, valorisé à l'ouverture optimiste
     private bool   _subscribed;
     private bool   _loading;
     private UnityEngine.CanvasGroup _slotsGroup;
@@ -75,6 +76,7 @@ public class ContainerPanelUI : MonoBehaviour
         ClientItemManager.ContainerOpened     += OnContainerOpened;
         ClientItemManager.ContainerOpenFailed += OnContainerOpenFailed;
         StorageContainerBehaviour.OnOpenRequested += OnOptimisticOpenRequested;
+        DraggableItem.OnDoubleClick           += OnItemDoubleClicked;
         _subscribed = true;
     }
 
@@ -84,7 +86,50 @@ public class ContainerPanelUI : MonoBehaviour
         ClientItemManager.ContainerOpened     -= OnContainerOpened;
         ClientItemManager.ContainerOpenFailed -= OnContainerOpenFailed;
         StorageContainerBehaviour.OnOpenRequested -= OnOptimisticOpenRequested;
+        DraggableItem.OnDoubleClick           -= OnItemDoubleClicked;
         _subscribed = false;
+    }
+
+    /// <summary>True quand une session conteneur est ouverte ET prête (snapshot reçu).
+    /// Tant que <see cref="_loading"/> est vrai, le PlaceId backend n'est pas connu et les
+    /// quick-moves doivent attendre.</summary>
+    public bool IsOpen => !_loading && !string.IsNullOrEmpty(_currentPlaceId);
+
+    /// <summary>UUID backend de la place conteneur en cours. Utilisé pour router un quick-move.</summary>
+    public string PlaceId => _currentPlaceId;
+
+    /// <summary>Premier slot actif vide, ou -1 si plein.</summary>
+    public int FindFirstFreeSlot()
+    {
+        for (int i = 0; i < _slots.Count; i++) {
+            var slot = _slots[i];
+            if (slot != null && slot.gameObject.activeSelf && slot.Item == null) return i;
+        }
+        return -1;
+    }
+
+    /// <summary>True si <paramref name="slot"/> appartient à la grille de ce conteneur.</summary>
+    public bool OwnsSlot(ItemSlot slot) => slot != null && _slots.Contains(slot);
+
+    private void OnItemDoubleClicked(DraggableItem item)
+    {
+        if (!IsOpen || item == null || item.ItemSlot == null) return;
+        if (!OwnsSlot(item.ItemSlot)) return;
+
+        var inv = HUDManager.Instance?.InventoryUI;
+        if (inv == null) return;
+        if (!inv.TryFindQuickMoveTargetForItem(item, out string toPlace, out int toSlot)) {
+            WorldToastManager.Show("Pas de place dans l'inventaire");
+            return;
+        }
+        if (!Mirror.NetworkClient.isConnected) return;
+
+        Mirror.NetworkClient.Send(new C2S_MoveItem {
+            EntityId    = item.EntityId,
+            FromPlaceId = item.ItemSlot.PlaceId,
+            ToPlaceId   = toPlace,
+            ToSlotIndex = toSlot,
+        });
     }
 
     /// <summary>
@@ -92,11 +137,12 @@ public class ContainerPanelUI : MonoBehaviour
     /// de grille, mais les slots bloquent les drops via le CanvasGroup jusqu'à l'arrivée
     /// du snapshot (qui apporte le PlaceId nécessaire au routage C2S_MoveItem).
     /// </summary>
-    private void OnOptimisticOpenRequested(int propId, int slotCount)
+    private void OnOptimisticOpenRequested(int propId, int slotCount, string propName)
     {
-        _currentPropId  = propId;
-        _currentPlaceId = null;     // sera renseigné par le snapshot
-        _loading        = true;
+        _currentPropId   = propId;
+        _currentPropName = propName;
+        _currentPlaceId  = null;    // sera renseigné par le snapshot
+        _loading         = true;
 
         Show(true);
         if (HUDManager.Instance != null) HUDManager.Instance.ShowInventory();
@@ -104,10 +150,14 @@ public class ContainerPanelUI : MonoBehaviour
         EnsureSlotPool(slotCount);
         ConfigureSlots(null, slotCount);
         ReleaseSpawnedItems();
-        if (titleText != null) titleText.text = "Ouverture…";
+        if (titleText != null) titleText.text = ResolveTitle();
 
         SetSlotsInteractive(false);
     }
+
+    /// <summary>Titre courant du panneau : nom du prop si connu, sinon fallback générique.</summary>
+    private string ResolveTitle() =>
+        !string.IsNullOrEmpty(_currentPropName) ? _currentPropName : "Conteneur";
 
     private void SetSlotsInteractive(bool interactive)
     {
@@ -132,7 +182,7 @@ public class ContainerPanelUI : MonoBehaviour
         EnsureSlotPool(msg.SlotCount);
         ConfigureSlots(msg.PlaceId, msg.SlotCount);
         ReleaseSpawnedItems();
-        if (titleText != null) titleText.text = $"Conteneur ({msg.SlotCount} slots)";
+        if (titleText != null) titleText.text = ResolveTitle();
         SpawnItemsFromSnapshot(msg.Items);
 
         // Snapshot reçu → panneau pleinement interactif.
@@ -228,9 +278,10 @@ public class ContainerPanelUI : MonoBehaviour
             NetworkClient.Send(new C2S_CloseContainer());
         Show(false);
         ReleaseSpawnedItems();
-        _currentPlaceId = null;
-        _currentPropId  = 0;
-        _loading        = false;
+        _currentPlaceId  = null;
+        _currentPropId   = 0;
+        _currentPropName = null;
+        _loading         = false;
         SetSlotsInteractive(true);
 
         // Ferme aussi l'inventaire pour aligner conteneur et HUD : clic « X »

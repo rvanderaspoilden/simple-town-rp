@@ -86,8 +86,9 @@ public class StorageContainerBehaviour : PropBehaviourBase
     /// Émis sur le client opener au moment du clic OPEN, AVANT l'aller-retour serveur.
     /// Permet à <see cref="ContainerPanelUI"/> d'ouvrir le panneau optimistement (perçu instantané)
     /// pendant que le serveur fait son POST+GET vers le backend (~50-300ms).
+    /// Args : propId, slotCount, displayName (titre du panneau, fallback "Conteneur" si vide).
     /// </summary>
-    public static event System.Action<int, int> OnOpenRequested;
+    public static event System.Action<int, int, string> OnOpenRequested;
 
     private void SendOpenRequest()
     {
@@ -96,7 +97,8 @@ public class StorageContainerBehaviour : PropBehaviourBase
             return;
         }
         int slotCount = configuration?.Container != null ? configuration.Container.SlotCount : 0;
-        if (slotCount > 0) OnOpenRequested?.Invoke(PropId, slotCount);
+        string displayName = configuration != null ? configuration.GetDisplayName() : null;
+        if (slotCount > 0) OnOpenRequested?.Invoke(PropId, slotCount, displayName);
         NetworkClient.Send(new C2S_OpenContainer { PropId = PropId });
     }
 

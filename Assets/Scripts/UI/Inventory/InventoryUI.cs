@@ -54,12 +54,13 @@ public class InventoryUI : MonoBehaviour
     {
         UpdateUI();
 
-        DraggableItem.OnLeftClick  += OnItemLeftClicked;
-        DraggableItem.OnRightClick += OnItemRightClicked;
-        DraggableItem.OnStartDrag  += OnItemStartDrag;
-        ItemSlot.OnItemMove        += OnItemMoved;
-        ItemSlot.OnItemSwap        += OnItemsSwapped;
-        PlayerHands.OnHandChanged  += OnPlayerHandChanged;
+        DraggableItem.OnLeftClick   += OnItemLeftClicked;
+        DraggableItem.OnRightClick  += OnItemRightClicked;
+        DraggableItem.OnDoubleClick += OnItemDoubleClicked;
+        DraggableItem.OnStartDrag   += OnItemStartDrag;
+        ItemSlot.OnItemMove         += OnItemMoved;
+        ItemSlot.OnItemSwap         += OnItemsSwapped;
+        PlayerHands.OnHandChanged   += OnPlayerHandChanged;
         ClientItemManager.MoveItemResult += OnMoveItemResultReceived;
         ClientItemManager.PocketSync     += OnPocketSyncReceived;
 
@@ -77,12 +78,13 @@ public class InventoryUI : MonoBehaviour
         ReleaseSlot(rightHandSlot);
         ReleaseSlot(bothHandSlot);
 
-        DraggableItem.OnLeftClick  -= OnItemLeftClicked;
-        DraggableItem.OnRightClick -= OnItemRightClicked;
-        DraggableItem.OnStartDrag  -= OnItemStartDrag;
-        ItemSlot.OnItemMove        -= OnItemMoved;
-        ItemSlot.OnItemSwap        -= OnItemsSwapped;
-        PlayerHands.OnHandChanged  -= OnPlayerHandChanged;
+        DraggableItem.OnLeftClick   -= OnItemLeftClicked;
+        DraggableItem.OnRightClick  -= OnItemRightClicked;
+        DraggableItem.OnDoubleClick -= OnItemDoubleClicked;
+        DraggableItem.OnStartDrag   -= OnItemStartDrag;
+        ItemSlot.OnItemMove         -= OnItemMoved;
+        ItemSlot.OnItemSwap         -= OnItemsSwapped;
+        PlayerHands.OnHandChanged   -= OnPlayerHandChanged;
         ClientItemManager.MoveItemResult -= OnMoveItemResultReceived;
         ClientItemManager.PocketSync     -= OnPocketSyncReceived;
 
@@ -133,6 +135,77 @@ public class InventoryUI : MonoBehaviour
 
     private void OnItemLeftClicked(DraggableItem draggableItem)   => CloseCurrentActionMenu();
     private void OnItemStartDrag(DraggableItem draggableItem)     => CloseCurrentActionMenu();
+
+    /// <summary>
+    /// Double-clic gauche : quick-move main/poche → conteneur ouvert. Le sens conteneur
+    /// → inventaire est géré par <see cref="ContainerPanelUI.OnItemDoubleClicked"/>.
+    /// </summary>
+    private void OnItemDoubleClicked(DraggableItem item)
+    {
+        if (item == null || item.ItemSlot == null) return;
+        var src = item.ItemSlot;
+        bool srcIsOurs = src == leftHandSlot || src == rightHandSlot || src == bothHandSlot
+                      || src == leftPocketSlot || src == rightPocketSlot;
+        if (!srcIsOurs) return;
+
+        var container = ContainerPanelUI.Instance;
+        if (container == null || !container.IsOpen) return;     // pas de conteneur ouvert → no-op
+
+        int targetSlot = container.FindFirstFreeSlot();
+        if (targetSlot < 0) {
+            WorldToastManager.Show("Conteneur plein");
+            return;
+        }
+        if (string.IsNullOrEmpty(container.PlaceId) || string.IsNullOrEmpty(src.PlaceId)) return;
+        if (!NetworkClient.isConnected) return;
+
+        NetworkClient.Send(new C2S_MoveItem {
+            EntityId    = item.EntityId,
+            FromPlaceId = src.PlaceId,
+            ToPlaceId   = container.PlaceId,
+            ToSlotIndex = targetSlot,
+        });
+    }
+
+    /// <summary>
+    /// Choisit une destination "main/poche" libre pour un quick-move depuis un conteneur.
+    /// Priorité : main droite → main gauche → poche slot 0 → poche slot 1. Pour un item
+    /// TWO_HAND, n'autorise que les mains, et seulement si les DEUX sont libres.
+    /// Retourne le placeKey wire ("hand_right:{charId}" / "pocket:{charId}") + slotIndex,
+    /// ou false si rien de libre n'est compatible.
+    /// </summary>
+    public bool TryFindQuickMoveTargetForItem(DraggableItem item, out string placeKey, out int slotIndex)
+    {
+        placeKey = null; slotIndex = 0;
+        if (PlayerController.Local == null) return false;
+        string charId = PlayerController.Local.CharacterData?.Id;
+        if (string.IsNullOrEmpty(charId)) return false;
+
+        var hands = PlayerController.Local.PlayerHands;
+        ItemConfig cfg = item != null ? item.ItemConfig : null;
+        bool isTwoHand = cfg != null && cfg.HandleType == ItemHandleType.TWO_HAND;
+
+        if (isTwoHand) {
+            // TWO_HAND : besoin des DEUX mains libres ; sinon abandonne (les poches ne
+            // peuvent pas accueillir un objet à deux mains).
+            if (hands.RightHandItem == null && hands.LeftHandItem == null) {
+                placeKey = $"hand_right:{charId}";
+                return true;
+            }
+            return false;
+        }
+
+        if (hands.RightHandItem == null) { placeKey = $"hand_right:{charId}"; return true; }
+        if (hands.LeftHandItem  == null) { placeKey = $"hand_left:{charId}";  return true; }
+
+        if (leftPocketSlot != null && leftPocketSlot.Item == null) {
+            placeKey = $"pocket:{charId}"; slotIndex = 0; return true;
+        }
+        if (rightPocketSlot != null && rightPocketSlot.Item == null) {
+            placeKey = $"pocket:{charId}"; slotIndex = 1; return true;
+        }
+        return false;
+    }
 
     private void OnItemRightClicked(DraggableItem draggableItem)
     {

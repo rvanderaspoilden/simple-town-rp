@@ -1,8 +1,20 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler {
+public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler {
     private DraggableItem _item;
+
+    [Header("Hover highlight (optionnel)")]
+    [SerializeField, Tooltip("Graphic (Image background, overlay…) qui fade-in quand un draggable survole ce slot. Laisser vide pour désactiver.")]
+    private Graphic dropHighlight;
+    [SerializeField, Range(0f, 1f), Tooltip("Alpha cible du highlight survol.")]
+    private float highlightAlpha = 0.3f;
+    [SerializeField, Tooltip("Durée du fade in/out (secondes).")]
+    private float highlightFadeDuration = 0.1f;
+
+    private Coroutine _fadeTween;
 
     // Place backend de ce slot (hand_left:..., hand_right:..., pocket:..., container place id).
     // Sert au routage cross-place via C2S_MoveItem (InventoryUI.OnItemMoved).
@@ -41,42 +53,67 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler {
         if (eventData.pointerDrag == null) return;
 
         DraggableItem draggableItem = eventData.pointerDrag.GetComponent<DraggableItem>();
+        if (!draggableItem) return;
 
-        if (draggableItem) {
-            ItemSlot originSlot = draggableItem.ItemSlot;
+        // Le drag se termine ici (sur ce slot ou un autre) — hide highlight immédiat.
+        FadeHighlight(0f);
 
-            if (draggableItem == _item) {
-                // Même slot → re-ancre (drag annulé sur soi-même)
-                this.SetItem(draggableItem);
-            } else if (MustSwapWith(draggableItem)) {
-                // CanSwap requis sur les deux slots. hand↔hand est traité localement
-                // (PlayerHands.Swap), hand↔container et container↔container passent par
-                // C2S_SwapItems côté listener.
-                DraggableItem displaced = _item;
-                originSlot.SetItem(displaced);
-                this.SetItem(draggableItem);
-                // Convention origine : (originSlot, draggableItem) = item draggé et sa place
-                // d'origine ; (this, displaced) = item qui occupait la cible et sa place d'origine.
-                OnItemSwap?.Invoke(originSlot, draggableItem, this, displaced);
-            } else if (!this._item) {
-                // Slot vide → déplace
-                draggableItem.ItemSlot.Clear();
-                this.SetItem(draggableItem);
-                OnItemMove?.Invoke(originSlot, this);
-            } else {
-                // Slot occupé sans swap autorisé (container↔main ou intra-container) →
-                // snap back à l'origine pour éviter divergence visuel/serveur.
-                if (originSlot != null) originSlot.SetItem(draggableItem);
-            }
+        ItemSlot originSlot = draggableItem.ItemSlot;
+
+        if (draggableItem == _item) {
+            // Même slot → re-ancre animé (drag annulé sur soi-même).
+            this.SetItem(draggableItem, animate: true);
+        } else if (MustSwapWith(draggableItem)) {
+            // CanSwap requis sur les deux slots. hand↔hand est traité localement
+            // (PlayerHands.Swap), hand↔container et container↔container passent par
+            // C2S_SwapItems côté listener. Les deux items tweenent en parallèle.
+            DraggableItem displaced = _item;
+            originSlot.SetItem(displaced, animate: true);
+            this.SetItem(draggableItem, animate: true);
+            OnItemSwap?.Invoke(originSlot, draggableItem, this, displaced);
+        } else if (!this._item) {
+            // Slot vide → déplace, smooth land.
+            draggableItem.ItemSlot.Clear();
+            this.SetItem(draggableItem, animate: true);
+            OnItemMove?.Invoke(originSlot, this);
+        } else {
+            // Slot occupé sans swap autorisé → snap-back animé vers l'origine.
+            if (originSlot != null) originSlot.SnapBackInto(draggableItem);
         }
     }
 
-    public void SetItem(DraggableItem item) {
+    public void SetItem(DraggableItem item) => SetItem(item, animate: false);
+
+    /// <summary>
+    /// Place <paramref name="item"/> dans ce slot. Si <paramref name="animate"/> est vrai,
+    /// la position anchorée tween vers le centre du slot (sensation de drop tactile) ;
+    /// sinon snap instantané (utilisé par les reconstructions de snapshot serveur).
+    /// La reparent et le padding sont toujours appliqués instantanément — seul le
+    /// recentrage est animé.
+    /// </summary>
+    public void SetItem(DraggableItem item, bool animate) {
         this._item = item;
         this._item.transform.parent = this.transform;
-        this._item.SetAnchoredPosition(Vector2.zero);
         this._item.SetPadding(10, 10, 10, 10);
         this._item.ItemSlot = this;
+        if (animate) {
+            this._item.AnimateToAnchored(Vector2.zero, this._item.LandDuration, this._item.LandCurve);
+        } else {
+            this._item.SetAnchoredPosition(Vector2.zero);
+        }
+    }
+
+    /// <summary>
+    /// Reparent <paramref name="item"/> sur ce slot (qui doit en être l'origine) et joue
+    /// l'anim de snap-back (durée + curve dédiées). Utilisé par OnDrop quand un drop
+    /// invalide doit retourner l'item à sa source sans clignotement.
+    /// </summary>
+    public void SnapBackInto(DraggableItem item) {
+        this._item = item;
+        this._item.transform.parent = this.transform;
+        this._item.SetPadding(10, 10, 10, 10);
+        this._item.ItemSlot = this;
+        this._item.AnimateBackToOrigin();
     }
 
     public DraggableItem Item => _item;
@@ -92,9 +129,57 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler {
         return this._item && this._item != draggableItem;
     }
 
+    private void Awake() {
+        // Démarre invisible — sinon un highlight rouge oublié dans le prefab resterait
+        // affiché en permanence.
+        if (dropHighlight != null) {
+            Color c = dropHighlight.color;
+            c.a = 0f;
+            dropHighlight.color = c;
+        }
+    }
+
     public void OnPointerEnter(PointerEventData eventData) {
         if (eventData.pointerDrag == null) return;
+        // Seuls les drags d'un DraggableItem déclenchent le highlight (ignore les
+        // pointerDrag d'autres systèmes UI éventuels).
+        if (eventData.pointerDrag.GetComponent<DraggableItem>() == null) return;
+        FadeHighlight(highlightAlpha);
+    }
 
-        Debug.Log("HOVER");
+    public void OnPointerExit(PointerEventData eventData) {
+        // Pendant un drag, on hide quand le pointeur sort. Hors drag, no-op (l'alpha
+        // est déjà 0).
+        if (eventData.pointerDrag == null) return;
+        FadeHighlight(0f);
+    }
+
+    private void FadeHighlight(float targetAlpha) {
+        if (dropHighlight == null) return;
+        if (_fadeTween != null) { StopCoroutine(_fadeTween); _fadeTween = null; }
+        if (highlightFadeDuration <= 0f || !isActiveAndEnabled) {
+            Color c = dropHighlight.color;
+            c.a = targetAlpha;
+            dropHighlight.color = c;
+            return;
+        }
+        _fadeTween = StartCoroutine(FadeHighlightCoroutine(targetAlpha));
+    }
+
+    private IEnumerator FadeHighlightCoroutine(float targetAlpha) {
+        Color start = dropHighlight.color;
+        float t = 0f;
+        while (t < highlightFadeDuration) {
+            t += Time.unscaledDeltaTime;
+            float k = Mathf.Clamp01(t / highlightFadeDuration);
+            Color c = start;
+            c.a = Mathf.Lerp(start.a, targetAlpha, k);
+            dropHighlight.color = c;
+            yield return null;
+        }
+        Color end = dropHighlight.color;
+        end.a = targetAlpha;
+        dropHighlight.color = end;
+        _fadeTween = null;
     }
 }
