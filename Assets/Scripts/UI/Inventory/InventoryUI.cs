@@ -159,7 +159,7 @@ public class InventoryUI : MonoBehaviour
         CloseCurrentActionMenu();
         ApplyDropAcceptanceForDrag(draggableItem);
     }
-    private void OnItemDragEnded(DraggableItem draggableItem)     => ResetDropAcceptance();
+    private void OnItemDragEnded(DraggableItem draggableItem)     => ResetDropAcceptance(draggableItem);
 
     /// <summary>
     /// Désactive visuellement (alpha + raycasts) les slots inventaire qui ne peuvent pas
@@ -242,7 +242,7 @@ public class InventoryUI : MonoBehaviour
         if (dragged.ItemSlot != null) dragged.ItemSlot.SetDropAcceptance(true);
     }
 
-    private void ResetDropAcceptance() {
+    private void ResetDropAcceptance(DraggableItem dragged = null) {
         if (leftHandSlot)    leftHandSlot.SetDropAcceptance(true);
         if (rightHandSlot)   rightHandSlot.SetDropAcceptance(true);
         if (bothHandSlot)    bothHandSlot.SetDropAcceptance(true);
@@ -251,12 +251,18 @@ public class InventoryUI : MonoBehaviour
 
         if (_layoutForcedDuringDrag) {
             _layoutForcedDuringDrag = false;
-            // Si bothHandSlot a reçu un drop pendant ce drag (OnDrop fire AVANT OnEndDrag,
-            // donc avant ce reset), on laisse le layout intact : OnPlayerHandChanged →
-            // UpdateUI prendra le relais après confirmation serveur. Sinon, on revient
-            // au layout réel basé sur l'état effectif des mains.
-            bool bothHandHasItem = bothHandSlot != null && bothHandSlot.Item != null;
-            if (!bothHandHasItem) UpdateUI();
+            // Détection client-optimistic : on regarde dragged.ItemSlot (set par
+            // ItemSlot.SetItem au moment de l'OnDrop, AVANT que OnItemMoved appelle
+            // targetSlot.Clear() pour le release différé du placeholder). bothHand._item
+            // peut déjà être null à ce stade, mais ItemSlot du draggable est intact.
+            //
+            // Si le drop a atterri sur bothHandSlot → on laisse le layout optimiste
+            // (bothHand visible) jusqu'à la confirmation serveur :
+            //   - succès → OnPlayerHandChanged → UpdateUI repopule proprement
+            //   - échec  → OnMoveItemResultReceived → UpdateUI rollback vers single-hand
+            // Sinon (snap-back ou drop ailleurs) → restaure le layout immédiatement.
+            bool droppedOnBothHand = dragged != null && dragged.ItemSlot == bothHandSlot;
+            if (!droppedOnBothHand) UpdateUI();
         }
     }
 
