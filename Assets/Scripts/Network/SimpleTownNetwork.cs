@@ -8,6 +8,9 @@ using Sim.Building;
 using Sim.Entities;
 using Sim.Entities.Persistence;
 using Sim.Logging;
+#if STRESS_TEST_BOTS
+using Sim.StressTest;
+#endif
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -271,7 +274,11 @@ public class SimpleTownNetwork : NetworkManager
         var characterMsg = new CreateCharacterMessage
         {
             userId = this.characterData.UserId,
-            characterId = this.characterData.Id
+            characterId = this.characterData.Id,
+#if STRESS_TEST_BOTS
+            // Stress-test bots skip the apartment instantiation to save server RAM.
+            spawnInCity = CommandLineArgs.BotMode,
+#endif
         };
         NetworkClient.Send(characterMsg);
         ClientLogger.Network("SendCreateCharacter {UserId} {CharacterId}", characterMsg.userId,
@@ -676,10 +683,19 @@ public class SimpleTownNetwork : NetworkManager
             LoadingManager.Instance.Hide();
     }
 
+#if STRESS_TEST_BOTS
+    private static readonly System.Collections.Generic.Dictionary<int, bool> _spawnInCityByConn = new System.Collections.Generic.Dictionary<int, bool>();
+#endif
+
     private void OnCreateCharacter(NetworkConnectionToClient conn, CreateCharacterMessage message)
     {
         GameLogger.Network.Info("CreateCharacterRequest {ConnectionId} {UserId} {CharacterId}",
             conn.connectionId, message.userId, message.characterId);
+#if STRESS_TEST_BOTS
+        if (message.spawnInCity) {
+            _spawnInCityByConn[conn.connectionId] = true;
+        }
+#endif
         StartCoroutine(SetupCharacterCoroutine(conn, message.userId));
     }
 
@@ -876,6 +892,20 @@ public class SimpleTownNetwork : NetworkManager
         } else {
             GameLogger.Network.Warning("EnsurePlaces skipped — character id missing {ConnectionId}", conn.connectionId);
         }
+
+#if STRESS_TEST_BOTS
+        bool forceCitySpawn = _spawnInCityByConn.TryGetValue(conn.connectionId, out var flag) && flag;
+        _spawnInCityByConn.Remove(conn.connectionId);
+
+        if (forceCitySpawn) {
+            // Stress-test bots: skip the apartment instantiation entirely. Saves the
+            // server ~50-100 MB per connection that we'd otherwise spend on a hall +
+            // room build the bot has zero use for.
+            GameLogger.Network.Info("ForceCitySpawn {ConnectionId} {UserId} - skipping apartment lookup", conn.connectionId, userId);
+            FinalizePlayerSpawn(conn, go, spawnInCity: true);
+            yield break;
+        }
+#endif
 
         UnityWebRequest homeRequest =
             ApiManager.Instance.RetrieveHomesByCharacterRequest(characterResponse.Characters[0]);

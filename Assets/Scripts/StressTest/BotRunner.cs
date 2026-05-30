@@ -1,3 +1,4 @@
+#if STRESS_TEST_BOTS
 using System;
 using System.Collections;
 using System.Text;
@@ -38,8 +39,6 @@ namespace Sim.StressTest {
         [SerializeField] private float maxWaitBetweenMoves = 8f;
         [SerializeField] private float wanderRadius = 15f;
         [SerializeField] private float reconnectDelay = 5f;
-        [SerializeField] private float waitBeforeElevator = 2f;   // let server register apartment room state
-        [SerializeField] private float waitAfterElevator = 3f;    // let TeleportMessage round-trip + ClientPropManager.EnterRoom settle
 
         private bool _running;
         private bool _moveLoopStarted;
@@ -50,8 +49,11 @@ namespace Sim.StressTest {
                 return;
             }
             DontDestroyOnLoad(this.gameObject);
-            Application.targetFrameRate = 30;     // bots don't render — cap CPU
+            Application.targetFrameRate = 30;     // bots don't render - cap CPU
             QualitySettings.vSyncCount = 0;
+            QualitySettings.SetQualityLevel(0, applyExpensiveChanges: false);
+            AudioListener.volume = 0f;            // skip audio decoding/clipping
+            AudioListener.pause = true;
             Debug.Log($"[Bot] Booted as bot index={CommandLineArgs.BotIndex} server={CommandLineArgs.BotServer}");
         }
 
@@ -77,7 +79,9 @@ namespace Sim.StressTest {
                 while (this._running && NetworkClient.isConnected) {
                     if (!this._moveLoopStarted && PlayerController.Local != null) {
                         this._moveLoopStarted = true;
-                        StartCoroutine(this.ElevatorToCityThenWander());
+                        // Bot already spawned in the city (CreateCharacterMessage.spawnInCity=true);
+                        // wander loop can start directly, no elevator hop needed.
+                        StartCoroutine(this.MoveLoop());
                     }
                     yield return new WaitForSeconds(0.5f);
                 }
@@ -172,26 +176,7 @@ namespace Sim.StressTest {
             }
         }
 
-        // ── elevator + wander ────────────────────────────────────────────────
-
-        /// <summary>
-        /// Bots spawn inside their apartment (server places them there after
-        /// CreateCharacterMessage). For the stress test we want them in the
-        /// city, walking around, so we replay exactly what ElevatorUI.GoToHall
-        /// does: send C2S_TeleporterUse{FloorDestination=0}. The server's
-        /// PropInteractionDispatcher routes this via the room the player is
-        /// currently in, so no PropId is needed.
-        /// </summary>
-        private IEnumerator ElevatorToCityThenWander() {
-            yield return new WaitForSeconds(this.waitBeforeElevator);
-            if (!NetworkClient.isConnected || PlayerController.Local == null) yield break;
-
-            Debug.Log("[Bot] Calling elevator -> floor 0 (city)");
-            NetworkClient.Send(new C2S_TeleporterUse { FloorDestination = 0 });
-
-            yield return new WaitForSeconds(this.waitAfterElevator);
-            yield return this.MoveLoop();
-        }
+        // ── wander ────────────────────────────────────────────────────────────
 
         private IEnumerator MoveLoop() {
             Debug.Log("[Bot] Local player ready — starting move loop");
@@ -235,3 +220,4 @@ namespace Sim.StressTest {
         }
     }
 }
+#endif

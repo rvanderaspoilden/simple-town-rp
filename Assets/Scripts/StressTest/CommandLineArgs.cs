@@ -1,3 +1,4 @@
+#if STRESS_TEST_BOTS
 using System;
 using System.Collections.Generic;
 
@@ -51,3 +52,4 @@ namespace Sim.StressTest {
         }
     }
 }
+#endif
