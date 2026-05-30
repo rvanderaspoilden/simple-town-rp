@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using Sim.StressTest;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -35,6 +36,14 @@ namespace Sim {
         private Image statusImg;
 
         private void Awake() {
+            // Stress-test build: BotRunner owns the boot sequence (auth, connect,
+            // wander). Skip the interactive Launcher entirely so it doesn't try
+            // to wire its UI inputs or react to ApiManager events.
+            if (CommandLineArgs.BotMode) {
+                this.gameObject.SetActive(false);
+                return;
+            }
+
             ApiManager.OnAuthenticationSucceeded += OnAuthenticationSucceeded;
             ApiManager.OnAuthenticationFailed += this.OnAuthenticationFailed;
             ApiManager.OnServerStatusChanged += this.OnServerStatusChanged;
@@ -43,6 +52,7 @@ namespace Sim {
         }
 
         private void Start() {
+            if (CommandLineArgs.BotMode) return;
             ApiManager.Instance.CheckServerStatus();
         }
 

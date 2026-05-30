@@ -6,6 +6,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Sim.Entities;
 using Sim.Entities.Persistence;
+using Sim.StressTest;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -77,7 +78,13 @@ namespace Sim {
                 Destroy(this.gameObject);
             }
 
-            if (this.local) {
+            // Bot mode wins over the `local` toggle: a stress-test build needs to
+            // point at whichever server URI the launcher script passed, and the
+            // serialized `local=true` we ship in dev scenes would otherwise pin
+            // every bot to localhost regardless of --bot-server.
+            if (CommandLineArgs.BotMode && !string.IsNullOrEmpty(CommandLineArgs.BotServer)) {
+                this.uri = CommandLineArgs.BotServer;
+            } else if (this.local) {
                 this.uri = "http://localhost:3000";
             }
 
@@ -87,6 +94,19 @@ namespace Sim {
         public void Authenticate(String username, String password) {
             this.authenticationCoroutine ??= StartCoroutine(this.AuthenticationCoroutine(username, password));
         }
+
+        /// <summary>
+        /// Stress-test bot path. The /auth/register-bot endpoint already returns
+        /// a JWT + the user identity in a single round-trip, so we inject the
+        /// state directly instead of replaying the AuthenticationCoroutine.
+        /// Only invoked by BotRunner in headless bot builds.
+        /// </summary>
+        public void SetBotAuth(string token, User identity) {
+            this.accessToken = token;
+            this.user = identity;
+        }
+
+        public string Uri => this.uri;
 
         public UnityWebRequest RetrieveHomeRequest(Address address) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(address));
