@@ -76,9 +76,25 @@ if ($rsyncAvailable) {
     & rsync -avz --delete --info=progress2 "$localBuild/" "${User}@${Server}:${Remote}/"
     if ($LASTEXITCODE -ne 0) { Write-Error "rsync failed"; exit 1 }
 } else {
-    Write-Warning "rsync not found - falling back to scp -r (slower, no delete)."
-    & scp -r "$localBuild/*" "${User}@${Server}:${Remote}/"
-    if ($LASTEXITCODE -ne 0) { Write-Error "scp failed"; exit 1 }
+    # Fallback: tar locally, scp the tarball, extract remotely. Works on Windows
+    # native (tar.exe shipped since Win10 1803), handles spaces in filenames,
+    # avoids the scp wildcard headache, and is faster than scp -r over slow links.
+    Write-Warning "rsync not found - using tar+scp+ssh fallback (Windows-native, no delete on remote)."
+
+    $tarball = Join-Path $env:TEMP "simple-town-server-deploy.tar"
+    if (Test-Path $tarball) { Remove-Item $tarball -Force }
+
+    # -C cd into the source dir, then . = pack its contents (not the dir itself)
+    & tar -cf $tarball -C $localBuild .
+    if ($LASTEXITCODE -ne 0) { Write-Error "local tar failed"; exit 1 }
+
+    & scp $tarball "${User}@${Server}:/tmp/simple-town-server-deploy.tar"
+    if ($LASTEXITCODE -ne 0) { Write-Error "scp of tarball failed"; exit 1 }
+
+    & ssh "${User}@${Server}" "tar -xf /tmp/simple-town-server-deploy.tar -C '${Remote}' && rm /tmp/simple-town-server-deploy.tar"
+    if ($LASTEXITCODE -ne 0) { Write-Error "remote extract failed"; exit 1 }
+
+    Remove-Item $tarball -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host "Setting exec bits + restarting service..."

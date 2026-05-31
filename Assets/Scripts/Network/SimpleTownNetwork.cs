@@ -7,6 +7,7 @@ using Sim;
 using Sim.Building;
 using Sim.Entities;
 using Sim.Entities.Persistence;
+using Sim.Deployment;
 using Sim.Logging;
 #if STRESS_TEST_BOTS
 using Sim.StressTest;
@@ -88,6 +89,13 @@ public class SimpleTownNetwork : NetworkManager
     public override void Awake()
     {
         base.Awake();
+
+        // Step 1 — runtime default from EnvironmentSelector (driven by the
+        // Launcher dropdown, PlayerPrefs-backed). The Launcher will override
+        // this again after Awake when it applies the dropdown selection, but
+        // setting it here means scenes loaded without the Launcher (e.g.
+        // BotRunner stress tests) still pick up whatever env the dev set.
+        this.networkAddress = EnvironmentSelector.Current.MirrorAddress;
 
         // Deployment override: client builds running off the VPS can be
         // pointed at the remote Mirror server without rebuilding by setting

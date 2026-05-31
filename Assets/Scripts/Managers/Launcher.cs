@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections;
+using Mirror;
+using Sim.Deployment;
 #if STRESS_TEST_BOTS
 using Sim.StressTest;
 #endif
@@ -37,6 +39,22 @@ namespace Sim {
         [SerializeField]
         private Image statusImg;
 
+        [Header("Environment")]
+        [SerializeField]
+        [Tooltip("Optional. If wired, the dropdown lets the player switch between the deployments declared in EnvironmentRegistry. " +
+                 "If absent, the saved selection from PlayerPrefs still applies but the UI is hidden.")]
+        private TMP_Dropdown environmentDropdown;
+
+        [SerializeField]
+        [Tooltip("Optional label displayed next to the status indicator (e.g. 'Production'). Hidden if null.")]
+        private TextMeshProUGUI environmentLabel;
+
+        [SerializeField]
+        [Tooltip("Seconds between two automatic Mirror server health re-polls. 0 disables the periodic refresh.")]
+        private float statusRefreshInterval = 0f;
+
+        private Coroutine _statusCoroutine;
+
         private void Awake() {
 #if STRESS_TEST_BOTS
             // Stress-test build: BotRunner owns the boot sequence (auth, connect,
@@ -50,8 +68,8 @@ namespace Sim {
 
             ApiManager.OnAuthenticationSucceeded += OnAuthenticationSucceeded;
             ApiManager.OnAuthenticationFailed += this.OnAuthenticationFailed;
-            ApiManager.OnServerStatusChanged += this.OnServerStatusChanged;
 
+            this.PopulateEnvironmentDropdown();
             this.DisplaySignInPanel();
         }
 
@@ -59,7 +77,11 @@ namespace Sim {
 #if STRESS_TEST_BOTS
             if (CommandLineArgs.BotMode) return;
 #endif
-            ApiManager.Instance.CheckServerStatus();
+            this.ApplyEnvironment(EnvironmentSelector.Current);
+            this.RefreshStatusOnce();
+            if (this.statusRefreshInterval > 0f) {
+                _statusCoroutine = StartCoroutine(this.StatusRefreshLoop());
+            }
         }
 
         private void Update() {
@@ -83,8 +105,74 @@ namespace Sim {
         private void OnDestroy() {
             ApiManager.OnAuthenticationSucceeded -= this.OnAuthenticationSucceeded;
             ApiManager.OnAuthenticationFailed -= this.OnAuthenticationFailed;
-            ApiManager.OnServerStatusChanged -= this.OnServerStatusChanged;
+            if (_statusCoroutine != null) StopCoroutine(_statusCoroutine);
         }
+
+        // ── Environment selector ────────────────────────────────────────────
+
+        private void PopulateEnvironmentDropdown() {
+            if (this.environmentDropdown == null) return;
+            var registry = EnvironmentSelector.Registry;
+            if (registry == null || registry.Environments == null || registry.Environments.Count == 0) {
+                this.environmentDropdown.gameObject.SetActive(false);
+                return;
+            }
+            this.environmentDropdown.ClearOptions();
+            int selectedIdx = 0;
+            var options = new System.Collections.Generic.List<string>(registry.Environments.Count);
+            for (int i = 0; i < registry.Environments.Count; i++) {
+                var entry = registry.Environments[i];
+                if (entry == null) continue;
+                options.Add(entry.Name);
+                if (entry.Name == EnvironmentSelector.Current.Name) selectedIdx = options.Count - 1;
+            }
+            this.environmentDropdown.AddOptions(options);
+            this.environmentDropdown.SetValueWithoutNotify(selectedIdx);
+            this.environmentDropdown.onValueChanged.AddListener(this.OnEnvironmentDropdownChanged);
+        }
+
+        private void OnEnvironmentDropdownChanged(int index) {
+            string name = this.environmentDropdown.options[index].text;
+            EnvironmentSelector.Select(name);
+            this.ApplyEnvironment(EnvironmentSelector.Current);
+            this.RefreshStatusOnce();
+        }
+
+        private void ApplyEnvironment(EnvironmentEntry entry) {
+            if (entry == null) return;
+            if (ApiManager.Instance != null) ApiManager.Instance.SetUri(entry.ApiUri);
+            if (NetworkManager.singleton != null) NetworkManager.singleton.networkAddress = entry.MirrorAddress;
+            if (this.environmentLabel != null) this.environmentLabel.text = entry.Name;
+        }
+
+        // ── Mirror health check ─────────────────────────────────────────────
+
+        private IEnumerator StatusRefreshLoop() {
+            var wait = new WaitForSeconds(this.statusRefreshInterval);
+            while (true) {
+                yield return wait;
+                this.RefreshStatusOnce();
+            }
+        }
+
+        private void RefreshStatusOnce() {
+            string url = EnvironmentSelector.Current?.MirrorHealthUrl;
+            if (string.IsNullOrEmpty(url)) {
+                this.statusImg.color = Color.gray;   // health endpoint not configured
+                return;
+            }
+            StartCoroutine(this.CheckMirrorHealth(url));
+        }
+
+        private IEnumerator CheckMirrorHealth(string url) {
+            using var req = UnityWebRequest.Get(url);
+            req.timeout = 5;
+            yield return req.SendWebRequest();
+            bool ok = req.result == UnityWebRequest.Result.Success && req.responseCode == 200;
+            this.statusImg.color = ok ? Color.green : Color.red;
+        }
+
+        // ── UI ──────────────────────────────────────────────────────────────
 
         public void DisplaySignInPanel() {
             this.signInPanel.SetActive(true);
@@ -152,8 +240,6 @@ namespace Sim {
         }
 
         private void OnAuthenticationFailed(String msg) => this.errorText.text = msg;
-
-        private void OnServerStatusChanged(bool isActive) => this.statusImg.color = isActive ? Color.green : Color.red;
 
         #endregion
     }

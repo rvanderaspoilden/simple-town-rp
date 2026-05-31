@@ -6,6 +6,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Sim.Entities;
 using Sim.Entities.Persistence;
+using Sim.Deployment;
 #if STRESS_TEST_BOTS
 using Sim.StressTest;
 #endif
@@ -80,6 +81,10 @@ namespace Sim {
                 Destroy(this.gameObject);
             }
 
+            // Step 1 — runtime default from the EnvironmentSelector (PlayerPrefs-backed,
+            // driven by the Launcher dropdown). Overrides below win over this.
+            this.uri = EnvironmentSelector.Current.ApiUri;
+
 #if STRESS_TEST_BOTS
             // Bot mode wins over the `local` toggle: a stress-test build needs to
             // point at whichever server URI the launcher script passed, and the
@@ -99,9 +104,8 @@ namespace Sim {
             // Deployment override: on the VPS, the Mirror server runs with
             // API_URL=http://localhost:3000 exported by run-server.sh. Same
             // mechanism lets a remote tester point a local Editor at a
-            // distant backend without rebuilding. Wins over both the `local`
-            // toggle and the bot --bot-server flag — env vars are the most
-            // explicit signal an operator can give.
+            // distant backend without rebuilding. Wins over everything else —
+            // env vars are the most explicit signal an operator can give.
             string envUri = Environment.GetEnvironmentVariable("API_URL");
             if (!string.IsNullOrEmpty(envUri)) {
                 this.uri = envUri;
@@ -112,6 +116,18 @@ namespace Sim {
 
         public void Authenticate(String username, String password) {
             this.authenticationCoroutine ??= StartCoroutine(this.AuthenticationCoroutine(username, password));
+        }
+
+        /// <summary>
+        /// Runtime override of the API base URI. Used by the Launcher when the
+        /// player switches environment via the dropdown — we don't want to wait
+        /// for a domain reload to pick up the new value. No-op on empty input
+        /// so a misconfigured EnvironmentRegistry entry can't accidentally wipe
+        /// the URI mid-session.
+        /// </summary>
+        public void SetUri(string newUri) {
+            if (string.IsNullOrEmpty(newUri)) return;
+            this.uri = newUri;
         }
 
 #if STRESS_TEST_BOTS
