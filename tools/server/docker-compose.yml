@@ -8,6 +8,13 @@ services:
       #   docker run --rm -it datalust/seq config hash
       # then paste the resulting hash here (NOT the plaintext password).
       SEQ_FIRSTRUN_ADMINPASSWORDHASH: "${SEQ_ADMIN_PASSWORD_HASH}"
+    ports:
+      # Expose the ingest port (Seq internal :80) on the VPS loopback only so
+      # the Unity host process can POST events via http://localhost:5341. We
+      # deliberately bind to 127.0.0.1 — no external access, ingest stays
+      # private to the box. The Seq web UI continues to go through Caddy on
+      # the public :80/:443.
+      - "127.0.0.1:5341:80"
     volumes:
       - seq-data:/data
     networks:
