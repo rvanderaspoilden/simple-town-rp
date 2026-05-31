@@ -1,0 +1,22 @@
+# Caddy reverse proxy in front of Seq.
+#
+# Replace the host on the next line with your actual domain. Caddy will
+# fetch a Let's Encrypt cert automatically. If you don't have a domain
+# yet, comment this block and use the :80 block below for an SSH-tunnel-only
+# setup.
+{$SEQ_HOST} {
+    basicauth {
+        # Generate a hash with:
+        #   docker run --rm -it caddy caddy hash-password
+        # then paste here (the username can stay "admin").
+        admin {$SEQ_BASIC_AUTH_HASH}
+    }
+    reverse_proxy seq:80
+}
+
+# Fallback: plain HTTP on :80 for localhost / SSH-tunnel access.
+# Useful when no domain is configured yet.
+# Reach it via:  ssh -L 8080:localhost:80 vps  then  http://localhost:8080
+:80 {
+    reverse_proxy seq:80
+}

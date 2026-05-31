@@ -1,0 +1,23 @@
+[Unit]
+Description=Simple Town NestJS backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=simpletown
+Group=simpletown
+WorkingDirectory=/opt/simple-town/backend
+EnvironmentFile=/opt/simple-town/backend/.env
+ExecStart=/usr/bin/node dist/main
+Restart=always
+RestartSec=3
+StandardOutput=append:/opt/simple-town/backend/logs/stdout.log
+StandardError=append:/opt/simple-town/backend/logs/stderr.log
+
+# Modest limits — NestJS doesn't need much, but Supabase client + websockets
+# can open many connections in bursts.
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target

@@ -89,6 +89,16 @@ public class SimpleTownNetwork : NetworkManager
     {
         base.Awake();
 
+        // Deployment override: client builds running off the VPS can be
+        // pointed at the remote Mirror server without rebuilding by setting
+        // MIRROR_HOST. Server-side it's a no-op (Mirror binds to 0.0.0.0 by
+        // default for incoming connections; the field is the *address* the
+        // client connects to).
+        string envHost = System.Environment.GetEnvironmentVariable("MIRROR_HOST");
+        if (!string.IsNullOrEmpty(envHost)) {
+            this.networkAddress = envHost;
+        }
+
         Application.targetFrameRate = 144;
     }
 

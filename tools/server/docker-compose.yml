@@ -1,0 +1,40 @@
+services:
+  seq:
+    image: datalust/seq:latest
+    container_name: simpletown-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      # Generate a password hash with:
+      #   docker run --rm -it datalust/seq config hash
+      # then paste the resulting hash here (NOT the plaintext password).
+      SEQ_FIRSTRUN_ADMINPASSWORDHASH: "${SEQ_ADMIN_PASSWORD_HASH}"
+    volumes:
+      - seq-data:/data
+    networks:
+      - simpletown
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: simpletown-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - simpletown
+    depends_on:
+      - seq
+    restart: unless-stopped
+
+networks:
+  simpletown:
+    driver: bridge
+
+volumes:
+  seq-data:
+  caddy-data:
+  caddy-config:

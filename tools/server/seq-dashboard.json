@@ -1,0 +1,132 @@
+{
+  "Title": "Simple Town Server",
+  "OwnerId": null,
+  "IsProtected": false,
+  "SignalExpression": null,
+  "Charts": [
+    {
+      "Title": "Active connections",
+      "DisplayStyle": {
+        "Type": "Line",
+        "SuppressLegend": false
+      },
+      "Queries": [
+        {
+          "Measurements": [
+            {
+              "Value": "mean(Connections)",
+              "Label": "Connections"
+            }
+          ],
+          "Where": "@MessageTemplate like '%ServerMetrics%'",
+          "GroupBy": [
+            "time(30s)"
+          ],
+          "DisplayStyle": {
+            "Type": "Line",
+            "LineFillToZeroY": false,
+            "LineShowMarkers": false,
+            "BarOverlayValues": false,
+            "SuppressLegend": false,
+            "Palette": "Default"
+          }
+        }
+      ]
+    },
+    {
+      "Title": "Avg frame time (target: 16ms @ 60Hz)",
+      "DisplayStyle": {
+        "Type": "Line",
+        "SuppressLegend": false
+      },
+      "Queries": [
+        {
+          "Measurements": [
+            {
+              "Value": "mean(AvgFrameMs)",
+              "Label": "AvgMs"
+            },
+            {
+              "Value": "16",
+              "Label": "Target60Hz"
+            }
+          ],
+          "Where": "@MessageTemplate like '%ServerMetrics%'",
+          "GroupBy": [
+            "time(30s)"
+          ],
+          "DisplayStyle": {
+            "Type": "Line",
+            "LineFillToZeroY": false,
+            "LineShowMarkers": false,
+            "SuppressLegend": false,
+            "Palette": "Default"
+          }
+        }
+      ]
+    },
+    {
+      "Title": "Memory MB (Mono / Total / Gfx)",
+      "DisplayStyle": {
+        "Type": "Line",
+        "SuppressLegend": false
+      },
+      "Queries": [
+        {
+          "Measurements": [
+            {
+              "Value": "mean(MonoMB)",
+              "Label": "Mono"
+            },
+            {
+              "Value": "mean(TotalMB)",
+              "Label": "Total"
+            },
+            {
+              "Value": "mean(GfxMB)",
+              "Label": "Gfx"
+            }
+          ],
+          "Where": "@MessageTemplate like '%ServerMetrics%'",
+          "GroupBy": [
+            "time(30s)"
+          ],
+          "DisplayStyle": {
+            "Type": "Line",
+            "LineFillToZeroY": true,
+            "LineShowMarkers": false,
+            "SuppressLegend": false,
+            "Palette": "Default"
+          }
+        }
+      ]
+    },
+    {
+      "Title": "GC Gen0 collections per minute",
+      "DisplayStyle": {
+        "Type": "Bar",
+        "SuppressLegend": false
+      },
+      "Queries": [
+        {
+          "Measurements": [
+            {
+              "Value": "sum(GcGen0Delta)",
+              "Label": "Gen0PerMin"
+            }
+          ],
+          "Where": "@MessageTemplate like '%ServerMetrics%'",
+          "GroupBy": [
+            "time(1m)"
+          ],
+          "DisplayStyle": {
+            "Type": "Bar",
+            "BarOverlayValues": true,
+            "SuppressLegend": false,
+            "Palette": "Default"
+          }
+        }
+      ]
+    }
+  ]
+}

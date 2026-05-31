@@ -1,0 +1,24 @@
+[Unit]
+Description=Simple Town Unity Mirror server
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=simpletown
+Group=simpletown
+WorkingDirectory=/opt/simple-town/server
+EnvironmentFile=-/opt/simple-town/server/.env
+ExecStart=/opt/simple-town/server/run-server.sh
+Restart=always
+RestartSec=5
+# Catch stdout/stderr from the Unity process; Serilog handles structured logs.
+StandardOutput=append:/opt/simple-town/server/Logs/systemd-stdout.log
+StandardError=append:/opt/simple-town/server/Logs/systemd-stderr.log
+
+# Generous limits — Unity headless can spike on GC / shader-init.
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

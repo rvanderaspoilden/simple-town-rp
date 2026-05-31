@@ -76,7 +76,9 @@ namespace Sim.Logging {
 
                 _isInitialized = true;
 
-                Log.Information("Logger initialized successfully at {LogDirectory} with level {MinimumLevel}", 
+                AttachUnityLogForwarder();
+
+                Log.Information("Logger initialized successfully at {LogDirectory} with level {MinimumLevel}",
                     logDirectory, minimumLevel);
             }
             catch (Exception ex) {
@@ -90,12 +92,62 @@ namespace Sim.Logging {
             if (!_isInitialized) return;
 
             try {
+                DetachUnityLogForwarder();
                 Log.Information("Shutting down logger");
                 Log.CloseAndFlush();
                 _isInitialized = false;
             }
             catch (Exception ex) {
                 Debug.LogError("Error during logger shutdown: " + ex.Message);
+            }
+        }
+
+        // ─── Unity → Serilog forwarder ──────────────────────────────────────
+        // Captures Debug.LogError / Debug.LogException / Debug.LogWarning that
+        // originate outside GameLogger (Mirror, Dissonance, Unity core), so they
+        // converge in the same Seq + File sinks. Without this, an uncaught Mirror
+        // exception never leaves the server's local file.
+        //
+        // Loop protection: UnityEditorSink calls Debug.LogError when it emits an
+        // Error-level event in the editor, which would re-enter this forwarder.
+        // The ThreadStatic flag below blocks the recursion (same-thread emit).
+
+        [ThreadStatic] private static bool _forwardingInProgress;
+        private static bool _forwarderAttached;
+        private static Application.LogCallback _forwarderDelegate;
+
+        private static void AttachUnityLogForwarder() {
+            if (_forwarderAttached) return;
+            _forwarderDelegate = OnUnityLog;
+            Application.logMessageReceivedThreaded += _forwarderDelegate;
+            _forwarderAttached = true;
+        }
+
+        private static void DetachUnityLogForwarder() {
+            if (!_forwarderAttached) return;
+            Application.logMessageReceivedThreaded -= _forwarderDelegate;
+            _forwarderAttached = false;
+        }
+
+        private static void OnUnityLog(string message, string stackTrace, LogType type) {
+            if (_forwardingInProgress) return;
+            _forwardingInProgress = true;
+            try {
+                switch (type) {
+                    case LogType.Exception:
+                    case LogType.Error:
+                        Log.Error("{UnitySource} {Message}\n{Stack}", "Unity", message, stackTrace);
+                        break;
+                    case LogType.Warning:
+                        Log.Warning("{UnitySource} {Message}", "Unity", message);
+                        break;
+                    // LogType.Log / Assert are skipped intentionally — too noisy and
+                    // anything we care about already goes through GameLogger.
+                }
+            } catch {
+                // Never let the forwarder throw — that would brick the Unity log pipeline.
+            } finally {
+                _forwardingInProgress = false;
             }
         }
 

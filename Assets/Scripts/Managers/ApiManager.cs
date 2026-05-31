@@ -96,6 +96,17 @@ namespace Sim {
             }
 #endif
 
+            // Deployment override: on the VPS, the Mirror server runs with
+            // API_URL=http://localhost:3000 exported by run-server.sh. Same
+            // mechanism lets a remote tester point a local Editor at a
+            // distant backend without rebuilding. Wins over both the `local`
+            // toggle and the bot --bot-server flag — env vars are the most
+            // explicit signal an operator can give.
+            string envUri = Environment.GetEnvironmentVariable("API_URL");
+            if (!string.IsNullOrEmpty(envUri)) {
+                this.uri = envUri;
+            }
+
             DontDestroyOnLoad(this.gameObject);
         }
 
