@@ -5,6 +5,7 @@ namespace Sim {
         SLEEP = 2,
         DIE = 3,
         SEARCH = 4,
-        ATTACK = 5
+        ATTACK = 5,
+        GREET = 6
     }
 }

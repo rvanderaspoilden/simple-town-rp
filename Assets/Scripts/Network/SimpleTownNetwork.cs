@@ -339,6 +339,7 @@ public class SimpleTownNetwork : NetworkManager
         ItemSystemBootstrap.OnServerStart();
         Sim.Jobs.JobSystemBootstrap.OnServerStart();
         Sim.RentSystemBootstrap.OnServerStart();
+        Sim.AcquaintanceSystemBootstrap.OnServerStart();
 
         // Initialize all BuildingBehavior instances (scene objects, possibly inactive).
         // Replaces the former NetworkBehaviour.OnStartServer hook on each building.
@@ -385,6 +386,7 @@ public class SimpleTownNetwork : NetworkManager
         NpcSystemBootstrap.OnClientStart();
         ItemSystemBootstrap.OnClientStart();
         Sim.Jobs.JobSystemBootstrap.OnClientStart();
+        Sim.AcquaintanceSystemBootstrap.OnClientStart();
         ClientLogger.Network("ClientStarted {Active}", NetworkClient.active);
     }
 
@@ -406,6 +408,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkServer.UnregisterHandler<CreateDeliveryRequest>();
         NetworkServer.UnregisterHandler<TeleportMessage>();
 
+        Sim.AcquaintanceSystemBootstrap.OnServerStop();
         Sim.RentSystemBootstrap.OnServerStop();
         Sim.Jobs.JobSystemBootstrap.OnServerStop();
         ItemSystemBootstrap.OnServerStop();
@@ -438,6 +441,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.UnregisterHandler<S2C_HallDespawn>();
         NetworkClient.UnregisterHandler<S2C_ApartmentSpawn>();
 
+        Sim.AcquaintanceSystemBootstrap.OnClientStop();
         Sim.Jobs.JobSystemBootstrap.OnClientStop();
         ItemSystemBootstrap.OnClientStop();
         NpcSystemBootstrap.OnClientStop();

@@ -1,5 +1,6 @@
 using AI.States;
 using Interaction;
+using Sim.Entities;
 using Sim.Enums;
 using Sim.Interactables;
 using Sim.Utils;
@@ -167,7 +168,10 @@ namespace Sim {
             PlayerController pc = col.GetComponentInParent<PlayerController>();
             if (pc != null) {
                 if (pc.isLocalPlayer) return null;
-                return pc.CharacterData?.Identity.FullName;
+                // Identity is gated by relationship: revealed once at least
+                // acquaintances, "Broz inconnu" otherwise.
+                RelationshipState state = ClientRelationshipManager.Instance.GetState(pc.CharacterData?.Id);
+                return state >= RelationshipState.Acquaintance ? pc.CharacterData?.Identity.FullName : "Broz inconnu";
             }
 
             ClientNpcView npc = col.GetComponentInParent<ClientNpcView>();
@@ -312,7 +316,7 @@ namespace Sim {
                         HUDManager.Instance.ToggleInventory();
                     } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
                         PlayerController.Local.LookAt(player.transform);
-                        HUDManager.Instance.ShowContextMenu(player.Actions, player.transform);
+                        HUDManager.Instance.ShowContextMenu(player.GetContextActions(), player.transform);
                     }
                 }
             }

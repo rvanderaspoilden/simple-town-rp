@@ -20,9 +20,6 @@ namespace Sim {
         private TMP_InputField lastNameInputField;
 
         [SerializeField]
-        private TMP_InputField originCountryInputField;
-
-        [SerializeField]
         private TMP_InputField entranceDateField;
 
         [SerializeField]
@@ -109,8 +106,7 @@ namespace Sim {
                 firstname = firstNameInputField.text,
                 lastname = lastNameInputField.text,
                 style = this.characterStyleSetup.GetStyle(),
-                entranceDate = CommonUtils.GetDate(),
-                originCountry = originCountryInputField.text
+                entranceDate = CommonUtils.GetDate()
             };
 
             ApiManager.Instance.CreateCharacter(request);
@@ -118,8 +114,7 @@ namespace Sim {
 
         public void CheckValidity() {
             this.joinButton.interactable = firstNameInputField.text != string.Empty &&
-                                           lastNameInputField.text != string.Empty &&
-                                           originCountryInputField.text != string.Empty;
+                                           lastNameInputField.text != string.Empty;
         }
 
         private void OnCharacterCreated(CharacterData characterData) {

@@ -237,6 +237,11 @@ namespace Sim {
             CharacterInfoPanelUI.Instance.UpdateHealthUI(this.playerHealth.Health);
             CharacterInfoPanelUI.Instance.UpdateMoney(this.playerBankAccount.Money);
 
+            // Hydrate the local relationship store so hover names are gated correctly.
+            if (!string.IsNullOrEmpty(this.characterData?.Id)) {
+                ApiManager.Instance.RetrieveRelationships(this.characterData.Id);
+            }
+
             if (ClientPropManager.Instance == null) {
                 ClientLogger.NetworkError(null, "ClientPropManagerNull {NetId}", netId);
             } else {
@@ -709,6 +714,35 @@ namespace Sim {
 
         public Action[] Actions => actions;
 
+        private Action _makeAcquaintanceAction;
+
+        /// <summary>
+        /// Context-menu actions for THIS player as seen by the local player, gated
+        /// by relationship state: "Faire connaissance" only appears while the two
+        /// are still strangers (Unknown). Built on top of the prefab's base actions
+        /// (e.g. LOOK / "Regarder").
+        /// </summary>
+        public Action[] GetContextActions() {
+            List<Action> list = new List<Action>(this.actions);
+
+            if (ClientRelationshipManager.Instance.GetState(this.characterData?.Id) == RelationshipState.Unknown) {
+                if (_makeAcquaintanceAction == null) {
+                    Sprite icon = this.actions.Length > 0 ? this.actions[0].Icon : null;
+                    _makeAcquaintanceAction = Action.CreateRuntime(ActionTypeEnum.MAKE_ACQUAINTANCE, "Faire connaissance", icon);
+                    _makeAcquaintanceAction.OnExecute += DoAction;
+                }
+                list.Add(_makeAcquaintanceAction);
+            }
+
+            return list.ToArray();
+        }
+
+        /// <summary>Client (initiator): asks to make acquaintance with a target player.</summary>
+        public void SendAcquaintanceRequest(PlayerController target) {
+            if (target == null || target == Local) return;
+            NetworkClient.Send(new C2S_AcquaintanceRequest { targetNetId = target.netId });
+        }
+
         public void SetupActions() {
             this.actions = this.actions.Where(x => x).Select(Instantiate).ToArray();
             this.SubscribeActions(this.actions);
@@ -732,6 +766,9 @@ namespace Sim {
             switch (action.Type) {
                 case ActionTypeEnum.LOOK:
                     Local.Look(this.transform);
+                    break;
+                case ActionTypeEnum.MAKE_ACQUAINTANCE:
+                    Local.SendAcquaintanceRequest(this);
                     break;
             }
         }

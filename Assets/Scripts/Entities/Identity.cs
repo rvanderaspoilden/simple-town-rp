@@ -9,8 +9,6 @@ namespace Sim.Entities {
 
         public string lastname;
 
-        public string originCountry;
-
         public JobEnum job;
 
         public string Firstname {
@@ -21,11 +19,6 @@ namespace Sim.Entities {
         public string Lastname {
             get => lastname;
             set => lastname = value;
-        }
-
-        public string OriginCountry {
-            get => originCountry;
-            set => originCountry = value;
         }
 
         public JobEnum Job {

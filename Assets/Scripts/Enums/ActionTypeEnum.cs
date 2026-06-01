@@ -24,7 +24,8 @@
         BUY,
         DESTROY,
         CLEAN,
-        THROW
+        THROW,
+        MAKE_ACQUAINTANCE
     }
 
 }

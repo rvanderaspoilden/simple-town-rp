@@ -7,8 +7,6 @@ namespace Sim.Entities {
 
         public string lastname;
 
-        public string originCountry;
-
         public string entranceDate;
 
         public Style style;

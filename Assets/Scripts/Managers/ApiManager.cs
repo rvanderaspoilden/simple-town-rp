@@ -424,6 +424,46 @@ namespace Sim {
             BuildJsonRequest($"{this.uri}/homes/rent/tick", "POST",
                 new RentTickBody { nowInGameSeconds = nowInGameSeconds });
 
+        // ── Relationships ─────────────────────────────────────────────────────
+
+        public static event Action<List<RelationshipData>> OnRelationshipsRetrieved;
+
+        /// <summary>GET /characters/:id/relationships — all relationships of a character.</summary>
+        public UnityWebRequest RetrieveRelationshipsRequest(string characterId) =>
+            BuildJsonRequest($"{this.uri}/characters/{characterId}/relationships", "GET", null);
+
+        public void RetrieveRelationships(string characterId) {
+            StartCoroutine(RetrieveRelationshipsCoroutine(characterId));
+        }
+
+        private IEnumerator RetrieveRelationshipsCoroutine(string characterId) {
+            UnityWebRequest request = RetrieveRelationshipsRequest(characterId);
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 200) {
+                RelationshipResponse response = JsonUtility.FromJson<RelationshipResponse>(request.downloadHandler.text);
+                OnRelationshipsRetrieved?.Invoke(response?.relationships ?? new List<RelationshipData>());
+            } else {
+                Debug.LogError($"[ApiManager] RetrieveRelationships failed code={request.responseCode}");
+            }
+        }
+
+        /// <summary>POST /relationships — records a mutual acquaintance. Server-side
+        /// (called when an acquaintance request is accepted).</summary>
+        public UnityWebRequest CreateRelationshipRequest(string characterA, string characterB) =>
+            BuildJsonRequest($"{this.uri}/relationships", "POST",
+                new CreateRelationshipBody { characterA = characterA, characterB = characterB });
+
+        public IEnumerator CreateRelationshipCoroutine(string characterA, string characterB, Action onDone) {
+            UnityWebRequest request = CreateRelationshipRequest(characterA, characterB);
+            yield return request.SendWebRequest();
+
+            if (request.responseCode != 200 && request.responseCode != 201) {
+                Debug.LogError($"[ApiManager] CreateRelationship failed code={request.responseCode} body={request.downloadHandler.text}");
+            }
+            onDone?.Invoke();
+        }
+
         public IEnumerator RentTickCoroutine(long nowInGameSeconds, Action<RentTickResponse> onDone) {
             UnityWebRequest request = RentTickRequest(nowInGameSeconds);
             yield return request.SendWebRequest();
