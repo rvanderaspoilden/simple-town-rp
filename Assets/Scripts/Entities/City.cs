@@ -10,6 +10,7 @@ public struct City {
     public int tax_by_month;
     public int unemployed_income;
     public int salary_period_seconds;
+    public int rent_period_seconds;
 
     public string ID {
         get => _id;
@@ -49,5 +50,10 @@ public struct City {
     public int SalaryPeriodSeconds {
         get => salary_period_seconds;
         set => salary_period_seconds = value;
+    }
+
+    public int RentPeriodSeconds {
+        get => rent_period_seconds;
+        set => rent_period_seconds = value;
     }
 }

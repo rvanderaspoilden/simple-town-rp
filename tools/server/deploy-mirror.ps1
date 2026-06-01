@@ -98,11 +98,10 @@ if ($rsyncAvailable) {
 }
 
 Write-Host "Setting exec bits + restarting service..."
-$remoteCmd = @"
-set -euo pipefail
-chmod +x '${Remote}/Simple Town.x86_64' '${Remote}/run-server.sh' || true
-sudo systemctl restart simple-town-server
-"@
+# Single-line bash command to avoid CRLF / line-ending issues when PowerShell
+# pipes a multi-line here-string to ssh. `&&` chains keep the same fail-fast
+# semantics as `set -e` without the multi-line here-string mangling.
+$remoteCmd = "chmod +x '${Remote}/Simple Town.x86_64' '${Remote}/run-server.sh' && sudo systemctl restart simple-town-server"
 & ssh "${User}@${Server}" $remoteCmd
 if ($LASTEXITCODE -ne 0) { Write-Error "Remote restart failed"; exit 1 }
 

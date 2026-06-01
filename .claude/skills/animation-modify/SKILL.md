@@ -71,7 +71,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
       "$ref": "#/$defs/AIGD.AssetObjectRef"
     },
     "modifications": {
-      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationModification%5B%5D"
+      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationModification-1"
     }
   },
   "$defs": {
@@ -133,7 +133,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
           "description": "Property to animate (e.g., 'localPosition.x', 'm_LocalScale.y'). Required for: SetCurve, RemoveCurve."
         },
         "keyframes": {
-          "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationKeyframe%5B%5D",
+          "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationKeyframe-1",
           "description": "Keyframes for the curve. Required for: SetCurve."
         },
         "frameRate": {
@@ -181,7 +181,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
         "type"
       ]
     },
-    "com.IvanMurzak.Unity.MCP.Animation.AnimationKeyframe[]": {
+    "com.IvanMurzak.Unity.MCP.Animation.AnimationKeyframe-1": {
       "type": "array",
       "items": {
         "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationKeyframe"
@@ -230,7 +230,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
         "value"
       ]
     },
-    "com.IvanMurzak.Unity.MCP.Animation.AnimationModification[]": {
+    "com.IvanMurzak.Unity.MCP.Animation.AnimationModification-1": {
       "type": "array",
       "items": {
         "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationModification"
@@ -253,11 +253,11 @@ Read the /unity-initial-setup skill for detailed installation instructions.
   "type": "object",
   "properties": {
     "result": {
-      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BModifyAnimationResponse"
+      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools-ModifyAnimationResponse"
     }
   },
   "$defs": {
-    "com.IvanMurzak.Unity.MCP.Animation.AnimationTools+ModifyAnimationInfo": {
+    "com.IvanMurzak.Unity.MCP.Animation.AnimationTools-ModifyAnimationInfo": {
       "type": "object",
       "properties": {
         "path": {
@@ -274,20 +274,20 @@ Read the /unity-initial-setup skill for detailed installation instructions.
         "instanceId"
       ]
     },
-    "System.Collections.Generic.List<System.String>": {
+    "System.Collections.Generic.List(System.String)": {
       "type": "array",
       "items": {
         "type": "string"
       }
     },
-    "com.IvanMurzak.Unity.MCP.Animation.AnimationTools+ModifyAnimationResponse": {
+    "com.IvanMurzak.Unity.MCP.Animation.AnimationTools-ModifyAnimationResponse": {
       "type": "object",
       "properties": {
         "modifiedAsset": {
-          "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BModifyAnimationInfo"
+          "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools-ModifyAnimationInfo"
         },
         "errors": {
-          "$ref": "#/$defs/System.Collections.Generic.List%3CSystem.String%3E"
+          "$ref": "#/$defs/System.Collections.Generic.List(System.String)"
         }
       }
     }

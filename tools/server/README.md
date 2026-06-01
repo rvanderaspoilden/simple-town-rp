@@ -164,6 +164,62 @@ manually — it takes ~3 minutes:
 | `ENVIRONMENT` | `Production` (non-editor) | Enriches every event |
 | `HEALTH_PORT` | `8080` | Port for `/health` and `/metrics` |
 
+## First-time setup — Dashboard (React SPA)
+
+The dashboard is purely static — Caddy serves it from a read-only volume
+mount. There's no service to install, just a directory the deploy script
+rsyncs into.
+
+```bash
+# On the VPS, as simpletown
+sudo mkdir -p /opt/simple-town/dashboard
+sudo chown -R simpletown:simpletown /opt/simple-town/dashboard
+```
+
+The `Caddyfile` already has the `/app/*` handle pointing at this directory
+and the `docker-compose.yml` mounts it into the Caddy container. After the
+first `docker compose up -d` (or after pulling a Caddyfile change), reload
+Caddy so the new routes take effect:
+
+```bash
+cd /opt/simple-town/server
+docker compose --env-file .env up -d   # picks up new docker-compose changes
+docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+Once the first `deploy-dashboard.yml` workflow runs, the dashboard is at:
+- `http://<VPS_IP>/app/` (basicauth: same admin password as Seq)
+
+The dashboard talks to the backend via Caddy reverse proxy:
+- `http://<VPS_IP>/admin/*` → backend `:3000/admin/*`
+- `http://<VPS_IP>/swagger/*` → backend `:3000/swagger/*`
+
+### Mirror server control from the dashboard
+
+The dashboard's **Mirror server** page (route `/server`) calls
+`/admin/server/{status,start,stop,restart}`. The backend in turn shells out to
+`systemctl` for the start/stop/restart actions — which means the `simpletown`
+user needs `NOPASSWD` sudoers entries for all three actions, not just restart:
+
+```bash
+sudo visudo -f /etc/sudoers.d/simpletown
+```
+
+Make sure the file contains:
+```
+simpletown ALL=NOPASSWD: /bin/systemctl start simple-town-server
+simpletown ALL=NOPASSWD: /bin/systemctl stop simple-town-server
+simpletown ALL=NOPASSWD: /bin/systemctl restart simple-town-server
+simpletown ALL=NOPASSWD: /bin/systemctl restart simple-town-backend
+```
+
+`is-active` and `status` do not require sudo (any user can read unit state),
+so no extra entry is needed for them.
+
+The dashboard status auto-refreshes every 5 seconds via React Query, so after
+a restart you'll see the unit go through `stopping → starting → running`
+without manual refresh.
+
 ## First-time setup — Backend (NestJS)
 
 The backend runs side-by-side with the Mirror server on the same VPS, listening

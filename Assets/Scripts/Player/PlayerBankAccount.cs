@@ -27,6 +27,17 @@ public class PlayerBankAccount : NetworkBehaviour {
     }
 
     /// <summary>
+    /// Sets the SyncVar to an authoritative balance computed server-side WITHOUT
+    /// posting a ledger entry. Use when the balance changed in the DB through a
+    /// path that bypasses PostLedger (e.g. the rent collect_rent RPC), to keep
+    /// online players' displayed money in sync.
+    /// </summary>
+    [Server]
+    public void SetAuthoritativeBalance(int amount) {
+        this.money = amount;
+    }
+
+    /// <summary>
     /// Single chokepoint for EVERY money movement on this account (shop, dispenser,
     /// job reward, salary, death penalty, p2p sale/gift). Posts a signed amount
     /// (+credit / -debit) + reason to the ledger; the backend updates the balance

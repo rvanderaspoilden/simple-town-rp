@@ -1,22 +1,67 @@
-# Caddy reverse proxy in front of Seq.
+# Caddy serves three things from the same VPS:
+#   /app/*       → React admin dashboard (static files from /var/dashboard/dist)
+#   /admin/*     → reverse_proxy to the NestJS backend on the host (port 3000)
+#   /swagger/*   → reverse_proxy to the NestJS backend on the host (port 3000)
+#   everything else → Seq (logs/observability UI in the Docker network)
 #
-# Replace the host on the next line with your actual domain. Caddy will
-# fetch a Let's Encrypt cert automatically. If you don't have a domain
-# yet, comment this block and use the :80 block below for an SSH-tunnel-only
-# setup.
-{$SEQ_HOST} {
+# Both the dashboard and Seq are gated by the same Caddy basicauth so we only
+# have to remember one password. The backend reverse_proxy is NOT auth-gated at
+# the Caddy level — the backend handles its own JWT and the dashboard fetches
+# happen in the user's already-authenticated browser session.
+
+# Public domain block — uncomment + set SEQ_HOST in .env once you have a DNS
+# record pointing at the VPS. Caddy will provision Let's Encrypt automatically.
+#
+# {$SEQ_HOST} {
+#     basicauth {
+#         admin {$SEQ_BASIC_AUTH_HASH}
+#     }
+#     handle_path /app/* {
+#         root * /var/dashboard/dist
+#         try_files {path} /index.html
+#         file_server
+#     }
+#     handle /admin/* {
+#         reverse_proxy host.docker.internal:3000
+#     }
+#     handle /swagger/* {
+#         reverse_proxy host.docker.internal:3000
+#     }
+#     handle {
+#         reverse_proxy seq:80
+#     }
+# }
+
+# IP-only / SSH-tunnel access on port 80. Use this until you have a domain.
+# Reach the dashboard at  http://<vps-ip>/app/
+# Reach Seq at            http://<vps-ip>/
+:80 {
     basicauth {
-        # Generate a hash with:
-        #   docker run --rm -it caddy caddy hash-password
-        # then paste here (the username can stay "admin").
         admin {$SEQ_BASIC_AUTH_HASH}
     }
-    reverse_proxy seq:80
-}
 
-# Fallback: plain HTTP on :80 for localhost / SSH-tunnel access.
-# Useful when no domain is configured yet.
-# Reach it via:  ssh -L 8080:localhost:80 vps  then  http://localhost:8080
-:80 {
-    reverse_proxy seq:80
+    # React dashboard (Vite build) — static + SPA fallback.
+    # handle_path strips the /app prefix before resolving, so /app/foo
+    # serves dist/foo. The try_files line falls back to index.html for
+    # client-side routes like /app/characters or /app/cities.
+    handle_path /app/* {
+        root * /var/dashboard/dist
+        try_files {path} /index.html
+        file_server
+    }
+
+    # Backend REST endpoints the dashboard hits. Use host.docker.internal
+    # because the NestJS backend runs on the VPS host, not inside Docker.
+    # Requires extra_hosts in docker-compose to resolve that name on Linux.
+    handle /admin/* {
+        reverse_proxy host.docker.internal:3000
+    }
+    handle /swagger/* {
+        reverse_proxy host.docker.internal:3000
+    }
+
+    # Catch-all → Seq web UI inside the Docker network.
+    handle {
+        reverse_proxy seq:80
+    }
 }

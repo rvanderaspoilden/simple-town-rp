@@ -13,6 +13,8 @@ namespace Sim.Entities {
         [SerializeField] private int purchasePrice;
         [SerializeField] private int rentPrice;
         [SerializeField] private string preset;
+        [SerializeField] private long tenantSince;
+        [SerializeField] private long lastRentCollectedAt;
 
         public string Id            { get => _id;            set => _id = value; }
         public Address Address      { get => address;        set => address = value; }
@@ -22,5 +24,7 @@ namespace Sim.Entities {
         public int PurchasePrice    { get => purchasePrice;  set => purchasePrice = value; }
         public int RentPrice        { get => rentPrice;      set => rentPrice = value; }
         public string Preset        { get => preset;         set => preset = value; }
+        public long TenantSince         { get => tenantSince;         set => tenantSince = value; }
+        public long LastRentCollectedAt { get => lastRentCollectedAt; set => lastRentCollectedAt = value; }
     }
 }

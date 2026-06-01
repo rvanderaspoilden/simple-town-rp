@@ -105,17 +105,17 @@ Read the /unity-initial-setup skill for detailed installation instructions.
   "type": "object",
   "properties": {
     "result": {
-      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BGetDataResponse"
+      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools-GetDataResponse"
     }
   },
   "$defs": {
-    "System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimationTools+CurveBindingInfo>": {
+    "System.Collections.Generic.List(com.IvanMurzak.Unity.MCP.Animation.AnimationTools-CurveBindingInfo)": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BCurveBindingInfo"
+        "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools-CurveBindingInfo"
       }
     },
-    "com.IvanMurzak.Unity.MCP.Animation.AnimationTools+CurveBindingInfo": {
+    "com.IvanMurzak.Unity.MCP.Animation.AnimationTools-CurveBindingInfo": {
       "type": "object",
       "properties": {
         "path": {
@@ -143,13 +143,13 @@ Read the /unity-initial-setup skill for detailed installation instructions.
         "keyframeCount"
       ]
     },
-    "System.Collections.Generic.List<com.IvanMurzak.Unity.MCP.Animation.AnimationTools+AnimationEventInfo>": {
+    "System.Collections.Generic.List(com.IvanMurzak.Unity.MCP.Animation.AnimationTools-AnimationEventInfo)": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BAnimationEventInfo"
+        "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimationTools-AnimationEventInfo"
       }
     },
-    "com.IvanMurzak.Unity.MCP.Animation.AnimationTools+AnimationEventInfo": {
+    "com.IvanMurzak.Unity.MCP.Animation.AnimationTools-AnimationEventInfo": {
       "type": "object",
       "properties": {
         "time": {
@@ -174,7 +174,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
         "floatParameter"
       ]
     },
-    "com.IvanMurzak.Unity.MCP.Animation.AnimationTools+GetDataResponse": {
+    "com.IvanMurzak.Unity.MCP.Animation.AnimationTools-GetDataResponse": {
       "type": "object",
       "properties": {
         "name": {
@@ -217,13 +217,13 @@ Read the /unity-initial-setup skill for detailed installation instructions.
           "type": "boolean"
         },
         "curveBindings": {
-          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BCurveBindingInfo%3E"
+          "$ref": "#/$defs/System.Collections.Generic.List(com.IvanMurzak.Unity.MCP.Animation.AnimationTools-CurveBindingInfo)"
         },
         "objectReferenceBindings": {
-          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BCurveBindingInfo%3E"
+          "$ref": "#/$defs/System.Collections.Generic.List(com.IvanMurzak.Unity.MCP.Animation.AnimationTools-CurveBindingInfo)"
         },
         "events": {
-          "$ref": "#/$defs/System.Collections.Generic.List%3Ccom.IvanMurzak.Unity.MCP.Animation.AnimationTools%2BAnimationEventInfo%3E"
+          "$ref": "#/$defs/System.Collections.Generic.List(com.IvanMurzak.Unity.MCP.Animation.AnimationTools-AnimationEventInfo)"
         }
       },
       "required": [

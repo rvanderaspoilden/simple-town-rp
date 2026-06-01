@@ -71,7 +71,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
       "$ref": "#/$defs/AIGD.AssetObjectRef"
     },
     "modifications": {
-      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimatorModification%5B%5D"
+      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimatorModification-1"
     }
   },
   "$defs": {
@@ -185,7 +185,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
           "description": "Whether duration is in seconds (true) or normalized (false). Optional for: AddTransition, AddAnyStateTransition."
         },
         "conditions": {
-          "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimatorConditionData%5B%5D",
+          "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimatorConditionData-1",
           "description": "Transition conditions. Optional for: AddTransition, AddAnyStateTransition."
         }
       },
@@ -193,7 +193,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
         "type"
       ]
     },
-    "com.IvanMurzak.Unity.MCP.Animation.AnimatorConditionData[]": {
+    "com.IvanMurzak.Unity.MCP.Animation.AnimatorConditionData-1": {
       "type": "array",
       "items": {
         "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimatorConditionData"
@@ -216,7 +216,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
         }
       }
     },
-    "com.IvanMurzak.Unity.MCP.Animation.AnimatorModification[]": {
+    "com.IvanMurzak.Unity.MCP.Animation.AnimatorModification-1": {
       "type": "array",
       "items": {
         "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimatorModification"
@@ -239,7 +239,7 @@ Read the /unity-initial-setup skill for detailed installation instructions.
   "type": "object",
   "properties": {
     "result": {
-      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimatorTools%2BModifyAnimatorResponse"
+      "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.AnimatorTools-ModifyAnimatorResponse"
     }
   },
   "$defs": {
@@ -260,20 +260,20 @@ Read the /unity-initial-setup skill for detailed installation instructions.
         "instanceId"
       ]
     },
-    "System.Collections.Generic.List<System.String>": {
+    "System.Collections.Generic.List(System.String)": {
       "type": "array",
       "items": {
         "type": "string"
       }
     },
-    "com.IvanMurzak.Unity.MCP.Animation.AnimatorTools+ModifyAnimatorResponse": {
+    "com.IvanMurzak.Unity.MCP.Animation.AnimatorTools-ModifyAnimatorResponse": {
       "type": "object",
       "properties": {
         "modifiedAsset": {
           "$ref": "#/$defs/com.IvanMurzak.Unity.MCP.Animation.ModifyAnimatorInfo"
         },
         "errors": {
-          "$ref": "#/$defs/System.Collections.Generic.List%3CSystem.String%3E"
+          "$ref": "#/$defs/System.Collections.Generic.List(System.String)"
         }
       }
     }

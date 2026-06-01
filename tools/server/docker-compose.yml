@@ -27,10 +27,27 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    # Pass the basicauth + domain env vars into the Caddy container so the
+    # `{$VAR}` interpolation in Caddyfile resolves. Without this, Caddy reads
+    # blank strings, the basicauth directive becomes invalid, and the container
+    # crashes in a restart loop.
+    environment:
+      SEQ_HOST: "${SEQ_HOST}"
+      SEQ_BASIC_AUTH_HASH: "${SEQ_BASIC_AUTH_HASH}"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
+      # React dashboard static files. The CI deploy script rsyncs the
+      # Vite build into /opt/simple-town/dashboard/dist on the host; Caddy
+      # serves them read-only via the /app/* handler in the Caddyfile.
+      - /opt/simple-town/dashboard:/var/dashboard:ro
+    # Linux Docker doesn't auto-resolve host.docker.internal; this mapping
+    # tells the container that name = the host's gateway IP. Used by the
+    # Caddyfile to reverse_proxy /admin/* + /swagger/* to the NestJS backend
+    # running on the VPS host (not inside a container).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - simpletown
     depends_on:

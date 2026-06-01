@@ -414,6 +414,30 @@ namespace Sim {
         public UnityWebRequest RetrieveLedgerRequest(string characterId) =>
             BuildJsonRequest($"{this.uri}/characters/{characterId}/ledger", "GET", null);
 
+        // ── Rent ────────────────────────────────────────────────────────────
+
+        /// <summary>POST /homes/rent/tick — server-driven rent collection pass at
+        /// the given in-game time. Charges due homes (catch-up), reverses to the
+        /// owner, and evicts non-payers. Returns the evictions for the caller to
+        /// act on (teleport + notify).</summary>
+        public UnityWebRequest RentTickRequest(long nowInGameSeconds) =>
+            BuildJsonRequest($"{this.uri}/homes/rent/tick", "POST",
+                new RentTickBody { nowInGameSeconds = nowInGameSeconds });
+
+        public IEnumerator RentTickCoroutine(long nowInGameSeconds, Action<RentTickResponse> onDone) {
+            UnityWebRequest request = RentTickRequest(nowInGameSeconds);
+            yield return request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success) {
+                Debug.LogError($"[ApiManager] RentTick failed code={request.responseCode} body={request.downloadHandler.text}");
+                onDone?.Invoke(null);
+                yield break;
+            }
+
+            RentTickResponse response = JsonConvert.DeserializeObject<RentTickResponse>(request.downloadHandler.text);
+            onDone?.Invoke(response);
+        }
+
         // ── Career endpoints ──────────────────────────────────────────────────
 
         public UnityWebRequest UpdateCharacterCurrentJobRequest(string characterId, CharacterUpdateCurrentJobRequest body) {

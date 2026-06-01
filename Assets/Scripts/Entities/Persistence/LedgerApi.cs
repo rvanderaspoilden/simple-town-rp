@@ -22,6 +22,9 @@ namespace Sim.Entities.Persistence {
         public const string P2pPurchase       = "p2p_purchase";
         public const string GiftSent          = "gift_sent";
         public const string GiftReceived      = "gift_received";
+        public const string RentPaid          = "rent_paid";
+        public const string RentReceived      = "rent_received";
+        public const string RentEvicted       = "rent_evicted";
     }
 
     public static class LedgerCounterparty {

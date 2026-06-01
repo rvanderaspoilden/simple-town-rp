@@ -28,6 +28,24 @@ namespace Sim.Server.Monitoring {
         private CancellationTokenSource _cts;
         private float _bootTime;
 
+        // Snapshot of main-thread Unity state, refreshed once per frame in Update().
+        // HandleRequest runs on a thread-pool worker, so it cannot read NetworkServer.*
+        // or Time.* directly — those APIs throw UnityException off the main thread.
+        // We read the snapshot from worker threads via volatile (struct-style atomic
+        // read of references) without locks; staleness is at most one frame, which
+        // is fine for a /health probe.
+        private volatile MainThreadSnapshot _mainSnapshot = new MainThreadSnapshot {
+            ServerActive = false,
+            Connections  = 0,
+            UnityTime    = 0f,
+        };
+
+        private sealed class MainThreadSnapshot {
+            public bool   ServerActive;
+            public int    Connections;
+            public float  UnityTime;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoBootstrap() {
             // Server-only — same guard as MetricsReporter / ServerLoggerInitializer.
@@ -55,6 +73,16 @@ namespace Sim.Server.Monitoring {
                 GameLogger.System.Warning("HealthHttpEndpoint failed to start on port {Port}: {Error}", port, ex.Message);
                 _listener = null;
             }
+        }
+
+        private void Update() {
+            // Refresh the snapshot every frame on the main thread. HandleRequest
+            // running on a worker thread reads it without going through Unity APIs.
+            _mainSnapshot = new MainThreadSnapshot {
+                ServerActive = NetworkServer.active,
+                Connections  = NetworkServer.active ? NetworkServer.connections.Count : 0,
+                UnityTime    = Time.unscaledTime,
+            };
         }
 
         private void OnDestroy() {
@@ -119,18 +147,18 @@ namespace Sim.Server.Monitoring {
         }
 
         private (string json, int status) BuildHealthJson() {
-            // Hand-rolled JSON to avoid pulling Newtonsoft on the server hot path
-            // for two tiny fields. If this grows we can switch to JsonUtility.
-            bool serverActive = NetworkServer.active;
-            int connections = serverActive ? NetworkServer.connections.Count : 0;
-            float uptime = Time.unscaledTime - _bootTime;
-            string status = serverActive ? "ok" : "starting";
+            // Read from the main-thread snapshot — never call NetworkServer.* or
+            // Time.* directly here (this method runs on a thread-pool worker via
+            // Task.Run in HandleRequest, and those APIs throw off the main thread).
+            var snap = _mainSnapshot;
+            float uptime = snap.UnityTime - _bootTime;
+            string status = snap.ServerActive ? "ok" : "starting";
             string json = "{" +
                 $"\"status\":\"{status}\"," +
                 $"\"uptimeSec\":{uptime.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}," +
-                $"\"connections\":{connections}" +
+                $"\"connections\":{snap.Connections}" +
                 "}";
-            return (json, serverActive ? 200 : 503);
+            return (json, snap.ServerActive ? 200 : 503);
         }
 
         private (string json, int status) BuildMetricsJson() {

@@ -129,8 +129,25 @@ namespace Sim.Logging {
             _forwarderAttached = false;
         }
 
+        // Substrings of Unity-side messages that we deliberately drop on the floor.
+        // These spam every frame from URP / Dissonance / etc. on a dedicated server
+        // build and would otherwise saturate Seq + the local file sink. Keep this
+        // list narrow — only well-known, high-volume noise.
+        private static readonly string[] _droppedMessageSubstrings = {
+            "Dedicated Server Optimizations",   // URP/render-pipeline shader probe spam on Server Build
+        };
+
+        private static bool ShouldDrop(string message) {
+            if (string.IsNullOrEmpty(message)) return false;
+            for (int i = 0; i < _droppedMessageSubstrings.Length; i++) {
+                if (message.IndexOf(_droppedMessageSubstrings[i], StringComparison.Ordinal) >= 0) return true;
+            }
+            return false;
+        }
+
         private static void OnUnityLog(string message, string stackTrace, LogType type) {
             if (_forwardingInProgress) return;
+            if (ShouldDrop(message)) return;
             _forwardingInProgress = true;
             try {
                 switch (type) {
