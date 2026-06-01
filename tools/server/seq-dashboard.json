@@ -1,132 +1,250 @@
 {
-  "Title": "Simple Town Server",
   "OwnerId": null,
+  "Title": "Simple Town Server",
   "IsProtected": false,
   "SignalExpression": null,
   "Charts": [
     {
-      "Title": "Active connections",
-      "DisplayStyle": {
-        "Type": "Line",
-        "SuppressLegend": false
-      },
+      "Id": "chart-6",
+      "Title": "All Events",
+      "SignalExpression": null,
       "Queries": [
         {
+          "Id": "chartquery-7",
           "Measurements": [
-            {
-              "Value": "mean(Connections)",
-              "Label": "Connections"
-            }
+            { "Value": "count(*)", "Label": "count" }
           ],
-          "Where": "@MessageTemplate like '%ServerMetrics%'",
-          "GroupBy": [
-            "time(30s)"
-          ],
-          "DisplayStyle": {
-            "Type": "Line",
-            "LineFillToZeroY": false,
-            "LineShowMarkers": false,
-            "BarOverlayValues": false,
-            "SuppressLegend": false,
-            "Palette": "Default"
-          }
-        }
-      ]
-    },
-    {
-      "Title": "Avg frame time (target: 16ms @ 60Hz)",
-      "DisplayStyle": {
-        "Type": "Line",
-        "SuppressLegend": false
-      },
-      "Queries": [
-        {
-          "Measurements": [
-            {
-              "Value": "mean(AvgFrameMs)",
-              "Label": "AvgMs"
-            },
-            {
-              "Value": "16",
-              "Label": "Target60Hz"
-            }
-          ],
-          "Where": "@MessageTemplate like '%ServerMetrics%'",
-          "GroupBy": [
-            "time(30s)"
-          ],
-          "DisplayStyle": {
-            "Type": "Line",
-            "LineFillToZeroY": false,
-            "LineShowMarkers": false,
-            "SuppressLegend": false,
-            "Palette": "Default"
-          }
-        }
-      ]
-    },
-    {
-      "Title": "Memory MB (Mono / Total / Gfx)",
-      "DisplayStyle": {
-        "Type": "Line",
-        "SuppressLegend": false
-      },
-      "Queries": [
-        {
-          "Measurements": [
-            {
-              "Value": "mean(MonoMB)",
-              "Label": "Mono"
-            },
-            {
-              "Value": "mean(TotalMB)",
-              "Label": "Total"
-            },
-            {
-              "Value": "mean(GfxMB)",
-              "Label": "Gfx"
-            }
-          ],
-          "Where": "@MessageTemplate like '%ServerMetrics%'",
-          "GroupBy": [
-            "time(30s)"
-          ],
+          "Where": null,
+          "SignalExpression": null,
+          "GroupBy": [],
           "DisplayStyle": {
             "Type": "Line",
             "LineFillToZeroY": true,
             "LineShowMarkers": false,
+            "BarOverlaySum": false,
+            "UseLogarithmicScale": false,
             "SuppressLegend": false,
             "Palette": "Default"
-          }
+          },
+          "Having": null,
+          "OrderBy": [],
+          "Limit": null
         }
-      ]
+      ],
+      "DisplayStyle": { "WidthColumns": 8, "HeightRows": 1 },
+      "Description": null
     },
     {
-      "Title": "GC Gen0 collections per minute",
-      "DisplayStyle": {
-        "Type": "Bar",
-        "SuppressLegend": false
-      },
+      "Id": "chart-8",
+      "Title": "Count by Level",
+      "SignalExpression": null,
       "Queries": [
         {
+          "Id": "chartquery-9",
           "Measurements": [
-            {
-              "Value": "sum(GcGen0Delta)",
-              "Label": "Gen0PerMin"
-            }
+            { "Value": "count(*)", "Label": "count" }
           ],
-          "Where": "@MessageTemplate like '%ServerMetrics%'",
-          "GroupBy": [
-            "time(1m)"
-          ],
+          "Where": null,
+          "SignalExpression": null,
+          "GroupBy": ["@Level"],
           "DisplayStyle": {
-            "Type": "Bar",
-            "BarOverlayValues": true,
+            "Type": "Pie",
+            "LineFillToZeroY": false,
+            "LineShowMarkers": true,
+            "BarOverlaySum": false,
+            "UseLogarithmicScale": false,
             "SuppressLegend": false,
             "Palette": "Default"
-          }
+          },
+          "Having": null,
+          "OrderBy": [],
+          "Limit": null
         }
-      ]
+      ],
+      "DisplayStyle": { "WidthColumns": 4, "HeightRows": 1 },
+      "Description": null
+    },
+    {
+      "Id": "chart-10",
+      "Title": "Errors and Exceptions",
+      "SignalExpression": null,
+      "Queries": [
+        {
+          "Id": "chartquery-11",
+          "Measurements": [
+            { "Value": "count(*)", "Label": "count" }
+          ],
+          "Where": "@Exception is not null or @Level in ['f', 'fa', 'fat', 'ftl', 'fata', 'fatl', 'fatal', 'c', 'cr', 'cri', 'crt', 'crit', 'critical', 'alert', 'emerg', 'panic', 'e', 'er', 'err', 'eror', 'erro', 'error'] ci",
+          "SignalExpression": null,
+          "GroupBy": [],
+          "DisplayStyle": {
+            "Type": "Bar",
+            "LineFillToZeroY": false,
+            "LineShowMarkers": true,
+            "BarOverlaySum": true,
+            "UseLogarithmicScale": false,
+            "SuppressLegend": false,
+            "Palette": "Reds"
+          },
+          "Having": null,
+          "OrderBy": [],
+          "Limit": null
+        }
+      ],
+      "DisplayStyle": { "WidthColumns": 8, "HeightRows": 1 },
+      "Description": null
+    },
+    {
+      "Id": "chart-12",
+      "Title": "Distinct Event Types",
+      "SignalExpression": null,
+      "Queries": [
+        {
+          "Id": "chartquery-13",
+          "Measurements": [
+            { "Value": "count(distinct(@EventType))", "Label": "count" }
+          ],
+          "Where": null,
+          "SignalExpression": null,
+          "GroupBy": [],
+          "DisplayStyle": {
+            "Type": "Value",
+            "LineFillToZeroY": false,
+            "LineShowMarkers": true,
+            "BarOverlaySum": false,
+            "UseLogarithmicScale": false,
+            "SuppressLegend": false,
+            "Palette": "Default"
+          },
+          "Having": null,
+          "OrderBy": [],
+          "Limit": null
+        }
+      ],
+      "DisplayStyle": { "WidthColumns": 4, "HeightRows": 1 },
+      "Description": null
+    },
+    {
+      "Id": "chart-100",
+      "Title": "Active connections",
+      "SignalExpression": null,
+      "Queries": [
+        {
+          "Id": "chartquery-100",
+          "Measurements": [
+            { "Value": "mean(Connections)", "Label": "Connections" }
+          ],
+          "Where": "@MessageTemplate like '%ServerMetrics%'",
+          "SignalExpression": null,
+          "GroupBy": [],
+          "DisplayStyle": {
+            "Type": "Line",
+            "LineFillToZeroY": true,
+            "LineShowMarkers": false,
+            "BarOverlaySum": false,
+            "UseLogarithmicScale": false,
+            "SuppressLegend": false,
+            "Palette": "Default"
+          },
+          "Having": null,
+          "OrderBy": [],
+          "Limit": null
+        }
+      ],
+      "DisplayStyle": { "WidthColumns": 6, "HeightRows": 1 },
+      "Description": "Number of connected players + bots at any time. Drops in steps = disconnects."
+    },
+    {
+      "Id": "chart-101",
+      "Title": "Avg frame time (ms) — target 16ms @ 60Hz",
+      "SignalExpression": null,
+      "Queries": [
+        {
+          "Id": "chartquery-101",
+          "Measurements": [
+            { "Value": "mean(AvgFrameMs)", "Label": "AvgMs" }
+          ],
+          "Where": "@MessageTemplate like '%ServerMetrics%'",
+          "SignalExpression": null,
+          "GroupBy": [],
+          "DisplayStyle": {
+            "Type": "Line",
+            "LineFillToZeroY": false,
+            "LineShowMarkers": false,
+            "BarOverlaySum": false,
+            "UseLogarithmicScale": false,
+            "SuppressLegend": false,
+            "Palette": "Default"
+          },
+          "Having": null,
+          "OrderBy": [],
+          "Limit": null
+        }
+      ],
+      "DisplayStyle": { "WidthColumns": 6, "HeightRows": 1 },
+      "Description": "Server tick budget. Above 16ms = saturation, sync degrades."
+    },
+    {
+      "Id": "chart-102",
+      "Title": "Memory MB (Mono / Total / Gfx)",
+      "SignalExpression": null,
+      "Queries": [
+        {
+          "Id": "chartquery-102",
+          "Measurements": [
+            { "Value": "mean(MonoMB)",  "Label": "Mono" },
+            { "Value": "mean(TotalMB)", "Label": "Total" },
+            { "Value": "mean(GfxMB)",   "Label": "Gfx" }
+          ],
+          "Where": "@MessageTemplate like '%ServerMetrics%'",
+          "SignalExpression": null,
+          "GroupBy": [],
+          "DisplayStyle": {
+            "Type": "Line",
+            "LineFillToZeroY": true,
+            "LineShowMarkers": false,
+            "BarOverlaySum": false,
+            "UseLogarithmicScale": false,
+            "SuppressLegend": false,
+            "Palette": "Default"
+          },
+          "Having": null,
+          "OrderBy": [],
+          "Limit": null
+        }
+      ],
+      "DisplayStyle": { "WidthColumns": 6, "HeightRows": 1 },
+      "Description": "Continuous growth = leak. Spikes = GC or shader compile."
+    },
+    {
+      "Id": "chart-103",
+      "Title": "GC Gen0 collections",
+      "SignalExpression": null,
+      "Queries": [
+        {
+          "Id": "chartquery-103",
+          "Measurements": [
+            { "Value": "sum(GcGen0Delta)", "Label": "Gen0" }
+          ],
+          "Where": "@MessageTemplate like '%ServerMetrics%'",
+          "SignalExpression": null,
+          "GroupBy": [],
+          "DisplayStyle": {
+            "Type": "Bar",
+            "LineFillToZeroY": false,
+            "LineShowMarkers": false,
+            "BarOverlaySum": true,
+            "UseLogarithmicScale": false,
+            "SuppressLegend": false,
+            "Palette": "Default"
+          },
+          "Having": null,
+          "OrderBy": [],
+          "Limit": null
+        }
+      ],
+      "DisplayStyle": { "WidthColumns": 6, "HeightRows": 1 },
+      "Description": "Allocs per frame. High bars = optimisation needed in hot path."
     }
   ]
 }

@@ -91,6 +91,12 @@ namespace Sim.UI {
         }
 
         public void Setup(Home home) {
+            if (home?.Address == null || string.IsNullOrEmpty(home.Address.street)) {
+                this.addressHotelText.text = "Sans domicile";
+                this.addressDoorText.text = string.Empty;
+                return;
+            }
+
             this.addressHotelText.text = home.Address.street;
             this.addressDoorText.text = $"Étage {Mathf.CeilToInt(home.Address.doorNumber / (float) 6)}, Appt {home.Address.doorNumber}";
         }

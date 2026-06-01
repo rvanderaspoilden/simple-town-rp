@@ -70,6 +70,21 @@ New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $pidFile = Join-Path (Split-Path $resolvedBuild) "bots.pid"
 $pids    = @()
 
+# Extract the hostname from -Server so the bot's Mirror StartClient targets
+# the same host as the API. Without MIRROR_HOST set, SimpleTownNetwork.Awake
+# falls back to the bot's PlayerPrefs-saved Local environment (= "localhost"),
+# which makes the bot try to connect to itself.
+# Child processes inherit $env vars from the current PowerShell session.
+try {
+    $mirrorHost = ([System.Uri]$Server).Host
+    if (-not [string]::IsNullOrEmpty($mirrorHost)) {
+        $env:MIRROR_HOST = $mirrorHost
+        Write-Host "Setting MIRROR_HOST=$mirrorHost for spawned bots"
+    }
+} catch {
+    Write-Warning "Could not parse -Server '$Server' as URI. Bots will use default MIRROR_HOST."
+}
+
 Write-Host "Launching $Count bots, indices [$StartIndex..$($StartIndex + $Count - 1)] -> $Server"
 
 for ($i = 0; $i -lt $Count; $i++) {
@@ -92,7 +107,13 @@ for ($i = 0; $i -lt $Count; $i++) {
     }
 }
 
-$pids | Set-Content -Path $pidFile -Encoding utf8
+# APPEND to the PID file so subsequent paliers (e.g. -StartIndex 5 after the
+# first batch) accumulate instead of overwriting — otherwise stop-bots.ps1
+# only sees the last batch. The file is cleaned up by stop-bots.ps1 after a
+# full teardown, so the next "fresh" launch starts empty automatically.
+$pids | Add-Content -Path $pidFile -Encoding utf8
+
+$totalTracked = (Get-Content -Path $pidFile | Where-Object { $_ -match '^\d+$' }).Count
 Write-Host ""
-Write-Host "Wrote $($pids.Count) PIDs to $pidFile"
-Write-Host "Stop with: ./stop-bots.ps1"
+Write-Host "Added $($pids.Count) PIDs to $pidFile  (total tracked: $totalTracked)"
+Write-Host "Stop ALL tracked bots with: ./stop-bots.ps1"

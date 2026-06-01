@@ -490,23 +490,6 @@ public class SimpleTownNetwork : NetworkManager
         GameLogger.Network.Debug("TeleportSent {ConnectionId}", conn.connectionId);
     }
 
-    /// <summary>
-    /// Server → client: moves a connection's player back to the open city at the
-    /// default start position with no room (same semantics as an initial city
-    /// spawn). Used by the rent system to physically remove an evicted tenant
-    /// who is currently standing inside the apartment they just lost.
-    /// </summary>
-    [Server]
-    public void ServerTeleportToCity(NetworkConnectionToClient conn)
-    {
-        if (conn == null) return;
-        Vector3 dest = (startPositions != null && startPositions.Count > 0 && startPositions[0] != null)
-            ? startPositions[0].position
-            : Vector3.zero;
-        conn.Send(new TeleportMessage { destination = dest, NewRoomId = "" });
-        GameLogger.Network.Info("EvictionTeleportToCity {ConnectionId}", conn.connectionId);
-    }
-
     [ServerCallback]
     private void OnUserSettingsSync(NetworkConnectionToClient conn, UserSettingsSyncMessage msg)
     {

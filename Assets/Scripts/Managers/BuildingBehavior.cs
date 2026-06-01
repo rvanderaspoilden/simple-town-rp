@@ -160,6 +160,26 @@ public class BuildingBehavior : MonoBehaviour {
         hallController.MoveToApartment(doorNumber, conn, null);
     }
 
+    /// <summary>
+    /// Rent eviction: if the connection's player is currently on the floor of the
+    /// given apartment door (rooms are per-floor — hall:street:floor), sends them
+    /// out to the city via the main elevator spawn and returns true. Returns false
+    /// when the player is elsewhere (city, another floor/building), so the rent
+    /// system only physically moves a tenant who is actually inside.
+    /// </summary>
+    [Server]
+    public bool EvictFromApartmentIfInside(int doorNumber, NetworkConnectionToClient conn) {
+        if (conn == null) return false;
+
+        int floor = this.GetFloorByDoorNumber(doorNumber);
+        string apartmentRoomId = $"hall:{this.streetName}:{floor}";
+
+        if (PlayerRoomTracker.Instance.GetRoom(conn) != apartmentRoomId) return false;
+
+        this.TeleportToFloor(floor, 0, conn); // targetFloor 0 → exit to city
+        return true;
+    }
+
     public void TeleportToFloor(int originFloor, int targetFloor, NetworkConnectionToClient conn) {
         if (!NetworkServer.active) return;
         Debug.Log($"[Building] TeleportToFloor building={streetName} from={originFloor} to={targetFloor} conn={conn.connectionId}");

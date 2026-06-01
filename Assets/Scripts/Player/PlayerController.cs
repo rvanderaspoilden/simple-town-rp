@@ -544,7 +544,15 @@ namespace Sim {
         [Server]
         public void SetRawCharacterHome(string data) {
             this.rawCharacterHome = data;
-            this.characterHome = JsonUtility.FromJson<Home>(this.rawCharacterHome);
+            this.characterHome = string.IsNullOrEmpty(data) ? null : JsonUtility.FromJson<Home>(data);
+        }
+
+        /// <summary>Server-side: drops this character's home (e.g. rent eviction).
+        /// The SyncVar hook refreshes the local player's address panel to
+        /// "Sans domicile".</summary>
+        [Server]
+        public void ClearHome() {
+            this.SetRawCharacterHome("{}");
         }
 
         public void ParseCharacterData(string old, string newValue) {
@@ -559,8 +567,10 @@ namespace Sim {
         }
 
         public void ParseCharacterHome(string old, string newValue) {
-            this.characterHome = JsonUtility.FromJson<Home>(newValue);
-            Debug.Log("TOTO");
+            this.characterHome = string.IsNullOrEmpty(newValue) ? null : JsonUtility.FromJson<Home>(newValue);
+            if (isLocalPlayer && CharacterInfoPanelUI.Instance != null) {
+                CharacterInfoPanelUI.Instance.Setup(this.characterHome);
+            }
         }
 
         private void Update() {
@@ -786,18 +796,24 @@ namespace Sim {
 
         [Server]
         public void Revive() {
-            BuildingBehavior buildingBehavior = FindObjectsByType<BuildingBehavior>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-                .FirstOrDefault(x => x.Match(this.characterHome.Address));
+            this.playerHealth.ResetAll();
+            this.playerBankAccount.PostLedger(-50, LedgerReason.DeathPenalty, LedgerCounterparty.System, LedgerCounterparty.Bank);
+
+            // Homeless players (e.g. evicted) have no apartment to return to —
+            // revive them in place (city) without an apartment teleport.
+            BuildingBehavior buildingBehavior = this.characterHome?.Address != null
+                ? FindObjectsByType<BuildingBehavior>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                    .FirstOrDefault(x => x.Match(this.characterHome.Address))
+                : null;
 
             if (buildingBehavior) {
                 GameLogger.Player.Info("PlayerRevived {PlayerNetId} {BuildingStreet}", netId, this.characterHome.Address.street);
                 buildingBehavior.TeleportExistingPlayerToApartment(this.characterHome.Address.doorNumber, this.netIdentity.connectionToClient);
-                this.playerHealth.ResetAll();
-                this.playerBankAccount.PostLedger(-50, LedgerReason.DeathPenalty, LedgerCounterparty.System, LedgerCounterparty.Bank);
-                this.TargetRevive(this.netIdentity.connectionToClient);
             } else {
-                GameLogger.Network.Error(null, "ReviveBuildingNotFound {PlayerNetId} {Street}", netId, this.characterHome.Address.street);
+                GameLogger.Player.Info("PlayerRevivedHomeless {PlayerNetId}", netId);
             }
+
+            this.TargetRevive(this.netIdentity.connectionToClient);
         }
 
         [TargetRpc]

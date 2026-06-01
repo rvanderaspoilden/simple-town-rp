@@ -71,13 +71,16 @@ namespace Sim {
             if (homes != null && homes.Count > 0) {
                 Debug.Log("Homes retrieved !");
                 ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = homes;
-            
-                this.mainMenuPanel.SetActive(true);
             } else {
-                Debug.Log("Homes not found");
-                this.apartmentCreationManager.Show();
+                // Existing character with no home (e.g. evicted): homelessness is a
+                // valid state — let them Play and spawn in the street. The server
+                // city-spawns any connection without a home. (New characters still
+                // get apartment onboarding via OnCharacterCreated.)
+                Debug.Log("Homes not found — playing homeless (street spawn)");
+                ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = new List<Home>();
             }
-            
+
+            this.mainMenuPanel.SetActive(true);
             LoadingManager.Instance.Hide();
         }
 

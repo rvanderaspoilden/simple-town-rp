@@ -1,4 +1,6 @@
+using System.Linq;
 using Mirror;
+using Sim.Entities;
 using Sim.Entities.Persistence;
 using Sim.Logging;
 using UnityEngine;
@@ -119,17 +121,29 @@ namespace Sim {
             return conn;
         }
 
-        // Online tenant: physically remove them from the apartment and notify.
-        // Offline tenant: nothing to do — the backend already vacated the home
-        // and moved their belongings to a transit place.
+        // Online tenant: notify them, and physically remove them from the
+        // apartment ONLY if they're currently inside it (on its floor). A player
+        // standing in the city or elsewhere is left where they are. Offline
+        // tenant: nothing to do — the backend already vacated the home and moved
+        // their belongings to a transit place.
         private void HandleEviction(RentEvictionDto eviction) {
             if (eviction == null || string.IsNullOrEmpty(eviction.characterId)) return;
 
             NetworkConnectionToClient conn = FindConnectionByCharacter(eviction.characterId);
-            if (conn == null) return;
+            if (conn?.identity == null) return;
 
-            SimpleTownNetwork net = NetworkManager.singleton as SimpleTownNetwork;
-            net?.ServerTeleportToCity(conn);
+            PlayerController player = conn.identity.GetComponent<PlayerController>();
+            Home home = player != null ? player.CharacterHome : null;
+            if (home?.Address != null) {
+                BuildingBehavior building = Object
+                    .FindObjectsByType<BuildingBehavior>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                    .FirstOrDefault(b => b.Match(home.Address));
+                building?.EvictFromApartmentIfInside(home.Address.doorNumber, conn);
+            }
+
+            // Home is lost regardless of where the player stands → drop it so the
+            // address panel shows "Sans domicile" live (and revive goes to city).
+            player?.ClearHome();
 
             conn.Send(new ToastNotificationMessage {
                 text = "Vous avez été expulsé de votre logement pour loyer impayé.",
