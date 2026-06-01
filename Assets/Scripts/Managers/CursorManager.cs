@@ -148,7 +148,9 @@ namespace Sim {
             PlayerController player = hit.collider.GetComponent<PlayerController>();
 
             if (player != null && player != PlayerController.Local) {
-                this.SetCursor(this.socialCursor);
+                // Default cursor over other characters (the name tooltip is the
+                // hover feedback now, not a social cursor).
+                this.SetCursor(null);
                 return true;
             }
 

@@ -90,9 +90,12 @@ namespace Sim {
             if (this.currentMode == CameraModeEnum.FREE) {
                 this.ManageInteraction();
                 this.ManageHover();
-            } else if (this._hoveredOutline != null) {
-                this._hoveredOutline.Hide();
-                this._hoveredOutline = null;
+            } else {
+                if (this._hoveredOutline != null) {
+                    this._hoveredOutline.Hide();
+                    this._hoveredOutline = null;
+                }
+                HoverNameTooltip.Hide();
             }
         }
 
@@ -127,6 +130,7 @@ namespace Sim {
         /// </summary>
         private void ManageHover() {
             PropHoverOutline target = null;
+            string hoverName = null;
 
             bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             if (!overUI) {
@@ -138,6 +142,8 @@ namespace Sim {
                         target = host.GetComponent<PropHoverOutline>();
                         if (target == null) target = host.AddComponent<PropHoverOutline>();
                     }
+
+                    hoverName = ResolveHoverName(h.collider);
                 }
             }
 
@@ -146,6 +152,28 @@ namespace Sim {
                 this._hoveredOutline = target;
                 if (this._hoveredOutline != null) this._hoveredOutline.Show();
             }
+
+            if (!string.IsNullOrEmpty(hoverName)) HoverNameTooltip.Show(hoverName);
+            else HoverNameTooltip.Hide();
+        }
+
+        /// <summary>
+        /// Resolves the display name of a hovered character collider: remote
+        /// players and NPCs. Returns null for the local player (no self tooltip),
+        /// props, or anything else. NOTE: the PlayerController branch is the single
+        /// gate point for the future V2 "give your identity" feature.
+        /// </summary>
+        private string ResolveHoverName(Collider col) {
+            PlayerController pc = col.GetComponentInParent<PlayerController>();
+            if (pc != null) {
+                if (pc.isLocalPlayer) return null;
+                return pc.CharacterData?.Identity.FullName;
+            }
+
+            ClientNpcView npc = col.GetComponentInParent<ClientNpcView>();
+            if (npc != null) return $"[PNJ] {npc.FullName}";
+
+            return null;
         }
 
         public CameraModeEnum GetMode() {

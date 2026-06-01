@@ -1,0 +1,108 @@
+name: Build & deploy Mirror server
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  # Never cancel a running deploy mid-flight — the SSH step would leave the
+  # VPS in an inconsistent state (binary half-extracted, service mid-restart).
+  group: build-server
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Linux IL2CPP Server build + VPS deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # Cache the Library/ folder so subsequent builds skip the asset re-import
+      # phase (which can take 20+ min on cold runs). Key on packages-lock +
+      # ProjectSettings since those are what actually invalidate the Library.
+      - name: Cache Library/
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-
+
+      - name: Build via game-ci
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion:    6000.4.4f1
+          targetPlatform:  StandaloneLinux64
+          buildMethod:     CiBuild.BuildServer
+          # The build script writes its output to build/Server/ regardless of
+          # this hint; we set it for game-ci's own bookkeeping (artifact name,
+          # cache invalidation).
+          buildName:       Server
+          allowDirtyBuild: true
+
+      - name: Verify build output
+        run: |
+          test -f "build/Server/Simple Town.x86_64" \
+            || (echo "Build script claimed success but binary missing" && exit 1)
+          ls -la "build/Server/"
+
+      - name: Bundle build into a tarball
+        run: |
+          cd build/Server
+          tar -cf ../server-bundle.tar .
+          ls -la ../server-bundle.tar
+
+      - name: Upload bundle to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host:     ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key:      ${{ secrets.VPS_SSH_KEY }}
+          source:   "build/server-bundle.tar"
+          target:   "/tmp/"
+          strip_components: 1
+
+      - name: Extract + restart + health check on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key:      ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: "5m"
+          script: |
+            set -euo pipefail
+            REMOTE=/opt/simple-town/server
+
+            # Extract on top of the existing install — tar overwrites files in
+            # place. We don't delete first because we want to keep .env, logs/,
+            # and any preset data the Unity server may write.
+            tar -xf /tmp/server-bundle.tar -C "$REMOTE"
+            rm /tmp/server-bundle.tar
+
+            chmod +x "$REMOTE/Simple Town.x86_64"
+            chmod +x "$REMOTE/run-server.sh" || true
+
+            sudo /bin/systemctl restart simple-town-server
+
+            # Health check: poll /health for up to 60s. Mirror's StartServer +
+            # MetricsReporter need ~5-15s to reach steady state on a Linux IL2CPP
+            # build, so don't fail too eagerly.
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8080/health > /dev/null 2>&1; then
+                echo "Server healthy after $((i * 2))s"
+                curl -s http://127.0.0.1:8080/health
+                exit 0
+              fi
+              sleep 2
+            done
+
+            echo "Health check failed after 60s. Recent logs:" >&2
+            sudo journalctl -u simple-town-server -n 80 --no-pager >&2
+            exit 1
