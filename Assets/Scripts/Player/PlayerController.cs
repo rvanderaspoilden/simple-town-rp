@@ -558,7 +558,9 @@ namespace Sim {
         public void ParseCharacterData(string old, string newValue) {
             this.characterData = JsonUtility.FromJson<CharacterData>(newValue);
             this.characterStyleSetup.ApplyStyle(this.CharacterData.Style);
-            OnCharacterDataChanged?.Invoke(this.characterData);
+            // Static event drives local-player HUD only — never broadcast a remote
+            // player's data to it, or the local character panel gets overwritten.
+            if (isLocalPlayer) OnCharacterDataChanged?.Invoke(this.characterData);
         }
 
         public string RawCharacterHome {
@@ -855,7 +857,7 @@ namespace Sim {
         public void SetMood(MoodConfig moodConfig) {
             this.characterData.Mood = moodConfig.MoodEnum;
             this.animator.SetMood((int) moodConfig.MoodEnum);
-            OnCharacterDataChanged?.Invoke(this.characterData);
+            if (isLocalPlayer) OnCharacterDataChanged?.Invoke(this.characterData);
         }
 
         public StateType GetState() {
@@ -879,7 +881,7 @@ namespace Sim {
             set {
                 characterData = value;
                 this.animator.SetMood((int) characterData.Mood);
-                OnCharacterDataChanged?.Invoke(characterData);
+                if (isLocalPlayer) OnCharacterDataChanged?.Invoke(characterData);
             }
         }
 
