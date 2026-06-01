@@ -116,6 +116,12 @@ namespace Sim {
 
         private static void OnPlayGreet(S2C_PlayGreet msg) {
             if (!NetworkClient.spawned.TryGetValue(msg.netId, out NetworkIdentity id)) return;
+
+            // Only wave if the right hand is free (no item held there). PlayerHands
+            // is replicated on every client, so this gate is consistent for all.
+            PlayerHands hands = id.GetComponent<PlayerHands>();
+            if (hands != null && hands.RightEntityId != -1) return;
+
             PlayerAnimator animator = id.GetComponent<PlayerAnimator>();
             if (animator == null) return;
             animator.SetAction(CharacterAnimatorAction.GREET);
