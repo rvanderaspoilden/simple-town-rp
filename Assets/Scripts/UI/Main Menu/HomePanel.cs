@@ -1,4 +1,5 @@
 using Sim.Entities;
+using Sim.Jobs;
 using TMPro;
 using UnityEngine;
 
@@ -39,7 +40,7 @@ namespace Sim {
             }
 
             if (levelText != null) {
-                levelText.text = "Niveau 1";
+                levelText.text = JobCategoryLabels.Display(character.CurrentJobCategory);
             }
 
             if (moneyText != null) {
