@@ -5,7 +5,10 @@ using UnityEngine;
 
 namespace Sim {
     public class MainMenuManager : MonoBehaviour {
-        [Header("Settings")]
+        [Header("Panels")]
+        [SerializeField]
+        private HomePanel homePanel;
+
         [SerializeField]
         private CharacterCreationManager characterCreationManager;
 
@@ -13,16 +16,21 @@ namespace Sim {
         private ApartmentCreationManager apartmentCreationManager;
 
         [SerializeField]
-        private GameObject mainMenuPanel;
+        private AboutPanel aboutPanel;
 
         [SerializeField]
-        private GameObject aboutText;
-        
+        private GameObject inventoryPreviewPanel;
+
+        [SerializeField]
+        private GameObject questsPreviewPanel;
+
         private void Awake() {
             this.characterCreationManager.Hide();
             this.apartmentCreationManager.Hide();
-            this.mainMenuPanel.SetActive(false);
-            this.aboutText.SetActive(false);
+            this.homePanel.Hide();
+            this.aboutPanel.Hide();
+            if (this.inventoryPreviewPanel != null) this.inventoryPreviewPanel.SetActive(false);
+            if (this.questsPreviewPanel != null) this.questsPreviewPanel.SetActive(false);
         }
 
         private void Start() {
@@ -48,12 +56,44 @@ namespace Sim {
             ApiManager.OnApartmentAssigned -= OnApartmentAssigned;
         }
 
-        public void Play() {
+        public void EnterCity() {
+            SimpleTownNetwork network = (SimpleTownNetwork) NetworkManager.singleton;
+            bool hasHome = network.CharacterHomes != null && network.CharacterHomes.Count > 0;
+
+            if (!hasHome) {
+                this.homePanel.Hide();
+                this.apartmentCreationManager.Show();
+                return;
+            }
+
             LoadingManager.Instance.Show();
-            
-            ((SimpleTownNetwork) NetworkManager.singleton).Invoke(nameof(NetworkManager.StartClient), 1f);
+            network.Invoke(nameof(NetworkManager.StartClient), 1f);
         }
-        
+
+        public void OpenCharacterPanel() {
+            this.characterCreationManager.Show();
+        }
+
+        public void OpenInventoryPreview() {
+            if (this.inventoryPreviewPanel != null) this.inventoryPreviewPanel.SetActive(true);
+        }
+
+        public void OpenQuestsPreview() {
+            if (this.questsPreviewPanel != null) this.questsPreviewPanel.SetActive(true);
+        }
+
+        public void OpenAbout() {
+            this.aboutPanel.Show();
+        }
+
+        public void CloseAbout() {
+            this.aboutPanel.Hide();
+        }
+
+        public void Quit() {
+            Application.Quit();
+        }
+
         private void OnCharacterRetrieved(CharacterData characterData) {
             if (characterData != null) {
                 Debug.Log("Character retrieved");
@@ -68,19 +108,22 @@ namespace Sim {
         }
 
         private void OnHomesRetrieved(List<Home> homes) {
+            SimpleTownNetwork network = (SimpleTownNetwork) NetworkManager.singleton;
+
             if (homes != null && homes.Count > 0) {
                 Debug.Log("Homes retrieved !");
-                ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = homes;
+                network.CharacterHomes = homes;
             } else {
                 // Existing character with no home (e.g. evicted): homelessness is a
                 // valid state — let them Play and spawn in the street. The server
                 // city-spawns any connection without a home. (New characters still
                 // get apartment onboarding via OnCharacterCreated.)
                 Debug.Log("Homes not found — playing homeless (street spawn)");
-                ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = new List<Home>();
+                network.CharacterHomes = new List<Home>();
             }
 
-            this.mainMenuPanel.SetActive(true);
+            this.homePanel.Bind(network.CharacterData);
+            this.homePanel.Show();
             LoadingManager.Instance.Hide();
         }
 
@@ -93,17 +136,12 @@ namespace Sim {
 
         private void OnApartmentAssigned(Home home) {
             Debug.Log("Apartment assigned !");
-            ((SimpleTownNetwork) NetworkManager.singleton).CharacterHomes = new List<Home>() {home};
+            SimpleTownNetwork network = (SimpleTownNetwork) NetworkManager.singleton;
+            network.CharacterHomes = new List<Home>() {home};
             this.apartmentCreationManager.Hide();
-            this.mainMenuPanel.SetActive(true);
-        }
 
-        public void Quit() {
-            Application.Quit();
-        }
-
-        public void ShowAbout() {
-            this.aboutText.SetActive(true);
+            this.homePanel.Bind(network.CharacterData);
+            this.homePanel.Show();
         }
     }
 }
