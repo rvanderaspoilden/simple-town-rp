@@ -35,6 +35,7 @@ public class TrashBehaviour : PropBehaviourBase
         // + le toast de succès sont gérés côté serveur (PropInteractionRouter.HandleTrash),
         // qui les envoie au seul jeteur — d'où plus de toast local ici.
         PlayThrowVfx();
+        Sim.Audio.AudioManager.Instance.Play(Sim.Audio.SfxId.TrashThrow, transform.position);
     }
 
     /// <summary>

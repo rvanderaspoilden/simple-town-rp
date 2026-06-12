@@ -56,6 +56,7 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_TrashThrown>           (OnTrashThrown);
         NetworkClient.RegisterHandler<S2C_ConstructionVfx>       (OnConstructionVfx);
         NetworkClient.RegisterHandler<S2C_PropDestroyed>         (OnPropDestroyed);
+        NetworkClient.RegisterHandler<S2C_PropPacked>            (OnPropPacked);
         NetworkClient.RegisterHandler<S2C_PropSaleState>          (OnPropSaleState);
         NetworkClient.RegisterHandler<S2C_BuyPropResult>          (OnBuyPropResult);
         NetworkClient.RegisterHandler<S2C_ContainerVisualState>   (OnContainerVisualState);
@@ -76,6 +77,7 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.UnregisterHandler<S2C_TrashThrown>();
         NetworkClient.UnregisterHandler<S2C_ConstructionVfx>();
         NetworkClient.UnregisterHandler<S2C_PropDestroyed>();
+        NetworkClient.UnregisterHandler<S2C_PropPacked>();
         NetworkClient.UnregisterHandler<S2C_PropSaleState>();
         NetworkClient.UnregisterHandler<S2C_BuyPropResult>();
         NetworkClient.UnregisterHandler<S2C_ContainerVisualState>();
@@ -284,7 +286,14 @@ public class ClientPropManager : MonoBehaviour {
     private void OnPropDestroyed(S2C_PropDestroyed msg) {
         if (msg.RoomId != _currentRoomId) return;
         DestructionVfx.SpawnAt(msg.Position);
+        Sim.Audio.AudioManager.Instance.Play(Sim.Audio.SfxId.PropDestroy, msg.Position);
         ClientLogger.NetworkDebug("PropDestroyed {RoomId} {Position}", msg.RoomId, msg.Position);
+    }
+
+    private void OnPropPacked(S2C_PropPacked msg) {
+        if (msg.RoomId != _currentRoomId) return;
+        PackVfx.SpawnAt(msg.Position);
+        ClientLogger.NetworkDebug("PropPacked {RoomId} {Position}", msg.RoomId, msg.Position);
     }
 
     private void OnRoomState(S2C_RoomState msg) {

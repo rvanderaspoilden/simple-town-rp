@@ -51,6 +51,9 @@ namespace Sim {
             if (string.IsNullOrEmpty(characterId)) return;
             // Preserve previously-known fields when an update omits them.
             _entries.TryGetValue(characterId, out RelationshipEntry prev);
+            // Son de poignée de main quand on devient connaissance (transition vers >= Acquaintance).
+            if (prev.State < RelationshipState.Acquaintance && state >= RelationshipState.Acquaintance)
+                Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.Handshake);
             _entries[characterId] = new RelationshipEntry {
                 State = state,
                 FullName = !string.IsNullOrEmpty(fullName) ? fullName : prev.FullName,

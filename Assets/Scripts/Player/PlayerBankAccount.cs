@@ -59,8 +59,18 @@ public class PlayerBankAccount : NetworkBehaviour {
         StartCoroutine(this.PostLedgerCoroutine(body));
     }
 
+    private bool _seenFirstMoney;
+
     [ClientCallback]
     public void OnMoneyUpdated(int old, int newAmount) {
+        // Son d'encaissement pour le joueur LOCAL uniquement, sur une vraie hausse (pas la
+        // synchro initiale au spawn). Les dépenses ont déjà leur notification banque.
+        if (isLocalPlayer) {
+            if (_seenFirstMoney && newAmount > old)
+                Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.MoneyReceive);
+            _seenFirstMoney = true;
+        }
+
         if (!CharacterInfoPanelUI.Instance) return;
 
         CharacterInfoPanelUI.Instance.UpdateMoney(this.money);

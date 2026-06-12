@@ -101,24 +101,13 @@ public class WorldToastManager : MonoBehaviour
 
     // ── Sons par template ──────────────────────────────────────────────────────────
     // Joués via la source audio UI partagée du HUD. Clips chargés depuis Resources
-    // (swappables : changer le chemin ci-dessous). Silencieux si introuvables / pas de HUD.
-    private const string ErrorSoundPath   = "Sounds/Thud";
-    private const string SuccessSoundPath = "Sounds/Purchase/Item purchase 24";
-
-    private static AudioClip _errorClip, _successClip;
-    private static bool _clipsLoaded;
-
+    // Routé via le catalogue audio (SfxId.UiToastSuccess / UiToastError) : changer le son se
+    // fait désormais dans le SfxCatalog, plus aucun chemin string ici. Silencieux si non câblé.
     private static void PlayKindSound(ToastKind kind)
     {
         if (kind == ToastKind.Neutral) return;
-        if (!_clipsLoaded)
-        {
-            _clipsLoaded = true;
-            _errorClip   = Resources.Load<AudioClip>(ErrorSoundPath);
-            _successClip = Resources.Load<AudioClip>(SuccessSoundPath);
-        }
-        AudioClip clip = kind == ToastKind.Error ? _errorClip : _successClip;
-        if (clip != null) HUDManager.Instance?.PlaySound(clip, 1f);
+        Sim.Audio.AudioManager.Instance.PlayUI(
+            kind == ToastKind.Error ? Sim.Audio.SfxId.UiToastError : Sim.Audio.SfxId.UiToastSuccess);
     }
 
     /// <summary>0 = joueur local ; sinon le joueur réseau identifié par netId (s'il est spawné ici).</summary>

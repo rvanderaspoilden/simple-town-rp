@@ -93,6 +93,8 @@ namespace Sim {
         }
 
         private static void OnSmsReceived(S2C_SmsReceived msg) {
+            Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.SmsReceive);
+
             bool conversationOpen = SmsConversationUI.Instance != null
                 && SmsConversationUI.Instance.IsOpenFor(msg.senderCharacterId);
 

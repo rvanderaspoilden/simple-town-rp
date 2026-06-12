@@ -108,6 +108,16 @@ public struct S2C_PropDestroyed : NetworkMessage {
 }
 
 /// <summary>
+/// Diffuse à tous les clients de la room l'emballage réussi d'un meuble dans un colis :
+/// ceux-ci jouent un VFX d'emballage + son à la position donnée (le meuble est par ailleurs
+/// retiré du monde via S2C_PropRemove). Le toast de succès est envoyé séparément à l'emballeur.
+/// </summary>
+public struct S2C_PropPacked : NetworkMessage {
+    public string  RoomId;
+    public Vector3 Position;
+}
+
+/// <summary>
 /// Diffuse à tous les clients de la room la phase du VFX de construction d'un prop.
 /// Phase : 0 = Start (spawn le VFX en boucle), 1 = Finale (joue la finale + stoppe la
 /// boucle), 2 = Cancel (stoppe/détruit le VFX sans finale). Le client joue le VFX sur le

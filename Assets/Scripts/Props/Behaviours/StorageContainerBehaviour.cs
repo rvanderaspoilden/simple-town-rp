@@ -109,5 +109,7 @@ public class StorageContainerBehaviour : PropBehaviourBase
     /// </summary>
     public void SetOpenState(bool open) {
         if (doorAnimator != null) doorAnimator.SetOpen(open);
+        Sim.Audio.AudioManager.Instance.Play(
+            open ? Sim.Audio.SfxId.ContainerOpen : Sim.Audio.SfxId.ContainerClose, transform.position);
     }
 }

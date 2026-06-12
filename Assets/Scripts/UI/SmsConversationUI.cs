@@ -177,6 +177,7 @@ namespace Sim {
             }, mine: true); // optimistic echo
 
             NetworkClient.Send(new C2S_SendSms { recipientCharacterId = _currentContactId, text = text });
+            Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.SmsSend);
             ScrollToBottom();
 
             inputField.text = string.Empty;

@@ -196,12 +196,16 @@ public class ClientItemManager
 
     private void OnPickupResult(S2C_PickupResult msg)
     {
-        if (msg.Success) return; // Visual outcome arrives via S2C_ItemAttachedToHand
+        if (msg.Success) {
+            Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.ItemPickup);
+            return; // Visual outcome arrives via S2C_ItemAttachedToHand
+        }
 
         Debug.LogWarning($"[Item] Pickup rejected entity={msg.EntityId}: {msg.ErrorMessage}");
 
         // Feedback systématique : toute action refusée affiche le motif (français,
         // produit côté serveur) au-dessus du joueur, sinon le joueur ne sait pas pourquoi.
+        Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.ActionFail);
         ShowActionFailureToast(msg.ErrorMessage);
     }
 
@@ -236,10 +240,13 @@ public class ClientItemManager
 
     private void OnDropResult(S2C_DropResult msg)
     {
-        if (!msg.Success) {
-            Debug.LogWarning($"[Item] Drop rejected hand={msg.Hand}: {msg.ErrorMessage}");
-            ShowActionFailureToast(msg.ErrorMessage);
+        if (msg.Success) {
+            Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.ItemDrop);
+            return;
         }
+        Debug.LogWarning($"[Item] Drop rejected hand={msg.Hand}: {msg.ErrorMessage}");
+        Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.ActionFail);
+        ShowActionFailureToast(msg.ErrorMessage);
     }
 
     // ── Internal helpers ──────────────────────────────────────────────────────

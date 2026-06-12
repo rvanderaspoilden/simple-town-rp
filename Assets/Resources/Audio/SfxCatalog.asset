@@ -1,0 +1,135 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bacbfae35724c6e4abcac73a7b7158b4, type: 3}
+  m_Name: SfxCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Audio.SfxCatalog
+  entries:
+  - id: 1
+    clips:
+    - {fileID: 8300000, guid: e234f7902c1991942b2a8b242da20bdb, type: 3}
+    volume: {x: 0.45, y: 0.6}
+    pitch: {x: 0.92, y: 1.12}
+    spatial: 1
+    minInterval: 0.1
+    mixerGroup: {fileID: 0}
+  - id: 6
+    clips:
+    - {fileID: 8300000, guid: 83f2f868f0918d04ab6a5e1e83f08455, type: 3}
+    volume: {x: 0.7, y: 0.8}
+    pitch: {x: 0.95, y: 1.05}
+    spatial: 1
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 17
+    clips:
+    - {fileID: 8300000, guid: 3cdf6946b7f8a1549ab339405d1c0146, type: 3}
+    volume: {x: 0.6, y: 0.7}
+    pitch: {x: 0.95, y: 1.08}
+    spatial: 1
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 22
+    clips:
+    - {fileID: 8300000, guid: 4f8aa9e57a7a5ed4295faa1a774724d0, type: 3}
+    volume: {x: 0.8, y: 0.9}
+    pitch: {x: 0.98, y: 1.04}
+    spatial: 1
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 23
+    clips:
+    - {fileID: 8300000, guid: 952e8d12e090ef744a71c6f912f460d0, type: 3}
+    volume: {x: 0.8, y: 0.9}
+    pitch: {x: 0.98, y: 1.04}
+    spatial: 1
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 29
+    clips:
+    - {fileID: 8300000, guid: ca806aab1d446614bbe7fb0c0af69b79, type: 3}
+    volume: {x: 0.5, y: 0.5}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 46
+    clips:
+    - {fileID: 8300000, guid: ca806aab1d446614bbe7fb0c0af69b79, type: 3}
+    volume: {x: 1, y: 1}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 47
+    clips:
+    - {fileID: 8300000, guid: 3cdf6946b7f8a1549ab339405d1c0146, type: 3}
+    volume: {x: 0.8, y: 0.8}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 42
+    clips:
+    - {fileID: 8300000, guid: 622df6012652bdb498c7ec99b1b8a532, type: 3}
+    volume: {x: 1, y: 1}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0.03
+    mixerGroup: {fileID: 0}
+  - id: 43
+    clips:
+    - {fileID: 8300000, guid: a3723b260c560944ca45ec5b066bc871, type: 3}
+    volume: {x: 1, y: 1}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0.03
+    mixerGroup: {fileID: 0}
+  - id: 48
+    clips:
+    - {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+    volume: {x: 0.5, y: 0.5}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 44
+    clips:
+    - {fileID: 8300000, guid: c2dc6a4ee70e4344e8e25bf44f538f9e, type: 3}
+    volume: {x: 0.5, y: 0.5}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 45
+    clips:
+    - {fileID: 8300000, guid: 26ba141b9d89e4644b5e00f1cf484701, type: 3}
+    volume: {x: 0.5, y: 0.5}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 37
+    clips:
+    - {fileID: 8300000, guid: 933967666cf08f948b930cf5b66f99ae, type: 3}
+    volume: {x: 1, y: 1}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    mixerGroup: {fileID: 0}
+  - id: 39
+    clips:
+    - {fileID: 8300000, guid: 7cbe375f9e9b36b4ea781cdd1754436e, type: 3}
+    volume: {x: 0.8, y: 0.8}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    mixerGroup: {fileID: 0}

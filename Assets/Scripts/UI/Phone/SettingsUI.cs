@@ -118,9 +118,10 @@ public class SettingsUI : PhoneApplicationUI {
     private void WireButtons() {
         if (notificationsNewMissionToggle != null)
             notificationsNewMissionToggle.onValueChanged.AddListener(OnToggleNotif);
-        if (audioMasterSlider != null) audioMasterSlider.onValueChanged.AddListener(v => _working.AudioMaster = v);
-        if (audioMusicSlider != null) audioMusicSlider.onValueChanged.AddListener(v => _working.AudioMusic = v);
-        if (audioSfxSlider != null) audioSfxSlider.onValueChanged.AddListener(v => _working.AudioSfx = v);
+        // Application LIVE au glissement (preview immédiat) ; la persistance se fait au Save.
+        if (audioMasterSlider != null) audioMasterSlider.onValueChanged.AddListener(v => { _working.AudioMaster = v; ApplyAudioLive(); });
+        if (audioMusicSlider != null)  audioMusicSlider.onValueChanged.AddListener(v => { _working.AudioMusic = v; ApplyAudioLive(); });
+        if (audioSfxSlider != null)    audioSfxSlider.onValueChanged.AddListener(v => { _working.AudioSfx = v; ApplyAudioLive(); });
         if (graphicsQualityDropdown != null)
             graphicsQualityDropdown.onValueChanged.AddListener(v => _working.GraphicsQuality = v);
         if (audioInputDropdown != null)
@@ -136,6 +137,10 @@ public class SettingsUI : PhoneApplicationUI {
         if (graphicsQualityDropdown != null) graphicsQualityDropdown.onValueChanged.RemoveAllListeners();
         if (audioInputDropdown != null) audioInputDropdown.onValueChanged.RemoveAllListeners();
         if (saveButton != null) saveButton.onClick.RemoveAllListeners();
+    }
+
+    private void ApplyAudioLive() {
+        if (_working != null) Sim.Audio.AudioVolume.ApplyFrom(_working);
     }
 
     private void OnToggleNotif(bool value) {
@@ -163,7 +168,7 @@ public class SettingsUI : PhoneApplicationUI {
     }
 
     private static void ApplyLocal(UserSettingsData data) {
-        AudioListener.volume = Mathf.Clamp01(data.AudioMaster);
+        Sim.Audio.AudioVolume.ApplyFrom(data); // Master (AudioListener) + Musique/SFX (mixer)
         int qualityIdx = Mathf.Clamp(data.GraphicsQuality, 0, QualitySettings.names.Length - 1);
         if (QualitySettings.GetQualityLevel() != qualityIdx) {
             QualitySettings.SetQualityLevel(qualityIdx, applyExpensiveChanges: true);

@@ -1906,8 +1906,24 @@ public class ServerItemManager
         int newVersion = propVersion + 1;
         try { var pj = JsonConvert.DeserializeObject<PropJson>(patchReq.downloadHandler.text); if (pj != null) newVersion = pj.version; } catch { }
 
+        // Feedback : VFX d'emballage à la position du meuble (diffusé à toute la room),
+        // capturé AVANT le retrait runtime. Le toast de succès part au seul emballeur.
+        GameObject packedGo = ServerPropManager.Instance.GetSpawnedGameObject(propId);
+        if (packedGo != null) {
+            BroadcastToRoom(roomId, new S2C_PropPacked { RoomId = roomId, Position = packedGo.transform.position });
+        }
+
         // 4. Retire le meuble du monde (runtime + broadcast S2C_PropRemove). PAS de DELETE DB.
         ServerPropManager.Instance.RemoveProp(roomId, propId);
+
+        if (conn != null && conn.isReady) {
+            conn.Send(new ToastNotificationMessage {
+                text       = "Meuble emballé",
+                typeByte   = (byte)NotificationType.JOB,
+                worldToast = true,
+                kindByte   = (byte)ToastKind.Success,
+            });
+        }
 
         // 5. Si le colis est ouvert : ajoute l'entrée meuble + snapshot live.
         if (_openItemContainerByPlayer.TryGetValue(netId, out var session) && session.PlaceId == placeId) {

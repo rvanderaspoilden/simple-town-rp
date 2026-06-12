@@ -135,11 +135,13 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
             originSlot.SetItem(displaced, animate: true);
             this.SetItem(draggableItem, animate: true);
             OnItemSwap?.Invoke(originSlot, draggableItem, this, displaced);
+            Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.ItemSwap);
         } else if (!this._item) {
             // Slot vide → déplace, smooth land.
             draggableItem.ItemSlot.Clear();
             this.SetItem(draggableItem, animate: true);
             OnItemMove?.Invoke(originSlot, this);
+            Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.ItemMove);
         } else {
             // Slot occupé sans swap autorisé → snap-back animé vers l'origine.
             if (originSlot != null) originSlot.SnapBackInto(draggableItem);

@@ -49,6 +49,16 @@ namespace Sim {
             } else {
                 Instance = this;
                 this.audioSource = GetComponent<AudioSource>();
+
+                // Route la musique de fond vers le groupe Music du mixer → contrôlée par le
+                // slider Musique des réglages (le slider SFX/Master n'affecte pas la musique).
+                if (this.backgroundAudioSource != null) {
+                    var mixer = Resources.Load<UnityEngine.Audio.AudioMixer>("Audio/GameAudio");
+                    if (mixer != null) {
+                        var music = mixer.FindMatchingGroups("Music");
+                        if (music.Length > 0) this.backgroundAudioSource.outputAudioMixerGroup = music[0];
+                    }
+                }
             }
 
             DontDestroyOnLoad(this.gameObject);
@@ -62,9 +72,10 @@ namespace Sim {
             this.CloseConstellation();
         }
 
+        // Façade : tous les appels existants passent désormais par l'AudioManager (pooling +
+        // mixer centralisés). Signature conservée → aucun site d'appel à modifier.
         public void PlaySound(AudioClip sound, float volume) {
-            this.audioSource.volume = volume;
-            this.audioSource.PlayOneShot(sound);
+            Sim.Audio.AudioManager.Instance.PlayClip2D(sound, volume);
         }
 
         public void PlayBackgroundSound(AudioClip audioClip, float volume) {
@@ -110,7 +121,10 @@ namespace Sim {
         }
 
         public void ToggleInventory() {
-            this.inventoryUI.gameObject.SetActive(!this.inventoryUI.gameObject.activeSelf);
+            bool willOpen = !this.inventoryUI.gameObject.activeSelf;
+            this.inventoryUI.gameObject.SetActive(willOpen);
+            Sim.Audio.AudioManager.Instance.PlayUI(
+                willOpen ? Sim.Audio.SfxId.InventoryOpen : Sim.Audio.SfxId.InventoryClose);
         }
 
         public InventoryUI InventoryUI => inventoryUI;

@@ -129,6 +129,16 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         _identity = GetComponent<PropIdentity>();
         _renderer = GetComponent<PropsRenderer>();
         _isShopDisplay = GetComponent<ShopDisplay>() != null;
+
+        // Route les sons du prop (porte, distributeur, colis, construction…) vers le groupe
+        // SFX du mixer → contrôlés par le slider SFX. Les clips restent ceux du prefab (aucune
+        // régression) ; seul le bus de sortie change.
+        var sfxGroup = Sim.Audio.AudioManager.Instance.SfxGroup;
+        if (sfxGroup != null) {
+            foreach (var a in GetComponentsInChildren<AudioSource>(true))
+                a.outputAudioMixerGroup = sfxGroup;
+        }
+
         SetupActions();
     }
 

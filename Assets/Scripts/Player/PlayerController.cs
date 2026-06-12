@@ -193,11 +193,12 @@ namespace Sim {
         /// </summary>
         public void OnConsumeBite() {
             if (!isLocalPlayer) return;
-            int entityId = this.pendingDrinkEntityId >= 0 ? this.pendingDrinkEntityId : this.pendingEatEntityId;
+            bool isDrink = this.pendingDrinkEntityId >= 0;
+            int entityId = isDrink ? this.pendingDrinkEntityId : this.pendingEatEntityId;
             if (entityId < 0) return;
             this.pendingDrinkEntityId = -1;
             this.pendingEatEntityId = -1;
-            this.ConsumeItem(entityId);
+            this.ConsumeItem(entityId, isDrink);
             this.SetDrinkingHand(0);
         }
 
@@ -391,12 +392,12 @@ namespace Sim {
             this.audioSource.PlayOneShot(this.walkStepSound);
         }
 
-        public void ConsumeItem(int entityId) {
-            this.CmdConsumeItem(entityId);
+        public void ConsumeItem(int entityId, bool isDrink = false) {
+            this.CmdConsumeItem(entityId, isDrink);
         }
 
         [Command]
-        public void CmdConsumeItem(int entityId) {
+        public void CmdConsumeItem(int entityId, bool isDrink) {
             GameLogger.Network.Debug("CmdConsumeItem {PlayerNetId} {EntityId}", netId, entityId);
 
             string roomId = PlayerRoomTracker.Instance.GetRoom(connectionToClient);
@@ -420,7 +421,7 @@ namespace Sim {
 
             GameLogger.Player.Info("PlayerConsumedItem {PlayerNetId} {EntityId} {ItemConfigId}",
                 netId, entityId, entity.ItemConfigId);
-            this.RpcConsume();
+            this.RpcConsume(isDrink);
         }
 
         public void CleanItem(int entityId) {
@@ -478,16 +479,17 @@ namespace Sim {
         }
 
         [ClientRpc]
-        public void RpcConsume() {
+        public void RpcConsume(bool isDrink) {
             ClientLogger.NetworkDebug("RpcConsume {PlayerNetId} {IsLocalPlayer}", netId, isLocalPlayer);
-            
+
             if (isLocalPlayer) {
                 HUDManager.Instance.InventoryUI.Invoke(nameof(InventoryUI.UpdateUI), .1f);
                 ClientLogger.UI("InventoryUpdateTriggered");
             }
-            
-            this.audioSource.PlayOneShot(this.eatSound);
-            ClientLogger.Audio("EatSoundPlayed {PlayerNetId}", netId);
+
+            Sim.Audio.AudioManager.Instance.Play(
+                isDrink ? Sim.Audio.SfxId.Drink : Sim.Audio.SfxId.Eat, transform.position);
+            ClientLogger.Audio("ConsumeSoundPlayed {PlayerNetId} {IsDrink}", netId, isDrink);
         }
 
         public void ResetGeographicArea() {
