@@ -28,7 +28,7 @@ namespace Sim.Missions {
             bool hasConstellation = constellationLabels != null && constellationLabels.Length > 0;
             if (money <= 0 && !hasConstellation) return;
 
-            WorldToastManager.Show("Mission terminée",
+            WorldToastManager.ShowSuccess("Mission terminée",
                 FormatRewardSubtitle(money, constellationLabels, constellationAmounts),
                 delay: 0.25f);
         }

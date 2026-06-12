@@ -31,6 +31,10 @@ namespace Sim.Scriptables {
         [SerializeField]
         private int price;
 
+        [Tooltip("Son de pas produit par ce revêtement quand un perso marche dessus (sols).")]
+        [SerializeField]
+        private Sim.Audio.SfxId footstepSfx = Sim.Audio.SfxId.FootstepDefault;
+
         public int GetId() {
             return this.id;
         }
@@ -68,5 +72,7 @@ namespace Sim.Scriptables {
         }
 
         public Sprite Sprite => sprite;
+
+        public Sim.Audio.SfxId FootstepSfx => footstepSfx;
     }
 }

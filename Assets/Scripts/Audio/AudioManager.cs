@@ -82,12 +82,16 @@ namespace Sim.Audio {
         /// <summary>Joue un SFX en 3D à la position donnée (pas, props, ramassage…).</summary>
         public void Play(SfxId id, Vector3 position) {
             if (!TryResolve(id, out SfxEntry entry, out AudioClip clip)) return;
-            AudioSource src = NextSource();
+            // Un son basse priorité (pas…) ne vole PAS de voix : s'il n'y a aucune source libre,
+            // on le saute plutôt que de couper un son plus important.
+            AudioSource src = NextSource(allowSteal: !entry.lowPriority);
+            if (src == null) return;
             src.transform.position = position;
             src.spatialBlend = entry.spatial ? 1f : 0f;
             src.clip = clip;
             src.volume = entry.RandomVolume();
             src.pitch = entry.RandomPitch();
+            src.priority = entry.lowPriority ? 230 : 128; // 0=prioritaire, 256=sacrifiable en premier
             src.outputAudioMixerGroup = entry.MixerGroup != null ? entry.MixerGroup : _sfxGroup;
             src.Play();
         }
@@ -98,6 +102,22 @@ namespace Sim.Audio {
             _uiSource.outputAudioMixerGroup = entry.MixerGroup != null ? entry.MixerGroup : _sfxGroup;
             _uiSource.pitch = entry.RandomPitch();
             _uiSource.PlayOneShot(clip, entry.RandomVolume());
+        }
+
+        /// <summary>Joue un clip arbitraire en 3D à une position (overrides par-conteneur :
+        /// frigo, carton…). Passe par le pool + bus SFX, comme <see cref="Play"/>.</summary>
+        public void PlayClip3D(AudioClip clip, Vector3 position, float volume = 1f) {
+            if (clip == null) return;
+            AudioSource src = NextSource(allowSteal: true);
+            if (src == null) return;
+            src.transform.position = position;
+            src.spatialBlend = 1f;
+            src.clip = clip;
+            src.volume = Mathf.Clamp01(volume);
+            src.pitch = 1f;
+            src.priority = 128;
+            src.outputAudioMixerGroup = _sfxGroup;
+            src.Play();
         }
 
         /// <summary>
@@ -140,12 +160,14 @@ namespace Sim.Audio {
             return entry.clips[idx];
         }
 
-        /// <summary>Source libre en priorité, sinon round-robin (plafond de voix).</summary>
-        private AudioSource NextSource() {
+        /// <summary>Source libre en priorité. Si aucune n'est libre : round-robin (vole la plus
+        /// ancienne) seulement si <paramref name="allowSteal"/> ; sinon renvoie null.</summary>
+        private AudioSource NextSource(bool allowSteal) {
             for (int i = 0; i < _pool.Length; i++) {
                 int idx = (_poolCursor + i) % _pool.Length;
                 if (!_pool[idx].isPlaying) { _poolCursor = (idx + 1) % _pool.Length; return _pool[idx]; }
             }
+            if (!allowSteal) return null;
             AudioSource s = _pool[_poolCursor];
             _poolCursor = (_poolCursor + 1) % _pool.Length;
             return s;

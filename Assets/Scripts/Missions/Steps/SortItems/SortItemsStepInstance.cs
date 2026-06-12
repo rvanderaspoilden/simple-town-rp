@@ -194,6 +194,7 @@ namespace Sim.Missions {
                     text       = "Aucune mission ne te demande de trier des colis.",
                     typeByte   = (byte)NotificationType.JOB,
                     worldToast = true,
+                    kindByte   = (byte)ToastKind.Error,
                 });
                 return;
             }
@@ -222,6 +223,7 @@ namespace Sim.Missions {
                     text       = "Tu dois tenir un colis à trier pour utiliser ce bac.",
                     typeByte   = (byte)NotificationType.JOB,
                     worldToast = true,
+                    kindByte   = (byte)ToastKind.Error,
                 });
                 return;
             }
@@ -248,6 +250,7 @@ namespace Sim.Missions {
                 text       = heldState.correct ? "Parfait !" : "Mauvais bac !",
                 typeByte   = (byte)NotificationType.JOB,
                 worldToast = true,
+                kindByte   = (byte)(heldState.correct ? ToastKind.Success : ToastKind.Error),
             });
 
             if (!heldState.correct) {

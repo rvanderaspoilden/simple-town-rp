@@ -13,45 +13,14 @@ MonoBehaviour:
   m_Name: SfxCatalog
   m_EditorClassIdentifier: Assembly-CSharp::Sim.Audio.SfxCatalog
   entries:
-  - id: 1
-    clips:
-    - {fileID: 8300000, guid: e234f7902c1991942b2a8b242da20bdb, type: 3}
-    volume: {x: 0.45, y: 0.6}
-    pitch: {x: 0.92, y: 1.12}
-    spatial: 1
-    minInterval: 0.1
-    mixerGroup: {fileID: 0}
-  - id: 6
-    clips:
-    - {fileID: 8300000, guid: 83f2f868f0918d04ab6a5e1e83f08455, type: 3}
-    volume: {x: 0.7, y: 0.8}
-    pitch: {x: 0.95, y: 1.05}
-    spatial: 1
-    minInterval: 0
-    mixerGroup: {fileID: 0}
   - id: 17
     clips:
-    - {fileID: 8300000, guid: 3cdf6946b7f8a1549ab339405d1c0146, type: 3}
+    - {fileID: 8300000, guid: 4f53772524a0f284487a21b169cb6590, type: 3}
     volume: {x: 0.6, y: 0.7}
     pitch: {x: 0.95, y: 1.08}
     spatial: 1
     minInterval: 0
-    mixerGroup: {fileID: 0}
-  - id: 22
-    clips:
-    - {fileID: 8300000, guid: 4f8aa9e57a7a5ed4295faa1a774724d0, type: 3}
-    volume: {x: 0.8, y: 0.9}
-    pitch: {x: 0.98, y: 1.04}
-    spatial: 1
-    minInterval: 0
-    mixerGroup: {fileID: 0}
-  - id: 23
-    clips:
-    - {fileID: 8300000, guid: 952e8d12e090ef744a71c6f912f460d0, type: 3}
-    volume: {x: 0.8, y: 0.9}
-    pitch: {x: 0.98, y: 1.04}
-    spatial: 1
-    minInterval: 0
+    lowPriority: 0
     mixerGroup: {fileID: 0}
   - id: 29
     clips:
@@ -60,6 +29,7 @@ MonoBehaviour:
     pitch: {x: 1, y: 1}
     spatial: 0
     minInterval: 0
+    lowPriority: 0
     mixerGroup: {fileID: 0}
   - id: 46
     clips:
@@ -68,6 +38,7 @@ MonoBehaviour:
     pitch: {x: 1, y: 1}
     spatial: 0
     minInterval: 0
+    lowPriority: 0
     mixerGroup: {fileID: 0}
   - id: 47
     clips:
@@ -76,6 +47,7 @@ MonoBehaviour:
     pitch: {x: 1, y: 1}
     spatial: 0
     minInterval: 0
+    lowPriority: 0
     mixerGroup: {fileID: 0}
   - id: 42
     clips:
@@ -84,6 +56,7 @@ MonoBehaviour:
     pitch: {x: 1, y: 1}
     spatial: 0
     minInterval: 0.03
+    lowPriority: 0
     mixerGroup: {fileID: 0}
   - id: 43
     clips:
@@ -92,14 +65,7 @@ MonoBehaviour:
     pitch: {x: 1, y: 1}
     spatial: 0
     minInterval: 0.03
-    mixerGroup: {fileID: 0}
-  - id: 48
-    clips:
-    - {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
-    volume: {x: 0.5, y: 0.5}
-    pitch: {x: 1, y: 1}
-    spatial: 0
-    minInterval: 0
+    lowPriority: 0
     mixerGroup: {fileID: 0}
   - id: 44
     clips:
@@ -108,6 +74,7 @@ MonoBehaviour:
     pitch: {x: 1, y: 1}
     spatial: 0
     minInterval: 0
+    lowPriority: 0
     mixerGroup: {fileID: 0}
   - id: 45
     clips:
@@ -116,6 +83,7 @@ MonoBehaviour:
     pitch: {x: 1, y: 1}
     spatial: 0
     minInterval: 0
+    lowPriority: 0
     mixerGroup: {fileID: 0}
   - id: 37
     clips:
@@ -124,6 +92,7 @@ MonoBehaviour:
     pitch: {x: 1, y: 1}
     spatial: 0
     minInterval: 0
+    lowPriority: 0
     mixerGroup: {fileID: 0}
   - id: 39
     clips:
@@ -132,4 +101,175 @@ MonoBehaviour:
     pitch: {x: 1, y: 1}
     spatial: 0
     minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 1
+    clips:
+    - {fileID: 8300000, guid: b84568b577150694fa12728cffad3bff, type: 3}
+    - {fileID: 8300000, guid: 7edf3ff08fee2214f8d61b5eaf23a347, type: 3}
+    - {fileID: 8300000, guid: e74aa274d193fcd4488b4696d3826a21, type: 3}
+    - {fileID: 8300000, guid: 50584594b50a99d4fad67deaaa3bdaf5, type: 3}
+    volume: {x: 0.08, y: 0.14}
+    pitch: {x: 0.92, y: 1.12}
+    spatial: 1
+    minInterval: 0.08
+    lowPriority: 1
+    mixerGroup: {fileID: 0}
+  - id: 2
+    clips:
+    - {fileID: 8300000, guid: babedf3c2da73b0448d229c341bc57e0, type: 3}
+    - {fileID: 8300000, guid: 4dd0b1b70c2f6264db347403ef0bbc8d, type: 3}
+    - {fileID: 8300000, guid: 6900dc556c592bc4a999df95992b3c6f, type: 3}
+    volume: {x: 0.14, y: 0.22}
+    pitch: {x: 0.92, y: 1.12}
+    spatial: 1
+    minInterval: 0.08
+    lowPriority: 1
+    mixerGroup: {fileID: 0}
+  - id: 3
+    clips:
+    - {fileID: 8300000, guid: 2c77c21f00866b5448e74a28129c72db, type: 3}
+    - {fileID: 8300000, guid: 11b2067359b996544a14d6dd1ccab4f7, type: 3}
+    - {fileID: 8300000, guid: f7733eaf86c482d4ba917c39f0d30838, type: 3}
+    - {fileID: 8300000, guid: 6058e970cd43e534fb77843c81759ac3, type: 3}
+    - {fileID: 8300000, guid: 74134710c8ef2074b8dffa7f101ac7db, type: 3}
+    volume: {x: 0.14, y: 0.22}
+    pitch: {x: 0.92, y: 1.12}
+    spatial: 1
+    minInterval: 0.08
+    lowPriority: 1
+    mixerGroup: {fileID: 0}
+  - id: 4
+    clips:
+    - {fileID: 8300000, guid: 48cfc20f030172d46bf23068b32d3db7, type: 3}
+    - {fileID: 8300000, guid: f4453feba2e33b74e95f3a6d55c7c2d8, type: 3}
+    - {fileID: 8300000, guid: 5e1f9e61f5acd8342bced142c2ba5354, type: 3}
+    - {fileID: 8300000, guid: 93157aebd22147443a3c4fee3946b82d, type: 3}
+    - {fileID: 8300000, guid: 77235a97628caf54aac3758359f0e9ba, type: 3}
+    volume: {x: 0.14, y: 0.22}
+    pitch: {x: 0.92, y: 1.12}
+    spatial: 1
+    minInterval: 0.08
+    lowPriority: 1
+    mixerGroup: {fileID: 0}
+  - id: 5
+    clips:
+    - {fileID: 8300000, guid: 63a506205f1551040bb776a8cbbcad36, type: 3}
+    - {fileID: 8300000, guid: 3af7e336c9abd9447893072efed062ca, type: 3}
+    - {fileID: 8300000, guid: b8fc676fb391e8e41bbbe78854f4a26a, type: 3}
+    - {fileID: 8300000, guid: 5f1cfae10b3fc814c9277d16290544e1, type: 3}
+    - {fileID: 8300000, guid: 163f7f8a7f30dd44b9934dc19d213d07, type: 3}
+    volume: {x: 0.14, y: 0.22}
+    pitch: {x: 0.92, y: 1.12}
+    spatial: 1
+    minInterval: 0.08
+    lowPriority: 1
+    mixerGroup: {fileID: 0}
+  - id: 22
+    clips:
+    - {fileID: 8300000, guid: 4f8aa9e57a7a5ed4295faa1a774724d0, type: 3}
+    volume: {x: 0.8, y: 0.9}
+    pitch: {x: 0.98, y: 1.04}
+    spatial: 1
+    minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 23
+    clips:
+    - {fileID: 8300000, guid: 952e8d12e090ef744a71c6f912f460d0, type: 3}
+    volume: {x: 0.8, y: 0.9}
+    pitch: {x: 0.98, y: 1.04}
+    spatial: 1
+    minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 24
+    clips:
+    - {fileID: 8300000, guid: a6d5a21f1b29d794295e8183cf4126c9, type: 3}
+    volume: {x: 0.8, y: 0.9}
+    pitch: {x: 0.98, y: 1.04}
+    spatial: 1
+    minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 6
+    clips:
+    - {fileID: 8300000, guid: 83f2f868f0918d04ab6a5e1e83f08455, type: 3}
+    volume: {x: 0.6, y: 0.7}
+    pitch: {x: 0.95, y: 1.08}
+    spatial: 1
+    minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 7
+    clips:
+    - {fileID: 8300000, guid: 0426f266710659a44802633c80643a30, type: 3}
+    volume: {x: 0.6, y: 0.7}
+    pitch: {x: 0.95, y: 1.08}
+    spatial: 1
+    minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 21
+    clips:
+    - {fileID: 8300000, guid: 5cf72cf058ab5644daf127c015b91a55, type: 3}
+    volume: {x: 0.8, y: 0.9}
+    pitch: {x: 0.96, y: 1.06}
+    spatial: 1
+    minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 13
+    clips:
+    - {fileID: 8300000, guid: 3f82c0c6135a268498b82648846bcf62, type: 3}
+    volume: {x: 0.7, y: 0.8}
+    pitch: {x: 0.97, y: 1.05}
+    spatial: 0
+    minInterval: 0.03
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 34
+    clips:
+    - {fileID: 8300000, guid: 3a96821d6ec955146b6a697eee1d4e13, type: 3}
+    volume: {x: 0.8, y: 0.8}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 35
+    clips:
+    - {fileID: 8300000, guid: a7cae65960cc9a145a9c3adb9fb20f37, type: 3}
+    volume: {x: 0.7, y: 0.7}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 36
+    clips:
+    - {fileID: 8300000, guid: d9a071116119ac54c9745c6f943d1f01, type: 3}
+    volume: {x: 0.9, y: 0.9}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 48
+    clips:
+    - {fileID: 8300000, guid: 4f53772524a0f284487a21b169cb6590, type: 3}
+    volume: {x: 0.5, y: 0.5}
+    pitch: {x: 1, y: 1}
+    spatial: 0
+    minInterval: 0
+    lowPriority: 0
+    mixerGroup: {fileID: 0}
+  - id: 20
+    clips:
+    - {fileID: 8300000, guid: f45b48024b600754b8fbef71ef1ea472, type: 3}
+    volume: {x: 0.8, y: 0.9}
+    pitch: {x: 0.96, y: 1.05}
+    spatial: 1
+    minInterval: 0
+    lowPriority: 0
     mixerGroup: {fileID: 0}

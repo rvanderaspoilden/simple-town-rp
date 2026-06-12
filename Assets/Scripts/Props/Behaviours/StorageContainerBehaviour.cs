@@ -109,7 +109,14 @@ public class StorageContainerBehaviour : PropBehaviourBase
     /// </summary>
     public void SetOpenState(bool open) {
         if (doorAnimator != null) doorAnimator.SetOpen(open);
-        Sim.Audio.AudioManager.Instance.Play(
-            open ? Sim.Audio.SfxId.ContainerOpen : Sim.Audio.SfxId.ContainerClose, transform.position);
+
+        // Son spécifique au conteneur (frigo, carton…) s'il est configuré ; sinon SfxId générique.
+        var container = configuration != null ? configuration.Container : null;
+        AudioClip overrideClip = container != null ? (open ? container.OpenClip : container.CloseClip) : null;
+        if (overrideClip != null)
+            Sim.Audio.AudioManager.Instance.PlayClip3D(overrideClip, transform.position);
+        else
+            Sim.Audio.AudioManager.Instance.Play(
+                open ? Sim.Audio.SfxId.ContainerOpen : Sim.Audio.SfxId.ContainerClose, transform.position);
     }
 }

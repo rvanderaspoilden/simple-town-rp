@@ -212,7 +212,7 @@ public class ClientItemManager
     /// <summary>Toast d'échec d'action générique : affiche le motif serveur, ou un fallback.</summary>
     private static void ShowActionFailureToast(string serverMessage)
     {
-        WorldToastManager.Show(string.IsNullOrEmpty(serverMessage) ? "Action impossible" : serverMessage);
+        WorldToastManager.ShowError(string.IsNullOrEmpty(serverMessage) ? "Action impossible" : serverMessage);
     }
 
     private void OnItemAttachedToHand(S2C_ItemAttachedToHand msg)

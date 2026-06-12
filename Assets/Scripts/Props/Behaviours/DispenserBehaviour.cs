@@ -34,7 +34,7 @@ public class DispenserBehaviour : PropBehaviourBase {
             // main tout de suite) → toast flottant, pas une notification (réservée aux
             // résultats asynchrones/différés, ex. livraison à domicile).
             ItemConfig cfg = DatabaseManager.GetItemConfigById(itemId);
-            WorldToastManager.Show(cfg != null ? $"{cfg.Label} acheté" : "Objet acheté");
+            WorldToastManager.ShowSuccess(cfg != null ? $"{cfg.Label} acheté" : "Objet acheté");
         }
         OnPurchaseResult?.Invoke(itemId, success);
     }

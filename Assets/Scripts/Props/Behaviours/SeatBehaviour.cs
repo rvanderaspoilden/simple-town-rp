@@ -179,13 +179,13 @@ public class SeatBehaviour : PropBehaviourBase, ISeatBehavior {
                 if (HasAvailableSeat())
                     SendPropInteraction(PropType.Seat, SeatInteraction.SitRequest);
                 else
-                    WorldToastManager.Show("Aucune place libre");
+                    WorldToastManager.ShowError("Aucune place libre");
                 break;
             case ActionTypeEnum.COUCH:
                 if (HasAvailableCouch())
                     SendPropInteraction(PropType.Seat, SeatInteraction.CouchRequest);
                 else
-                    WorldToastManager.Show("Aucune place libre");
+                    WorldToastManager.ShowError("Aucune place libre");
                 break;
         }
     }

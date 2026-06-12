@@ -572,6 +572,7 @@ public class SimpleTownNetwork : NetworkManager
                     text = $"Fonds insuffisants ({price} €).",
                     typeByte = (byte)NotificationType.BANK,
                     worldToast = true,
+                    kindByte = (byte)ToastKind.Error,
                 });
                 conn.Send(new ShopResponseMessage { isSuccess = false });
             }

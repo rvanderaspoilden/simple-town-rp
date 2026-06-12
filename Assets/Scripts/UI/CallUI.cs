@@ -22,7 +22,7 @@ namespace Sim {
 
         [Header("Ringing sound")]
         [SerializeField] private AudioSource ringSource;
-        [SerializeField] private string ringClipResource = "Sounds/Phone/Phone_notif";
+        [SerializeField] private string ringClipResource = "Sounds/Phone/sfx-phone-call";
 
         private CallUIState _state;
         private string _peerId;

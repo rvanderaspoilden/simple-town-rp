@@ -173,6 +173,9 @@ namespace Sim {
             if (!isLocalPlayer) return;
             this.pendingDrinkEntityId = entityId;
             this.SetDrinkingHand(hand == HandType.Right ? 1 : 2);
+            // Le son de gorgée démarre AVEC l'animation (geste levé), pas à la consommation
+            // (OnConsumeBite). Répliqué à tous les clients qui voient le geste.
+            this.CmdPlayDrinkSound();
         }
 
         /// <summary>
@@ -475,7 +478,16 @@ namespace Sim {
         /// </summary>
         [TargetRpc]
         public void TargetActionFailed(NetworkConnectionToClient target, string message) {
-            if (!string.IsNullOrEmpty(message)) WorldToastManager.Show(message);
+            if (!string.IsNullOrEmpty(message)) WorldToastManager.ShowError(message);
+        }
+
+        // Son de gorgée déclenché au début du geste de boire (cf. Drink), pour TOUS les clients.
+        [Command]
+        private void CmdPlayDrinkSound() => RpcPlayDrinkSound();
+
+        [ClientRpc]
+        private void RpcPlayDrinkSound() {
+            Sim.Audio.AudioManager.Instance.Play(Sim.Audio.SfxId.Drink, transform.position);
         }
 
         [ClientRpc]
@@ -487,9 +499,12 @@ namespace Sim {
                 ClientLogger.UI("InventoryUpdateTriggered");
             }
 
-            Sim.Audio.AudioManager.Instance.Play(
-                isDrink ? Sim.Audio.SfxId.Drink : Sim.Audio.SfxId.Eat, transform.position);
-            ClientLogger.Audio("ConsumeSoundPlayed {PlayerNetId} {IsDrink}", netId, isDrink);
+            // Le son de gorgée joue déjà au début du geste (RpcPlayDrinkSound) ; ici on ne joue
+            // que le son de bouchée (manger), au moment où la nourriture atteint la bouche.
+            if (!isDrink) {
+                Sim.Audio.AudioManager.Instance.Play(Sim.Audio.SfxId.Eat, transform.position);
+                ClientLogger.Audio("ConsumeSoundPlayed {PlayerNetId} {IsDrink}", netId, isDrink);
+            }
         }
 
         public void ResetGeographicArea() {

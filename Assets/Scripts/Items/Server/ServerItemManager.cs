@@ -574,11 +574,45 @@ public class ServerItemManager
     }
 
     // Le joueur tient-il un colis (item-conteneur persisté) ? Renvoie son uuid + config conteneur.
-    // Storage objects (item-containers) may never be nested inside another container —
-    // neither an item-container nor a prop-container. An item is a storage object when its
-    // config exposes a container grid (SlotCount > 0). Enforced at every placement chokepoint.
+    // Un objet de stockage (conteneur) ne peut être rangé dans un autre conteneur QUE s'il est
+    // VIDE (sinon : "videz-le d'abord"). Un item est un objet de stockage quand sa config expose
+    // une grille (SlotCount > 0). Règle appliquée à chaque point de placement (déplacement,
+    // swap, emballage de meuble).
     private static bool IsStorageItem(ItemConfig cfg)
         => cfg != null && cfg.Container != null && cfg.Container.IsContainer;
+
+    /// <summary>Le conteneur (item ou prop) identifié par <paramref name="uuid"/> est-il VIDE
+    /// (sa place ne contient aucun item ni meuble) ? Place inexistante = vide. Async (lecture DB),
+    /// résultat via <paramref name="cb"/>.</summary>
+    private IEnumerator CheckContainerEmptyByUuid(string uuid, bool isProp, System.Action<bool> cb) {
+        if (string.IsNullOrEmpty(uuid)) { cb(true); yield break; }
+        string placeKey = (isProp ? "container:" : "item_container:") + uuid;
+        var createBody = new CreatePlaceBody { placeKey = placeKey, type = "container", ownerId = uuid };
+        UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
+        yield return createReq.SendWebRequest();
+        if (createReq.responseCode < 200 || createReq.responseCode >= 300) { cb(true); yield break; }
+        string placeId = null;
+        try { placeId = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text)?.Id; } catch { }
+        if (string.IsNullOrEmpty(placeId)) { cb(true); yield break; }
+        UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
+        yield return stateReq.SendWebRequest();
+        if (stateReq.responseCode != 200) { cb(true); yield break; }
+        bool empty = true;
+        try {
+            var sd = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
+            empty = (sd?.items?.Length ?? 0) + (sd?.props?.Length ?? 0) == 0;
+        } catch { }
+        cb(empty);
+    }
+
+    /// <summary>Gate "conteneur imbriqué" pour un déplacement/swap : si l'item déplacé est un
+    /// conteneur ET que la cible est un conteneur (prop ou colis), n'autorise que s'il est vide.
+    /// <paramref name="cb"/>(true) = autorisé, (false) = refusé (à vider d'abord).</summary>
+    private IEnumerator GateNestedContainer(ItemCtx moved, IPlaceContext toCtx, System.Action<bool> cb) {
+        bool intoContainer = toCtx.Kind == PlaceKind.Container || toCtx.Kind == PlaceKind.ItemContainer;
+        if (!intoContainer || !IsStorageItem(DatabaseManager.GetItemConfigById(moved.ConfigId))) { cb(true); yield break; }
+        yield return CheckContainerEmptyByUuid(moved.ItemUuid, isProp: false, cb);
+    }
 
     private bool TryGetHeldPackage(uint netId, string roomId, out int pkgEntityId, out string pkgUuid, out ContainerConfig pkgCfg) {
         pkgEntityId = -1; pkgUuid = null; pkgCfg = null;
@@ -1248,6 +1282,15 @@ public class ServerItemManager
         ClearBridge(entityId);
     }
 
+    /// <summary>Supprime en DB un item orphelin (config inexistante) repéré au restore des mains.
+    /// Pas de bridge/entité runtime associé — on supprime directement par UUID (cascade backend).</summary>
+    private IEnumerator DeleteOrphanItemCoroutine(string itemUuid) {
+        UnityWebRequest req = ApiManager.Instance.DeleteItemRequest(itemUuid);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300)
+            Debug.LogWarning($"[ServerItemManager] Delete orphan item {itemUuid} failed code={req.responseCode} body={req.downloadHandler?.text}");
+    }
+
     private void PersistMoveToHandAsync(int entityId, string newHandPlaceId) {
         if (ApiManager.Instance == null) return;
         ItemDbBridge bridge = GetBridge(entityId);
@@ -1472,6 +1515,18 @@ public class ServerItemManager
         if (state?.items == null) yield break;
 
         foreach (ItemJson it in state.items) {
+            // Orphan guard : un item dont l'ItemConfig n'existe plus dans le projet (config
+            // supprimée/renommée) ne peut JAMAIS être rendu ni manipulé côté client
+            // (S2C_SpawnItem → "No prefab for itemConfigId=X"), mais il occuperait quand même
+            // la main côté serveur → mains bloquées "pleines" alors qu'elles paraissent vides.
+            // On le saute (la main reste libre) et on supprime la ligne morte pour auto-réparer.
+            if (DatabaseManager.GetItemConfigById(it.configId) == null) {
+                Debug.LogWarning($"[ServerItemManager] RestoreHand({hand}) orphan item config={it.configId} uuid={it.Id} — skip + delete dead row");
+                if (!string.IsNullOrEmpty(it.Id))
+                    ApiManager.Instance.StartCoroutine(DeleteOrphanItemCoroutine(it.Id));
+                continue;
+            }
+
             // Re-create the runtime entity attached to the player in the current room.
             int entityId = _nextEntityId++;
             var entity = new ItemEntity {
@@ -1831,12 +1886,8 @@ public class ServerItemManager
             player?.TargetActionFailed(conn, "Meuble introuvable");
             return;
         }
-        // Pas de stockage imbriqué : un meuble-conteneur ne peut pas être emballé dans un colis.
-        var packPropCfg = DatabaseManager.GetPropsById(propState.PrefabId);
-        if (packPropCfg != null && packPropCfg.Container != null && packPropCfg.Container.IsContainer) {
-            player?.TargetActionFailed(conn, InventoryToasts.NoNestedStorage);
-            return;
-        }
+        // Un meuble-conteneur ne peut être emballé que s'il est VIDE → vérifié en async dans
+        // PackPropCoroutine (lecture de sa place "container:{uuid}").
         if (propState.OwnerCharId != charId) {
             player?.TargetActionFailed(conn, "Ce meuble ne vous appartient pas");
             return;
@@ -1856,6 +1907,14 @@ public class ServerItemManager
         string propUuid, int propVersion, int propConfigId, int presetId, string pkgUuid, ContainerConfig pkgCfg, string roomId)
     {
         var player = conn.identity != null ? conn.identity.GetComponent<Sim.PlayerController>() : null;
+
+        // 0. Si le meuble est lui-même un conteneur, il ne peut être emballé que VIDE.
+        var packPropCfg = DatabaseManager.GetPropsById(propConfigId);
+        if (packPropCfg != null && packPropCfg.Container != null && packPropCfg.Container.IsContainer) {
+            bool emptyProp = true;
+            yield return CheckContainerEmptyByUuid(propUuid, isProp: true, e => emptyProp = e);
+            if (!emptyProp) { player?.TargetActionFailed(conn, InventoryToasts.NestedStorageMustBeEmpty); yield break; }
+        }
 
         // 1. Place du colis (POST idempotent).
         string placeKey = $"item_container:{pkgUuid}";
@@ -1889,11 +1948,15 @@ public class ServerItemManager
         for (int i = 0; i < pkgCfg.SlotCount; i++) if (!occupied.Contains(i)) { freeSlot = i; break; }
         if (freeSlot < 0) { player?.TargetActionFailed(conn, "Colis plein"); yield break; } // meuble NON retiré du monde
 
-        // 3. Déplace le meuble dans la place du colis (UUID conservé, perd l'état built).
+        // 3. Déplace le meuble dans la place du colis (UUID conservé). Les meubles à-construire
+        // (toBuild) repassent à-construire ; ceux construits de base le restent (jamais de phase
+        // de construction → is_built doit rester true même stocké).
+        var packCfg = DatabaseManager.GetPropsById(propConfigId);
+        bool packBuilt = packCfg != null && !packCfg.MustBeBuilt();
         var body = new UpdatePropBody {
             expectedVersion = propVersion,
             placeId   = placeId,
-            isBuilt   = false,
+            isBuilt   = packBuilt,
             stateData = new Dictionary<string, object> { { "slotIndex", freeSlot } },
         };
         UnityWebRequest patchReq = ApiManager.Instance.UpdatePropRequest(propUuid, body);
@@ -1995,13 +2058,16 @@ public class ServerItemManager
         }
         if (packed == null || string.IsNullOrEmpty(packed.Id)) { player?.TargetActionFailed(conn, "Meuble introuvable"); yield break; }
 
-        // 2. PATCH le meuble vers l'appartement + position (UUID conservé, reste à-construire).
+        // 2. PATCH le meuble vers l'appartement + position (UUID conservé). Les meubles à-construire
+        // (toBuild) ressortent à-construire ; ceux construits de base restent construits.
+        var unpackCfg = DatabaseManager.GetPropsById(packed.configId);
+        bool unpackBuilt = unpackCfg != null && !unpackCfg.MustBeBuilt();
         var body = new UpdatePropBody {
             expectedVersion = packed.version,
             placeId   = apt.HomeData.Id,
             position  = new Vector3Body(position),
             rotation  = new Vector3Body(rotation.eulerAngles),
-            isBuilt   = false,
+            isBuilt   = unpackBuilt,
             stateData = new Dictionary<string, object>(), // libère le slotIndex
         };
         UnityWebRequest patchReq = ApiManager.Instance.UpdatePropRequest(packed.Id, body);
@@ -2014,8 +2080,8 @@ public class ServerItemManager
         int newVersion = packed.version + 1;
         try { var pj = JsonConvert.DeserializeObject<PropJson>(patchReq.downloadHandler.text); if (pj != null) newVersion = pj.version; } catch { }
 
-        // 3. Re-spawn runtime dans l'appart (UUID conservé, à-construire).
-        var header = new PropStateHeader { IsBuilt = false, PresetId = packed.presetIndex };
+        // 3. Re-spawn runtime dans l'appart (UUID conservé ; built selon toBuild).
+        var header = new PropStateHeader { IsBuilt = unpackBuilt, PresetId = packed.presetIndex };
         int newPropId = ServerPropManager.Instance.SpawnProp(
             apt.RoomId, packed.configId, position, rotation,
             headerOverride: header, propUuid: packed.Id, propVersion: newVersion, ownerCharId: charId);
@@ -2247,6 +2313,16 @@ public class ServerItemManager
             yield break;
         }
 
+        // Règle "conteneur imbriqué" : ranger un conteneur DANS un autre n'est permis que VIDE.
+        bool allowNest = true;
+        yield return GateNestedContainer(itemCtx, toCtx, ok => allowNest = ok);
+        if (!allowNest) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId,
+                ErrorMessage = InventoryToasts.NestedStorageMustBeEmpty });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
+            yield break;
+        }
+
         int newVersion = itemCtx.Version + 1;
         if (!isEphemeral) {
             // Item persisté : PATCH /items/:id pour refléter le nouveau placement.
@@ -2371,6 +2447,19 @@ public class ServerItemManager
     private IEnumerator SwapItemsCoroutine(NetworkConnectionToClient conn, C2S_SwapItems msg,
         IPlaceContext ctxA, ItemCtx itemA, IPlaceContext ctxB, ItemCtx itemB)
     {
+        // Règle "conteneur imbriqué" : A va vers ctxB et B vers ctxA ; chacun n'est permis dans
+        // un conteneur que s'il est VIDE. Vérifié avant toute écriture.
+        bool okA = true, okB = true;
+        yield return GateNestedContainer(itemA, ctxB, v => okA = v);
+        yield return GateNestedContainer(itemB, ctxA, v => okB = v);
+        if (!okA || !okB) {
+            conn.Send(new S2C_MoveItemResult { Success = false,
+                EntityId = !okA ? msg.EntityIdA : msg.EntityIdB,
+                ErrorMessage = InventoryToasts.NestedStorageMustBeEmpty });
+            PushSnapshotsFor(conn, ctxA, ctxB);
+            yield break;
+        }
+
         // PATCH A → destination de B (placeB / slotB)
         var bodyA = new UpdateItemBody {
             expectedVersion = itemA.Version,
@@ -2720,9 +2809,8 @@ public class ServerItemManager
         public bool ValidateAsTarget(int slotIndex, int configId, out string err) {
             err = null;
             var itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == configId);
-            if (IsStorageItem(itemConfig)) {
-                err = InventoryToasts.NoNestedStorage; return false;
-            }
+            // Imbrication de conteneur autorisée si le conteneur déplacé est vide → vérifiée en
+            // async dans MoveItemCoroutine/SwapItemsCoroutine (GateNestedContainer), pas ici.
             if (itemConfig != null && !_session.Config.Accepts(itemConfig.Type)) {
                 err = "Type refusé par ce conteneur"; return false;
             }
@@ -2784,9 +2872,8 @@ public class ServerItemManager
         public bool ValidateAsTarget(int slotIndex, int configId, out string err) {
             err = null;
             var itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == configId);
-            if (IsStorageItem(itemConfig)) {
-                err = InventoryToasts.NoNestedStorage; return false;
-            }
+            // Imbrication de conteneur autorisée si le conteneur déplacé est vide → vérifiée en
+            // async dans MoveItemCoroutine/SwapItemsCoroutine (GateNestedContainer), pas ici.
             if (itemConfig != null && !_session.Config.Accepts(itemConfig.Type)) {
                 err = "Type refusé par ce package"; return false;
             }

@@ -11,6 +11,7 @@ public static class InventoryToasts
     public const string NotPocketable        = "Cet item ne peut pas être stocké en poche";
     public const string NotStorable          = "Cet item ne peut pas être stocké";
     public const string NoNestedStorage      = "Un objet de stockage ne peut pas en contenir un autre";
+    public const string NestedStorageMustBeEmpty = "Videz ce conteneur avant de le ranger";
     public const string OtherHandBusy        = "L'autre main n'est pas libre";
     public const string AlreadyHoldingTwoHand = "Vous portez déjà un objet à deux mains";
 }

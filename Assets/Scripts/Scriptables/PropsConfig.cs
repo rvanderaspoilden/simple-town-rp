@@ -24,10 +24,17 @@ namespace Sim.Scriptables {
                  "Le prop est déplacé (UUID conservé) dans la place du conteneur, position null, is_built remis à false.")]
         [SerializeField] private bool acceptsProps = false;
 
+        [Tooltip("Son d'ouverture spécifique à ce conteneur (carton, frigo…). Vide = SfxId.ContainerOpen générique.")]
+        [SerializeField] private AudioClip openClip;
+        [Tooltip("Son de fermeture spécifique à ce conteneur. Vide = SfxId.ContainerClose générique.")]
+        [SerializeField] private AudioClip closeClip;
+
         public int SlotCount => slotCount;
         public IReadOnlyList<ItemType> AcceptedTypes => acceptedTypes;
         public bool IsContainer => slotCount > 0;
         public bool AcceptsProps => acceptsProps;
+        public AudioClip OpenClip => openClip;
+        public AudioClip CloseClip => closeClip;
 
         /// <summary>True si le conteneur accepte ce type (liste vide = accepte tout).</summary>
         public bool Accepts(ItemType type)

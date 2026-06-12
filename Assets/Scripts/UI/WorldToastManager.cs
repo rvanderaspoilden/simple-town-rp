@@ -20,6 +20,13 @@ using UnityEngine;
 ///
 /// Lazy singleton (DontDestroyOnLoad), créé à la première utilisation. Empile les toasts
 /// concurrents ; chaque toast suit son ancre et se détruit seul (~2.6s).
+///
+/// CONVENTION (obligatoire) — tout feedback de résultat d'action passe par <see cref="ShowError"/>
+/// (échec/refus : rouge + ⚠ + secousse + SON) ou <see cref="ShowSuccess"/> (réussite : vert + ✓ +
+/// rebond, SILENCIEUX). Ne jamais reconstruire un toast à la main ni utiliser <see cref="Show"/>
+/// neutre pour un résultat d'action — c'est réservé aux floaties cosmétiques (emoji social via
+/// <see cref="ShowAbove"/>). Côté serveur : <c>ToastNotificationMessage</c> avec <c>worldToast=true</c>
+/// DOIT porter un <c>kindByte</c> (ToastKind.Error/Success), jamais Neutral. Seul l'ERREUR sonne.
 /// </summary>
 public class WorldToastManager : MonoBehaviour
 {
@@ -100,14 +107,13 @@ public class WorldToastManager : MonoBehaviour
     }
 
     // ── Sons par template ──────────────────────────────────────────────────────────
-    // Joués via la source audio UI partagée du HUD. Clips chargés depuis Resources
-    // Routé via le catalogue audio (SfxId.UiToastSuccess / UiToastError) : changer le son se
-    // fait désormais dans le SfxCatalog, plus aucun chemin string ici. Silencieux si non câblé.
+    // Seul le toast d'ERREUR joue un son (SfxId.UiToastError, via le catalogue audio). Les
+    // toasts de succès et neutres sont silencieux : un succès est un feedback positif discret,
+    // le son est réservé à ce qui doit attirer l'attention (une erreur / un refus).
     private static void PlayKindSound(ToastKind kind)
     {
-        if (kind == ToastKind.Neutral) return;
-        Sim.Audio.AudioManager.Instance.PlayUI(
-            kind == ToastKind.Error ? Sim.Audio.SfxId.UiToastError : Sim.Audio.SfxId.UiToastSuccess);
+        if (kind == ToastKind.Error)
+            Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.UiToastError);
     }
 
     /// <summary>0 = joueur local ; sinon le joueur réseau identifié par netId (s'il est spawné ici).</summary>

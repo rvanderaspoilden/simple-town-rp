@@ -455,7 +455,8 @@ public static class PropInteractionRouter {
                 conn.Send(new ToastNotificationMessage {
                     text = "Termine ta mission avant d'acheter.",
                     typeByte = (byte)NotificationType.BANK,
-                    worldToast = true
+                    worldToast = true,
+                    kindByte = (byte)ToastKind.Error
                 });
                 return;
             }
@@ -468,7 +469,8 @@ public static class PropInteractionRouter {
                 conn.Send(new ToastNotificationMessage {
                     text = "Mains pleines : impossible d'acheter cet objet.",
                     typeByte = (byte)NotificationType.BANK,
-                    worldToast = true
+                    worldToast = true,
+                    kindByte = (byte)ToastKind.Error
                 });
                 return;
             }

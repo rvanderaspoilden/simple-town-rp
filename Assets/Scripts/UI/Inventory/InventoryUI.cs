@@ -288,7 +288,7 @@ public class InventoryUI : MonoBehaviour
 
         int targetSlot = container.FindFirstFreeSlot();
         if (targetSlot < 0) {
-            WorldToastManager.Show(InventoryToasts.ContainerFull);
+            WorldToastManager.ShowError(InventoryToasts.ContainerFull);
             return;
         }
         if (string.IsNullOrEmpty(container.PlaceId) || string.IsNullOrEmpty(src.PlaceId)) return;
@@ -558,7 +558,7 @@ public class InventoryUI : MonoBehaviour
         // authoritatif (le placeholder a déjà été release, l'origin slot était cleared
         // par OnDrop, UpdateUI re-rente un draggable depuis PlayerHands si l'item y est encore).
         Debug.LogWarning($"[InventoryUI] Move refusé entity={msg.EntityId} reason={msg.ErrorMessage} — refresh UI");
-        if (!string.IsNullOrEmpty(msg.ErrorMessage)) WorldToastManager.Show(msg.ErrorMessage);
+        if (!string.IsNullOrEmpty(msg.ErrorMessage)) WorldToastManager.ShowError(msg.ErrorMessage);
         UpdateUI();
     }
 

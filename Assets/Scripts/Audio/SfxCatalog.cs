@@ -23,6 +23,9 @@ namespace Sim.Audio {
         public bool spatial = true;
         [Tooltip("Intervalle minimal (s) entre deux lectures de ce SfxId (anti-spam). 0 = aucun.")]
         public float minInterval = 0f;
+        [Tooltip("Son d'ambiance secondaire (pas, etc.) : basse priorité (Unity le coupe en premier " +
+                 "si trop de voix) et ne vole jamais une source du pool aux autres sons.")]
+        public bool lowPriority = false;
         [Tooltip("Groupe de mixer optionnel (Master/SFX/UI/Ambient…). Null = sortie par défaut.")]
         public AudioMixerGroup mixerGroup;
 

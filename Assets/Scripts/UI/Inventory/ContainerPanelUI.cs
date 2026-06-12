@@ -75,6 +75,7 @@ public class ContainerPanelUI : MonoBehaviour
     private int    _autoOpenedEntityId = -1; // colis pour lequel l'auto-open a déjà été déclenché
     private int    _openRetries;         // tentatives d'auto-open en attendant l'UUID (spawn async)
     private const int MaxOpenRetries = 8;
+    private AudioClip _itemContainerCloseClip; // son de fermeture du colis ouvert (mémorisé à l'open)
 
     // Protos d'actions du menu contextuel (clic droit dans la grille). Clonées par
     // InventoryActionMenu.ShowSingleAction.
@@ -248,7 +249,7 @@ public class ContainerPanelUI : MonoBehaviour
         var inv = HUDManager.Instance?.InventoryUI;
         if (inv == null) return;
         if (!inv.TryFindQuickMoveTargetForItem(item, out string toPlace, out int toSlot)) {
-            WorldToastManager.Show(InventoryToasts.NoSpaceInInventory);
+            WorldToastManager.ShowError(InventoryToasts.NoSpaceInInventory);
             return;
         }
         if (!Mirror.NetworkClient.isConnected) return;
@@ -281,7 +282,16 @@ public class ContainerPanelUI : MonoBehaviour
         _heldDriven          = false;
         _isItemContainer     = true;
         _currentItemEntityId = entityId;
+        PlayItemContainerOpenSound(ClientItemManager.Instance.GetItem(entityId)?.Configuration?.Container);
         OpenOptimisticCore(slotCount, displayName);
+    }
+
+    /// <summary>Son d'ouverture spécifique au colis (carton…), et mémorise son son de
+    /// fermeture pour <see cref="Close"/>. 2D : c'est un objet tenu/manipulé par le joueur local.</summary>
+    private void PlayItemContainerOpenSound(Sim.Scriptables.ContainerConfig cc) {
+        _itemContainerCloseClip = cc != null ? cc.CloseClip : null;
+        if (cc != null && cc.OpenClip != null)
+            Sim.Audio.AudioManager.Instance.PlayClip2D(cc.OpenClip, 1f);
     }
 
     /// <summary>
@@ -333,6 +343,8 @@ public class ContainerPanelUI : MonoBehaviour
 
         _isItemContainer     = true;
         _currentItemEntityId = colis.Identity.EntityId;
+        // Pas de son ici : l'auto-affichage d'un colis tenu n'est PAS une ouverture explicite.
+        // Le son d'ouverture ne se joue qu'au clic sur l'action OPEN (OnItemContainerOpenRequested).
         // forceInventory=false : l'inventaire est déjà ouvert (gardé par OnLocalHandsChanged),
         // on ne le force pas — sinon tenir un colis ré-ouvrirait le HUD tout seul.
         OpenOptimisticCore(slotCount, colis.Configuration.Label, forceInventory: false);
@@ -418,7 +430,7 @@ public class ContainerPanelUI : MonoBehaviour
         Debug.LogWarning($"[ContainerPanelUI] Ouverture refusée propId={msg.PropId} : {msg.ErrorMessage}");
         // Si le panneau était ouvert optimistement pour ce prop, on referme + toast.
         if (_loading && !_isItemContainer && _currentPropId == msg.PropId) {
-            if (!string.IsNullOrEmpty(msg.ErrorMessage)) WorldToastManager.Show(msg.ErrorMessage);
+            if (!string.IsNullOrEmpty(msg.ErrorMessage)) WorldToastManager.ShowError(msg.ErrorMessage);
             Close();
         }
     }
@@ -440,7 +452,7 @@ public class ContainerPanelUI : MonoBehaviour
 
         Debug.LogWarning($"[ContainerPanelUI] Ouverture package refusée entityId={msg.EntityId} : {msg.ErrorMessage}");
         _openRetries = 0;
-        if (!string.IsNullOrEmpty(msg.ErrorMessage)) WorldToastManager.Show(msg.ErrorMessage);
+        if (!string.IsNullOrEmpty(msg.ErrorMessage)) WorldToastManager.ShowError(msg.ErrorMessage);
         Close();
     }
 
@@ -476,9 +488,8 @@ public class ContainerPanelUI : MonoBehaviour
             // Autorise le swap visuel pour container↔container et container↔main : le
             // handler ItemSlot.OnItemSwap route ensuite vers C2S_SwapItems.
             slot.CanSwap = true;
-            // Pas de stockage imbriqué : refuse en local le drop d'un item-conteneur dans la
-            // grille (couvre les deux canaux prop + item, en symétrie avec le garde serveur).
-            slot.RejectsStorageItems = true;
+            // Imbrication de conteneur autorisée si vide → arbitrée côté serveur
+            // (GateNestedContainer). Plus de blocage client sur ces slots.
             _slots.Add(slot);
         }
         var inv = HUDManager.Instance != null ? HUDManager.Instance.InventoryUI : null;
@@ -613,6 +624,11 @@ public class ContainerPanelUI : MonoBehaviour
         // peuvent être ouverts en même temps → on ne replie plus tout l'inventaire ici.
         if (NetworkClient.isConnected && _currentPlaceId != null)
             NetworkClient.Send(new C2S_CloseContainer { ItemContainer = IsItemChannel });
+        // Son de fermeture du colis (les conteneurs de prop se ferment via S2C_ContainerVisualState).
+        if (IsItemChannel && _itemContainerCloseClip != null) {
+            Sim.Audio.AudioManager.Instance.PlayClip2D(_itemContainerCloseClip, 1f);
+            _itemContainerCloseClip = null;
+        }
         Show(false);
         ReleaseSpawnedItems();
         _currentPlaceId     = null;

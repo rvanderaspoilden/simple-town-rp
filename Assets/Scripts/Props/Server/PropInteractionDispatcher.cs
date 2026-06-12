@@ -466,7 +466,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
         PlayerBankAccount buyerBank = conn.identity.GetComponent<PlayerBankAccount>();
         if (price > 0 && (buyerBank == null || buyerBank.Money < price)) {
             ServerPropManager.Instance.ClearReservation(roomId, msg.PropId);
-            SendToast(conn, $"Fonds insuffisants pour acheter {propName} ({price}).");
+            SendToast(conn, $"Fonds insuffisants pour acheter {propName} ({price}).", ToastKind.Error);
             SendBuyResult(conn, msg.PropId, false, 2);
             yield break;
         }
@@ -562,10 +562,10 @@ public class PropInteractionDispatcher : MonoBehaviour {
         SendBuyResult(conn, msg.PropId, true, 0);
 
         // 5b. Notify both parties (the seller only if online).
-        SendToast(conn, price > 0 ? $"Tu as acheté {propName} pour {price}." : $"Tu as reçu {propName}.");
+        SendToast(conn, price > 0 ? $"Tu as acheté {propName} pour {price}." : $"Tu as reçu {propName}.", ToastKind.Success);
         if (sellerBank != null)
             SendToast(sellerBank.connectionToClient,
-                price > 0 ? $"Tu as vendu {propName} pour {price}." : $"Tu as donné {propName}.");
+                price > 0 ? $"Tu as vendu {propName} pour {price}." : $"Tu as donné {propName}.", ToastKind.Success);
 
         // 6. Refresh the buyer's delivery box if their apartment is currently loaded.
         if (ServerApartmentRegistry.Instance.TryGetByTenant(buyerCharId, out ApartmentController buyerApt)
@@ -611,7 +611,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
         // Fonds.
         PlayerBankAccount buyerBank = conn.identity.GetComponent<PlayerBankAccount>();
         if (price > 0 && (buyerBank == null || buyerBank.Money < price)) {
-            SendToast(conn, $"Fonds insuffisants pour acheter {propName} ({price}).");
+            SendToast(conn, $"Fonds insuffisants pour acheter {propName} ({price}).", ToastKind.Error);
             SendBuyResult(conn, msg.PropId, false, 2);
             yield break;
         }
@@ -660,7 +660,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
 
         // 4. L'expo reste en place : aucune réservation, aucun RemoveProp.
         SendBuyResult(conn, msg.PropId, true, 0);
-        SendToast(conn, price > 0 ? $"Tu as acheté {propName} pour {price}." : $"Tu as reçu {propName}.");
+        SendToast(conn, price > 0 ? $"Tu as acheté {propName} pour {price}." : $"Tu as reçu {propName}.", ToastKind.Success);
 
         // 5. Rafraîchir la delivery box de l'acheteur si son appart est chargé.
         if (ServerApartmentRegistry.Instance.TryGetByTenant(buyerCharId, out ApartmentController buyerApt)
