@@ -1514,6 +1514,12 @@ public class ServerItemManager
 
         if (state?.items == null) yield break;
 
+        // Le joueur a pu être TÉLÉPORTÉ (ex. vers son appartement) pendant la lecture DB async :
+        // on (re)résout sa room ACTUELLE pour créer l'item tenu au bon endroit ET diffuser là où
+        // il est réellement. Sinon l'item est créé dans une room déjà quittée (broadcast à 0
+        // destinataire → item invisible) et le runtime serveur reste orphelin dans l'ancienne room.
+        string liveRoom = PlayerRoomTracker.Instance.GetRoom(conn) ?? roomId;
+
         foreach (ItemJson it in state.items) {
             // Orphan guard : un item dont l'ItemConfig n'existe plus dans le projet (config
             // supprimée/renommée) ne peut JAMAIS être rendu ni manipulé côté client
@@ -1531,7 +1537,7 @@ public class ServerItemManager
             int entityId = _nextEntityId++;
             var entity = new ItemEntity {
                 EntityId      = entityId,
-                RoomId        = roomId,
+                RoomId        = liveRoom,
                 ItemConfigId  = it.configId,
                 Position      = conn.identity.transform.position,
                 Rotation      = Quaternion.identity,
@@ -1541,9 +1547,9 @@ public class ServerItemManager
                 LocalRotation = Quaternion.identity,
             };
 
-            if (!_rooms.TryGetValue(roomId, out var roomItems)) {
+            if (!_rooms.TryGetValue(liveRoom, out var roomItems)) {
                 roomItems = new Dictionary<int, ItemEntity>();
-                _rooms[roomId] = roomItems;
+                _rooms[liveRoom] = roomItems;
             }
             roomItems[entityId] = entity;
 
@@ -1553,9 +1559,9 @@ public class ServerItemManager
 
             AssociateUuid(entityId, it.Id, it.version, handPlaceId);
 
-            BroadcastToRoom(roomId, new S2C_SpawnItem {
+            var spawnMsg = new S2C_SpawnItem {
                 EntityId      = entityId,
-                RoomId        = roomId,
+                RoomId        = liveRoom,
                 ItemConfigId  = it.configId,
                 Position      = entity.Position,
                 Rotation      = entity.Rotation,
@@ -1564,10 +1570,19 @@ public class ServerItemManager
                 HolderHand    = hand,
                 LocalPosition = Vector3.zero,
                 LocalRotation = Quaternion.identity,
-            });
+            };
 
-            GameLogger.Network.Info("Item Restore entity={EntityId} configId={ItemConfigId} player={PlayerNetId} hand={Hand}",
-                entityId, it.configId, playerNetId, hand);
+            // L'item TENU doit atteindre son propriétaire même si sa connexion n'est pas (encore)
+            // listée dans la room au moment de ce broadcast asynchrone — timing de reconnexion :
+            // la restauration fait une requête DB avant de diffuser, et GetConnectionsInRoom peut
+            // alors renvoyer 0 (le joueur restaurait dans le vide → item invisible, mains pleines).
+            // On l'envoie donc DIRECTEMENT à conn, plus le broadcast room pour les autres
+            // observateurs (le garde anti-doublon de OnSpawnItem gère l'éventuel double envoi).
+            if (conn != null && conn.isReady) conn.Send(spawnMsg);
+            BroadcastToRoom(liveRoom, spawnMsg);
+
+            GameLogger.Network.Info("Item Restore entity={EntityId} configId={ItemConfigId} player={PlayerNetId} hand={Hand} room={Room}",
+                entityId, it.configId, playerNetId, hand, liveRoom);
         }
     }
 

@@ -280,17 +280,27 @@ public class ClientItemManager
             yield break;
         }
 
-        var playerHands = playerIdentity.GetComponent<PlayerHands>();
+        // Attendre que PlayerHands ET l'os de main soient prêts. À la RECONNEXION, le spawn
+        // de restauration (item tenu) peut arriver avant que le rig du joueur soit initialisé :
+        // GetHandTransform renverrait null. On boucle (même timeout) au lieu de bail immédiat,
+        // sinon l'item ne se parente jamais (ni 3D ni 2D) alors que le serveur le tient en main.
+        PlayerHands playerHands = null;
+        Transform   handTransform = null;
+        while (Time.time < timeout)
+        {
+            playerHands   = playerIdentity.GetComponent<PlayerHands>();
+            handTransform = playerHands != null ? playerHands.GetHandTransform(hand) : null;
+            if (playerHands != null && handTransform != null) break;
+            yield return null;
+        }
         if (playerHands == null)
         {
-            Debug.LogWarning($"[ClientItemManager] Player netId={playerNetId} has no PlayerHands");
+            Debug.LogWarning($"[ClientItemManager] Player netId={playerNetId} has no PlayerHands (timeout)");
             yield break;
         }
-
-        Transform handTransform = playerHands.GetHandTransform(hand);
         if (handTransform == null)
         {
-            Debug.LogWarning($"[ClientItemManager] Player netId={playerNetId} hand={hand} transform is null");
+            Debug.LogWarning($"[ClientItemManager] Player netId={playerNetId} hand={hand} transform null (timeout — rig not ready?)");
             yield break;
         }
 
