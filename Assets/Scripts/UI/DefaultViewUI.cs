@@ -17,8 +17,16 @@ namespace Sim {
         [SerializeField]
         private CharacterInfoPanelUI characterInfoPanelUI;
 
+        [Tooltip("Root of the top-right location panel. Hidden when there is no location text to display.")]
+        [SerializeField]
+        private GameObject locationPanel;
+
         [SerializeField]
         private TextMeshProUGUI locationText;
+
+        [Tooltip("Optional subtitle TMP shown right under the main location text. Receives everything after the first ', ' of the location string (e.g. 'ÉTAGE 1, PORTE 6' for 'SALMON HOTEL, ÉTAGE 1, PORTE 6'). Hidden when there's no subtitle to show.")]
+        [SerializeField]
+        private TextMeshProUGUI locationSubtitleText;
 
         [SerializeField]
         private TextMeshProUGUI tenantText;
@@ -67,14 +75,38 @@ namespace Sim {
         }
 
         public void SetLocationText(string value) {
-            foreach (TextMeshProUGUI tmpPro in this.locationText.GetComponentsInChildren<TextMeshProUGUI>()) {
-                tmpPro.text = value;
+            bool has = !string.IsNullOrWhiteSpace(value);
+            string main = string.Empty;
+            string sub  = string.Empty;
+            if (has) {
+                // Split on first ", " — "SALMON HOTEL, ÉTAGE 1, PORTE 6" → main
+                // "SALMON HOTEL" + subtitle "ÉTAGE 1, PORTE 6". No comma → all in main.
+                int sep = value.IndexOf(", ", System.StringComparison.Ordinal);
+                if (sep < 0) {
+                    main = value;
+                } else {
+                    main = value.Substring(0, sep);
+                    sub  = value.Substring(sep + 2);
+                }
             }
+            if (this.locationText != null) this.locationText.text = main;
+            if (this.locationSubtitleText != null) {
+                this.locationSubtitleText.text = sub;
+                this.locationSubtitleText.gameObject.SetActive(!string.IsNullOrWhiteSpace(sub));
+            }
+            // Hide the whole panel (location + subtitle + tenant + background) when
+            // there's nothing to display — the player is in unknown territory.
+            if (this.locationPanel != null) this.locationPanel.SetActive(has);
         }
-        
+
         public void SetTenantText(string value) {
-            foreach (TextMeshProUGUI tmpPro in this.tenantText.GetComponentsInChildren<TextMeshProUGUI>()) {
-                tmpPro.text = value;
+            bool has = !string.IsNullOrWhiteSpace(value);
+            if (this.tenantText != null) {
+                this.tenantText.text = has ? value : string.Empty;
+                // Toggle the tenant child active state so the VerticalLayoutGroup
+                // recomputes the panel height (childControlHeight=false, but the
+                // layout ignores inactive children).
+                this.tenantText.gameObject.SetActive(has);
             }
         }
 

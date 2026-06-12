@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 10
   displayName: Porte en bois
+  description: "Porte d'entr\xE9e en bois massif."
   sprite: {fileID: 0}
   propsType: 1
   price: 250
@@ -25,6 +26,7 @@ MonoBehaviour:
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
+  movable: 1
   rangeToInteract: 1
   rightClickOnly: 1
   actions:
@@ -35,3 +37,8 @@ MonoBehaviour:
   cursor: {fileID: 0}
   presets: []
   buildSound: {fileID: 0}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

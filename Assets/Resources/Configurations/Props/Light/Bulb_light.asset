@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 43
   displayName: Bulb light
+  description: Ampoule suspendue.
   sprite: {fileID: 0}
   propsType: 5
   price: 150
@@ -25,10 +26,16 @@ MonoBehaviour:
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
+  movable: 1
   rangeToInteract: 5
   rightClickOnly: 1
-  actions:
+  actions: []
   unbuiltActions: []
   cursor: {fileID: 0}
   presets: []
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

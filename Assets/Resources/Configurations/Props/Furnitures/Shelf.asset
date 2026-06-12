@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 60
   displayName: "Etag\xE8re murale"
+  description: "\xC9tag\xE8re murale pour ranger et exposer."
   sprite: {fileID: 0}
   propsType: 0
   price: 350
@@ -34,3 +35,8 @@ MonoBehaviour:
   cursor: {fileID: 0}
   presets: []
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

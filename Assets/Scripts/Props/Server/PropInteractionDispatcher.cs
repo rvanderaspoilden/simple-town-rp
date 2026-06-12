@@ -246,6 +246,10 @@ public class PropInteractionDispatcher : MonoBehaviour {
         }
         apt.TrackProp(newPropId);
 
+        // NB : le crédit de points Ingenious + toast a été DÉPLACÉ sur l'action BUILD
+        // (PropInteractionRouter.HandleGeneric / BuildRequest) — c'est la vraie
+        // construction. Le placement ne fait que créer le prop (à construire si toBuild).
+
         // 4. Reparent server-side instance under apartment props container (for hierarchy queries)
         GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(newPropId);
         if (go != null && apt.PropsContainer != null) {
@@ -671,9 +675,10 @@ public class PropInteractionDispatcher : MonoBehaviour {
             conn.Send(new S2C_BuyPropResult { PropId = propId, Success = success, ReasonCode = reason });
     }
 
-    private static void SendToast(NetworkConnectionToClient conn, string text) {
+    private static void SendToast(NetworkConnectionToClient conn, string text, ToastKind kind = ToastKind.Neutral) {
         if (conn != null && conn.isReady)
-            conn.Send(new ToastNotificationMessage { text = text, typeByte = (byte)NotificationType.BANK, worldToast = true });
+            conn.Send(new ToastNotificationMessage {
+                text = text, typeByte = (byte)NotificationType.BANK, worldToast = true, kindByte = (byte)kind });
     }
 
     /// <summary>Finds the bank account of an online character by id, or null if offline.</summary>

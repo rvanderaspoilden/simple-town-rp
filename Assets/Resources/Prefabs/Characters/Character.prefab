@@ -539,59 +539,6 @@ SkinnedMeshRenderer:
     m_Center: {x: 0.0029303655, y: -0.20822921, z: 0.0010300167}
     m_Extent: {x: 0.124751605, y: 0.16175714, z: 0.10551451}
   m_DirtyAABB: 0
---- !u!1 &447806571958855694
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 912111271314466959}
-  - component: {fileID: 265243475326304554}
-  m_Layer: 8
-  m_Name: LeftArmOverrides
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &912111271314466959
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 447806571958855694}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.45892012, y: -0.4589204, z: 0.5379524, w: 0.53795135}
-  m_LocalPosition: {x: 9.852474, y: 11.323153, z: 9.943969}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1877372078908910639}
-  m_LocalEulerAnglesHint: {x: 80.934, y: 0, z: 90}
---- !u!114 &265243475326304554
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 447806571958855694}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf219326d2292de48a0c671da18d402b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Animation.Rigging::UnityEngine.Animations.Rigging.OverrideTransform
-  m_Weight: 1
-  m_Data:
-    m_ConstrainedObject: {fileID: 8728513059894483753}
-    m_OverrideSource: {fileID: 912111271314466959}
-    m_OverridePosition: {x: 0, y: 0, z: 0}
-    m_OverrideRotation: {x: 0, y: 0, z: 0}
-    m_PositionWeight: 1
-    m_RotationWeight: 1
-    m_Space: 2
 --- !u!1 &563483637145496113
 GameObject:
   m_ObjectHideFlags: 0
@@ -1282,39 +1229,6 @@ Transform:
   - {fileID: 2569061278075988576}
   m_Father: {fileID: 5740683191993841384}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1807172491644249189
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1877372078908910639}
-  m_Layer: 0
-  m_Name: Overrides
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1877372078908910639
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1807172491644249189}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 912111271314466959}
-  - {fileID: 6602320461948257817}
-  m_Father: {fileID: 1338729154825123581}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1969642553106217496
 GameObject:
   m_ObjectHideFlags: 0
@@ -1762,6 +1676,8 @@ MonoBehaviour:
   chatText: {fileID: 8762153900681825946}
   chatTextLabel: {fileID: 1534418630015483445}
   chatMessageDuration: 4
+  maxChatWidth: 2
+  minChatWidth: 0.5
   minPosY: 2.2
   maxPosY: 2.7
   nearCameraDistance: 2.7
@@ -1962,7 +1878,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3384166933368041466}
   - component: {fileID: 9027285105096621250}
-  - component: {fileID: 6989098466899675476}
   m_Layer: 8
   m_Name: Render
   m_TagString: Untagged
@@ -2031,7 +1946,6 @@ Transform:
   - {fileID: 4299480922994776937}
   - {fileID: 1162465761973653013}
   - {fileID: 1544476717}
-  - {fileID: 1338729154825123581}
   m_Father: {fileID: 6953365128800779912}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &9027285105096621250
@@ -2056,38 +1970,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &6989098466899675476
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2719375146979046720}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fff0960ef4ea6e04eac66b4a7fd2189d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Animation.Rigging::UnityEngine.Animations.Rigging.RigBuilder
-  m_RigLayers:
-  - m_Rig: {fileID: 3257258849207488522}
-    m_Active: 1
-  m_Effectors:
-  - m_Transform: {fileID: 912111271314466959}
-    m_Style:
-      shape: {fileID: 4300000, guid: 687b70eb9c49243639f9379f6965034f, type: 2}
-      color: {r: 1, g: 0, b: 0, a: 0.5}
-      size: 0.1
-      position: {x: 0, y: 0, z: 0}
-      rotation: {x: 0, y: 0, z: 0}
-    m_Visible: 1
-  - m_Transform: {fileID: 6602320461948257817}
-    m_Style:
-      shape: {fileID: 4300000, guid: 687b70eb9c49243639f9379f6965034f, type: 2}
-      color: {r: 1, g: 0, b: 0, a: 0.5}
-      size: 0.1
-      position: {x: 0, y: 0, z: 0}
-      rotation: {x: 0, y: 0, z: 0}
-    m_Visible: 1
 --- !u!1 &2772317434010916379
 GameObject:
   m_ObjectHideFlags: 0
@@ -3367,59 +3249,6 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.00082918257, y: 0.19012262, z: -0.006804213}
     m_Extent: {x: 0.22476825, y: 0.24720208, z: 0.13592167}
   m_DirtyAABB: 0
---- !u!1 &3873171321004056335
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6602320461948257817}
-  - component: {fileID: 46447927882277033}
-  m_Layer: 8
-  m_Name: RightArmOverrides
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6602320461948257817
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3873171321004056335}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.46086544, y: -0.46086153, z: 0.53629017, w: -0.536286}
-  m_LocalPosition: {x: 10.147506, y: 11.323152, z: 9.948701}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1877372078908910639}
-  m_LocalEulerAnglesHint: {x: 81.349, y: -0.003, z: -90.003}
---- !u!114 &46447927882277033
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3873171321004056335}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf219326d2292de48a0c671da18d402b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Animation.Rigging::UnityEngine.Animations.Rigging.OverrideTransform
-  m_Weight: 1
-  m_Data:
-    m_ConstrainedObject: {fileID: 8807345800163809044}
-    m_OverrideSource: {fileID: 6602320461948257817}
-    m_OverridePosition: {x: 0, y: 0, z: 0}
-    m_OverrideRotation: {x: 0, y: 0, z: 0}
-    m_PositionWeight: 1
-    m_RotationWeight: 1
-    m_Space: 2
 --- !u!1 &4150260641878746405
 GameObject:
   m_ObjectHideFlags: 0
@@ -5195,53 +5024,6 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.0011405498, y: 0.37316114, z: 0.052472185}
     m_Extent: {x: 0.106993094, y: 0.15295069, z: 0.13454007}
   m_DirtyAABB: 0
---- !u!1 &6671890740518888827
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1338729154825123581}
-  - component: {fileID: 3257258849207488522}
-  m_Layer: 0
-  m_Name: Rig 1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1338729154825123581
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6671890740518888827}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -10, y: -10, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1877372078908910639}
-  m_Father: {fileID: 3384166933368041466}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3257258849207488522
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6671890740518888827}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 70b342d8ce5c2fd48b8fa3147d48d1d1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Animation.Rigging::UnityEngine.Animations.Rigging.Rig
-  m_Weight: 1
-  m_Effectors: []
 --- !u!1 &6696422471905771650
 GameObject:
   m_ObjectHideFlags: 0
@@ -5301,6 +5083,7 @@ GameObject:
   - component: {fileID: -5593754752210305832}
   - component: {fileID: 6741411215430397098}
   - component: {fileID: -4587985912181790829}
+  - component: {fileID: 3000777749584029312}
   m_Layer: 8
   m_Name: Character
   m_TagString: Player
@@ -5385,7 +5168,6 @@ MonoBehaviour:
     identity:
       firstname: 
       lastname: 
-      originCountry: 
       job: 0
     money: 0
     health:
@@ -5411,7 +5193,7 @@ MonoBehaviour:
       skinColorPercent: 0
       gender: 0
     mood: 0
-    currentJob: -1
+    currentProfessionId: 
     jobs: []
   characterHome:
     _id: 
@@ -5425,6 +5207,8 @@ MonoBehaviour:
     purchasePrice: 0
     rentPrice: 0
     preset: 
+    tenantSince: 0
+    lastRentCollectedAt: 0
 --- !u!114 &7147682903337299061
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5523,6 +5307,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b71fd563843b5214f85d0ca2ee59f16f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  actionsKeepingHeldItemsVisible: 
 --- !u!81 &8612616425041672941
 AudioListener:
   m_ObjectHideFlags: 0
@@ -5853,6 +5638,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd97bd6957e3cb9419f39563a1e9bc0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInventory
+--- !u!114 &3000777749584029312
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6953365128800779919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd0def3da55e19c49adfbd205b3c0d95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Player.PlayerConstellation
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  useMockProvider: 0
 --- !u!1 &6974000221088511038
 GameObject:
   m_ObjectHideFlags: 0
@@ -8176,13 +7977,13 @@ MonoBehaviour:
     _volume: 1
     _fadeInTicks: 7500000
     _fadeOutTicks: 11500000
-  _broadcastPosition: 0
-  _channelType: 2
+  _broadcastPosition: 1
+  _channelType: 0
   _inputName: GlobalChat
   _mode: 2
   _muted: 0
   _playerId: 
-  _useTrigger: 1
+  _useTrigger: 0
   _roomName: 
   _priority: 2
 --- !u!135 &7215779008952977388
@@ -8224,7 +8025,7 @@ MonoBehaviour:
   _tokensExpanded: 0
   _colliderExpanded: 0
   _roomName: Global
-  _useTrigger: 1
+  _useTrigger: 0
 --- !u!54 &2952256392077847557
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -8264,3 +8065,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29dd4e7910ef2324895ee029cc02b76f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Sim.VoiceRoomAdapter
+  pushToTalkKey: 118

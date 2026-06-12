@@ -88,6 +88,20 @@ namespace Sim {
             this.actionBarCanvasGroup.interactable = true;
         }
 
+        /// <summary>Unlock/open the phone (if closed) and switch to the given app.
+        /// Used by network events (e.g. an incoming call) to surface an app
+        /// without user input.</summary>
+        public void ForceOpenApp(PhoneApplicationUI app) {
+            if (app == null) return;
+            this.OpenPhone(); // idempotent: no-op when already open
+            if (this.currentActiveApplication == app) return;
+            if (this.currentActiveApplication != null) this.currentActiveApplication.gameObject.SetActive(false);
+            app.gameObject.SetActive(true);
+            this.currentActiveApplication = app;
+            this.actionBarCanvasGroup.alpha = 1;
+            this.actionBarCanvasGroup.interactable = true;
+        }
+
         public void BackToHome() {
             this.currentActiveApplication.gameObject.SetActive(false);
             this.currentActiveApplication = null;
@@ -139,7 +153,7 @@ namespace Sim {
             }
         }
 
-        private void ClosePhone() {
+        public void ClosePhone() {
             if (this.phoneOpened) {
                 HUDManager.Instance.PlaySound(this.lockSound, .5f);
                 this.rectTransform.DOAnchorPosY(this.defaultPhoneAnchorPosY, this.closeAnimationDuration)

@@ -26,11 +26,13 @@ namespace Sim {
         public static List<NotificationTemplateConfig> NotificationTemplateConfigs;
         public static List<SubGameConfiguration> SubGameConfigurations;
         public static List<BuildingConfig> BuildingConfigurations;
+        public static List<MinimapRoomMapConfig> MinimapRoomMapConfigs;
 
         // Lookups O(1) construits au chargement.
         private static Dictionary<int, PropsConfig> _propsById;
         private static Dictionary<int, CoverConfig> _paintsById;
         private static Dictionary<int, ItemConfig> _itemsById;
+        private static Dictionary<string, MinimapRoomMapConfig> _minimapByRoomId;
 
         public static DatabaseManager Instance;
 
@@ -70,6 +72,14 @@ namespace Sim {
 
             BuildingConfigurations = Resources.LoadAll<BuildingConfig>("Configurations/Buildings").ToList();
             Debug.Log($"Building configurations loaded : {BuildingConfigurations.Count}");
+
+            MinimapRoomMapConfigs = Resources.LoadAll<MinimapRoomMapConfig>("Configurations/Minimap").ToList();
+            _minimapByRoomId = new Dictionary<string, MinimapRoomMapConfig>();
+            foreach (var m in MinimapRoomMapConfigs) {
+                if (m == null || string.IsNullOrEmpty(m.RoomId)) continue;
+                _minimapByRoomId[m.RoomId] = m;
+            }
+            Debug.Log($"Minimap room map configs loaded : {MinimapRoomMapConfigs.Count}");
 
             RegisterPrefabs();
 
@@ -127,6 +137,10 @@ namespace Sim {
         public static MoodConfig GetMoodConfigByEnum(MoodEnum moodEnum) {
             return MoodConfigs.Find(config => config.MoodEnum == moodEnum);
         }
+
+        public static MinimapRoomMapConfig GetMinimapRoomMapByRoomId(string roomId)
+            => _minimapByRoomId != null && !string.IsNullOrEmpty(roomId)
+               && _minimapByRoomId.TryGetValue(roomId, out var m) ? m : null;
 
         public static ShopCategoryConfig GetShopCategoryByPropsType(PropsType propsType) {
             return ShopCategoryConfigs.Find(config => config.PropsType == propsType);

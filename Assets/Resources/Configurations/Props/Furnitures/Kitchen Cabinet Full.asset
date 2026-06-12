@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 22
   displayName: Meuble haut + bas (cuisine)
+  description: Ensemble de meubles de cuisine haut et bas.
   sprite: {fileID: 0}
   propsType: 0
   price: 550
@@ -25,6 +26,7 @@ MonoBehaviour:
   hasPosableSurface: 1
   connectedToWall: 0
   toBuild: 1
+  movable: 1
   rangeToInteract: 1
   rightClickOnly: 0
   actions: []
@@ -88,3 +90,8 @@ MonoBehaviour:
       color: {r: 0, g: 0, b: 0, a: 0}
       material: {fileID: 0}
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

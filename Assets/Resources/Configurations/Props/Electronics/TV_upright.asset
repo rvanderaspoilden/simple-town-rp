@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 24
   displayName: "TV pos\xE9e"
+  description: "T\xE9l\xE9viseur \xE0 poser sur un meuble."
   sprite: {fileID: 0}
   propsType: 6
   price: 550
@@ -25,11 +26,17 @@ MonoBehaviour:
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
+  movable: 1
   rangeToInteract: 1
   rightClickOnly: 0
   actions:
   - {fileID: 11400000, guid: eb2c51e8927332c40abe1682f0e39009, type: 2}
-  unbuiltActions:
+  unbuiltActions: []
   cursor: {fileID: 2800000, guid: b762715829c783140b3d5acdeb463d87, type: 3}
   presets: []
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

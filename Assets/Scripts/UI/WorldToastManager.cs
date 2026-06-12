@@ -37,24 +37,41 @@ public class WorldToastManager : MonoBehaviour
     /// <paramref name="delay"/> permet de le faire suivre un autre feedback (ex. un VFX).
     /// </summary>
     public static void Show(string title, string subtitle, float delay = 0f, Color? accent = null)
-    {
-        Ensure();
-        _instance.StartCoroutine(_instance.ShowRoutine(0u, title, subtitle, delay, accent ?? DefaultAccent));
-    }
+        => ShowKind(0u, title, subtitle, delay, accent ?? DefaultAccent, ToastKind.Neutral);
 
     /// <summary>Toast LOCAL simple ligne (ex. « Mains pleines »). Pas de sous-titre accentué.</summary>
     public static void Show(string message, float delay = 0f, Color? accent = null)
         => Show(message, null, delay, accent);
+
+    /// <summary>Toast d'ERREUR local (template commun : rouge + icône ⚠ + son + secousse).</summary>
+    public static void ShowError(string message, float delay = 0f)
+        => ShowKind(0u, message, null, delay, DefaultAccent, ToastKind.Error);
+
+    /// <summary>Toast d'ERREUR local avec sous-titre.</summary>
+    public static void ShowError(string title, string subtitle, float delay = 0f)
+        => ShowKind(0u, title, subtitle, delay, DefaultAccent, ToastKind.Error);
+
+    /// <summary>Toast de SUCCÈS local (template commun : vert + icône ✓ + son + rebond).</summary>
+    public static void ShowSuccess(string message, float delay = 0f)
+        => ShowKind(0u, message, null, delay, DefaultAccent, ToastKind.Success);
+
+    /// <summary>Toast de SUCCÈS local avec sous-titre.</summary>
+    public static void ShowSuccess(string title, string subtitle, float delay = 0f)
+        => ShowKind(0u, title, subtitle, delay, DefaultAccent, ToastKind.Success);
 
     /// <summary>
     /// Toast au-dessus d'un joueur précis identifié par son <paramref name="anchorNetId"/>.
     /// Affiché sur CE client uniquement ; pour un rendu synchronisé chez tous les joueurs,
     /// le serveur broadcast un <c>S2C_WorldToast</c> (que chaque client relaie ici).
     /// </summary>
-    public static void ShowAbove(uint anchorNetId, string title, string subtitle, float delay = 0f, Color? accent = null)
+    public static void ShowAbove(uint anchorNetId, string title, string subtitle, float delay = 0f,
+        Color? accent = null, ToastKind kind = ToastKind.Neutral)
+        => ShowKind(anchorNetId, title, subtitle, delay, accent ?? DefaultAccent, kind);
+
+    private static void ShowKind(uint anchorNetId, string title, string subtitle, float delay, Color accent, ToastKind kind)
     {
         Ensure();
-        _instance.StartCoroutine(_instance.ShowRoutine(anchorNetId, title, subtitle, delay, accent ?? DefaultAccent));
+        _instance.StartCoroutine(_instance.ShowRoutine(anchorNetId, title, subtitle, delay, accent, kind));
     }
 
     private static void Ensure()
@@ -65,19 +82,43 @@ public class WorldToastManager : MonoBehaviour
         _instance = go.AddComponent<WorldToastManager>();
     }
 
-    private IEnumerator ShowRoutine(uint anchorNetId, string title, string subtitle, float delay, Color accent)
+    private IEnumerator ShowRoutine(uint anchorNetId, string title, string subtitle, float delay, Color accent, ToastKind kind)
     {
         if (delay > 0f) yield return new WaitForSeconds(delay);
 
         Transform anchor = ResolveAnchor(anchorNetId);
         if (anchor == null) yield break;
 
+        PlayKindSound(kind);
+
         _active.RemoveAll(t => t == null);
         float heightOffset = BaseHeight + _active.Count * StackSpacing;
 
-        WorldToast toast = WorldToast.Create(title, subtitle, accent);
+        WorldToast toast = WorldToast.Create(title, subtitle, accent, kind);
         _active.Add(toast);
         toast.Play(anchor, heightOffset, () => _active.Remove(toast));
+    }
+
+    // ── Sons par template ──────────────────────────────────────────────────────────
+    // Joués via la source audio UI partagée du HUD. Clips chargés depuis Resources
+    // (swappables : changer le chemin ci-dessous). Silencieux si introuvables / pas de HUD.
+    private const string ErrorSoundPath   = "Sounds/Thud";
+    private const string SuccessSoundPath = "Sounds/Purchase/Item purchase 24";
+
+    private static AudioClip _errorClip, _successClip;
+    private static bool _clipsLoaded;
+
+    private static void PlayKindSound(ToastKind kind)
+    {
+        if (kind == ToastKind.Neutral) return;
+        if (!_clipsLoaded)
+        {
+            _clipsLoaded = true;
+            _errorClip   = Resources.Load<AudioClip>(ErrorSoundPath);
+            _successClip = Resources.Load<AudioClip>(SuccessSoundPath);
+        }
+        AudioClip clip = kind == ToastKind.Error ? _errorClip : _successClip;
+        if (clip != null) HUDManager.Instance?.PlaySound(clip, 1f);
     }
 
     /// <summary>0 = joueur local ; sinon le joueur réseau identifié par netId (s'il est spawné ici).</summary>

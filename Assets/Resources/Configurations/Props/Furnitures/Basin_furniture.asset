@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 32
   displayName: Vasque
+  description: "Meuble vasque avec lavabo int\xE9gr\xE9."
   sprite: {fileID: 0}
   propsType: 0
   price: 600
@@ -61,3 +62,8 @@ MonoBehaviour:
       color: {r: 0.56078434, g: 0.7137255, b: 0.7490196, a: 1}
       material: {fileID: 0}
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 12
   displayName: Carton
+  description: Carton de livraison.
   sprite: {fileID: 0}
   propsType: 3
   price: 950
@@ -25,6 +26,7 @@ MonoBehaviour:
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
+  movable: 1
   rangeToInteract: 2
   rightClickOnly: 0
   actions:
@@ -33,3 +35,8 @@ MonoBehaviour:
   cursor: {fileID: 2800000, guid: b642424dd84566a4faa0d7cfadc2ac5f, type: 3}
   presets: []
   buildSound: {fileID: 0}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

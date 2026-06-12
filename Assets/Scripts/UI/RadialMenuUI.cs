@@ -23,8 +23,35 @@ namespace Sim.UI {
         [SerializeField]
         private float backgroundRadiusOffset;
 
+        [Tooltip("Décalage ajouté au rayon de placement des boutons (pour les aligner sur la bordure du radial). Peut être négatif.")]
+        [SerializeField]
+        private float buttonRadiusOffset = 0f;
+
         [SerializeField]
         private TextMeshProUGUI actionText;
+
+        [Tooltip("Conteneur (fond + label) du nom de la cible, affiché AU-DESSUS du menu radial (autoré dans le prefab).")]
+        [SerializeField]
+        private RectTransform targetNamePlate;
+
+        [Tooltip("Label du nom de la cible (enfant du NamePlate).")]
+        [SerializeField]
+        private TextMeshProUGUI targetNameText;
+
+        [Tooltip("Décalage vertical (px écran) du nom au-dessus du centre du radial (cas multi-actions).")]
+        [SerializeField]
+        private float nameAboveOffset = 120f;
+
+        [Tooltip("Décalage vertical (px écran) du label SOUS le bouton (cas action unique).")]
+        [SerializeField]
+        private float nameBelowOffset = 90f;
+
+        [Header("SFX")]
+        [SerializeField]
+        private AudioClip hoverSfx;
+
+        [SerializeField] [Range(0f, 1f)]
+        private float hoverSfxVolume = 0.6f;
 
         [Header("Only for debug")]
         [SerializeField]
@@ -34,9 +61,17 @@ namespace Sim.UI {
 
         private Collider currentTargetCollider;
 
+        private Color radialBaseColor = Color.white;
+
+        // true = plate sous le bouton (action unique) ; false = plate au-dessus (multi-actions).
+        private bool plateBelow;
+
         private void Awake() {
             this.radialMenuButtons = new List<RadialMenuButton>();
             this.actionText.enabled = false;
+            // Couleur autorée du fond radial (préservée : l'anim d'apparition fade vers elle au lieu d'un blanc hardcodé).
+            this.radialBaseColor = this.radialImage.color;
+            if (this.targetNamePlate != null) this.targetNamePlate.gameObject.SetActive(false);
             this.radialImage.gameObject.SetActive(false);
         }
 
@@ -74,6 +109,11 @@ namespace Sim.UI {
                 this.radialRectTransform.sizeDelta = new Vector2((radius + backgroundRadiusOffset) * 2f, (radius + backgroundRadiusOffset) * 2f);
             }
 
+            if (this.targetNamePlate != null && this.targetNamePlate.gameObject.activeSelf) {
+                float dy = this.plateBelow ? -this.nameBelowOffset : this.nameAboveOffset;
+                this.targetNamePlate.position = origin + new Vector3(0f, dy, 0f);
+            }
+
             for (int i = 0; i < this.radialMenuButtons.Count; i++) {
                 RadialMenuButton button = this.radialMenuButtons[i];
 
@@ -82,8 +122,9 @@ namespace Sim.UI {
                 RectTransform buttonRectTransform = button.RectTransform;
 
                 if (this.radialMenuButtons.Count > 1) {
-                    float x = buttonRectTransform.anchoredPosition.x + Mathf.Cos(radiansOfSeparation * i) * this.radius;
-                    float y = buttonRectTransform.anchoredPosition.y + Mathf.Sin(radiansOfSeparation * i) * this.radius;
+                    float r = this.radius + this.buttonRadiusOffset;
+                    float x = buttonRectTransform.anchoredPosition.x + Mathf.Cos(radiansOfSeparation * i) * r;
+                    float y = buttonRectTransform.anchoredPosition.y + Mathf.Sin(radiansOfSeparation * i) * r;
 
                     buttonRectTransform.anchoredPosition = new Vector2(x, y);
                 }
@@ -110,17 +151,29 @@ namespace Sim.UI {
             this.ClearButtons();
 
             this.ClearText();
-            
+
             if (withPriority && actions.Length > 1) {
                 actions = new[] {actions[0]};
             }
 
-            if (actions.Length > 1) {
+            // Plate (label + fond) :
+            //  - multi-actions  → nom du prop/item ciblé, AU-DESSUS du radial, affiché en permanence.
+            //  - action unique  → label de l'action, SOUS le bouton, affiché UNIQUEMENT au survol.
+            bool multi = actions.Length > 1;
+            this.plateBelow = !multi;
+            string plateLabel = multi
+                ? this.ResolveTargetName()
+                : (actions.Length == 1 ? actions[0].Label : null);
+            if (this.targetNameText != null) this.targetNameText.text = plateLabel ?? string.Empty;
+            if (this.targetNamePlate != null)
+                this.targetNamePlate.gameObject.SetActive(multi && !string.IsNullOrEmpty(plateLabel));
+
+            if (multi) {
                 this.radialImage.gameObject.SetActive(true);
 
-                this.radialImage.color = new Color(0, 0, 0, 0);
+                this.radialImage.color = new Color(this.radialBaseColor.r, this.radialBaseColor.g, this.radialBaseColor.b, 0f);
                 this.radialImage.DOComplete();
-                this.radialImage.DOColor(Color.white, .3f).SetEase(Ease.OutQuad);
+                this.radialImage.DOColor(this.radialBaseColor, .3f).SetEase(Ease.OutQuad);
             } else {
                 this.radialImage.gameObject.SetActive(false);
             }
@@ -142,18 +195,36 @@ namespace Sim.UI {
 
                 this.radialMenuButtons.Add(button);
             }
+
+            // Positionne tout sur la frame d'apparition pour éviter un « téléport » visible
+            // depuis l'ancienne position (sinon le 1er placement n'a lieu qu'au prochain Update).
+            this.Center();
         }
 
         private void ClearButtons() {
             this.radialMenuButtons.ForEach(x => x.GetComponent<RectTransform>().DOComplete());
             
             foreach (Transform child in this.transform) {
-                if (child != this.radialImage.transform) {
-                    Destroy(child.gameObject);
-                }
+                if (child == this.radialImage.transform) continue;
+                if (this.targetNamePlate != null && child == this.targetNamePlate.transform) continue;
+                Destroy(child.gameObject);
             }
 
             this.radialMenuButtons.Clear();
+        }
+
+        /// <summary>Nom à afficher pour la cible : prop (PropsConfig) ou item (ItemConfig), sinon null.</summary>
+        private string ResolveTargetName() {
+            if (this.currentTarget == null) return null;
+
+            PropBehaviourBase pb = this.currentTarget.GetComponentInParent<PropBehaviourBase>();
+            var propCfg = pb != null ? pb.GetConfiguration() : null;
+            if (propCfg != null) return propCfg.GetDisplayName();
+
+            ItemBehaviour ib = this.currentTarget.GetComponentInParent<ItemBehaviour>();
+            if (ib != null && ib.Configuration != null) return ib.Configuration.Label;
+
+            return null;
         }
 
         private void ClearText() {
@@ -162,11 +233,23 @@ namespace Sim.UI {
         }
 
         private void OnRadialButtonHover(Action action) {
-            this.actionText.enabled = true;
-            this.actionText.text = action.Label;
+            if (this.plateBelow) {
+                // Action unique : la plate (label sous le bouton) n'apparaît qu'au survol.
+                if (this.targetNamePlate != null && !string.IsNullOrEmpty(this.targetNameText != null ? this.targetNameText.text : null)) {
+                    this.targetNamePlate.gameObject.SetActive(true);
+                    this.Center();
+                }
+            } else {
+                this.actionText.enabled = true;
+                this.actionText.text = action.Label;
+            }
+
+            if (this.hoverSfx != null) Sim.HUDManager.Instance?.PlaySound(this.hoverSfx, this.hoverSfxVolume);
         }
 
         private void OnRadialButtonExit(Action action) {
+            if (this.plateBelow && this.targetNamePlate != null)
+                this.targetNamePlate.gameObject.SetActive(false);
             this.ClearText();
         }
 
@@ -180,6 +263,7 @@ namespace Sim.UI {
             this.currentTargetCollider = null;
             this.ClearButtons();
             this.ClearText();
+            if (this.targetNamePlate != null) this.targetNamePlate.gameObject.SetActive(false);
             this.gameObject.SetActive(false);
         }
     }

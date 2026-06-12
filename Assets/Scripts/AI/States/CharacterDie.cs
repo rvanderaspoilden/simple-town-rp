@@ -12,7 +12,7 @@ namespace AI.States {
         public void OnEnter() {
             this.player.PlayerState = PlayerState.DIED;
 
-            this.player.Animator.SetAction(CharacterAnimatorAction.DIE);
+            this.player.SetAnimatorAction(CharacterAnimatorAction.DIE);
 
             this.player.SetHeadTargetPosition(this.player.SitHeadPosition);
 
@@ -27,7 +27,7 @@ namespace AI.States {
         public void Tick() { }
 
         public void OnExit() {
-            this.player.Animator.SetAction(CharacterAnimatorAction.NONE);
+            this.player.SetAnimatorAction(CharacterAnimatorAction.NONE);
             this.player.SetHeadTargetPosition(this.player.IdleHeadPosition);
         }
     }

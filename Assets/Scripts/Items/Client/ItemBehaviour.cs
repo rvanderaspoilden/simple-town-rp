@@ -19,6 +19,7 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
     private ItemIdentity _identity;
     private ItemConfig   _config;
     private NavMeshObstacle _navObstacle;
+    private Renderer[]   _renderers;
 
     private bool    _isHeld;
     private uint    _holderNetId;
@@ -34,6 +35,7 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
     {
         _identity = GetComponent<ItemIdentity>();
         _navObstacle = GetComponentInChildren<NavMeshObstacle>(true);
+        _renderers = GetComponentsInChildren<Renderer>(true);
     }
 
     protected virtual void OnDestroy()
@@ -65,6 +67,21 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
         _isHeld      = false;
         _holderNetId = 0;
         if (_navObstacle != null) _navObstacle.enabled = true;
+        // Restore visibility in case the item was hidden by an action while held
+        // (e.g. dropped while the holder was sitting).
+        SetRenderersVisible(true);
+    }
+
+    /// <summary>
+    /// Toggle the visibility of every renderer on the item. Driven by PlayerAnimator
+    /// when the holder performs an action that should hide held items (e.g. SIT, SLEEP).
+    /// Uses Renderer.enabled to leave colliders / NavMeshObstacle / logic untouched.
+    /// </summary>
+    public void SetRenderersVisible(bool visible)
+    {
+        if (_renderers == null) return;
+        foreach (var r in _renderers)
+            if (r != null) r.enabled = visible;
     }
 
     // ── IInteractable ─────────────────────────────────────────────────────────
@@ -85,12 +102,15 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
     {
         if (!_isHeld)
         {
-            // Client-side hint: mark PICK as forbidden when hands are full
+            // Client-side hint: PICK est interdit si les mains sont pleines, SAUF si le
+            // joueur tient un colis (l'item ramassé y est routé — capacité validée serveur).
             if (PlayerController.Local != null)
             {
+                var hands = PlayerController.Local.PlayerHands;
+                bool canAcquire = hands.CanHandleItem(_config.HandleType) || hands.IsHoldingContainer();
                 foreach (var a in _groundActions)
                     if (a.Type == ActionTypeEnum.PICK)
-                        a.IsForbidden = !PlayerController.Local.PlayerHands.CanHandleItem(_config.HandleType);
+                        a.IsForbidden = !canAcquire;
             }
             return _groundActions;
         }

@@ -27,6 +27,16 @@ namespace Sim {
         [Tooltip("Fenêtre temporelle entre deux mouseDown gauche pour qu'ils soient considérés comme un double clic et déclenchent la course.")]
         [SerializeField] private float doubleClickWindow = 0.3f;
 
+        [Header("Curseur magnétique")]
+        [Tooltip("Si le curseur ne touche pas pile un item/prop, on cible automatiquement l'interactable à portée le plus proche du curseur à l'écran.")]
+        [SerializeField] private bool magneticTargetingEnabled = true;
+        [Tooltip("Rayon (m) autour du joueur dans lequel chercher les interactables candidats (≈ portée d'interaction max).")]
+        [SerializeField] private float magneticCandidateRadius = 3.5f;
+        [Tooltip("Tolérance écran (px, à la résolution de référence) : un candidat n'est aimanté que si sa projection est à moins de cette distance du curseur.")]
+        [SerializeField] private float magneticScreenTolerancePixels = 70f;
+        [Tooltip("Hauteur d'écran de référence pour la tolérance (px). La tolérance réelle est mise à l'échelle par Screen.height / cette valeur.")]
+        [SerializeField] private float magneticToleranceReferenceHeight = 1080f;
+
         private float _lastLeftDownTime = -10f;
         private bool _pendingRunRequest;
 
@@ -100,7 +110,7 @@ namespace Sim {
             }
         }
 
-        private PropHoverOutline _hoveredOutline;
+        private HoverOutline _hoveredOutline;
         private int _outlineLayerBit = -1;
         private int _missionLayerBit = -1;
 
@@ -112,7 +122,7 @@ namespace Sim {
         private LayerMask InteractionMask {
             get {
                 if (_outlineLayerBit < 0) {
-                    int l = LayerMask.NameToLayer(PropHoverOutline.OutlineLayerName);
+                    int l = LayerMask.NameToLayer(HoverOutline.OutlineLayerName);
                     _outlineLayerBit = l >= 0 ? (1 << l) : 0;
                 }
                 if (_missionLayerBit < 0) {
@@ -123,6 +133,100 @@ namespace Sim {
             }
         }
 
+        private static bool WithinPlanarRange(Vector3 a, Vector3 b, float range) {
+            return Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z)) <= range;
+        }
+
+        /// <summary>Vrai si le curseur vise exactement (raycast) un joueur distant — sert à
+        /// protéger l'interaction sociale (clic droit) du magnétisme items/props.</summary>
+        private bool IsCursorOverRemotePlayer() {
+            Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
+                PlayerController pc = h.collider.GetComponentInParent<PlayerController>();
+                return pc != null && !pc.isLocalPlayer;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Résout l'interactable visé par le curseur, de façon TOLÉRANTE. D'abord un raycast
+        /// exact (visée précise + visée d'objets hors portée pour s'en approcher conservées) ;
+        /// si rien d'interactable n'est touché, on aimante sur l'interactable À PORTÉE dont la
+        /// projection écran est la plus proche du curseur (dans une petite tolérance en pixels).
+        /// Utilisé par le survol ET le clic → l'objet surligné est toujours celui qu'on interagit.
+        /// La forgiveness ne concerne QUE la précision du curseur ; la portée/ligne de vue reste
+        /// vérifiée par CanInteractWith (et revalidée serveur).
+        /// </summary>
+        private bool TryResolveInteractable(out IInteractable interactable, out Collider col, out Vector3 point) {
+            interactable = null; col = null; point = Vector3.zero;
+
+            // 1. Raycast exact d'abord.
+            Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
+                IInteractable exact = h.collider.GetComponentInParent<IInteractable>();
+                if (exact.IsAlive() && exact.IsInteractable()) {
+                    interactable = exact; col = h.collider; point = h.point;
+                    return true;
+                }
+            }
+
+            // 2. Fallback magnétique : interactable à portée le plus proche du curseur à l'écran.
+            if (!this.magneticTargetingEnabled || PlayerController.Local == null) return false;
+
+            Vector3 playerPos = PlayerController.Local.transform.position;
+            Collider[] candidates = Physics.OverlapSphere(playerPos, this.magneticCandidateRadius, this.InteractionMask, QueryTriggerInteraction.Ignore);
+            if (candidates.Length == 0) return false;
+
+            float refHeight = this.magneticToleranceReferenceHeight > 0f ? this.magneticToleranceReferenceHeight : 1080f;
+            float tol = this.magneticScreenTolerancePixels * (Screen.height / refHeight);
+            float tolSqr = tol * tol;
+            Vector2 mouse = Input.mousePosition;
+            float bestSqr = float.MaxValue;
+
+            foreach (Collider c in candidates) {
+                IInteractable cand = c.GetComponentInParent<IInteractable>();
+                if (!cand.IsAlive() || !cand.IsInteractable()) continue;
+                if (!WithinPlanarRange(playerPos, cand.transform.position, cand.GetRange())) continue;
+
+                Vector3 sp = this.camera.WorldToScreenPoint(c.bounds.center);
+                if (sp.z <= 0f) continue; // candidat derrière la caméra
+                float dSqr = ((Vector2)sp - mouse).sqrMagnitude;
+                if (dSqr > tolSqr || dSqr >= bestSqr) continue;
+
+                bestSqr = dSqr;
+                interactable = cand; col = c; point = c.bounds.center;
+            }
+
+            return interactable != null;
+        }
+
+        /// <summary>
+        /// Applique le clic sur un interactable résolu (visée exacte OU magnétique) : ouvre le
+        /// menu radial si à portée (CanInteractWith = portée + ligne de vue), sinon s'en approche.
+        /// </summary>
+        private void HandleInteractableClick(IInteractable interactable, Vector3 point, bool leftMouseClick) {
+            bool canInteract = PlayerController.Local.CanInteractWith(interactable, point);
+            Action[] actions = interactable.GetActions();
+
+            if (leftMouseClick && (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
+                                   PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle))) {
+                actions = interactable.GetActions(true);
+                canInteract = canInteract || (actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK));
+            }
+
+            if (canInteract) {
+                if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
+                    PlayerController.Local.Idle();
+                } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
+                    PlayerController.Local.LookAt(interactable.transform);
+                }
+
+                HUDManager.Instance.ShowContextMenu(actions, interactable.transform, leftMouseClick);
+            } else {
+                PlayerController.Local.SetTarget(point, interactable, leftMouseClick, _pendingRunRequest);
+            }
+        }
+
         /// <summary>
         /// Per-frame hover highlight: raycasts under the cursor and outlines the
         /// IInteractable being pointed at (toggling the outline as the hovered target
@@ -130,21 +234,32 @@ namespace Sim {
         /// boards… — not just PropBehaviourBase.
         /// </summary>
         private void ManageHover() {
-            PropHoverOutline target = null;
+            HoverOutline target = null;
             string hoverName = null;
 
             bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             if (!overUI) {
-                Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
-                if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
-                    IInteractable interactable = h.collider.GetComponentInParent<IInteractable>();
-                    if (interactable != null && interactable.IsInteractable()) {
-                        GameObject host = interactable.transform.gameObject;
-                        target = host.GetComponent<PropHoverOutline>();
-                        if (target == null) target = host.AddComponent<PropHoverOutline>();
+                // Résolution tolérante (visée exacte + magnétisme) : le même objet est surligné
+                // au survol et interagi au clic.
+                if (TryResolveInteractable(out IInteractable interactable, out Collider col, out _)) {
+                    GameObject host = interactable.transform.gameObject;
+                    target = host.GetComponent<HoverOutline>();
+                    if (target == null) target = host.AddComponent<HoverOutline>();
+                    hoverName = ResolveHoverName(col);
+                } else {
+                    // Joueurs distants / NPC : pas IInteractable (interaction au clic droit via
+                    // GetContextActions) mais on veut quand même les surligner au survol. Grandes
+                    // capsules → pas de souci d'ergonomie, un raycast exact dédié suffit.
+                    Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
+                    if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
+                        PlayerController pc = h.collider.GetComponentInParent<PlayerController>();
+                        if (pc != null && !pc.isLocalPlayer) {
+                            GameObject host = pc.gameObject;
+                            target = host.GetComponent<HoverOutline>();
+                            if (target == null) target = host.AddComponent<HoverOutline>();
+                        }
+                        hoverName = ResolveHoverName(h.collider);
                     }
-
-                    hoverName = ResolveHoverName(h.collider);
                 }
             }
 
@@ -201,9 +316,9 @@ namespace Sim {
         }
 
         // The Outline layer must always be in the camera culling mask so that props
-        // moved to that layer by PropHoverOutline.Show() remain visible while outlined.
+        // moved to that layer by HoverOutline.Show() remain visible while outlined.
         private LayerMask WithOutlineLayer(LayerMask mask) {
-            int l1 = LayerMask.NameToLayer(PropHoverOutline.OutlineLayerName);
+            int l1 = LayerMask.NameToLayer(HoverOutline.OutlineLayerName);
             if (l1 >= 0) mask |= (1 << l1);
             int l2 = LayerMask.NameToLayer("MissionHighlight");
             if (l2 >= 0) mask |= (1 << l2);
@@ -254,6 +369,22 @@ namespace Sim {
 
             if (!(leftMouseClick || rightMouseClick || leftMousePressed)) return;
 
+            // Résolution magnétique de l'interactable, sur le clic UP (pas le maintien gauche =
+            // déplacement continu). Si un interactable à portée est proche du curseur, on l'aimante.
+            // Exception : le clic droit visant un joueur distant (interaction sociale) garde la
+            // priorité sur le magnétisme — les joueurs sont de grandes capsules, la visée exacte suffit.
+            bool exactOnRemotePlayer = rightMouseClick && IsCursorOverRemotePlayer();
+            if ((leftMouseClick || rightMouseClick) && !exactOnRemotePlayer) {
+                if (TryResolveInteractable(out IInteractable magnet, out _, out Vector3 magnetPoint)) {
+                    // Clic gauche : un interactable "clic droit uniquement" ne réagit pas → on
+                    // laisse retomber sur le chemin RaycastAll (déplacement / objet derrière).
+                    if (!(leftMouseClick && magnet.IsRightClickOnly())) {
+                        HandleInteractableClick(magnet, magnetPoint, leftMouseClick);
+                        return;
+                    }
+                }
+            }
+
             // Ignore trigger colliders: props can host triggers for occupancy detection (e.g. DoorPropSource)
             // and we don't want those to intercept the click — only solid geometry should be hit.
             RaycastHit[] hits = Physics.RaycastAll(ray.origin, ray.direction, 100, this.InteractionMask, QueryTriggerInteraction.Ignore);
@@ -279,27 +410,7 @@ namespace Sim {
 
                 if (interactable != null && !leftMousePressed) {
                     if (interactable.IsInteractable()) {
-                        bool canInteract = PlayerController.Local.CanInteractWith(interactable, hit.point);
-                        Action[] actions = interactable.GetActions();
-
-                        if (leftMouseClick && (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
-                                               PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle))) {
-                            actions = interactable.GetActions(true);
-
-                            canInteract = canInteract || (actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK));
-                        }
-
-                        if (canInteract) {
-                            if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
-                                PlayerController.Local.Idle();
-                            } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
-                                PlayerController.Local.LookAt(interactable.transform);
-                            }
-
-                            HUDManager.Instance.ShowContextMenu(actions, interactable.transform, leftMouseClick);
-                        } else {
-                            PlayerController.Local.SetTarget(hit.point, interactable, leftMouseClick, _pendingRunRequest);
-                        }
+                        HandleInteractableClick(interactable, hit.point, leftMouseClick);
                     } else {
                         PlayerController.Local.SetTarget(hit.point, interactable, false, _pendingRunRequest);
                     }

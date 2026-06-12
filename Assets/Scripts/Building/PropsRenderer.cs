@@ -167,5 +167,85 @@ namespace Sim.Building {
                 this.foundationObj.SetActive(visibility == VisibilityStateEnum.HIDE);
             }
         }
+
+        // ── Construction reveal (Phase 2 sketch silhouette + Phase 4 vertical dissolve) ──
+        //
+        // Swaps the prop renderers to instances of Sim/ConstructionReveal that copy each
+        // real material's base map/color, then reveals bottom-to-top as _Progress 0→1.
+        // Driven over the network by PropBehaviourBase. EndConstructionReveal restores the
+        // normal materials (UpdateGraphics: unbuilt ghost if cancelled, real if just built).
+
+        private static readonly int ProgressId    = Shader.PropertyToID("_Progress");
+        private static readonly int MinYId         = Shader.PropertyToID("_MinY");
+        private static readonly int MaxYId         = Shader.PropertyToID("_MaxY");
+        private static readonly int BaseMapId      = Shader.PropertyToID("_BaseMap");
+        private static readonly int BaseColorId    = Shader.PropertyToID("_BaseColor");
+        private static readonly int LegacyColorId  = Shader.PropertyToID("_Color");
+
+        private readonly List<Material> _revealInstances = new List<Material>();
+        private bool _revealing;
+
+        public bool IsRevealing => _revealing;
+
+        public void BeginConstructionReveal() {
+            if (renderersToModify == null || renderersToModify.Length == 0) return;
+            if (this.defaultMaterialsByRenderer == null) this.SetupDefaultMaterials();
+
+            Material template = Resources.Load<Material>("Materials/ConstructionReveal");
+            if (template == null) {
+                Debug.LogWarning("[PropsRenderer] ConstructionReveal material missing — reveal skipped");
+                return;
+            }
+
+            // World-space vertical extent of the prop, so _Progress maps to bottom→top.
+            bool hasBounds = false;
+            Bounds bounds = default;
+            foreach (Renderer r in renderersToModify) {
+                if (r == null) continue;
+                if (!hasBounds) { bounds = r.bounds; hasBounds = true; }
+                else bounds.Encapsulate(r.bounds);
+            }
+            float minY = hasBounds ? bounds.min.y : transform.position.y;
+            float maxY = hasBounds ? bounds.max.y : transform.position.y + 1f;
+
+            EndConstructionReveal(restore: false); // clear any previous instances
+
+            foreach (Renderer renderer in renderersToModify) {
+                if (renderer == null) continue;
+                Material[] defs = this.defaultMaterialsByRenderer[renderer];
+                Material[] mats = new Material[defs.Length];
+                for (int i = 0; i < defs.Length; i++) {
+                    Material m = new Material(template);
+                    Material src = defs[i];
+                    if (src != null) {
+                        if (src.HasProperty(BaseMapId)) m.SetTexture(BaseMapId, src.GetTexture(BaseMapId));
+                        if (src.HasProperty(BaseColorId)) m.SetColor(BaseColorId, src.GetColor(BaseColorId));
+                        else if (src.HasProperty(LegacyColorId)) m.SetColor(BaseColorId, src.GetColor(LegacyColorId));
+                    }
+                    m.SetFloat(MinYId, minY);
+                    m.SetFloat(MaxYId, maxY);
+                    m.SetFloat(ProgressId, 0f);
+                    mats[i] = m;
+                    _revealInstances.Add(m);
+                }
+                renderer.materials = mats;
+            }
+            _revealing = true;
+        }
+
+        public void SetConstructionProgress(float progress) {
+            if (!_revealing) return;
+            float p = Mathf.Clamp01(progress);
+            foreach (Material m in _revealInstances) if (m != null) m.SetFloat(ProgressId, p);
+        }
+
+        public void EndConstructionReveal() => EndConstructionReveal(restore: true);
+
+        private void EndConstructionReveal(bool restore) {
+            foreach (Material m in _revealInstances) if (m != null) Destroy(m);
+            _revealInstances.Clear();
+            _revealing = false;
+            if (restore) this.UpdateGraphics();
+        }
     }
 }

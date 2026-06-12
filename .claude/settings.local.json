@@ -133,7 +133,20 @@
       "Bash(git -C D:/Workspace/Unity/TheBroz/simple-town-ws commit -m 'chore: pin packageManager for turbo 2 + add engines *)",
       "Bash(git -C D:/Workspace/Unity/TheBroz/simple-town-ws push origin master)",
       "Bash(git -C D:/Workspace/Unity/TheBroz/simple-town-ws log --oneline -3)",
-      "Bash(git -C D:/Workspace/Unity/TheBroz/simple-town-ws remote -v)"
+      "Bash(git -C D:/Workspace/Unity/TheBroz/simple-town-ws remote -v)",
+      "mcp__ai-game-developer__reflection-method-call",
+      "mcp__ai-game-developer__assets-find-built-in",
+      "mcp__ai-game-developer__screenshot-game-view",
+      "mcp__unity-mcp__Unity_ManageMenuItem",
+      "mcp__ai-game-developer__editor-application-set-state",
+      "PowerShell($ws = 'D:\\\\Workspace\\\\Unity\\\\TheBroz\\\\simple-town-ws'; npx --prefix $ws tsc --noEmit -p \"$ws\\\\apps\\\\api\\\\tsconfig.json\" 2>&1 | Select-Object -First 50)",
+      "mcp__unity-mcp__Unity_RunCommand",
+      "Bash(git rm *)",
+      "Bash(rm -v Assets/Resources/Configurations/Jobs/RewardKinds/SocialCreditReward.asset Assets/Resources/Configurations/Jobs/RewardKinds/SocialCreditReward.asset.meta)",
+      "Bash(rm -v Assets/Resources/Configurations/Jobs/Definitions/SocialCredit_1_1.asset Assets/Resources/Configurations/Jobs/Definitions/SocialCredit_1_1.asset.meta)",
+      "Bash(powershell -Command \"\\(Get-Content 'Assets\\\\Scripts\\\\Constellation\\\\Data\\\\ConstellationGraphConfig.cs' -Raw\\) -replace 'x\\\\.connectedNodeIds = new\\\\[\\\\]', 'x.legacyConnectedNodeIds = new[]' -replace 'x\\\\.extraPrerequisiteNodeIds = new\\\\[\\\\]', 'x.legacyExtraPrerequisiteNodeIds = new[]' | Set-Content 'Assets\\\\Scripts\\\\Constellation\\\\Data\\\\ConstellationGraphConfig.cs' -NoNewline\")",
+      "mcp__unity-mcp__Unity_ReadConsole",
+      "Bash(grep guid *)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -60,6 +60,28 @@ public static class PropInteractionRouter {
             // persist the same flag on the props row so the next load doesn't show the
             // prop as still-to-be-built.
             PropInteractionDispatcher.Instance?.SyncPropBuilt(msg.PropId, true);
+
+            // Bricoleur: CONSTRUIRE un prop (action BUILD) crédite des points Ingenious
+            // (x2 avec Bricoleur) + toast de succès au builder. Sur la VRAIE construction
+            // (transition à IsBuilt), pas au placement. Serveur-autoritaire.
+            var builderPc = conn != null && conn.identity != null
+                ? conn.identity.GetComponent<Sim.Player.PlayerConstellation>() : null;
+            if (builderPc != null) {
+                int pts = Sim.Constellation.ConstellationPerks.BuildIngeniousPoints(builderPc.ServerHasUnlockedNode);
+                if (pts > 0) {
+                    builderPc.GrantPoints(
+                        new System.Collections.Generic.Dictionary<string, int> {
+                            { Sim.Constellation.ConstellationPerks.IngeniousBranchId, pts }
+                        }, "build_prop");
+                    if (conn.isReady)
+                        conn.Send(new ToastNotificationMessage {
+                            text       = $"+{pts} points Ingénieux",
+                            typeByte   = (byte)NotificationType.BANK,
+                            worldToast = true,
+                            kindByte   = (byte)ToastKind.Success,
+                        });
+                }
+            }
         }
     }
 
@@ -88,6 +110,24 @@ public static class PropInteractionRouter {
         var thrown = new S2C_TrashThrown { PropId = msg.PropId, RoomId = msg.RoomId, ThrowerNetId = conn.identity.netId };
         foreach (var c in PlayerRoomTracker.Instance.GetConnectionsInRoom(msg.RoomId)) {
             if (c != null && c.isReady) c.Send(thrown);
+        }
+
+        // Récompense : jeter un objet crédite des points de la branche Environnement
+        // (remplace l'ancien "+1 crédit social" purement cosmétique). + toast de succès.
+        var pc = conn.identity.GetComponent<Sim.Player.PlayerConstellation>();
+        if (pc != null) {
+            int pts = Sim.Constellation.ConstellationPerks.TrashEnvironnementPoints;
+            pc.GrantPoints(
+                new System.Collections.Generic.Dictionary<string, int> {
+                    { Sim.Constellation.ConstellationPerks.EnvironnementBranchId, pts }
+                }, "trash");
+            if (conn.isReady)
+                conn.Send(new ToastNotificationMessage {
+                    text       = $"+{pts} Environnement",
+                    typeByte   = (byte)NotificationType.BANK,
+                    worldToast = true,
+                    kindByte   = (byte)ToastKind.Success,
+                });
         }
 
         Debug.Log($"[PropInteractionRouter] TrashThrow player={conn.identity.netId} entity={entityId} prop={msg.PropId} room='{roomId}'");
@@ -229,6 +269,7 @@ public static class PropInteractionRouter {
         GameObject go  = ServerPropManager.Instance.GetSpawnedGameObject(msg.PropId);
         Vector3    pos = go != null ? go.transform.position : Vector3.zero;
         Quaternion rot = go != null ? go.transform.rotation : Quaternion.identity;
+        Vector3    vfxPos = pos; // VFX joue à l'emplacement réel du prop (avant ajustement sol mural)
 
         // Prop mural : son origine est en hauteur sur le mur. Le débris doit tomber au
         // sol — on raycast vers le bas sur le layer sol (9) et on le pose à plat.
@@ -246,6 +287,11 @@ public static class PropInteractionRouter {
 
         // 3. Retrait runtime + broadcast S2C_DestroyProp aux clients de la pièce.
         ServerPropManager.Instance.RemoveProp(apt.RoomId, msg.PropId);
+
+        // 3b. VFX poussière + éclats à tous les clients de la pièce, à l'emplacement du prop.
+        var destroyed = new S2C_PropDestroyed { RoomId = apt.RoomId, Position = vfxPos };
+        foreach (var c in PlayerRoomTracker.Instance.GetConnectionsInRoom(apt.RoomId))
+            if (c != null && c.isReady) c.Send(destroyed);
 
         // 4. Laisse un débris (item persistant) à la place. Persistant si l'appart a une
         //    place DB et que la config est ToPersist (survit au redémarrage → force le

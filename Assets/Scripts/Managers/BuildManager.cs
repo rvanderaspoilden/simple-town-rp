@@ -48,6 +48,11 @@ namespace Sim {
 
         private PropBehaviourBase currentPropBehaviour;
 
+        // Contexte de déballage (>=0 = placement en cours déclenché par un colis). Permet à
+        // Apply de router vers OnValidatePropUnpack au lieu de OnValidatePropCreation.
+        private int unpackPackageEntityId = -1;
+        private int unpackSlotIndex       = -1;
+
         private PaintBucketBehaviour currentOpenedBucket;
 
         private BuildModeEnum mode;
@@ -91,6 +96,13 @@ namespace Sim {
         public delegate void ValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation);
 
         public static event ValidatePropCreation OnValidatePropCreation;
+
+        // Déballage d'un meuble emballé : à la validation du placement, on ne CRÉE pas un
+        // prop (OnValidatePropCreation) mais on DÉPLACE le meuble existant du colis vers le
+        // monde (le serveur résout via packageEntityId + slotIndex). UUID conservé.
+        public delegate void ValidatePropUnpack(int packageEntityId, int slotIndex, Vector3 position, Quaternion rotation);
+
+        public static event ValidatePropUnpack OnValidatePropUnpack;
 
         public delegate void ValidatePropEdit(PropBehaviourBase behaviour);
 
@@ -206,6 +218,35 @@ namespace Sim {
             }
         }
 
+        /// <summary>Déballage : entre en mode placement pour re-poser un meuble emballé.
+        /// Mémorise le colis + slot ; à la validation, Apply émet OnValidatePropUnpack.</summary>
+        public void InitUnpack(PropsConfig propsConfig, int presetId, int packageEntityId, int slotIndex) {
+            if (propsConfig == null) {
+                Debug.LogError("[BuildManager] InitUnpack called with null config");
+                return;
+            }
+
+            this.unpackPackageEntityId = packageEntityId;
+            this.unpackSlotIndex       = slotIndex;
+
+            this.currentPropBehaviour = PropsManager.Instance.InstantiateProps(propsConfig, presetId);
+            this.currentPropsCollider = this.currentPropBehaviour.GetComponent<BoxCollider>();
+            this.currentPreview = this.currentPropBehaviour.gameObject.AddComponent<BuildPreview>();
+
+            this.SetMode(BuildModeEnum.POSING);
+
+            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
+
+            PropsVisibilityUI.Instance.Bind(this.apartmentController);
+
+            if (propsConfig.GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
+                this.apartmentController.SetWallVisibility(VisibilityModeEnum.FORCE_HIDE);
+                WallVisibilityUI.Instance.Bind(this.apartmentController, VisibilityModeEnum.FORCE_HIDE);
+            } else {
+                WallVisibilityUI.Instance.Bind(this.apartmentController);
+            }
+        }
+
         public void Edit(PropBehaviourBase behaviour) {
             PropIdentity identity = behaviour.GetComponent<PropIdentity>();
             Debug.Log($"[BuildMode] Entering build mode prop={identity?.PropId} room={identity?.RoomId} pos={behaviour.transform.position}");
@@ -289,6 +330,9 @@ namespace Sim {
         public ApartmentController CurrentApartment => apartmentController;
 
         public void Cancel() {
+            // Annuler un déballage laisse le meuble dans le colis (aucun message envoyé).
+            this.unpackPackageEntityId = -1;
+            this.unpackSlotIndex       = -1;
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
             this.apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
@@ -347,11 +391,23 @@ namespace Sim {
                         OnValidatePropEdit?.Invoke(this.currentPropBehaviour);
                     }
                 } else if (this.currentPropBehaviour != null) {
-                    OnValidatePropCreation?.Invoke(
-                        this.currentPropBehaviour.GetConfiguration(),
-                        this.currentPropBehaviour.DefaultPresetId,
-                        this.currentPropBehaviour.transform.position,
-                        this.currentPropBehaviour.transform.rotation);
+                    if (this.unpackPackageEntityId >= 0) {
+                        // Déballage : on déplace le meuble existant (le serveur résout via
+                        // colis + slot), pas de création.
+                        OnValidatePropUnpack?.Invoke(
+                            this.unpackPackageEntityId,
+                            this.unpackSlotIndex,
+                            this.currentPropBehaviour.transform.position,
+                            this.currentPropBehaviour.transform.rotation);
+                        this.unpackPackageEntityId = -1;
+                        this.unpackSlotIndex       = -1;
+                    } else {
+                        OnValidatePropCreation?.Invoke(
+                            this.currentPropBehaviour.GetConfiguration(),
+                            this.currentPropBehaviour.DefaultPresetId,
+                            this.currentPropBehaviour.transform.position,
+                            this.currentPropBehaviour.transform.rotation);
+                    }
                     Destroy(this.currentPropBehaviour.gameObject);
                 }
             } else if (this.mode == BuildModeEnum.WALL_PAINT || this.mode == BuildModeEnum.GROUND_PAINT) {

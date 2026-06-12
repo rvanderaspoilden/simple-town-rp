@@ -10,7 +10,7 @@ using Mirror;
 using Sim.Entities;
 using Sim.Entities.Persistence;
 using Sim.Enums;
-using Sim.Jobs;
+using Sim.Missions;
 using Sim.Logging;
 using Sim.Scriptables;
 using Sim.UI;
@@ -123,6 +123,98 @@ namespace Sim {
             foreach (Canvas c in GetComponentsInChildren<Canvas>(false)) c.enabled = !hidden;
         }
 
+        // Replicated full-body action animation (SIT, SLEEP, DIE, BUILD…). The player
+        // state machine only runs on the local player, so without this SyncVar remote
+        // clients would never see the action pose nor the held-item hiding it triggers.
+        [SyncVar(hook = nameof(OnAnimatorActionSynced))]
+        private int _animatorActionSync;
+
+        /// <summary>
+        /// Set the current full-body action animation and replicate it to every client.
+        /// The local player applies it immediately (prediction) then commands the server,
+        /// which sets the SyncVar so remote copies play the same pose and apply the matching
+        /// held-item visibility (PlayerAnimator.SetAction is the single chokepoint).
+        /// </summary>
+        public void SetAnimatorAction(CharacterAnimatorAction action) {
+            this.animator.SetAction(action);
+            if (isLocalPlayer) this.CmdSetAnimatorAction((int)action);
+        }
+
+        [Command]
+        private void CmdSetAnimatorAction(int action) {
+            this._animatorActionSync = action;
+        }
+
+        private void OnAnimatorActionSynced(int _, int newValue) {
+            // The owner already applied it locally (prediction); only remote copies need this.
+            if (!isLocalPlayer) this.animator.SetAction((CharacterAnimatorAction)newValue);
+        }
+
+        // Replicated drink gesture, targeted to a single arm: 0 = none, 1 = right, 2 = left.
+        // Only the arm holding the consumed item plays Drink; the other hand keeps its anim.
+        [SyncVar(hook = nameof(OnDrinkingHandSynced))]
+        private int _drinkingHand;
+
+        // Item awaiting consumption while the drink/eat gesture plays. The consume is driven by
+        // the `OnConsumeBite` animation event so it lands exactly when the cup/food reaches the
+        // mouth. Drink and Eat keep separate pending slots so they can later diverge onto their
+        // own animations. -1 = none in progress. The gesture (and thus the event) only plays when
+        // the holding arm is in Carry_Mug, so consumable configs must use the MUG carry shape.
+        private int pendingDrinkEntityId = -1;
+        private int pendingEatEntityId = -1;
+
+        /// <summary>
+        /// Start a one-shot drink gesture on the local player (replicated to every client).
+        /// The item is consumed by the <see cref="OnConsumeBite"/> animation event fired when the
+        /// cup reaches the mouth. Only the arm given by <paramref name="hand"/> plays the gesture
+        /// (requires that item's CarryShape to be MUG).
+        /// </summary>
+        public void Drink(int entityId, HandType hand) {
+            if (!isLocalPlayer) return;
+            this.pendingDrinkEntityId = entityId;
+            this.SetDrinkingHand(hand == HandType.Right ? 1 : 2);
+        }
+
+        /// <summary>
+        /// Start a one-shot eat gesture on the local player (replicated to every client).
+        /// Mirrors <see cref="Drink"/>: the item is consumed by the <see cref="OnConsumeBite"/>
+        /// animation event fired when the food reaches the mouth. Reuses the drink gesture for now.
+        /// </summary>
+        public void Eat(int entityId, HandType hand) {
+            if (!isLocalPlayer) return;
+            this.pendingEatEntityId = entityId;
+            this.SetDrinkingHand(hand == HandType.Right ? 1 : 2);
+        }
+
+        /// <summary>
+        /// Animation event raised when the cup/food reaches the mouth. Dispatched on every client
+        /// playing the gesture, but only the local owner consumes (the consume goes through a
+        /// Command). Consumes whichever gesture (drink or eat) is in progress, then releases the arm.
+        /// </summary>
+        public void OnConsumeBite() {
+            if (!isLocalPlayer) return;
+            int entityId = this.pendingDrinkEntityId >= 0 ? this.pendingDrinkEntityId : this.pendingEatEntityId;
+            if (entityId < 0) return;
+            this.pendingDrinkEntityId = -1;
+            this.pendingEatEntityId = -1;
+            this.ConsumeItem(entityId);
+            this.SetDrinkingHand(0);
+        }
+
+        private void SetDrinkingHand(int hand) {
+            this.animator.SetDrinkingHand(hand);          // local prediction
+            if (isLocalPlayer) this.CmdSetDrinkingHand(hand);
+        }
+
+        [Command]
+        private void CmdSetDrinkingHand(int hand) {
+            this._drinkingHand = hand;
+        }
+
+        private void OnDrinkingHandSynced(int _, int newValue) {
+            if (!isLocalPlayer) this.animator.SetDrinkingHand(newValue);
+        }
+
         // Server-only cache of the user's preferences. Hydrated by the server
         // in SetupCharacterCoroutine and updated via UserSettingsSyncMessage.
         // Lives outside SyncVar — only the server consults it (notif gate,
@@ -209,11 +301,11 @@ namespace Sim {
                 Destroy(GetComponent<AudioListener>());
             }
 
-            Sim.Jobs.JobTargetHooks.RegisterPlayer(this);
+            Sim.Missions.MissionTargetHooks.RegisterPlayer(this);
         }
 
         public override void OnStopServer() {
-            Sim.Jobs.JobTargetHooks.UnregisterPlayer(this);
+            Sim.Missions.MissionTargetHooks.UnregisterPlayer(this);
             base.OnStopServer();
         }
 
@@ -353,22 +445,36 @@ namespace Sim {
 
             const int TrashBagConfigId = 101;
             ItemConfig bagCfg = DatabaseManager.GetItemConfigById(TrashBagConfigId);
+            if (bagCfg == null) return;
 
-            // Vérifier une main libre AVANT de supprimer le débris — sinon on perd le
-            // débris sans donner le sac.
-            if (bagCfg == null || !ServerItemManager.Instance.CanFitInHand(netId, bagCfg)) {
-                GameLogger.Network.Warning("CmdCleanItemNoHand {PlayerNetId} {EntityId}", netId, entityId);
-                return;
-            }
+            // Acquisition UNIVERSELLE : le sac va dans une main libre, sinon dans le colis
+            // tenu, sinon échec — un seul point de contrôle (pas de check manuel ici). Le
+            // débris n'est retiré QUE si le sac a pu être placé (onSuccess), pour ne jamais
+            // perdre le débris sans donner le sac.
+            int debrisEntityId = entityId;
+            int debrisConfigId = entity.ItemConfigId;
+            ServerItemManager.Instance.SpawnItemIntoInventory(connectionToClient, TrashBagConfigId, bagCfg, persistent: false,
+                onSuccess: () => {
+                    ServerItemManager.Instance.DespawnItem(roomId, debrisEntityId);
+                    GameLogger.Player.Info("PlayerCleanedItem {PlayerNetId} {EntityId} {ItemConfigId}",
+                        netId, debrisEntityId, debrisConfigId);
+                },
+                onFail: reason => {
+                    GameLogger.Network.Warning("CmdCleanItemFail {PlayerNetId} {EntityId} {Reason}",
+                        netId, debrisEntityId, reason);
+                    TargetActionFailed(connectionToClient, reason);
+                });
+        }
 
-            // Retire le débris du monde (+ ligne DB via le bridge), puis spawn un sac
-            // poubelle éphémère dans la main du joueur.
-            ServerItemManager.Instance.DespawnItem(roomId, entityId);
-            ServerItemManager.Instance.SpawnItemInHand(roomId, TrashBagConfigId,
-                connectionToClient, bagCfg, persistent: false);
-
-            GameLogger.Player.Info("PlayerCleanedItem {PlayerNetId} {EntityId} {ItemConfigId}",
-                netId, entityId, entity.ItemConfigId);
+        /// <summary>
+        /// Feedback générique d'échec d'action serveur (pas de message S2C dédié) : affiche
+        /// un toast au-dessus du joueur owner. Ex. CLEAN (sac ne tient pas) ou Emballer
+        /// (colis plein / n'accepte pas les meubles). Appelable depuis le serveur (ex.
+        /// ServerItemManager) via l'instance PlayerController de la connexion.
+        /// </summary>
+        [TargetRpc]
+        public void TargetActionFailed(NetworkConnectionToClient target, string message) {
+            if (!string.IsNullOrEmpty(message)) WorldToastManager.Show(message);
         }
 
         [ClientRpc]
@@ -446,52 +552,52 @@ namespace Sim {
         }
 
         /// <summary>
-        /// Server-only career change. newJob=-1 means resign (currentJob → null).
+        /// Server-only career change. newProfessionId="" means resign (current → null).
         /// Persists to backend (start_or_resume + update_current_job) then
         /// rebroadcasts CharacterData. Active mission, if any, is abandoned.
         /// </summary>
         [Server]
-        public void StartCareerChange(int newJob) {
-            StartCoroutine(CareerChangeCoroutine(newJob));
+        public void StartCareerChange(string newProfessionId) {
+            StartCoroutine(CareerChangeCoroutine(newProfessionId ?? ""));
         }
 
         [Server]
-        private IEnumerator CareerChangeCoroutine(int newJob) {
+        private IEnumerator CareerChangeCoroutine(string newProfessionId) {
             if (characterData == null || string.IsNullOrEmpty(characterData.Id)) {
                 GameLogger.Network.Warning("CareerChangeSkipped_NoCharacter {NetId}", netId);
                 yield break;
             }
 
             // Abandon any in-flight job; rewards system / cleanup handle the rest.
-            JobServerManager.Instance.OnPlayerDisconnected(netId);
+            MissionServerManager.Instance.OnPlayerDisconnected(netId);
 
             // Upsert the destination row when applying to a job (skip on resign).
-            if (newJob >= 0) {
+            if (!string.IsNullOrEmpty(newProfessionId)) {
                 var startBody = new CharacterJobStartRequest {
                     characterId = characterData.Id,
-                    category = newJob,
+                    professionId = newProfessionId,
                 };
                 UnityWebRequest startReq = ApiManager.Instance.StartCharacterJobRequest(startBody);
                 yield return startReq.SendWebRequest();
                 if (startReq.responseCode != 200 && startReq.responseCode != 201) {
-                    GameLogger.Network.Error(null, "CareerStartFailed {CharacterId} {Category} {Code}",
-                        characterData.Id, newJob, startReq.responseCode);
+                    GameLogger.Network.Error(null, "CareerStartFailed {CharacterId} {Profession} {Code}",
+                        characterData.Id, newProfessionId, startReq.responseCode);
                     yield break;
                 }
                 CharacterJobData row = JsonUtility.FromJson<CharacterJobData>(startReq.downloadHandler.text);
                 if (row != null) MergeJob(row);
             }
 
-            var updateBody = new CharacterUpdateCurrentJobRequest { currentJob = newJob };
+            var updateBody = new CharacterUpdateCurrentJobRequest { currentProfessionId = newProfessionId };
             UnityWebRequest updateReq = ApiManager.Instance.UpdateCharacterCurrentJobRequest(characterData.Id, updateBody);
             yield return updateReq.SendWebRequest();
             if (updateReq.responseCode != 200) {
-                GameLogger.Network.Error(null, "CareerUpdateCurrentJobFailed {CharacterId} {NewJob} {Code}",
-                    characterData.Id, newJob, updateReq.responseCode);
+                GameLogger.Network.Error(null, "CareerUpdateCurrentMissionFailed {CharacterId} {NewProfession} {Code}",
+                    characterData.Id, newProfessionId, updateReq.responseCode);
                 yield break;
             }
 
-            characterData.CurrentJobRaw = newJob;
+            characterData.CurrentProfessionId = newProfessionId;
             SetRawCharacterData(JsonUtility.ToJson(characterData));
         }
 
@@ -499,51 +605,12 @@ namespace Sim {
         private void MergeJob(CharacterJobData row) {
             var list = characterData.Jobs;
             for (int i = 0; i < list.Count; i++) {
-                if (list[i].Category == row.Category) {
+                if (list[i].ProfessionId == row.ProfessionId) {
                     list[i] = row;
                     return;
                 }
             }
             list.Add(row);
-        }
-
-        /// <summary>
-        /// Server-only XP bump. Increments xp on the CharacterJob row for the
-        /// given category (creating it if missing), rebroadcasts CharacterData,
-        /// and persists via PUT /character-jobs/add-xp.
-        /// </summary>
-        [Server]
-        public void AddJobXp(int category, int delta) {
-            if (delta == 0 || characterData == null || string.IsNullOrEmpty(characterData.Id)) return;
-
-            CharacterJobData row = null;
-            var list = characterData.Jobs;
-            for (int i = 0; i < list.Count; i++) {
-                if (list[i].Category == category) { row = list[i]; break; }
-            }
-            if (row == null) {
-                row = new CharacterJobData { Category = category };
-                list.Add(row);
-            }
-            row.Xp += delta;
-
-            SetRawCharacterData(JsonUtility.ToJson(characterData));
-            StartCoroutine(PersistJobXp(category, delta));
-        }
-
-        [Server]
-        private IEnumerator PersistJobXp(int category, int delta) {
-            var body = new CharacterJobAddXpRequest {
-                characterId = characterData.Id,
-                category = category,
-                delta = delta,
-            };
-            UnityWebRequest req = ApiManager.Instance.AddCharacterJobXpRequest(body);
-            yield return req.SendWebRequest();
-            if (req.responseCode != 200) {
-                GameLogger.Network.Error(null, "JobXpPersistFailed {CharacterId} {Category} {Delta} {Code}",
-                    characterData.Id, category, delta, req.responseCode);
-            }
         }
 
         [Server]
@@ -715,32 +782,91 @@ namespace Sim {
         public Action[] Actions => actions;
 
         private Action _makeAcquaintanceAction;
+        private Action _viewIdentityAction;
+        private Action _makeContactAction;
+        private Action _giveMoneyAction;
+        private Action _muteAction;
+        private Action _unmuteAction;
 
         /// <summary>
         /// Context-menu actions for THIS player as seen by the local player, gated
-        /// by relationship state: "Faire connaissance" only appears while the two
-        /// are still strangers (Unknown). Built on top of the prefab's base actions
-        /// (e.g. LOOK / "Regarder").
+        /// by relationship state. Strangers → "Faire connaissance" ; connaissances →
+        /// "Voir identité" + "Ajouter aux contacts" ; contacts → "Voir identité".
+        /// Always offers "Rendre muet"/"Rétablir le son". Built on top of the prefab's
+        /// base actions (e.g. LOOK / "Regarder").
         /// </summary>
         public Action[] GetContextActions() {
             List<Action> list = new List<Action>(this.actions);
 
-            if (ClientRelationshipManager.Instance.GetState(this.characterData?.Id) == RelationshipState.Unknown) {
-                if (_makeAcquaintanceAction == null) {
-                    Sprite icon = this.actions.Length > 0 ? this.actions[0].Icon : null;
-                    _makeAcquaintanceAction = Action.CreateRuntime(ActionTypeEnum.MAKE_ACQUAINTANCE, "Faire connaissance", icon);
-                    _makeAcquaintanceAction.OnExecute += DoAction;
+            RelationshipState state = ClientRelationshipManager.Instance.GetState(this.characterData?.Id);
+
+            if (state == RelationshipState.Unknown) {
+                AddContextAction(list, ref _makeAcquaintanceAction, "MAKE_ACQUAINTANCE");
+            } else {
+                AddContextAction(list, ref _viewIdentityAction, "VIEW_IDENTITY");
+                if (state == RelationshipState.Acquaintance) {
+                    AddContextAction(list, ref _makeContactAction, "MAKE_CONTACT");
                 }
-                list.Add(_makeAcquaintanceAction);
             }
 
+            // Available to anyone, including strangers (social-first pillar).
+            AddContextAction(list, ref _giveMoneyAction, "GIVE_MONEY");
+
+            // Local voice mute toggle — label/icône reflètent l'état courant (2 assets).
+            if (IsLocallyMuted()) AddContextAction(list, ref _unmuteAction, "UNMUTE");
+            else                  AddContextAction(list, ref _muteAction,   "MUTE");
+
             return list.ToArray();
+        }
+
+        private void AddContextAction(List<Action> list, ref Action cached, string resourceName) {
+            Action a = EnsureAction(ref cached, resourceName);
+            if (a != null) list.Add(a);
+        }
+
+        /// <summary>Clone une fois l'asset Action `Resources/Configurations/Actions/{name}`
+        /// (label + sprite définis dans l'asset, comme les autres actions) et l'abonne.</summary>
+        private Action EnsureAction(ref Action cached, string resourceName) {
+            if (cached == null) {
+                Action proto = Resources.Load<Action>($"Configurations/Actions/{resourceName}");
+                if (proto == null) {
+                    Debug.LogWarning($"[PlayerController] Action asset introuvable: Configurations/Actions/{resourceName}");
+                    return null;
+                }
+                cached = Instantiate(proto);
+                cached.OnExecute += DoAction;
+            }
+            return cached;
         }
 
         /// <summary>Client (initiator): asks to make acquaintance with a target player.</summary>
         public void SendAcquaintanceRequest(PlayerController target) {
             if (target == null || target == Local) return;
             NetworkClient.Send(new C2S_AcquaintanceRequest { targetNetId = target.netId });
+        }
+
+        /// <summary>Client (initiator): asks to add a target player to contacts.</summary>
+        public void SendContactRequest(PlayerController target) {
+            if (target == null || target == Local) return;
+            NetworkClient.Send(new C2S_ContactRequest { targetNetId = target.netId });
+        }
+
+        // ── Local voice mute (Dissonance, client-only, not persisted) ──────────
+        private Dissonance.VoicePlayerState ResolveVoicePlayer() {
+            var mip = GetComponentInChildren<Dissonance.Integrations.MirrorIgnorance.MirrorIgnorancePlayer>();
+            if (mip == null || string.IsNullOrEmpty(mip.PlayerId)) return null;
+            var comms = Dissonance.DissonanceComms.GetSingleton();
+            return comms != null ? comms.FindPlayer(mip.PlayerId) : null;
+        }
+
+        private bool IsLocallyMuted() {
+            var vp = ResolveVoicePlayer();
+            return vp != null && vp.IsLocallyMuted;
+        }
+
+        private void ToggleMute() {
+            var vp = ResolveVoicePlayer();
+            if (vp != null) vp.IsLocallyMuted = !vp.IsLocallyMuted;
         }
 
         public void SetupActions() {
@@ -770,6 +896,18 @@ namespace Sim {
                 case ActionTypeEnum.MAKE_ACQUAINTANCE:
                     Local.SendAcquaintanceRequest(this);
                     break;
+                case ActionTypeEnum.MAKE_CONTACT:
+                    Local.SendContactRequest(this);
+                    break;
+                case ActionTypeEnum.VIEW_IDENTITY:
+                    IdentityCardUI.Instance.ShowFor(this);
+                    break;
+                case ActionTypeEnum.GIVE_MONEY:
+                    Sim.UI.GiveMoneyInputUI.Instance?.Show(this);
+                    break;
+                case ActionTypeEnum.TOGGLE_MUTE:
+                    this.ToggleMute();
+                    break;
             }
         }
 
@@ -784,10 +922,20 @@ namespace Sim {
 
         public void MoveTo(Vector3 targetPoint, bool isRunning = false) {
             this.stateMachine.SetState(moveState);
-            this.navMeshAgent.speed = isRunning ? runSpeed : walkSpeed;
+            this.navMeshAgent.speed = (isRunning ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier();
             this.navMeshAgent.SetDestination(targetPoint);
 
             HUDManager.Instance.CloseInventory();
+        }
+
+        // Bonus de vitesse passif issu des nœuds de constellation débloqués (ex. nœud
+        // Vitesse du Livreur). Lu sur le provider du joueur LOCAL — le mouvement est
+        // piloté par l'owner. 1.0 si aucun bonus / provider non hydraté.
+        private float MoveSpeedPerkMultiplier() {
+            var pc = GetComponent<Sim.Player.PlayerConstellation>();
+            var provider = pc != null ? pc.Provider : null;
+            if (provider == null) return 1f;
+            return Sim.Constellation.ConstellationPerks.MoveSpeedMultiplier(provider.State.IsUnlocked);
         }
 
         public void LookAt(Transform target) {
@@ -808,6 +956,14 @@ namespace Sim {
             this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
         }
 
+        /// <summary>Enters the timed prop-construction state: looping anim + world progress
+        /// bar above <paramref name="progressAnchor"/> (le prop) over <paramref name="duration"/> s.
+        /// On completion fires <paramref name="onComplete"/>. Interrupted (cancelled) if any other
+        /// state takes over before the timer ends. NE change PAS le StateType (caméra reste FREE).</summary>
+        public void StartPropsBuilding(float duration, System.Action onComplete, System.Action onCancel = null) {
+            this.stateMachine.SetState(new CharacterPropsBuilding(this, duration, onComplete, onCancel));
+        }
+
         public void Sleep(ISeatBehavior props, Transform couchTransform) {
             this.stateMachine.SetState(new CharacterSleep(this, props, couchTransform));
         }
@@ -826,8 +982,8 @@ namespace Sim {
         public void Kill() {
             GameLogger.Player.Warning("PlayerKilled {PlayerNetId}", netId);
             // End any in-progress mission. Failing the job also despawns a held mission item
-            // (via JobItemCleanup) and clears the owner's mission UI (via OnJobFinished).
-            Sim.Jobs.JobServerManager.Instance.AbandonAllForOwner(this.netId);
+            // (via MissionItemCleanup) and clears the owner's mission UI (via OnMissionFinished).
+            Sim.Missions.MissionServerManager.Instance.AbandonAllForOwner(this.netId);
             this.Die();
             this.TargetKill(this.netIdentity.connectionToClient);
             Invoke(nameof(Revive), 4f);

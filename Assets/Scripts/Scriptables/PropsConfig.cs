@@ -20,9 +20,14 @@ namespace Sim.Scriptables {
                  "Sert au filtrage côté UI (drop rejeté) et au gating côté serveur (drop ignoré).")]
         [SerializeField] private List<ItemType> acceptedTypes = new List<ItemType>();
 
+        [Tooltip("Autorise l'emballage de meubles (props) dans ce conteneur via l'action « Emballer ». " +
+                 "Le prop est déplacé (UUID conservé) dans la place du conteneur, position null, is_built remis à false.")]
+        [SerializeField] private bool acceptsProps = false;
+
         public int SlotCount => slotCount;
         public IReadOnlyList<ItemType> AcceptedTypes => acceptedTypes;
         public bool IsContainer => slotCount > 0;
+        public bool AcceptsProps => acceptsProps;
 
         /// <summary>True si le conteneur accepte ce type (liste vide = accepte tout).</summary>
         public bool Accepts(ItemType type)
@@ -36,6 +41,10 @@ namespace Sim.Scriptables {
 
         [SerializeField]
         private string displayName;
+
+        [Tooltip("Description affichée dans la tooltip au survol d'un slot (optionnel).")]
+        [SerializeField] [TextArea]
+        private string description;
 
         [SerializeField]
         private Sprite sprite;
@@ -94,6 +103,9 @@ namespace Sim.Scriptables {
         [SerializeField]
         private AudioClip buildSound;
 
+        [SerializeField, Tooltip("Durée de construction en secondes (le joueur joue une animation + barre de progression). 0 = construction instantanée.")]
+        private float buildDuration = 3f;
+
         [Header("Storage container")]
         [SerializeField] private ContainerConfig container = new ContainerConfig();
 
@@ -111,6 +123,9 @@ namespace Sim.Scriptables {
         }
 
         public AudioClip BuildSound => buildSound;
+
+        /// <summary>Durée de construction (secondes). 0 = instantané.</summary>
+        public float BuildDuration => buildDuration;
 
         public bool NeedToBeConnectedToWall() {
             return this.connectedToWall;
@@ -155,6 +170,8 @@ namespace Sim.Scriptables {
         public string GetDisplayName() {
             return this.displayName;
         }
+
+        public string Description => description;
 
         public BuildSurfaceEnum GetSurfaceToPose() {
             return this.surfaceToPose;

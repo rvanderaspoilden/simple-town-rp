@@ -6,6 +6,7 @@ namespace Sim {
         DIE = 3,
         SEARCH = 4,
         ATTACK = 5,
-        GREET = 6
+        GREET = 6,
+        SEARCHING = 8
     }
 }

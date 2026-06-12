@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d96afc3d24447147bebc4fb5d111efd, type: 3}
+  m_Name: sportif_course
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Constellation.ConstellationNodeData
+  id: sportif_course
+  displayName: Course
+  description: "Se d\xE9placer rapidement \xE0 pied."
+  branch: {fileID: 11400000, guid: ad862ab26945b7c4a9c39a8ab143e3fb, type: 2}
+  cost:
+  - branch: {fileID: 11400000, guid: ad862ab26945b7c4a9c39a8ab143e3fb, type: 2}
+    amount: 16
+  definesBranch: {fileID: 0}
+  mapPosition: {x: 0, y: 0}
+  masteryThreshold: 46
+  connectedNodes:
+  - {fileID: 11400000, guid: 82f09dc78036a6a449214ca0c993f03d, type: 2}
+  unlocks: []
+  activities:
+  - Course
+  icon: {fileID: 0}
+  isCenter: 0
+  extraPrerequisites: []
+  isHybrid: 0
+  secondaryBranch: {fileID: 11400000, guid: 4310e3f869d0bf54db3bf14ff18febae, type: 2}
+  unlockThreshold: 16
+  secondaryThreshold: 10
+  professionCostConfig: {fileID: 0}
+  professionCost: 0
+  definesProfession: {fileID: 0}
+  definesProfessionId: 
+  professionCostId: 
+  legacyBranchTag: 2
+  legacySecondaryBranchTag: 0
+  legacyConnectedNodeIds:
+  - sportif_base
+  legacyExtraPrerequisiteNodeIds: []

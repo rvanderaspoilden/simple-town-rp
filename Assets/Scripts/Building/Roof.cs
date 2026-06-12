@@ -23,7 +23,24 @@ public class Roof : MonoBehaviour {
     [SerializeField]
     private GameObject preventClickChild;
 
+    [Tooltip("When true, the minimap fades out while the local player stands under this roof. Disable for canopies/awnings that should not be treated as interiors.")]
+    [SerializeField]
+    private bool hideMinimap = true;
+
     private readonly HashSet<object> _hiders = new HashSet<object>();
+
+    // Tracks whether the local player is currently inside this specific roof's
+    // trigger, so we add/remove our contribution to the global minimap-hider
+    // counter exactly once.
+    private bool _coveringMinimap;
+
+    // ── Minimap coverage (global) ─────────────────────────────────────────────
+    // Counter incremented by every Roof that currently covers the local player
+    // AND has hideMinimap == true. The event fires only on 0↔1 transitions, so
+    // the MinimapController only fades once even with overlapping roofs.
+    private static int _minimapHiderCount;
+    public  static bool IsMinimapCovered => _minimapHiderCount > 0;
+    public  static event System.Action<bool> OnMinimapCoverageChanged;
 
     // Keys for the built-in interior trigger on this GameObject.
     private static readonly object PlayerKey = new object();
@@ -74,6 +91,10 @@ public class Roof : MonoBehaviour {
     }
 
     private void OnTriggerStay(Collider other) {
+        // Per-fixed-frame: only the idempotent AddHider votes here (pre-existing
+        // behaviour, kept defensive for late-spawned local players). The minimap
+        // coverage signal lives on Enter/Exit so the global counter doesn't pay
+        // any per-frame cost.
         if (PlayerController.Local && other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
             AddHider(PlayerKey);
         } else if (other.CompareTag("MainCamera")) {
@@ -81,9 +102,16 @@ public class Roof : MonoBehaviour {
         }
     }
 
+    private void OnTriggerEnter(Collider other) {
+        if (PlayerController.Local && other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
+            SetMinimapCoverage(true);
+        }
+    }
+
     private void OnTriggerExit(Collider other) {
         if (PlayerController.Local && other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
             RemoveHider(PlayerKey);
+            SetMinimapCoverage(false);
         } else if (other.CompareTag("MainCamera")) {
             RemoveHider(CameraKey);
         }
@@ -95,6 +123,18 @@ public class Roof : MonoBehaviour {
         _hiders.Remove(PlayerKey);
         _hiders.Remove(CameraKey);
         Refresh();
+        SetMinimapCoverage(false);
+    }
+
+    private void SetMinimapCoverage(bool covering) {
+        if (_coveringMinimap == covering) return;
+        _coveringMinimap = covering;
+        if (!hideMinimap) return; // this roof opts out — its presence doesn't fade the minimap
+        bool wasCovered = _minimapHiderCount > 0;
+        _minimapHiderCount += covering ? 1 : -1;
+        if (_minimapHiderCount < 0) _minimapHiderCount = 0; // defensive
+        bool isCovered = _minimapHiderCount > 0;
+        if (wasCovered != isCovered) OnMinimapCoverageChanged?.Invoke(isCovered);
     }
 
     private void Refresh() {

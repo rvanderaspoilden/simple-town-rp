@@ -30,7 +30,7 @@ namespace AI.States {
             characterTransform.position = couchTransform.position;
             characterTransform.rotation = couchTransform.rotation;
 
-            this.player.Animator.SetAction(CharacterAnimatorAction.SLEEP);
+            this.player.SetAnimatorAction(CharacterAnimatorAction.SLEEP);
 
             this.player.SetHeadTargetPosition(this.player.SitHeadPosition);
             
@@ -42,7 +42,7 @@ namespace AI.States {
         public void OnExit() {
             SubGameController.Instance.StopSubGame();
             
-            this.player.Animator.SetAction(CharacterAnimatorAction.NONE);
+            this.player.SetAnimatorAction(CharacterAnimatorAction.NONE);
             this.player.SetHeadTargetPosition(this.player.IdleHeadPosition);
 
             this.props.RevokeCouch();

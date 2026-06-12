@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 66
   displayName: "R\xE9frig\xE9rateur"
+  description: "R\xE9frig\xE9rateur pour conserver vos aliments au frais."
   sprite: {fileID: 0}
   propsType: 6
   price: 1000
@@ -33,6 +34,8 @@ MonoBehaviour:
   cursor: {fileID: 2800000, guid: bb735f5ed12e4d1439f78a761cf355c1, type: 3}
   presets: []
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
   container:
     slotCount: 12
     acceptedTypes: 00000000
+    acceptsProps: 0

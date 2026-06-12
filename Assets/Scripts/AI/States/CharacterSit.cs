@@ -29,7 +29,7 @@ namespace AI.States {
             characterTransform.position = seatTransform.position;
             characterTransform.rotation = seatTransform.rotation;
 
-            this.player.Animator.SetAction(CharacterAnimatorAction.SIT);
+            this.player.SetAnimatorAction(CharacterAnimatorAction.SIT);
 
             this.player.SetHeadTargetPosition(this.player.SitHeadPosition);
         }
@@ -37,7 +37,7 @@ namespace AI.States {
         public void Tick() { }
 
         public void OnExit() {
-            this.player.Animator.SetAction(CharacterAnimatorAction.NONE);
+            this.player.SetAnimatorAction(CharacterAnimatorAction.NONE);
             this.player.SetHeadTargetPosition(this.player.IdleHeadPosition);
 
             this.props.RevokeSeat();

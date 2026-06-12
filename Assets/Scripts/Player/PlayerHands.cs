@@ -117,6 +117,41 @@ public class PlayerHands : MonoBehaviour
         return HasFreeHand();
     }
 
+    /// <summary>True si une main tient un item-conteneur (« colis ») — les items ramassés
+    /// peuvent alors y être routés même mains pleines. La capacité réelle est validée serveur.</summary>
+    public bool IsHoldingContainer()
+    {
+        return IsContainer(leftHandItem) || IsContainer(rightHandItem);
+    }
+
+    private static bool IsContainer(ItemBehaviour item) =>
+        item != null && item.Configuration != null
+        && item.Configuration.Container != null && item.Configuration.Container.IsContainer;
+
+    /// <summary>L'item-conteneur (« colis ») actuellement tenu, ou null. Sert à l'affichage
+    /// automatique de la grille du conteneur dès qu'un colis est en main.</summary>
+    public ItemBehaviour HeldContainerItem
+    {
+        get
+        {
+            if (IsContainer(rightHandItem)) return rightHandItem;
+            if (IsContainer(leftHandItem))  return leftHandItem;
+            return null;
+        }
+    }
+
+    /// <summary>True si le joueur tient un colis dont la config accepte les meubles (props).
+    /// Gate client de l'action « Emballer » ; la place réelle est validée serveur.</summary>
+    public bool HoldsPropAcceptingContainer
+    {
+        get
+        {
+            ItemBehaviour colis = HeldContainerItem;
+            return colis != null && colis.Configuration != null
+                && colis.Configuration.Container != null && colis.Configuration.Container.AcceptsProps;
+        }
+    }
+
     public Transform GetHandTransform(HandType hand)
     {
         return hand == HandType.Left ? leftHandTransform : rightHandTransform;
@@ -137,12 +172,13 @@ public class PlayerHands : MonoBehaviour
         // remote players display the correct carry animation as well. Per-arm
         // composition: each arm picks its own pose, and a 2H item overrides
         // both via the Two Hand layer.
+        // Drives renderer visibility AND the hand-pose layers from the current held
+        // items + the holder's current action (single source of truth). A 2H item
+        // overrides both arms via the Two Hand layer; an action that hides items
+        // (e.g. SIT) also releases the hand poses to NONE.
         if (playerAnimator != null)
         {
-            ResolvedPose pose = HandPoseResolver.Resolve(leftHandItem, rightHandItem);
-            playerAnimator.SetRightHandPose(pose.Right);
-            playerAnimator.SetLeftHandPose(pose.Left);
-            playerAnimator.SetTwoHandPose(pose.TwoHand);
+            playerAnimator.ApplyHeldItemVisibility();
         }
 
         // UI event is scoped to the local player only (inventory panel listens once).

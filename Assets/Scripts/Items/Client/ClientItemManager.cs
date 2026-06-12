@@ -32,6 +32,8 @@ public class ClientItemManager
 
         NetworkClient.RegisterHandler<S2C_ContainerOpened>(OnContainerOpened);
         NetworkClient.RegisterHandler<S2C_ContainerOpenFailed>(OnContainerOpenFailed);
+        NetworkClient.RegisterHandler<S2C_ItemContainerOpened>(OnItemContainerOpened);
+        NetworkClient.RegisterHandler<S2C_ItemContainerOpenFailed>(OnItemContainerOpenFailed);
         NetworkClient.RegisterHandler<S2C_MoveItemResult>(OnMoveItemResult);
         NetworkClient.RegisterHandler<S2C_PocketSync>(OnPocketSync);
     }
@@ -46,6 +48,8 @@ public class ClientItemManager
         NetworkClient.UnregisterHandler<S2C_DropResult>();
         NetworkClient.UnregisterHandler<S2C_ContainerOpened>();
         NetworkClient.UnregisterHandler<S2C_ContainerOpenFailed>();
+        NetworkClient.UnregisterHandler<S2C_ItemContainerOpened>();
+        NetworkClient.UnregisterHandler<S2C_ItemContainerOpenFailed>();
         NetworkClient.UnregisterHandler<S2C_MoveItemResult>();
         NetworkClient.UnregisterHandler<S2C_PocketSync>();
     }
@@ -54,6 +58,8 @@ public class ClientItemManager
 
     public static event System.Action<S2C_ContainerOpened> ContainerOpened;
     public static event System.Action<S2C_ContainerOpenFailed> ContainerOpenFailed;
+    public static event System.Action<S2C_ItemContainerOpened> ItemContainerOpened;
+    public static event System.Action<S2C_ItemContainerOpenFailed> ItemContainerOpenFailed;
     public static event System.Action<S2C_MoveItemResult> MoveItemResult;
     public static event System.Action<S2C_PocketSync> PocketSync;
 
@@ -73,8 +79,22 @@ public class ClientItemManager
         ContainerOpenFailed?.Invoke(msg);
     }
 
+    private void OnItemContainerOpened(S2C_ItemContainerOpened msg) {
+        Debug.Log($"[ItemContainer] Opened entityId={msg.EntityId} placeId={msg.PlaceId} slots={msg.SlotCount} items={msg.Items?.Length}");
+        ItemContainerOpened?.Invoke(msg);
+    }
+
+    private void OnItemContainerOpenFailed(S2C_ItemContainerOpenFailed msg) {
+        Debug.LogWarning($"[ItemContainer] Open failed entityId={msg.EntityId} reason={msg.ErrorMessage}");
+        ShowActionFailureToast(msg.ErrorMessage);
+        ItemContainerOpenFailed?.Invoke(msg);
+    }
+
     private void OnMoveItemResult(S2C_MoveItemResult msg) {
-        if (!msg.Success) Debug.LogWarning($"[Container] Move failed entity={msg.EntityId} reason={msg.ErrorMessage}");
+        if (!msg.Success) {
+            Debug.LogWarning($"[Container] Move failed entity={msg.EntityId} reason={msg.ErrorMessage}");
+            ShowActionFailureToast(msg.ErrorMessage);
+        }
         MoveItemResult?.Invoke(msg);
     }
 
@@ -180,19 +200,15 @@ public class ClientItemManager
 
         Debug.LogWarning($"[Item] Pickup rejected entity={msg.EntityId}: {msg.ErrorMessage}");
 
-        // Feedback d'action banal → toast au-dessus du joueur (ex. mains pleines).
-        string toast = MapPickupError(msg.ErrorMessage);
-        if (!string.IsNullOrEmpty(toast)) WorldToastManager.Show(toast);
+        // Feedback systématique : toute action refusée affiche le motif (français,
+        // produit côté serveur) au-dessus du joueur, sinon le joueur ne sait pas pourquoi.
+        ShowActionFailureToast(msg.ErrorMessage);
     }
 
-    /// <summary>Traduit les motifs de rejet de pickup pertinents pour le joueur (sinon null = pas de toast).</summary>
-    private static string MapPickupError(string error)
+    /// <summary>Toast d'échec d'action générique : affiche le motif serveur, ou un fallback.</summary>
+    private static void ShowActionFailureToast(string serverMessage)
     {
-        if (string.IsNullOrEmpty(error)) return null;
-        if (error.Contains("Hands full")) return "Mains pleines";
-        if (error.Contains("Too far"))    return "Trop loin";
-        if (error.Contains("Not yours"))  return "Cet objet ne vous appartient pas";
-        return null; // erreurs internes (item introuvable, hors room…) → silencieux
+        WorldToastManager.Show(string.IsNullOrEmpty(serverMessage) ? "Action impossible" : serverMessage);
     }
 
     private void OnItemAttachedToHand(S2C_ItemAttachedToHand msg)
@@ -220,8 +236,10 @@ public class ClientItemManager
 
     private void OnDropResult(S2C_DropResult msg)
     {
-        if (!msg.Success)
+        if (!msg.Success) {
             Debug.LogWarning($"[Item] Drop rejected hand={msg.Hand}: {msg.ErrorMessage}");
+            ShowActionFailureToast(msg.ErrorMessage);
+        }
     }
 
     // ── Internal helpers ──────────────────────────────────────────────────────

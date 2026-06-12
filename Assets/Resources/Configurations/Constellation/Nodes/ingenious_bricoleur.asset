@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d96afc3d24447147bebc4fb5d111efd, type: 3}
+  m_Name: ingenious_bricoleur
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Constellation.ConstellationNodeData
+  id: ingenious_bricoleur
+  displayName: Bricoleur
+  description: "Poser des meubles rapporte des points Ing\xE9nieux. Ce talent double
+    le gain de bricolage."
+  branch: {fileID: 11400000, guid: 66a775d248415104bae30a50f44b47e7, type: 2}
+  cost:
+  - branch: {fileID: 11400000, guid: 66a775d248415104bae30a50f44b47e7, type: 2}
+    amount: 5
+  definesBranch: {fileID: 0}
+  mapPosition: {x: 480.8326, y: 480.8326}
+  connectedNodes:
+  - {fileID: 11400000, guid: 760cda1532f41d34ca8d70deb2285792, type: 2}
+  - {fileID: 11400000, guid: bf161e6326c5f7b49b0b1fb254512313, type: 2}
+  unlocks:
+  - "x2 points Ing\xE9nieux par meuble pos\xE9"
+  activities: []
+  icon: {fileID: 0}
+  isCenter: 0
+  extraPrerequisites: []

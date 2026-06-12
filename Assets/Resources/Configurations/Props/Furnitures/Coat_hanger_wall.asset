@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 62
   displayName: Porte manteau mural
+  description: "Pat\xE8re murale pour accrocher manteaux et sacs."
   sprite: {fileID: 0}
   propsType: 0
   price: 450
@@ -34,3 +35,8 @@ MonoBehaviour:
   cursor: {fileID: 2800000, guid: 5ebd2cb74cea3b644a5834d4596e3665, type: 3}
   presets: []
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

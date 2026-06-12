@@ -22,6 +22,9 @@ public class ClientPropManager : MonoBehaviour {
 
     private string _currentRoomId;
 
+    /// <summary>Current local room id ("city" outdoors, "hall:..."/"apartment:..." indoors, null before any EnterRoom).</summary>
+    public string CurrentRoomId => _currentRoomId;
+
     // propId → behaviour (scene OR runtime)
     private readonly Dictionary<int, IPropBehaviour> _props = new Dictionary<int, IPropBehaviour>();
 
@@ -51,6 +54,8 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_RoomState>              (OnRoomState);
         NetworkClient.RegisterHandler<S2C_DoorRing>               (OnDoorRing);
         NetworkClient.RegisterHandler<S2C_TrashThrown>           (OnTrashThrown);
+        NetworkClient.RegisterHandler<S2C_ConstructionVfx>       (OnConstructionVfx);
+        NetworkClient.RegisterHandler<S2C_PropDestroyed>         (OnPropDestroyed);
         NetworkClient.RegisterHandler<S2C_PropSaleState>          (OnPropSaleState);
         NetworkClient.RegisterHandler<S2C_BuyPropResult>          (OnBuyPropResult);
         NetworkClient.RegisterHandler<S2C_ContainerVisualState>   (OnContainerVisualState);
@@ -69,6 +74,8 @@ public class ClientPropManager : MonoBehaviour {
         NetworkClient.UnregisterHandler<S2C_RoomState>();
         NetworkClient.UnregisterHandler<S2C_DoorRing>();
         NetworkClient.UnregisterHandler<S2C_TrashThrown>();
+        NetworkClient.UnregisterHandler<S2C_ConstructionVfx>();
+        NetworkClient.UnregisterHandler<S2C_PropDestroyed>();
         NetworkClient.UnregisterHandler<S2C_PropSaleState>();
         NetworkClient.UnregisterHandler<S2C_BuyPropResult>();
         NetworkClient.UnregisterHandler<S2C_ContainerVisualState>();
@@ -142,6 +149,17 @@ public class ClientPropManager : MonoBehaviour {
     public void RequestBuy(int propId) {
         if (string.IsNullOrEmpty(_currentRoomId)) return;
         NetworkClient.Send(new C2S_BuyProp { RoomId = _currentRoomId, PropId = propId });
+    }
+
+    /// <summary>Demande de remballer un prop non construit dans le package ouvert.</summary>
+    public void RequestPackProp(int propId) {
+        NetworkClient.Send(new C2S_PackProp { PropId = propId });
+    }
+
+    /// <summary>Signal a construction-VFX phase for a prop (0 = start, 1 = finale, 2 = cancel).</summary>
+    public void RequestConstructionVfx(int propId, byte phase, int durationMs = 0) {
+        if (string.IsNullOrEmpty(_currentRoomId)) return;
+        NetworkClient.Send(new C2S_ConstructionVfx { RoomId = _currentRoomId, PropId = propId, Phase = phase, DurationMs = durationMs });
     }
 
     // ── S2C handlers ──────────────────────────────────────────────────────────
@@ -253,6 +271,20 @@ public class ClientPropManager : MonoBehaviour {
             trash.OnThrown(byLocal);
         }
         ClientLogger.NetworkDebug("TrashThrown {PropId} {RoomId}", msg.PropId, msg.RoomId);
+    }
+
+    private void OnConstructionVfx(S2C_ConstructionVfx msg) {
+        if (msg.RoomId != _currentRoomId) return;
+        if (_props.TryGetValue(msg.PropId, out var behaviour) && behaviour is PropBehaviourBase prop) {
+            prop.ApplyConstructionVfx(msg.Phase, msg.DurationMs);
+        }
+        ClientLogger.NetworkDebug("ConstructionVfx {PropId} {Phase}", msg.PropId, msg.Phase);
+    }
+
+    private void OnPropDestroyed(S2C_PropDestroyed msg) {
+        if (msg.RoomId != _currentRoomId) return;
+        DestructionVfx.SpawnAt(msg.Position);
+        ClientLogger.NetworkDebug("PropDestroyed {RoomId} {Position}", msg.RoomId, msg.Position);
     }
 
     private void OnRoomState(S2C_RoomState msg) {

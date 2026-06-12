@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Sim.Enums;
-using Sim.Jobs;
+using Sim.Professions;
 using UnityEngine;
 
 namespace Sim.Entities {
@@ -28,10 +28,10 @@ namespace Sim.Entities {
         [SerializeField]
         private MoodEnum mood = MoodEnum.HAPPY;
 
-        // -1 = unemployed, otherwise a JobCategory value. Backed by the
-        // characters.current_job column (nullable smallint on the backend).
+        // "" = unemployed, otherwise a ProfessionConfig.id. Backed by the
+        // characters.current_profession_id column (nullable text on the backend).
         [SerializeField]
-        private int currentJob = -1;
+        private string currentProfessionId = "";
 
         // Mirror of the character_jobs collection for this character. Hydrated
         // server-side before SetRawCharacterData; broadcast to all clients via
@@ -74,25 +74,27 @@ namespace Sim.Entities {
             set => health = value;
         }
 
-        public int CurrentJobRaw {
-            get => currentJob;
-            set => currentJob = value;
+        // Id du métier actif (= ProfessionConfig.id). Chaîne vide = chômage.
+        public string CurrentProfessionId {
+            get => currentProfessionId;
+            set => currentProfessionId = value ?? "";
         }
 
-        public JobCategory? CurrentJobCategory {
-            get => currentJob < 0 ? (JobCategory?)null : (JobCategory)currentJob;
-            set => currentJob = value.HasValue ? (int)value.Value : -1;
-        }
+        // Résout le SO ProfessionConfig du métier actif via ProfessionDatabase.
+        // Null si le joueur est au chômage. Donne accès au displayName + baseSalary.
+        public ProfessionConfig CurrentProfession =>
+            string.IsNullOrEmpty(currentProfessionId) ? null : ProfessionDatabase.ById(currentProfessionId);
 
         public List<CharacterJobData> Jobs {
             get => jobs ??= new List<CharacterJobData>();
             set => jobs = value ?? new List<CharacterJobData>();
         }
 
-        public CharacterJobData GetJob(JobCategory category) {
+        public CharacterJobData GetJob(string professionId) {
+            if (string.IsNullOrEmpty(professionId)) return null;
             var list = Jobs;
             for (int i = 0; i < list.Count; i++) {
-                if (list[i].Category == (int)category) return list[i];
+                if (list[i].ProfessionId == professionId) return list[i];
             }
             return null;
         }

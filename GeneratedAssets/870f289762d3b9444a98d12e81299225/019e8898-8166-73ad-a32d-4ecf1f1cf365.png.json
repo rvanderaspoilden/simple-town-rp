@@ -1,0 +1,38 @@
+{
+    "asset": "870f289762d3b9444a98d12e81299225",
+    "fileName": "019e8898-8166-73ad-a32d-4ecf1f1cf365.png",
+    "prompt": "A Unity game asset sprite sheet. White background. STRICT 4x4 grid (4 columns, 4 rows = 16 equal cells). The grid should fill the entire image with size 1024x1024 with no extra border or padding outside the cells. Contains the following individual game assets, one per cell left-to-right top-to-bottom, styled to exactly match the art style of the provided reference image: Simpletown Logo (a stylized blue city building silhouette), Wooden Welcome Sign (large wooden sign with welcome text), Wooden Header Banner (small wooden plank), Login Panel Frame (rounded cream-colored panel), Input Field Frame (pill-shaped white container), Login Button (green rounded button), Leaf Icon (small green leaf), Lock Icon (small brown padlock), Eye Icon (small brown eye), TikTok Icon (white TikTok logo), Discord Icon (white Discord logo). Rules: ONE asset per grid cell, centered with ample padding. Assets must be scaled to fit within their cell — do NOT overflow into grid lines. Grid must have exactly 4 columns and 4 rows of equal-sized cells. Grid lines: clean, solid black, clearly visible but not overly thick. All cells must be equal in size. White background inside every cell. Any remaining empty cells must be pure white with no content. NO text, labels, captions, names, or annotations anywhere in the image. Assets must look like they belong in the original scene (match style exactly). Do NOT remove background on the game asset sprite sheet.",
+    "negativePrompt": "",
+    "model": "gemini-3.1-flash",
+    "modelName": "Gemini 3.1 Nano Banana 2",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "b3a2840a78943fa42a911bc70162590a",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

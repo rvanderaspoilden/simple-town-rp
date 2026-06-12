@@ -16,5 +16,10 @@ public struct ToastNotificationMessage : NetworkMessage {
     /// </summary>
     public bool worldToast;
 
+    /// <summary>Template visuel/audio du world toast : 0 = neutre, 1 = erreur, 2 = succès
+    /// (mappé sur ToastKind). Ignoré si worldToast == false.</summary>
+    public byte kindByte;
+
     public NotificationType Type => (NotificationType)typeByte;
+    public ToastKind Kind => (ToastKind)kindByte;
 }

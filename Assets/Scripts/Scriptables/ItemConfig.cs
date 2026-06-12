@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Sim;
 using Sim.Interactables;
+using Sim.Scriptables;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Configurations/Item", fileName = "New Item")]
@@ -10,6 +11,10 @@ public class ItemConfig : ScriptableObject {
 
     [SerializeField]
     private string label;
+
+    [Tooltip("Description affichée dans la tooltip au survol d'un slot (optionnel).")]
+    [SerializeField] [TextArea]
+    private string description;
 
     [SerializeField]
     private ItemType type;
@@ -53,9 +58,17 @@ public class ItemConfig : ScriptableObject {
     [SerializeField]
     private Vector3 gripEuler;
 
+    [Header("Container (package)")]
+    [Tooltip("Si SlotCount > 0, l'item est lui-même un conteneur (« package ») : ouvre une grille " +
+             "comme un conteneur de prop. Réutilise la même ContainerConfig que les props.")]
+    [SerializeField]
+    private ContainerConfig container = new ContainerConfig();
+
     public int ID => id;
 
     public string Label => label;
+
+    public string Description => description;
 
     public ItemType Type => type;
 
@@ -82,4 +95,6 @@ public class ItemConfig : ScriptableObject {
     public Vector3 GripEuler => gripEuler;
 
     public bool HasGripOverride => gripPosition != Vector3.zero || gripEuler != Vector3.zero;
+
+    public ContainerConfig Container => container;
 }

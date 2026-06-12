@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 27
   displayName: Buffet bas
+  description: Buffet bas de rangement.
   sprite: {fileID: 0}
   propsType: 0
   price: 950
@@ -75,3 +76,8 @@ MonoBehaviour:
       color: {r: 0.9490197, g: 0.58431375, b: 0.26666668, a: 1}
       material: {fileID: 0}
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

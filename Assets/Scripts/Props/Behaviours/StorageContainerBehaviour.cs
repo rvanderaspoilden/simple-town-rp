@@ -62,7 +62,8 @@ public class StorageContainerBehaviour : PropBehaviourBase
         // Sur un prop d'expo (ShopDisplay), la base court-circuite déjà à [BUY] :
         // on ne doit RIEN ajouter, sinon le radial affiche BUY + OPEN. Le contenu
         // d'un présentoir n'est pas accessible — c'est un stock infini visuel.
-        if (_actOpen == null || IsShopDisplay) return acts;
+        // OPEN n'a de sens qu'une fois le meuble CONSTRUIT (pas en état à-construire).
+        if (_actOpen == null || IsShopDisplay || !IsBuilt()) return acts;
         // Évite de dupliquer si elle se retrouvait déjà dans la liste.
         for (int i = 0; i < acts.Length; i++) {
             if (acts[i] == _actOpen) return acts;

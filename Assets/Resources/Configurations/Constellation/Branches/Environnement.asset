@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01b22bcbf899bab4ba21723f34937028, type: 3}
+  m_Name: Environnement
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Constellation.Branches.BranchConfig
+  id: Environnement
+  parent: {fileID: 0}
+  displayName: Environnement
+  description: "Tronc \xE9cologie : garder le quartier propre."
+  color: {r: 0.4, g: 0.8, b: 0.5, a: 1}
+  showInProfile: 1

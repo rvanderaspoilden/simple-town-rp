@@ -25,6 +25,7 @@ namespace Sim {
 
             BuildManager.OnCancel                    += OnBuildModificationCanceled;
             BuildManager.OnValidatePropCreation      += OnValidatePropCreation;
+            BuildManager.OnValidatePropUnpack        += OnValidatePropUnpack;
             BuildManager.OnValidatePropEdit          += OnValidatePropEdit;
             BuildManager.OnValidatePaintModification += OnValidatePaintModification;
             PropBehaviourBase.OnMoveRequest          += OnMoveRequest;
@@ -45,6 +46,7 @@ namespace Sim {
             if (isLocalPlayer) {
                 BuildManager.OnCancel                    -= OnBuildModificationCanceled;
                 BuildManager.OnValidatePropCreation      -= OnValidatePropCreation;
+                BuildManager.OnValidatePropUnpack        -= OnValidatePropUnpack;
                 BuildManager.OnValidatePropEdit          -= OnValidatePropEdit;
                 BuildManager.OnValidatePaintModification -= OnValidatePaintModification;
                 PropBehaviourBase.OnMoveRequest          -= OnMoveRequest;
@@ -92,7 +94,40 @@ namespace Sim {
             BuildManager.Instance.Init(delivery);
         }
 
+        /// <summary>
+        /// Déballage d'un meuble emballé : entre en mode build (comme la delivery box) pour
+        /// re-poser le meuble dans l'appartement. À la validation, le serveur DÉPLACE le
+        /// meuble existant (UUID conservé) — cf. <see cref="OnValidatePropUnpack"/>.
+        /// Appelé depuis la grille du colis (ContainerPanelUI) sur clic droit d'une entrée meuble.
+        /// </summary>
+        public void StartPropUnpack(PropsConfig config, int presetId, int packageEntityId, int slotIndex) {
+            if (config == null) return;
+            this.player.SetState(StateType.UNPACKAGING);
+            BuildManager.Instance.InitUnpack(config, presetId, packageEntityId, slotIndex);
+        }
+
+        private void OnValidatePropUnpack(int packageEntityId, int slotIndex, Vector3 position, Quaternion rotation) {
+            NetworkClient.Send(new C2S_UnpackProp {
+                PackageEntityId = packageEntityId,
+                SlotIndex       = slotIndex,
+                Position        = position,
+                Rotation        = rotation,
+            });
+            this.player.SetState(StateType.FREE);
+        }
+
         private void OpenBucket(PaintBucketBehaviour bucket) {
+            // Décoration: vérifié AU CLIC, AVANT tout changement d'état. Si le nœud
+            // n'est pas débloqué → toast d'erreur et on n'entre pas en mode peinture
+            // (ni état PAINTING, ni build). Fail-open si le provider n'est pas hydraté.
+            var pc = this.player != null ? this.player.GetComponent<Sim.Player.PlayerConstellation>() : null;
+            var provider = pc != null ? pc.Provider : null;
+            if (provider != null &&
+                !provider.State.IsUnlocked(Sim.Constellation.ConstellationPerks.CreatifDecorationNode)) {
+                WorldToastManager.ShowError("Débloque « Décoration » pour peindre");
+                return;
+            }
+
             this.currentOpenedBucket = bucket;
             this.player.SetState(StateType.PAINTING);
             BuildManager.Instance.Init(this.currentOpenedBucket);
@@ -151,6 +186,9 @@ namespace Sim {
                 }
             }
 
+            // Placement instantané : crée le prop (en état "à construire" si toBuild).
+            // La construction temporisée (barre de progression) se fait ENSUITE via
+            // l'action BUILD sur le prop (PropBehaviourBase.DoAction).
             NetworkClient.Send(new C2S_BuildProp {
                 RoomId            = boxId.RoomId,
                 DeliveryBoxPropId = boxId.PropId,

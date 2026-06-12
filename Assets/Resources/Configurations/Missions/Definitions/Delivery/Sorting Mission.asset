@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5aeb5419686b2554b9e64ad4e60d550f, type: 3}
+  m_Name: Sorting Mission
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.JobDefinition
+  missionId: sorting.test
+  displayNameKey: Tri des colis
+  icon: {fileID: 0}
+  profession: {fileID: 11400000, guid: efb095852034208428d48efc10b4a944, type: 2}
+  requiredNode: {fileID: 11400000, guid: 1788d1c046ddf894b899c05324946423, type: 2}
+  steps:
+  - {fileID: 11400000, guid: 44de55fa66bc77de88fa99bc00de11fa, type: 2}
+  rewardEntries:
+  - kind: {fileID: 11400000, guid: 9a2bce42574d30840b9cbf0884edd45e, type: 2}
+    amount: 50
+  - kind: {fileID: 11400000, guid: 4937ca65a1af6a14b90ecbb937d48639, type: 2}
+    amount: 3
+  rewards: []
+  scoringDefinition: {fileID: 11400000, guid: 66fa77bc88de99fa00bc11de22fa33bc, type: 2}
+  expirationSeconds: 600
+  boardExpirationSeconds: 60
+  maxConcurrentPerPlayer: 1
+  maxConcurrentGlobal: 1

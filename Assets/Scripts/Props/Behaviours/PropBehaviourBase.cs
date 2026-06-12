@@ -101,11 +101,11 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     // Visible only to the prop owner (IsOwnedByLocal). Per-instance copies wired to DoAction.
     // NB: selling is handled exclusively by the P2P LIST_FOR_SALE flow (GetSaleActions),
     // which is gated on PropsConfig.IsSellable(); there is no generic "sell/remove" action.
-    private Action _actBuild, _actMove, _actDestroy;
+    private Action _actBuild, _actMove, _actDestroy, _actRepack;
 
     // Shared Action "prototypes" loaded once from Resources (assets live under
     // Assets/Resources/Configurations/Actions/). Instantiated per prop instance.
-    private static Action _protoBuild, _protoMove, _protoDestroy;
+    private static Action _protoBuild, _protoMove, _protoDestroy, _protoRepack;
     private static bool   _genericProtosLoaded;
 
     private static void LoadGenericActionPrototypes()
@@ -114,6 +114,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         _protoBuild   = Resources.Load<Action>("Configurations/Actions/BUILD");
         _protoMove    = Resources.Load<Action>("Configurations/Actions/MOVE");
         _protoDestroy = Resources.Load<Action>("Configurations/Actions/DESTROY");
+        _protoRepack  = Resources.Load<Action>("Configurations/Actions/REPACK");
         _genericProtosLoaded = true;
     }
 
@@ -141,7 +142,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         UnsubscribeActions(_builtActions);
         UnsubscribeActions(_unbuiltActions);
         UnsubscribeActions(new[] { _actListForSale, _actUnlist, _actBuy });
-        UnsubscribeActions(new[] { _actBuild, _actMove, _actDestroy });
+        UnsubscribeActions(new[] { _actBuild, _actMove, _actDestroy, _actRepack });
     }
 
     // ── IPropBehaviour ────────────────────────────────────────────────────────
@@ -299,7 +300,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     /// <summary>
     /// Generic owner actions injected without any PropsConfig entry. Caller already
     /// checked IsOwnedByLocal.
-    ///   non-built + toBuild → BUILD (also offered on left-click, it's the primary act);
+    ///   non-built + toBuild → BUILD (left-click primary) + MOVE ("remballer", right-click);
     ///   built               → MOVE + DESTROY (right-click only, like the sale actions).
     /// Selling is NOT here — it's the P2P LIST_FOR_SALE flow, gated on IsSellable().
     /// </summary>
@@ -307,8 +308,15 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     {
         if (!_isBuilt)
         {
+            // BUILD : action primaire (clic gauche ok).
             if (configuration != null && configuration.MustBeBuilt() && _actBuild != null)
                 yield return _actBuild;
+            // MOVE (repositionner) : disponible avant construction aussi, clic droit.
+            if (!withPriority && _actMove != null && (configuration == null || configuration.IsMovable()))
+                yield return _actMove;
+            // EMBALLER (ranger le meuble dans le colis tenu) : clic droit.
+            if (CanPackInHeldContainer(withPriority))
+                yield return _actRepack;
             yield break;
         }
 
@@ -325,6 +333,21 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         if (_actDestroy != null && configuration != null
             && (configuration.MustBeBuilt() || configuration.IsMovable()))
             yield return _actDestroy;
+
+        // EMBALLER : disponible aussi sur un meuble construit (l'emballage retire l'état
+        // built ; il sera à-construire au déballage). Place réelle validée serveur.
+        if (CanPackInHeldContainer(withPriority))
+            yield return _actRepack;
+    }
+
+    /// <summary>« Emballer » est proposé (clic droit) quand le joueur local tient un colis
+    /// qui accepte les meubles. La présence d'un slot libre est revalidée serveur (toast
+    /// « Colis plein » sinon).</summary>
+    private bool CanPackInHeldContainer(bool withPriority)
+    {
+        return !withPriority && _actRepack != null
+            && PlayerController.Local != null && PlayerController.Local.PlayerHands != null
+            && PlayerController.Local.PlayerHands.HoldsPropAcceptingContainer;
     }
 
     public virtual void StopInteraction()
@@ -424,6 +447,10 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
     /// </summary>
     protected virtual void OnJustBuilt()
     {
+        // The mesh just flipped to its real material (SetBuiltState) — tear down the reveal
+        // instances so we go straight reveal → built (no unbuilt-ghost flash).
+        _renderer?.EndConstructionReveal();
+
         transform.localScale = Vector3.zero;
         transform.DOScale(Vector3.one, 1f)
             .SetEase(Ease.OutBounce);
@@ -481,6 +508,7 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
         _actBuild   = InstantiateAction(_protoBuild);
         _actMove    = InstantiateAction(_protoMove);
         _actDestroy = InstantiateAction(_protoDestroy);
+        _actRepack  = InstantiateAction(_protoRepack);
     }
 
     /// <summary>
@@ -513,8 +541,11 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
                 break;
 
             case ActionTypeEnum.BUILD:
-                // Sent to server; server updates isBuilt in the payload header and broadcasts state
-                SendPropInteraction(PropType.Generic, GenericPropInteraction.BuildRequest);
+                // Construction temporisée : le joueur entre en état PROPS_BUILDING (anim
+                // boucle + barre de progression sur PropsConfig.BuildDuration). La requête
+                // serveur (flip isBuilt) ne part QU'À LA FIN. Annulé si le joueur change
+                // d'état (déplacement / interaction). Le nœud Artisan accélère la durée.
+                StartTimedBuild();
                 break;
 
             case ActionTypeEnum.DESTROY:
@@ -524,6 +555,11 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
             case ActionTypeEnum.MOVE:
                 OnMoveRequest?.Invoke(this);
+                break;
+
+            case ActionTypeEnum.REPACK:
+                // Range ce prop non construit dans le package ouvert (validé serveur).
+                ClientPropManager.Instance?.RequestPackProp(PropId);
                 break;
 
             case ActionTypeEnum.LIST_FOR_SALE:
@@ -542,5 +578,106 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
                 Execute(action);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Construction temporisée déclenchée par l'action BUILD : passe le joueur local en
+    /// état PROPS_BUILDING (anim boucle + barre de progression) sur la durée
+    /// PropsConfig.BuildDuration (accélérée par le nœud Artisan). La requête serveur
+    /// (flip isBuilt) n'est envoyée qu'à la complétion. Si le joueur change d'état
+    /// (déplacement / interaction) avant la fin → annulation, rien n'est envoyé.
+    /// BuildDuration ≤ 0 ou pas de joueur local → construction immédiate.
+    /// </summary>
+    private void StartTimedBuild()
+    {
+        void SendBuild() { if (this != null) SendPropInteraction(PropType.Generic, GenericPropInteraction.BuildRequest); }
+
+        float duration = configuration != null ? configuration.BuildDuration : 0f;
+        var local = PlayerController.Local;
+        var pc = local != null ? local.GetComponent<Sim.Player.PlayerConstellation>() : null;
+        var provider = pc != null ? pc.Provider : null;
+        if (provider != null)
+            duration *= Sim.Constellation.ConstellationPerks.BuildDurationMultiplier(provider.State.IsUnlocked);
+
+        if (duration <= 0f || local == null) { SendBuild(); return; }
+
+        // Networked construction VFX: broadcast start now (with duration so every client can
+        // animate the mesh reveal), finale on completion, cancel on abort.
+        int durationMs = Mathf.RoundToInt(duration * 1000f);
+        SendConstructionVfx(VfxPhaseStart, durationMs);
+        void Complete() { SendBuild(); SendConstructionVfx(VfxPhaseFinale); }
+        void Cancel()   { SendConstructionVfx(VfxPhaseCancel); }
+        local.StartPropsBuilding(duration, Complete, Cancel);
+    }
+
+    // ── Construction VFX (networked, per prop) ──────────────────────────────────
+
+    private const byte VfxPhaseStart = 0, VfxPhaseFinale = 1, VfxPhaseCancel = 2;
+    private ConstructionVfx _constructionVfx;
+    private Coroutine _revealRoutine;
+
+    private void SendConstructionVfx(byte phase, int durationMs = 0)
+    {
+        ClientPropManager.Instance?.RequestConstructionVfx(PropId, phase, durationMs);
+    }
+
+    /// <summary>
+    /// Apply a construction-VFX phase on this client's copy of the prop (driven by S2C).
+    /// Start spawns the looping particle VFX and animates the mesh reveal (Phase 2 sketch
+    /// silhouette + Phase 4 bottom-to-top dissolve) over DurationMs. Finale plays the
+    /// particle finale and snaps the reveal to complete; Cancel tears everything down.
+    /// </summary>
+    public void ApplyConstructionVfx(byte phase, int durationMs)
+    {
+        switch (phase)
+        {
+            case VfxPhaseStart:
+                if (_constructionVfx == null) _constructionVfx = ConstructionVfx.SpawnAt(transform.position);
+                if (_renderer != null)
+                {
+                    _renderer.BeginConstructionReveal();
+                    if (_revealRoutine != null) StopCoroutine(_revealRoutine);
+                    _revealRoutine = StartCoroutine(RevealRoutine(durationMs / 1000f));
+                }
+                break;
+
+            case VfxPhaseFinale:
+                // Snap the reveal to full and play the particle finale. The actual cleanup
+                // (reveal → real material) happens in OnJustBuilt when the prop flips to built,
+                // so there's no unbuilt-ghost flash here.
+                if (_renderer != null) _renderer.SetConstructionProgress(1f);
+                if (_constructionVfx != null) { _constructionVfx.PlayFinale(); _constructionVfx = null; }
+                break;
+
+            case VfxPhaseCancel:
+                if (_revealRoutine != null) { StopCoroutine(_revealRoutine); _revealRoutine = null; }
+                if (_renderer != null) _renderer.EndConstructionReveal();
+                if (_constructionVfx != null) { Destroy(_constructionVfx.gameObject); _constructionVfx = null; }
+                break;
+        }
+    }
+
+    private System.Collections.IEnumerator RevealRoutine(float duration)
+    {
+        float t = 0f;
+        while (t < duration && _renderer != null && _renderer.IsRevealing)
+        {
+            t += Time.deltaTime;
+            _renderer.SetConstructionProgress(t / Mathf.Max(0.01f, duration));
+            yield return null;
+        }
+        _renderer?.SetConstructionProgress(1f);
+
+        // Hold fully-revealed until the build flip ends the reveal (OnJustBuilt). Safety net:
+        // if the server build never lands, clean up after a grace period so it can't stick.
+        float grace = 0f;
+        while (grace < 6f)
+        {
+            if (_renderer == null || !_renderer.IsRevealing) { _revealRoutine = null; yield break; }
+            grace += Time.deltaTime;
+            yield return null;
+        }
+        _renderer?.EndConstructionReveal();
+        _revealRoutine = null;
     }
 }

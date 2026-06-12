@@ -15,11 +15,11 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private Transform     poolContainer;
     [SerializeField] private DraggableItem draggableItemPrefab;
 
-    [SerializeField] private InventoryActionMenu leftHandActionMenu;
-    [SerializeField] private InventoryActionMenu rightHandActionMenu;
-
+    // Menu contextuel partagé unique (InventoryActionMenu.Shared) — plus de menu gauche/droite.
     [Header("Only for debug")]
     [SerializeField] private InventoryActionMenu currentActionMenu;
+    private ItemSlot _menuSlot;            // slot pour lequel le menu est ouvert (toggle)
+    private Sim.Interactables.Action _protoDrop;
 
     private GenericPool<DraggableItem> _draggableItemPool;
 
@@ -78,6 +78,9 @@ public class InventoryUI : MonoBehaviour
         // connect ; les opens/closes de la HUD ne re-déclenchent pas de S2C_PocketSync.
         if (ClientItemManager.LastPocketSnapshot.HasValue)
             ApplyPocketSnapshot(ClientItemManager.LastPocketSnapshot.Value);
+
+        // Ouvrir l'inventaire ré-affiche aussi la grille du colis s'il est tenu.
+        ContainerPanelUI.Item?.RefreshHeldContainer();
     }
 
     private void OnDisable()
@@ -99,9 +102,11 @@ public class InventoryUI : MonoBehaviour
         ClientItemManager.MoveItemResult -= OnMoveItemResultReceived;
         ClientItemManager.PocketSync     -= OnPocketSyncReceived;
 
-        // Ferme le conteneur avec l'inventaire (même comportement que si le joueur
-        // clique le bouton fermer du container ou appuie sur Escape).
-        ContainerPanelUI.Instance?.Close();
+        // Ferme les deux conteneurs avec l'inventaire (meuble + colis), comme un
+        // clic « X » ou Escape. Le colis ré-apparaîtra à la prochaine ouverture
+        // d'inventaire (RefreshHeldContainer) tant qu'il est tenu.
+        ContainerPanelUI.Prop?.Close();
+        ContainerPanelUI.Item?.Close();
     }
 
     // ── API pool partagée (consommée par ContainerPanelUI) ────────────────────
@@ -278,7 +283,7 @@ public class InventoryUI : MonoBehaviour
                       || src == leftPocketSlot || src == rightPocketSlot;
         if (!srcIsOurs) return;
 
-        var container = ContainerPanelUI.Instance;
+        var container = ContainerPanelUI.QuickMoveTarget();
         if (container == null || !container.IsOpen) return;     // pas de conteneur ouvert → no-op
 
         int targetSlot = container.FindFirstFreeSlot();
@@ -359,18 +364,35 @@ public class InventoryUI : MonoBehaviour
 
     private void OnItemRightClicked(DraggableItem draggableItem)
     {
-        if (draggableItem.ItemSlot == leftHandSlot)
-        {
-            if (currentActionMenu == leftHandActionMenu) CloseCurrentActionMenu();
-            else DisplayLeftActionMenu();
+        ItemSlot slot = draggableItem.ItemSlot;
+        if (slot == null) return;
+
+        // Re-clic sur le même slot → toggle fermeture.
+        if (currentActionMenu != null && _menuSlot == slot) { CloseCurrentActionMenu(); return; }
+
+        if (slot == leftHandSlot) { DisplayLeftActionMenu(); _menuSlot = slot; }
+        else if (slot == rightHandSlot || slot == bothHandSlot) {
+            // Item TWO_HAND : posé en bothHandSlot ; actions sur RightHandItem.
+            DisplayRightActionMenu(); _menuSlot = slot;
         }
-        else if (draggableItem.ItemSlot == rightHandSlot || draggableItem.ItemSlot == bothHandSlot)
-        {
-            // Pour un item TWO_HAND, l'instance est posée en bothHandSlot ;
-            // les actions sont sur RightHandItem dans ce cas.
-            if (currentActionMenu == rightHandActionMenu) CloseCurrentActionMenu();
-            else DisplayRightActionMenu();
+        else if (slot == leftPocketSlot || slot == rightPocketSlot) {
+            // Item en poche → action « Lâcher » (au sol).
+            DisplayPocketDropMenu(draggableItem); _menuSlot = slot;
         }
+    }
+
+    private void DisplayPocketDropMenu(DraggableItem item)
+    {
+        CloseCurrentActionMenu();
+        var menu = InventoryActionMenu.Shared;
+        if (menu == null) return;
+        if (_protoDrop == null) _protoDrop = Resources.Load<Sim.Interactables.Action>("Configurations/Actions/DROP");
+        if (_protoDrop == null) return;
+        int eid = item.EntityId;
+        menu.ShowSingleAction(_protoDrop, () => {
+            if (NetworkClient.isConnected) NetworkClient.Send(new C2S_DropFromInventory { EntityId = eid });
+        });
+        currentActionMenu = menu;
     }
 
     private void OnItemMoved(ItemSlot originSlot, ItemSlot targetSlot)
@@ -545,10 +567,12 @@ public class InventoryUI : MonoBehaviour
         CloseCurrentActionMenu();
         var item = PlayerController.Local.PlayerHands.LeftHandItem;
         if (item == null) return;
+        var menu = InventoryActionMenu.Shared;
+        if (menu == null) return;
         var actions = item.GetActions().ToList();
         Debug.Log($"[InventoryUI] LeftHand actions count={actions.Count} for config={item.Configuration?.Label}");
-        leftHandActionMenu.Setup(actions);
-        currentActionMenu = leftHandActionMenu;
+        menu.Setup(actions);
+        currentActionMenu = menu;
     }
 
     public void DisplayRightActionMenu()
@@ -556,10 +580,12 @@ public class InventoryUI : MonoBehaviour
         CloseCurrentActionMenu();
         var item = PlayerController.Local.PlayerHands.RightHandItem;
         if (item == null) return;
+        var menu = InventoryActionMenu.Shared;
+        if (menu == null) return;
         var actions = item.GetActions().ToList();
         Debug.Log($"[InventoryUI] RightHand actions count={actions.Count} for config={item.Configuration?.Label}");
-        rightHandActionMenu.Setup(actions);
-        currentActionMenu = rightHandActionMenu;
+        menu.Setup(actions);
+        currentActionMenu = menu;
     }
 
     public void CloseCurrentActionMenu(bool instantly = false)
@@ -567,6 +593,7 @@ public class InventoryUI : MonoBehaviour
         if (!currentActionMenu) return;
         currentActionMenu.Hide(instantly);
         currentActionMenu = null;
+        _menuSlot = null;
     }
 
     public void UpdateUI()
@@ -658,7 +685,7 @@ public class InventoryUI : MonoBehaviour
 
     private DraggableItem OnCreateDraggableItem()                   => Instantiate(draggableItemPrefab, poolContainer);
     private void          OnGetDraggableItem(DraggableItem item)    => item.gameObject.SetActive(true);
-    private void          OnReleaseDraggableItem(DraggableItem item) { item.ResetDragState(); item.transform.parent = poolContainer; item.gameObject.SetActive(false); }
+    private void          OnReleaseDraggableItem(DraggableItem item) { item.ResetDragState(); item.transform.SetParent(poolContainer, false); item.gameObject.SetActive(false); }
 
     #endregion
 }

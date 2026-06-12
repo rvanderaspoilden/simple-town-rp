@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 72
   displayName: Meuble de cuisine petit haut 1
+  description: "Petit meuble de cuisine haut, mod\xE8le 1."
   sprite: {fileID: 0}
   propsType: 0
   price: 950
@@ -25,6 +26,7 @@ MonoBehaviour:
   hasPosableSurface: 1
   connectedToWall: 0
   toBuild: 1
+  movable: 1
   rangeToInteract: 1.5
   rightClickOnly: 0
   actions: []
@@ -102,3 +104,8 @@ MonoBehaviour:
       color: {r: 1, g: 0.7725491, b: 0.5764706, a: 1}
       material: {fileID: 0}
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

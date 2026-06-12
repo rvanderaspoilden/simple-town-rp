@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 64
   displayName: Distributeur de boisson
+  description: "Distributeur automatique de boissons fra\xEEches."
   sprite: {fileID: 21300000, guid: a53ea1fd7171cbb439be2746de62bd4a, type: 3}
   propsType: 0
   price: 750
@@ -25,6 +26,7 @@ MonoBehaviour:
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
+  movable: 1
   rangeToInteract: 1
   rightClickOnly: 0
   actions:
@@ -33,6 +35,11 @@ MonoBehaviour:
   cursor: {fileID: 2800000, guid: 637b54a2bc7c57849b823c878ef3a877, type: 3}
   presets: []
   buildSound: {fileID: 0}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0
   itemsToSell:
   - item: {fileID: 11400000, guid: efce2a51cd3b7d345a7d2eac4a233b08, type: 2}
     price: 4

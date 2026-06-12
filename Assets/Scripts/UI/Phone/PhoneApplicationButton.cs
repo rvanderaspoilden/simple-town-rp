@@ -14,13 +14,27 @@ public class PhoneApplicationButton : MonoBehaviour, IPointerClickHandler, IPoin
     [SerializeField]
     private PhoneApplicationUI application;
 
+    [Tooltip("Si coché : au clic, ouvre la constellation et referme le téléphone (au lieu " +
+             "d'ouvrir une PhoneApplicationUI). Laisser 'application' vide dans ce cas, et NE PAS " +
+             "ajouter ce bouton à la liste 'applications' du PhoneControllerUI.")]
+    [SerializeField]
+    private bool opensConstellation;
+
     [SerializeField]
     private Image icon;
-    
+
     public PhoneApplicationUI Application => application;
-    
+
     public void OnPointerClick(PointerEventData eventData) {
         HUDManager.Instance.PlaySound(clickSound, 1f);
+
+        if (this.opensConstellation) {
+            // Ouvre la constellation et LAISSE le téléphone ouvert derrière. Le téléphone
+            // se refermera quand le joueur fermera la constellation (ConstellationUI.Close).
+            HUDManager.Instance.ConstellationUI?.Open();
+            return;
+        }
+
         PhoneControllerUI.Instance.OpenApplication(this);
     }
 

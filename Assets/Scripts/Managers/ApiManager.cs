@@ -69,6 +69,12 @@ namespace Sim {
         private string _transitPlaceId;
         public string TransitPlaceId => _transitPlaceId;
 
+        // Cached UUID of the singleton "city" place — the persistence anchor for
+        // world items dropped on the ground in the City scene (the city has no
+        // apartment place). Populated by EnsureCityPlace() at server boot.
+        private string _cityPlaceId;
+        public string CityPlaceId => _cityPlaceId;
+
         private static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings {
             NullValueHandling   = NullValueHandling.Ignore,
             DefaultValueHandling = DefaultValueHandling.Include,
@@ -414,6 +420,66 @@ namespace Sim {
         public UnityWebRequest RetrieveLedgerRequest(string characterId) =>
             BuildJsonRequest($"{this.uri}/characters/{characterId}/ledger", "GET", null);
 
+        // ── Constellation ───────────────────────────────────────────────────
+
+        public static event Action<ConstellationStateData> OnConstellationRetrieved;
+        public static event Action<ConstellationStateData> OnConstellationUpdated;
+
+        /// <summary>GET /characters/:id/constellation — full state (wallets +
+        /// unlocked node set + last discovery). The row is auto-created at
+        /// character insertion via a Postgres trigger.</summary>
+        public UnityWebRequest RetrieveConstellationRequest(string characterId) =>
+            BuildJsonRequest($"{this.uri}/characters/{characterId}/constellation", "GET", null);
+
+        /// <summary>POST /characters/:id/constellation/unlock — debit the wallet
+        /// for the given costs and append the node id to the unlocked set. The
+        /// server validates funds but not prerequisites (graph stays
+        /// client-authored). Raises HTTP 500 with `INSUFFICIENT_FUNDS:&lt;key&gt;`
+        /// if any wallet is short.</summary>
+        public UnityWebRequest UnlockConstellationNodeRequest(string characterId, UnlockNodeBody body) =>
+            BuildJsonRequest($"{this.uri}/characters/{characterId}/constellation/unlock", "POST", body);
+
+        /// <summary>POST /characters/:id/constellation/grant — additive credit
+        /// on branch + profession wallets. Used by the mission reward pipeline
+        /// (Unity server-side) and by the in-game debug keys.</summary>
+        public UnityWebRequest GrantConstellationPointsRequest(string characterId, GrantPointsBody body) =>
+            BuildJsonRequest($"{this.uri}/characters/{characterId}/constellation/grant", "POST", body);
+
+        public void RetrieveConstellation(string characterId) {
+            StartCoroutine(SendConstellationCoroutine(
+                RetrieveConstellationRequest(characterId),
+                state => OnConstellationRetrieved?.Invoke(state)));
+        }
+
+        public void UnlockConstellationNode(string characterId, UnlockNodeBody body, Action<ConstellationStateData> onSuccess = null, Action<string> onError = null) {
+            StartCoroutine(SendConstellationCoroutine(
+                UnlockConstellationNodeRequest(characterId, body),
+                state => { OnConstellationUpdated?.Invoke(state); onSuccess?.Invoke(state); },
+                onError));
+        }
+
+        public void GrantConstellationPoints(string characterId, GrantPointsBody body, Action<ConstellationStateData> onSuccess = null) {
+            StartCoroutine(SendConstellationCoroutine(
+                GrantConstellationPointsRequest(characterId, body),
+                state => { OnConstellationUpdated?.Invoke(state); onSuccess?.Invoke(state); }));
+        }
+
+        private IEnumerator SendConstellationCoroutine(UnityWebRequest req, Action<ConstellationStateData> onSuccess, Action<string> onError = null) {
+            yield return req.SendWebRequest();
+            if (req.responseCode >= 200 && req.responseCode < 300) {
+                var resp = JsonUtility.FromJson<ConstellationStateResponse>(req.downloadHandler.text);
+                if (resp != null && resp.States != null && resp.States.Length > 0) {
+                    onSuccess?.Invoke(resp.States[0]);
+                } else {
+                    Debug.LogWarning("[Constellation] Empty response: " + req.downloadHandler.text);
+                }
+            } else {
+                Debug.LogError($"[Constellation] HTTP {req.responseCode} on {req.url} — {req.downloadHandler?.text}");
+                onError?.Invoke(req.downloadHandler?.text);
+            }
+            req.Dispose();
+        }
+
         // ── Rent ────────────────────────────────────────────────────────────
 
         /// <summary>POST /homes/rent/tick — server-driven rent collection pass at
@@ -464,6 +530,95 @@ namespace Sim {
             onDone?.Invoke();
         }
 
+        /// <summary>POST /relationships/contact — promotes an acquaintance to contact.
+        /// Server-side (called when an "add to contacts" request is accepted).</summary>
+        public UnityWebRequest PromoteContactRequest(string characterA, string characterB) =>
+            BuildJsonRequest($"{this.uri}/relationships/contact", "POST",
+                new CreateRelationshipBody { characterA = characterA, characterB = characterB });
+
+        public IEnumerator PromoteContactCoroutine(string characterA, string characterB, Action onDone) {
+            UnityWebRequest request = PromoteContactRequest(characterA, characterB);
+            yield return request.SendWebRequest();
+
+            if (request.responseCode != 200 && request.responseCode != 201) {
+                Debug.LogError($"[ApiManager] PromoteContact failed code={request.responseCode} body={request.downloadHandler.text}");
+            }
+            onDone?.Invoke();
+        }
+
+        /// <summary>DELETE /relationships/:a/:b — full removal of the relationship AND
+        /// the whole conversation between the pair. Server-side (called on remove-contact).</summary>
+        public UnityWebRequest RemoveContactRequest(string characterA, string characterB) =>
+            BuildJsonRequest($"{this.uri}/relationships/{characterA}/{characterB}", "DELETE", null);
+
+        public IEnumerator RemoveContactCoroutine(string characterA, string characterB, Action onDone) {
+            UnityWebRequest request = RemoveContactRequest(characterA, characterB);
+            yield return request.SendWebRequest();
+
+            if (request.responseCode != 200 && request.responseCode != 204) {
+                Debug.LogError($"[ApiManager] RemoveContact failed code={request.responseCode} body={request.downloadHandler.text}");
+            }
+            onDone?.Invoke();
+        }
+
+        // ── Direct messages (SMS) ─────────────────────────────────────────────
+
+        public static event Action<string, List<DirectMessageData>> OnConversationRetrieved; // (otherId, messages)
+        public static event Action<List<UnreadCount>> OnUnreadRetrieved;
+
+        public void RetrieveConversation(string localId, string otherId) {
+            StartCoroutine(RetrieveConversationCoroutine(localId, otherId));
+        }
+
+        private IEnumerator RetrieveConversationCoroutine(string localId, string otherId) {
+            UnityWebRequest request = BuildJsonRequest($"{this.uri}/characters/{localId}/conversations/{otherId}", "GET", null);
+            yield return request.SendWebRequest();
+            if (request.responseCode == 200) {
+                ConversationResponse response = JsonUtility.FromJson<ConversationResponse>(request.downloadHandler.text);
+                OnConversationRetrieved?.Invoke(otherId, response?.messages ?? new List<DirectMessageData>());
+            } else {
+                Debug.LogError($"[ApiManager] RetrieveConversation failed code={request.responseCode}");
+            }
+        }
+
+        /// <summary>POST /direct-messages — persists an SMS. Server-side.</summary>
+        public IEnumerator SendDirectMessageCoroutine(string senderId, string recipientId, string message, Action onDone = null) {
+            UnityWebRequest request = BuildJsonRequest($"{this.uri}/direct-messages", "POST",
+                new SendDmBody { senderId = senderId, recipientId = recipientId, message = message });
+            yield return request.SendWebRequest();
+            if (request.responseCode != 200 && request.responseCode != 201) {
+                Debug.LogError($"[ApiManager] SendDirectMessage failed code={request.responseCode} body={request.downloadHandler.text}");
+            }
+            onDone?.Invoke();
+        }
+
+        public void MarkConversationRead(string localId, string otherId) {
+            StartCoroutine(MarkConversationReadCoroutine(localId, otherId));
+        }
+
+        private IEnumerator MarkConversationReadCoroutine(string localId, string otherId) {
+            UnityWebRequest request = BuildJsonRequest($"{this.uri}/characters/{localId}/conversations/{otherId}/read", "POST", null);
+            yield return request.SendWebRequest();
+            if (request.responseCode != 200) {
+                Debug.LogError($"[ApiManager] MarkConversationRead failed code={request.responseCode}");
+            }
+        }
+
+        public void RetrieveUnread(string localId) {
+            StartCoroutine(RetrieveUnreadCoroutine(localId));
+        }
+
+        private IEnumerator RetrieveUnreadCoroutine(string localId) {
+            UnityWebRequest request = BuildJsonRequest($"{this.uri}/characters/{localId}/messages/unread", "GET", null);
+            yield return request.SendWebRequest();
+            if (request.responseCode == 200) {
+                UnreadResponse response = JsonUtility.FromJson<UnreadResponse>(request.downloadHandler.text);
+                OnUnreadRetrieved?.Invoke(response?.unread ?? new List<UnreadCount>());
+            } else {
+                Debug.LogError($"[ApiManager] RetrieveUnread failed code={request.responseCode}");
+            }
+        }
+
         public IEnumerator RentTickCoroutine(long nowInGameSeconds, Action<RentTickResponse> onDone) {
             UnityWebRequest request = RentTickRequest(nowInGameSeconds);
             yield return request.SendWebRequest();
@@ -510,18 +665,7 @@ namespace Sim {
             return request;
         }
 
-        public UnityWebRequest AddCharacterJobXpRequest(CharacterJobAddXpRequest body) {
-            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(body));
-
-            UnityWebRequest request = new UnityWebRequest($"{this.uri}/character-jobs/add-xp", "PUT") {
-                uploadHandler = new UploadHandlerRaw(encodedPayload),
-                downloadHandler = new DownloadHandlerBuffer(),
-            };
-
-            request.SetRequestHeader("Content-type", "application/json");
-
-            return request;
-        }
+        // V3 : AddCharacterJobXpRequest retiré — XP supprimé end-to-end (cf. migration 26).
 
         // ── User Settings endpoints ───────────────────────────────────────────
 
@@ -781,6 +925,35 @@ namespace Sim {
             }
             this._transitPlaceId = place.Id;
             Debug.Log($"[ApiManager] Transit place ready id={place.Id}");
+        }
+
+        /// <summary>
+        /// One-shot at server boot: ensures the singleton "city" place exists and
+        /// caches its UUID on CityPlaceId. World items dropped on the ground in the
+        /// City scene are PATCHed to this place (+ position) so they persist like
+        /// apartment world items.
+        /// </summary>
+        public IEnumerator EnsureCityPlace() {
+            CreatePlaceBody body = new CreatePlaceBody {
+                placeKey = "city",
+                type     = "city",
+                ownerId  = "SIMPLE_TOWN"
+            };
+            UnityWebRequest request = CreatePlaceRequest(body);
+            yield return request.SendWebRequest();
+
+            if (request.responseCode != 200 && request.responseCode != 201) {
+                Debug.LogError($"[ApiManager] EnsureCityPlace failed code={request.responseCode} body={request.downloadHandler.text}");
+                yield break;
+            }
+
+            PlaceJson place = JsonConvert.DeserializeObject<PlaceJson>(request.downloadHandler.text);
+            if (place == null || string.IsNullOrEmpty(place.Id)) {
+                Debug.LogError($"[ApiManager] EnsureCityPlace returned invalid payload: {request.downloadHandler.text}");
+                yield break;
+            }
+            this._cityPlaceId = place.Id;
+            Debug.Log($"[ApiManager] City place ready id={place.Id}");
         }
     }
 }

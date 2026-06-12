@@ -15,7 +15,7 @@
       "hash": "acc1c7bc9ea34c33b830e40316fca52553878d29"
     },
     "com.ivanmurzak.unity.mcp": {
-      "version": "0.76.3",
+      "version": "0.80.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -26,12 +26,22 @@
       "url": "https://package.openupm.com"
     },
     "com.ivanmurzak.unity.mcp.animation": {
-      "version": "1.2.2",
+      "version": "1.2.16",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.ivanmurzak.unity.mcp": "0.73.0",
+        "com.ivanmurzak.unity.mcp": "0.79.1",
         "com.unity.modules.animation": "1.0.0"
+      },
+      "url": "https://package.openupm.com"
+    },
+    "com.ivanmurzak.unity.mcp.particlesystem": {
+      "version": "1.2.16",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.ivanmurzak.unity.mcp": "0.79.1",
+        "com.unity.modules.particlesystem": "1.0.0"
       },
       "url": "https://package.openupm.com"
     },
@@ -288,6 +298,18 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.probuilder": {
+      "version": "6.0.9",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.shadergraph": "17.0.3",
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.settings-manager": "1.0.3"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.profiling.core": {
       "version": "1.0.3",
       "depth": 1,
@@ -338,6 +360,13 @@
     "com.unity.searcher": {
       "version": "4.9.4",
       "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.settings-manager": {
+      "version": "2.1.1",
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"

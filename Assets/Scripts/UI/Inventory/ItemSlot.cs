@@ -48,6 +48,12 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     private bool rejectsNonPocketable = false;
     public bool RejectsNonPocketable => rejectsNonPocketable;
 
+    [SerializeField, Tooltip("Si vrai, ce slot rejette tout drop d'un objet de stockage (item-conteneur). " +
+        "Posé en code sur les slots de grille conteneur (ContainerPanelUI) : empêche l'imbrication de " +
+        "stockage côté client, en symétrie avec le garde serveur (ServerItemManager.IsStorageItem).")]
+    private bool rejectsStorageItems = false;
+    public bool RejectsStorageItems { get => rejectsStorageItems; set => rejectsStorageItems = value; }
+
     public delegate void ItemMoved(ItemSlot origin, ItemSlot target);
     public delegate void ItemsSwapped(ItemSlot slotA, DraggableItem itemA, ItemSlot slotB, DraggableItem itemB);
 
@@ -102,6 +108,18 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
             && draggableItem.ItemConfig != null
             && !draggableItem.ItemConfig.AllowedInPocket) {
             WorldToastManager.Show(InventoryToasts.NotPocketable);
+            if (originSlot != null) originSlot.SnapBackInto(draggableItem);
+            return;
+        }
+
+        // Bloque l'imbrication de stockage : un objet de stockage (item-conteneur) ne peut pas
+        // être déposé dans un slot conteneur. Symétrique avec ServerItemManager.IsStorageItem :
+        // feedback immédiat sans round-trip et pas de snap-back retardé après refus serveur.
+        if (rejectsStorageItems
+            && draggableItem.ItemConfig != null
+            && draggableItem.ItemConfig.Container != null
+            && draggableItem.ItemConfig.Container.IsContainer) {
+            WorldToastManager.Show(InventoryToasts.NoNestedStorage);
             if (originSlot != null) originSlot.SnapBackInto(draggableItem);
             return;
         }

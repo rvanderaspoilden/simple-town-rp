@@ -9,7 +9,7 @@ namespace Sim {
     /// <summary>
     /// Wires the rent system into Mirror's server lifecycle. Called from
     /// SimpleTownNetwork.OnStartServer / OnStopServer (same pattern as
-    /// JobSystemBootstrap). Owns the RentCollectionScheduler GameObject.
+    /// MissionSystemBootstrap). Owns the RentCollectionScheduler GameObject.
     /// </summary>
     public static class RentSystemBootstrap {
         private static GameObject _schedulerGO;

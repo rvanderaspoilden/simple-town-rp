@@ -16,12 +16,6 @@ namespace Sim.UI {
         [SerializeField]
         private float hoverScaleMultiplier = 1.5f;
 
-        [SerializeField]
-        private Color defaultColor = new Color32(77, 77, 77, 255);
-
-        [SerializeField]
-        private Color hoverColor = Color.white;
-
         private RectTransform rectTransform;
 
         private Action action;
@@ -29,9 +23,9 @@ namespace Sim.UI {
         public delegate void InteractionEvent(Action action);
 
         public static event InteractionEvent OnClicked;
-        
+
         public static event InteractionEvent OnHover;
-        
+
         public static event InteractionEvent OnExit;
 
         private void Awake() {
@@ -40,38 +34,31 @@ namespace Sim.UI {
 
         public void Setup(Action actionToHold) {
             this.action = actionToHold;
-            this.forbiddenImage.gameObject.SetActive(this.action.IsForbidden);
+            // Affichages « sélecteur » et « interdit » retirés : on les masque ; seul
+            // l'effet de scale au survol est conservé.
+            if (this.selectorImage  != null) this.selectorImage.gameObject.SetActive(false);
+            if (this.forbiddenImage != null) this.forbiddenImage.gameObject.SetActive(false);
         }
 
         public RectTransform RectTransform => rectTransform;
 
+        // Les boutons restent TOUJOURS interactifs (plus de gate IsForbidden) : l'action
+        // s'exécute, et un toast d'erreur s'affiche si elle ne peut pas aboutir.
         public void OnPointerEnter(PointerEventData eventData) {
-            if (this.action.IsForbidden) return;
-            
             this.rectTransform.DOComplete();
             this.rectTransform.DOScale(Vector3.one * this.hoverScaleMultiplier, .3f).SetEase(Ease.OutQuad);
 
-            this.selectorImage.DOComplete();
-            this.selectorImage.DOColor(hoverColor, .3f).SetEase(Ease.OutQuad);
-            
             OnHover?.Invoke(this.action);
         }
 
         public void OnPointerExit(PointerEventData eventData) {
-            if (this.action.IsForbidden) return;
-
             this.rectTransform.DOComplete();
             this.rectTransform.DOScale(Vector3.one, .3f).SetEase(Ease.OutQuad);
 
-            this.selectorImage.DOComplete();
-            this.selectorImage.DOColor(defaultColor, .3f).SetEase(Ease.OutQuad);
-            
             OnExit?.Invoke(this.action);
         }
 
         public void OnPointerClick(PointerEventData eventData) {
-            if (this.action.IsForbidden) return;
-
             OnClicked?.Invoke(this.action);
         }
     }

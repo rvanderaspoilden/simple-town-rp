@@ -1,5 +1,5 @@
 using UnityEngine;
-using Sim.Jobs;
+using Sim.Missions;
 
 /// <summary>
 /// Colis de mission (prefab "Job Package"). Spécialise <see cref="MissionItemBehaviour"/>
@@ -7,8 +7,8 @@ using Sim.Jobs;
 /// <see cref="SortingCategory"/> assignée au spawn.
 ///
 /// La catégorie n'est pas portée par l'ItemConfig ni par le pipeline d'items générique :
-/// elle est transmise au runtime par un message JOB dédié (JobSortItemsSpawnedMessage),
-/// que JobClientManager applique en appelant SetSortingCategory sur ce composant.
+/// elle est transmise au runtime par un message JOB dédié (MissionSortItemsSpawnedMessage),
+/// que MissionClientManager applique en appelant SetSortingCategory sur ce composant.
 ///
 /// L'étiquette est un SpriteRenderer enfant du carton (un seul sprite, le même pour
 /// toutes les catégories). On lui applique juste la couleur du bac qui accepte cette
@@ -30,7 +30,7 @@ public class PackageJobItemBehaviour : MissionItemBehaviour
         base.Awake();
 
         // Masqué par défaut : seul un spawn de mission de TRI le réactive via
-        // SetSortingCategory (JobSortItemsSpawnedMessage). Pour toute autre mission
+        // SetSortingCategory (MissionSortItemsSpawnedMessage). Pour toute autre mission
         // le colis ne porte pas d'étiquette.
         if (stickerRenderer != null) stickerRenderer.enabled = false;
     }

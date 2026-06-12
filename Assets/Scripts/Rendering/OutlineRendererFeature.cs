@@ -10,7 +10,7 @@ using UnityEngine.Rendering.Universal;
 /// solid mask, then a fullscreen pass draws the outline colour along the mask's outer
 /// edge. Mesh-agnostic → a clean, complete silhouette contour (no hard-edge gaps).
 ///
-/// Driven by PropHoverOutline, which moves the hovered prop's renderers onto the
+/// Driven by HoverOutline, which moves the hovered target's renderers onto the
 /// outline layer for one hover.
 ///
 /// Editor setup:

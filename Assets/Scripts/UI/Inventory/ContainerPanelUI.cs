@@ -13,9 +13,28 @@ using UnityEngine;
 /// Le GameObject porteur doit rester actif ; <see cref="root"/> est un enfant
 /// activé/désactivé.
 /// </summary>
+/// <summary>Canal d'un <see cref="ContainerPanelUI"/> : un panneau dédié aux meubles
+/// (Prop) et un dédié au colis tenu (Item) coexistent → drag&drop entre les deux.</summary>
+public enum ContainerChannel { Prop, Item }
+
 public class ContainerPanelUI : MonoBehaviour
 {
-    public static ContainerPanelUI Instance { get; private set; }
+    // Deux instances coexistent (une par canal). Accès statique par canal.
+    public static ContainerPanelUI Prop { get; private set; }
+    public static ContainerPanelUI Item { get; private set; }
+
+    /// <summary>Panneau cible d'un quick-move depuis l'inventaire : le meuble ouvert en
+    /// priorité (focus actif), sinon le colis.</summary>
+    public static ContainerPanelUI QuickMoveTarget()
+    {
+        if (Prop != null && Prop.IsOpen) return Prop;
+        if (Item != null && Item.IsOpen) return Item;
+        return null;
+    }
+
+    [Header("Canal (Prop = meuble, Item = colis tenu)")]
+    [SerializeField] private ContainerChannel channel = ContainerChannel.Prop;
+    private bool IsItemChannel => channel == ContainerChannel.Item;
 
     [Header("Root (enfant à activer/désactiver — PAS ce GameObject)")]
     [SerializeField] private GameObject root;
@@ -47,15 +66,32 @@ public class ContainerPanelUI : MonoBehaviour
 
     private string _currentPlaceId;
     private int    _currentPropId;
+    private int    _currentItemEntityId = -1; // package en cours (item-container)
+    private bool   _isItemContainer;          // source de l'ouverture courante
     private string _currentPropName;     // cache pour le titre, valorisé à l'ouverture optimiste
     private bool   _subscribed;
     private bool   _loading;
+    private bool   _heldDriven;          // l'item-conteneur affiché est piloté par « tenu en main »
+    private int    _autoOpenedEntityId = -1; // colis pour lequel l'auto-open a déjà été déclenché
+    private int    _openRetries;         // tentatives d'auto-open en attendant l'UUID (spawn async)
+    private const int MaxOpenRetries = 8;
+
+    // Protos d'actions du menu contextuel (clic droit dans la grille). Clonées par
+    // InventoryActionMenu.ShowSingleAction.
+    private Sim.Interactables.Action _protoPoser;
+    private Sim.Interactables.Action _protoDrop;
     private UnityEngine.CanvasGroup _slotsGroup;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
+        if (IsItemChannel) {
+            if (Item != null && Item != this) { Destroy(gameObject); return; }
+            Item = this;
+        } else {
+            if (Prop != null && Prop != this) { Destroy(gameObject); return; }
+            Prop = this;
+        }
+        _isItemContainer = IsItemChannel; // constant par panneau
 
         if (slotTemplate != null) slotTemplate.gameObject.SetActive(false);
         if (closeButton  != null) closeButton.onClick.AddListener(Close);
@@ -75,15 +111,25 @@ public class ContainerPanelUI : MonoBehaviour
     private void OnDestroy()
     {
         Unsubscribe();
-        if (Instance == this) Instance = null;
+        if (Item == this) Item = null;
+        if (Prop == this) Prop = null;
     }
 
     private void Subscribe()
     {
         if (_subscribed) return;
-        ClientItemManager.ContainerOpened     += OnContainerOpened;
-        ClientItemManager.ContainerOpenFailed += OnContainerOpenFailed;
-        StorageContainerBehaviour.OnOpenRequested += OnOptimisticOpenRequested;
+        // Chaque panneau n'écoute QUE les events de son canal → les deux coexistent.
+        if (IsItemChannel) {
+            ClientItemManager.ItemContainerOpened     += OnItemContainerOpened;
+            ClientItemManager.ItemContainerOpenFailed += OnItemContainerOpenFailed;
+            PackageItemBehaviour.OnItemContainerOpenRequested += OnItemContainerOpenRequested;
+            PlayerHands.OnHandChanged                 += OnLocalHandsChanged;
+            DraggableItem.OnRightClick                += OnEntryRightClicked;
+        } else {
+            ClientItemManager.ContainerOpened     += OnContainerOpened;
+            ClientItemManager.ContainerOpenFailed += OnContainerOpenFailed;
+            StorageContainerBehaviour.OnOpenRequested += OnOptimisticOpenRequested;
+        }
         DraggableItem.OnDoubleClick           += OnItemDoubleClicked;
         _subscribed = true;
     }
@@ -91,9 +137,17 @@ public class ContainerPanelUI : MonoBehaviour
     private void Unsubscribe()
     {
         if (!_subscribed) return;
-        ClientItemManager.ContainerOpened     -= OnContainerOpened;
-        ClientItemManager.ContainerOpenFailed -= OnContainerOpenFailed;
-        StorageContainerBehaviour.OnOpenRequested -= OnOptimisticOpenRequested;
+        if (IsItemChannel) {
+            ClientItemManager.ItemContainerOpened     -= OnItemContainerOpened;
+            ClientItemManager.ItemContainerOpenFailed -= OnItemContainerOpenFailed;
+            PackageItemBehaviour.OnItemContainerOpenRequested -= OnItemContainerOpenRequested;
+            PlayerHands.OnHandChanged                 -= OnLocalHandsChanged;
+            DraggableItem.OnRightClick                -= OnEntryRightClicked;
+        } else {
+            ClientItemManager.ContainerOpened     -= OnContainerOpened;
+            ClientItemManager.ContainerOpenFailed -= OnContainerOpenFailed;
+            StorageContainerBehaviour.OnOpenRequested -= OnOptimisticOpenRequested;
+        }
         DraggableItem.OnDoubleClick           -= OnItemDoubleClicked;
         _subscribed = false;
     }
@@ -106,6 +160,9 @@ public class ContainerPanelUI : MonoBehaviour
     /// <summary>UUID backend de la place conteneur en cours. Utilisé pour router un quick-move.</summary>
     public string PlaceId => _currentPlaceId;
 
+    /// <summary>True quand le conteneur ouvert est un item-conteneur (« package »), prêt.</summary>
+    public bool IsItemContainerOpen => IsOpen && _isItemContainer;
+
     /// <summary>Premier slot actif vide, ou -1 si plein.</summary>
     public int FindFirstFreeSlot()
     {
@@ -116,13 +173,77 @@ public class ContainerPanelUI : MonoBehaviour
         return -1;
     }
 
+    /// <summary>Nombre de slots actifs vides (espace restant).</summary>
+    public int FreeSlotCount()
+    {
+        int n = 0;
+        for (int i = 0; i < _slots.Count; i++) {
+            var slot = _slots[i];
+            if (slot != null && slot.gameObject.activeSelf && slot.Item == null) n++;
+        }
+        return n;
+    }
+
+    /// <summary>True si ce panneau affiche actuellement l'item-conteneur dont le colis a
+    /// l'entityId donné (utilisé par la tooltip pour montrer l'espace restant réel).</summary>
+    public bool IsShowingItemContainer(int packageEntityId) =>
+        IsItemContainerOpen && _currentItemEntityId == packageEntityId;
+
     /// <summary>True si <paramref name="slot"/> appartient à la grille de ce conteneur.</summary>
     public bool OwnsSlot(ItemSlot slot) => slot != null && _slots.Contains(slot);
+
+    /// <summary>
+    /// Clic droit sur une entrée de la grille → menu contextuel HUD :
+    ///  - meuble emballé → « Poser » (mode placement, le serveur déplace le meuble, UUID conservé) ;
+    ///  - item normal, SI le colis ouvert est tenu en main → « Lâcher » (au sol).
+    /// </summary>
+    private void OnEntryRightClicked(DraggableItem item)
+    {
+        if (!IsItemChannel || !IsOpen || item == null || item.ItemSlot == null) return;
+        if (!OwnsSlot(item.ItemSlot)) return;
+
+        var menu = InventoryActionMenu.Shared;
+        if (menu == null) return;
+
+        if (item.IsPackedProp) {
+            if (_protoPoser == null) _protoPoser = Resources.Load<Sim.Interactables.Action>("Configurations/Actions/POSER");
+            if (_protoPoser == null) return;
+            int cfgId = item.PropConfigId, preset = item.PropPresetId, pkg = _currentItemEntityId, slot = item.ItemSlot.SlotIndex;
+            menu.ShowSingleAction(_protoPoser, () => StartUnpack(cfgId, preset, pkg, slot));
+        } else {
+            // « Lâcher » uniquement si le colis ouvert est actuellement tenu en main.
+            if (!IsLocalHeldEntity(_currentItemEntityId)) return;
+            if (_protoDrop == null) _protoDrop = Resources.Load<Sim.Interactables.Action>("Configurations/Actions/DROP");
+            if (_protoDrop == null) return;
+            int eid = item.EntityId;
+            menu.ShowSingleAction(_protoDrop, () => {
+                if (NetworkClient.isConnected) NetworkClient.Send(new C2S_DropFromInventory { EntityId = eid });
+            });
+        }
+    }
+
+    private void StartUnpack(int propConfigId, int presetId, int packageEntityId, int slotIndex)
+    {
+        PlayerController pc = PlayerController.Local;
+        if (pc == null) return;
+        ApartmentController apt = pc.CurrentGeographicArea != null
+            ? pc.CurrentGeographicArea.GetComponentInParent<ApartmentController>() : null;
+        if (apt == null) { WorldToastManager.ShowError("Allez dans un appartement pour déballer"); return; }
+
+        var config = DatabaseManager.GetPropsById(propConfigId);
+        var inter  = pc.GetComponent<PlayerInteraction>();
+        if (config == null || inter == null) return;
+
+        inter.StartPropUnpack(config, presetId, packageEntityId, slotIndex);
+        // Le mode placement prend la main : on referme l'inventaire/grille.
+        if (HUDManager.Instance != null) HUDManager.Instance.CloseInventory();
+    }
 
     private void OnItemDoubleClicked(DraggableItem item)
     {
         if (!IsOpen || item == null || item.ItemSlot == null) return;
         if (!OwnsSlot(item.ItemSlot)) return;
+        if (!item.IsDraggable) return; // meuble emballé : pas de quick-move (déballage = futur)
 
         var inv = HUDManager.Instance?.InventoryUI;
         if (inv == null) return;
@@ -147,13 +268,86 @@ public class ContainerPanelUI : MonoBehaviour
     /// </summary>
     private void OnOptimisticOpenRequested(int propId, int slotCount, string propName)
     {
+        _isItemContainer = false;
         _currentPropId   = propId;
-        _currentPropName = propName;
+        OpenOptimisticCore(slotCount, propName);
+    }
+
+    /// <summary>Ouverture optimiste d'un item-conteneur (« package »).
+    /// Déclenchée par l'action OPEN sur un colis AU SOL (non tenu) → affichage non piloté
+    /// par la main (ne se referme pas sur changement de main).</summary>
+    private void OnItemContainerOpenRequested(int entityId, int slotCount, string displayName)
+    {
+        _heldDriven          = false;
+        _isItemContainer     = true;
+        _currentItemEntityId = entityId;
+        OpenOptimisticCore(slotCount, displayName);
+    }
+
+    /// <summary>
+    /// Affichage automatique de la grille dès qu'un colis est tenu en main (et fermeture
+    /// au lâcher). Piloté par <see cref="PlayerHands.OnHandChanged"/> du joueur local.
+    /// L'ouverture via l'action OPEN d'un colis au sol n'est PAS affectée (_heldDriven=false).
+    /// </summary>
+    private void OnLocalHandsChanged()
+    {
+        ItemBehaviour held = LocalHeldContainerItem();
+        if (held != null && held.Identity != null)
+        {
+            int eid = held.Identity.EntityId;
+            _heldDriven = true; // un colis tenu pilote l'affichage → se referme au lâcher
+            // N'auto-affiche le colis QUE si l'inventaire est déjà ouvert : tenir un colis
+            // ne doit PAS forcer l'ouverture du HUD (ex. au lancement du jeu). Quand le
+            // joueur ouvrira l'inventaire, RefreshHeldContainer ré-évaluera et l'affichera.
+            if (IsInventoryOpen() && eid != _autoOpenedEntityId)
+            {
+                _autoOpenedEntityId = eid;
+                _openRetries        = 0;
+                AutoOpenHeldContainer(held);
+            }
+        }
+        else
+        {
+            _autoOpenedEntityId = -1;
+            if (_isItemContainer && _heldDriven && (IsOpen || _loading)) Close();
+        }
+    }
+
+    private static ItemBehaviour LocalHeldContainerItem()
+    {
+        PlayerController pc = PlayerController.Local;
+        return pc != null && pc.PlayerHands != null ? pc.PlayerHands.HeldContainerItem : null;
+    }
+
+    private static bool IsInventoryOpen()
+    {
+        var inv = HUDManager.Instance != null ? HUDManager.Instance.InventoryUI : null;
+        return inv != null && inv.gameObject.activeSelf;
+    }
+
+    private void AutoOpenHeldContainer(ItemBehaviour colis)
+    {
+        var container = colis.Configuration != null ? colis.Configuration.Container : null;
+        int slotCount = container != null ? container.SlotCount : 0;
+        if (slotCount <= 0) return;
+
+        _isItemContainer     = true;
+        _currentItemEntityId = colis.Identity.EntityId;
+        // forceInventory=false : l'inventaire est déjà ouvert (gardé par OnLocalHandsChanged),
+        // on ne le force pas — sinon tenir un colis ré-ouvrirait le HUD tout seul.
+        OpenOptimisticCore(slotCount, colis.Configuration.Label, forceInventory: false);
+        if (NetworkClient.isConnected)
+            NetworkClient.Send(new C2S_OpenItemContainer { EntityId = colis.Identity.EntityId });
+    }
+
+    private void OpenOptimisticCore(int slotCount, string name, bool forceInventory = true)
+    {
+        _currentPropName = name;
         _currentPlaceId  = null;    // sera renseigné par le snapshot
         _loading         = true;
 
         Show(true);
-        if (HUDManager.Instance != null) HUDManager.Instance.ShowInventory();
+        if (forceInventory && HUDManager.Instance != null) HUDManager.Instance.ShowInventory();
 
         EnsureSlotPool(slotCount);
         ConfigureSlots(null, slotCount);
@@ -178,8 +372,27 @@ public class ContainerPanelUI : MonoBehaviour
 
     private void OnContainerOpened(S2C_ContainerOpened msg)
     {
-        _currentPlaceId = msg.PlaceId;
-        _currentPropId  = msg.PropId;
+        _isItemContainer = false;
+        _currentPropId   = msg.PropId;
+        ApplySnapshotCore(msg.PlaceId, msg.SlotCount, msg.Items);
+    }
+
+    private void OnItemContainerOpened(S2C_ItemContainerOpened msg)
+    {
+        _openRetries         = 0;
+        _isItemContainer     = true;
+        _currentItemEntityId = msg.EntityId;
+        ApplySnapshotCore(msg.PlaceId, msg.SlotCount, msg.Items);
+    }
+
+    private void ApplySnapshotCore(string placeId, int slotCount, S2C_ContainerItem[] items)
+    {
+        // Course rare : l'inventaire a été fermé entre l'auto-open d'un colis tenu et
+        // l'arrivée du snapshot. On n'ouvre PAS le HUD tout seul → on abandonne ; le colis
+        // se ré-affichera à la prochaine ouverture d'inventaire (RefreshHeldContainer).
+        if (_isItemContainer && _heldDriven && !IsInventoryOpen()) { Close(); return; }
+
+        _currentPlaceId = placeId;
 
         // Show AVANT de spawner : sinon les nouveaux DraggableItem sont instanciés
         // dans une hiérarchie inactive et leur Awake ne tourne pas → _image null
@@ -188,12 +401,12 @@ public class ContainerPanelUI : MonoBehaviour
         Show(true);
         if (HUDManager.Instance != null) HUDManager.Instance.ShowInventory();
 
-        EnsureSlotPool(msg.SlotCount);
-        ConfigureSlots(msg.PlaceId, msg.SlotCount);
-        ApplyDynamicHeight(msg.SlotCount);
+        EnsureSlotPool(slotCount);
+        ConfigureSlots(placeId, slotCount);
+        ApplyDynamicHeight(slotCount);
         ReleaseSpawnedItems();
         if (titleText != null) titleText.text = ResolveTitle();
-        SpawnItemsFromSnapshot(msg.Items);
+        SpawnItemsFromSnapshot(items);
 
         // Snapshot reçu → panneau pleinement interactif.
         _loading = false;
@@ -204,10 +417,46 @@ public class ContainerPanelUI : MonoBehaviour
     {
         Debug.LogWarning($"[ContainerPanelUI] Ouverture refusée propId={msg.PropId} : {msg.ErrorMessage}");
         // Si le panneau était ouvert optimistement pour ce prop, on referme + toast.
-        if (_loading && _currentPropId == msg.PropId) {
+        if (_loading && !_isItemContainer && _currentPropId == msg.PropId) {
             if (!string.IsNullOrEmpty(msg.ErrorMessage)) WorldToastManager.Show(msg.ErrorMessage);
             Close();
         }
+    }
+
+    private void OnItemContainerOpenFailed(S2C_ItemContainerOpenFailed msg)
+    {
+        if (!(_loading && _isItemContainer && _currentItemEntityId == msg.EntityId)) return;
+
+        // Course au spawn : un colis fraîchement créé n'a pas encore son UUID DB (l'upsert
+        // est async). L'auto-open du « tenu en main » arrive avant. Tant que le colis reste
+        // tenu, on retente silencieusement jusqu'à ce que le bridge soit prêt, au lieu de
+        // fermer + warning (le retry réussit en général à la 1re ou 2e tentative).
+        bool transientUuid = !string.IsNullOrEmpty(msg.ErrorMessage) && msg.ErrorMessage.Contains("UUID");
+        if (_heldDriven && transientUuid && IsLocalHeldEntity(msg.EntityId) && _openRetries < MaxOpenRetries) {
+            _openRetries++;
+            if (isActiveAndEnabled) StartCoroutine(RetryAutoOpenAfter(0.25f, msg.EntityId));
+            return;
+        }
+
+        Debug.LogWarning($"[ContainerPanelUI] Ouverture package refusée entityId={msg.EntityId} : {msg.ErrorMessage}");
+        _openRetries = 0;
+        if (!string.IsNullOrEmpty(msg.ErrorMessage)) WorldToastManager.Show(msg.ErrorMessage);
+        Close();
+    }
+
+    private static bool IsLocalHeldEntity(int entityId)
+    {
+        ItemBehaviour held = LocalHeldContainerItem();
+        return held != null && held.Identity != null && held.Identity.EntityId == entityId;
+    }
+
+    private System.Collections.IEnumerator RetryAutoOpenAfter(float delay, int entityId)
+    {
+        yield return new WaitForSeconds(delay);
+        // Toujours le même colis tenu ? Sinon on laisse tomber (OnLocalHandsChanged gère le reste).
+        if (!IsLocalHeldEntity(entityId)) { _openRetries = 0; yield break; }
+        if (NetworkClient.isConnected)
+            NetworkClient.Send(new C2S_OpenItemContainer { EntityId = entityId });
     }
 
     /// <summary>
@@ -227,6 +476,9 @@ public class ContainerPanelUI : MonoBehaviour
             // Autorise le swap visuel pour container↔container et container↔main : le
             // handler ItemSlot.OnItemSwap route ensuite vers C2S_SwapItems.
             slot.CanSwap = true;
+            // Pas de stockage imbriqué : refuse en local le drop d'un item-conteneur dans la
+            // grille (couvre les deux canaux prop + item, en symétrie avec le garde serveur).
+            slot.RejectsStorageItems = true;
             _slots.Add(slot);
         }
         var inv = HUDManager.Instance != null ? HUDManager.Instance.InventoryUI : null;
@@ -326,15 +578,29 @@ public class ContainerPanelUI : MonoBehaviour
         }
         foreach (var entry in items) {
             if (entry.SlotIndex < 0 || entry.SlotIndex >= _slots.Count) continue;
-            var cfg = DatabaseManager.GetItemConfigById(entry.ConfigId);
-            if (cfg == null) {
-                Debug.LogWarning($"[ContainerPanelUI] ItemConfig {entry.ConfigId} introuvable, slot {entry.SlotIndex} ignoré.");
-                continue;
-            }
+
             // Loué depuis le pool partagé InventoryUI : Awake est déjà passé sur ces
             // instances (vivent dans le poolContainer actif de l'inventaire).
             DraggableItem d = inv.RentDraggable();
-            d.SetConfiguration(cfg);
+
+            if (entry.PropConfigId > 0) {
+                // Meuble emballé : vraie icône du prop, non-draggable. Sa sortie passe par
+                // le déballage build-mode (clic droit → OnEntryRightClicked).
+                var pcfg = DatabaseManager.GetPropsById(entry.PropConfigId);
+                d.SetConfiguration(null);
+                d.SetSprite(pcfg != null ? pcfg.Sprite : null);
+                d.SetDraggable(false);
+                d.SetPackedProp(entry.PropConfigId, entry.PropPresetId);
+            } else {
+                var cfg = DatabaseManager.GetItemConfigById(entry.ConfigId);
+                if (cfg == null) {
+                    Debug.LogWarning($"[ContainerPanelUI] ItemConfig {entry.ConfigId} introuvable, slot {entry.SlotIndex} ignoré.");
+                    inv.ReleaseDraggable(d);
+                    continue;
+                }
+                d.SetConfiguration(cfg);
+                d.SetDraggable(true);
+            }
             d.SetEntityId(entry.EntityId);
             _slots[entry.SlotIndex].SetItem(d);
             _spawnedItems.Add(d);
@@ -343,22 +609,27 @@ public class ContainerPanelUI : MonoBehaviour
 
     public void Close()
     {
-        // Ne notifie le serveur que si une session est réellement ouverte.
+        // Ne ferme QUE ce panneau (son canal). Les deux conteneurs (meuble + colis)
+        // peuvent être ouverts en même temps → on ne replie plus tout l'inventaire ici.
         if (NetworkClient.isConnected && _currentPlaceId != null)
-            NetworkClient.Send(new C2S_CloseContainer());
+            NetworkClient.Send(new C2S_CloseContainer { ItemContainer = IsItemChannel });
         Show(false);
         ReleaseSpawnedItems();
-        _currentPlaceId  = null;
-        _currentPropId   = 0;
-        _currentPropName = null;
-        _loading         = false;
+        _currentPlaceId     = null;
+        _currentPropId      = 0;
+        _currentPropName    = null;
+        _loading            = false;
+        _autoOpenedEntityId = -1;   // permet de ré-afficher le colis si re-tenu / inventaire ré-ouvert
         SetSlotsInteractive(true);
+    }
 
-        // Ferme aussi l'inventaire pour aligner conteneur et HUD : clic « X »
-        // ⇒ plus aucune interaction prop, HUD complètement repliée. L'OnDisable
-        // de InventoryUI rappellera Close() en cascade, mais les états ci-dessus
-        // sont déjà nettoyés → re-entrée idempotente.
-        if (HUDManager.Instance != null) HUDManager.Instance.CloseInventory();
+    /// <summary>
+    /// Canal Item uniquement : ré-évalue l'affichage du colis. Appelé à l'ouverture de
+    /// l'inventaire pour que la grille du colis réapparaisse si un colis est tenu.
+    /// </summary>
+    public void RefreshHeldContainer()
+    {
+        if (IsItemChannel) OnLocalHandsChanged();
     }
 
     private void Show(bool visible)

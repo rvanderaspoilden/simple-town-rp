@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 57
   displayName: Pharmacie
+  description: "Armoire \xE0 pharmacie murale pour ranger les soins."
   sprite: {fileID: 0}
   propsType: 4
   price: 750
@@ -104,3 +105,8 @@ MonoBehaviour:
       color: {r: 1, g: 1, b: 1, a: 1}
       material: {fileID: 0}
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

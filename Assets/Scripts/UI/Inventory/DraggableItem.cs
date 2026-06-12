@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IEndDragHandler, IDragHandler {
+public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerEnterHandler, IPointerExitHandler {
     private Canvas canvas;
     private Image _image;
     private RectTransform _rectTransform;
@@ -94,14 +94,88 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     public int EntityId => _entityId;
     public void SetEntityId(int entityId) => _entityId = entityId;
 
+    // false = entrée d'affichage non-déplaçable (ex. meuble emballé dans un colis : sa
+    // sortie passe par le déballage build-mode, pas un drag). Remis à true au release.
+    private bool _draggable = true;
+    public bool IsDraggable => _draggable;
+    public void SetDraggable(bool value) => _draggable = value;
+
+    // Meuble emballé (entrée de colis) : id PropsConfig + variant pour démarrer le déballage.
+    private int _propConfigId;
+    private int _propPresetId;
+    public int  PropConfigId => _propConfigId;
+    public int  PropPresetId => _propPresetId;
+    public bool IsPackedProp => _propConfigId > 0;
+    public void SetPackedProp(int propConfigId, int propPresetId) {
+        _propConfigId = propConfigId;
+        _propPresetId = propPresetId;
+    }
+
     public void SetConfiguration(ItemConfig itemConfig) {
         EnsureRefs();
         this._itemConfig = itemConfig;
         this._image.sprite = this._itemConfig != null ? this._itemConfig.Icon : null;
     }
 
+    /// <summary>Force un sprite arbitraire (ex. icône d'un meuble emballé via PropsConfig).</summary>
+    public void SetSprite(Sprite sprite) {
+        EnsureRefs();
+        this._image.sprite = sprite;
+    }
+
+    // ── Tooltip au survol (icône + nom + description + effets + conteneur) ─────
+    public void OnPointerEnter(PointerEventData eventData) {
+        Sprite icon = null; string label = null, desc = null, effects = null, container = null;
+        if (_propConfigId > 0) {
+            var p = Sim.DatabaseManager.GetPropsById(_propConfigId);
+            if (p != null) { icon = p.Sprite; label = p.GetDisplayName(); desc = p.Description; container = FormatContainer(p.Container); }
+        } else if (_itemConfig != null) {
+            icon = _itemConfig.Icon; label = _itemConfig.Label; desc = _itemConfig.Description;
+            effects = FormatEffects(_itemConfig as ConsumableConfig);
+            container = FormatContainer(_itemConfig.Container);
+        }
+        if (icon != null || !string.IsNullOrEmpty(label)) Sim.ItemTooltipUI.Show(icon, label, desc, effects, container);
+    }
+
+    /// <summary>Met en forme les infos conteneur (type de stockage, capacité, espace restant).
+    /// L'espace restant n'est réel que si le panneau de CE conteneur est ouvert (sinon capacité).</summary>
+    private string FormatContainer(Sim.Scriptables.ContainerConfig cc) {
+        if (cc == null || !cc.IsContainer) return null;
+        // Espace restant réel si le panneau de CE conteneur est ouvert, sinon capacité.
+        int free = -1;
+        var panel = ContainerPanelUI.Item;
+        if (panel != null && panel.IsShowingItemContainer(_entityId)) free = panel.FreeSlotCount();
+        return Sim.ItemTooltipUI.FormatContainer(cc, free);
+    }
+
+    public void OnPointerExit(PointerEventData eventData) {
+        Sim.ItemTooltipUI.Hide();
+    }
+
+    /// <summary>Met en forme les effets d'un consommable (faim/soif/fatigue) pour la tooltip.</summary>
+    private static string FormatEffects(ConsumableConfig cc) {
+        if (cc == null || cc.Impacts == null || cc.Impacts.Length == 0) return null;
+        var sb = new System.Text.StringBuilder();
+        foreach (var hv in cc.Impacts) {
+            if (hv == null) continue;
+            string n;
+            switch (hv.VitalNecessityType) {
+                case VitalNecessityType.HUNGRY:    n = "Faim";    break;
+                case VitalNecessityType.THIRST:    n = "Soif";    break;
+                case VitalNecessityType.TIREDNESS: n = "Fatigue"; break;
+                default: n = hv.VitalNecessityType.ToString();    break;
+            }
+            float v = hv.Value;
+            string color = v >= 0 ? "#8FE36B" : "#E8836B";
+            sb.AppendLine($"<color={color}>{n} {(v >= 0 ? "+" : "")}{v:0.#}</color>");
+        }
+        return sb.ToString().TrimEnd();
+    }
+
     public void OnBeginDrag(PointerEventData eventData) {
         EnsureRefs();
+        if (!_draggable) return; // entrée verrouillée (ex. meuble emballé) : pas de drag
+        Sim.ItemTooltipUI.Hide(); // pas de tooltip pendant un drag
         this._canvasGroup.alpha = .6f;
         this._canvasGroup.blocksRaycasts = false;
         // Reparent au groupe inventaire (ou Canvas en fallback) pour rester au-dessus
@@ -199,6 +273,10 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         if (_moveTween  != null) { StopCoroutine(_moveTween);  _moveTween  = null; }
         if (_scaleTween != null) { StopCoroutine(_scaleTween); _scaleTween = null; }
         transform.localScale = Vector3.one;
+        _draggable = true; // réinitialise pour la prochaine location depuis le pool
+        _propConfigId = 0;
+        _propPresetId = 0;
+        Sim.ItemTooltipUI.Hide(); // au cas où ce draggable était survolé au moment du release
     }
 
     private bool IsOutOfSlot(PointerEventData eventData) {

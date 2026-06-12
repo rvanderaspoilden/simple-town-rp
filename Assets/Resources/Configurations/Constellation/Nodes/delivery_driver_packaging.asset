@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d96afc3d24447147bebc4fb5d111efd, type: 3}
+  m_Name: delivery_driver_packaging
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Constellation.ConstellationNodeData
+  id: delivery_driver_packaging
+  displayName: Emballage
+  description: "Emballer les colis pour exp\xE9dition."
+  branch: {fileID: 11400000, guid: 3cc0b7b27e5578c41bc63aaed4feb28c, type: 2}
+  cost:
+  - branch: {fileID: 11400000, guid: 6b8f3349b695dae40905262382862293, type: 2}
+    amount: 5
+  definesBranch: {fileID: 0}
+  mapPosition: {x: 0, y: 0}
+  masteryThreshold: 30
+  connectedNodes:
+  - {fileID: 11400000, guid: 68ef099a6cb5caf49822be48fb46e56a, type: 2}
+  unlocks:
+  - Mission Emballage
+  activities:
+  - Emballer les colis
+  icon: {fileID: 0}
+  isCenter: 0
+  extraPrerequisites: []
+  isHybrid: 0
+  secondaryBranch: {fileID: 11400000, guid: 4310e3f869d0bf54db3bf14ff18febae, type: 2}
+  unlockThreshold: 0
+  secondaryThreshold: 10
+  professionCostConfig: {fileID: 11400000, guid: efb095852034208428d48efc10b4a944,
+    type: 2}
+  professionCost: 5
+  definesProfession: {fileID: 0}
+  definesProfessionId: 
+  professionCostId: 
+  legacyBranchTag: 1
+  legacySecondaryBranchTag: 0
+  legacyConnectedNodeIds:
+  - ingenious_delivery_driver
+  legacyExtraPrerequisiteNodeIds: []

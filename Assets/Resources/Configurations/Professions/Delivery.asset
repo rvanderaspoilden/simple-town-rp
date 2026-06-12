@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0bdc841d9b84dc4eb5d387b22cc9fe6, type: 3}
+  m_Name: Delivery
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Professions.ProfessionConfig
+  id: delivery_driver
+  displayName: Livreur
+  description: "Tourn\xE9es en ville : tri, emballage, livraison. M\xE9tier de mouvement
+    et de relations clients."
+  color: {r: 0.45, g: 0.78, b: 0.95, a: 1}
+  baseSalary: 100
+  categoryTag: 0

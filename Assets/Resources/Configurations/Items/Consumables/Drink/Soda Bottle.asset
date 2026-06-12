@@ -14,9 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 4
   label: Soda (Bouteille)
+  description: "Grande bouteille de soda bien fra\xEEche. \xC9tanche efficacement
+    la soif."
   type: 0
   handleType: 0
-  sortingCategory: 0
   unEquippedActions:
   - {fileID: 11400000, guid: fa73a1da35281ac4794f59016aab77cd, type: 2}
   equippedActions:
@@ -24,11 +25,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 875ebf10bf5a7c24084772ff5e3be913, type: 2}
   prefab: {fileID: 8125782637803982039, guid: 8384a4eb2191fc943bbbd9b2055fa8fc, type: 3}
   toPersist: 0
+  allowedInPocket: 1
   cursor: {fileID: 2800000, guid: 5b706fae7d2c36844a29d5d563286f59, type: 3}
   icon: {fileID: 21300000, guid: 2a749de2a6f94a7489165654a2191fab, type: 3}
-  poseShape: 0
+  poseShape: 1
   gripPosition: {x: -0.025, y: 0.014, z: 0.019}
   gripEuler: {x: 0, y: 0, z: 241.5}
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0
   consumableType: 1
   impacts:
   - vitalNecessityType: 1

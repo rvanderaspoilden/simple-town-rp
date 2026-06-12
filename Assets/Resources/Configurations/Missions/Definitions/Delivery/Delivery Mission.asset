@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5aeb5419686b2554b9e64ad4e60d550f, type: 3}
+  m_Name: Delivery Mission
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.JobDefinition
+  missionId: delivery
+  displayNameKey: Livraison
+  icon: {fileID: 0}
+  profession: {fileID: 11400000, guid: efb095852034208428d48efc10b4a944, type: 2}
+  requiredNode: {fileID: 11400000, guid: d50d22de322dee14594a08d8375fbe1b, type: 2}
+  steps:
+  - {fileID: 11400000, guid: c7a9c4c9ba4b3154fb3b73320270ac2f, type: 2}
+  - {fileID: 11400000, guid: 5daeb3bbebf52184fbb1fa8c8e7656d2, type: 2}
+  - {fileID: 11400000, guid: 0495a2483c7180a448860790351f0a6e, type: 2}
+  rewardEntries:
+  - kind: {fileID: 11400000, guid: 9a2bce42574d30840b9cbf0884edd45e, type: 2}
+    amount: 25
+  - kind: {fileID: 11400000, guid: 4937ca65a1af6a14b90ecbb937d48639, type: 2}
+    amount: 1
+  rewards: []
+  scoringDefinition: {fileID: 11400000, guid: a1b2c3d4e5f60000a1b2c3d4e5f60001, type: 2}
+  expirationSeconds: 600
+  boardExpirationSeconds: 60
+  maxConcurrentPerPlayer: 1
+  maxConcurrentGlobal: 0

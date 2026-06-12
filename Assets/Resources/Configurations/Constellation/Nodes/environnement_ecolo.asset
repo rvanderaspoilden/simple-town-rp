@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d96afc3d24447147bebc4fb5d111efd, type: 3}
+  m_Name: environnement_ecolo
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Constellation.ConstellationNodeData
+  id: environnement_ecolo
+  displayName: "\xC9colo"
+  description: "D\xE9bloque un cosm\xE9tique \xE9colo."
+  branch: {fileID: 11400000, guid: e60591524a53f40418da9649223d9c6f, type: 2}
+  cost:
+  - branch: {fileID: 11400000, guid: e60591524a53f40418da9649223d9c6f, type: 2}
+    amount: 10
+  definesBranch: {fileID: 0}
+  mapPosition: {x: 0, y: 0}
+  connectedNodes:
+  - {fileID: 11400000, guid: 1089183502a6e434e9d02f68231a3a3e, type: 2}
+  unlocks:
+  - "Cosm\xE9tique \xC9colo"
+  activities: []
+  icon: {fileID: 0}
+  isCenter: 0
+  extraPrerequisites: []

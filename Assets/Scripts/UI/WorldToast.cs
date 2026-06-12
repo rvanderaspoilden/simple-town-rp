@@ -14,6 +14,10 @@ using UnityEngine.UI;
 /// Generic: it only knows about a title line, an accented subtitle line and an accent
 /// color — reuse it for "+1 Crédit Social", "+10 XP", etc.
 /// </summary>
+/// <summary>Visual/audio template applied to a toast. Neutral = the cozy default ;
+/// Error/Success share a common style (color + icon + sound + animation).</summary>
+public enum ToastKind { Neutral = 0, Error = 1, Success = 2 }
+
 public class WorldToast : MonoBehaviour
 {
     // Palette (cozy, warm, eco-friendly)
@@ -21,28 +25,41 @@ public class WorldToast : MonoBehaviour
     private static readonly Color PanelTint = new Color(0.12f, 0.14f, 0.18f, 0.82f); // dark gray-blue, translucent
     private static readonly Color ShadowCol = new Color(0f, 0f, 0f, 0.35f);
 
+    // Shared error/success templates (color + icon).
+    private static readonly Color ErrorColor   = new Color(0.95f, 0.38f, 0.34f, 1f);
+    private static readonly Color SuccessColor = new Color(0.46f, 0.86f, 0.52f, 1f);
+    private const string ErrorIcon   = "⚠ ";
+    private const string SuccessIcon = "✓ ";
+
     private const float WorldScale = 0.0045f;
 
     private RectTransform _root;
+    private RectTransform _content;       // holds the visuals; animated for kind FX (not touched by LateUpdate)
     private CanvasGroup    _group;
     private Transform      _anchor;
     private float          _heightOffset;
     private float          _rise;          // animated vertical float (world meters)
+    private ToastKind      _kind;
     private Action         _onComplete;
 
     // ── Factory ──────────────────────────────────────────────────────────────────
 
     /// <summary>Builds a toast GameObject with its procedural visuals (not yet animated).</summary>
-    public static WorldToast Create(string title, string subtitle, Color accent)
+    public static WorldToast Create(string title, string subtitle, Color accent, ToastKind kind = ToastKind.Neutral)
     {
         var go = new GameObject("WorldToast");
         var toast = go.AddComponent<WorldToast>();
-        toast.Build(title, subtitle, accent);
+        toast.Build(title, subtitle, accent, kind);
         return toast;
     }
 
-    private void Build(string title, string subtitle, Color accent)
+    private void Build(string title, string subtitle, Color accent, ToastKind kind)
     {
+        _kind = kind;
+        // Error/Success override the accent with their shared template color + add an icon.
+        string icon = string.Empty;
+        if (kind == ToastKind.Error)   { accent = ErrorColor;   icon = ErrorIcon; }
+        else if (kind == ToastKind.Success) { accent = SuccessColor; icon = SuccessIcon; }
         var canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
         canvas.overrideSorting = true;
@@ -54,22 +71,30 @@ public class WorldToast : MonoBehaviour
         _root = (RectTransform)transform;
         _root.localScale = Vector3.one * WorldScale;
 
+        // Content wrapper: kind FX (shake/punch) animate THIS in local space, so they don't
+        // fight the world-space follow + billboard applied to _root in LateUpdate.
+        var contentGO = new GameObject("Content", typeof(RectTransform));
+        contentGO.transform.SetParent(_root, false);
+        _content = (RectTransform)contentGO.transform;
+        _content.anchorMin = Vector2.zero; _content.anchorMax = Vector2.one;
+        _content.offsetMin = Vector2.zero; _content.offsetMax = Vector2.zero;
+
         Sprite rounded = GetRoundedSprite();
 
         // Soft drop shadow (offset, slightly larger).
-        var shadow = NewImage("Shadow", _root, rounded, ShadowCol);
+        var shadow = NewImage("Shadow", _content, rounded, ShadowCol);
         shadow.rectTransform.anchorMin = Vector2.zero; shadow.rectTransform.anchorMax = Vector2.one;
         shadow.rectTransform.offsetMin = new Vector2(-6f, -10f);
         shadow.rectTransform.offsetMax = new Vector2(6f, 2f);
 
         // Frosted translucent panel.
-        var bg = NewImage("BG", _root, rounded, PanelTint);
+        var bg = NewImage("BG", _content, rounded, PanelTint);
         bg.rectTransform.anchorMin = Vector2.zero; bg.rectTransform.anchorMax = Vector2.one;
         bg.rectTransform.offsetMin = Vector2.zero; bg.rectTransform.offsetMax = Vector2.zero;
 
         // Text (title off-white, subtitle accented + bold + slightly oversized).
         var labelGO = new GameObject("Label", typeof(RectTransform));
-        labelGO.transform.SetParent(_root, false);
+        labelGO.transform.SetParent(_content, false);
         var lblRt = (RectTransform)labelGO.transform;
         lblRt.anchorMin = Vector2.zero; lblRt.anchorMax = Vector2.one;
         lblRt.offsetMin = new Vector2(18f, 14f); lblRt.offsetMax = new Vector2(-18f, -14f);
@@ -80,15 +105,17 @@ public class WorldToast : MonoBehaviour
         label.richText = true;
         label.fontSize = 26f;
         label.color = OffWhite;
+        string accentHex = ColorUtility.ToHtmlStringRGB(accent);
         if (string.IsNullOrEmpty(subtitle))
         {
-            // Toast simple ligne (ex. feedback d'action : "Mains pleines").
-            label.text = $"<size=26>{title}</size>";
+            // Simple ligne. Neutral = off-white ; Error/Success = couleur + icône du template.
+            label.text = _kind == ToastKind.Neutral
+                ? $"<size=26>{title}</size>"
+                : $"<size=26><b><color=#{accentHex}>{icon}{title}</color></b></size>";
         }
         else
         {
-            string accentHex = ColorUtility.ToHtmlStringRGB(accent);
-            label.text = $"<size=22>{title}</size>\n<size=30><b><color=#{accentHex}>{subtitle}</color></b></size>";
+            label.text = $"<size=22>{icon}{title}</size>\n<size=30><b><color=#{accentHex}>{subtitle}</color></b></size>";
         }
 
         // Auto-size the panel to hug the text (+ padding) so the rounded background always
@@ -127,6 +154,27 @@ public class WorldToast : MonoBehaviour
             _onComplete?.Invoke();
             Destroy(gameObject);
         });
+
+        // Kind FX on the content wrapper (local space — independent of the billboard).
+        PlayKindAnimation();
+    }
+
+    /// <summary>Error = sharp horizontal shake ; Success = bouncy punch. Plays just after
+    /// the toast appears. Animates _content (local) so it never fights the LateUpdate billboard.</summary>
+    private void PlayKindAnimation()
+    {
+        if (_content == null) return;
+        switch (_kind)
+        {
+            case ToastKind.Error:
+                _content.DOShakeAnchorPos(0.45f, new Vector2(22f, 0f), 16, 90f, false, true)
+                        .SetDelay(0.14f).SetTarget(this);
+                break;
+            case ToastKind.Success:
+                _content.DOPunchScale(Vector3.one * 0.18f, 0.42f, 9, 0.8f)
+                        .SetDelay(0.14f).SetTarget(this);
+                break;
+        }
     }
 
     private void LateUpdate()

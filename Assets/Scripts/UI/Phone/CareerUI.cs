@@ -3,22 +3,22 @@ using System.Globalization;
 using Mirror;
 using Sim;
 using Sim.Entities;
-using Sim.Jobs;
+using Sim.Professions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// Phone app: career dashboard. Two modes —
-///   noJobView   → "Pas de métier" + Apply buttons (one per JobCategory).
+///   noJobView   → "Pas de métier" + Apply buttons (one per ProfessionConfig).
 ///   careerView  → current job name + xp + start date + Resign button.
 /// Driven by PlayerController.Local + OnCharacterDataChanged. Sends
-/// JobChangeCareerMessage to the server on Apply / Resign.
+/// MissionChangeCareerMessage to the server on Apply / Resign.
 /// </summary>
 public class CareerUI : PhoneApplicationUI {
     [Serializable]
-    private struct JobChoice {
-        public JobCategory category;
+    private struct CareerChoice {
+        public ProfessionConfig profession;
         public Button applyButton;
     }
 
@@ -28,14 +28,13 @@ public class CareerUI : PhoneApplicationUI {
 
     [Header("No-job view")]
     [Tooltip("One entry per job the player can apply to. Drag the Button refs here.")]
-    [SerializeField] private JobChoice[] choices;
+    [SerializeField] private CareerChoice[] choices;
 
     [Tooltip("Optional label that displays the city's unemployment income (e.g. 'Allocation : 50 € toutes les 10 min').")]
     [SerializeField] private TextMeshProUGUI unemploymentIncomeLabel;
 
     [Header("Career view")]
     [SerializeField] private TextMeshProUGUI jobNameLabel;
-    [SerializeField] private TextMeshProUGUI xpLabel;
     [SerializeField] private TextMeshProUGUI startedAtLabel;
     [SerializeField] private TextMeshProUGUI salaryLabel;
     [SerializeField] private Button resignButton;
@@ -66,14 +65,14 @@ public class CareerUI : PhoneApplicationUI {
         if (choices != null) {
             foreach (var choice in choices) {
                 if (choice.applyButton == null) continue;
-                var captured = choice.category;
+                var captured = choice.profession != null ? choice.profession.id : "";
                 choice.applyButton.onClick.RemoveAllListeners();
-                choice.applyButton.onClick.AddListener(() => SendChange((int)captured));
+                choice.applyButton.onClick.AddListener(() => SendChange(captured));
             }
         }
         if (resignButton != null) {
             resignButton.onClick.RemoveAllListeners();
-            resignButton.onClick.AddListener(() => SendChange(-1));
+            resignButton.onClick.AddListener(() => SendChange(""));
         }
     }
 
@@ -89,9 +88,9 @@ public class CareerUI : PhoneApplicationUI {
     private void Refresh() {
         if (_player == null) _player = PlayerController.Local;
         var character = _player != null ? _player.CharacterData : null;
-        var current = character?.CurrentJobCategory;
+        var current = character?.CurrentProfession;
 
-        bool hasJob = current.HasValue;
+        bool hasJob = current != null;
         if (noJobView != null) noJobView.SetActive(!hasJob);
         if (careerView != null) careerView.SetActive(hasJob);
 
@@ -101,15 +100,14 @@ public class CareerUI : PhoneApplicationUI {
             return;
         }
 
-        var row = character.GetJob(current.Value);
-        if (jobNameLabel != null) jobNameLabel.text = JobCategoryLabels.Display(current);
-        if (xpLabel != null) xpLabel.text = $"XP : {(row != null ? row.Xp : 0)}";
+        var row = character.GetJob(current.id);
+        if (jobNameLabel != null) jobNameLabel.text = current.displayName;
         if (startedAtLabel != null) startedAtLabel.text = FormatStartedAt(row?.StartedAt);
-        if (salaryLabel != null) salaryLabel.text = FormatSalary(current.Value);
+        if (salaryLabel != null) salaryLabel.text = FormatSalary(current);
     }
 
-    private static string FormatSalary(JobCategory category) {
-        int amount = JobDatabase.GetSalaryForCategory(category);
+    private static string FormatSalary(ProfessionConfig profession) {
+        int amount = profession != null ? profession.baseSalary : 0;
         if (amount <= 0) return string.Empty;
 
         var net = NetworkManager.singleton as SimpleTownNetwork;
@@ -146,8 +144,8 @@ public class CareerUI : PhoneApplicationUI {
         return $"Depuis {iso}";
     }
 
-    private void SendChange(int newJob) {
+    private void SendChange(string newProfessionId) {
         if (!NetworkClient.active || !NetworkClient.isConnected) return;
-        NetworkClient.Send(new JobChangeCareerMessage { newJob = newJob });
+        NetworkClient.Send(new MissionChangeCareerMessage { newProfessionId = newProfessionId ?? "" });
     }
 }

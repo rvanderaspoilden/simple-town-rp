@@ -74,8 +74,11 @@ public class ServerItemManager
         public int    EntityId;
         public int    ConfigId;
         public int    SlotIndex;
-        public string ItemUuid;
+        public string ItemUuid;       // pour un prop emballé (IsProp) : l'UUID du PROP (table props)
         public int    Version;
+        public bool   IsProp;         // true = meuble emballé (ligne props déplacée), pas un item
+        public int    PropConfigId;   // PropsConfig.id quand IsProp (icône + déballage)
+        public int    PropPresetId;   // variant du meuble quand IsProp (preview au déballage)
     }
 
     private sealed class ContainerSession {
@@ -93,6 +96,27 @@ public class ServerItemManager
 
     private readonly Dictionary<uint, ContainerSession> _openContainerByPlayer
         = new Dictionary<uint, ContainerSession>();
+
+    // ── Item-as-container sessions (« package ») ──────────────────────────────
+    // Un item tenu en main peut être lui-même un conteneur. Place backend
+    // "item_container:{itemUuid}" (owner_id = uuid de l'item). Même machinerie que
+    // ContainerSession ; on réutilise ContainerSessionItem pour les entrées. RoomId =
+    // room de l'opener (opener == holder : on ouvre son propre item). Un seul conteneur
+    // (prop OU item) ouvert à la fois par joueur → partagé via CloseSession.
+
+    private sealed class ItemContainerSession {
+        public int    PackageEntityId;
+        public string PackageItemUuid;
+        public string PlaceId;
+        public string RoomId;
+        public uint   OpenedBy;
+        public ContainerConfig Config;
+        public Dictionary<int, ContainerSessionItem> ItemsByEntityId = new Dictionary<int, ContainerSessionItem>();
+        public Dictionary<int, int> SlotToEntityId = new Dictionary<int, int>();
+    }
+
+    private readonly Dictionary<uint, ItemContainerSession> _openItemContainerByPlayer
+        = new Dictionary<uint, ItemContainerSession>();
 
     // ── Pocket sessions (toujours ouvertes pour la durée de connexion) ────────
     // Chaque joueur a UNE poche persistée à la place "pocket:{charId}", 2 slots
@@ -122,6 +146,15 @@ public class ServerItemManager
 
     public void AssociateUuid(int entityId, string uuid, int version, string placeId) {
         _bridges[entityId] = new ItemDbBridge { Uuid = uuid, Version = version, PlaceId = placeId };
+
+        // Un item adossé à la DB est PAR DÉFINITION persistant : aux transitions de room
+        // (et au reconnect) il doit être détruit-en-gardant-la-DB puis restauré depuis la
+        // DB — surtout PAS traité comme un éphémère, ce qui le re-spawnerait sans bridge
+        // et romprait le lien "item_container:{uuid}" d'un colis (open/pickup échouent).
+        // Point unique : toute création de bridge (restore main, item-monde DB, upsert
+        // pickup) passe ici, donc le flag est garanti cohérent.
+        foreach (var room in _rooms.Values)
+            if (room.TryGetValue(entityId, out var e)) { e.Persistent = true; break; }
     }
 
     public void UpdateBridgeVersion(int entityId, int version) {
@@ -179,6 +212,7 @@ public class ServerItemManager
         _bridges.Clear();
         _carriedEphemeral.Clear();
         _openContainerByPlayer.Clear();
+        _openItemContainerByPlayer.Clear();
         _pocketByPlayer.Clear();
         _nextEntityId = 1;
         GameLogger.Network.Info("ServerItemManagerReset");
@@ -199,7 +233,7 @@ public class ServerItemManager
 
         var handState   = GetOrCreateHandState(playerNetId);
         var resolvedCfg = config ?? DatabaseManager.ItemConfigs.Find(x => x.ID == itemConfigId);
-        HandType? hand  = ResolveHand(resolvedCfg, handState);
+        HandType? hand  = ResolveHand(resolvedCfg, playerNetId);
 
         if (!hand.HasValue)
             return -1;
@@ -369,6 +403,44 @@ public class ServerItemManager
     }
 
     /// <summary>
+    /// Server boot: load every position-bearing world item stored under a place
+    /// into the given runtime room, re-bridged so a later pickup moves/deletes the
+    /// right DB row. Mirrors ApartmentController's ground-item restore for the City,
+    /// which has no ApartmentController of its own.
+    /// </summary>
+    public IEnumerator LoadWorldItemsForPlace(string roomId, string placeId)
+    {
+        if (ApiManager.Instance == null || string.IsNullOrEmpty(placeId)) yield break;
+
+        UnityWebRequest req = ApiManager.Instance.GetPlaceStateRequest(placeId);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] LoadWorldItemsForPlace GET state failed code={req.responseCode} place={placeId}");
+            yield break;
+        }
+
+        PlaceStateJson state;
+        try { state = JsonConvert.DeserializeObject<PlaceStateJson>(req.downloadHandler.text); }
+        catch (System.Exception e) {
+            Debug.LogWarning($"[ServerItemManager] LoadWorldItemsForPlace parse error: {e.Message}");
+            yield break;
+        }
+        if (state?.items == null) yield break;
+
+        int count = 0;
+        foreach (ItemJson it in state.items) {
+            if (it.position == null) continue;        // inventory / stored items have no world position
+            if (it.placeId != placeId) continue;
+
+            Vector3    wpos = it.position.ToVector3();
+            Quaternion wrot = Quaternion.Euler(it.rotation != null ? it.rotation.ToVector3() : Vector3.zero);
+            SpawnPersistentWorldFromDb(roomId, it.configId, wpos, wrot, it.Id, it.version, placeId);
+            count++;
+        }
+        GameLogger.Network.Info("World items loaded count={Count} place={Place} room={Room}", count, placeId, roomId);
+    }
+
+    /// <summary>
     /// Removes a world item from the room and tells all room clients to destroy it.
     /// Also drops the item from its holder's hand if currently held.
     /// </summary>
@@ -377,7 +449,9 @@ public class ServerItemManager
         if (!TryGetEntity(roomId, entityId, out var entity)) return;
 
         // Supprime la ligne DB si elle existe (no-op pour les items éphémères).
-        // Sans ça, un item consommé/admin-destroyed survivait au reconnect.
+        // Sans ça, un item consommé/admin-destroyed survivait au reconnect. Si l'item est un
+        // conteneur (colis), le backend cascade la suppression de son contenu (items + meubles
+        // emballés) et de sa place — DELETE /items/:id (ItemService.delete → deleteOwnedContainer).
         PersistDropAsync(entityId);
 
         if (entity.IsHeld)
@@ -402,25 +476,25 @@ public class ServerItemManager
 
         if (roomId == null)
         {
-            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Not in a room" });
+            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Pas dans une pièce" });
             return;
         }
 
         if (!TryGetEntity(roomId, msg.EntityId, out var entity))
         {
-            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Item not found" });
+            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Objet introuvable" });
             return;
         }
 
         if (entity.IsHeld)
         {
-            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Already held" });
+            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Objet déjà tenu" });
             return;
         }
 
         if (entity.AuthorizedNetId != 0 && entity.AuthorizedNetId != playerNetId)
         {
-            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Not yours" });
+            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Cet objet ne vous appartient pas" });
             return;
         }
 
@@ -428,7 +502,7 @@ public class ServerItemManager
         Vector3 playerPos = conn.identity.transform.position;
         if (Vector3.Distance(playerPos, entity.Position) > 3f)
         {
-            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Too far" });
+            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Trop loin" });
             return;
         }
 
@@ -436,10 +510,24 @@ public class ServerItemManager
         var handState = GetOrCreateHandState(playerNetId);
         ItemConfig config = DatabaseManager.ItemConfigs.Find(x => x.ID == entity.ItemConfigId);
 
-        HandType? assignedHand = ResolveHand(config, handState);
+        HandType? assignedHand = ResolveHand(config, playerNetId);
         if (!assignedHand.HasValue)
         {
-            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Hands full" });
+            // Mains pleines : si le joueur tient un colis (item-conteneur), l'item ramassé
+            // va dans un slot libre du colis (même fermé). Plein → toast + pas de ramassage.
+            if (TryGetHeldPackage(playerNetId, roomId, out _, out string pkgUuid, out ContainerConfig pkgCfg)) {
+                int worldEntityId = msg.EntityId;
+                int worldConfigId = entity.ItemConfigId;
+                string charIdPk = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+                ApiManager.Instance?.StartCoroutine(CreateItemInPackageCoroutine(conn, playerNetId, worldConfigId, charIdPk, pkgUuid, pkgCfg,
+                    onSuccess: () => {
+                        DespawnItem(roomId, worldEntityId);
+                        conn.Send(new S2C_PickupResult { Success = true, EntityId = worldEntityId });
+                    },
+                    onFail: err => conn.Send(new S2C_PickupResult { Success = false, EntityId = worldEntityId, ErrorMessage = err })));
+                return;
+            }
+            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Mains pleines" });
             return;
         }
 
@@ -468,10 +556,163 @@ public class ServerItemManager
         // A bridged world item — e.g. a Déchet (Waste) collected from the ground — is
         // removed from the DB on pickup so it never re-spawns; it becomes an ephemeral
         // held item. Other items persist into the player's hand place as before.
-        if (GetBridge(msg.EntityId) != null)
-            PersistDropAsync(msg.EntityId);
+        if (GetBridge(msg.EntityId) != null) {
+            ItemConfig pickCfg = DatabaseManager.GetItemConfigById(entity.ItemConfigId);
+            if (pickCfg != null && pickCfg.ToPersist) {
+                // Item-monde persistant ramassé (UNIFORME) : on PATCH sa place vers la main,
+                // UUID conservé (jamais de delete) → la place "item_container:{uuid}" d'un
+                // colis et son contenu survivent au pickup.
+                var invC = conn.identity.GetComponent<PlayerInventory>();
+                string handPlaceId = invC?.HandPlaceFor(assignedHand.Value);
+                if (!string.IsNullOrEmpty(handPlaceId)) PersistMoveToHandAsync(msg.EntityId, handPlaceId);
+            } else {
+                PersistDropAsync(msg.EntityId); // bridgé non-persistant → delete (historique)
+            }
+        }
         else if (entity.Persistent)
             PersistPickupAsync(conn, msg.EntityId, entity.ItemConfigId, assignedHand.Value);
+    }
+
+    // Le joueur tient-il un colis (item-conteneur persisté) ? Renvoie son uuid + config conteneur.
+    // Storage objects (item-containers) may never be nested inside another container —
+    // neither an item-container nor a prop-container. An item is a storage object when its
+    // config exposes a container grid (SlotCount > 0). Enforced at every placement chokepoint.
+    private static bool IsStorageItem(ItemConfig cfg)
+        => cfg != null && cfg.Container != null && cfg.Container.IsContainer;
+
+    private bool TryGetHeldPackage(uint netId, string roomId, out int pkgEntityId, out string pkgUuid, out ContainerConfig pkgCfg) {
+        pkgEntityId = -1; pkgUuid = null; pkgCfg = null;
+        if (!_playerHands.TryGetValue(netId, out var hands)) return false;
+        int[] held = { hands.RightEntityId, hands.LeftEntityId };
+        foreach (int eid in held) {
+            if (eid == -1) continue;
+            if (!TryGetEntity(roomId, eid, out var e)) continue;
+            var cfg = DatabaseManager.GetItemConfigById(e.ItemConfigId);
+            if (cfg == null || cfg.Container == null || !cfg.Container.IsContainer) continue;
+            var br = GetBridge(eid);
+            if (br == null || string.IsNullOrEmpty(br.Uuid)) continue;
+            pkgEntityId = eid; pkgUuid = br.Uuid; pkgCfg = cfg.Container; return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Acquisition UNIVERSELLE d'un item dans l'inventaire du joueur : main libre en
+    /// priorité, sinon colis tenu (avec slot libre), sinon échec. Point unique pour TOUS
+    /// les flux qui donnent un item au joueur (CLEAN, achats dispenser/shop, récompenses…)
+    /// → plus besoin de re-vérifier les mains action par action. <paramref name="onSuccess"/>
+    /// est appelé une fois l'item réellement placé (synchrone pour la main, après l'aller-retour
+    /// backend pour le colis) ; <paramref name="onFail"/> avec un message de toast sinon.
+    /// </summary>
+    public void SpawnItemIntoInventory(NetworkConnectionToClient conn, int configId, ItemConfig config,
+        bool persistent, System.Action onSuccess = null, System.Action<string> onFail = null) {
+        if (conn?.identity == null) { onFail?.Invoke("Pas de joueur"); return; }
+        uint netId = conn.identity.netId;
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (roomId == null) { onFail?.Invoke("Pas de pièce"); return; }
+
+        if (ResolveHand(config, netId).HasValue) {
+            SpawnItemInHand(roomId, configId, conn, config, persistent);
+            onSuccess?.Invoke();
+            return;
+        }
+        if (TryGetHeldPackage(netId, roomId, out _, out string pkgUuid, out ContainerConfig pkgCfg)) {
+            string charId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+            ApiManager.Instance?.StartCoroutine(
+                CreateItemInPackageCoroutine(conn, netId, configId, charId, pkgUuid, pkgCfg, onSuccess, onFail));
+            return;
+        }
+        onFail?.Invoke("Mains pleines");
+    }
+
+    /// <summary>Pratique : true si le joueur peut recevoir un item (main libre OU colis tenu).
+    /// La capacité réelle du colis n'est confirmée qu'à l'écriture (async).</summary>
+    public bool CanReceiveItem(NetworkConnectionToClient conn, ItemConfig config) {
+        if (conn?.identity == null) return false;
+        uint netId = conn.identity.netId;
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (roomId == null) return false;
+        return ResolveHand(config, netId).HasValue
+            || TryGetHeldPackage(netId, roomId, out _, out _, out _);
+    }
+
+    // Cœur partagé : crée un item (config) dans le colis tenu — ensure place + slot libre +
+    // POST item + maj session live. Utilisé par le ramassage ET SpawnItemIntoInventory.
+    private IEnumerator CreateItemInPackageCoroutine(NetworkConnectionToClient conn, uint netId, int configId,
+        string charId, string pkgUuid, ContainerConfig pkgCfg, System.Action onSuccess, System.Action<string> onFail) {
+        string placeKey = $"item_container:{pkgUuid}";
+        var createBody = new CreatePlaceBody {
+            placeKey = placeKey, type = "container", ownerId = pkgUuid,
+            properties = new Dictionary<string, object> {
+                { "slotCount",     pkgCfg.SlotCount },
+                { "acceptedTypes", pkgCfg.AcceptedTypes.Select(t => (int)t).ToArray() },
+            },
+        };
+        UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
+        yield return createReq.SendWebRequest();
+        if (createReq.responseCode < 200 || createReq.responseCode >= 300) { onFail?.Invoke("Erreur colis"); yield break; }
+        PlaceJson placeData = null;
+        try { placeData = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text); } catch { }
+        string placeId = placeData?.Id;
+        if (string.IsNullOrEmpty(placeId)) { onFail?.Invoke("Colis sans place"); yield break; }
+
+        UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
+        yield return stateReq.SendWebRequest();
+        var occupied = new HashSet<int>();
+        if (stateReq.responseCode == 200) {
+            try {
+                var sd = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
+                if (sd?.items != null) foreach (var it in sd.items) occupied.Add(ReadSlotIndex(it.stateData));
+                // Les meubles emballés occupent aussi des slots → ne pas écraser leur place.
+                if (sd?.props != null) foreach (var p in sd.props) occupied.Add(ReadSlotIndex(p.stateData));
+            } catch { }
+        }
+        int freeSlot = -1;
+        for (int i = 0; i < pkgCfg.SlotCount; i++) if (!occupied.Contains(i)) { freeSlot = i; break; }
+        if (freeSlot < 0) { onFail?.Invoke("Colis plein"); yield break; }
+
+        var itemCfg = DatabaseManager.GetItemConfigById(configId);
+        if (IsStorageItem(itemCfg)) { onFail?.Invoke(InventoryToasts.NoNestedStorage); yield break; }
+        if (itemCfg != null && !pkgCfg.Accepts(itemCfg.Type)) { onFail?.Invoke("Refusé par le colis"); yield break; }
+
+        var body = new CreateItemBody {
+            placeId = placeId, configId = configId, quantity = 1, ownedBy = charId,
+            stateData = new Dictionary<string, object> { { "slotIndex", freeSlot } },
+        };
+        UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300) { onFail?.Invoke("Erreur stockage"); yield break; }
+        string itemUuid = null; int version = 1;
+        try { ItemJson item = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (item != null) { itemUuid = item.Id; version = item.version; } }
+        catch { }
+
+        // Colis ouvert → maj session + snapshot live.
+        if (_openItemContainerByPlayer.TryGetValue(netId, out var session) && session.PlaceId == placeId) {
+            int sid = _nextEntityId++;
+            session.ItemsByEntityId[sid] = new ContainerSessionItem {
+                EntityId = sid, ConfigId = configId, SlotIndex = freeSlot, ItemUuid = itemUuid, Version = version,
+            };
+            session.SlotToEntityId[freeSlot] = sid;
+            if (!string.IsNullOrEmpty(itemUuid))
+                _bridges[sid] = new ItemDbBridge { Uuid = itemUuid, Version = version, PlaceId = placeId };
+            SendItemContainerSnapshot(conn, session);
+        }
+
+        GameLogger.Network.Info("ItemIntoPackage configId={C} slot={S} netId={N}", configId, freeSlot, netId);
+        onSuccess?.Invoke();
+    }
+
+    /// <summary>
+    /// Place-monde où persister un item ToPersist lâché au sol : la place de
+    /// l'appartement courant si le joueur y est, sinon la place "city" pour la
+    /// rue/entrepôt. null si aucune (la ligne DB est alors conservée telle quelle).
+    /// </summary>
+    private string ResolveWorldPlaceId(NetworkConnectionToClient conn, string roomId)
+    {
+        ApartmentController apt = PropInteractionRouter.FindApartmentByConn(conn);
+        if (!string.IsNullOrEmpty(apt?.HomeData?.Id)) return apt.HomeData.Id;
+        if (roomId == "city") return ApiManager.Instance?.CityPlaceId;
+        return null;
     }
 
     public void HandleDrop(NetworkConnectionToClient conn, C2S_RequestDropItem msg)
@@ -484,26 +725,26 @@ public class ServerItemManager
 
         if (roomId == null)
         {
-            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Not in a room" });
+            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Pas dans une pièce" });
             return;
         }
 
         if (!_playerHands.TryGetValue(playerNetId, out var handState))
         {
-            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "No hand state" });
+            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Aucun objet en main" });
             return;
         }
 
         int entityId = handState.GetEntityId(msg.Hand);
         if (entityId == -1)
         {
-            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Hand empty" });
+            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Main vide" });
             return;
         }
 
         if (!TryGetEntity(roomId, entityId, out var entity))
         {
-            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Item not in room" });
+            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Objet introuvable" });
             return;
         }
 
@@ -519,10 +760,27 @@ public class ServerItemManager
         GameLogger.Network.Info("Item Drop player={PlayerNetId} entity={EntityId} hand={Hand} room={RoomId}",
             playerNetId, entityId, msg.Hand, roomId);
 
-        // DB: delete the persisted row — the item becomes an ephemeral world item
-        // (no DB tracking). Fire-and-forget; the drop succeeds visually even if
-        // the DELETE fails (orphan row in DB, to be cleaned later).
-        if (entity.Persistent) PersistDropAsync(entityId);
+        // Persistance au drop, pilotée par ItemConfig.ToPersist (UNIFORME — aucun cas
+        // spécial colis) :
+        //  - ToPersist → l'item devient un item-monde PERSISTANT : on PATCH sa place vers la
+        //    place de la pièce + sa position (UUID conservé → survit au redémarrage et se
+        //    recharge au sol via ApartmentController). C'est ce qui préserve aussi la place
+        //    "item_container:{uuid}" d'un colis et son contenu.
+        //  - sinon → on supprime sa ligne DB (item-monde éphémère, comportement historique).
+        ItemConfig dropCfg = DatabaseManager.GetItemConfigById(entity.ItemConfigId);
+        if (dropCfg != null && dropCfg.ToPersist) {
+            // Place-monde résolue selon le lieu : place de l'appartement si on y est,
+            // sinon la place "city" (anchor de persistance de la rue/entrepôt). Le PATCH
+            // conserve l'UUID + écrit la position → rechargé au sol au prochain boot.
+            string worldPlaceId = ResolveWorldPlaceId(conn, roomId);
+            if (!string.IsNullOrEmpty(worldPlaceId) && GetBridge(entityId) != null)
+                PersistMoveToWorldAsync(entityId, worldPlaceId, dropPos, entity.Rotation);
+            // Pas de place-monde résolue ou pas de ligne DB : on conserve la ligne telle
+            // quelle (jamais de delete) — l'UUID survit.
+        }
+        else if (entity.Persistent) {
+            PersistDropAsync(entityId);
+        }
 
         conn.Send(new S2C_DropResult { Success = true, Hand = msg.Hand });
 
@@ -540,6 +798,17 @@ public class ServerItemManager
         if (roomId == null)
         {
             GameLogger.Network.Warning("AdminSpawn rejected: player not in a room conn={ConnId}", conn.connectionId);
+            return;
+        }
+
+        // Un item-conteneur (« package ») doit être PERSISTÉ (UUID DB) pour porter sa
+        // place "item_container:{uuid}" → on le spawn directement en main (DB-backed),
+        // pas en item monde éphémère.
+        ItemConfig cfg = DatabaseManager.GetItemConfigById(msg.ItemConfigId);
+        if (cfg != null && cfg.Container != null && cfg.Container.IsContainer) {
+            int handEntity = SpawnItemInHand(roomId, msg.ItemConfigId, conn, cfg, persistent: true);
+            GameLogger.Network.Info("Package AdminSpawn entity={EntityId} configId={ItemConfigId} room={RoomId} conn={ConnId}",
+                handEntity, msg.ItemConfigId, roomId, conn.connectionId);
             return;
         }
 
@@ -669,7 +938,7 @@ public class ServerItemManager
         _carriedEphemeral.Remove(netId);
 
         // Toute session conteneur en cours est fermée (libère les bridges éphémères).
-        CloseSession(netId);
+        CloseAllSessions(netId);
         // Idem pour la session poche : libère les entityId+bridges alloués au connect.
         CleanupPocketSession(netId);
 
@@ -677,7 +946,7 @@ public class ServerItemManager
         // propriétaire correspond à ce joueur (AuthorizedNetId == netId). Cas typique :
         // colis de Sort spawnés au pickup et non encore ramassés au moment du crash.
         // En temps normal, SortItemsStepInstance.OnExit s'en charge via la chaîne
-        // JobServerManager.OnPlayerDisconnected → FinalizeFail → step.OnExit ;
+        // MissionServerManager.OnPlayerDisconnected → FinalizeFail → step.OnExit ;
         // ce filet couvre les races où cette chaîne ne parvient pas à boucler.
         DespawnOrphanWorldItemsAuthorizedBy(netId);
     }
@@ -685,7 +954,7 @@ public class ServerItemManager
     /// <summary>
     /// Despawn tous les items WORLD (non tenus) à travers toutes les rooms dont
     /// le verrou <see cref="ItemEntity.AuthorizedNetId"/> correspond à <paramref name="netId"/>.
-    /// Idempotent : si la chaîne JobServerManager a déjà nettoyé un item, le
+    /// Idempotent : si la chaîne MissionServerManager a déjà nettoyé un item, le
     /// DespawnItem retombe sur TryGetEntity false et part en no-op.
     /// </summary>
     private void DespawnOrphanWorldItemsAuthorizedBy(uint netId)
@@ -780,15 +1049,36 @@ public class ServerItemManager
         return state;
     }
 
-    private HandType? ResolveHand(ItemConfig config, PlayerHandState state)
+    private HandType? ResolveHand(ItemConfig config, uint netId)
     {
-        if (config == null) return state.GetFreeHand();
+        var state = GetOrCreateHandState(netId);
+        if (config == null) return FreeHandRespectingTwoHand(state);
 
         if (config.HandleType == ItemHandleType.TWO_HAND)
             return (state.RightEntityId == -1 && state.LeftEntityId == -1) ? HandType.Right : (HandType?)null;
 
+        return FreeHandRespectingTwoHand(state);
+    }
+
+    /// <summary>Tenir un item 2 mains bloque les DEUX mains, même s'il n'occupe qu'un slot
+    /// logique → aucun item 1 main ne peut être pris en main tant qu'on tient le 2 mains.</summary>
+    private HandType? FreeHandRespectingTwoHand(PlayerHandState state)
+    {
+        if (EntityIsTwoHand(state.RightEntityId) || EntityIsTwoHand(state.LeftEntityId)) return null;
         return state.GetFreeHand();
     }
+
+    private bool EntityIsTwoHand(int entityId)
+    {
+        if (entityId == -1) return false;
+        foreach (var room in _rooms.Values)
+            if (room.TryGetValue(entityId, out var e)) {
+                var cfg = DatabaseManager.GetItemConfigById(e.ItemConfigId);
+                return cfg != null && cfg.HandleType == ItemHandleType.TWO_HAND;
+            }
+        return false;
+    }
+
 
     /// <summary>
     /// Vérifie si le joueur peut accueillir l'item dans une main.
@@ -799,8 +1089,7 @@ public class ServerItemManager
     public bool CanFitInHand(uint playerNetId, ItemConfig config)
     {
         if (config == null) return false;
-        var state = GetOrCreateHandState(playerNetId);
-        return ResolveHand(config, state).HasValue;
+        return ResolveHand(config, playerNetId).HasValue;
     }
 
     /// <summary>
@@ -987,31 +1276,82 @@ public class ServerItemManager
         }
     }
 
+    // PATCH d'un item persistant vers la place d'une pièce + sa position (item-monde au sol).
+    // Préserve l'UUID + le bridge ; utilisé au drop d'un item ToPersist.
+    private void PersistMoveToWorldAsync(int entityId, string placeId, Vector3 position, Quaternion rotation) {
+        if (ApiManager.Instance == null) return;
+        ItemDbBridge bridge = GetBridge(entityId);
+        if (bridge == null) return;
+        ApiManager.Instance.StartCoroutine(MoveItemToWorldCoroutine(entityId, bridge, placeId, position, rotation));
+    }
+
+    private IEnumerator MoveItemToWorldCoroutine(int entityId, ItemDbBridge bridge, string placeId,
+        Vector3 position, Quaternion rotation) {
+        UpdateItemBody body = new UpdateItemBody {
+            expectedVersion = bridge.Version,
+            placeId  = placeId,
+            position = new Vector3Body(position),
+            rotation = new Vector3Body(rotation.eulerAngles),
+        };
+        UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(bridge.Uuid, body);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] Move item to world {bridge.Uuid} failed code={req.responseCode} body={req.downloadHandler?.text}");
+            yield break;
+        }
+        try {
+            ItemJson item = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
+            if (item != null) UpdateBridgePlace(entityId, placeId, item.version);
+        } catch (System.Exception e) {
+            Debug.LogWarning($"[ServerItemManager] Move-to-world parse error: {e.Message}");
+        }
+    }
+
     /// <summary>
     /// On first room entry after connect, fetch the player's hand_left and
     /// hand_right place state and re-create runtime entities for each item
     /// found, attached to the corresponding hand. Items dropped on map during
     /// previous session are NOT restored (they were ephemeral).
     /// </summary>
+    // Re-entrancy guard. A reconnect can fire OnPlayerEnterRoom twice, launching two
+    // RestoreHandItemsCoroutine in parallel for the same player. Because RestoreOneHand
+    // awaits a GET /places/state before spawning, both passes clear the dedup
+    // (DespawnHeldRuntimeForRestore) BEFORE either spawns, then each spawns a runtime
+    // entity for the same DB hand item → an orphan duplicate lingers in _rooms with a
+    // stale position, no longer referenced by _playerHands. That orphan later breaks
+    // "open held colis" (held=false → distance check on a stale position → "Trop loin").
+    private readonly HashSet<uint> _restoringHands = new HashSet<uint>();
+
     private IEnumerator RestoreHandItemsCoroutine(NetworkConnectionToClient conn, string roomId, PlayerInventory inv) {
         if (conn?.identity == null) yield break;
         uint playerNetId = conn.identity.netId;
 
-        // Idempotence : retire d'abord les items runtime déjà tenus par ce joueur dans
-        // cette room avant de re-restaurer. Sans ça, un OnPlayerEnterRoom rejoué pour la
-        // même room (ou un chevauchement) recréait un 2e exemplaire tenu : "manger"
-        // n'en supprimait qu'un et l'autre restait visible jusqu'au changement de room.
-        DespawnHeldRuntimeForRestore(playerNetId, roomId);
-
-        // Restore persisted hand items from DB (only when the player's hand places exist).
-        if (inv != null && inv.PlacesReady) {
-            yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandLeftPlaceId,  HandType.Left);
-            yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandRightPlaceId, HandType.Right);
+        // Skip if a restore for this player is already in flight (see _restoringHands).
+        if (!_restoringHands.Add(playerNetId)) {
+            GameLogger.Network.Debug("Item RestoreHands skip (already running) player={PlayerNetId} room={RoomId}",
+                playerNetId, roomId);
+            yield break;
         }
 
-        // Then re-spawn ephemeral items the player carried over from the previous room
-        // (no DB row). Done after the DB restore so hand slots are reconciled first.
-        RespawnCarriedEphemeral(conn, roomId);
+        try {
+            // Idempotence : retire d'abord les items runtime déjà tenus par ce joueur dans
+            // cette room avant de re-restaurer. Sans ça, un OnPlayerEnterRoom rejoué pour la
+            // même room (ou un chevauchement) recréait un 2e exemplaire tenu : "manger"
+            // n'en supprimait qu'un et l'autre restait visible jusqu'au changement de room.
+            DespawnHeldRuntimeForRestore(playerNetId, roomId);
+
+            // Restore persisted hand items from DB (only when the player's hand places exist).
+            if (inv != null && inv.PlacesReady) {
+                yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandLeftPlaceId,  HandType.Left);
+                yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandRightPlaceId, HandType.Right);
+            }
+
+            // Then re-spawn ephemeral items the player carried over from the previous room
+            // (no DB row). Done after the DB restore so hand slots are reconciled first.
+            RespawnCarriedEphemeral(conn, roomId);
+        } finally {
+            _restoringHands.Remove(playerNetId);
+        }
     }
 
     /// <summary>
@@ -1181,7 +1521,7 @@ public class ServerItemManager
     // Garde l'enum pour le typage de IPlaceContext.Kind (lecture côté code orchestrateur).
     // La classification placeId → PlaceKind et la résolution placeKey → UUID backend sont
     // désormais portées par ResolvePlace + les IPlaceContext concrets.
-    private enum PlaceKind { Unknown, HandLeft, HandRight, Container, Pocket }
+    private enum PlaceKind { Unknown, HandLeft, HandRight, Container, Pocket, ItemContainer }
 
     private static int ReadSlotIndex(Dictionary<string, object> stateData) {
         if (stateData == null || !stateData.TryGetValue("slotIndex", out var v) || v == null) return 0;
@@ -1195,8 +1535,9 @@ public class ServerItemManager
         if (conn?.identity == null) return;
         uint netId = conn.identity.netId;
 
-        // Un seul conteneur ouvert à la fois par joueur (MVP).
-        CloseSession(netId);
+        // Un seul conteneur de PROP ouvert à la fois (un item-conteneur tenu peut
+        // rester ouvert simultanément → drag&drop entre les deux).
+        ClosePropSession(netId);
 
         var go = ServerPropManager.Instance.GetSpawnedGameObject(msg.PropId);
         if (go == null) {
@@ -1320,27 +1661,511 @@ public class ServerItemManager
             propId, placeId, snapshot.Count, netId);
     }
 
-    public void HandleCloseContainer(NetworkConnectionToClient conn, C2S_CloseContainer msg) {
+    public void HandleOpenItemContainer(NetworkConnectionToClient conn, C2S_OpenItemContainer msg) {
         if (conn?.identity == null) return;
-        CloseSession(conn.identity.netId);
+        uint netId = conn.identity.netId;
+
+        // Un seul item-conteneur ouvert à la fois (un meuble peut rester ouvert en plus).
+        CloseItemSession(netId);
+
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (!TryGetEntity(roomId, msg.EntityId, out var entity)) {
+            conn.Send(new S2C_ItemContainerOpenFailed { EntityId = msg.EntityId, ErrorMessage = "Item introuvable" });
+            return;
+        }
+
+        // Ouvrable si tenu en main par CE joueur OU posé au sol à portée — pas besoin de
+        // tenir le colis pour l'ouvrir. On considère l'entité tenue via DEUX sources : la map
+        // _playerHands ET le HolderNetId porté par l'entité elle-même (mis à 0 au drop). La
+        // seconde reste fiable même si _playerHands a été momentanément désynchronisé (ex.
+        // restauration concurrente après reconnexion), ce qui évite un faux "Trop loin".
+        bool held = entity.HolderNetId == netId
+            || (_playerHands.TryGetValue(netId, out var hands)
+                && (hands.LeftEntityId == msg.EntityId || hands.RightEntityId == msg.EntityId));
+        if (!held && Vector3.Distance(conn.identity.transform.position, entity.Position) > 3f) {
+            conn.Send(new S2C_ItemContainerOpenFailed { EntityId = msg.EntityId, ErrorMessage = "Trop loin" });
+            return;
+        }
+        var itemCfg = DatabaseManager.GetItemConfigById(entity.ItemConfigId);
+        if (itemCfg == null || itemCfg.Container == null || !itemCfg.Container.IsContainer) {
+            conn.Send(new S2C_ItemContainerOpenFailed { EntityId = msg.EntityId, ErrorMessage = "Pas un conteneur" });
+            return;
+        }
+
+        // Le package doit être persisté (UUID DB) — sa place est "item_container:{uuid}".
+        var bridge = GetBridge(msg.EntityId);
+        if (bridge == null || string.IsNullOrEmpty(bridge.Uuid)) {
+            conn.Send(new S2C_ItemContainerOpenFailed { EntityId = msg.EntityId, ErrorMessage = "Package non persisté (UUID manquant)" });
+            return;
+        }
+
+        ApiManager.Instance?.StartCoroutine(
+            OpenItemContainerCoroutine(conn, netId, msg.EntityId, bridge.Uuid, itemCfg.Container));
     }
 
-    private void CloseSession(uint netId) {
+    private IEnumerator OpenItemContainerCoroutine(NetworkConnectionToClient conn, uint netId,
+        int packageEntityId, string itemUuid, ContainerConfig containerCfg)
+    {
+        // 1. Place idempotente (POST /places) — owner = uuid de l'item package.
+        string placeKey = $"item_container:{itemUuid}";
+        var createBody = new CreatePlaceBody {
+            placeKey = placeKey,
+            type = "container",
+            ownerId = itemUuid,
+            properties = new Dictionary<string, object> {
+                { "slotCount",     containerCfg.SlotCount },
+                { "acceptedTypes", containerCfg.AcceptedTypes.Select(t => (int)t).ToArray() },
+            },
+        };
+        UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
+        yield return createReq.SendWebRequest();
+        if (createReq.responseCode < 200 || createReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] OpenItemContainer create place failed code={createReq.responseCode}");
+            conn.Send(new S2C_ItemContainerOpenFailed { EntityId = packageEntityId, ErrorMessage = "Erreur place" });
+            yield break;
+        }
+        PlaceJson placeData = null;
+        try { placeData = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text); }
+        catch (System.Exception e) { Debug.LogWarning($"[ServerItemManager] OpenItemContainer parse: {e.Message}"); }
+        string placeId = placeData?.Id;
+        if (string.IsNullOrEmpty(placeId)) {
+            conn.Send(new S2C_ItemContainerOpenFailed { EntityId = packageEntityId, ErrorMessage = "Place sans id" });
+            yield break;
+        }
+
+        // 2. State fetch.
+        UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
+        yield return stateReq.SendWebRequest();
+        if (stateReq.responseCode != 200) {
+            conn.Send(new S2C_ItemContainerOpenFailed { EntityId = packageEntityId, ErrorMessage = "Erreur fetch state" });
+            yield break;
+        }
+        PlaceStateJson stateData = null;
+        try { stateData = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text); }
+        catch (System.Exception e) { Debug.LogWarning($"[ServerItemManager] OpenItemContainer state parse: {e.Message}"); }
+
+        // 3. Alloue entityId session + bridges + snapshot.
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        var session = new ItemContainerSession {
+            PackageEntityId = packageEntityId, PackageItemUuid = itemUuid,
+            PlaceId = placeId, RoomId = roomId, OpenedBy = netId, Config = containerCfg,
+        };
+        var snapshot = new List<S2C_ContainerItem>();
+        if (stateData?.items != null) {
+            foreach (var it in stateData.items) {
+                int slotIndex = ReadSlotIndex(it.stateData);
+                int entityId = _nextEntityId++;
+                session.ItemsByEntityId[entityId] = new ContainerSessionItem {
+                    EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
+                    ItemUuid = it.Id, Version = it.version,
+                };
+                if (!session.SlotToEntityId.ContainsKey(slotIndex)) session.SlotToEntityId[slotIndex] = entityId;
+                snapshot.Add(new S2C_ContainerItem {
+                    EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
+                });
+                _bridges[entityId] = new ItemDbBridge {
+                    Uuid = it.Id, Version = it.version, PlaceId = placeId,
+                };
+            }
+        }
+        // Meubles emballés : tout prop présent dans la place du colis est un prop stocké
+        // (la place item_container n'accueille QUE des props emballés). Entrée affichée avec
+        // l'icône réelle (PropConfigId), non-draggable cette itération (pas de bridge items).
+        if (stateData?.props != null) {
+            foreach (var p in stateData.props) {
+                int slotIndex = ReadSlotIndex(p.stateData);
+                int entityId = _nextEntityId++;
+                session.ItemsByEntityId[entityId] = new ContainerSessionItem {
+                    EntityId = entityId, ConfigId = 0, SlotIndex = slotIndex,
+                    ItemUuid = p.Id, Version = p.version, IsProp = true,
+                    PropConfigId = p.configId, PropPresetId = p.presetIndex,
+                };
+                if (!session.SlotToEntityId.ContainsKey(slotIndex)) session.SlotToEntityId[slotIndex] = entityId;
+                snapshot.Add(new S2C_ContainerItem {
+                    EntityId = entityId, ConfigId = 0, SlotIndex = slotIndex,
+                    PropConfigId = p.configId, PropPresetId = p.presetIndex,
+                });
+            }
+        }
+        _openItemContainerByPlayer[netId] = session;
+
+        conn.Send(new S2C_ItemContainerOpened {
+            EntityId = packageEntityId,
+            PlaceId = placeId,
+            SlotCount = containerCfg.SlotCount,
+            AcceptedTypes = containerCfg.AcceptedTypes.Select(t => (byte)t).ToArray(),
+            Items = snapshot.ToArray(),
+        });
+
+        GameLogger.Network.Info("ItemContainerOpened entityId={EntityId} placeId={PlaceId} items={Count} netId={NetId}",
+            packageEntityId, placeId, snapshot.Count, netId);
+    }
+
+    // ── Emballage d'un prop dans le colis (identité préservée) ─────────────────
+    // Le prop n'est PAS supprimé : sa ligne `props` (et son UUID) est DÉPLACÉE dans la
+    // place du colis (place_id = item_container:{uuid}, is_built=false, stateData.slotIndex).
+    // Seul le runtime quitte le monde (RemoveProp → broadcast S2C_PropRemove). Le déballage
+    // futur = un simple PATCH retour vers le monde (aucune création). Marche que le colis
+    // soit ouvert ou non. Tout meuble présent dans la place du colis = meuble emballé.
+
+    public void HandlePackProp(NetworkConnectionToClient conn, C2S_PackProp msg) {
+        if (conn?.identity == null) return;
+        uint netId = conn.identity.netId;
+        var player = conn.identity.GetComponent<Sim.PlayerController>();
+        string charId = player?.CharacterData?.Id;
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (string.IsNullOrEmpty(charId) || string.IsNullOrEmpty(roomId)) return;
+
+        // 1. Colis tenu qui accepte les meubles.
+        if (!TryGetHeldPackage(netId, roomId, out _, out string pkgUuid, out ContainerConfig pkgCfg)) {
+            player?.TargetActionFailed(conn, "Aucun colis en main");
+            return;
+        }
+        if (!pkgCfg.AcceptsProps) {
+            player?.TargetActionFailed(conn, "Ce colis n'accepte pas les meubles");
+            return;
+        }
+
+        // 2. Meuble possédé + adossé DB (UUID requis pour le PATCH /props).
+        if (!ServerPropManager.Instance.TryGetPropState(roomId, msg.PropId, out var propState)) {
+            player?.TargetActionFailed(conn, "Meuble introuvable");
+            return;
+        }
+        // Pas de stockage imbriqué : un meuble-conteneur ne peut pas être emballé dans un colis.
+        var packPropCfg = DatabaseManager.GetPropsById(propState.PrefabId);
+        if (packPropCfg != null && packPropCfg.Container != null && packPropCfg.Container.IsContainer) {
+            player?.TargetActionFailed(conn, InventoryToasts.NoNestedStorage);
+            return;
+        }
+        if (propState.OwnerCharId != charId) {
+            player?.TargetActionFailed(conn, "Ce meuble ne vous appartient pas");
+            return;
+        }
+        var propBridge = ServerPropManager.Instance.GetBridge(msg.PropId);
+        if (propBridge == null || string.IsNullOrEmpty(propBridge.Uuid)) {
+            player?.TargetActionFailed(conn, "Meuble non emballable");
+            return;
+        }
+
+        int presetId = PropStateHeader.ReadFrom(propState.Payload).PresetId;
+        ApiManager.Instance?.StartCoroutine(PackPropCoroutine(
+            conn, netId, msg.PropId, propBridge.Uuid, propBridge.Version, propState.PrefabId, presetId, pkgUuid, pkgCfg, roomId));
+    }
+
+    private IEnumerator PackPropCoroutine(NetworkConnectionToClient conn, uint netId, int propId,
+        string propUuid, int propVersion, int propConfigId, int presetId, string pkgUuid, ContainerConfig pkgCfg, string roomId)
+    {
+        var player = conn.identity != null ? conn.identity.GetComponent<Sim.PlayerController>() : null;
+
+        // 1. Place du colis (POST idempotent).
+        string placeKey = $"item_container:{pkgUuid}";
+        var createBody = new CreatePlaceBody {
+            placeKey = placeKey, type = "container", ownerId = pkgUuid,
+            properties = new Dictionary<string, object> {
+                { "slotCount",     pkgCfg.SlotCount },
+                { "acceptedTypes", pkgCfg.AcceptedTypes.Select(t => (int)t).ToArray() },
+            },
+        };
+        UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
+        yield return createReq.SendWebRequest();
+        if (createReq.responseCode < 200 || createReq.responseCode >= 300) { player?.TargetActionFailed(conn, "Erreur colis"); yield break; }
+        PlaceJson placeData = null;
+        try { placeData = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text); } catch { }
+        string placeId = placeData?.Id;
+        if (string.IsNullOrEmpty(placeId)) { player?.TargetActionFailed(conn, "Colis sans place"); yield break; }
+
+        // 2. Slot libre = index non occupé par un item NI un meuble déjà stocké.
+        UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
+        yield return stateReq.SendWebRequest();
+        var occupied = new HashSet<int>();
+        if (stateReq.responseCode == 200) {
+            try {
+                var sd = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
+                if (sd?.items != null) foreach (var it in sd.items) occupied.Add(ReadSlotIndex(it.stateData));
+                if (sd?.props != null) foreach (var p in sd.props) occupied.Add(ReadSlotIndex(p.stateData));
+            } catch { }
+        }
+        int freeSlot = -1;
+        for (int i = 0; i < pkgCfg.SlotCount; i++) if (!occupied.Contains(i)) { freeSlot = i; break; }
+        if (freeSlot < 0) { player?.TargetActionFailed(conn, "Colis plein"); yield break; } // meuble NON retiré du monde
+
+        // 3. Déplace le meuble dans la place du colis (UUID conservé, perd l'état built).
+        var body = new UpdatePropBody {
+            expectedVersion = propVersion,
+            placeId   = placeId,
+            isBuilt   = false,
+            stateData = new Dictionary<string, object> { { "slotIndex", freeSlot } },
+        };
+        UnityWebRequest patchReq = ApiManager.Instance.UpdatePropRequest(propUuid, body);
+        yield return patchReq.SendWebRequest();
+        if (patchReq.responseCode < 200 || patchReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] PackProp PATCH /props failed code={patchReq.responseCode} body={patchReq.downloadHandler?.text}");
+            player?.TargetActionFailed(conn, "Échec emballage");
+            yield break; // le meuble reste dans le monde
+        }
+        int newVersion = propVersion + 1;
+        try { var pj = JsonConvert.DeserializeObject<PropJson>(patchReq.downloadHandler.text); if (pj != null) newVersion = pj.version; } catch { }
+
+        // 4. Retire le meuble du monde (runtime + broadcast S2C_PropRemove). PAS de DELETE DB.
+        ServerPropManager.Instance.RemoveProp(roomId, propId);
+
+        // 5. Si le colis est ouvert : ajoute l'entrée meuble + snapshot live.
+        if (_openItemContainerByPlayer.TryGetValue(netId, out var session) && session.PlaceId == placeId) {
+            int entityId = _nextEntityId++;
+            session.ItemsByEntityId[entityId] = new ContainerSessionItem {
+                EntityId = entityId, ConfigId = 0, SlotIndex = freeSlot,
+                ItemUuid = propUuid, Version = newVersion, IsProp = true,
+                PropConfigId = propConfigId, PropPresetId = presetId,
+            };
+            session.SlotToEntityId[freeSlot] = entityId;
+            SendItemContainerSnapshot(conn, session);
+        }
+
+        GameLogger.Network.Info("PropPacked propUuid={Uuid} propConfigId={ConfigId} slot={Slot} netId={NetId}",
+            propUuid, propConfigId, freeSlot, netId);
+    }
+
+    // ── Déballage : le meuble emballé retourne dans le monde (UUID conservé) ───────
+    // Résout le colis par le bridge de PackageEntityId (tenu OU au sol), retrouve le
+    // meuble au SlotIndex dans la place du colis, PATCH sa ligne `props` vers la place
+    // de l'appartement + position (is_built=false → à-construire), re-spawn le runtime
+    // avec le MÊME UUID. Build mode côté client (comme la delivery box).
+
+    public void HandleUnpackProp(NetworkConnectionToClient conn, C2S_UnpackProp msg) {
+        if (conn?.identity == null) return;
+        uint netId = conn.identity.netId;
+        var player = conn.identity.GetComponent<Sim.PlayerController>();
+        string charId = player?.CharacterData?.Id;
+        if (string.IsNullOrEmpty(charId)) return;
+
+        var pkgBridge = GetBridge(msg.PackageEntityId);
+        if (pkgBridge == null || string.IsNullOrEmpty(pkgBridge.Uuid)) {
+            player?.TargetActionFailed(conn, "Colis introuvable");
+            return;
+        }
+        ApartmentController apt = PropInteractionRouter.FindApartmentByConn(conn);
+        if (apt == null || string.IsNullOrEmpty(apt.HomeData?.Id)) {
+            player?.TargetActionFailed(conn, "Déballage possible seulement dans un appartement");
+            return;
+        }
+
+        ApiManager.Instance?.StartCoroutine(UnpackPropCoroutine(
+            conn, netId, pkgBridge.Uuid, msg.SlotIndex, apt, charId, msg.Position, msg.Rotation));
+    }
+
+    private IEnumerator UnpackPropCoroutine(NetworkConnectionToClient conn, uint netId, string pkgUuid,
+        int slotIndex, ApartmentController apt, string charId, Vector3 position, Quaternion rotation)
+    {
+        var player = conn.identity != null ? conn.identity.GetComponent<Sim.PlayerController>() : null;
+
+        // 1. Place du colis (déjà existante) → retrouver le meuble au slot demandé.
+        var createBody = new CreatePlaceBody { placeKey = $"item_container:{pkgUuid}", type = "container", ownerId = pkgUuid };
+        UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
+        yield return createReq.SendWebRequest();
+        if (createReq.responseCode < 200 || createReq.responseCode >= 300) { player?.TargetActionFailed(conn, "Erreur colis"); yield break; }
+        PlaceJson placeData = null;
+        try { placeData = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text); } catch { }
+        string placeId = placeData?.Id;
+        if (string.IsNullOrEmpty(placeId)) { player?.TargetActionFailed(conn, "Colis sans place"); yield break; }
+
+        UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
+        yield return stateReq.SendWebRequest();
+        PropJson packed = null;
+        if (stateReq.responseCode == 200) {
+            try {
+                var sd = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
+                if (sd?.props != null) foreach (var p in sd.props) if (ReadSlotIndex(p.stateData) == slotIndex) { packed = p; break; }
+            } catch { }
+        }
+        if (packed == null || string.IsNullOrEmpty(packed.Id)) { player?.TargetActionFailed(conn, "Meuble introuvable"); yield break; }
+
+        // 2. PATCH le meuble vers l'appartement + position (UUID conservé, reste à-construire).
+        var body = new UpdatePropBody {
+            expectedVersion = packed.version,
+            placeId   = apt.HomeData.Id,
+            position  = new Vector3Body(position),
+            rotation  = new Vector3Body(rotation.eulerAngles),
+            isBuilt   = false,
+            stateData = new Dictionary<string, object>(), // libère le slotIndex
+        };
+        UnityWebRequest patchReq = ApiManager.Instance.UpdatePropRequest(packed.Id, body);
+        yield return patchReq.SendWebRequest();
+        if (patchReq.responseCode < 200 || patchReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] UnpackProp PATCH /props failed code={patchReq.responseCode} body={patchReq.downloadHandler?.text}");
+            player?.TargetActionFailed(conn, "Échec déballage");
+            yield break;
+        }
+        int newVersion = packed.version + 1;
+        try { var pj = JsonConvert.DeserializeObject<PropJson>(patchReq.downloadHandler.text); if (pj != null) newVersion = pj.version; } catch { }
+
+        // 3. Re-spawn runtime dans l'appart (UUID conservé, à-construire).
+        var header = new PropStateHeader { IsBuilt = false, PresetId = packed.presetIndex };
+        int newPropId = ServerPropManager.Instance.SpawnProp(
+            apt.RoomId, packed.configId, position, rotation,
+            headerOverride: header, propUuid: packed.Id, propVersion: newVersion, ownerCharId: charId);
+        if (newPropId < 0) { player?.TargetActionFailed(conn, "Échec spawn meuble"); yield break; }
+        apt.TrackProp(newPropId);
+        GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(newPropId);
+        if (go != null && apt.PropsContainer != null) {
+            go.transform.SetParent(apt.PropsContainer);
+            go.transform.position = position;
+            go.transform.rotation = rotation;
+        }
+
+        // 4. Retire l'entrée du colis ouvert (si ouvert) + snapshot.
+        if (_openItemContainerByPlayer.TryGetValue(netId, out var session) && session.PlaceId == placeId) {
+            if (session.SlotToEntityId.TryGetValue(slotIndex, out int eid)) {
+                session.ItemsByEntityId.Remove(eid);
+                session.SlotToEntityId.Remove(slotIndex);
+            }
+            SendItemContainerSnapshot(conn, session);
+        }
+
+        GameLogger.Network.Info("PropUnpacked propUuid={Uuid} configId={Config} slot={Slot} room={Room} netId={NetId}",
+            packed.Id, packed.configId, slotIndex, apt.RoomId, netId);
+    }
+
+    // ── Lâcher au sol un item rangé (colis tenu OU poche) ──────────────────────
+    // L'item quitte sa place (colis/poche) et devient un item-monde au pied du joueur.
+    // ToPersist → la ligne DB est déplacée vers la place du monde + position (UUID conservé) ;
+    // sinon la ligne DB est supprimée (item-monde éphémère).
+    public void HandleDropFromInventory(NetworkConnectionToClient conn, C2S_DropFromInventory msg) {
+        if (conn?.identity == null) return;
+        uint netId = conn.identity.netId;
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (roomId == null) return;
+        var player = conn.identity.GetComponent<Sim.PlayerController>();
+
+        string uuid = null; int configId = 0, version = 1, slotIndex = -1;
+        ItemContainerSession contSession = null; PocketSession pocketSession = null;
+        bool fromContainer = false, fromPocket = false;
+
+        // NB : TryGetValue(out session) renseigne `session` même sur un miss du second test ;
+        // on s'appuie donc sur les flags fromContainer/fromPocket, PAS sur (session != null).
+        if (_openItemContainerByPlayer.TryGetValue(netId, out contSession)
+            && contSession.ItemsByEntityId.TryGetValue(msg.EntityId, out var ci) && !ci.IsProp) {
+            // Le colis doit être tenu en main (exigence : drop depuis un colis tenu).
+            if (!TryGetHeldPackage(netId, roomId, out _, out string heldUuid, out _)
+                || heldUuid != contSession.PackageItemUuid) {
+                player?.TargetActionFailed(conn, "Le colis doit être en main");
+                return;
+            }
+            uuid = ci.ItemUuid; configId = ci.ConfigId; version = ci.Version; slotIndex = ci.SlotIndex;
+            fromContainer = true;
+        }
+        else if (_pocketByPlayer.TryGetValue(netId, out pocketSession)
+            && pocketSession.ItemsByEntityId.TryGetValue(msg.EntityId, out var pi)) {
+            uuid = pi.ItemUuid; configId = pi.ConfigId; version = pi.Version; slotIndex = pi.SlotIndex;
+            fromPocket = true;
+        }
+        else return; // introuvable
+
+        if (string.IsNullOrEmpty(uuid)) return;
+
+        // Position de drop : devant le joueur, raycast au sol (layer 9).
+        Vector3 dropPos = conn.identity.transform.position + conn.identity.transform.forward * 0.6f;
+        if (Physics.Raycast(dropPos + Vector3.up, Vector3.down, out var hitRay, 5f, 1 << 9)) dropPos = hitRay.point;
+
+        // Item-monde runtime au sol.
+        int worldEntity = SpawnItem(roomId, configId, dropPos, Quaternion.identity);
+
+        // Retire l'entrée de la session source + bridge + snapshot.
+        if (fromContainer) {
+            contSession.ItemsByEntityId.Remove(msg.EntityId);
+            if (slotIndex >= 0) contSession.SlotToEntityId.Remove(slotIndex);
+            ClearBridge(msg.EntityId);
+            SendItemContainerSnapshot(conn, contSession);
+        } else if (fromPocket) {
+            pocketSession.ItemsByEntityId.Remove(msg.EntityId);
+            if (slotIndex >= 0) pocketSession.SlotToEntityId.Remove(slotIndex);
+            ClearBridge(msg.EntityId);
+            SendPocketSnapshot(conn, pocketSession);
+        }
+
+        ItemConfig cfg = DatabaseManager.GetItemConfigById(configId);
+        string worldPlaceId = ResolveWorldPlaceId(conn, roomId);
+        bool toPersist = cfg != null && cfg.ToPersist && !string.IsNullOrEmpty(worldPlaceId);
+        ApiManager.Instance?.StartCoroutine(
+            DropFromInventoryCoroutine(worldEntity, uuid, version, worldPlaceId, dropPos, toPersist));
+
+        GameLogger.Network.Info("DropFromInventory uuid={Uuid} configId={Config} toPersist={Persist} netId={NetId}",
+            uuid, configId, toPersist, netId);
+    }
+
+    private IEnumerator DropFromInventoryCoroutine(int worldEntity, string uuid, int version,
+        string worldPlaceId, Vector3 dropPos, bool toPersist) {
+        if (toPersist) {
+            var body = new UpdateItemBody {
+                expectedVersion = version,
+                placeId  = worldPlaceId,
+                position = new Vector3Body(dropPos),
+                rotation = new Vector3Body(Vector3.zero),
+                stateData = new Dictionary<string, object>(), // libère le slotIndex
+            };
+            UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(uuid, body);
+            yield return req.SendWebRequest();
+            if (req.responseCode >= 200 && req.responseCode < 300) {
+                int nv = version + 1;
+                try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) nv = it.version; } catch { }
+                AssociateUuid(worldEntity, uuid, nv, worldPlaceId); // bridge + Persistent=true
+            } else {
+                Debug.LogWarning($"[ServerItemManager] DropFromInventory PATCH failed code={req.responseCode} body={req.downloadHandler?.text}");
+            }
+        } else {
+            UnityWebRequest req = ApiManager.Instance.DeleteItemRequest(uuid);
+            yield return req.SendWebRequest();
+        }
+    }
+
+    public void HandleCloseContainer(NetworkConnectionToClient conn, C2S_CloseContainer msg) {
+        if (conn?.identity == null) return;
+        uint netId = conn.identity.netId;
+        // Chaque panneau client ferme SA propre session (prop OU item) — les deux peuvent
+        // être ouvertes simultanément.
+        if (msg.ItemContainer) CloseItemSession(netId);
+        else                   ClosePropSession(netId);
+    }
+
+    /// <summary>Ferme la session conteneur de PROP du joueur (un meuble peut rester
+    /// ouvert en même temps qu'un item-conteneur tenu).</summary>
+    private void ClosePropSession(uint netId) {
         if (!_openContainerByPlayer.TryGetValue(netId, out var session)) return;
         _openContainerByPlayer.Remove(netId);
-        // Libère les bridges session (les entityId allouent à la session ne sont
+        // Libère les bridges session (les entityId alloués à la session ne sont
         // plus valides après close ; un re-open re-allouera des nouveaux ids).
         foreach (var it in session.ItemsByEntityId.Values) _bridges.Remove(it.EntityId);
 
-        // Broadcast visuel : porte/couvercle se referme. session.RoomId est figé
-        // au moment de l'open → fonctionne même si OpenedBy a quitté la room/déco.
-        if (!string.IsNullOrEmpty(session.RoomId)) {
+        // Broadcast visuel : porte/couvercle se referme — MAIS seulement si plus aucun autre
+        // joueur n'a ce même meuble ouvert. Chaque joueur a sa propre session ; sans ce compte,
+        // le premier à fermer refermait la porte alors que d'autres viewers étaient encore dessus.
+        bool anotherViewer = false;
+        foreach (var other in _openContainerByPlayer.Values) {
+            if (other.PropId == session.PropId && other.RoomId == session.RoomId) { anotherViewer = true; break; }
+        }
+
+        // session.RoomId est figé au moment de l'open → fonctionne même si OpenedBy a quitté la room/déco.
+        if (!anotherViewer && !string.IsNullOrEmpty(session.RoomId)) {
             BroadcastToRoom(session.RoomId, new S2C_ContainerVisualState {
                 RoomId = session.RoomId, PropId = session.PropId, IsOpen = false,
             });
         }
+        GameLogger.Network.Debug("ContainerClosed netId={NetId} placeId={PlaceId} keptOpen={Kept}",
+            netId, session.PlaceId, anotherViewer);
+    }
 
-        GameLogger.Network.Debug("ContainerClosed netId={NetId} placeId={PlaceId}", netId, session.PlaceId);
+    /// <summary>Ferme la session item-conteneur (« colis ») du joueur. Pas de broadcast
+    /// visuel (item tenu).</summary>
+    private void CloseItemSession(uint netId) {
+        if (!_openItemContainerByPlayer.TryGetValue(netId, out var itemSession)) return;
+        _openItemContainerByPlayer.Remove(netId);
+        foreach (var it in itemSession.ItemsByEntityId.Values) _bridges.Remove(it.EntityId);
+        GameLogger.Network.Debug("ItemContainerClosed netId={NetId} placeId={PlaceId}", netId, itemSession.PlaceId);
+    }
+
+    /// <summary>Ferme les deux types de session (déconnexion, cleanup).</summary>
+    private void CloseAllSessions(uint netId) {
+        ClosePropSession(netId);
+        CloseItemSession(netId);
     }
 
     public void HandleMoveItem(NetworkConnectionToClient conn, C2S_MoveItem msg) {
@@ -1367,6 +2192,14 @@ public class ServerItemManager
             // Push les snapshots pour reconcilier le client : il a déjà fait le visual
             // move dans OnDrop, sans snapshot il garderait un draggable fantôme dans le
             // slot de destination — qui répondrait ensuite "introuvable" à toute tentative.
+            PushSnapshotsFor(conn, fromCtx, toCtx);
+            return;
+        }
+        // Anti-boucle : un colis ne peut pas être rangé dans son propre conteneur.
+        if (toCtx is ItemContainerPlaceContext icc
+            && !string.IsNullOrEmpty(itemCtx.ItemUuid)
+            && itemCtx.ItemUuid == icc.PackageItemUuid) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Un colis ne peut pas se contenir lui-même" });
             PushSnapshotsFor(conn, fromCtx, toCtx);
             return;
         }
@@ -1435,6 +2268,7 @@ public class ServerItemManager
 
         conn.Send(new S2C_MoveItemResult { Success = true, EntityId = msg.EntityId });
         PushSnapshotsFor(conn, fromCtx, toCtx);
+        PropagateContainerUpdateToOtherSubscribers(conn.identity.netId, fromCtx, toCtx);
     }
 
     // ── Swap items (atomic two-PATCH) ────────────────────────────────────────
@@ -1483,6 +2317,19 @@ public class ServerItemManager
         }
         if (!ctxA.ValidateAsTarget(msg.SlotIndexA, itemB.ConfigId, out err)) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdB, ErrorMessage = err });
+            PushSnapshotsFor(conn, ctxA, ctxB);
+            return;
+        }
+
+        // Anti-boucle : un colis ne peut pas atterrir dans son propre conteneur via un swap.
+        // A → ctxB, B → ctxA : on rejette si l'item déplacé est le colis du conteneur cible.
+        bool aIntoOwnPackage = ctxB is ItemContainerPlaceContext iccB
+            && !string.IsNullOrEmpty(itemA.ItemUuid) && itemA.ItemUuid == iccB.PackageItemUuid;
+        bool bIntoOwnPackage = ctxA is ItemContainerPlaceContext iccA
+            && !string.IsNullOrEmpty(itemB.ItemUuid) && itemB.ItemUuid == iccA.PackageItemUuid;
+        if (aIntoOwnPackage || bIntoOwnPackage) {
+            int rejectedEntity = aIntoOwnPackage ? msg.EntityIdA : msg.EntityIdB;
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = rejectedEntity, ErrorMessage = "Un colis ne peut pas se contenir lui-même" });
             PushSnapshotsFor(conn, ctxA, ctxB);
             return;
         }
@@ -1567,6 +2414,7 @@ public class ServerItemManager
 
         conn.Send(new S2C_MoveItemResult { Success = true, EntityId = msg.EntityIdA });
         PushSnapshotsFor(conn, ctxA, ctxB);
+        PropagateContainerUpdateToOtherSubscribers(conn.identity.netId, ctxA, ctxB);
 
         GameLogger.Network.Info("SwapItems ok netId={NetId} A={A}({KA}/{SA}) ↔ B={B}({KB}/{SB})",
             conn.identity.netId, msg.EntityIdA, ctxA.Kind, msg.SlotIndexA, msg.EntityIdB, ctxB.Kind, msg.SlotIndexB);
@@ -1582,6 +2430,25 @@ public class ServerItemManager
         }
         conn.Send(new S2C_ContainerOpened {
             PropId        = session.PropId,
+            PlaceId       = session.PlaceId,
+            SlotCount     = session.Config.SlotCount,
+            AcceptedTypes = session.Config.AcceptedTypes.Select(t => (byte)t).ToArray(),
+            Items         = items.ToArray(),
+        });
+    }
+
+    private static void SendItemContainerSnapshot(NetworkConnectionToClient conn, ItemContainerSession session)
+    {
+        var items = new List<S2C_ContainerItem>(session.ItemsByEntityId.Count);
+        foreach (var it in session.ItemsByEntityId.Values) {
+            items.Add(new S2C_ContainerItem {
+                EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
+                PropConfigId = it.IsProp ? it.PropConfigId : 0,
+                PropPresetId = it.IsProp ? it.PropPresetId : 0,
+            });
+        }
+        conn.Send(new S2C_ItemContainerOpened {
+            EntityId      = session.PackageEntityId,
             PlaceId       = session.PlaceId,
             SlotCount     = session.Config.SlotCount,
             AcceptedTypes = session.Config.AcceptedTypes.Select(t => (byte)t).ToArray(),
@@ -1837,8 +2704,75 @@ public class ServerItemManager
         public bool ValidateAsTarget(int slotIndex, int configId, out string err) {
             err = null;
             var itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == configId);
+            if (IsStorageItem(itemConfig)) {
+                err = InventoryToasts.NoNestedStorage; return false;
+            }
             if (itemConfig != null && !_session.Config.Accepts(itemConfig.Type)) {
                 err = "Type refusé par ce conteneur"; return false;
+            }
+            if (slotIndex < 0 || slotIndex >= _session.Config.SlotCount) {
+                err = "Slot hors limites"; return false;
+            }
+            return true;
+        }
+
+        public bool IsSlotAvailableFor(int slotIndex, int entityId) {
+            if (!_session.SlotToEntityId.TryGetValue(slotIndex, out var occ)) return true;
+            return occ == entityId;
+        }
+
+        public void TearDown(int entityId) {
+            if (!_session.ItemsByEntityId.TryGetValue(entityId, out var old)) return;
+            _session.ItemsByEntityId.Remove(entityId);
+            if (_session.SlotToEntityId.TryGetValue(old.SlotIndex, out var occ) && occ == entityId)
+                _session.SlotToEntityId.Remove(old.SlotIndex);
+        }
+
+        public void Install(int entityId, ItemCtx ctx, int slotIndex, int newVersion) {
+            _session.ItemsByEntityId[entityId] = new ContainerSessionItem {
+                EntityId = entityId, ConfigId = ctx.ConfigId, SlotIndex = slotIndex,
+                ItemUuid = ctx.ItemUuid, Version = newVersion,
+            };
+            _session.SlotToEntityId[slotIndex] = entityId;
+            _mgr._bridges[entityId] = new ItemDbBridge { Uuid = ctx.ItemUuid, Version = newVersion, PlaceId = _session.PlaceId };
+        }
+    }
+
+    private sealed class ItemContainerPlaceContext : IPlaceContext {
+        private readonly ServerItemManager    _mgr;
+        private readonly ItemContainerSession _session;
+
+        public ItemContainerPlaceContext(ServerItemManager mgr, ItemContainerSession session) { _mgr = mgr; _session = session; }
+
+        public PlaceKind Kind         => PlaceKind.ItemContainer;
+        public string    PlaceId      => _session.PlaceId;
+        public bool      HasSlotIndex => true;
+        public string    PackageItemUuid => _session.PackageItemUuid; // pour le garde anti-auto-conteneur
+
+        public bool TryResolveItem(int entityId, int declaredSlot, out ItemCtx ctx, out string err) {
+            ctx = default; err = null;
+            if (!_session.ItemsByEntityId.TryGetValue(entityId, out var si)) {
+                err = "Item package introuvable"; return false;
+            }
+            // Un meuble emballé n'est pas déplaçable cette itération (déballage = futur).
+            if (si.IsProp) {
+                err = "Meuble emballé non déplaçable"; return false;
+            }
+            if (declaredSlot >= 0 && si.SlotIndex != declaredSlot) {
+                err = "Slot package incohérent"; return false;
+            }
+            ctx = new ItemCtx { ConfigId = si.ConfigId, ItemUuid = si.ItemUuid, Version = si.Version };
+            return true;
+        }
+
+        public bool ValidateAsTarget(int slotIndex, int configId, out string err) {
+            err = null;
+            var itemConfig = DatabaseManager.ItemConfigs.Find(x => x.ID == configId);
+            if (IsStorageItem(itemConfig)) {
+                err = InventoryToasts.NoNestedStorage; return false;
+            }
+            if (itemConfig != null && !_session.Config.Accepts(itemConfig.Type)) {
+                err = "Type refusé par ce package"; return false;
             }
             if (slotIndex < 0 || slotIndex >= _session.Config.SlotCount) {
                 err = "Slot hors limites"; return false;
@@ -1960,6 +2894,9 @@ public class ServerItemManager
         if (_openContainerByPlayer.TryGetValue(netId, out var openContainer) && placeId == openContainer.PlaceId) {
             return new ContainerPlaceContext(this, openContainer);
         }
+        if (_openItemContainerByPlayer.TryGetValue(netId, out var openItemContainer) && placeId == openItemContainer.PlaceId) {
+            return new ItemContainerPlaceContext(this, openItemContainer);
+        }
         return null;
     }
 
@@ -1978,5 +2915,91 @@ public class ServerItemManager
             && _pocketByPlayer.TryGetValue(netId, out var pocket)) {
             SendPocketSnapshot(conn, pocket);
         }
+        if ((from.Kind == PlaceKind.ItemContainer || to.Kind == PlaceKind.ItemContainer)
+            && _openItemContainerByPlayer.TryGetValue(netId, out var itemContainer)) {
+            SendItemContainerSnapshot(conn, itemContainer);
+        }
+    }
+
+    /// <summary>
+    /// Quand un joueur mute un conteneur, tous les AUTRES joueurs qui ont ce même
+    /// PlaceId backend ouvert ont une session figée (entityId locaux, slot mapping)
+    /// qui ne reflète plus la DB. On les re-synchronise : refetch de l'état canonique,
+    /// reconstruction de leur session côté serveur, re-push d'un snapshot complet.
+    /// </summary>
+    private void PropagateContainerUpdateToOtherSubscribers(uint moverNetId, IPlaceContext from, IPlaceContext to) {
+        string placeId = from.Kind == PlaceKind.Container ? from.PlaceId
+                       : to.Kind   == PlaceKind.Container ? to.PlaceId
+                       : null;
+        if (string.IsNullOrEmpty(placeId) || ApiManager.Instance == null) return;
+
+        List<uint> toRefresh = null;
+        foreach (var kv in _openContainerByPlayer) {
+            if (kv.Key == moverNetId) continue;
+            if (kv.Value.PlaceId != placeId) continue;
+            (toRefresh ??= new List<uint>()).Add(kv.Key);
+        }
+        if (toRefresh == null) return;
+
+        foreach (uint netId in toRefresh) {
+            if (!_openContainerByPlayer.TryGetValue(netId, out var session)) continue;
+            if (!NetworkServer.spawned.TryGetValue(netId, out var identity)) continue;
+            var conn = identity?.connectionToClient;
+            if (conn == null) continue;
+            ApiManager.Instance.StartCoroutine(RefreshContainerSessionAndPushSnapshot(conn, session));
+        }
+    }
+
+    /// <summary>
+    /// Refetch l'état d'une place conteneur depuis la DB et reconstruit la session
+    /// in-memory de <paramref name="conn"/> (libère les anciens bridges, alloue de
+    /// nouveaux entityId), puis pousse le snapshot client (<c>S2C_ContainerOpened</c>).
+    /// </summary>
+    private IEnumerator RefreshContainerSessionAndPushSnapshot(NetworkConnectionToClient conn, ContainerSession session) {
+        UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(session.PlaceId);
+        yield return stateReq.SendWebRequest();
+
+        // Le joueur a pu fermer son panneau pendant le fetch : si la session n'est
+        // plus active, on s'arrête là — sinon un S2C_ContainerOpened tardif rouvrirait
+        // l'UI côté client.
+        if (!_openContainerByPlayer.TryGetValue(session.OpenedBy, out var current) || current != session) {
+            yield break;
+        }
+
+        if (stateReq.responseCode != 200) {
+            Debug.LogWarning($"[ServerItemManager] RefreshContainerSession fetch failed code={stateReq.responseCode}");
+            yield break;
+        }
+        PlaceStateJson stateData = null;
+        try { stateData = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text); }
+        catch (System.Exception e) {
+            Debug.LogWarning($"[ServerItemManager] RefreshContainerSession parse error: {e.Message}");
+            yield break;
+        }
+
+        // Libère les anciens bridges/entityId de cette session (chaque autre joueur
+        // a ses propres entityId — on les recrée à partir de zéro).
+        foreach (var it in session.ItemsByEntityId.Values) _bridges.Remove(it.EntityId);
+        session.ItemsByEntityId.Clear();
+        session.SlotToEntityId.Clear();
+
+        if (stateData?.items != null) {
+            foreach (var it in stateData.items) {
+                int slotIndex = ReadSlotIndex(it.stateData);
+                int entityId = _nextEntityId++;
+                session.ItemsByEntityId[entityId] = new ContainerSessionItem {
+                    EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
+                    ItemUuid = it.Id, Version = it.version,
+                };
+                if (!session.SlotToEntityId.ContainsKey(slotIndex)) session.SlotToEntityId[slotIndex] = entityId;
+                _bridges[entityId] = new ItemDbBridge {
+                    Uuid = it.Id, Version = it.version, PlaceId = session.PlaceId,
+                };
+            }
+        }
+
+        SendContainerSnapshot(conn, session);
+        GameLogger.Network.Debug("ContainerSession refreshed placeId={PlaceId} netId={NetId} items={Count}",
+            session.PlaceId, session.OpenedBy, session.ItemsByEntityId.Count);
     }
 }

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d96afc3d24447147bebc4fb5d111efd, type: 3}
+  m_Name: sociable_reputation
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Constellation.ConstellationNodeData
+  id: sociable_reputation
+  displayName: "R\xE9putation"
+  description: "B\xE2tir une r\xE9putation dans la ville."
+  branch: {fileID: 11400000, guid: 191916a7719fd4348b0e4cb2be996db5, type: 2}
+  cost:
+  - branch: {fileID: 11400000, guid: 191916a7719fd4348b0e4cb2be996db5, type: 2}
+    amount: 32
+  definesBranch: {fileID: 0}
+  mapPosition: {x: -680, y: -140.00006}
+  connectedNodes:
+  - {fileID: 11400000, guid: 9834d9a62a8b4734db0c17e0bf73e737, type: 2}
+  unlocks: []
+  activities:
+  - "R\xE9putation"
+  icon: {fileID: 0}
+  isCenter: 0
+  extraPrerequisites: []

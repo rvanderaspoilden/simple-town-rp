@@ -13,12 +13,10 @@ GameObject:
   - component: {fileID: 7383885112472423916}
   - component: {fileID: 9098399826493897009}
   - component: {fileID: 2686430353325794601}
-  - component: {fileID: -4363456237023114618}
-  - component: {fileID: 3046694514775587690}
-  - component: {fileID: 5085618503510842961}
-  - component: {fileID: 4275894008647507813}
-  - component: {fileID: 6996241086097520150}
-  m_Layer: 10
+  - component: {fileID: 4081855701838832818}
+  - component: {fileID: -858921113604713935}
+  - component: {fileID: 6450938611772495891}
+  m_Layer: 19
   m_Name: Package
   m_TagString: Interactable
   m_Icon: {fileID: 0}
@@ -35,7 +33,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -1.504, y: 0, z: 5.493}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -134,7 +132,7 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.45000002, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &-4363456237023114618
+--- !u!114 &4081855701838832818
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -143,18 +141,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 9098399826493897008}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d57c981d9e812147b2529fa0e23ac73, type: 3}
+  m_Script: {fileID: 11500000, guid: bf1f0aa548853a34daf7e6faee450220, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  renderersToModify:
-  - {fileID: 7383885112472423916}
-  primaryStyleMeshRenderers: []
-  secondaryStyleMeshRenderers: []
-  tertiaryStyleMeshRenderers: []
-  hideable: 1
-  interactWithCameraDistance: 0
-  foundationObj: {fileID: 0}
---- !u!54 &3046694514775587690
+  m_EditorClassIdentifier: Assembly-CSharp::ItemIdentity
+--- !u!114 &-858921113604713935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9098399826493897008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b05404ad22cf8e4cba3e1544e4888a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PackageItemBehaviour
+--- !u!54 &6450938611772495891
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -181,45 +183,3 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &5085618503510842961
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9098399826493897008}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 842998c85c9b3194c9be6c9d88330d1a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PropIdentity
-  propId: 0
-  roomId: city
---- !u!114 &4275894008647507813
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9098399826493897008}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac5735293af53174a8e7a89b45f435f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PackagePropSource
---- !u!114 &6996241086097520150
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9098399826493897008}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 171109a5ebdcdf0428c948dfe6b570c8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PackageBehaviour
-  configuration: {fileID: 11400000, guid: 34c00ce4ef922744da6647a4c48b6853, type: 2}
-  defaultPresetId: -1
-  openSound: {fileID: 8300000, guid: 3cdf6946b7f8a1549ab339405d1c0146, type: 3}
-  propsInside: {fileID: 0}

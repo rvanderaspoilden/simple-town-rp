@@ -21,11 +21,23 @@ namespace Sim {
 
         private bool _isLocal;
 
-        public void OnLocalPlayerStart() {
+        private void Awake() {
             _broadcast = GetComponent<VoiceBroadcastTrigger>();
             _receipt   = GetComponent<VoiceReceiptTrigger>();
+            // Inert until proven local. The triggers transmit/receive the LOCAL
+            // microphone, so a copy on every remote player instance would make the
+            // local mic broadcast through each one. Only the local player's adapter
+            // re-enables them in OnLocalPlayerStart.
+            if (_broadcast != null) { _broadcast.Mode = CommActivationMode.None; _broadcast.enabled = false; }
+            if (_receipt   != null) _receipt.enabled = false;
+        }
+
+        public void OnLocalPlayerStart() {
+            if (_broadcast == null) _broadcast = GetComponent<VoiceBroadcastTrigger>();
+            if (_receipt   == null) _receipt   = GetComponent<VoiceReceiptTrigger>();
             // Push-to-talk: start muted; Update() opens the channel only while the key is held.
-            if (_broadcast != null) _broadcast.Mode = CommActivationMode.None;
+            if (_broadcast != null) { _broadcast.enabled = true; _broadcast.Mode = CommActivationMode.None; }
+            if (_receipt   != null) _receipt.enabled = true;
             _isLocal = true;
             ClientPropManager.OnLocalRoomChanged += SwitchRoom;
             SwitchRoom("city");

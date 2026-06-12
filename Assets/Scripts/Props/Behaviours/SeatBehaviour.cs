@@ -151,11 +151,15 @@ public class SeatBehaviour : PropBehaviourBase, ISeatBehavior {
         uint localNetId = PlayerController.Local?.netId ?? 0;
         if (IsLocalPlayerOccupying(localNetId)) return System.Array.Empty<Action>();
 
-        // SIT/COUCH are shown whenever the corresponding slot type exists on the prop
-        // (regardless of occupancy). Picking a full slot is handled in Execute with a toast.
         System.Collections.Generic.IEnumerable<Action> result = base.GetActions(withPriority);
-        if (_actSit   != null) result = result.Append(_actSit);
-        if (_actCouch != null) result = result.Append(_actCouch);
+
+        // SIT/COUCH only once the seat is BUILT. While it's a to-build placeholder the base
+        // already exposes BUILD (owner) and nothing else — sitting on a non-existent seat
+        // must not be offered. Picking a full slot (when built) is handled in Execute.
+        if (IsBuilt()) {
+            if (_actSit   != null) result = result.Append(_actSit);
+            if (_actCouch != null) result = result.Append(_actCouch);
+        }
         return result.ToArray();
     }
 

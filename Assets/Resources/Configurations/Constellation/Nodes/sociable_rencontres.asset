@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d96afc3d24447147bebc4fb5d111efd, type: 3}
+  m_Name: sociable_rencontres
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Constellation.ConstellationNodeData
+  id: sociable_rencontres
+  displayName: Rencontres
+  description: Faire connaissance avec d'autres Broz.
+  branch: {fileID: 11400000, guid: 191916a7719fd4348b0e4cb2be996db5, type: 2}
+  cost:
+  - branch: {fileID: 11400000, guid: 191916a7719fd4348b0e4cb2be996db5, type: 2}
+    amount: 10
+  definesBranch: {fileID: 0}
+  mapPosition: {x: 0, y: 0}
+  masteryThreshold: 40
+  connectedNodes:
+  - {fileID: 11400000, guid: 9834d9a62a8b4734db0c17e0bf73e737, type: 2}
+  unlocks: []
+  activities:
+  - Rencontres
+  icon: {fileID: 0}
+  isCenter: 0
+  extraPrerequisites: []
+  isHybrid: 0
+  secondaryBranch: {fileID: 11400000, guid: 4310e3f869d0bf54db3bf14ff18febae, type: 2}
+  unlockThreshold: 10
+  secondaryThreshold: 10
+  professionCostConfig: {fileID: 0}
+  professionCost: 0
+  definesProfession: {fileID: 0}
+  definesProfessionId: 
+  professionCostId: 
+  legacyBranchTag: 3
+  legacySecondaryBranchTag: 0
+  legacyConnectedNodeIds:
+  - sociable_base
+  legacyExtraPrerequisiteNodeIds: []

@@ -1,5 +1,5 @@
 using Sim.Entities;
-using Sim.Jobs;
+using Sim.Missions;
 using TMPro;
 using UnityEngine;
 
@@ -40,7 +40,8 @@ namespace Sim {
             }
 
             if (levelText != null) {
-                levelText.text = JobCategoryLabels.Display(character.CurrentJobCategory);
+                var prof = character.CurrentProfession;
+                levelText.text = prof != null ? prof.displayName : "Sans emploi";
             }
 
             if (moneyText != null) {

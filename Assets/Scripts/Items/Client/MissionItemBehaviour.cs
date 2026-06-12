@@ -1,6 +1,6 @@
 using Mirror;
 using UnityEngine;
-using Sim.Jobs;
+using Sim.Missions;
 
 /// <summary>
 /// ItemBehaviour spécialisé pour les items spawn par le système Jobs

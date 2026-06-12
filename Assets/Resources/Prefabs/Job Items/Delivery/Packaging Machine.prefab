@@ -104,7 +104,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 658aa34a5a3737940b7db6e19beffdc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Sim.Jobs.PackagingMachineBehaviour
-  requiredJob: 0
+  requiredProfession: {fileID: 11400000, guid: efb095852034208428d48efc10b4a944, type: 2}
+  legacyRequiredJob: 0
   actionTemplates:
   - {fileID: 11400000, guid: b9dab5efe24ed7e478a5549ec5c52858, type: 2}
   interactionRange: 1

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d96afc3d24447147bebc4fb5d111efd, type: 3}
+  m_Name: ingenieux_base
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Constellation.ConstellationNodeData
+  id: ingenieux_base
+  displayName: "M\xE9tier"
+  description: "L'arbre des m\xE9tiers que tu pratiques en ville."
+  branch: {fileID: 11400000, guid: 3cc0b7b27e5578c41bc63aaed4feb28c, type: 2}
+  cost: []
+  definesBranch: {fileID: 0}
+  mapPosition: {x: -282.8427, y: 282.8427}
+  connectedNodes:
+  - {fileID: 11400000, guid: 1794e87548db087449fac06d5cbb57b6, type: 2}
+  - {fileID: 11400000, guid: 68ef099a6cb5caf49822be48fb46e56a, type: 2}
+  unlocks: []
+  activities: []
+  icon: {fileID: 0}
+  isCenter: 0
+  extraPrerequisites: []

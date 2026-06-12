@@ -28,6 +28,7 @@ public static class PropSystemBootstrap {
         NetworkServer.RegisterHandler<C2S_LeaveRoom>      (Server_OnLeaveRoom);
         NetworkServer.RegisterHandler<C2S_PropInteraction>(Server_OnInteraction);
         NetworkServer.RegisterHandler<C2S_BuildProp>      (Server_OnBuildProp);
+        NetworkServer.RegisterHandler<C2S_ConstructionVfx>(Server_OnConstructionVfx);
         NetworkServer.RegisterHandler<C2S_EditProp>       (Server_OnEditProp);
         NetworkServer.RegisterHandler<C2S_RemoveProp>     (Server_OnRemoveProp);
         NetworkServer.RegisterHandler<C2S_DestroyProp>    (Server_OnDestroyProp);
@@ -50,6 +51,7 @@ public static class PropSystemBootstrap {
         NetworkServer.UnregisterHandler<C2S_LeaveRoom>();
         NetworkServer.UnregisterHandler<C2S_PropInteraction>();
         NetworkServer.UnregisterHandler<C2S_BuildProp>();
+        NetworkServer.UnregisterHandler<C2S_ConstructionVfx>();
         NetworkServer.UnregisterHandler<C2S_EditProp>();
         NetworkServer.UnregisterHandler<C2S_RemoveProp>();
         NetworkServer.UnregisterHandler<C2S_DestroyProp>();
@@ -152,6 +154,18 @@ public static class PropSystemBootstrap {
         GameLogger.Network.Info("BuildProp {ConnectionId} {RoomId} {PropConfigId} {Position}",
             conn.connectionId, msg.RoomId, msg.PropConfigId, msg.Position);
         PropInteractionRouter.HandleBuildProp(conn, msg);
+    }
+
+    // Pure-cosmetic construction VFX: validate the sender is in the claimed room, then
+    // re-broadcast to everyone in that room so all clients see the effect on the prop.
+    private static void Server_OnConstructionVfx(NetworkConnectionToClient conn, C2S_ConstructionVfx msg) {
+        string playerRoom = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (playerRoom != msg.RoomId) return;
+
+        var vfx = new S2C_ConstructionVfx { PropId = msg.PropId, RoomId = msg.RoomId, Phase = msg.Phase, DurationMs = msg.DurationMs };
+        foreach (var c in PlayerRoomTracker.Instance.GetConnectionsInRoom(msg.RoomId)) {
+            if (c != null && c.isReady) c.Send(vfx);
+        }
     }
 
     private static void Server_OnEditProp(NetworkConnectionToClient conn, C2S_EditProp msg) {

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 40
   displayName: Bedside lamp
+  description: "Lampe de chevet \xE0 lumi\xE8re douce."
   sprite: {fileID: 0}
   propsType: 5
   price: 600
@@ -25,10 +26,16 @@ MonoBehaviour:
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
+  movable: 1
   rangeToInteract: 1
   rightClickOnly: 0
-  actions:
+  actions: []
   unbuiltActions: []
   cursor: {fileID: 2800000, guid: 7784397540d3a944db99f9132529c66c, type: 3}
   presets: []
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

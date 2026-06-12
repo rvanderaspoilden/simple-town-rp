@@ -211,20 +211,21 @@ public class SimpleTownNetwork : NetworkManager
             string characterId = player != null && player.CharacterData != null ? player.CharacterData.Id : null;
             if (!string.IsNullOrEmpty(characterId)) {
                 StartCoroutine(UpdateOnlineStateCoroutine(characterId, false));
+                Sim.CallSystemBootstrap.OnPlayerGone(characterId);
             }
         }
 
         // Cleanup jobs/board DÉTERMINISTE ici, AVANT base.OnServerDisconnect ne
         // détruise l'identity. Sinon on dépend entièrement de
-        // PlayerController.OnStopServer → JobTargetHooks.UnregisterPlayer, et la
+        // PlayerController.OnStopServer → MissionTargetHooks.UnregisterPlayer, et la
         // moindre fragilité (timing, exception en amont, identity déjà disposed)
         // laisse les missions actives et leurs items en monde (sort packages,
         // pickup, etc.). Les méthodes appelées sont idempotentes : si la chaîne
         // OnStopServer ré-appelle ces handlers ensuite, c'est un no-op.
         uint disconnectingNetId = conn.identity != null ? conn.identity.netId : 0u;
         if (disconnectingNetId != 0u) {
-            Sim.Jobs.JobServerManager.Instance.OnPlayerDisconnected(disconnectingNetId);
-            Sim.Jobs.JobBoardServer.Instance.OnPlayerDisconnected(conn);
+            Sim.Missions.MissionServerManager.Instance.OnPlayerDisconnected(disconnectingNetId);
+            Sim.Missions.MissionBoardServer.Instance.OnPlayerDisconnected(conn);
         }
 
         OnPlayerDisconnected?.Invoke(conn);
@@ -232,6 +233,11 @@ public class SimpleTownNetwork : NetworkManager
     }
 
     private IEnumerator UpdateOnlineStateCoroutine(string characterId, bool online) {
+        // Broadcast presence to every client up-front; each client filters by its own
+        // relationship store so only contacts react. Independent of the API call so
+        // a slow/failed DB write still pushes the right UI state to live sessions.
+        NetworkServer.SendToAll(new S2C_ContactPresence { characterId = characterId, online = online });
+
         UnityWebRequest req = ApiManager.Instance.UpdateCharacterOnlineStateRequest(characterId, online);
         yield return req.SendWebRequest();
         if (req.responseCode != 200) {
@@ -337,9 +343,12 @@ public class SimpleTownNetwork : NetworkManager
         PropSystemBootstrap.OnServerStart();
         NpcSystemBootstrap.OnServerStart();
         ItemSystemBootstrap.OnServerStart();
-        Sim.Jobs.JobSystemBootstrap.OnServerStart();
+        Sim.Missions.MissionSystemBootstrap.OnServerStart();
         Sim.RentSystemBootstrap.OnServerStart();
         Sim.AcquaintanceSystemBootstrap.OnServerStart();
+        Sim.GiveMoneySystemBootstrap.OnServerStart();
+        Sim.SmsSystemBootstrap.OnServerStart();
+        Sim.CallSystemBootstrap.OnServerStart();
 
         // Initialize all BuildingBehavior instances (scene objects, possibly inactive).
         // Replaces the former NetworkBehaviour.OnStartServer hook on each building.
@@ -354,6 +363,12 @@ public class SimpleTownNetwork : NetworkManager
         // can POST /props with placeId = TransitPlaceId. Idempotent — runs once
         // per server boot.
         StartCoroutine(Sim.ApiManager.Instance.EnsureTransitPlace());
+
+        // Ensure the singleton "city" place, then restore world items dropped on
+        // the ground in the City during a previous session. The city has no
+        // ApartmentController, so this is the city's equivalent of the apartment
+        // ground-item restore.
+        StartCoroutine(EnsureCityPlaceThenRestoreItems());
 
         // Recover from stale online flags left by a previous crash. The login
         // endpoint refuses to issue a JWT while any of the user's characters
@@ -385,8 +400,10 @@ public class SimpleTownNetwork : NetworkManager
         PropSystemBootstrap.OnClientStart();
         NpcSystemBootstrap.OnClientStart();
         ItemSystemBootstrap.OnClientStart();
-        Sim.Jobs.JobSystemBootstrap.OnClientStart();
+        Sim.Missions.MissionSystemBootstrap.OnClientStart();
         Sim.AcquaintanceSystemBootstrap.OnClientStart();
+        Sim.SmsSystemBootstrap.OnClientStart();
+        Sim.CallSystemBootstrap.OnClientStart();
         ClientLogger.Network("ClientStarted {Active}", NetworkClient.active);
     }
 
@@ -408,9 +425,12 @@ public class SimpleTownNetwork : NetworkManager
         NetworkServer.UnregisterHandler<CreateDeliveryRequest>();
         NetworkServer.UnregisterHandler<TeleportMessage>();
 
+        Sim.CallSystemBootstrap.OnServerStop();
+        Sim.SmsSystemBootstrap.OnServerStop();
+        Sim.GiveMoneySystemBootstrap.OnServerStop();
         Sim.AcquaintanceSystemBootstrap.OnServerStop();
         Sim.RentSystemBootstrap.OnServerStop();
-        Sim.Jobs.JobSystemBootstrap.OnServerStop();
+        Sim.Missions.MissionSystemBootstrap.OnServerStop();
         ItemSystemBootstrap.OnServerStop();
         NpcSystemBootstrap.OnServerStop();
         PropSystemBootstrap.OnServerStop();
@@ -441,8 +461,10 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.UnregisterHandler<S2C_HallDespawn>();
         NetworkClient.UnregisterHandler<S2C_ApartmentSpawn>();
 
+        Sim.CallSystemBootstrap.OnClientStop();
+        Sim.SmsSystemBootstrap.OnClientStop();
         Sim.AcquaintanceSystemBootstrap.OnClientStop();
-        Sim.Jobs.JobSystemBootstrap.OnClientStop();
+        Sim.Missions.MissionSystemBootstrap.OnClientStop();
         ItemSystemBootstrap.OnClientStop();
         NpcSystemBootstrap.OnClientStop();
         PropSystemBootstrap.OnClientStop();
@@ -452,6 +474,20 @@ public class SimpleTownNetwork : NetworkManager
     }
 
     #endregion
+
+    /// <summary>
+    /// Boot sequence for the City persistence place: ensure it exists (caching its
+    /// UUID on ApiManager.CityPlaceId), then restore the world items that were left
+    /// on the ground there in a previous session.
+    /// </summary>
+    private IEnumerator EnsureCityPlaceThenRestoreItems()
+    {
+        yield return Sim.ApiManager.Instance.EnsureCityPlace();
+
+        string cityPlaceId = Sim.ApiManager.Instance.CityPlaceId;
+        if (!string.IsNullOrEmpty(cityPlaceId) && ServerItemManager.Instance != null)
+            yield return ServerItemManager.Instance.LoadWorldItemsForPlace("city", cityPlaceId);
+    }
 
     private IEnumerator RetrieveCityData()
     {
@@ -673,8 +709,14 @@ public class SimpleTownNetwork : NetworkManager
 
         if (message.worldToast)
         {
-            // Feedback d'action banal (mains pleines, fonds insuffisants…) → toast flottant.
-            WorldToastManager.Show(message.text);
+            // Feedback d'action banal (mains pleines, fonds insuffisants…) → toast flottant,
+            // avec le template adapté (neutre / erreur / succès).
+            switch (message.Kind)
+            {
+                case ToastKind.Error:   WorldToastManager.ShowError(message.text);   break;
+                case ToastKind.Success: WorldToastManager.ShowSuccess(message.text); break;
+                default:                WorldToastManager.Show(message.text);        break;
+            }
         }
         else if (NotificationManager.Instance != null)
         {
@@ -884,7 +926,7 @@ public class SimpleTownNetwork : NetworkManager
         player.SetRawCharacterData(JsonUtility.ToJson(characterResponse.Characters[0]));
 
         // Hydrate the user's preferences (notif opt-ins, audio, graphics, …)
-        // so server-side gates (e.g. JobServerManager.Publish notif filter)
+        // so server-side gates (e.g. MissionServerManager.Publish notif filter)
         // can read them. Missing or failed fetch → leave defaults.
         UnityWebRequest settingsRequest = ApiManager.Instance.RetrieveUserSettingsRequest(userId);
         yield return settingsRequest.SendWebRequest();
@@ -897,6 +939,28 @@ public class SimpleTownNetwork : NetworkManager
             GameLogger.Network.Warning("UserSettingsRetrievalFailed {UserId} {ResponseCode}",
                 userId, settingsRequest.responseCode);
         }
+
+        // Hydrate the server-side unlocked-node cache so the mission gate
+        // (MissionServerManager.TakeFromBoard) can authorize node-gated missions
+        // without a per-take backend round-trip. Kept fresh on later unlocks via
+        // PlayerConstellation.CmdNotifyNodeUnlocked.
+        var constellation = go.GetComponent<Sim.Player.PlayerConstellation>();
+        if (constellation != null) {
+            UnityWebRequest constellationRequest =
+                ApiManager.Instance.RetrieveConstellationRequest(characterResponse.Characters[0].Id);
+            yield return constellationRequest.SendWebRequest();
+            if (constellationRequest.responseCode == 200) {
+                var stateResp = JsonUtility.FromJson<ConstellationStateResponse>(
+                    constellationRequest.downloadHandler.text);
+                if (stateResp?.States != null && stateResp.States.Length > 0) {
+                    constellation.ServerSetUnlockedNodes(stateResp.States[0].unlocked_node_ids);
+                }
+            } else {
+                GameLogger.Network.Warning("ConstellationRetrievalFailed {CharacterId} {ResponseCode}",
+                    characterResponse.Characters[0].Id, constellationRequest.responseCode);
+            }
+        }
+
         go.name = $"Player [conn={conn.connectionId}] [{characterResponse.Characters[0].Identity.FullName}]";
 
         // Provision the character's pocket + hand_left + hand_right places in DB

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 44
   displayName: Chaise en plastique
+  description: "Chaise en plastique l\xE9g\xE8re."
   sprite: {fileID: 0}
   propsType: 0
   price: 300
@@ -25,6 +26,7 @@ MonoBehaviour:
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
+  movable: 1
   rangeToInteract: 1
   rightClickOnly: 0
   actions: []
@@ -102,3 +104,8 @@ MonoBehaviour:
       color: {r: 0, g: 0, b: 0, a: 0}
       material: {fileID: 0}
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

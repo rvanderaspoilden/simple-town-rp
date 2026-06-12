@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 31
   displayName: Penderie
+  description: "Penderie pour ranger vos v\xEAtements."
   sprite: {fileID: 0}
   propsType: 0
   price: 550
@@ -25,10 +26,11 @@ MonoBehaviour:
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 1
+  movable: 1
   rangeToInteract: 2
   rightClickOnly: 0
-  actions:
-  unbuiltActions:
+  actions: []
+  unbuiltActions: []
   cursor: {fileID: 2800000, guid: 33526c3eed3c1d244a53675ab13ce34d, type: 3}
   presets:
   - id: 1
@@ -74,3 +76,8 @@ MonoBehaviour:
       color: {r: 0, g: 0, b: 0, a: 0}
       material: {fileID: 0}
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

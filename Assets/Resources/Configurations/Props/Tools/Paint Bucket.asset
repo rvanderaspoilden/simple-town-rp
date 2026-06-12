@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 14
   displayName: Pot de peinture
+  description: "Pot de peinture pour d\xE9corer murs et sols."
   sprite: {fileID: 0}
   propsType: 2
   price: 350
@@ -25,6 +26,7 @@ MonoBehaviour:
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 0
+  movable: 1
   rangeToInteract: 2
   rightClickOnly: 0
   actions:
@@ -33,3 +35,8 @@ MonoBehaviour:
   cursor: {fileID: 2800000, guid: fc4b7d40fef93c84c9788c76d6c5cb19, type: 3}
   presets: []
   buildSound: {fileID: 0}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

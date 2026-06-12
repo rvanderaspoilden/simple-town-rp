@@ -95,6 +95,8 @@ public struct S2C_ContainerItem
     public int EntityId;     // id éphémère alloué pour la session
     public int ConfigId;     // ItemConfig.ID
     public int SlotIndex;    // position dans la grille
+    public int PropConfigId; // >0 = meuble emballé (icône PropsConfig.Sprite, non-draggable) ; 0 = item normal
+    public int PropPresetId; // variant du meuble emballé (pour la preview au déballage)
 }
 
 /// <summary>Client → server : le joueur ouvre un conteneur (prop avec PropsConfig.Container.IsContainer).</summary>
@@ -133,8 +135,72 @@ public struct S2C_ContainerVisualState : NetworkMessage
     public bool   IsOpen;
 }
 
-/// <summary>Client → server : ferme la session conteneur en cours.</summary>
-public struct C2S_CloseContainer : NetworkMessage { }
+/// <summary>Client → server : ferme une session conteneur. <see cref="ItemContainer"/>
+/// distingue le colis (item-conteneur) d'un meuble (prop) — les deux peuvent être
+/// ouverts en même temps, chaque panneau ferme la sienne.</summary>
+public struct C2S_CloseContainer : NetworkMessage { public bool ItemContainer; }
+
+// ── Item-as-container (« package ») ───────────────────────────────────────────
+// Un item tenu en main peut être lui-même un conteneur (ItemConfig.Container).
+// Place backend "item_container:{itemUuid}" (owner_id = uuid de l'item package).
+// Même machinerie que les conteneurs de prop (sessions, snapshot, move/swap) ;
+// seul l'identifiant d'ouverture change (EntityId de l'item au lieu d'un PropId).
+
+/// <summary>Client → server : le joueur ouvre un item-conteneur qu'il tient en main.</summary>
+public struct C2S_OpenItemContainer : NetworkMessage
+{
+    public int EntityId;   // entityId de l'item package en main
+}
+
+/// <summary>Server → opener : snapshot de l'item-conteneur ouvert.</summary>
+public struct S2C_ItemContainerOpened : NetworkMessage
+{
+    public int    EntityId;          // entityId du package (matching ouverture optimiste)
+    public string PlaceId;           // UUID backend de la place item_container
+    public int    SlotCount;
+    public byte[] AcceptedTypes;     // valeurs ItemType ; vide = tous types
+    public S2C_ContainerItem[] Items;
+}
+
+/// <summary>Server → opener : refus d'ouverture d'un item-conteneur.</summary>
+public struct S2C_ItemContainerOpenFailed : NetworkMessage
+{
+    public int    EntityId;
+    public string ErrorMessage;
+}
+
+/// <summary>
+/// Client → server : « emballer » un prop possédé dans le colis tenu. Le serveur
+/// déplace la ligne `props` (UUID conservé) dans la place du colis (is_built=false).
+/// </summary>
+public struct C2S_PackProp : NetworkMessage
+{
+    public int PropId;
+}
+
+/// <summary>
+/// Client → server : « déballer » un meuble emballé du colis → re-pose à-construire
+/// dans l'appartement (build mode). Le serveur résout le meuble via la place du colis
+/// (bridge de <see cref="PackageEntityId"/>) + <see cref="SlotIndex"/>, PATCH la ligne
+/// `props` vers la place de l'appartement + position (UUID conservé), re-spawn runtime.
+/// </summary>
+public struct C2S_UnpackProp : NetworkMessage
+{
+    public int PackageEntityId;   // entityId runtime du colis (tenu OU au sol)
+    public int SlotIndex;         // slot du meuble emballé dans la grille
+    public Vector3 Position;
+    public Quaternion Rotation;
+}
+
+/// <summary>
+/// Client → server : lâcher au sol un item rangé dans un colis tenu OU dans une poche.
+/// <see cref="EntityId"/> = id de session de l'item (résolu côté serveur dans la session
+/// colis ouverte ou la session poche). L'item devient un item-monde au pied du joueur.
+/// </summary>
+public struct C2S_DropFromInventory : NetworkMessage
+{
+    public int EntityId;
+}
 
 // ── Poches (toujours ouvertes pour le joueur local) ───────────────────────────
 // Modèle identique à un conteneur 2 slots, persisté en DB à la place

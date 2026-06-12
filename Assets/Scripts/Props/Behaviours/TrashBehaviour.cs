@@ -31,10 +31,10 @@ public class TrashBehaviour : PropBehaviourBase
     /// </summary>
     public void OnThrown(bool byLocalPlayer)
     {
+        // VFX eco pour tous les clients de la room. La récompense (points Environnement)
+        // + le toast de succès sont gérés côté serveur (PropInteractionRouter.HandleTrash),
+        // qui les envoie au seul jeteur — d'où plus de toast local ici.
         PlayThrowVfx();
-
-        if (byLocalPlayer)
-            WorldToastManager.Show("🌱 Quartier plus propre", "+1 Crédit Social ⭐", delay: 0.35f);
     }
 
     /// <summary>
@@ -99,8 +99,8 @@ public class TrashBehaviour : PropBehaviourBase
 
         if (held.Count == 0) return;
 
-        // Un seul item → on le jette directement.
-        if (held.Count == 1) { SendThrow(held[0].entityId); return; }
+        // Un seul item → on le jette directement (confirmation si c'est un colis).
+        if (held.Count == 1) { RequestThrow(held[0].entityId, held[0].item); return; }
 
         // Plusieurs items → menu radial de choix (réutilise le HUD contextuel). Différé
         // d'une frame : le menu radial courant se ferme juste après cet Execute, donc on
@@ -109,15 +109,36 @@ public class TrashBehaviour : PropBehaviourBase
         foreach (var h in held)
         {
             int eid = h.entityId;
-            ItemConfig cfg = h.item != null ? h.item.Configuration : null;
+            ItemBehaviour itm = h.item;
+            ItemConfig cfg = itm != null ? itm.Configuration : null;
             Action choice = Action.CreateRuntime(
                 ActionTypeEnum.THROW,
                 cfg != null ? cfg.Label : "Jeter",
                 cfg != null ? cfg.Icon : null);
-            choice.OnExecute += _ => SendThrow(eid);
+            choice.OnExecute += _ => RequestThrow(eid, itm);
             choices.Add(choice);
         }
         StartCoroutine(ShowChoiceMenuNextFrame(choices.ToArray()));
+    }
+
+    /// <summary>
+    /// Jette l'item — mais demande confirmation d'abord si c'est un item-conteneur (colis),
+    /// car le serveur supprime alors définitivement le colis ET tout son contenu.
+    /// </summary>
+    private void RequestThrow(int entityId, ItemBehaviour item)
+    {
+        ItemConfig cfg = item != null ? item.Configuration : null;
+        bool isContainer = cfg != null && cfg.Container != null && cfg.Container.IsContainer;
+
+        if (isContainer) {
+            string label = !string.IsNullOrEmpty(cfg.Label) ? cfg.Label : "ce colis";
+            Sim.UI.ConfirmDialogUI.Request(
+                "Jeter le colis ?",
+                $"« {label} » et tout son contenu seront définitivement supprimés. Cette action est irréversible.",
+                () => SendThrow(entityId));
+        } else {
+            SendThrow(entityId);
+        }
     }
 
     private IEnumerator ShowChoiceMenuNextFrame(Action[] choices)

@@ -1,4 +1,5 @@
-﻿using Sim.Interactables;
+﻿using Sim.Constellation;
+using Sim.Interactables;
 using Sim.UI;
 using UnityEngine;
 
@@ -30,6 +31,9 @@ namespace Sim {
         private BuyConfirmUI buyConfirmUI;
 
         [SerializeField]
+        private ConstellationUI constellationUI;
+
+        [SerializeField]
         private AudioSource audioSource;
 
         [SerializeField]
@@ -55,6 +59,7 @@ namespace Sim {
             this.DisplayPanel(PanelTypeEnum.NONE);
             this.CloseContextMenu();
             this.CloseInventory();
+            this.CloseConstellation();
         }
 
         public void PlaySound(AudioClip sound, float volume) {
@@ -117,6 +122,21 @@ namespace Sim {
         public SalePriceInputUI SalePriceInputUI => salePriceInputUI;
 
         public BuyConfirmUI BuyConfirmUI => buyConfirmUI;
+
+        public ConstellationUI ConstellationUI => constellationUI;
+
+        public void ShowConstellation() {
+            if (this.constellationUI != null) this.constellationUI.gameObject.SetActive(true);
+        }
+
+        public void CloseConstellation() {
+            if (this.constellationUI != null) this.constellationUI.gameObject.SetActive(false);
+        }
+
+        public void ToggleConstellation() {
+            if (this.constellationUI != null)
+                this.constellationUI.gameObject.SetActive(!this.constellationUI.gameObject.activeSelf);
+        }
 
         public void ShowChatInput() {
             if (this.chatInputUI != null && !this.chatInputUI.IsOpen) this.chatInputUI.Show();

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d96afc3d24447147bebc4fb5d111efd, type: 3}
+  m_Name: sportif_base
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Constellation.ConstellationNodeData
+  id: sportif_base
+  displayName: Sportif
+  description: Le tronc de la branche Sportif.
+  branch: {fileID: 11400000, guid: ad862ab26945b7c4a9c39a8ab143e3fb, type: 2}
+  cost:
+  - branch: {fileID: 11400000, guid: ad862ab26945b7c4a9c39a8ab143e3fb, type: 2}
+    amount: 5
+  definesBranch: {fileID: 0}
+  mapPosition: {x: 0.0000047699523, y: -400}
+  connectedNodes:
+  - {fileID: 11400000, guid: 1794e87548db087449fac06d5cbb57b6, type: 2}
+  - {fileID: 11400000, guid: d6008ca67e1ffb94996454b0cc709a7e, type: 2}
+  - {fileID: 11400000, guid: d8a29b666861c014794f28fb53fccc9f, type: 2}
+  unlocks: []
+  activities: []
+  icon: {fileID: 0}
+  isCenter: 0
+  extraPrerequisites: []

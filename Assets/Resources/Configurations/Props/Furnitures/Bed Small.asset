@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 48
   displayName: Lit 1 place
+  description: Lit une place pour se reposer.
   sprite: {fileID: 0}
   propsType: 0
   price: 950
@@ -25,10 +26,11 @@ MonoBehaviour:
   hasPosableSurface: 0
   connectedToWall: 0
   toBuild: 1
+  movable: 1
   rangeToInteract: 1.5
   rightClickOnly: 0
   actions: []
-  unbuiltActions:
+  unbuiltActions: []
   cursor: {fileID: 2800000, guid: 9cc015a6abbde62498f5bd35945939ef, type: 3}
   presets:
   - id: 0
@@ -74,3 +76,8 @@ MonoBehaviour:
       color: {r: 0.9245283, g: 0.9245283, b: 0.9245283, a: 1}
       material: {fileID: 0}
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

@@ -25,7 +25,13 @@
         DESTROY,
         CLEAN,
         THROW,
-        MAKE_ACQUAINTANCE
+        MAKE_ACQUAINTANCE,
+        MAKE_CONTACT,
+        VIEW_IDENTITY,
+        TOGGLE_MUTE,
+        GIVE_MONEY,
+        REPACK,
+        UNPACK
     }
 
 }

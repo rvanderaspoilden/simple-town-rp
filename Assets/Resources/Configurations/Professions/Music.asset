@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0bdc841d9b84dc4eb5d387b22cc9fe6, type: 3}
+  m_Name: Music
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Professions.ProfessionConfig
+  id: music
+  displayName: Musicien
+  description: "Anime les rues et les \xE9v\xE9nements de la ville par sa musique."
+  color: {r: 0.85, g: 0.55, b: 0.85, a: 1}
+  baseSalary: 80
+  categoryTag: 5

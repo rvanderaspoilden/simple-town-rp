@@ -99,6 +99,28 @@ public struct S2C_TrashThrown : NetworkMessage {
 }
 
 /// <summary>
+/// Diffuse à tous les clients de la room la destruction d'un prop : ceux-ci jouent un VFX
+/// poussière + éclats à la position donnée (le prop est par ailleurs retiré via S2C_PropRemove).
+/// </summary>
+public struct S2C_PropDestroyed : NetworkMessage {
+    public string  RoomId;
+    public Vector3 Position;
+}
+
+/// <summary>
+/// Diffuse à tous les clients de la room la phase du VFX de construction d'un prop.
+/// Phase : 0 = Start (spawn le VFX en boucle), 1 = Finale (joue la finale + stoppe la
+/// boucle), 2 = Cancel (stoppe/détruit le VFX sans finale). Le client joue le VFX sur le
+/// PropBehaviourBase identifié par PropId.
+/// </summary>
+public struct S2C_ConstructionVfx : NetworkMessage {
+    public int    PropId;
+    public string RoomId;
+    public byte   Phase;
+    public int    DurationMs;   // Start uniquement : durée du build pour animer la révélation
+}
+
+/// <summary>
 /// État de vente d'un prop (orthogonal au PropType — n'importe quel meuble peut
 /// être mis en vente). Diffusé à la room sur changement et rejoué dans le snapshot.
 /// ReservedByName est vide tant que personne n'a cliqué Acheter.
@@ -136,6 +158,18 @@ public struct C2S_PropInteraction : NetworkMessage {
     public string   RoomId;
     public PropType Type;
     public byte[]   Payload;
+}
+
+/// <summary>
+/// Le client (constructeur) signale une phase du VFX de construction d'un prop. Le serveur
+/// valide la room puis diffuse S2C_ConstructionVfx à toute la room. Purement cosmétique
+/// (aucune mutation d'état). Phase : 0 = Start, 1 = Finale, 2 = Cancel.
+/// </summary>
+public struct C2S_ConstructionVfx : NetworkMessage {
+    public int    PropId;
+    public string RoomId;
+    public byte   Phase;
+    public int    DurationMs;   // Start uniquement : durée du build pour animer la révélation
 }
 
 /// <summary>Le client entre dans une room et demande son snapshot.</summary>

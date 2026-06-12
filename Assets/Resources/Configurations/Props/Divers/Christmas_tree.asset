@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 39
   displayName: "Arbre de no\xEBl"
+  description: "Sapin de No\xEBl d\xE9cor\xE9 pour les f\xEAtes."
   sprite: {fileID: 0}
   propsType: 4
   price: 250
@@ -34,3 +35,8 @@ MonoBehaviour:
   cursor: {fileID: 2800000, guid: b5ca50659d52b0c43b56fdc1455e5a41, type: 3}
   presets: []
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

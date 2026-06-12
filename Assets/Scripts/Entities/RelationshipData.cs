@@ -17,6 +17,9 @@ namespace Sim.Entities {
         public string otherCharacterId;
         public string state;   // "acquaintance" | "contact"
         public string metAt;
+        public string otherFullName;
+        public string jobProfessionId = "";  // other character's current profession id; "" = none
+        public bool online;                    // other character's online presence at fetch time
 
         public RelationshipState State {
             get {

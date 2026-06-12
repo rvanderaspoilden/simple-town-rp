@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 20
   displayName: Meuble bas cuisine
+  description: Meuble bas de cuisine avec rangements.
   sprite: {fileID: 0}
   propsType: 0
   price: 250
@@ -25,10 +26,11 @@ MonoBehaviour:
   hasPosableSurface: 1
   connectedToWall: 0
   toBuild: 1
+  movable: 1
   rangeToInteract: 1.5
   rightClickOnly: 0
-  actions:
-  unbuiltActions:
+  actions: []
+  unbuiltActions: []
   cursor: {fileID: 2800000, guid: 5ebd2cb74cea3b644a5834d4596e3665, type: 3}
   presets:
   - id: 1
@@ -88,3 +90,8 @@ MonoBehaviour:
       color: {r: 0, g: 0, b: 0, a: 0}
       material: {fileID: 0}
   buildSound: {fileID: 8300000, guid: 6411885c3a6fe874da90bf5645372766, type: 3}
+  buildDuration: 3
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0

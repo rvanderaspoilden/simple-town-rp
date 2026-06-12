@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 100
   label: "D\xE9bris"
+  description: "Des planches bris\xE9es laiss\xE9es par un meuble d\xE9truit. \xC0
+    nettoyer."
   type: 2
   handleType: 0
   unEquippedActions:
@@ -27,3 +29,7 @@ MonoBehaviour:
   poseShape: 0
   gripPosition: {x: 0, y: 0, z: 0}
   gripEuler: {x: 0, y: 0, z: 0}
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0
