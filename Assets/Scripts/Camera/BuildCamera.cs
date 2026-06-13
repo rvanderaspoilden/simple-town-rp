@@ -1,4 +1,4 @@
-﻿using Cinemachine;
+﻿using Unity.Cinemachine;
 using DG.Tweening;
 using Sim.Enums;
 using UnityEngine;

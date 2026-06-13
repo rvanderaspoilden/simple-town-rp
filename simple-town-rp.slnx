@@ -6,6 +6,7 @@
   <Project Path="Unity.ProBuilder.csproj" />
   <Project Path="Unity.Mathematics.csproj" />
   <Project Path="Unity.Multiplayer.Center.Editor.csproj" />
+  <Project Path="Unity.Cinemachine.Editor.csproj" />
   <Project Path="Unity.2D.Psdimporter.Editor.csproj" />
   <Project Path="Unity.MemoryProfiler.Editor.csproj" />
   <Project Path="Unity.InferenceEngine.Microsoft.Msagl.csproj" />
@@ -40,10 +41,12 @@
   <Project Path="UnityEditor.TestRunner.csproj" />
   <Project Path="Mirror.Examples.csproj" />
   <Project Path="Unity.AI.Pbr.csproj" />
+  <Project Path="Unity.Cinemachine.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Runtime.csproj" />
   <Project Path="Unity.Burst.CodeGen.csproj" />
   <Project Path="UnityEngine.TestRunner.csproj" />
   <Project Path="Unity.2D.Tilemap.Editor.csproj" />
+  <Project Path="Unity.Splines.Editor.csproj" />
   <Project Path="AV.Inspector.Runtime.csproj" />
   <Project Path="Unity.PerformanceTesting.csproj" />
   <Project Path="Unity.AI.ModelSelector.csproj" />
@@ -65,7 +68,6 @@
   <Project Path="Unity.Rider.Editor.csproj" />
   <Project Path="Unity.Mirror.CodeGen.csproj" />
   <Project Path="Unity.AI.Generators.IO.csproj" />
-  <Project Path="Cinemachine.csproj" />
   <Project Path="Unity.InternalAPIEditorBridge.001.csproj" />
   <Project Path="HFDownloader.csproj" />
   <Project Path="SimpleWebTransport.csproj" />
@@ -82,9 +84,9 @@
   <Project Path="glTFast.Newtonsoft.csproj" />
   <Project Path="Unity.TextMeshPro.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.2D.Editor.Overrides.csproj" />
-  <Project Path="com.unity.cinemachine.editor.csproj" />
   <Project Path="Unity.AI.Generators.Redux.csproj" />
   <Project Path="Mirror.Authenticators.csproj" />
+  <Project Path="com.IvanMurzak.Unity.MCP.Splines.Editor.csproj" />
   <Project Path="Unity.AI.Toolkit.Accounts.csproj" />
   <Project Path="Unity.AI.Generators.UI.csproj" />
   <Project Path="Unity.2D.Animation.Editor.csproj" />
@@ -94,6 +96,7 @@
   <Project Path="Mirror.Transports.csproj" />
   <Project Path="NuGetForUnity.csproj" />
   <Project Path="Unity.AI.Navigation.Editor.csproj" />
+  <Project Path="com.IvanMurzak.Unity.MCP.Terrain.Editor.csproj" />
   <Project Path="Unity.Timeline.csproj" />
   <Project Path="Unity.AppUI.MVVM.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Editor.Shared.csproj" />
@@ -107,6 +110,7 @@
   <Project Path="Unity.2D.Sprite.Editor.csproj" />
   <Project Path="Unity.AppUI.Navigation.csproj" />
   <Project Path="Unity.AI.Generators.Asset.csproj" />
+  <Project Path="com.IvanMurzak.Unity.MCP.Cinemachine.Editor.csproj" />
   <Project Path="Boxophobic.Utils.Editor.csproj" />
   <Project Path="Unity.AI.Toolkit.Asset.csproj" />
   <Project Path="Unity.Collections.CodeGen.csproj" />
@@ -138,6 +142,7 @@
   <Project Path="Unity.InferenceEngine.Editor.Visualizer.csproj" />
   <Project Path="Unity.SurfaceCache.Runtime.csproj" />
   <Project Path="Unity.InternalAPIEngineBridge.RenderPipelines.Core.Runtime.Shared.csproj" />
+  <Project Path="Unity.Splines.csproj" />
   <Project Path="Unity.AI.Navigation.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Animation.Editor.csproj" />
   <Project Path="Unity.Mathematics.Editor.csproj" />

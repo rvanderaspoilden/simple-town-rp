@@ -6,6 +6,7 @@ namespace Sim.Enums {
     public enum CameraModeEnum {
         FREE,
         BUILD,
-        FPS
+        FPS,
+        DRIVE
     }
 }

@@ -41,8 +41,10 @@ namespace Sim {
         private bool _pendingRunRequest;
 
         private BuildCamera buildCamera;
-        
+
         private ThirdPersonCamera tpsCamera;
+
+        private DriveCamera driveCamera;
 
         private float lastCameraPosition;
 
@@ -69,9 +71,11 @@ namespace Sim {
             this.camera = GetComponentInChildren<Camera>();
             this.buildCamera = GetComponent<BuildCamera>();
             this.tpsCamera = GetComponent<ThirdPersonCamera>();
+            this.driveCamera = GetComponent<DriveCamera>();
 
             this.buildCamera.enabled = false;
             this.tpsCamera.enabled = false;
+            if (this.driveCamera != null) this.driveCamera.enabled = false;
             this.fpsCamera.SetActive(false);
 
             DontDestroyOnLoad(this.gameObject);
@@ -341,6 +345,7 @@ namespace Sim {
             this.currentMode = mode;
             this.buildCamera.enabled = mode == CameraModeEnum.BUILD;
             this.tpsCamera.enabled = mode == CameraModeEnum.FREE;
+            if (this.driveCamera != null) this.driveCamera.enabled = mode == CameraModeEnum.DRIVE;
             this.fpsCamera.SetActive(mode == CameraModeEnum.FPS);
 
             if (this.currentMode == CameraModeEnum.BUILD) {
@@ -349,9 +354,24 @@ namespace Sim {
             } else if (this.currentMode == CameraModeEnum.FREE) {
                 this.tpsCamera.Setup(this.buildCamera.GetVirtualCamera());
                 this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
+            } else if (this.currentMode == CameraModeEnum.DRIVE) {
+                this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
             } else {
                 this.camera.cullingMask = this.WithOutlineLayer(this.fpsCullingMask);
             }
+        }
+
+        /// <summary>Bascule sur la caméra de conduite dédiée, ciblant le véhicule donné.</summary>
+        public void EnterVehicleCamera(VehicleController vehicle) {
+            if (this.driveCamera == null) return;
+            this.driveCamera.SetVehicle(vehicle);
+            this.SetCurrentMode(CameraModeEnum.DRIVE);
+        }
+
+        /// <summary>Rend la main à la caméra "à pied" (FREE) à la sortie du véhicule.</summary>
+        public void ExitVehicleCamera() {
+            if (this.driveCamera != null) this.driveCamera.SetVehicle(null);
+            this.SetCurrentMode(CameraModeEnum.FREE);
         }
 
         private void ManageInteraction() {

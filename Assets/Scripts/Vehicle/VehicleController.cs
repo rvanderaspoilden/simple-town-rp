@@ -43,6 +43,8 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SerializeField] private float reverseSpeed = 3f;
     [SerializeField] private float acceleration = 8f;
     [SerializeField] private float braking      = 12f;
+    [Tooltip("Décélération en roue libre (accélérateur relâché, sans freiner). Faible = inertie.")]
+    [SerializeField] private float friction      = 1.5f;
     [Tooltip("Vitesse de braquage (deg/s) à pleine vitesse.")]
     [SerializeField] private float turnSpeed    = 90f;
 
@@ -62,6 +64,10 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     public Transform CameraAnchor => cameraAnchor;
     public Transform ExitAnchor   => exitAnchor;
     public bool      IsOccupied   => driverNetId != 0;
+
+    /// <summary>Vitesse normalisée [0..1] (magnitude / maxSpeed). Owner-only (calculée localement) :
+    /// utilisée par DriveCamera pour l'effet de vitesse (FOV).</summary>
+    public float NormalizedSpeed => maxSpeed > 0f ? Mathf.Clamp01(Mathf.Abs(_currentSpeed) / maxSpeed) : 0f;
 
     // ── Lifecycle ───────────────────────────────────────────────────────────────
 
@@ -190,7 +196,11 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         float targetSpeed = throttle > 0f ? throttle * maxSpeed
                           : throttle < 0f ? throttle * reverseSpeed
                           : 0f;
-        float rate = Mathf.Abs(targetSpeed) > Mathf.Abs(_currentSpeed) ? acceleration : braking;
+        // Roue libre quand l'accélérateur est relâché (inertie) ; sinon accélération si on pousse,
+        // freinage si on demande l'inverse du mouvement courant.
+        float rate = Mathf.Approximately(throttle, 0f) ? friction
+                   : Mathf.Abs(targetSpeed) > Mathf.Abs(_currentSpeed) ? acceleration
+                   : braking;
         _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, rate * Time.deltaTime);
 
         // Braquage proportionnel à la vitesse (et à son signe, comme une vraie voiture).

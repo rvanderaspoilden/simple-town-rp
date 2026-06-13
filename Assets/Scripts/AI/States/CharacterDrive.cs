@@ -38,9 +38,8 @@ namespace AI.States {
             this.player.SetAnimatorAction(CharacterAnimatorAction.SIT);
             this.player.SetHeadTargetPosition(this.player.SitHeadPosition);
 
-            if (this.vehicle.CameraAnchor != null) {
-                CameraManager.Instance.SetCameraTarget(this.vehicle.CameraAnchor);
-            }
+            // Caméra Cinemachine dédiée à la conduite (centrée sur le véhicule, rotation souris seule).
+            CameraManager.Instance.EnterVehicleCamera(this.vehicle);
         }
 
         public void Tick() { }
@@ -59,7 +58,8 @@ namespace AI.States {
             this.player.Collider.enabled = true;
             this.player.NavMeshAgent.enabled = true;
 
-            // Recale la caméra sur la tête du joueur.
+            // Rend la main à la caméra "à pied" (FREE), recalée sur la tête du joueur.
+            CameraManager.Instance.ExitVehicleCamera();
             CameraManager.Instance.SetCameraTarget(this.player.GetHeadTargetForCamera());
         }
     }
