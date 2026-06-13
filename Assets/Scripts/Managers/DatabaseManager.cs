@@ -116,6 +116,14 @@ namespace Sim {
                 if (config == null || config.Prefab == null) continue;
                 NetworkManager.singleton.spawnPrefabs.Add(config.Prefab.gameObject);
             }
+
+            // Véhicules : tout prefab portant un VehicleController sous Resources/Prefabs/Vehicles
+            // est enregistré comme spawnable Mirror (spawn serveur via VehicleSpawner).
+            foreach (VehicleController vehicle in Resources.LoadAll<VehicleController>("Prefabs/Vehicles")) {
+                if (vehicle == null) continue;
+                if (!NetworkManager.singleton.spawnPrefabs.Contains(vehicle.gameObject))
+                    NetworkManager.singleton.spawnPrefabs.Add(vehicle.gameObject);
+            }
         }
 
         // ── Lookups ──────────────────────────────────────────────────────────────

@@ -15,6 +15,34 @@ using UnityEngine;
 public static class SeatService {
 
     /// <summary>
+    /// Hauteur (mètres) à laquelle on lance le linecast de ligne de vue, pour éviter
+    /// de raser le sol (origin/siège sont au niveau des pieds).
+    /// </summary>
+    private const float LineOfSightHeight = 1.0f;
+
+    private static int _obstructionMask = -1;
+    private static int ObstructionMask {
+        get {
+            if (_obstructionMask == -1) _obstructionMask = LayerMask.GetMask("Wall", "Door");
+            return _obstructionMask;
+        }
+    }
+
+    /// <summary>
+    /// Vrai si un mur (layer "Wall") ou une porte (layer "Door") se trouve entre
+    /// <paramref name="from"/> et <paramref name="to"/>. Le linecast ignore les triggers
+    /// et est lancé à hauteur de buste pour ne pas heurter le sol. Évite qu'un NPC
+    /// cible/réserve un siège situé derrière un mur ou une porte (même room, distance
+    /// à vol d'oiseau courte).
+    /// </summary>
+    private static bool IsBlockedByWall(Vector3 from, Vector3 to) {
+        if (ObstructionMask == 0) return false; // layers absents du projet → pas de blocage
+        Vector3 a = from + Vector3.up * LineOfSightHeight;
+        Vector3 b = to   + Vector3.up * LineOfSightHeight;
+        return Physics.Linecast(a, b, ObstructionMask, QueryTriggerInteraction.Ignore);
+    }
+
+    /// <summary>
     /// Tente d'attribuer un slot Seat libre à <paramref name="entity"/> sur le prop indiqué.
     /// Renvoie true et remplit <paramref name="seatTransform"/> en cas de succès.
     /// Idempotent : si l'entité occupe déjà un slot Seat, renvoie son transform actuel.
@@ -116,6 +144,10 @@ public static class SeatService {
             Vector3 pos = behaviour.SeatTransforms[0].position;
             float sqr = (pos - origin).sqrMagnitude;
             if (sqr > bestSqr) continue;
+
+            // Ligne de vue : un mur entre le NPC et le siège l'exclut (pas
+            // d'interaction « à travers les murs », cf. CanInteractWith côté joueur).
+            if (IsBlockedByWall(origin, pos)) continue;
 
             bestSqr          = sqr;
             propId           = state.PropId;

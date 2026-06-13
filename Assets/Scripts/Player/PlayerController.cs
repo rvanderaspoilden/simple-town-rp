@@ -973,6 +973,16 @@ namespace Sim {
             this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
         }
 
+        /// <summary>True tant que le joueur conduit un véhicule (état CharacterDrive).
+        /// Géré exclusivement par CharacterDrive.OnEnter/OnExit ; consommé par CameraManager
+        /// pour neutraliser le click-to-move pendant la conduite.</summary>
+        public bool IsDriving { get; set; }
+
+        /// <summary>Entre dans l'état de conduite du véhicule (miroir de Sit()).</summary>
+        public void DriveVehicle(VehicleController vehicle) {
+            this.stateMachine.SetState(new CharacterDrive(this, vehicle));
+        }
+
         /// <summary>Enters the timed prop-construction state: looping anim + world progress
         /// bar above <paramref name="progressAnchor"/> (le prop) over <paramref name="duration"/> s.
         /// On completion fires <paramref name="onComplete"/>. Interrupted (cancelled) if any other

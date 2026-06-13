@@ -31,7 +31,9 @@
         TOGGLE_MUTE,
         GIVE_MONEY,
         REPACK,
-        UNPACK
+        UNPACK,
+        ENTER_VEHICLE,
+        EXIT_VEHICLE
     }
 
 }

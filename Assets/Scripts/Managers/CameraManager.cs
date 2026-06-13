@@ -98,6 +98,18 @@ namespace Sim {
         void Update() {
             if (PlayerController.Local == null || PlayerController.Local.PlayerState == PlayerState.DIED) return;
 
+            // Pendant la conduite, l'input est piloté par le VehicleController (WASD).
+            // On neutralise le click-to-move / menu radial pour éviter qu'un clic au sol
+            // déclenche un MoveTo qui se battrait avec la conduite.
+            if (PlayerController.Local.IsDriving) {
+                if (this._hoveredOutline != null) {
+                    this._hoveredOutline.Hide();
+                    this._hoveredOutline = null;
+                }
+                HoverNameTooltip.Hide();
+                return;
+            }
+
             if (this.currentMode == CameraModeEnum.FREE) {
                 this.ManageInteraction();
                 this.ManageHover();
