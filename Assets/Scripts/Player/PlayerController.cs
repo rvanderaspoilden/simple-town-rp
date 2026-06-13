@@ -983,6 +983,15 @@ namespace Sim {
             this.stateMachine.SetState(new CharacterDrive(this, vehicle));
         }
 
+        /// <summary>True tant que le joueur est passager d'un véhicule (état CharacterPassenger).
+        /// Comme IsDriving, sert à neutraliser le click-to-move / survol côté caméra.</summary>
+        public bool IsPassenger { get; set; }
+
+        /// <summary>Entre dans l'état passager (assis, vue véhicule, sortie via X).</summary>
+        public void RidePassenger(VehicleController vehicle) {
+            this.stateMachine.SetState(new CharacterPassenger(this, vehicle));
+        }
+
         /// <summary>Enters the timed prop-construction state: looping anim + world progress
         /// bar above <paramref name="progressAnchor"/> (le prop) over <paramref name="duration"/> s.
         /// On completion fires <paramref name="onComplete"/>. Interrupted (cancelled) if any other

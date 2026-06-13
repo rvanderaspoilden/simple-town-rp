@@ -105,7 +105,7 @@ namespace Sim {
             // Pendant la conduite, l'input est piloté par le VehicleController (WASD).
             // On neutralise le click-to-move / menu radial pour éviter qu'un clic au sol
             // déclenche un MoveTo qui se battrait avec la conduite.
-            if (PlayerController.Local.IsDriving) {
+            if (PlayerController.Local.IsDriving || PlayerController.Local.IsPassenger) {
                 if (this._hoveredOutline != null) {
                     this._hoveredOutline.Hide();
                     this._hoveredOutline = null;

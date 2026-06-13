@@ -40,6 +40,9 @@ namespace AI.States {
 
             // Caméra Cinemachine dédiée à la conduite (centrée sur le véhicule, rotation souris seule).
             CameraManager.Instance.EnterVehicleCamera(this.vehicle);
+
+            // HUD de conduite : vitesse km/h + rappel des touches.
+            HUDManager.Instance.ShowVehicleHud(this.vehicle);
         }
 
         public void Tick() { }
@@ -57,6 +60,9 @@ namespace AI.States {
 
             this.player.Collider.enabled = true;
             this.player.NavMeshAgent.enabled = true;
+
+            // Masque le HUD de conduite.
+            HUDManager.Instance.HideVehicleHud();
 
             // Rend la main à la caméra "à pied" (FREE), recalée sur la tête du joueur.
             CameraManager.Instance.ExitVehicleCamera();

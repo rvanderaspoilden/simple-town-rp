@@ -34,6 +34,9 @@ namespace Sim {
         private ConstellationUI constellationUI;
 
         [SerializeField]
+        private VehicleHudUI vehicleHudUI;
+
+        [SerializeField]
         private AudioSource audioSource;
 
         [SerializeField]
@@ -70,6 +73,15 @@ namespace Sim {
             this.CloseContextMenu();
             this.CloseInventory();
             this.CloseConstellation();
+            this.HideVehicleHud();
+        }
+
+        public void ShowVehicleHud(VehicleController vehicle) {
+            if (this.vehicleHudUI != null) this.vehicleHudUI.Show(vehicle);
+        }
+
+        public void HideVehicleHud() {
+            if (this.vehicleHudUI != null) this.vehicleHudUI.Hide();
         }
 
         // Façade : tous les appels existants passent désormais par l'AudioManager (pooling +
