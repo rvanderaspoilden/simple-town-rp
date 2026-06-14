@@ -34,6 +34,9 @@ namespace AI.States {
 
             // Vue embarquée : on suit le véhicule (même caméra dédiée que le conducteur).
             CameraManager.Instance.EnterVehicleCamera(this.vehicle);
+
+            // HUD : vie du véhicule + rappel touche de sortie (mode passager).
+            HUDManager.Instance.ShowVehicleHud(this.vehicle, false);
         }
 
         public void Tick() {
@@ -46,6 +49,7 @@ namespace AI.States {
 
         public void OnExit() {
             this.player.IsPassenger = false;
+            HUDManager.Instance.HideVehicleHud();
             this.player.SetAnimatorAction(CharacterAnimatorAction.NONE);
             this.player.SetHeadTargetPosition(this.player.IdleHeadPosition);
 

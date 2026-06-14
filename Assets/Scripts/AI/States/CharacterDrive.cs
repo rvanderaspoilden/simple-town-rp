@@ -41,8 +41,8 @@ namespace AI.States {
             // Caméra Cinemachine dédiée à la conduite (centrée sur le véhicule, rotation souris seule).
             CameraManager.Instance.EnterVehicleCamera(this.vehicle);
 
-            // HUD de conduite : vitesse km/h + rappel des touches.
-            HUDManager.Instance.ShowVehicleHud(this.vehicle);
+            // HUD de conduite : vitesse km/h + vie + rappel des touches (mode conducteur).
+            HUDManager.Instance.ShowVehicleHud(this.vehicle, true);
         }
 
         public void Tick() { }

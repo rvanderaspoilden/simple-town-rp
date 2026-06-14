@@ -12,17 +12,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 32becda0c41f3814393ee9357d721018, type: 3}
   m_Name: Car
   m_EditorClassIdentifier: Assembly-CSharp::VehicleConfig
+  id: city-car
   modelName: Citadine
+  prefab: {fileID: 6048379817288373512, guid: 684d13f604e6be5498b798123c9d984d, type: 3}
   passengerCount: 4
   trunkSlots: 5
-  maxSpeed: 6
+  maxHealth: 100
+  price: 100
+  maxSpeed: 15
   reverseSpeed: 3
   acceleration: 8
   braking: 12
   friction: 1.5
   turnSpeed: 90
-  engineLoop: {fileID: 0}
-  brake: {fileID: 0}
+  engineLoop: {fileID: 8300000, guid: bda86261998f0d34887141d2666de96e, type: 3}
+  brake: {fileID: 8300000, guid: 418160fd83540d94499c3262df46c745, type: 3}
   horn: {fileID: 8300000, guid: 8d7778d785a83b04e91e5316cc9776de, type: 3}
   doorOpen: {fileID: 8300000, guid: 3c27c1451bbde96449bb91f247e52bc6, type: 3}
   doorClose: {fileID: 8300000, guid: 0872c37b5e9f503449ae45c3391723c2, type: 3}
+  impact: {fileID: 8300000, guid: 4b6d1717fffecb54eac97b6cdf748a0d, type: 3}
+  ko: {fileID: 8300000, guid: 4b6d1717fffecb54eac97b6cdf748a0d, type: 3}
+  lockSound: {fileID: 8300000, guid: 6b165381b0fae274e9f5ddc5d1d5b4db, type: 3}
+  unlockSound: {fileID: 8300000, guid: 97d24e55eb3deb24a88abea945036e6e, type: 3}

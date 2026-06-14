@@ -76,8 +76,8 @@ namespace Sim {
             this.HideVehicleHud();
         }
 
-        public void ShowVehicleHud(VehicleController vehicle) {
-            if (this.vehicleHudUI != null) this.vehicleHudUI.Show(vehicle);
+        public void ShowVehicleHud(VehicleController vehicle, bool asDriver) {
+            if (this.vehicleHudUI != null) this.vehicleHudUI.Show(vehicle, asDriver);
         }
 
         public void HideVehicleHud() {

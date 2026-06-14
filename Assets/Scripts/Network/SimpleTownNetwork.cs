@@ -349,6 +349,7 @@ public class SimpleTownNetwork : NetworkManager
         Sim.GiveMoneySystemBootstrap.OnServerStart();
         Sim.SmsSystemBootstrap.OnServerStart();
         Sim.CallSystemBootstrap.OnServerStart();
+        Sim.VehicleSystemBootstrap.OnServerStart();
 
         // Initialize all BuildingBehavior instances (scene objects, possibly inactive).
         // Replaces the former NetworkBehaviour.OnStartServer hook on each building.
@@ -425,6 +426,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkServer.UnregisterHandler<CreateDeliveryRequest>();
         NetworkServer.UnregisterHandler<TeleportMessage>();
 
+        Sim.VehicleSystemBootstrap.OnServerStop();
         Sim.CallSystemBootstrap.OnServerStop();
         Sim.SmsSystemBootstrap.OnServerStop();
         Sim.GiveMoneySystemBootstrap.OnServerStop();

@@ -1,14 +1,15 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Sim.UI {
     /// <summary>
-    /// Panneau HUD affiché pendant la conduite : vitesse en km/h, nom du modèle et rappel des
-    /// touches. Le rappel des touches est du texte statique autoré dans le prefab HUD ; ce
-    /// composant ne pilote que la vitesse + le modèle et l'affichage on/off.
+    /// Panneau HUD affiché aux occupants d'un véhicule (conducteur ET passagers) : vitesse km/h,
+    /// modèle, BARRE DE VIE du véhicule, et rappel des touches (complet pour le conducteur, réduit
+    /// à « sortir » pour les passagers).
     ///
-    /// Activé par <see cref="HUDManager.ShowVehicleHud"/> à l'entrée en conduite
-    /// (<c>CharacterDrive.OnEnter</c>) et masqué à la sortie.
+    /// Activé par <see cref="HUDManager.ShowVehicleHud"/> (CharacterDrive / CharacterPassenger),
+    /// masqué à la sortie.
     /// </summary>
     public class VehicleHudUI : MonoBehaviour {
         [Header("Settings")]
@@ -16,14 +17,24 @@ namespace Sim.UI {
         [SerializeField] private TextMeshProUGUI speedText;
         [Tooltip("Nom du modèle conduit (optionnel).")]
         [SerializeField] private TextMeshProUGUI modelText;
+        [Tooltip("Image (Filled Horizontal) de la barre de vie du véhicule.")]
+        [SerializeField] private Image healthFill;
+        [Tooltip("Texte des touches : complet pour le conducteur, réduit pour le passager.")]
+        [SerializeField] private TextMeshProUGUI keysText;
+        [Tooltip("Indicateur d'état verrouillé / déverrouillé.")]
+        [SerializeField] private TextMeshProUGUI lockText;
+
+        private const string DriverKeys    = "Z/S : avancer/reculer    Q/D : tourner    ESPACE : frein    H : klaxon    L : verrouiller    X : sortir";
+        private const string PassengerKeys = "X : descendre";
 
         private VehicleController vehicle;
 
-        public void Show(VehicleController target) {
+        public void Show(VehicleController target, bool asDriver) {
             this.vehicle = target;
             if (this.modelText != null) {
                 this.modelText.text = target != null && target.Config != null ? target.Config.modelName : string.Empty;
             }
+            if (this.keysText != null) this.keysText.text = asDriver ? DriverKeys : PassengerKeys;
             this.gameObject.SetActive(true);
         }
 
@@ -33,8 +44,19 @@ namespace Sim.UI {
         }
 
         private void Update() {
-            if (this.vehicle == null || this.speedText == null) return;
-            this.speedText.text = $"{this.vehicle.SpeedKmh:0} km/h";
+            if (this.vehicle == null) return;
+            if (this.speedText != null)
+                this.speedText.text = this.vehicle.IsKO ? "KO" : $"{this.vehicle.SpeedKmh:0} km/h";
+            if (this.healthFill != null) {
+                float t = this.vehicle.HealthNormalized;
+                this.healthFill.fillAmount = t;
+                this.healthFill.color = Color.Lerp(new Color(0.9f, 0.2f, 0.15f), new Color(0.35f, 0.85f, 0.4f), t);
+            }
+            if (this.lockText != null) {
+                bool locked = this.vehicle.IsLocked;
+                this.lockText.text = locked ? "VERROUILLÉ" : "DÉVERROUILLÉ";
+                this.lockText.color = locked ? new Color(0.95f, 0.5f, 0.3f) : new Color(0.6f, 0.85f, 0.6f);
+            }
         }
     }
 }

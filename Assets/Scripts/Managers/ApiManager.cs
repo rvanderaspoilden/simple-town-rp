@@ -561,6 +561,98 @@ namespace Sim {
             onDone?.Invoke();
         }
 
+        // ── Vehicles (ownership) ──────────────────────────────────────────────
+
+        /// <summary>Fired after RetrieveOwnedVehicles — the calling character's owned vehicles.</summary>
+        public static event Action<List<VehicleData>> OnOwnedVehiclesRetrieved;
+
+        /// <summary>GET /characters/:id/vehicles → fires OnOwnedVehiclesRetrieved (client UI).</summary>
+        public void RetrieveOwnedVehicles(string characterId) {
+            StartCoroutine(RetrieveOwnedVehiclesCoroutine(characterId,
+                list => OnOwnedVehiclesRetrieved?.Invoke(list)));
+        }
+
+        /// <summary>GET /characters/:id/vehicles with a callback (server-side validation).</summary>
+        public IEnumerator RetrieveOwnedVehiclesCoroutine(string characterId, Action<List<VehicleData>> onDone) {
+            UnityWebRequest request = BuildJsonRequest($"{this.uri}/characters/{characterId}/vehicles", "GET", null);
+            yield return request.SendWebRequest();
+
+            List<VehicleData> vehicles = new List<VehicleData>();
+            if (request.responseCode == 200) {
+                VehicleListResponse response = JsonUtility.FromJson<VehicleListResponse>(request.downloadHandler.text);
+                if (response?.vehicles != null) vehicles = response.vehicles;
+            } else {
+                Debug.LogError($"[ApiManager] RetrieveOwnedVehicles failed code={request.responseCode}");
+            }
+            onDone?.Invoke(vehicles);
+        }
+
+        /// <summary>POST /vehicles/ensure — get-or-create the ownership row for a stable
+        /// vehicle key. Server-side (called on spawn). Returns the row (owner may be empty).</summary>
+        public IEnumerator EnsureVehicleCoroutine(string vehicleKey, string modelId, Action<VehicleData> onDone) {
+            UnityWebRequest request = BuildJsonRequest($"{this.uri}/vehicles/ensure", "POST",
+                new EnsureVehicleBody { vehicleKey = vehicleKey, modelId = modelId });
+            yield return request.SendWebRequest();
+
+            VehicleData vehicle = null;
+            if (request.responseCode == 200 || request.responseCode == 201) {
+                vehicle = JsonUtility.FromJson<VehicleData>(request.downloadHandler.text);
+            } else {
+                Debug.LogError($"[ApiManager] EnsureVehicle failed code={request.responseCode} body={request.downloadHandler.text}");
+            }
+            onDone?.Invoke(vehicle);
+        }
+
+        /// <summary>POST /places then invokes onPlaceId with the place id (idempotent on placeKey).
+        /// Server-side — used to get-or-create a character's virtual garage place.</summary>
+        public IEnumerator CreatePlaceCoroutine(CreatePlaceBody body, Action<string> onPlaceId) {
+            UnityWebRequest request = CreatePlaceRequest(body);
+            yield return request.SendWebRequest();
+
+            string placeId = null;
+            if (request.responseCode == 200 || request.responseCode == 201) {
+                try {
+                    PlaceJson place = JsonConvert.DeserializeObject<PlaceJson>(request.downloadHandler.text);
+                    placeId = place?.Id;
+                } catch (Exception e) {
+                    Debug.LogError($"[ApiManager] CreatePlace parse failed: {e.Message}");
+                }
+            } else {
+                Debug.LogError($"[ApiManager] CreatePlace failed code={request.responseCode} body={request.downloadHandler.text}");
+            }
+            onPlaceId?.Invoke(placeId);
+        }
+
+        /// <summary>POST /vehicles — creates a purchased vehicle in the owner's garage. Server-side.</summary>
+        public IEnumerator CreateGaragedVehicleCoroutine(string ownerCharacterId, string modelId, string placeId, Action<VehicleData> onDone) {
+            UnityWebRequest request = BuildJsonRequest($"{this.uri}/vehicles", "POST",
+                new CreateGaragedVehicleBody { ownerCharacterId = ownerCharacterId, modelId = modelId, placeId = placeId });
+            yield return request.SendWebRequest();
+
+            VehicleData vehicle = null;
+            if (request.responseCode == 200 || request.responseCode == 201) {
+                vehicle = JsonUtility.FromJson<VehicleData>(request.downloadHandler.text);
+            } else {
+                Debug.LogError($"[ApiManager] CreateGaragedVehicle failed code={request.responseCode} body={request.downloadHandler.text}");
+            }
+            onDone?.Invoke(vehicle);
+        }
+
+        /// <summary>PATCH /vehicles/:key/owner — claim/transfer ownership. Server-side.</summary>
+        public IEnumerator SetVehicleOwnerCoroutine(string vehicleKey, string ownerCharacterId, Action<VehicleData> onDone) {
+            UnityWebRequest request = BuildJsonRequest($"{this.uri}/vehicles/{vehicleKey}/owner", "PATCH",
+                new SetVehicleOwnerBody { ownerCharacterId = ownerCharacterId });
+            yield return request.SendWebRequest();
+
+            VehicleData vehicle = null;
+            if (request.responseCode == 200) {
+                vehicle = JsonUtility.FromJson<VehicleData>(request.downloadHandler.text);
+            } else {
+                Debug.LogError($"[ApiManager] SetVehicleOwner failed code={request.responseCode} body={request.downloadHandler.text}");
+            }
+            onDone?.Invoke(vehicle);
+        }
+
         // ── Direct messages (SMS) ─────────────────────────────────────────────
 
         public static event Action<string, List<DirectMessageData>> OnConversationRetrieved; // (otherId, messages)

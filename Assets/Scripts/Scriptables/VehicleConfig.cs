@@ -13,14 +13,26 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Vehicle Config", menuName = "Configurations/Vehicle")]
 public class VehicleConfig : ScriptableObject {
     [Header("Identity")]
+    [Tooltip("Identifiant stable du véhicule (clé de résolution config↔DB↔prefab). Unique, ex. « city-car ».")]
+    public string id = "vehicle";
     [Tooltip("Nom du modèle (affiché dans le HUD / l'UI).")]
     public string modelName = "Vehicle";
+    [Tooltip("Prefab conduisible (avec VehicleController) instancié pour ce véhicule.")]
+    public GameObject prefab;
 
     [Header("Capacity")]
     [Tooltip("Nombre total de places assises (conducteur inclus).")]
     [Min(1)] public int passengerCount = 1;
     [Tooltip("Nombre d'emplacements de stockage du coffre.")]
     [Min(0)] public int trunkSlots = 0;
+
+    [Header("Health")]
+    [Tooltip("Points de vie maximum. À 0, le véhicule est KO (ne roule plus).")]
+    [Min(1f)] public float maxHealth = 100f;
+
+    [Header("Shop")]
+    [Tooltip("Prix d'achat au concessionnaire (BroCoins).")]
+    [Min(0)] public int price = 5000;
 
     [Header("Driving (kinematic arcade)")]
     public float maxSpeed     = 6f;
@@ -44,4 +56,12 @@ public class VehicleConfig : ScriptableObject {
     public AudioClip doorOpen;
     [Tooltip("Fermeture de portière (à la descente).")]
     public AudioClip doorClose;
+    [Tooltip("Choc/collision (volume proportionnel à la violence de l'impact).")]
+    public AudioClip impact;
+    [Tooltip("Joué une fois quand le véhicule tombe KO (vie à 0).")]
+    public AudioClip ko;
+    [Tooltip("Verrouillage du véhicule.")]
+    public AudioClip lockSound;
+    [Tooltip("Déverrouillage du véhicule.")]
+    public AudioClip unlockSound;
 }

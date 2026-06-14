@@ -27,12 +27,14 @@ namespace Sim {
         public static List<SubGameConfiguration> SubGameConfigurations;
         public static List<BuildingConfig> BuildingConfigurations;
         public static List<MinimapRoomMapConfig> MinimapRoomMapConfigs;
+        public static List<VehicleConfig> VehicleConfigs;
 
         // Lookups O(1) construits au chargement.
         private static Dictionary<int, PropsConfig> _propsById;
         private static Dictionary<int, CoverConfig> _paintsById;
         private static Dictionary<int, ItemConfig> _itemsById;
         private static Dictionary<string, MinimapRoomMapConfig> _minimapByRoomId;
+        private static Dictionary<string, VehicleConfig> _vehiclesById;
 
         public static DatabaseManager Instance;
 
@@ -80,6 +82,17 @@ namespace Sim {
                 _minimapByRoomId[m.RoomId] = m;
             }
             Debug.Log($"Minimap room map configs loaded : {MinimapRoomMapConfigs.Count}");
+
+            VehicleConfigs = Resources.LoadAll<VehicleConfig>("Configurations/Vehicles").ToList();
+            _vehiclesById = new Dictionary<string, VehicleConfig>();
+            foreach (var v in VehicleConfigs) {
+                if (v == null) continue;
+                if (!string.IsNullOrEmpty(v.id)) _vehiclesById[v.id] = v;
+                // Repli par nom de modèle (anciennes lignes DB qui stockaient le modelName).
+                if (!string.IsNullOrEmpty(v.modelName) && !_vehiclesById.ContainsKey(v.modelName))
+                    _vehiclesById[v.modelName] = v;
+            }
+            Debug.Log($"Vehicle configs loaded : {VehicleConfigs.Count}");
 
             RegisterPrefabs();
 
@@ -149,6 +162,11 @@ namespace Sim {
         public static MinimapRoomMapConfig GetMinimapRoomMapByRoomId(string roomId)
             => _minimapByRoomId != null && !string.IsNullOrEmpty(roomId)
                && _minimapByRoomId.TryGetValue(roomId, out var m) ? m : null;
+
+        /// <summary>Résout une config véhicule par son id (repli sur le modelName pour les anciennes lignes).</summary>
+        public static VehicleConfig GetVehicleConfigById(string id)
+            => _vehiclesById != null && !string.IsNullOrEmpty(id)
+               && _vehiclesById.TryGetValue(id, out var v) ? v : null;
 
         public static ShopCategoryConfig GetShopCategoryByPropsType(PropsType propsType) {
             return ShopCategoryConfigs.Find(config => config.PropsType == propsType);

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Interaction;
 using Mirror;
 using Sim;
@@ -62,6 +63,14 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SerializeField] private float enginePitchIdle = 0.8f;
     [SerializeField] private float enginePitchMax  = 1.7f;
 
+    [Header("Health / collisions")]
+    [Tooltip("Particules émises en continu quand le véhicule est KO (fumée).")]
+    [SerializeField] private ParticleSystem koParticles;
+    [Tooltip("Vitesse de choc (m/s) en-dessous de laquelle un impact n'inflige aucun dégât.")]
+    [SerializeField] private float minImpactSpeed = 2f;
+    [Tooltip("Dégâts infligés par (m/s) au-dessus du seuil.")]
+    [SerializeField] private float impactDamageFactor = 6f;
+
     [Header("Collision")]
     [Tooltip("Layers bloquant l'avancée (murs, décor). Le véhicule ne les traverse pas.")]
     [SerializeField] private LayerMask obstacleMask = ~0;
@@ -72,6 +81,25 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SyncVar(hook = nameof(OnDriverChanged))]
     private uint driverNetId;
 
+    [SyncVar(hook = nameof(OnHealthChanged))]
+    private float health = -1f; // -1 = non initialisé (le serveur le règle à MaxHealth au spawn)
+
+    [SyncVar(hook = nameof(OnLockedChanged))]
+    private bool isLocked;
+
+    // Propriétaire PERSISTANT (character id), hydraté depuis la DB au spawn. "" = non possédé.
+    [SyncVar]
+    private string ownerCharacterId = "";
+
+    // Id DB du véhicule (non vide = véhicule sorti du GARAGE). Sert à l'identifier pour le rangement
+    // et à savoir s'il est déjà dehors. Vide pour les véhicules de scène / d'exposition.
+    [SyncVar]
+    private string vehicleDbId = "";
+
+    // Clé stable + modèle, côté serveur uniquement (assignés par le spawner) pour la persistance.
+    private string vehicleKey;
+    private bool   _ownershipInitialized;
+
     // Sièges passagers : un SyncVar par place (le projet n'utilise pas de collections sync).
     private const int MaxPassengerSlots = 3;
     [SyncVar(hook = nameof(OnPassenger0Changed))] private uint passenger0NetId;
@@ -79,13 +107,21 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SyncVar(hook = nameof(OnPassenger2Changed))] private uint passenger2NetId;
 
     private Action _enterAction;
+    private Action _lockAction;
+    private Action _unlockAction;
+    private int    _collisionMask;     // obstacleMask SANS le layer Item (on ne percute pas les objets ramassables)
     private float  _currentSpeed;
     private AudioSource _engineSource;
+    private AudioSource _brakeSource;   // boucle de freinage, coupée dès que le frein est relâché
+    private float  _lastImpactTime = -10f;
 
     public Transform CameraAnchor => cameraAnchor;
     public Transform ExitAnchor   => exitAnchor;
     public bool      IsOccupied   => driverNetId != 0;
     public VehicleConfig Config   => config;
+    public string    OwnerCharacterId => ownerCharacterId;
+    /// <summary>Id DB si ce véhicule a été sorti d'un garage ("" sinon). Identifie un véhicule possédé sorti.</summary>
+    public string    VehicleDbId  => vehicleDbId;
 
     // ── Paramètres effectifs (config si présente, sinon valeurs de repli) ────────────
     private float MaxSpeed     => config != null ? config.maxSpeed     : maxSpeed;
@@ -101,6 +137,17 @@ public class VehicleController : NetworkBehaviour, IInteractable {
 
     /// <summary>Vitesse courante en km/h (valeur signée → magnitude). Affichée par le HUD.</summary>
     public float SpeedKmh => Mathf.Abs(_currentSpeed) * 3.6f;
+
+    // ── Santé ────────────────────────────────────────────────────────────────────────
+    public float MaxHealth => config != null ? config.maxHealth : 100f;
+    /// <summary>Vie [0..1] pour la barre / le HUD. (-1 = pas encore synchronisé → plein.)</summary>
+    public float HealthNormalized => health < 0f ? 1f : (MaxHealth > 0f ? Mathf.Clamp01(health / MaxHealth) : 0f);
+    /// <summary>Véhicule hors d'usage : ne roule plus, fume.</summary>
+    public bool IsKO => health == 0f;
+
+    public override void OnStartServer() {
+        health = MaxHealth;
+    }
 
     // ── Sièges passagers ─────────────────────────────────────────────────────────────
     /// <summary>Nombre de places passagers exploitables : min(slots SyncVar, ancres, capacité config-1).</summary>
@@ -143,7 +190,28 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             _enterAction.OnExecute += OnEnterActionExecuted;
         }
 
+        Action lockProto = Resources.Load<Action>("Configurations/Actions/LOCK");
+        if (lockProto != null) {
+            _lockAction = Instantiate(lockProto);
+            _lockAction.OnExecute += OnLockActionExecuted;
+        }
+        Action unlockProto = Resources.Load<Action>("Configurations/Actions/UNLOCK");
+        if (unlockProto != null) {
+            _unlockAction = Instantiate(unlockProto);
+            _unlockAction.OnExecute += OnUnlockActionExecuted;
+        }
+
         SetupEngineAudio();
+        SetKoParticles(false);
+
+        // Collisions avec tout SAUF les items (objets ramassables au sol).
+        int itemLayer = LayerMask.NameToLayer("Item");
+        _collisionMask = itemLayer >= 0 ? (obstacleMask & ~(1 << itemLayer)) : (int)obstacleMask;
+    }
+
+    public override void OnStartClient() {
+        // Applique l'état de vie initial (la barre + les particules) sans jouer de son.
+        RefreshHealthVisual();
     }
 
     /// <summary>AudioSource 3D dédiée à la boucle moteur, mutualisée sur le bus SFX du mixer.</summary>
@@ -156,22 +224,60 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         _engineSource.minDistance   = 3f;
         _engineSource.maxDistance   = 25f;
         _engineSource.outputAudioMixerGroup = AudioManager.Instance.SfxGroup;
+
+        _brakeSource = gameObject.AddComponent<AudioSource>();
+        _brakeSource.playOnAwake   = false;
+        _brakeSource.loop          = true;     // jouée tant qu'on freine, stoppée au relâché
+        _brakeSource.spatialBlend  = 1f;
+        _brakeSource.rolloffMode   = AudioRolloffMode.Linear;
+        _brakeSource.minDistance   = 3f;
+        _brakeSource.maxDistance   = 22f;
+        _brakeSource.outputAudioMixerGroup = AudioManager.Instance.SfxGroup;
+    }
+
+    /// <summary>Démarre/arrête la boucle de freinage selon l'input (coupée dès qu'on ne freine plus).</summary>
+    private void SetBrakeSound(bool on) {
+        if (_brakeSource == null) return;
+        AudioClip clip = config != null ? config.brake : null;
+        if (on && clip != null) {
+            if (!_brakeSource.isPlaying) { _brakeSource.clip = clip; _brakeSource.Play(); }
+        } else if (_brakeSource.isPlaying) {
+            _brakeSource.Stop();
+        }
     }
 
     private void OnDestroy() {
         if (_enterAction != null) _enterAction.OnExecute -= OnEnterActionExecuted;
+        if (_lockAction != null) _lockAction.OnExecute -= OnLockActionExecuted;
+        if (_unlockAction != null) _unlockAction.OnExecute -= OnUnlockActionExecuted;
     }
 
     // ── IInteractable ─────────────────────────────────────────────────────────────
 
     public float GetRange()          => interactionRange;
-    public bool  IsInteractable()    => _enterAction != null && HasFreeSeat();
+    public bool  IsInteractable()    => CanEnterAction() || OwnerLockActionAvailable();
     public bool  IsRightClickOnly()  => false;
     public void  StopInteraction()   { }
 
+    /// <summary>Action « Monter » disponible : véhicule déverrouillé + place libre.</summary>
+    private bool CanEnterAction() => _enterAction != null && !isLocked && HasFreeSeat();
+
+    /// <summary>Le joueur local est le propriétaire ET à l'extérieur → action verrouiller/déverrouiller.</summary>
+    private bool OwnerLockActionAvailable() {
+        var local = PlayerController.Local;
+        if (local == null || string.IsNullOrEmpty(ownerCharacterId)) return false;
+        if (local.CharacterData == null || local.CharacterData.Id != ownerCharacterId) return false;
+        if (IsOccupant(local.netId)) return false; // depuis l'extérieur uniquement
+        return (isLocked ? _unlockAction : _lockAction) != null;
+    }
+
+    public bool IsOwnedBy(string characterId) => !string.IsNullOrEmpty(ownerCharacterId) && ownerCharacterId == characterId;
+
     public Action[] GetActions(bool withPriority = false) {
-        if (_enterAction == null || !HasFreeSeat()) return System.Array.Empty<Action>();
-        return new[] { _enterAction };
+        var list = new List<Action>(2);
+        if (CanEnterAction()) list.Add(_enterAction);
+        if (OwnerLockActionAvailable()) list.Add(isLocked ? _unlockAction : _lockAction);
+        return list.Count == 0 ? System.Array.Empty<Action>() : list.ToArray();
     }
 
     private void OnEnterActionExecuted(Action action) {
@@ -179,11 +285,17 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         CmdEnterVehicle();
     }
 
+    private void OnLockActionExecuted(Action action)   => CmdSetLockAsOwner(true);
+    private void OnUnlockActionExecuted(Action action) => CmdSetLockAsOwner(false);
+
+    public bool IsLocked => isLocked;
+
     // ── Server: enter / exit ────────────────────────────────────────────────────
 
     [Command(requiresAuthority = false)]
     private void CmdEnterVehicle(NetworkConnectionToClient conn = null) {
         if (conn?.identity == null) return;
+        if (isLocked) return;                         // verrouillé : personne ne monte
         uint id = conn.identity.netId;
         if (IsOccupant(id)) return;                   // déjà à bord
 
@@ -198,6 +310,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             netIdentity.AssignClientAuthority(conn);
             ApplyParentingTo(pc, seatAnchor, true);   // serveur
             driverNetId = id;
+            ServerClaimOwnership(pc);                  // premier conducteur = propriétaire (persisté)
             return;
         }
 
@@ -213,6 +326,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [Command(requiresAuthority = false)]
     private void CmdExitAsPassenger(NetworkConnectionToClient conn = null) {
         if (conn?.identity == null) return;
+        if (isLocked) return;                         // verrouillé : le passager ne sort pas
         uint id = conn.identity.netId;
         for (int i = 0; i < MaxPassengerSlots; i++) {
             if (GetPassenger(i) != id) continue;
@@ -229,7 +343,71 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [Command]
     private void CmdExitVehicle() {
         if (driverNetId == 0) return;
+        if (isLocked) return;                         // verrouillé : on ne sort pas
         ServerReleaseDriver();
+    }
+
+    // ── Verrouillage ────────────────────────────────────────────────────────────────
+
+    /// <summary>Bascule par le conducteur (autorité du véhicule) — propriétaire ou non.</summary>
+    [Command]
+    private void CmdToggleLockAsDriver() {
+        isLocked = !isLocked;
+    }
+
+    /// <summary>Verrouille/déverrouille par le propriétaire depuis l'extérieur.</summary>
+    [Command(requiresAuthority = false)]
+    private void CmdSetLockAsOwner(bool locked, NetworkConnectionToClient conn = null) {
+        if (conn?.identity == null) return;
+        PlayerController pc = conn.identity.GetComponent<PlayerController>();
+        string charId = pc != null && pc.CharacterData != null ? pc.CharacterData.Id : null;
+        if (string.IsNullOrEmpty(charId) || charId != ownerCharacterId) return; // propriétaire uniquement
+        float sqr = (conn.identity.transform.position - transform.position).sqrMagnitude;
+        if (sqr > (interactionRange * 2f) * (interactionRange * 2f)) return;
+        isLocked = locked;
+    }
+
+    // ── Propriété persistée (serveur) ───────────────────────────────────────────────
+
+    /// <summary>Hydrate la propriété depuis la DB au spawn (appelé par VehicleSpawner). La clé
+    /// stable permet de retrouver le propriétaire à chaque (re)spawn. Pas de position persistée.</summary>
+    [Server]
+    public void ServerInitOwnership(string key) {
+        if (_ownershipInitialized) return;
+        _ownershipInitialized = true;
+        vehicleKey = key;
+        if (string.IsNullOrEmpty(key) || ApiManager.Instance == null) return;
+        string mdl = config != null ? config.id : "vehicle"; // on stocke l'id de config dans `model`
+        ApiManager.Instance.StartCoroutine(
+            ApiManager.Instance.EnsureVehicleCoroutine(key, mdl, row => {
+                if (row != null) ownerCharacterId = row.ownerCharacterId ?? "";
+            }));
+    }
+
+    /// <summary>Initialise un véhicule SORTI d'un garage : propriétaire connu + id DB (pour le rangement).
+    /// Pas d'appel DB (la propriété est déjà persistée).</summary>
+    [Server]
+    public void ServerInitFromGarage(string dbId, string ownerCharId) {
+        _ownershipInitialized = true;
+        vehicleDbId = dbId ?? "";
+        ownerCharacterId = ownerCharId ?? "";
+    }
+
+    /// <summary>Le premier conducteur réclame la propriété (persistée), si le véhicule est libre.</summary>
+    [Server]
+    private void ServerClaimOwnership(PlayerController driver) {
+        if (!string.IsNullOrEmpty(ownerCharacterId)) return; // déjà possédé
+        string charId = driver != null && driver.CharacterData != null ? driver.CharacterData.Id : null;
+        if (string.IsNullOrEmpty(charId)) return;
+        ownerCharacterId = charId;
+        if (!string.IsNullOrEmpty(vehicleKey) && ApiManager.Instance != null)
+            ApiManager.Instance.StartCoroutine(
+                ApiManager.Instance.SetVehicleOwnerCoroutine(vehicleKey, charId, _ => { }));
+    }
+
+    private void OnLockedChanged(bool previous, bool current) {
+        AudioClip clip = config != null ? (current ? config.lockSound : config.unlockSound) : null;
+        if (clip != null) AudioManager.Instance.PlayClip3D(clip, transform.position);
     }
 
     [Server]
@@ -296,6 +474,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     }
 
     private void StartEngine() {
+        if (IsKO) return;
         AudioClip loop = config != null ? config.engineLoop : null;
         if (loop == null || _engineSource == null) return;
         _engineSource.clip = loop;
@@ -305,6 +484,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
 
     private void StopEngine() {
         if (_engineSource != null) _engineSource.Stop();
+        SetBrakeSound(false); // coupe aussi le frein (sortie / KO)
     }
 
     /// <summary>Pitch moteur suivant la vitesse. Le conducteur (owner) a _currentSpeed réel ;
@@ -313,6 +493,49 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (_engineSource == null || !_engineSource.isPlaying) return;
         _engineSource.pitch = Mathf.Lerp(enginePitchIdle, enginePitchMax, NormalizedSpeed);
     }
+
+    // ── Santé / collisions ──────────────────────────────────────────────────────────
+
+    private void OnHealthChanged(float previous, float current) {
+        RefreshHealthVisual();
+
+        // Son de choc proportionnel aux dégâts subis (ignore l'init -1 → MaxHealth).
+        if (previous >= 0f && current < previous && config != null && config.impact != null) {
+            float severity = Mathf.Clamp01((previous - current) / Mathf.Max(1f, MaxHealth) * 3f);
+            AudioManager.Instance.PlayClip3D(config.impact, transform.position, 0.4f + 0.6f * severity);
+        }
+
+        // Passage KO.
+        if (current == 0f && previous != 0f) {
+            StopEngine();
+            if (config != null && config.ko != null)
+                AudioManager.Instance.PlayClip3D(config.ko, transform.position);
+        }
+    }
+
+    /// <summary>Met à jour les particules KO d'après la vie courante (la barre de vie vit dans le HUD).</summary>
+    private void RefreshHealthVisual() {
+        SetKoParticles(IsKO);
+    }
+
+    private void SetKoParticles(bool on) {
+        if (koParticles == null) return;
+        if (on) { if (!koParticles.isPlaying) koParticles.Play(); }
+        else    { if (koParticles.isPlaying)  koParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear); }
+    }
+
+    /// <summary>Applique un impact côté serveur (appelé par le conducteur via Command).</summary>
+    [Server]
+    private void ServerApplyImpact(float impactSpeed) {
+        if (health <= 0f) return;
+        float over = impactSpeed - minImpactSpeed;
+        if (over <= 0f) return;
+        float damage = over * impactDamageFactor;
+        health = Mathf.Max(0f, health - damage);
+    }
+
+    [Command(requiresAuthority = false)]
+    private void CmdReportImpact(float impactSpeed) => ServerApplyImpact(impactSpeed);
 
     // ── Klaxon (réseau) ─────────────────────────────────────────────────────────────
 
@@ -364,20 +587,21 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         }
 
         if (Input.GetKeyDown(KeyCode.H)) CmdHorn();
+        if (Input.GetKeyDown(KeyCode.L)) CmdToggleLockAsDriver(); // clé : verrouiller/déverrouiller
 
         DriveStep();
     }
 
     private void DriveStep() {
+        // KO : le véhicule ne roule plus (la fumée tourne via les particules).
+        if (IsKO) { _currentSpeed = 0f; SetBrakeSound(false); return; }
+
         float throttle = Input.GetAxisRaw("Vertical");   // W/S (ou flèches)
         float steer    = Input.GetAxisRaw("Horizontal"); // A/D
         bool  braking_ = Input.GetKey(KeyCode.Space);    // frein explicite
 
-        // Frein actif : feedback sonore au déclenchement si on roulait.
-        if (Input.GetKeyDown(KeyCode.Space) && Mathf.Abs(_currentSpeed) > 1f
-            && config != null && config.brake != null) {
-            AudioManager.Instance.PlayClip3D(config.brake, transform.position);
-        }
+        // Boucle de freinage : jouée tant qu'on freine ET qu'on roule encore, coupée sinon.
+        SetBrakeSound(braking_ && Mathf.Abs(_currentSpeed) > 1f);
 
         float targetSpeed = throttle > 0f ? throttle * MaxSpeed
                           : throttle < 0f ? throttle * ReverseSpeed
@@ -406,10 +630,16 @@ public class VehicleController : NetworkBehaviour, IInteractable {
 
         // Anti-traversée des murs : balayage en boîte vers l'avant (ignore self).
         if (Physics.BoxCast(transform.position, sweepHalfExtents, moveDir, out RaycastHit hit,
-                            transform.rotation, dist + 0.1f, obstacleMask,
+                            transform.rotation, dist + 0.1f, _collisionMask,
                             QueryTriggerInteraction.Ignore)
             && !hit.collider.transform.IsChildOf(transform)) {
+            float impactSpeed = Mathf.Abs(_currentSpeed);
             _currentSpeed = 0f;
+            // Dégâts de collision proportionnels à la violence du choc (anti-spam : cooldown).
+            if (impactSpeed > minImpactSpeed && Time.time - _lastImpactTime > 0.4f) {
+                _lastImpactTime = Time.time;
+                CmdReportImpact(impactSpeed);
+            }
             return;
         }
 
