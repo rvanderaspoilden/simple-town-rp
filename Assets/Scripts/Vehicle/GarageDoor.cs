@@ -69,6 +69,7 @@ public class GarageDoor : MonoBehaviour, IInteractable {
     // ── Sortir un véhicule (client) ─────────────────────────────────────────────────
     private void OnTakeOutExecuted(Action _) {
         PlayerController local = PlayerController.Local;
+        Debug.Log($"[GarageDoor] action 'Sortir' exécutée (local={(local!=null)}, charId={local?.CharacterData?.Id}, api={(ApiManager.Instance!=null)})");
         if (local?.CharacterData == null || ApiManager.Instance == null) return;
         ApiManager.Instance.StartCoroutine(
             ApiManager.Instance.RetrieveOwnedVehiclesCoroutine(local.CharacterData.Id, ShowVehicleMenu));
@@ -76,6 +77,9 @@ public class GarageDoor : MonoBehaviour, IInteractable {
 
     private void ShowVehicleMenu(List<VehicleData> vehicles) {
         var actions = new List<Action>();
+        int garaged = 0;
+        foreach (var dv in vehicles) if (dv != null && !string.IsNullOrEmpty(dv.placeId)) garaged++;
+        Debug.Log($"[GarageDoor] véhicules reçus={vehicles.Count}, garés (placeId set)={garaged}");
         foreach (VehicleData v in vehicles) {
             if (v == null || string.IsNullOrEmpty(v.placeId)) continue; // véhicules garés uniquement
             if (IsVehicleOut(v.id)) continue;                            // déjà dehors

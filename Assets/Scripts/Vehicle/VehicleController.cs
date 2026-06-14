@@ -58,6 +58,20 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [Tooltip("Vitesse de braquage (deg/s) à pleine vitesse.")]
     [SerializeField] private float turnSpeed    = 90f;
 
+    [Header("Ground / relief")]
+    [Tooltip("Layers du sol/terrain à suivre (relief). Si vide, le layer « Ground » est utilisé.")]
+    [SerializeField] private LayerMask groundMask;
+    [Tooltip("Hauteur de départ du raycast sol au-dessus du pivot (m).")]
+    [SerializeField] private float groundRayUp = 1.5f;
+    [Tooltip("Portée du raycast sol sous le pivot (m).")]
+    [SerializeField] private float groundRayDown = 4f;
+    [Tooltip("Décalage vertical du pivot au-dessus du point de contact (m).")]
+    [SerializeField] private float groundOffset = 0f;
+    [Tooltip("Aligner l'inclinaison du véhicule sur la pente du sol.")]
+    [SerializeField] private bool alignToSlope = true;
+    [Tooltip("Vitesse de lissage de l'orientation (sol/pente).")]
+    [SerializeField] private float groundAlignSpeed = 10f;
+
     [Header("Engine audio")]
     [Tooltip("Pitch de la boucle moteur au ralenti et à pleine vitesse.")]
     [SerializeField] private float enginePitchIdle = 0.8f;
@@ -207,6 +221,12 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         // Collisions avec tout SAUF les items (objets ramassables au sol).
         int itemLayer = LayerMask.NameToLayer("Item");
         _collisionMask = itemLayer >= 0 ? (obstacleMask & ~(1 << itemLayer)) : (int)obstacleMask;
+
+        // Masque sol : défaut sur le layer « Ground » si non renseigné.
+        if (groundMask.value == 0) {
+            int g = LayerMask.NameToLayer("Ground");
+            if (g >= 0) groundMask = 1 << g;
+        }
     }
 
     public override void OnStartClient() {
@@ -615,35 +635,64 @@ public class VehicleController : NetworkBehaviour, IInteractable {
                    : Braking;
         _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, rate * Time.deltaTime);
 
-        // Braquage proportionnel à la vitesse (et à son signe, comme une vraie voiture).
+        // Cap (heading) à plat : on travaille dans le plan horizontal, le relief n'altère pas
+        // la vitesse ni le braquage (l'inclinaison est purement visuelle, appliquée après).
+        Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        if (flatForward.sqrMagnitude < 1e-4f) flatForward = Vector3.forward;
+        flatForward.Normalize();
+
+        // Braquage proportionnel à la vitesse (yaw autour de l'up MONDE → cohérent en pente).
         if (Mathf.Abs(_currentSpeed) > 0.05f) {
             float dir = Mathf.Sign(_currentSpeed);
             float speedFactor = Mathf.Clamp01(Mathf.Abs(_currentSpeed) / MaxSpeed);
-            transform.Rotate(0f, steer * TurnSpeed * speedFactor * dir * Time.deltaTime, 0f);
+            float yaw = steer * TurnSpeed * speedFactor * dir * Time.deltaTime;
+            flatForward = Quaternion.AngleAxis(yaw, Vector3.up) * flatForward;
         }
 
         float delta = _currentSpeed * Time.deltaTime;
-        if (Mathf.Approximately(delta, 0f)) return;
+        float dist  = Mathf.Abs(delta);
 
-        Vector3 moveDir = delta >= 0f ? transform.forward : -transform.forward;
-        float   dist    = Mathf.Abs(delta);
+        if (!Mathf.Approximately(delta, 0f)) {
+            Vector3 moveDir = delta >= 0f ? flatForward : -flatForward;
 
-        // Anti-traversée des murs : balayage en boîte vers l'avant (ignore self).
-        if (Physics.BoxCast(transform.position, sweepHalfExtents, moveDir, out RaycastHit hit,
-                            transform.rotation, dist + 0.1f, _collisionMask,
-                            QueryTriggerInteraction.Ignore)
-            && !hit.collider.transform.IsChildOf(transform)) {
-            float impactSpeed = Mathf.Abs(_currentSpeed);
-            _currentSpeed = 0f;
-            // Dégâts de collision proportionnels à la violence du choc (anti-spam : cooldown).
-            if (impactSpeed > minImpactSpeed && Time.time - _lastImpactTime > 0.4f) {
-                _lastImpactTime = Time.time;
-                CmdReportImpact(impactSpeed);
+            // Anti-traversée des murs : balayage en boîte vers l'avant (ignore self).
+            if (Physics.BoxCast(transform.position, sweepHalfExtents, moveDir, out RaycastHit wall,
+                                transform.rotation, dist + 0.1f, _collisionMask,
+                                QueryTriggerInteraction.Ignore)
+                && !wall.collider.transform.IsChildOf(transform)) {
+                float impactSpeed = Mathf.Abs(_currentSpeed);
+                _currentSpeed = 0f;
+                if (impactSpeed > minImpactSpeed && Time.time - _lastImpactTime > 0.4f) {
+                    _lastImpactTime = Time.time;
+                    CmdReportImpact(impactSpeed);
+                }
+            } else {
+                transform.position += moveDir * dist; // déplacement planaire
             }
-            return;
         }
 
-        transform.position += moveDir * dist;
+        ApplyGroundFollow(flatForward); // colle au sol + épouse la pente
+    }
+
+    /// <summary>Cale le véhicule sur le relief : raycast vers le bas pour le Y, et oriente le
+    /// véhicule selon le cap (flatForward) + la normale de la pente. Sans sol détecté, reste à plat.</summary>
+    private void ApplyGroundFollow(Vector3 flatForward) {
+        Vector3 origin = transform.position + Vector3.up * groundRayUp;
+        Vector3 up = Vector3.up;
+
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, groundRayUp + groundRayDown,
+                            groundMask, QueryTriggerInteraction.Ignore)
+            && !hit.collider.transform.IsChildOf(transform)) {
+            Vector3 p = transform.position;
+            p.y = hit.point.y + groundOffset;
+            transform.position = p;
+            if (alignToSlope) up = hit.normal;
+        }
+
+        Vector3 fwdOnPlane = Vector3.ProjectOnPlane(flatForward, up);
+        if (fwdOnPlane.sqrMagnitude < 1e-4f) return;
+        Quaternion target = Quaternion.LookRotation(fwdOnPlane.normalized, up);
+        transform.rotation = Quaternion.Slerp(transform.rotation, target, groundAlignSpeed * Time.deltaTime);
     }
 
     [Server]
