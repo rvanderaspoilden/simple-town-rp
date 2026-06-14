@@ -35,6 +35,15 @@ public class VehicleWheels : MonoBehaviour {
     private float   _lastYaw;
     private float[] _roll;
     private float   _steer;
+    private float   _inputSteer;          // input de braquage [-1..1] fourni par le conducteur local
+    private float   _inputSteerTime = -10f;
+
+    /// <summary>Le conducteur local pousse son input de braquage chaque frame → angle visuel précis
+    /// et instantané. Les clients distants (qui n'appellent pas ceci) retombent sur le lacet mesuré.</summary>
+    public void SetSteerInput(float normalized) {
+        _inputSteer = Mathf.Clamp(normalized, -1f, 1f);
+        _inputSteerTime = Time.time;
+    }
 
     private void Awake() {
         _lastPos = transform.position;
@@ -70,11 +79,19 @@ public class VehicleWheels : MonoBehaviour {
             _roll[i] += rollDelta;
         }
 
-        // Braquage visuel : angle = atan(empattement · ωlacet / vitesse). Nul à l'arrêt.
-        float targetSteer = 0f;
-        if (Mathf.Abs(speed) > 0.2f) {
-            float steerRad = Mathf.Atan2(wheelBase * yawRate * Mathf.Deg2Rad, Mathf.Abs(speed));
-            targetSteer = Mathf.Clamp(steerRad * Mathf.Rad2Deg * Mathf.Sign(speed), -maxSteerAngle, maxSteerAngle);
+        // Braquage visuel.
+        float targetSteer;
+        if (Time.time - _inputSteerTime < 0.2f) {
+            // Conducteur local : piloté DIRECTEMENT par l'input → précis, sans latence ni dépendance
+            // à la mesure du lacet. Tourne même à l'arrêt (comme de vraies roues).
+            targetSteer = _inputSteer * maxSteerAngle;
+        } else {
+            // Clients distants : déduit du taux de lacet mesuré (sans réseau). Nul à l'arrêt.
+            targetSteer = 0f;
+            if (Mathf.Abs(speed) > 0.2f) {
+                float steerRad = Mathf.Atan2(wheelBase * yawRate * Mathf.Deg2Rad, Mathf.Abs(speed));
+                targetSteer = Mathf.Clamp(steerRad * Mathf.Rad2Deg * Mathf.Sign(speed), -maxSteerAngle, maxSteerAngle);
+            }
         }
         _steer = Mathf.Lerp(_steer, targetSteer, steerLerp * dt);
 

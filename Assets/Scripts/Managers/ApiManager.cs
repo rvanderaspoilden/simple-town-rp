@@ -581,7 +581,6 @@ namespace Sim {
             if (request.responseCode == 200) {
                 VehicleListResponse response = JsonUtility.FromJson<VehicleListResponse>(request.downloadHandler.text);
                 if (response?.vehicles != null) vehicles = response.vehicles;
-                Debug.Log($"[ApiManager] OwnedVehicles charId={characterId} count={vehicles.Count} body={request.downloadHandler.text}");
             } else {
                 Debug.LogError($"[ApiManager] RetrieveOwnedVehicles failed code={request.responseCode} body={request.downloadHandler.text}");
             }

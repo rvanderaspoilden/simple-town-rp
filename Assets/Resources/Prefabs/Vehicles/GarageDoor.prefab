@@ -10,9 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 3626185441567306906}
   - component: {fileID: 3558887762036992069}
-  - component: {fileID: 8585636729206906439}
   - component: {fileID: 8831416206309490731}
-  m_Layer: 15
+  m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -42,27 +41,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2380672790563436864}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!65 &8585636729206906439
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2380672790563436864}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &8831416206309490731
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -122,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1770176144477121348}
   - component: {fileID: 7714619995573856237}
+  - component: {fileID: 6389369573245368890}
   m_Layer: 15
   m_Name: GarageDoor
   m_TagString: Untagged
@@ -162,7 +141,27 @@ MonoBehaviour:
   spawnPoint: {fileID: 5115026545183640742}
   storeRadius: 6
   interactionRange: 3
-  vehiclePrefabPath: Prefabs/Vehicles/Vehicle
+--- !u!65 &6389369573245368890
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6153403176415729239}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2.6583366, y: 3.17523, z: 0.3513794}
+  m_Center: {x: 0.11201477, y: 1.087615, z: -0.036935806}
 --- !u!1 &8444090455301544387
 GameObject:
   m_ObjectHideFlags: 0

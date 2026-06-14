@@ -55,8 +55,10 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SerializeField] private float braking      = 12f;
     [Tooltip("Décélération en roue libre (accélérateur relâché, sans freiner). Faible = inertie.")]
     [SerializeField] private float friction      = 1.5f;
-    [Tooltip("Vitesse de braquage (deg/s) à pleine vitesse.")]
-    [SerializeField] private float turnSpeed    = 90f;
+    [Tooltip("Vitesse de braquage (deg/s).")]
+    [SerializeField] private float turnSpeed    = 120f;
+    [Tooltip("Atténuation du braquage à pleine vitesse (1 = aucune ; <1 = tourne moins vite à fond, plus stable).")]
+    [SerializeField] private float highSpeedTurnFactor = 0.65f;
 
     [Header("Ground / relief")]
     [Tooltip("Layers du sol/terrain à suivre (relief). Si vide, le layer « Ground » est utilisé.")]
@@ -125,6 +127,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private Action _unlockAction;
     private int    _collisionMask;     // obstacleMask SANS le layer Item (on ne percute pas les objets ramassables)
     private float  _currentSpeed;
+    private VehicleWheels _wheels;      // animation visuelle des roues (braquage piloté par l'input du conducteur)
     private AudioSource _engineSource;
     private AudioSource _brakeSource;   // boucle de freinage, coupée dès que le frein est relâché
     private float  _lastImpactTime = -10f;
@@ -215,6 +218,8 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             _unlockAction.OnExecute += OnUnlockActionExecuted;
         }
 
+        _wheels = GetComponent<VehicleWheels>();
+
         SetupEngineAudio();
         SetKoParticles(false);
 
@@ -227,6 +232,18 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             int g = LayerMask.NameToLayer("Ground");
             if (g >= 0) groundMask = 1 << g;
         }
+
+        // Garde-fous : les prefabs sérialisés AVANT l'ajout de ces champs les ont à 0
+        // (Unity n'applique pas l'initialiseur C# aux objets déjà sérialisés). À 0,
+        // groundAlignSpeed=0 fige la rotation (plus de braquage) et les distances de
+        // raycast nulles cassent le suivi de sol.
+        if (groundAlignSpeed <= 0f) groundAlignSpeed = 10f;
+        if (groundRayUp     <= 0f) groundRayUp     = 1.5f;
+        if (groundRayDown   <= 0f) groundRayDown   = 4f;
+        // Idem : champs ajoutés après coup → 0 sur les prefabs déjà sérialisés. À 0 le braquage
+        // s'annulerait à pleine vitesse (turnSpeed fallback) / serait nul (highSpeedTurnFactor).
+        if (turnSpeed          <= 0f) turnSpeed          = 120f;
+        if (highSpeedTurnFactor <= 0f) highSpeedTurnFactor = 0.65f;
     }
 
     public override void OnStartClient() {
@@ -635,19 +652,25 @@ public class VehicleController : NetworkBehaviour, IInteractable {
                    : Braking;
         _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, rate * Time.deltaTime);
 
-        // Cap (heading) à plat : on travaille dans le plan horizontal, le relief n'altère pas
-        // la vitesse ni le braquage (l'inclinaison est purement visuelle, appliquée après).
+        // Braquage : appliqué DIRECTEMENT au transform (yaw autour de l'up MONDE → cohérent en
+        // pente). Aucun lissage ici → réponse instantanée. ApplyGroundFollow ne lisse ensuite que
+        // l'INCLINAISON (pente), le cap étant déjà correct. (L'ancien code tournait un vecteur puis
+        // laissait le Slerp rejoindre la cible : intégrateur à fuite → sous-virage + latence.)
+        if (Mathf.Abs(_currentSpeed) > 0.05f && Mathf.Abs(steer) > 0.001f) {
+            float dir = Mathf.Sign(_currentSpeed);
+            // Autorité pleine à basse vitesse (manœuvrable), atténuée à haute vitesse (stable).
+            float speedFactor = Mathf.Lerp(1f, highSpeedTurnFactor, Mathf.Clamp01(Mathf.Abs(_currentSpeed) / MaxSpeed));
+            float yaw = steer * TurnSpeed * speedFactor * dir * Time.deltaTime;
+            transform.Rotate(Vector3.up, yaw, Space.World);
+        }
+        // Braquage VISUEL des roues piloté par l'input (précis/instantané chez le conducteur ;
+        // les clients distants retombent sur le lacet mesuré dans VehicleWheels).
+        if (_wheels != null) _wheels.SetSteerInput(steer);
+
+        // Cap à plat (après rotation) : le relief n'altère ni la vitesse ni le braquage.
         Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
         if (flatForward.sqrMagnitude < 1e-4f) flatForward = Vector3.forward;
         flatForward.Normalize();
-
-        // Braquage proportionnel à la vitesse (yaw autour de l'up MONDE → cohérent en pente).
-        if (Mathf.Abs(_currentSpeed) > 0.05f) {
-            float dir = Mathf.Sign(_currentSpeed);
-            float speedFactor = Mathf.Clamp01(Mathf.Abs(_currentSpeed) / MaxSpeed);
-            float yaw = steer * TurnSpeed * speedFactor * dir * Time.deltaTime;
-            flatForward = Quaternion.AngleAxis(yaw, Vector3.up) * flatForward;
-        }
 
         float delta = _currentSpeed * Time.deltaTime;
         float dist  = Mathf.Abs(delta);

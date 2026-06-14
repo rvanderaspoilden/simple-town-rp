@@ -37,6 +37,9 @@ namespace Sim {
         private VehicleHudUI vehicleHudUI;
 
         [SerializeField]
+        private VehicleGarageUI vehicleGarageUI;
+
+        [SerializeField]
         private AudioSource audioSource;
 
         [SerializeField]
@@ -82,6 +85,11 @@ namespace Sim {
 
         public void HideVehicleHud() {
             if (this.vehicleHudUI != null) this.vehicleHudUI.Hide();
+        }
+
+        /// <summary>Ouvre la modale du garage avec la liste des véhicules ; onPick(vehicleId) au choix.</summary>
+        public void ShowGarage(System.Collections.Generic.List<VehicleGarageUI.Entry> entries, System.Action<string> onPick) {
+            if (this.vehicleGarageUI != null) this.vehicleGarageUI.Show(entries, onPick);
         }
 
         // Façade : tous les appels existants passent désormais par l'AudioManager (pooling +
