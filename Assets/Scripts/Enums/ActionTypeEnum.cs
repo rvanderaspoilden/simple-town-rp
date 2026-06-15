@@ -33,7 +33,8 @@
         REPACK,
         UNPACK,
         ENTER_VEHICLE,
-        EXIT_VEHICLE
+        EXIT_VEHICLE,
+        REFUEL
     }
 
 }

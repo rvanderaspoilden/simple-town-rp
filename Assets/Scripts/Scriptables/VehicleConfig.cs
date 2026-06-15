@@ -30,6 +30,14 @@ public class VehicleConfig : ScriptableObject {
     [Tooltip("Points de vie maximum. À 0, le véhicule est KO (ne roule plus).")]
     [Min(1f)] public float maxHealth = 100f;
 
+    [Header("Carburant")]
+    [Tooltip("Capacité du réservoir (litres). Plein au spawn.")]
+    [Min(1f)] public float fuelCapacity = 50f;
+    [Tooltip("Consommation à PLEINE vitesse (litres/seconde).")]
+    [Min(0f)] public float fuelConsumption = 1.2f;
+    [Tooltip("Consommation au ralenti / moteur tournant à l'arrêt (litres/seconde).")]
+    [Min(0f)] public float fuelIdleConsumption = 0.1f;
+
     [Header("Shop")]
     [Tooltip("Prix d'achat au concessionnaire (BroCoins).")]
     [Min(0)] public int price = 5000;
@@ -64,4 +72,6 @@ public class VehicleConfig : ScriptableObject {
     public AudioClip lockSound;
     [Tooltip("Déverrouillage du véhicule.")]
     public AudioClip unlockSound;
+    [Tooltip("Remplissage du réservoir (joué à chaque ravitaillement au bidon).")]
+    public AudioClip refuel;
 }

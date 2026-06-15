@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0283878b117f1e1459aa35d3b7e14ec8, type: 3}
+  m_Name: FuelCanister
+  m_EditorClassIdentifier: Assembly-CSharp::FuelCanisterConfig
+  id: 102
+  label: Bidon d'essence
+  description: "Contient de l'essence pour ravitailler un v\xE9hicule."
+  type: 3
+  handleType: 0
+  unEquippedActions:
+  - {fileID: 11400000, guid: fa73a1da35281ac4794f59016aab77cd, type: 2}
+  equippedActions:
+  - {fileID: 11400000, guid: 875ebf10bf5a7c24084772ff5e3be913, type: 2}
+  prefab: {fileID: 6195545988160666293, guid: 55f0aa1a8ca203a4399e3a340e7f7eb2, type: 3}
+  toPersist: 0
+  allowedInPocket: 0
+  cursor: {fileID: 0}
+  icon: {fileID: 0}
+  poseShape: 0
+  gripPosition: {x: 0, y: 0, z: 0}
+  gripEuler: {x: 0, y: 0, z: 0}
+  container:
+    slotCount: 0
+    acceptedTypes: 
+    acceptsProps: 0
+    openClip: {fileID: 0}
+    closeClip: {fileID: 0}
+  fuelCapacity: 20

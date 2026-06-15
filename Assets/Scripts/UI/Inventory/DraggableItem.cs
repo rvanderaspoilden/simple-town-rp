@@ -131,7 +131,9 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
             if (p != null) { icon = p.Sprite; label = p.GetDisplayName(); desc = p.Description; container = FormatContainer(p.Container); }
         } else if (_itemConfig != null) {
             icon = _itemConfig.Icon; label = _itemConfig.Label; desc = _itemConfig.Description;
-            effects = FormatEffects(_itemConfig as ConsumableConfig);
+            effects = _itemConfig.ID == FuelCanister.ConfigId
+                ? FormatCanisterFuel(_entityId, _itemConfig)
+                : FormatEffects(_itemConfig as ConsumableConfig);
             container = FormatContainer(_itemConfig.Container);
         }
         if (icon != null || !string.IsNullOrEmpty(label)) Sim.ItemTooltipUI.Show(icon, label, desc, effects, container);
@@ -150,6 +152,17 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
 
     public void OnPointerExit(PointerEventData eventData) {
         Sim.ItemTooltipUI.Hide();
+    }
+
+    /// <summary>Contenu du bidon d'essence (litres restants) pour la tooltip d'inventaire.
+    /// Le niveau est répliqué sur l'ItemBehaviour côté client (S2C_ItemFuel).</summary>
+    private static string FormatCanisterFuel(int entityId, ItemConfig cfg) {
+        var item = ClientItemManager.Instance.GetItem(entityId) as FuelCanisterBehaviour;
+        float fuel = item != null ? item.Fuel : 0f;
+        float capacity = (cfg as FuelCanisterConfig)?.fuelCapacity ?? 20f;
+        float pct = capacity > 0f ? Mathf.Clamp01(fuel / capacity) : 0f;
+        string color = pct <= 0.001f ? "#E8836B" : (pct < 0.34f ? "#E8C36B" : "#8FE36B");
+        return $"<color={color}>Réservoir : {fuel:0} / {capacity:0} L</color>";
     }
 
     /// <summary>Met en forme les effets d'un consommable (faim/soif/fatigue) pour la tooltip.</summary>

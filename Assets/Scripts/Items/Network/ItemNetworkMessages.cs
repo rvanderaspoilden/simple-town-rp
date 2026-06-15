@@ -19,6 +19,13 @@ public struct S2C_SpawnItem : NetworkMessage
     public Quaternion LocalRotation;
 }
 
+/// <summary>Server → clients in room: niveau de carburant d'un item (bidon) mis à jour.</summary>
+public struct S2C_ItemFuel : NetworkMessage
+{
+    public int   EntityId;
+    public float Fuel;
+}
+
 /// <summary>Server → all clients in room: item removed from world.</summary>
 public struct S2C_DestroyItem : NetworkMessage
 {

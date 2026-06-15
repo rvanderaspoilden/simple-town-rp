@@ -116,6 +116,9 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SyncVar(hook = nameof(OnLockedChanged))]
     private bool isLocked;
 
+    [SyncVar(hook = nameof(OnFuelChanged))]
+    private float fuel = -1f; // -1 = non initialisé (le serveur le règle à MaxFuel au spawn)
+
     // Feux : bits packés dans un octet répliqué (un seul SyncVar → trafic minimal).
     private const byte LIGHT_HEAD  = 1; // phares avant
     private const byte LIGHT_BRAKE = 2; // feux stop
@@ -144,12 +147,17 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private Action _enterAction;
     private Action _lockAction;
     private Action _unlockAction;
+    private Action _refuelAction;
     private int    _collisionMask;     // obstacleMask SANS le layer Item (on ne percute pas les objets ramassables)
     private float  _currentSpeed;
     private VehicleWheels _wheels;      // animation visuelle des roues (braquage piloté par l'input du conducteur)
     private VehicleLights _lights;      // visuel des feux (piloté par lightFlags via le hook)
     private byte   _desiredFlags;       // état des feux voulu par le conducteur (edge-triggered → Cmd)
     private Vector3 _velocity;          // vitesse PLANAIRE monde (≠ cap → permet le dérapage latéral)
+    private float  _fuelAccum;          // carburant consommé localement, envoyé au serveur par paquets
+    private float  _fuelSendTimer;      // cadence d'envoi de la consommation
+    private VehicleFuelBar _fuelBar;    // jauge monde « Réservoir » affichée au ravitaillement
+    private const float FuelBarHeight = 2.4f; // hauteur d'affichage au-dessus du véhicule (m)
     private AudioSource _engineSource;
     private AudioSource _brakeSource;   // boucle de freinage, coupée dès que le frein est relâché
     private float  _lastImpactTime = -10f;
@@ -183,8 +191,16 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     /// <summary>Véhicule hors d'usage : ne roule plus, fume.</summary>
     public bool IsKO => health == 0f;
 
+    // ── Carburant ──────────────────────────────────────────────────────────────────
+    public float MaxFuel => config != null ? config.fuelCapacity : 50f;
+    /// <summary>Niveau de carburant [0..1] pour la jauge HUD. (-1 = pas encore synchronisé → plein.)</summary>
+    public float FuelNormalized => fuel < 0f ? 1f : (MaxFuel > 0f ? Mathf.Clamp01(fuel / MaxFuel) : 0f);
+    /// <summary>Reste-t-il du carburant ? (-1 = non initialisé → considéré plein.)</summary>
+    public bool HasFuel => fuel != 0f;
+
     public override void OnStartServer() {
         health = MaxHealth;
+        fuel = MaxFuel;
     }
 
     // ── Sièges passagers ─────────────────────────────────────────────────────────────
@@ -237,6 +253,11 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (unlockProto != null) {
             _unlockAction = Instantiate(unlockProto);
             _unlockAction.OnExecute += OnUnlockActionExecuted;
+        }
+        Action refuelProto = Resources.Load<Action>("Configurations/Actions/REFUEL");
+        if (refuelProto != null) {
+            _refuelAction = Instantiate(refuelProto);
+            _refuelAction.OnExecute += OnRefuelActionExecuted;
         }
 
         _wheels = GetComponent<VehicleWheels>();
@@ -314,17 +335,31 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (_enterAction != null) _enterAction.OnExecute -= OnEnterActionExecuted;
         if (_lockAction != null) _lockAction.OnExecute -= OnLockActionExecuted;
         if (_unlockAction != null) _unlockAction.OnExecute -= OnUnlockActionExecuted;
+        if (_refuelAction != null) _refuelAction.OnExecute -= OnRefuelActionExecuted;
+        if (_fuelBar != null) Destroy(_fuelBar.gameObject);
     }
 
     // ── IInteractable ─────────────────────────────────────────────────────────────
 
     public float GetRange()          => interactionRange;
-    public bool  IsInteractable()    => CanEnterAction() || OwnerLockActionAvailable();
+    public bool  IsInteractable()    => CanEnterAction() || OwnerLockActionAvailable() || CanRefuelAction();
     public bool  IsRightClickOnly()  => false;
     public void  StopInteraction()   { }
 
     /// <summary>Action « Monter » disponible : véhicule déverrouillé + place libre.</summary>
     private bool CanEnterAction() => _enterAction != null && !isLocked && HasFreeSeat();
+
+    /// <summary>Action « Mettre de l'essence » : visible dès que le joueur local tient un bidon
+    /// (hint client). Le serveur valide au clic — réservoir plein / bidon vide renvoient un toast.</summary>
+    private bool CanRefuelAction() {
+        if (_refuelAction == null) return false;
+        var local = PlayerController.Local;
+        if (local == null || local.PlayerHands == null) return false;
+        return IsCanister(local.PlayerHands.RightHandItem) || IsCanister(local.PlayerHands.LeftHandItem);
+    }
+
+    private static bool IsCanister(ItemBehaviour it) =>
+        it != null && it.Configuration != null && it.Configuration.ID == FuelCanister.ConfigId;
 
     /// <summary>Le joueur local est le propriétaire ET à l'extérieur → action verrouiller/déverrouiller.</summary>
     private bool OwnerLockActionAvailable() {
@@ -338,9 +373,10 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     public bool IsOwnedBy(string characterId) => !string.IsNullOrEmpty(ownerCharacterId) && ownerCharacterId == characterId;
 
     public Action[] GetActions(bool withPriority = false) {
-        var list = new List<Action>(2);
+        var list = new List<Action>(3);
         if (CanEnterAction()) list.Add(_enterAction);
         if (OwnerLockActionAvailable()) list.Add(isLocked ? _unlockAction : _lockAction);
+        if (CanRefuelAction()) list.Add(_refuelAction);
         return list.Count == 0 ? System.Array.Empty<Action>() : list.ToArray();
     }
 
@@ -351,6 +387,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
 
     private void OnLockActionExecuted(Action action)   => CmdSetLockAsOwner(true);
     private void OnUnlockActionExecuted(Action action) => CmdSetLockAsOwner(false);
+    private void OnRefuelActionExecuted(Action action) => CmdRefuel();
 
     public bool IsLocked => isLocked;
 
@@ -483,6 +520,66 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         _lights.SetBrake     ((lightFlags & LIGHT_BRAKE) != 0);
     }
 
+    // ── Carburant ──────────────────────────────────────────────────────────────────
+
+    /// <summary>Le conducteur consomme localement et envoie la consommation par paquets au serveur.</summary>
+    [Command]
+    private void CmdConsumeFuel(float amount) {
+        if (fuel < 0f) fuel = MaxFuel;          // sécurité si pas encore initialisé
+        fuel = Mathf.Max(0f, fuel - Mathf.Max(0f, amount));
+    }
+
+    /// <summary>Refait le plein (station-service à venir). Serveur uniquement.</summary>
+    [Server]
+    public void ServerRefuel(float amount) {
+        if (fuel < 0f) fuel = 0f;
+        fuel = Mathf.Clamp(fuel + Mathf.Max(0f, amount), 0f, MaxFuel);
+    }
+
+    /// <summary>« Mettre de l'essence » : transfère le contenu du bidon tenu vers le réservoir.</summary>
+    [Command(requiresAuthority = false)]
+    private void CmdRefuel(NetworkConnectionToClient conn = null) {
+        if (conn?.identity == null) return;
+        float sqr = (conn.identity.transform.position - transform.position).sqrMagnitude;
+        if (sqr > (interactionRange * 2f) * (interactionRange * 2f)) return;
+
+        if (fuel < 0f) fuel = MaxFuel;
+        float deficit = MaxFuel - fuel;
+        if (deficit <= 0.01f) { TargetRefuelResult(conn, false, "Réservoir plein"); return; }
+
+        bool transferred = ServerItemManager.Instance.TryConsumeHeldFuel(
+            conn, FuelCanister.ConfigId, deficit, out float amount, out bool hasItem);
+        if (!hasItem)     { TargetRefuelResult(conn, false, "Aucun bidon"); return; }
+        if (!transferred) { TargetRefuelResult(conn, false, "Bidon vide");  return; }
+
+        ServerRefuel(amount);
+        TargetRefuelResult(conn, true, $"+{amount:0} L");
+    }
+
+    /// <summary>Résultat du ravitaillement renvoyé à l'initiateur (toast succès/erreur).</summary>
+    [TargetRpc]
+    private void TargetRefuelResult(NetworkConnectionToClient target, bool success, string message) {
+        if (success) WorldToastManager.ShowSuccess(message);
+        else         WorldToastManager.ShowError(message);
+    }
+
+    private void OnFuelChanged(float previous, float current) {
+        // Panne sèche : coupe le moteur (le HUD lit FuelNormalized chaque frame).
+        if (current == 0f && previous != 0f) StopEngine();
+
+        // Ravitaillement (carburant en HAUSSE, hors init -1→plein) : jauge monde « Réservoir » + SFX.
+        if (previous >= 0f && current > previous + 0.001f) {
+            ShowFuelBar();
+            if (config != null && config.refuel != null)
+                AudioManager.Instance.PlayClip3D(config.refuel, transform.position);
+        }
+    }
+
+    private void ShowFuelBar() {
+        if (_fuelBar == null) _fuelBar = VehicleFuelBar.Create(transform, FuelBarHeight);
+        _fuelBar.SetProgress(FuelNormalized);
+    }
+
     private void OnLockedChanged(bool previous, bool current) {
         AudioClip clip = config != null ? (current ? config.lockSound : config.unlockSound) : null;
         if (clip != null) AudioManager.Instance.PlayClip3D(clip, transform.position);
@@ -557,7 +654,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     }
 
     private void StartEngine() {
-        if (IsKO) return;
+        if (IsKO || !HasFuel) return;
         AudioClip loop = config != null ? config.engineLoop : null;
         if (loop == null || _engineSource == null) return;
         _engineSource.clip = loop;
@@ -687,6 +784,8 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         float steer    = Input.GetAxisRaw("Horizontal"); // A/D
         bool  braking_ = Input.GetKey(KeyCode.Space);    // frein explicite
 
+        if (!HasFuel) throttle = 0f;                     // panne sèche : plus d'accélération (on roue libre / freine)
+
         // Repère du véhicule, à plat.
         Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
         if (flatForward.sqrMagnitude < 1e-4f) flatForward = Vector3.forward;
@@ -726,6 +825,20 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             _velocity = flatForward * vF + flatRight * vL;
         }
         _currentSpeed = vF; // compteur (HUD / pitch moteur) = composante avant
+
+        // ── Consommation carburant (conducteur) : ralenti + part proportionnelle à la vitesse,
+        // accumulée localement et envoyée au serveur par paquets (toutes les 0.5 s).
+        if (HasFuel && config != null) {
+            float rate = config.fuelIdleConsumption
+                       + Mathf.Max(0f, config.fuelConsumption - config.fuelIdleConsumption) * NormalizedSpeed;
+            _fuelAccum += Mathf.Max(0f, rate) * dt;
+            _fuelSendTimer += dt;
+            if (_fuelSendTimer >= 0.5f && _fuelAccum > 0f) {
+                CmdConsumeFuel(_fuelAccum);
+                _fuelAccum = 0f;
+                _fuelSendTimer = 0f;
+            }
+        }
 
         // ── Braquage : modèle bicyclette + sous-virage à la vitesse (logique de masse) ──
         // Le lacet est piloté par la VITESSE RÉELLE (magnitude planaire), pas seulement la composante

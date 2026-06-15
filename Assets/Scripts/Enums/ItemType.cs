@@ -1,5 +1,6 @@
 public enum ItemType {
     CONSUMABLE,
     PACKAGE,
-    WASTE
+    WASTE,
+    MISC
 }

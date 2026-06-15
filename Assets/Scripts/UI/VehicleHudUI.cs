@@ -19,6 +19,8 @@ namespace Sim.UI {
         [SerializeField] private TextMeshProUGUI modelText;
         [Tooltip("Image (Filled Horizontal) de la barre de vie du véhicule.")]
         [SerializeField] private Image healthFill;
+        [Tooltip("Image (Filled Horizontal) de la jauge de carburant.")]
+        [SerializeField] private Image fuelFill;
         [Tooltip("Texte des touches : complet pour le conducteur, réduit pour le passager.")]
         [SerializeField] private TextMeshProUGUI keysText;
         [Tooltip("Indicateur d'état verrouillé / déverrouillé.")]
@@ -51,6 +53,14 @@ namespace Sim.UI {
                 float t = this.vehicle.HealthNormalized;
                 this.healthFill.fillAmount = t;
                 this.healthFill.color = Color.Lerp(new Color(0.9f, 0.2f, 0.15f), new Color(0.35f, 0.85f, 0.4f), t);
+            }
+            if (this.fuelFill != null) {
+                float f = this.vehicle.FuelNormalized;
+                this.fuelFill.fillAmount = f;
+                // Vert plein → orange → rouge sous ~20 %.
+                this.fuelFill.color = f <= 0.2f
+                    ? Color.Lerp(new Color(0.9f, 0.2f, 0.15f), new Color(0.95f, 0.6f, 0.2f), f / 0.2f)
+                    : Color.Lerp(new Color(0.95f, 0.6f, 0.2f), new Color(0.4f, 0.8f, 0.95f), (f - 0.2f) / 0.8f);
             }
             if (this.lockText != null) {
                 bool locked = this.vehicle.IsLocked;

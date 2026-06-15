@@ -29,6 +29,7 @@ public class ClientItemManager
         NetworkClient.RegisterHandler<S2C_ItemAttachedToHand>(OnItemAttachedToHand);
         NetworkClient.RegisterHandler<S2C_ItemDetachedFromHand>(OnItemDetachedFromHand);
         NetworkClient.RegisterHandler<S2C_DropResult>(OnDropResult);
+        NetworkClient.RegisterHandler<S2C_ItemFuel>(OnItemFuel);
 
         NetworkClient.RegisterHandler<S2C_ContainerOpened>(OnContainerOpened);
         NetworkClient.RegisterHandler<S2C_ContainerOpenFailed>(OnContainerOpenFailed);
@@ -46,6 +47,7 @@ public class ClientItemManager
         NetworkClient.UnregisterHandler<S2C_ItemAttachedToHand>();
         NetworkClient.UnregisterHandler<S2C_ItemDetachedFromHand>();
         NetworkClient.UnregisterHandler<S2C_DropResult>();
+        NetworkClient.UnregisterHandler<S2C_ItemFuel>();
         NetworkClient.UnregisterHandler<S2C_ContainerOpened>();
         NetworkClient.UnregisterHandler<S2C_ContainerOpenFailed>();
         NetworkClient.UnregisterHandler<S2C_ItemContainerOpened>();
@@ -222,6 +224,12 @@ public class ClientItemManager
         NetworkManager.singleton.StartCoroutine(
             AttachToHandCoroutine(msg.EntityId, msg.PlayerNetId, msg.HandType,
                 msg.LocalPosition, msg.LocalRotation));
+    }
+
+    private void OnItemFuel(S2C_ItemFuel msg)
+    {
+        if (_items.TryGetValue(msg.EntityId, out var behaviour) && behaviour is FuelCanisterBehaviour fc)
+            fc.SetFuel(msg.Fuel);
     }
 
     private void OnItemDetachedFromHand(S2C_ItemDetachedFromHand msg)

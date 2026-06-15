@@ -297,14 +297,19 @@ public class ServerItemManager
     {
         int entityId = _nextEntityId++;
 
-        var entity = new ItemEntity
-        {
-            EntityId     = entityId,
-            RoomId       = roomId,
-            ItemConfigId = itemConfigId,
-            Position     = position,
-            Rotation     = rotation
-        };
+        // Besoin spécifique (bidon d'essence) → sous-classe dédiée, sans polluer ItemEntity.
+        // Le bidon spawn PLEIN à la capacité définie dans sa config (FuelCanisterConfig).
+        ItemEntity entity;
+        if (itemConfigId == FuelCanister.ConfigId) {
+            float capacity = (DatabaseManager.GetItemConfigById(itemConfigId) as FuelCanisterConfig)?.fuelCapacity ?? 20f;
+            entity = new FuelCanisterEntity {
+                EntityId = entityId, RoomId = roomId, ItemConfigId = itemConfigId,
+                Position = position, Rotation = rotation, Fuel = capacity };
+        } else {
+            entity = new ItemEntity {
+                EntityId = entityId, RoomId = roomId, ItemConfigId = itemConfigId,
+                Position = position, Rotation = rotation };
+        }
 
         if (!_rooms.TryGetValue(roomId, out var roomItems))
         {
@@ -325,6 +330,10 @@ public class ServerItemManager
             Rotation     = rotation,
             IsHeld       = false
         });
+
+        // Bidon : diffuse son niveau de carburant aux clients présents (sinon ils affichent 0).
+        if (entity is FuelCanisterEntity fc)
+            BroadcastToRoom(roomId, new S2C_ItemFuel { EntityId = entityId, Fuel = fc.Fuel });
 
         return entityId;
     }
@@ -571,6 +580,48 @@ public class ServerItemManager
         }
         else if (entity.Persistent)
             PersistPickupAsync(conn, msg.EntityId, entity.ItemConfigId, assignedHand.Value);
+    }
+
+    // ── Carburant générique d'item (bidon d'essence) ────────────────────────────
+
+    /// <summary>Fixe la réserve de carburant d'une entité (ex. bidon spawné par un marqueur) et
+    /// diffuse le niveau aux clients de la room (pour la tooltip).</summary>
+    public void SetEntityFuel(string roomId, int entityId, float fuel) {
+        if (!TryGetEntity(roomId, entityId, out var e) || e is not FuelCanisterEntity fce) return;
+        fce.Fuel = Mathf.Max(0f, fuel);
+        BroadcastToRoom(roomId, new S2C_ItemFuel { EntityId = entityId, Fuel = fce.Fuel });
+    }
+
+    /// <summary>
+    /// Transfère du carburant depuis l'item de config <paramref name="configId"/> tenu par le
+    /// joueur. <paramref name="hasItem"/> = le joueur tient bien cet item ; <paramref name="transferred"/>
+    /// = min(réserve du bidon, <paramref name="requested"/>), retiré de sa réserve. Renvoie true si
+    /// un transfert effectif (>0) a eu lieu.
+    /// </summary>
+    public bool TryConsumeHeldFuel(NetworkConnectionToClient conn, int configId, float requested,
+        out float transferred, out bool hasItem) {
+        transferred = 0f; hasItem = false;
+        if (conn?.identity == null) return false;
+        uint netId = conn.identity.netId;
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (roomId == null) return false;
+        if (!_playerHands.TryGetValue(netId, out var hands)) return false;
+
+        int[] held = { hands.RightEntityId, hands.LeftEntityId };
+        Debug.Log($"[Refuel] netId={netId} room={roomId} cfgWanted={configId} R={hands.RightEntityId} L={hands.LeftEntityId}");
+        foreach (int eid in held) {
+            if (eid == -1) continue;
+            if (!TryGetEntity(roomId, eid, out var e)) { Debug.Log($"[Refuel] eid={eid} introuvable dans room"); continue; }
+            Debug.Log($"[Refuel] eid={eid} configId={e.ItemConfigId} type={e.GetType().Name}");
+            if (e.ItemConfigId != configId || e is not FuelCanisterEntity fce) continue;
+            hasItem = true;
+            transferred = Mathf.Min(fce.Fuel, Mathf.Max(0f, requested));
+            fce.Fuel -= transferred;
+            if (transferred > 0f)
+                BroadcastToRoom(roomId, new S2C_ItemFuel { EntityId = eid, Fuel = fce.Fuel });
+            return transferred > 0f;
+        }
+        return false;
     }
 
     // Le joueur tient-il un colis (item-conteneur persisté) ? Renvoie son uuid + config conteneur.
@@ -1038,6 +1089,9 @@ public class ServerItemManager
                 LocalPosition = entity.LocalPosition,
                 LocalRotation = entity.LocalRotation
             });
+            // Bidon : pousse le niveau de carburant au client qui rejoint (tooltip).
+            if (entity is FuelCanisterEntity fce)
+                conn.Send(new S2C_ItemFuel { EntityId = entity.EntityId, Fuel = fce.Fuel });
         }
     }
 
