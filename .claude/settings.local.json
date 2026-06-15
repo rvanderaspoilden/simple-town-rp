@@ -146,7 +146,8 @@
       "Bash(rm -v Assets/Resources/Configurations/Jobs/Definitions/SocialCredit_1_1.asset Assets/Resources/Configurations/Jobs/Definitions/SocialCredit_1_1.asset.meta)",
       "Bash(powershell -Command \"\\(Get-Content 'Assets\\\\Scripts\\\\Constellation\\\\Data\\\\ConstellationGraphConfig.cs' -Raw\\) -replace 'x\\\\.connectedNodeIds = new\\\\[\\\\]', 'x.legacyConnectedNodeIds = new[]' -replace 'x\\\\.extraPrerequisiteNodeIds = new\\\\[\\\\]', 'x.legacyExtraPrerequisiteNodeIds = new[]' | Set-Content 'Assets\\\\Scripts\\\\Constellation\\\\Data\\\\ConstellationGraphConfig.cs' -NoNewline\")",
       "mcp__unity-mcp__Unity_ReadConsole",
-      "Bash(grep guid *)"
+      "Bash(grep guid *)",
+      "mcp__ai-game-developer__type-get-json-schema"
     ]
   },
   "enableAllProjectMcpServers": true,

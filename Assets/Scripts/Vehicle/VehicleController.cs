@@ -55,10 +55,23 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SerializeField] private float braking      = 12f;
     [Tooltip("Décélération en roue libre (accélérateur relâché, sans freiner). Faible = inertie.")]
     [SerializeField] private float friction      = 1.5f;
-    [Tooltip("Vitesse de braquage (deg/s).")]
-    [SerializeField] private float turnSpeed    = 120f;
-    [Tooltip("Atténuation du braquage à pleine vitesse (1 = aucune ; <1 = tourne moins vite à fond, plus stable).")]
-    [SerializeField] private float highSpeedTurnFactor = 0.65f;
+    [Tooltip("Empattement (m) : distance essieu avant ↔ arrière. Pilote le rayon de virage (modèle bicyclette).")]
+    [SerializeField] private float wheelBase = 2.6f;
+    [Tooltip("Angle de braquage max des roues avant (deg). Plus grand = tourne plus court.")]
+    [SerializeField] private float maxSteerAngle = 35f;
+    [Tooltip("Distance du pivot (origine du prefab) à l'essieu arrière (m). Le véhicule pivote autour de l'arrière.")]
+    [SerializeField] private float rearAxleOffset = 1.3f;
+    [Tooltip("Facteur de braquage à VITESSE MAX (1 = aucune réduction ; <1 = sous-virage). " +
+             "Simule la masse/inertie : à haute vitesse l'angle des roues est réduit → virages plus larges.")]
+    [Range(0.1f, 1f)] [SerializeField] private float highSpeedSteerFactor = 0.35f;
+
+    [Header("Dérapage (drift)")]
+    [Tooltip("Adhérence latérale NORMALE (m/s de glisse amortis par seconde). Élevé = aucun dérapage : " +
+             "le véhicule va exactement où il pointe.")]
+    [SerializeField] private float lateralGrip = 40f;
+    [Tooltip("Adhérence latérale en FREINANT (Espace) — basse = l'arrière décroche, la voiture glisse. " +
+             "C'est la physique de dérapage au frein.")]
+    [SerializeField] private float driftGrip = 3f;
 
     [Header("Ground / relief")]
     [Tooltip("Layers du sol/terrain à suivre (relief). Si vide, le layer « Ground » est utilisé.")]
@@ -103,6 +116,12 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SyncVar(hook = nameof(OnLockedChanged))]
     private bool isLocked;
 
+    // Feux : bits packés dans un octet répliqué (un seul SyncVar → trafic minimal).
+    private const byte LIGHT_HEAD  = 1; // phares avant
+    private const byte LIGHT_BRAKE = 2; // feux stop
+    [SyncVar(hook = nameof(OnLightFlagsChanged))]
+    private byte lightFlags;
+
     // Propriétaire PERSISTANT (character id), hydraté depuis la DB au spawn. "" = non possédé.
     [SyncVar]
     private string ownerCharacterId = "";
@@ -128,6 +147,9 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private int    _collisionMask;     // obstacleMask SANS le layer Item (on ne percute pas les objets ramassables)
     private float  _currentSpeed;
     private VehicleWheels _wheels;      // animation visuelle des roues (braquage piloté par l'input du conducteur)
+    private VehicleLights _lights;      // visuel des feux (piloté par lightFlags via le hook)
+    private byte   _desiredFlags;       // état des feux voulu par le conducteur (edge-triggered → Cmd)
+    private Vector3 _velocity;          // vitesse PLANAIRE monde (≠ cap → permet le dérapage latéral)
     private AudioSource _engineSource;
     private AudioSource _brakeSource;   // boucle de freinage, coupée dès que le frein est relâché
     private float  _lastImpactTime = -10f;
@@ -146,7 +168,6 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private float Acceleration => config != null ? config.acceleration : acceleration;
     private float Braking      => config != null ? config.braking      : braking;
     private float Friction     => config != null ? config.friction     : friction;
-    private float TurnSpeed    => config != null ? config.turnSpeed    : turnSpeed;
 
     /// <summary>Vitesse normalisée [0..1] (magnitude / maxSpeed). Owner-only (calculée localement) :
     /// utilisée par DriveCamera pour l'effet de vitesse (FOV) et le pitch moteur.</summary>
@@ -219,6 +240,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         }
 
         _wheels = GetComponent<VehicleWheels>();
+        _lights = GetComponent<VehicleLights>();
 
         SetupEngineAudio();
         SetKoParticles(false);
@@ -240,15 +262,20 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (groundAlignSpeed <= 0f) groundAlignSpeed = 10f;
         if (groundRayUp     <= 0f) groundRayUp     = 1.5f;
         if (groundRayDown   <= 0f) groundRayDown   = 4f;
-        // Idem : champs ajoutés après coup → 0 sur les prefabs déjà sérialisés. À 0 le braquage
-        // s'annulerait à pleine vitesse (turnSpeed fallback) / serait nul (highSpeedTurnFactor).
-        if (turnSpeed          <= 0f) turnSpeed          = 120f;
-        if (highSpeedTurnFactor <= 0f) highSpeedTurnFactor = 0.65f;
+        // Idem : champs ajoutés après coup → 0 sur les prefabs déjà sérialisés. À 0, wheelBase
+        // diviserait par zéro et rearAxleOffset/maxSteerAngle annuleraient le pivot/braquage.
+        if (wheelBase      <= 0f) wheelBase      = 2.6f;
+        if (maxSteerAngle  <= 0f) maxSteerAngle  = 35f;
+        if (rearAxleOffset <= 0f) rearAxleOffset = 1.3f;
+        if (highSpeedSteerFactor <= 0f) highSpeedSteerFactor = 0.35f;
+        if (lateralGrip <= 0f) lateralGrip = 40f;
+        if (driftGrip   <= 0f) driftGrip   = 3f;
     }
 
     public override void OnStartClient() {
         // Applique l'état de vie initial (la barre + les particules) sans jouer de son.
         RefreshHealthVisual();
+        ApplyLightVisual(); // état initial des feux (un véhicule sorti peut déjà être allumé)
     }
 
     /// <summary>AudioSource 3D dédiée à la boucle moteur, mutualisée sur le bus SFX du mixer.</summary>
@@ -442,6 +469,20 @@ public class VehicleController : NetworkBehaviour, IInteractable {
                 ApiManager.Instance.SetVehicleOwnerCoroutine(vehicleKey, charId, _ => { }));
     }
 
+    // ── Feux (phares + stop) ─────────────────────────────────────────────────────────
+
+    /// <summary>Le conducteur (autorité du véhicule) pousse l'état des feux voulu.</summary>
+    [Command]
+    private void CmdSetLights(byte flags) => lightFlags = flags;
+
+    private void OnLightFlagsChanged(byte previous, byte current) => ApplyLightVisual();
+
+    private void ApplyLightVisual() {
+        if (_lights == null) return;
+        _lights.SetHeadlights((lightFlags & LIGHT_HEAD)  != 0);
+        _lights.SetBrake     ((lightFlags & LIGHT_BRAKE) != 0);
+    }
+
     private void OnLockedChanged(bool previous, bool current) {
         AudioClip clip = config != null ? (current ? config.lockSound : config.unlockSound) : null;
         if (clip != null) AudioManager.Instance.PlayClip3D(clip, transform.position);
@@ -454,6 +495,8 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         }
         if (netIdentity.connectionToClient != null) netIdentity.RemoveClientAuthority();
         _currentSpeed = 0f;
+        _velocity = Vector3.zero;
+        lightFlags = 0; // phares + stop éteints quand le conducteur descend
         driverNetId = 0;
     }
 
@@ -466,7 +509,10 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             PlayerController driver = ResolveClientPlayer(current);
             if (driver == null) return;
             ApplyParentingTo(driver, seatAnchor, true);
-            if (driver == PlayerController.Local) driver.DriveVehicle(this);
+            if (driver == PlayerController.Local) {
+                _desiredFlags = lightFlags; // synchronise l'état voulu sur l'état répliqué courant
+                driver.DriveVehicle(this);
+            }
         }
         else if (previous != 0) {
             PlayDoorSound(false);  // portière qui se ferme
@@ -569,6 +615,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (over <= 0f) return;
         float damage = over * impactDamageFactor;
         health = Mathf.Max(0f, health - damage);
+        if (health == 0f) lightFlags &= unchecked((byte)~LIGHT_BRAKE); // KO : feux stop éteints
     }
 
     [Command(requiresAuthority = false)]
@@ -625,76 +672,106 @@ public class VehicleController : NetworkBehaviour, IInteractable {
 
         if (Input.GetKeyDown(KeyCode.H)) CmdHorn();
         if (Input.GetKeyDown(KeyCode.L)) CmdToggleLockAsDriver(); // clé : verrouiller/déverrouiller
+        if (Input.GetKeyDown(KeyCode.F)) _desiredFlags ^= LIGHT_HEAD; // phares on/off
 
         DriveStep();
     }
 
     private void DriveStep() {
+        float dt = Time.deltaTime;
+
         // KO : le véhicule ne roule plus (la fumée tourne via les particules).
-        if (IsKO) { _currentSpeed = 0f; SetBrakeSound(false); return; }
+        if (IsKO) { _currentSpeed = 0f; _velocity = Vector3.zero; SetBrakeSound(false); return; }
 
         float throttle = Input.GetAxisRaw("Vertical");   // W/S (ou flèches)
         float steer    = Input.GetAxisRaw("Horizontal"); // A/D
         bool  braking_ = Input.GetKey(KeyCode.Space);    // frein explicite
 
-        // Boucle de freinage : jouée tant qu'on freine ET qu'on roule encore, coupée sinon.
-        SetBrakeSound(braking_ && Mathf.Abs(_currentSpeed) > 1f);
-
-        float targetSpeed = throttle > 0f ? throttle * MaxSpeed
-                          : throttle < 0f ? throttle * ReverseSpeed
-                          : 0f;
-        if (braking_) targetSpeed = 0f;                  // le frein l'emporte sur l'accélérateur
-
-        // Frein > freinage actif (sens inverse) > accélération (on pousse) > roue libre (inertie).
-        float rate = braking_ ? Braking
-                   : Mathf.Approximately(throttle, 0f) ? Friction
-                   : Mathf.Abs(targetSpeed) > Mathf.Abs(_currentSpeed) ? Acceleration
-                   : Braking;
-        _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, rate * Time.deltaTime);
-
-        // Braquage : appliqué DIRECTEMENT au transform (yaw autour de l'up MONDE → cohérent en
-        // pente). Aucun lissage ici → réponse instantanée. ApplyGroundFollow ne lisse ensuite que
-        // l'INCLINAISON (pente), le cap étant déjà correct. (L'ancien code tournait un vecteur puis
-        // laissait le Slerp rejoindre la cible : intégrateur à fuite → sous-virage + latence.)
-        if (Mathf.Abs(_currentSpeed) > 0.05f && Mathf.Abs(steer) > 0.001f) {
-            float dir = Mathf.Sign(_currentSpeed);
-            // Autorité pleine à basse vitesse (manœuvrable), atténuée à haute vitesse (stable).
-            float speedFactor = Mathf.Lerp(1f, highSpeedTurnFactor, Mathf.Clamp01(Mathf.Abs(_currentSpeed) / MaxSpeed));
-            float yaw = steer * TurnSpeed * speedFactor * dir * Time.deltaTime;
-            transform.Rotate(Vector3.up, yaw, Space.World);
-        }
-        // Braquage VISUEL des roues piloté par l'input (précis/instantané chez le conducteur ;
-        // les clients distants retombent sur le lacet mesuré dans VehicleWheels).
-        if (_wheels != null) _wheels.SetSteerInput(steer);
-
-        // Cap à plat (après rotation) : le relief n'altère ni la vitesse ni le braquage.
+        // Repère du véhicule, à plat.
         Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
         if (flatForward.sqrMagnitude < 1e-4f) flatForward = Vector3.forward;
         flatForward.Normalize();
+        Vector3 flatRight = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
 
-        float delta = _currentSpeed * Time.deltaTime;
-        float dist  = Mathf.Abs(delta);
+        // Décompose la vitesse en composantes LONGITUDINALE (cap) et LATÉRALE (glisse).
+        float vF = Vector3.Dot(_velocity, flatForward);
+        float vL = Vector3.Dot(_velocity, flatRight);
 
-        if (!Mathf.Approximately(delta, 0f)) {
-            Vector3 moveDir = delta >= 0f ? flatForward : -flatForward;
+        // Boucle de freinage : jouée tant qu'on freine ET qu'on roule encore, coupée sinon.
+        SetBrakeSound(braking_ && Mathf.Abs(vF) > 1f);
 
-            // Anti-traversée des murs : balayage en boîte vers l'avant (ignore self).
+        // Feux stop suivent le frein ; réconcilie l'état voulu avec l'état répliqué (edge-triggered).
+        if (braking_) _desiredFlags |= LIGHT_BRAKE; else _desiredFlags &= unchecked((byte)~LIGHT_BRAKE);
+        if (_desiredFlags != lightFlags) CmdSetLights(_desiredFlags);
+
+        // ── Longitudinal + frein ──
+        if (braking_) {
+            // Frein : décélère la vitesse TOTALE (avant + latéral), sans la réaligner. La voiture
+            // continue donc de glisser ET de tourner tant qu'il reste de la vitesse, puis s'arrête
+            // vraiment — au lieu de se figer sur un angle en gardant de l'élan latéral.
+            _velocity = Vector3.MoveTowards(_velocity, Vector3.zero, Braking * dt);
+            vF = Vector3.Dot(_velocity, flatForward);
+            vL = Vector3.Dot(_velocity, flatRight);
+            vL = Mathf.MoveTowards(vL, 0f, driftGrip * dt);   // adhérence basse → la glisse persiste
+            _velocity = flatForward * vF + flatRight * vL;
+        } else {
+            float targetSpeed = throttle > 0f ? throttle * MaxSpeed
+                              : throttle < 0f ? throttle * ReverseSpeed
+                              : 0f;
+            float rate = Mathf.Approximately(throttle, 0f) ? Friction
+                       : Mathf.Abs(targetSpeed) > Mathf.Abs(vF) ? Acceleration
+                       : Braking;
+            vF = Mathf.MoveTowards(vF, targetSpeed, rate * dt);
+            vL = Mathf.MoveTowards(vL, 0f, lateralGrip * dt); // forte adhérence → pas de glisse hors frein
+            _velocity = flatForward * vF + flatRight * vL;
+        }
+        _currentSpeed = vF; // compteur (HUD / pitch moteur) = composante avant
+
+        // ── Braquage : modèle bicyclette + sous-virage à la vitesse (logique de masse) ──
+        // Le lacet est piloté par la VITESSE RÉELLE (magnitude planaire), pas seulement la composante
+        // avant : en drift profond vF peut être faible alors que la voiture file vite → le cap doit
+        // continuer de tourner jusqu'à l'arrêt (sinon il se fige sur un angle).
+        float planarSpeed = _velocity.magnitude;
+        float speedT = MaxSpeed > 0f ? Mathf.Clamp01(planarSpeed / MaxSpeed) : 0f;
+        float steerScale = Mathf.Lerp(1f, highSpeedSteerFactor, speedT * speedT);
+        float steerAngleDeg = steer * maxSteerAngle * steerScale;
+        if (_wheels != null) _wheels.SetSteerInput(steer * steerScale);
+
+        // Rotation du CAP autour de l'essieu arrière (pivot arrière), SANS translation : Δψ =
+        // (vitesse·dt / L)·tan(δ). La vitesse monde _velocity reste inchangée par la rotation →
+        // relative au nouveau cap elle gagne une composante latérale = la glisse.
+        float steerSpeed = (vF >= 0f ? 1f : -1f) * planarSpeed; // signé par le sens de marche
+        if (Mathf.Abs(steerAngleDeg) > 0.001f && Mathf.Abs(steerSpeed) > 0.05f) {
+            float yawDeg = (steerSpeed * dt / wheelBase) * Mathf.Tan(steerAngleDeg * Mathf.Deg2Rad) * Mathf.Rad2Deg;
+            Vector3 rearAxle = transform.position - flatForward * rearAxleOffset;
+            transform.Rotate(Vector3.up, yawDeg, Space.World);
+            Vector3 newForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            transform.position = rearAxle + newForward * rearAxleOffset; // pivot pur, pas d'avance
+        }
+
+        // ── Déplacement par la VITESSE (peut différer du cap → glisse visible) ──
+        Vector3 move = _velocity * dt;
+        float dist = move.magnitude;
+        if (dist > 1e-5f) {
+            Vector3 moveDir = move / dist;
+            // Anti-traversée des murs : balayage en boîte dans la direction réelle (ignore self).
             if (Physics.BoxCast(transform.position, sweepHalfExtents, moveDir, out RaycastHit wall,
                                 transform.rotation, dist + 0.1f, _collisionMask,
                                 QueryTriggerInteraction.Ignore)
                 && !wall.collider.transform.IsChildOf(transform)) {
-                float impactSpeed = Mathf.Abs(_currentSpeed);
+                float impactSpeed = _velocity.magnitude;
+                _velocity = Vector3.zero;
                 _currentSpeed = 0f;
                 if (impactSpeed > minImpactSpeed && Time.time - _lastImpactTime > 0.4f) {
                     _lastImpactTime = Time.time;
                     CmdReportImpact(impactSpeed);
                 }
             } else {
-                transform.position += moveDir * dist; // déplacement planaire
+                transform.position += move;
             }
         }
 
-        ApplyGroundFollow(flatForward); // colle au sol + épouse la pente
+        ApplyGroundFollow(Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized);
     }
 
     /// <summary>Cale le véhicule sur le relief : raycast vers le bas pour le Y, et oriente le
@@ -723,6 +800,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         // Si le conducteur s'est déconnecté (identity disparue), libère le véhicule.
         if (driverNetId != 0 && !NetworkServer.spawned.ContainsKey(driverNetId)) {
             _currentSpeed = 0f;
+            _velocity = Vector3.zero;
             driverNetId = 0;
         }
         // Idem pour les passagers déconnectés.

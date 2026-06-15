@@ -24,7 +24,7 @@ namespace Sim.UI {
         [Tooltip("Indicateur d'état verrouillé / déverrouillé.")]
         [SerializeField] private TextMeshProUGUI lockText;
 
-        private const string DriverKeys    = "Z/S : avancer/reculer    Q/D : tourner    ESPACE : frein    H : klaxon    L : verrouiller    X : sortir";
+        private const string DriverKeys    = "Z/S : avancer/reculer    Q/D : tourner    ESPACE : frein    F : phares    H : klaxon    L : verrouiller    X : sortir";
         private const string PassengerKeys = "X : descendre";
 
         private VehicleController vehicle;
