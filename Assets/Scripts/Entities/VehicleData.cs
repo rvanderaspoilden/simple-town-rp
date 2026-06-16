@@ -13,6 +13,15 @@ namespace Sim.Entities {
         public string ownerCharacterId; // "" = unowned
         public string modelId;          // VehicleConfig.id (display name resolved from the config)
         public string placeId;          // "" for a world vehicle; garage place for a purchased one
+        public float  health = -1f;     // -1 = jamais persisté → restauré "plein"
+        public float  fuel   = -1f;     // -1 = jamais persisté → restauré "plein"
+    }
+
+    /// <summary>Body for PATCH /vehicles/:id/state (Unity server, on store back in garage).</summary>
+    [Serializable]
+    public class VehicleStateBody {
+        public float health;
+        public float fuel;
     }
 
     /// <summary>Body for POST /vehicles (Unity server, on purchase at the dealership).</summary>

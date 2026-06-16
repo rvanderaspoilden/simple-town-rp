@@ -229,6 +229,16 @@ public class SimpleTownNetwork : NetworkManager
         }
 
         OnPlayerDisconnected?.Invoke(conn);
+        // Le véhicule conduit par le joueur qui se déconnecte ne doit PAS être détruit : Mirror
+        // détruit les objets à autorité de la connexion. On retire l'autorité + libère le conducteur
+        // AVANT base.OnServerDisconnect → le véhicule reste garé dans le monde.
+        foreach (var id in NetworkServer.spawned.Values) {
+            if (id != null && id.connectionToClient == conn) {
+                var vc = id.GetComponent<VehicleController>();
+                if (vc != null) vc.ServerHandleOwnerDisconnect();
+            }
+        }
+
         base.OnServerDisconnect(conn);
     }
 

@@ -80,4 +80,8 @@ public class VehicleConfig : ScriptableObject {
     public AudioClip unlockSound;
     [Tooltip("Remplissage du réservoir (joué à chaque ravitaillement au bidon).")]
     public AudioClip refuel;
+    [Tooltip("Ouverture du coffre (joué quand la grille du coffre s'ouvre).")]
+    public AudioClip trunkOpen;
+    [Tooltip("Fermeture du coffre (joué quand la grille du coffre se ferme).")]
+    public AudioClip trunkClose;
 }

@@ -978,6 +978,11 @@ namespace Sim {
         /// pour neutraliser le click-to-move pendant la conduite.</summary>
         public bool IsDriving { get; set; }
 
+        /// <summary>Véhicule actuellement occupé (conducteur OU passager), sinon null. Posé/effacé
+        /// par CharacterDrive/CharacterPassenger ; consommé par CameraManager pour autoriser le clic
+        /// « Sortir » sur le véhicule occupé pendant que le reste de l'interaction est neutralisé.</summary>
+        public VehicleController CurrentVehicle { get; set; }
+
         /// <summary>Entre dans l'état de conduite du véhicule (miroir de Sit()).</summary>
         public void DriveVehicle(VehicleController vehicle) {
             this.stateMachine.SetState(new CharacterDrive(this, vehicle));

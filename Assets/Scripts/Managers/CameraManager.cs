@@ -104,13 +104,10 @@ namespace Sim {
 
             // Pendant la conduite, l'input est piloté par le VehicleController (WASD).
             // On neutralise le click-to-move / menu radial pour éviter qu'un clic au sol
-            // déclenche un MoveTo qui se battrait avec la conduite.
+            // déclenche un MoveTo qui se battrait avec la conduite — mais on autorise le CLIC
+            // sur le véhicule occupé pour ouvrir son menu contextuel (« Sortir », etc.).
             if (PlayerController.Local.IsDriving || PlayerController.Local.IsPassenger) {
-                if (this._hoveredOutline != null) {
-                    this._hoveredOutline.Hide();
-                    this._hoveredOutline = null;
-                }
-                HoverNameTooltip.Hide();
+                this.ManageVehicleOccupantInteraction();
                 return;
             }
 
@@ -372,6 +369,38 @@ namespace Sim {
         public void ExitVehicleCamera() {
             if (this.driveCamera != null) this.driveCamera.SetVehicle(null);
             this.SetCurrentMode(CameraModeEnum.FREE);
+        }
+
+        /// <summary>
+        /// Interaction réduite quand le joueur local est À BORD d'un véhicule (conducteur ou passager).
+        /// Le click-to-move et le survol génériques restent neutralisés (ils se battraient avec la
+        /// conduite), mais le CLIC GAUCHE sur le véhicule occupé ouvre son menu contextuel (« Sortir »).
+        /// Le curseur reste libre en conduite (la vue se pilote à la molette), donc le clic est fiable.
+        /// </summary>
+        private void ManageVehicleOccupantInteraction() {
+            VehicleController vehicle = PlayerController.Local.CurrentVehicle;
+            bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+
+            HoverOutline target = null;
+            if (vehicle != null && !overUI) {
+                Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
+                if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.InteractionMask, QueryTriggerInteraction.Ignore)
+                    && h.collider.GetComponentInParent<VehicleController>() == vehicle
+                    && vehicle.IsInteractable()) {
+                    target = vehicle.GetComponent<HoverOutline>();
+                    if (target == null) target = vehicle.gameObject.AddComponent<HoverOutline>();
+
+                    if (Input.GetMouseButtonUp(0))
+                        HUDManager.Instance.ShowContextMenu(vehicle.GetActions(), vehicle.transform, true);
+                }
+            }
+
+            if (target != this._hoveredOutline) {
+                if (this._hoveredOutline != null) this._hoveredOutline.Hide();
+                this._hoveredOutline = target;
+                if (this._hoveredOutline != null) this._hoveredOutline.Show();
+            }
+            HoverNameTooltip.Hide();
         }
 
         private void ManageInteraction() {

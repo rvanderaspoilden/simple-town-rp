@@ -90,9 +90,15 @@ public class ServerItemManager
                                     // même quand le joueur a déjà quitté la room (disconnect).
         public uint   OpenedBy;
         public ContainerConfig Config;
+        public bool   IsVehicleTrunk; // true = coffre de véhicule (PropUuid = uuid véhicule, pas de prop)
         public Dictionary<int, ContainerSessionItem> ItemsByEntityId = new Dictionary<int, ContainerSessionItem>();
         public Dictionary<int, int> SlotToEntityId = new Dictionary<int, int>();
     }
+
+    /// <summary>Émis (serveur) quand le coffre d'un véhicule s'ouvre/se ferme. Argument : uuid du
+    /// véhicule (= clé "container:{uuid}") + état ouvert. <see cref="VehicleController"/> s'y abonne
+    /// pour jouer le son de coffre. Pas de prop à animer → pas de S2C_ContainerVisualState.</summary>
+    public static event System.Action<string, bool> OnVehicleTrunkStateChanged;
 
     private readonly Dictionary<uint, ContainerSession> _openContainerByPlayer
         = new Dictionary<uint, ContainerSession>();
@@ -1714,11 +1720,13 @@ public class ServerItemManager
         }
         ClosePropSession(netId); // un seul conteneur de "prop"/coffre ouvert à la fois
         ApiManager.Instance?.StartCoroutine(
-            OpenContainerCoroutine(conn, netId, 0, vehicleUuid, charId, trunkCfg, broadcastVisual: false));
+            OpenContainerCoroutine(conn, netId, 0, vehicleUuid, charId, trunkCfg,
+                broadcastVisual: false, isVehicleTrunk: true));
     }
 
     private IEnumerator OpenContainerCoroutine(NetworkConnectionToClient conn, uint netId, int propId,
-        string propUuid, string charId, ContainerConfig containerCfg, bool broadcastVisual = true)
+        string propUuid, string charId, ContainerConfig containerCfg, bool broadcastVisual = true,
+        bool isVehicleTrunk = false)
     {
         // 1. Place idempotent (POST /places).
         string placeKey = $"container:{propUuid}";
@@ -1764,6 +1772,7 @@ public class ServerItemManager
             PropId = propId, PlaceId = placeId, PropUuid = propUuid,
             RoomId = roomId,
             OpenedBy = netId, Config = containerCfg,
+            IsVehicleTrunk = isVehicleTrunk,
         };
         var snapshot = new List<S2C_ContainerItem>();
         if (stateData?.items != null) {
@@ -1800,6 +1809,9 @@ public class ServerItemManager
                 RoomId = roomId, PropId = propId, IsOpen = true,
             });
         }
+
+        // Coffre de véhicule : pas de prop, le VehicleController joue le son via l'événement.
+        if (isVehicleTrunk) OnVehicleTrunkStateChanged?.Invoke(propUuid, true);
 
         GameLogger.Network.Info("ContainerOpened propId={PropId} placeId={PlaceId} items={Count} netId={NetId}",
             propId, placeId, snapshot.Count, netId);
@@ -2305,6 +2317,9 @@ public class ServerItemManager
         // Libère les bridges session (les entityId alloués à la session ne sont
         // plus valides après close ; un re-open re-allouera des nouveaux ids).
         foreach (var it in session.ItemsByEntityId.Values) _bridges.Remove(it.EntityId);
+
+        // Coffre de véhicule : pas de prop à animer → le VehicleController joue le son de fermeture.
+        if (session.IsVehicleTrunk) OnVehicleTrunkStateChanged?.Invoke(session.PropUuid, false);
 
         // Broadcast visuel : porte/couvercle se referme — MAIS seulement si plus aucun autre
         // joueur n'a ce même meuble ouvert. Chaque joueur a sa propre session ; sans ce compte,

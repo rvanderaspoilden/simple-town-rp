@@ -653,6 +653,23 @@ namespace Sim {
             onDone?.Invoke(vehicle);
         }
 
+        /// <summary>PATCH /vehicles/:id/state en FIRE-AND-FORGET (arrêt serveur : on range tous les
+        /// véhicules ; même approche que la sauvegarde du timestamp ville, sans attendre la réponse).</summary>
+        public void SaveVehicleStateNow(string vehicleId, float health, float fuel) {
+            BuildJsonRequest($"{this.uri}/vehicles/{vehicleId}/state", "PATCH",
+                new VehicleStateBody { health = health, fuel = fuel }).SendWebRequest();
+        }
+
+        /// <summary>PATCH /vehicles/:id/state — persiste vie + essence (au rangement au garage). Serveur.</summary>
+        public IEnumerator UpdateVehicleStateCoroutine(string vehicleId, float health, float fuel, Action onDone = null) {
+            UnityWebRequest request = BuildJsonRequest($"{this.uri}/vehicles/{vehicleId}/state", "PATCH",
+                new VehicleStateBody { health = health, fuel = fuel });
+            yield return request.SendWebRequest();
+            if (request.responseCode != 200)
+                Debug.LogError($"[ApiManager] UpdateVehicleState failed code={request.responseCode} body={request.downloadHandler.text}");
+            onDone?.Invoke();
+        }
+
         // ── Direct messages (SMS) ─────────────────────────────────────────────
 
         public static event Action<string, List<DirectMessageData>> OnConversationRetrieved; // (otherId, messages)

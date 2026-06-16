@@ -21,8 +21,8 @@ MonoBehaviour:
     slotCount: 8
     acceptedTypes: 
     acceptsProps: 0
-    openClip: {fileID: 0}
-    closeClip: {fileID: 0}
+    openClip: {fileID: 8300000, guid: 3d8e172bfe9d4004089d127e428588eb, type: 3}
+    closeClip: {fileID: 8300000, guid: 0a9d7b25447639641b87997ab0cf9186, type: 3}
     allowsNestedContainers: 1
   maxHealth: 100
   fuelCapacity: 50
@@ -45,3 +45,5 @@ MonoBehaviour:
   lockSound: {fileID: 8300000, guid: 6b165381b0fae274e9f5ddc5d1d5b4db, type: 3}
   unlockSound: {fileID: 8300000, guid: 97d24e55eb3deb24a88abea945036e6e, type: 3}
   refuel: {fileID: 8300000, guid: d4a7d2b0e89a7034381e1fcd9c5f84ed, type: 3}
+  trunkOpen: {fileID: 0}
+  trunkClose: {fileID: 0}

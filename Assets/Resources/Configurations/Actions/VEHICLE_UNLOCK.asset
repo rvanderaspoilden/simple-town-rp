@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 351fc396b69ebdf4fabf43ea447c6c21, type: 3}
-  m_Name: ENTER_VEHICLE
+  m_Name: VEHICLE_UNLOCK
   m_EditorClassIdentifier: Assembly-CSharp::Sim.Interactables.Action
-  type: 31
-  label: Monter
-  icon: {fileID: -1305787163, guid: d8d88c0e3c4e14b4f8d1259cde37904b, type: 3}
+  type: 17
+  label: "D\xE9verouiller"
+  icon: {fileID: -1855969175, guid: a516da3528b989741a4463d98ed4c967, type: 3}
   needPermission: 0

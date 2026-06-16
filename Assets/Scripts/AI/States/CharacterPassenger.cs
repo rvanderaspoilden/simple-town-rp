@@ -26,6 +26,7 @@ namespace AI.States {
             this.player.Collider.enabled = false;
             this.player.PlayerState = PlayerState.SITTING;
             this.player.IsPassenger = true;
+            this.player.CurrentVehicle = this.vehicle;
 
             this.player.transform.DOComplete();
 
@@ -41,14 +42,15 @@ namespace AI.States {
 
         public void Tick() {
             // Sortie passager : touche X (le passager n'est pas owner du véhicule, donc
-            // VehicleController.Update ne lit pas son input — on le fait ici).
+            // VehicleController.Update ne lit pas son input — on le fait ici). Verrouillé → toast.
             if (Input.GetKeyDown(KeyCode.X) && this.vehicle != null) {
-                this.vehicle.RequestPassengerExit();
+                this.vehicle.LocalRequestExit();
             }
         }
 
         public void OnExit() {
             this.player.IsPassenger = false;
+            this.player.CurrentVehicle = null;
             HUDManager.Instance.HideVehicleHud();
             this.player.SetAnimatorAction(CharacterAnimatorAction.NONE);
             this.player.SetHeadTargetPosition(this.player.IdleHeadPosition);

@@ -32,6 +32,7 @@ namespace AI.States {
             this.player.Collider.enabled = false;
             this.player.PlayerState = PlayerState.SITTING;
             this.player.IsDriving = true;
+            this.player.CurrentVehicle = this.vehicle;
 
             this.player.transform.DOComplete(); // stoppe un éventuel tween LookAt
 
@@ -49,6 +50,7 @@ namespace AI.States {
 
         public void OnExit() {
             this.player.IsDriving = false;
+            this.player.CurrentVehicle = null;
             this.player.SetAnimatorAction(CharacterAnimatorAction.NONE);
             this.player.SetHeadTargetPosition(this.player.IdleHeadPosition);
 

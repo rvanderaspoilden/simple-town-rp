@@ -25,6 +25,16 @@ namespace Sim {
             NetworkServer.UnregisterHandler<C2S_BuyVehicle>();
             NetworkServer.UnregisterHandler<C2S_TakeOutVehicle>();
             NetworkServer.UnregisterHandler<C2S_StoreVehicle>();
+
+            // À l'arrêt : on « range » tous les véhicules sortis en persistant vie + essence
+            // (fire-and-forget, comme le timestamp ville). Le coffre (place DB) persiste seul.
+            if (ApiManager.Instance == null) return;
+            foreach (var id in NetworkServer.spawned.Values) {
+                if (id == null) continue;
+                var vc = id.GetComponent<VehicleController>();
+                if (vc != null && !string.IsNullOrEmpty(vc.VehicleDbId))
+                    ApiManager.Instance.SaveVehicleStateNow(vc.VehicleDbId, vc.ServerHealth, vc.ServerFuel);
+            }
         }
 
         // ── Achat (concession) ──────────────────────────────────────────────────────

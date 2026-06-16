@@ -34,14 +34,20 @@ public class GarageDoor : MonoBehaviour, IInteractable {
 
     private Action _takeOutAction;
     private Action _storeAction;
-    private Sprite _icon;
 
     private void Awake() {
-        _icon = Resources.Load<Action>("Configurations/Actions/ENTER_VEHICLE")?.Icon;
-        _takeOutAction = Action.CreateRuntime(ActionTypeEnum.USE, "Sortir un véhicule", _icon);
-        _takeOutAction.OnExecute += OnTakeOutExecuted;
-        _storeAction = Action.CreateRuntime(ActionTypeEnum.USE, "Ranger le véhicule", _icon);
-        _storeAction.OnExecute += OnStoreExecuted;
+        // Configs DÉDIÉES (icône + libellé personnalisables dans l'inspecteur). Instanciées pour ne
+        // pas partager le delegate OnExecute sur l'asset partagé.
+        Action takeOutProto = Resources.Load<Action>("Configurations/Actions/GARAGE_TAKE_OUT");
+        if (takeOutProto != null) {
+            _takeOutAction = Instantiate(takeOutProto);
+            _takeOutAction.OnExecute += OnTakeOutExecuted;
+        }
+        Action storeProto = Resources.Load<Action>("Configurations/Actions/GARAGE_STORE");
+        if (storeProto != null) {
+            _storeAction = Instantiate(storeProto);
+            _storeAction.OnExecute += OnStoreExecuted;
+        }
     }
 
     private void OnEnable()  { if (!string.IsNullOrEmpty(doorKey)) _registry[doorKey] = this; }
@@ -61,8 +67,9 @@ public class GarageDoor : MonoBehaviour, IInteractable {
     public void  StopInteraction()  { }
 
     public Action[] GetActions(bool withPriority = false) {
-        var list = new List<Action> { _takeOutAction };
-        if (LocalHasStorableVehicleNearby()) list.Add(_storeAction);
+        var list = new List<Action>(2);
+        if (_takeOutAction != null) list.Add(_takeOutAction);
+        if (_storeAction != null && LocalHasStorableVehicleNearby()) list.Add(_storeAction);
         return list.ToArray();
     }
 
@@ -112,7 +119,7 @@ public class GarageDoor : MonoBehaviour, IInteractable {
         Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
         Quaternion rot = spawnPoint != null ? spawnPoint.rotation : transform.rotation;
         GameObject go = Instantiate(prefab, pos, rot);
-        go.GetComponent<VehicleController>()?.ServerInitFromGarage(v.id, v.ownerCharacterId);
+        go.GetComponent<VehicleController>()?.ServerInitFromGarage(v.id, v.ownerCharacterId, v.health, v.fuel);
         NetworkServer.Spawn(go);
     }
 
@@ -125,6 +132,8 @@ public class GarageDoor : MonoBehaviour, IInteractable {
             if (vc.OwnerCharacterId != charId) continue;
             if (vc.IsOccupied) continue;
             if ((vc.transform.position - transform.position).sqrMagnitude > r2) continue;
+            // La sauvegarde vie/essence se fait dans VehicleController.OnStopServer (point unique
+            // de despawn) ; le coffre (place DB) persiste seul. Ici on ne fait que ranger.
             NetworkServer.Destroy(vc.gameObject);
             return;
         }

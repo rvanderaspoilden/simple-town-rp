@@ -137,6 +137,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     // Clé stable + modèle, côté serveur uniquement (assignés par le spawner) pour la persistance.
     private string vehicleKey;
     private bool   _ownershipInitialized;
+    private bool   _stateInitialized; // true = vie/essence restaurées du garage → OnStartServer ne réinitialise pas
 
     // Sièges passagers : un SyncVar par place (le projet n'utilise pas de collections sync).
     private const int MaxPassengerSlots = 3;
@@ -145,6 +146,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SyncVar(hook = nameof(OnPassenger2Changed))] private uint passenger2NetId;
 
     private Action _enterAction;
+    private Action _exitAction;
     private Action _lockAction;
     private Action _unlockAction;
     private Action _refuelAction;
@@ -200,8 +202,47 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     public bool HasFuel => fuel != 0f;
 
     public override void OnStartServer() {
+        // Son de coffre : le système de conteneurs signale l'ouverture/fermeture (pas de prop à animer).
+        ServerItemManager.OnVehicleTrunkStateChanged += OnTrunkStateChanged;
+        // Ne pas écraser l'état restauré du garage (ServerInitFromGarage tourne AVANT le spawn).
+        if (_stateInitialized) return;
         health = MaxHealth;
         fuel = MaxFuel;
+    }
+
+    /// <summary>Point UNIQUE de sauvegarde : tout despawn serveur (rangement, déconnexion du
+    /// conducteur — Mirror détruit ses objets à autorité —, arrêt) persiste vie + essence.
+    /// Le coffre (place DB séparée « container:{id} ») persiste indépendamment.</summary>
+    public override void OnStopServer() {
+        ServerItemManager.OnVehicleTrunkStateChanged -= OnTrunkStateChanged;
+        if (!string.IsNullOrEmpty(vehicleDbId) && ApiManager.Instance != null)
+            ApiManager.Instance.StartCoroutine(
+                ApiManager.Instance.UpdateVehicleStateCoroutine(vehicleDbId, ServerHealth, ServerFuel));
+    }
+
+    /// <summary>Coffre ouvert/fermé pour CE véhicule (filtré par uuid) → son 3D pour tous.</summary>
+    [Server]
+    private void OnTrunkStateChanged(string vehicleUuid, bool open) {
+        if (!string.IsNullOrEmpty(vehicleUuid) && vehicleUuid == ServerTrunkUuid())
+            RpcTrunkSound(open);
+    }
+
+    [ClientRpc]
+    private void RpcTrunkSound(bool open) {
+        AudioClip clip = config != null ? (open ? config.trunkOpen : config.trunkClose) : null;
+        if (clip != null) AudioManager.Instance.PlayClip3D(clip, transform.position);
+    }
+
+    /// <summary>Vie/essence courantes côté serveur (pour la persistance au rangement).</summary>
+    public float ServerHealth => health < 0f ? MaxHealth : health;
+    public float ServerFuel   => fuel   < 0f ? MaxFuel   : fuel;
+
+    /// <summary>Appelé quand le CONDUCTEUR (détenteur de l'autorité) se déconnecte : on lui retire
+    /// l'autorité et on libère le véhicule pour que Mirror ne le DÉTRUISE pas (il détruit les objets
+    /// à autorité de la connexion qui part). Le véhicule reste donc garé dans le monde.</summary>
+    [Server]
+    public void ServerHandleOwnerDisconnect() {
+        if (driverNetId != 0) ServerReleaseDriver();
     }
 
     // ── Sièges passagers ─────────────────────────────────────────────────────────────
@@ -244,13 +285,20 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             _enterAction = Instantiate(proto);
             _enterAction.OnExecute += OnEnterActionExecuted;
         }
+        Action exitProto = Resources.Load<Action>("Configurations/Actions/EXIT_VEHICLE");
+        if (exitProto != null) {
+            _exitAction = Instantiate(exitProto);
+            _exitAction.OnExecute += OnExitActionExecuted;
+        }
 
-        Action lockProto = Resources.Load<Action>("Configurations/Actions/LOCK");
+        // Lock / unlock / coffre : configs DÉDIÉES au véhicule (icône + libellé personnalisables
+        // sans impacter les actions génériques LOCK/UNLOCK/OPEN des portes & conteneurs).
+        Action lockProto = Resources.Load<Action>("Configurations/Actions/VEHICLE_LOCK");
         if (lockProto != null) {
             _lockAction = Instantiate(lockProto);
             _lockAction.OnExecute += OnLockActionExecuted;
         }
-        Action unlockProto = Resources.Load<Action>("Configurations/Actions/UNLOCK");
+        Action unlockProto = Resources.Load<Action>("Configurations/Actions/VEHICLE_UNLOCK");
         if (unlockProto != null) {
             _unlockAction = Instantiate(unlockProto);
             _unlockAction.OnExecute += OnUnlockActionExecuted;
@@ -260,10 +308,11 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             _refuelAction = Instantiate(refuelProto);
             _refuelAction.OnExecute += OnRefuelActionExecuted;
         }
-        // Coffre : action OPEN avec libellé dédié (réutilise l'icône de l'action OPEN générique).
-        Action openProto = Resources.Load<Action>("Configurations/Actions/OPEN");
-        _openTrunkAction = Action.CreateRuntime(ActionTypeEnum.OPEN, "Ouvrir le coffre", openProto != null ? openProto.Icon : null);
-        _openTrunkAction.OnExecute += OnOpenTrunkActionExecuted;
+        Action trunkProto = Resources.Load<Action>("Configurations/Actions/VEHICLE_TRUNK");
+        if (trunkProto != null) {
+            _openTrunkAction = Instantiate(trunkProto);
+            _openTrunkAction.OnExecute += OnOpenTrunkActionExecuted;
+        }
 
         _wheels = GetComponent<VehicleWheels>();
         _lights = GetComponent<VehicleLights>();
@@ -338,6 +387,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
 
     private void OnDestroy() {
         if (_enterAction != null) _enterAction.OnExecute -= OnEnterActionExecuted;
+        if (_exitAction != null) _exitAction.OnExecute -= OnExitActionExecuted;
         if (_lockAction != null) _lockAction.OnExecute -= OnLockActionExecuted;
         if (_unlockAction != null) _unlockAction.OnExecute -= OnUnlockActionExecuted;
         if (_refuelAction != null) _refuelAction.OnExecute -= OnRefuelActionExecuted;
@@ -354,12 +404,20 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     // ── IInteractable ─────────────────────────────────────────────────────────────
 
     public float GetRange()          => interactionRange;
-    public bool  IsInteractable()    => CanEnterAction() || OwnerLockActionAvailable() || CanRefuelAction() || CanOpenTrunkAction();
+    public bool  IsInteractable()    => CanEnterAction() || CanExitAction() || OwnerLockActionAvailable() || CanRefuelAction() || CanOpenTrunkAction();
     public bool  IsRightClickOnly()  => false;
     public void  StopInteraction()   { }
 
     /// <summary>Action « Monter » disponible : véhicule déverrouillé + place libre.</summary>
     private bool CanEnterAction() => _enterAction != null && !isLocked && HasFreeSeat();
+
+    /// <summary>Action « Sortir » disponible : le joueur local est à bord (conducteur ou passager).
+    /// Affichée MÊME verrouillé : la tentative déclenche alors un toast d'erreur (cf. LocalRequestExit).</summary>
+    private bool CanExitAction() {
+        if (_exitAction == null) return false;
+        var local = PlayerController.Local;
+        return local != null && IsOccupant(local.netId);
+    }
 
     /// <summary>Action « Mettre de l'essence » : visible dès que le joueur local tient un bidon
     /// (hint client). Le serveur valide au clic — réservoir plein / bidon vide renvoient un toast.</summary>
@@ -373,14 +431,9 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private static bool IsCanister(ItemBehaviour it) =>
         it != null && it.Configuration != null && it.Configuration.ID == FuelCanister.ConfigId;
 
-    /// <summary>Action « Ouvrir le coffre » : le véhicule a un coffre ET l'accès est permis
-    /// (déverrouillé = tout le monde ; verrouillé = propriétaire seulement).</summary>
-    private bool CanOpenTrunkAction() {
-        if (_openTrunkAction == null || !HasTrunk) return false;
-        if (!isLocked) return true;
-        var local = PlayerController.Local;
-        return local != null && local.CharacterData != null && local.CharacterData.Id == ownerCharacterId;
-    }
+    /// <summary>Action « Ouvrir le coffre » : visible dès que le véhicule a un coffre, MÊME verrouillé.
+    /// Verrouillé : la tentative déclenche un toast d'erreur (cf. OnOpenTrunkActionExecuted).</summary>
+    private bool CanOpenTrunkAction() => _openTrunkAction != null && HasTrunk;
 
     /// <summary>Le joueur local est le propriétaire ET à l'extérieur → action verrouiller/déverrouiller.</summary>
     private bool OwnerLockActionAvailable() {
@@ -394,8 +447,9 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     public bool IsOwnedBy(string characterId) => !string.IsNullOrEmpty(ownerCharacterId) && ownerCharacterId == characterId;
 
     public Action[] GetActions(bool withPriority = false) {
-        var list = new List<Action>(3);
+        var list = new List<Action>(4);
         if (CanEnterAction()) list.Add(_enterAction);
+        if (CanExitAction()) list.Add(_exitAction);
         if (OwnerLockActionAvailable()) list.Add(isLocked ? _unlockAction : _lockAction);
         if (CanRefuelAction()) list.Add(_refuelAction);
         if (CanOpenTrunkAction()) list.Add(_openTrunkAction);
@@ -407,10 +461,28 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         CmdEnterVehicle();
     }
 
+    private void OnExitActionExecuted(Action action) => LocalRequestExit();
+
+    /// <summary>Point d'entrée CLIENT unique de la sortie (clic « Sortir » OU touche X, conducteur
+    /// comme passager). Verrouillé → toast d'erreur, aucune Command. Sinon dispatch conducteur /
+    /// passager. isLocked est répliqué → le contrôle client est fiable (le serveur revalide aussi).</summary>
+    public void LocalRequestExit() {
+        var local = PlayerController.Local;
+        if (local == null) return;
+        if (isLocked) { WorldToastManager.ShowError("Véhicule verrouillé"); return; }
+        if (driverNetId == local.netId) CmdExitVehicle();
+        else CmdExitAsPassenger();
+    }
+
     private void OnLockActionExecuted(Action action)   => CmdSetLockAsOwner(true);
     private void OnUnlockActionExecuted(Action action) => CmdSetLockAsOwner(false);
     private void OnRefuelActionExecuted(Action action) => CmdRefuel();
-    private void OnOpenTrunkActionExecuted(Action action) => CmdOpenTrunk();
+
+    /// <summary>Ouverture du coffre : verrouillé → toast d'erreur, aucune Command (le serveur revalide).</summary>
+    private void OnOpenTrunkActionExecuted(Action action) {
+        if (isLocked) { WorldToastManager.ShowError("Véhicule verrouillé"); return; }
+        CmdOpenTrunk();
+    }
 
     public bool IsLocked => isLocked;
 
@@ -461,9 +533,6 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         }
     }
 
-    /// <summary>Appelé par CharacterPassenger (joueur local) pour descendre du véhicule.</summary>
-    public void RequestPassengerExit() => CmdExitAsPassenger();
-
     [Command]
     private void CmdExitVehicle() {
         if (driverNetId == 0) return;
@@ -511,10 +580,14 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     /// <summary>Initialise un véhicule SORTI d'un garage : propriétaire connu + id DB (pour le rangement).
     /// Pas d'appel DB (la propriété est déjà persistée).</summary>
     [Server]
-    public void ServerInitFromGarage(string dbId, string ownerCharId) {
+    public void ServerInitFromGarage(string dbId, string ownerCharId, float restoredHealth, float restoredFuel) {
         _ownershipInitialized = true;
         vehicleDbId = dbId ?? "";
         ownerCharacterId = ownerCharId ?? "";
+        // Restaure l'état persisté (-1 = jamais sauvegardé → plein). Précède OnStartServer.
+        health = restoredHealth >= 0f ? Mathf.Min(restoredHealth, MaxHealth) : MaxHealth;
+        fuel   = restoredFuel   >= 0f ? Mathf.Min(restoredFuel,   MaxFuel)   : MaxFuel;
+        _stateInitialized = true;
     }
 
     /// <summary>Le premier conducteur réclame la propriété (persistée), si le véhicule est libre.</summary>
@@ -591,12 +664,9 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [Command(requiresAuthority = false)]
     private void CmdOpenTrunk(NetworkConnectionToClient conn = null) {
         if (conn?.identity == null || !HasTrunk) return;
+        if (isLocked) return; // verrouillé : coffre inaccessible (le client affiche le toast)
         float sqr = (conn.identity.transform.position - transform.position).sqrMagnitude;
         if (sqr > (interactionRange * 2f) * (interactionRange * 2f)) return;
-        if (isLocked) {
-            string cid = conn.identity.GetComponent<PlayerController>()?.CharacterData?.Id;
-            if (string.IsNullOrEmpty(cid) || cid != ownerCharacterId) return; // verrouillé : propriétaire seul
-        }
         ServerItemManager.Instance.OpenVehicleTrunk(conn, ServerTrunkUuid(), config.trunk);
     }
 
@@ -800,7 +870,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (!isOwned)  return;
 
         if (Input.GetKeyDown(KeyCode.X)) {
-            CmdExitVehicle();
+            LocalRequestExit();
             return;
         }
 
