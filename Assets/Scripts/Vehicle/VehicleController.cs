@@ -48,6 +48,25 @@ public class VehicleController : NetworkBehaviour, IInteractable {
              "si absent, on retombe sur les valeurs par défaut ci-dessous.")]
     [SerializeField] private VehicleConfig config;
 
+    [Header("Physique (WheelCollider)")]
+    [Tooltip("Les 4 WheelColliders, dans l'ordre : avant-gauche, avant-droit, arrière-gauche, arrière-droit. " +
+             "Les 2 premiers (avant) braquent ; les 4 reçoivent couple moteur et frein.")]
+    [SerializeField] private WheelCollider[] wheelColliders = new WheelCollider[0];
+    [Tooltip("Couple moteur max par roue (N·m).")]
+    [SerializeField] private float motorTorque = 1200f;
+    [Tooltip("Angle de braquage max des roues avant (deg).")]
+    [SerializeField] private float maxSteerAngleDeg = 30f;
+    [Tooltip("Couple de frein (Espace, ou inversion de sens) par roue (N·m).")]
+    [SerializeField] private float brakeTorque = 2500f;
+    [Tooltip("Frein moteur en roue libre (accélérateur relâché) par roue (N·m).")]
+    [SerializeField] private float engineBrakeTorque = 250f;
+    [Tooltip("Facteur de vitesse max en marche arrière (× vitesse max avant).")]
+    [Range(0.1f, 1f)] [SerializeField] private float reverseSpeedFactor = 0.4f;
+    [Tooltip("Abaissement du centre de masse (m, local) pour la stabilité anti-tonneau.")]
+    [SerializeField] private float centerOfMassDrop = 0.5f;
+    [Tooltip("Lissage du braquage (vitesse d'interpolation de l'angle des roues avant).")]
+    [SerializeField] private float steerLerp = 6f;
+
     [Header("Driving fallback (si pas de config)")]
     [SerializeField] private float maxSpeed     = 6f;
     [SerializeField] private float reverseSpeed = 3f;
@@ -172,7 +191,6 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private Action _unlockAction;
     private Action _refuelAction;
     private Action _openTrunkAction;
-    private int    _collisionMask;     // obstacleMask SANS le layer Item (on ne percute pas les objets ramassables)
     private float  _currentSpeed;
     private VehicleWheels _wheels;      // animation visuelle des roues (braquage piloté par l'input du conducteur)
     private VehicleLights _lights;      // visuel des feux (piloté par lightFlags via le hook)
@@ -184,13 +202,14 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private const float FuelBarHeight = 2.4f; // hauteur d'affichage au-dessus du véhicule (m)
     private AudioSource _engineSource;
     private AudioSource _brakeSource;   // boucle de freinage, coupée dès que le frein est relâché
-    private float  _lastImpactTime = -10f;
     private int    _characterMask;   // Player | NPC : cible du renversement (séparé du masque mur)
+    private int    _impactMask;      // layers infligeant des dégâts d'impact (murs/décor, pas sol/persos)
     private readonly Collider[] _hitBuffer = new Collider[8];
     private readonly Dictionary<uint, float> _playerHitTime = new Dictionary<uint, float>();
     private readonly Dictionary<int, float>  _npcHitTime    = new Dictionary<int, float>();
-    private float     _verticalVel;    // vitesse verticale (suspension + gravité), owner-side
-    private Vector3[] _suspCorners;    // offsets locaux des 4 coins échantillonnés pour l'orientation
+    private Rigidbody _rb;             // corps physique (non-kinematic chez le simulateur d'autorité)
+    private float     _steerAngleCurrent; // angle de braquage lissé courant
+    private float     _lastCollisionDamageTime = -10f;
 
     public Transform CameraAnchor => cameraAnchor;
     public Transform ExitAnchor   => exitAnchor;
@@ -207,12 +226,29 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private float Braking      => config != null ? config.braking      : braking;
     private float Friction     => config != null ? config.friction     : friction;
 
-    /// <summary>Vitesse normalisée [0..1] (magnitude / maxSpeed). Owner-only (calculée localement) :
-    /// utilisée par DriveCamera pour l'effet de vitesse (FOV) et le pitch moteur.</summary>
-    public float NormalizedSpeed => MaxSpeed > 0f ? Mathf.Clamp01(Mathf.Abs(_currentSpeed) / MaxSpeed) : 0f;
+    /// <summary>Vitesse planaire courante (m/s), lue sur le Rigidbody. Owner-only fiable (le corps y
+    /// simule) ; les copies distantes sont kinematic → ~0 (acceptable, le HUD vitesse est conducteur-only).</summary>
+    private float CurrentSpeedMs => _rb != null ? Vector3.ProjectOnPlane(_rb.linearVelocity, transform.up).magnitude : 0f;
 
-    /// <summary>Vitesse courante en km/h (valeur signée → magnitude). Affichée par le HUD.</summary>
-    public float SpeedKmh => Mathf.Abs(_currentSpeed) * 3.6f;
+    /// <summary>Vitesse normalisée [0..1] (vitesse / vitesse max). Pilote l'effet de vitesse caméra + pitch moteur.</summary>
+    public float NormalizedSpeed => MaxSpeed > 0f ? Mathf.Clamp01(CurrentSpeedMs / MaxSpeed) : 0f;
+
+    /// <summary>Vitesse courante en km/h. Affichée par le HUD conducteur.</summary>
+    public float SpeedKmh => CurrentSpeedMs * 3.6f;
+
+    /// <summary>Vrai là où CETTE instance doit simuler la physique : le client propriétaire (conducteur)
+    /// OU le serveur quand le véhicule n'a pas de propriétaire client (garé). Ailleurs → kinematic
+    /// (le NetworkTransform impose la position).</summary>
+    private bool ShouldSimulate => isOwned || (isServer && netIdentity.connectionToClient == null);
+
+    /// <summary>Active/désactive la simulation physique selon l'autorité. À appeler à chaque changement
+    /// d'autorité (entrée/sortie conducteur, spawn).</summary>
+    private void RefreshSimulationState() {
+        if (_rb == null) return;
+        bool sim = ShouldSimulate;
+        _rb.isKinematic = !sim;
+        if (sim) _rb.WakeUp();
+    }
 
     // ── Santé ────────────────────────────────────────────────────────────────────────
     public float MaxHealth => config != null ? config.maxHealth : 100f;
@@ -231,6 +267,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     public override void OnStartServer() {
         // Son de coffre : le système de conteneurs signale l'ouverture/fermeture (pas de prop à animer).
         ServerItemManager.OnVehicleTrunkStateChanged += OnTrunkStateChanged;
+        RefreshSimulationState();
         // Ne pas écraser l'état restauré du garage (ServerInitFromGarage tourne AVANT le spawn).
         if (_stateInitialized) return;
         health = MaxHealth;
@@ -347,55 +384,38 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         SetupEngineAudio();
         SetKoParticles(false);
 
-        // Collisions avec tout SAUF les items (objets ramassables au sol).
-        int itemLayer = LayerMask.NameToLayer("Item");
-        _collisionMask = itemLayer >= 0 ? (obstacleMask & ~(1 << itemLayer)) : (int)obstacleMask;
+        // Corps physique : centre de masse abaissé (anti-tonneau) + interpolation pour un rendu fluide.
+        _rb = GetComponent<Rigidbody>();
+        if (_rb != null) {
+            _rb.centerOfMass += Vector3.down * centerOfMassDrop;
+            _rb.interpolation = RigidbodyInterpolation.Interpolate;
+        }
 
-        // Masque des personnages renversables (Player + NPC) — indépendant du masque mur.
+        // Masque des personnages renversables (Player + NPC).
         int playerLayer = LayerMask.NameToLayer("Player");
         int npcLayer    = LayerMask.NameToLayer("NPC");
         _characterMask  = (playerLayer >= 0 ? 1 << playerLayer : 0) | (npcLayer >= 0 ? 1 << npcLayer : 0);
 
-        // Masque sol : défaut sur le layer « Ground » si non renseigné.
-        if (groundMask.value == 0) {
-            int g = LayerMask.NameToLayer("Ground");
-            if (g >= 0) groundMask = 1 << g;
+        // Dégâts d'impact : tout SAUF sol, personnages (renversement) et items.
+        int softLayers = _characterMask;
+        foreach (string n in new[] { "Ground", "Ragdoll", "Item" }) {
+            int l = LayerMask.NameToLayer(n);
+            if (l >= 0) softLayers |= 1 << l;
         }
+        _impactMask = ~softLayers;
 
-        // Garde-fous : les prefabs sérialisés AVANT l'ajout de ces champs les ont à 0
-        // (Unity n'applique pas l'initialiseur C# aux objets déjà sérialisés). À 0,
-        // groundAlignSpeed=0 fige la rotation (plus de braquage) et les distances de
-        // raycast nulles cassent le suivi de sol.
-        if (groundAlignSpeed <= 0f) groundAlignSpeed = 10f;
-        if (groundRayUp     <= 0f) groundRayUp     = 1.5f;
-        if (groundRayDown   <= 0f) groundRayDown   = 4f;
-        // Idem : champs ajoutés après coup → 0 sur les prefabs déjà sérialisés. À 0, wheelBase
-        // diviserait par zéro et rearAxleOffset/maxSteerAngle annuleraient le pivot/braquage.
-        if (wheelBase      <= 0f) wheelBase      = 2.6f;
-        if (maxSteerAngle  <= 0f) maxSteerAngle  = 35f;
-        if (rearAxleOffset <= 0f) rearAxleOffset = 1.3f;
-        if (highSpeedSteerFactor <= 0f) highSpeedSteerFactor = 0.35f;
-        if (lateralGrip <= 0f) lateralGrip = 40f;
-        if (driftGrip   <= 0f) driftGrip   = 3f;
-        // Garde-fous suspension (prefabs sérialisés avant l'ajout de ces champs → 0).
-        if (gravity             <= 0f) gravity             = 25f;
-        if (suspensionStiffness <= 0f) suspensionStiffness = 120f;
-        if (suspensionDamping   <= 0f) suspensionDamping   = 22f;
-        if (trackWidth          <= 0f) trackWidth          = 1.6f;
-
-        // Offsets des 4 coins (FL, FR, RL, RR) pour échantillonner le sol et orienter le châssis.
-        float ht = trackWidth * 0.5f, hb = wheelBase * 0.5f;
-        _suspCorners = new[] {
-            new Vector3( ht, 0f,  hb), new Vector3(-ht, 0f,  hb),
-            new Vector3( ht, 0f, -hb), new Vector3(-ht, 0f, -hb)
-        };
+        if (maxSteerAngleDeg <= 0f) maxSteerAngleDeg = 30f;
     }
 
     public override void OnStartClient() {
         // Applique l'état de vie initial (la barre + les particules) sans jouer de son.
         RefreshHealthVisual();
         ApplyLightVisual(); // état initial des feux (un véhicule sorti peut déjà être allumé)
+        RefreshSimulationState();
     }
+
+    public override void OnStartAuthority() => RefreshSimulationState();
+    public override void OnStopAuthority()  => RefreshSimulationState();
 
     /// <summary>AudioSource 3D dédiée à la boucle moteur, mutualisée sur le bus SFX du mixer.</summary>
     private void SetupEngineAudio() {
@@ -553,6 +573,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         // Conducteur si la place est libre, sinon premier siège passager disponible.
         if (driverNetId == 0) {
             netIdentity.AssignClientAuthority(conn);
+            RefreshSimulationState();                  // serveur → kinematic (le conducteur simule)
             ApplyParentingTo(pc, seatAnchor, true);   // serveur
             driverNetId = id;
             ServerClaimOwnership(pc);                  // premier conducteur = propriétaire (persisté)
@@ -747,6 +768,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             ApplyParentingTo(idn.GetComponent<PlayerController>(), seatAnchor, false); // serveur
         }
         if (netIdentity.connectionToClient != null) netIdentity.RemoveClientAuthority();
+        RefreshSimulationState();                      // serveur reprend la simulation (véhicule garé)
         _currentSpeed = 0f;
         _velocity = Vector3.zero;
         lightFlags = 0; // phares + stop éteints quand le conducteur descend
@@ -927,122 +949,83 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (Input.GetKeyDown(KeyCode.L)) CmdToggleLockAsDriver(); // clé : verrouiller/déverrouiller
         if (Input.GetKeyDown(KeyCode.F)) _desiredFlags ^= LIGHT_HEAD; // phares on/off
 
-        DriveStep();
+        // Feux stop = frein tenu (réconcilie l'état voulu, edge-triggered) + boucle sonore de frein.
+        bool braking = Input.GetKey(KeyCode.Space);
+        if (braking) _desiredFlags |= LIGHT_BRAKE; else _desiredFlags &= unchecked((byte)~LIGHT_BRAKE);
+        if (_desiredFlags != lightFlags) CmdSetLights(_desiredFlags);
+        SetBrakeSound(braking && CurrentSpeedMs > 1f);
+
+        DetectCharacterHits();
     }
 
-    private void DriveStep() {
-        float dt = Time.deltaTime;
+    /// <summary>Conduite physique (WheelCollider) — conducteur (autorité) uniquement, en pas physique.
+    /// Couple moteur + frein sur les 4 roues, braquage lissé sur les 2 avant, limitation de vitesse,
+    /// consommation carburant. La suspension/le relief sont gérés nativement par les WheelColliders.</summary>
+    private void FixedUpdate() {
+        if (!isOwned || _rb == null || _rb.isKinematic || wheelColliders == null || wheelColliders.Length < 4) return;
 
-        // KO : le véhicule ne roule plus (la fumée tourne via les particules).
-        if (IsKO) { _currentSpeed = 0f; _velocity = Vector3.zero; SetBrakeSound(false); return; }
+        // Cache pour HUD / détection de renversement / audio (vitesse planaire + composante avant signée).
+        _velocity = Vector3.ProjectOnPlane(_rb.linearVelocity, transform.up);
+        _currentSpeed = Vector3.Dot(_rb.linearVelocity, transform.forward);
 
-        float throttle = Input.GetAxisRaw("Vertical");   // W/S (ou flèches)
-        float steer    = Input.GetAxisRaw("Horizontal"); // A/D
-        bool  braking_ = Input.GetKey(KeyCode.Space);    // frein explicite
+        float throttle  = (IsKO || !HasFuel) ? 0f : Input.GetAxisRaw("Vertical");
+        float steerIn   = Input.GetAxisRaw("Horizontal");
+        bool  handbrake = Input.GetKey(KeyCode.Space) || IsKO;
 
-        if (!HasFuel) throttle = 0f;                     // panne sèche : plus d'accélération (on roue libre / freine)
+        // Braquage lissé → roues avant (indices 0,1). Alimente aussi le visuel des roues.
+        float targetSteer = steerIn * maxSteerAngleDeg;
+        _steerAngleCurrent = Mathf.Lerp(_steerAngleCurrent, targetSteer, steerLerp * Time.fixedDeltaTime);
+        if (wheelColliders[0] != null) wheelColliders[0].steerAngle = _steerAngleCurrent;
+        if (wheelColliders[1] != null) wheelColliders[1].steerAngle = _steerAngleCurrent;
+        if (_wheels != null) _wheels.SetSteerInput(maxSteerAngleDeg > 0f ? _steerAngleCurrent / maxSteerAngleDeg : 0f);
 
-        // Repère du véhicule, à plat.
-        Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
-        if (flatForward.sqrMagnitude < 1e-4f) flatForward = Vector3.forward;
-        flatForward.Normalize();
-        Vector3 flatRight = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
-
-        // Décompose la vitesse en composantes LONGITUDINALE (cap) et LATÉRALE (glisse).
-        float vF = Vector3.Dot(_velocity, flatForward);
-        float vL = Vector3.Dot(_velocity, flatRight);
-
-        // Boucle de freinage : jouée tant qu'on freine ET qu'on roule encore, coupée sinon.
-        SetBrakeSound(braking_ && Mathf.Abs(vF) > 1f);
-
-        // Feux stop suivent le frein ; réconcilie l'état voulu avec l'état répliqué (edge-triggered).
-        if (braking_) _desiredFlags |= LIGHT_BRAKE; else _desiredFlags &= unchecked((byte)~LIGHT_BRAKE);
-        if (_desiredFlags != lightFlags) CmdSetLights(_desiredFlags);
-
-        // ── Longitudinal + frein ──
-        if (braking_) {
-            // Frein : décélère la vitesse TOTALE (avant + latéral), sans la réaligner. La voiture
-            // continue donc de glisser ET de tourner tant qu'il reste de la vitesse, puis s'arrête
-            // vraiment — au lieu de se figer sur un angle en gardant de l'élan latéral.
-            _velocity = Vector3.MoveTowards(_velocity, Vector3.zero, Braking * dt);
-            vF = Vector3.Dot(_velocity, flatForward);
-            vL = Vector3.Dot(_velocity, flatRight);
-            vL = Mathf.MoveTowards(vL, 0f, driftGrip * dt);   // adhérence basse → la glisse persiste
-            _velocity = flatForward * vF + flatRight * vL;
-        } else {
-            float targetSpeed = throttle > 0f ? throttle * MaxSpeed
-                              : throttle < 0f ? throttle * ReverseSpeed
-                              : 0f;
-            float rate = Mathf.Approximately(throttle, 0f) ? Friction
-                       : Mathf.Abs(targetSpeed) > Mathf.Abs(vF) ? Acceleration
-                       : Braking;
-            vF = Mathf.MoveTowards(vF, targetSpeed, rate * dt);
-            vL = Mathf.MoveTowards(vL, 0f, lateralGrip * dt); // forte adhérence → pas de glisse hors frein
-            _velocity = flatForward * vF + flatRight * vL;
+        // Couple moteur / frein selon l'intention et le sens de marche.
+        float speedMs  = _currentSpeed;     // signé : avant = +
+        float topSpeed = MaxSpeed;
+        float motor = 0f, brake = handbrake ? brakeTorque : 0f;
+        if (!handbrake) {
+            if (throttle > 0.01f) {
+                if (speedMs < -0.5f) brake = brakeTorque;                 // recule mais veut avancer → freiner
+                else if (speedMs < topSpeed) motor = throttle * motorTorque;
+            } else if (throttle < -0.01f) {
+                if (speedMs > 0.5f) brake = brakeTorque;                  // avance mais veut reculer → freiner
+                else if (-speedMs < topSpeed * reverseSpeedFactor) motor = throttle * motorTorque;
+            } else {
+                brake = engineBrakeTorque;                                // roue libre : frein moteur léger
+            }
         }
-        _currentSpeed = vF; // compteur (HUD / pitch moteur) = composante avant
+        for (int i = 0; i < wheelColliders.Length; i++) {
+            WheelCollider w = wheelColliders[i];
+            if (w == null) continue;
+            w.motorTorque = motor;
+            w.brakeTorque = brake;
+        }
 
-        // ── Consommation carburant (conducteur) : ralenti + part proportionnelle à la vitesse,
-        // accumulée localement et envoyée au serveur par paquets (toutes les 0.5 s).
+        // Consommation carburant (par paquets envoyés au serveur).
         if (HasFuel && config != null) {
             float rate = config.fuelIdleConsumption
                        + Mathf.Max(0f, config.fuelConsumption - config.fuelIdleConsumption) * NormalizedSpeed;
-            _fuelAccum += Mathf.Max(0f, rate) * dt;
-            _fuelSendTimer += dt;
+            _fuelAccum += Mathf.Max(0f, rate) * Time.fixedDeltaTime;
+            _fuelSendTimer += Time.fixedDeltaTime;
             if (_fuelSendTimer >= 0.5f && _fuelAccum > 0f) {
                 CmdConsumeFuel(_fuelAccum);
                 _fuelAccum = 0f;
                 _fuelSendTimer = 0f;
             }
         }
+    }
 
-        // ── Braquage : modèle bicyclette + sous-virage à la vitesse (logique de masse) ──
-        // Le lacet est piloté par la VITESSE RÉELLE (magnitude planaire), pas seulement la composante
-        // avant : en drift profond vF peut être faible alors que la voiture file vite → le cap doit
-        // continuer de tourner jusqu'à l'arrêt (sinon il se fige sur un angle).
-        float planarSpeed = _velocity.magnitude;
-        float speedT = MaxSpeed > 0f ? Mathf.Clamp01(planarSpeed / MaxSpeed) : 0f;
-        float steerScale = Mathf.Lerp(1f, highSpeedSteerFactor, speedT * speedT);
-        float steerAngleDeg = steer * maxSteerAngle * steerScale;
-        if (_wheels != null) _wheels.SetSteerInput(steer * steerScale);
-
-        // Rotation du CAP autour de l'essieu arrière (pivot arrière), SANS translation : Δψ =
-        // (vitesse·dt / L)·tan(δ). La vitesse monde _velocity reste inchangée par la rotation →
-        // relative au nouveau cap elle gagne une composante latérale = la glisse.
-        float steerSpeed = (vF >= 0f ? 1f : -1f) * planarSpeed; // signé par le sens de marche
-        if (Mathf.Abs(steerAngleDeg) > 0.001f && Mathf.Abs(steerSpeed) > 0.05f) {
-            float yawDeg = (steerSpeed * dt / wheelBase) * Mathf.Tan(steerAngleDeg * Mathf.Deg2Rad) * Mathf.Rad2Deg;
-            Vector3 rearAxle = transform.position - flatForward * rearAxleOffset;
-            transform.Rotate(Vector3.up, yawDeg, Space.World);
-            Vector3 newForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-            transform.position = rearAxle + newForward * rearAxleOffset; // pivot pur, pas d'avance
-        }
-
-        // ── Déplacement par la VITESSE (peut différer du cap → glisse visible) ──
-        Vector3 move = _velocity * dt;
-        float dist = move.magnitude;
-        if (dist > 1e-5f) {
-            Vector3 moveDir = move / dist;
-            // Anti-traversée des murs : balayage en boîte dans la direction réelle (ignore self).
-            if (Physics.BoxCast(transform.position, sweepHalfExtents, moveDir, out RaycastHit wall,
-                                transform.rotation, dist + 0.1f, _collisionMask,
-                                QueryTriggerInteraction.Ignore)
-                && !wall.collider.transform.IsChildOf(transform)) {
-                float impactSpeed = _velocity.magnitude;
-                _velocity = Vector3.zero;
-                _currentSpeed = 0f;
-                if (impactSpeed > minImpactSpeed && Time.time - _lastImpactTime > 0.4f) {
-                    _lastImpactTime = Time.time;
-                    CmdReportImpact(impactSpeed);
-                }
-            } else {
-                transform.position += move;
-            }
-        }
-
-        DetectCharacterHits();
-
-        ApplySuspension(Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized);
+    /// <summary>Dégâts d'impact via la physique (conducteur uniquement). Les chocs « mous » (sol,
+    /// personnages — gérés par le renversement) sont ignorés via le masque + le seuil de vitesse.</summary>
+    private void OnCollisionEnter(Collision collision) {
+        if (!isOwned || collision == null) return;
+        if ((_impactMask & (1 << collision.gameObject.layer)) == 0) return;
+        float impactSpeed = collision.relativeVelocity.magnitude;
+        if (impactSpeed <= minImpactSpeed || Time.time - _lastCollisionDamageTime < 0.3f) return;
+        _lastCollisionDamageTime = Time.time;
+        CmdReportImpact(impactSpeed);
+        if (config != null && config.impact != null)
+            AudioManager.Instance.PlayClip3D(config.impact, transform.position);
     }
 
     /// <summary>Conducteur uniquement : détecte les personnages (joueurs/PNJ) percutés par le
@@ -1097,65 +1080,6 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         } else if (NpcAIController.TryGet((int)id, out NpcAIController npc)) {
             npc.ServerKnockDown(impulse, point);
         }
-    }
-
-    /// <summary>
-    /// Suspension cinématique réaliste (owner-side). Trois améliorations vs l'ancien collage instantané :
-    ///   1. RESSORT-AMORTISSEUR sur la hauteur du châssis → le sol est suivi vite mais en douceur
-    ///      (raideur élevée = peu de latence ; amorti ≈ critique = pas de rebond).
-    ///   2. GRAVITÉ permanente → le véhicule RETOMBE toujours ; impossible de rester en l'air / voler
-    ///      (en saut/relief, chute libre amortie jusqu'au sol retrouvé).
-    ///   3. ORIENTATION via la normale MOYENNE de 4 coins (sous les roues) → inclinaison stable sur
-    ///      la pente, sans à-coups d'une seule normale.
-    /// La sonde descend loin (groundRayUp + groundRayDown) pour toujours retrouver le sol sous le châssis.
-    /// </summary>
-    private void ApplySuspension(Vector3 flatForward) {
-        float dt = Time.deltaTime;
-        float probe = groundRayUp + Mathf.Max(groundRayDown, 1f);
-
-        // Sonde centrale : référence de hauteur.
-        Vector3 cOrigin = transform.position + Vector3.up * groundRayUp;
-        bool grounded = Physics.Raycast(cOrigin, Vector3.down, out RaycastHit cHit, probe,
-                                        groundMask, QueryTriggerInteraction.Ignore)
-                        && !cHit.collider.transform.IsChildOf(transform);
-
-        // Normale moyenne (orientation) : centre + 4 coins.
-        Vector3 up = Vector3.up;
-        if (alignToSlope && _suspCorners != null) {
-            Vector3 nSum = grounded ? cHit.normal : Vector3.zero;
-            int nCount = grounded ? 1 : 0;
-            for (int i = 0; i < _suspCorners.Length; i++) {
-                Vector3 o = transform.TransformPoint(_suspCorners[i]) + Vector3.up * groundRayUp;
-                if (Physics.Raycast(o, Vector3.down, out RaycastHit wh, probe, groundMask, QueryTriggerInteraction.Ignore)
-                    && !wh.collider.transform.IsChildOf(transform)) {
-                    nSum += wh.normal; nCount++;
-                }
-            }
-            if (nCount > 0) up = (nSum / nCount).normalized;
-        }
-
-        // Hauteur : ressort-amortisseur de suspension. Le ressort ne POUSSE QUE vers le haut
-        // (max(0, compression) — un ressort ne tire pas le châssis sous le sol), l'amortissement ET
-        // la gravité s'appliquent EN PERMANENCE (sinon effet trampoline), et le sol sert de butée.
-        if (grounded) {
-            float restY = cHit.point.y + groundOffset;          // hauteur de repos (châssis posé)
-            float curY = transform.position.y;
-            float compression = restY - curY;                   // >0 = suspension comprimée → pousse en haut
-            float springForce = Mathf.Max(0f, compression) * suspensionStiffness;
-            _verticalVel += (springForce - _verticalVel * suspensionDamping - gravity) * dt;
-            float newY = curY + _verticalVel * dt;
-            if (newY < restY) { newY = restY; if (_verticalVel < 0f) _verticalVel = 0f; } // butée sol
-            Vector3 p = transform.position; p.y = newY; transform.position = p;
-        } else {
-            // Pas de sol à portée : chute libre (gravité) — jamais de vol.
-            _verticalVel -= gravity * dt;
-            Vector3 p = transform.position; p.y += _verticalVel * dt; transform.position = p;
-        }
-
-        Vector3 fwdOnPlane = Vector3.ProjectOnPlane(flatForward, up);
-        if (fwdOnPlane.sqrMagnitude < 1e-4f) return;
-        Quaternion target = Quaternion.LookRotation(fwdOnPlane.normalized, up);
-        transform.rotation = Quaternion.Slerp(transform.rotation, target, groundAlignSpeed * dt);
     }
 
     [Server]
