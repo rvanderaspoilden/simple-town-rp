@@ -584,14 +584,6 @@ public class ServerItemManager
 
     // ── Carburant générique d'item (bidon d'essence) ────────────────────────────
 
-    /// <summary>Fixe la réserve de carburant d'une entité (ex. bidon spawné par un marqueur) et
-    /// diffuse le niveau aux clients de la room (pour la tooltip).</summary>
-    public void SetEntityFuel(string roomId, int entityId, float fuel) {
-        if (!TryGetEntity(roomId, entityId, out var e) || e is not FuelCanisterEntity fce) return;
-        fce.Fuel = Mathf.Max(0f, fuel);
-        BroadcastToRoom(roomId, new S2C_ItemFuel { EntityId = entityId, Fuel = fce.Fuel });
-    }
-
     /// <summary>
     /// Transfère du carburant depuis l'item de config <paramref name="configId"/> tenu par le
     /// joueur. <paramref name="hasItem"/> = le joueur tient bien cet item ; <paramref name="transferred"/>
@@ -662,6 +654,8 @@ public class ServerItemManager
     private IEnumerator GateNestedContainer(ItemCtx moved, IPlaceContext toCtx, System.Action<bool> cb) {
         bool intoContainer = toCtx.Kind == PlaceKind.Container || toCtx.Kind == PlaceKind.ItemContainer;
         if (!intoContainer || !IsStorageItem(DatabaseManager.GetItemConfigById(moved.ConfigId))) { cb(true); yield break; }
+        // Coffre de véhicule : imbrication autorisée (on peut y ranger un colis rempli).
+        if (toCtx is ContainerPlaceContext cpc && cpc.AllowsNesting) { cb(true); yield break; }
         yield return CheckContainerEmptyByUuid(moved.ItemUuid, isProp: false, cb);
     }
 
@@ -1698,8 +1692,33 @@ public class ServerItemManager
             OpenContainerCoroutine(conn, netId, msg.PropId, propUuid, charId, config.Container));
     }
 
+    /// <summary>Ouvre le COFFRE d'un véhicule en réutilisant exactement le flux des conteneurs de
+    /// prop (place "container:{uuid}", session, ContainerUI). <paramref name="vehicleUuid"/> = id
+    /// persistant du véhicule, <paramref name="trunkCfg"/> = VehicleConfig.trunk. La validation
+    /// d'accès/proximité est faite côté véhicule (CmdOpenTrunk) avant l'appel.</summary>
+    public void OpenVehicleTrunk(NetworkConnectionToClient conn, string vehicleUuid, ContainerConfig trunkCfg) {
+        if (conn?.identity == null) return;
+        uint netId = conn.identity.netId;
+        if (trunkCfg == null || !trunkCfg.IsContainer) {
+            conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Pas de coffre" });
+            return;
+        }
+        if (string.IsNullOrEmpty(vehicleUuid)) {
+            conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Véhicule non persisté" });
+            return;
+        }
+        string charId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+        if (string.IsNullOrEmpty(charId)) {
+            conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Sans caractère" });
+            return;
+        }
+        ClosePropSession(netId); // un seul conteneur de "prop"/coffre ouvert à la fois
+        ApiManager.Instance?.StartCoroutine(
+            OpenContainerCoroutine(conn, netId, 0, vehicleUuid, charId, trunkCfg, broadcastVisual: false));
+    }
+
     private IEnumerator OpenContainerCoroutine(NetworkConnectionToClient conn, uint netId, int propId,
-        string propUuid, string charId, ContainerConfig containerCfg)
+        string propUuid, string charId, ContainerConfig containerCfg, bool broadcastVisual = true)
     {
         // 1. Place idempotent (POST /places).
         string placeKey = $"container:{propUuid}";
@@ -1775,7 +1794,8 @@ public class ServerItemManager
         });
 
         // Broadcast visuel : porte/couvercle s'ouvre pour tout le monde dans la room.
-        if (!string.IsNullOrEmpty(roomId)) {
+        // Ignoré pour le coffre de véhicule (pas de prop à animer).
+        if (broadcastVisual && !string.IsNullOrEmpty(roomId)) {
             BroadcastToRoom(roomId, new S2C_ContainerVisualState {
                 RoomId = roomId, PropId = propId, IsOpen = true,
             });
@@ -2862,6 +2882,8 @@ public class ServerItemManager
         public PlaceKind Kind         => PlaceKind.Container;
         public string    PlaceId      => _session.PlaceId;
         public bool      HasSlotIndex => true;
+        /// <summary>Coffre de véhicule : autorise l'imbrication de conteneurs non vides.</summary>
+        public bool      AllowsNesting => _session.Config != null && _session.Config.AllowsNestedContainers;
 
         public bool TryResolveItem(int entityId, int declaredSlot, out ItemCtx ctx, out string err) {
             ctx = default; err = null;

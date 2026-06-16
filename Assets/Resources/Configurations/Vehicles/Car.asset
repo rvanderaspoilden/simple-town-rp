@@ -17,6 +17,13 @@ MonoBehaviour:
   prefab: {fileID: 6048379817288373512, guid: 684d13f604e6be5498b798123c9d984d, type: 3}
   passengerCount: 4
   trunkSlots: 5
+  trunk:
+    slotCount: 8
+    acceptedTypes: 
+    acceptsProps: 0
+    openClip: {fileID: 0}
+    closeClip: {fileID: 0}
+    allowsNestedContainers: 1
   maxHealth: 100
   fuelCapacity: 50
   fuelConsumption: 1.2

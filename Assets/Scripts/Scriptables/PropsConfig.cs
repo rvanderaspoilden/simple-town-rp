@@ -29,10 +29,15 @@ namespace Sim.Scriptables {
         [Tooltip("Son de fermeture spécifique à ce conteneur. Vide = SfxId.ContainerClose générique.")]
         [SerializeField] private AudioClip closeClip;
 
+        [Tooltip("Autorise de ranger des conteneurs NON VIDES (colis remplis…) à l'intérieur — imbrication. " +
+                 "Défaut false (règle « videz-le d'abord »). Activé pour le coffre de véhicule.")]
+        [SerializeField] private bool allowsNestedContainers = false;
+
         public int SlotCount => slotCount;
         public IReadOnlyList<ItemType> AcceptedTypes => acceptedTypes;
         public bool IsContainer => slotCount > 0;
         public bool AcceptsProps => acceptsProps;
+        public bool AllowsNestedContainers => allowsNestedContainers;
         public AudioClip OpenClip => openClip;
         public AudioClip CloseClip => closeClip;
 

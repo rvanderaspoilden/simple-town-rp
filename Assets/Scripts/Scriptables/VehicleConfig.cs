@@ -1,3 +1,4 @@
+using Sim.Scriptables;
 using UnityEngine;
 
 /// <summary>
@@ -25,6 +26,11 @@ public class VehicleConfig : ScriptableObject {
     [Min(1)] public int passengerCount = 1;
     [Tooltip("Nombre d'emplacements de stockage du coffre.")]
     [Min(0)] public int trunkSlots = 0;
+
+    [Tooltip("Coffre du véhicule : conteneur réutilisant le même système que les props/colis " +
+             "(grille, ContainerUI). SlotCount>0 = le véhicule a un coffre. Active " +
+             "« AllowsNestedContainers » pour pouvoir y ranger des colis remplis.")]
+    public ContainerConfig trunk = new ContainerConfig();
 
     [Header("Health")]
     [Tooltip("Points de vie maximum. À 0, le véhicule est KO (ne roule plus).")]
