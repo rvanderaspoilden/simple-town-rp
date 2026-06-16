@@ -101,6 +101,18 @@ namespace Sim {
         [SyncVar]
         private PlayerState _playerState;
 
+        // Renversé par un véhicule (ragdoll). Source de vérité serveur, répliquée pour les
+        // late-joiners + le verrouillage du déplacement local. L'impulsion one-shot passe par
+        // RpcKnockdown. Recovery automatique côté serveur après KnockdownDuration.
+        [SyncVar(hook = nameof(OnKnockdownChanged))]
+        private bool isKnockedDown;
+
+        /// <summary>Le joueur est-il actuellement renversé ? Consommé par CameraManager pour
+        /// neutraliser le click-to-move / l'interaction (comme IsDriving).</summary>
+        public bool IsKnockedDown => isKnockedDown;
+
+        private const float KnockdownDuration = 3f;
+
         // Hidden on every client while the player teleports, so remote clients don't see
         // the NetworkTransform interpolate the position jump (the player slides). Toggled
         // around the reposition in SimpleTownNetwork.TeleportCoroutine.
@@ -253,7 +265,11 @@ namespace Sim {
 
         private CharacterDie dieState;
 
+        private CharacterKnockdown knockdownState;
+
         private CharacterStyleSetup characterStyleSetup;
+
+        private RagdollController ragdoll;
 
         public delegate void StateChanged(PlayerController player, StateType state);
 
@@ -283,6 +299,7 @@ namespace Sim {
             this.playerBankAccount = GetComponent<PlayerBankAccount>();
             this.Collider = GetComponent<Collider>();
             this.characterStyleSetup = GetComponent<CharacterStyleSetup>();
+            this.ragdoll = GetComponent<RagdollController>();
         }
 
         public override void OnStartClient() {
@@ -768,6 +785,7 @@ namespace Sim {
             this.lookAtState = new CharacterLookAt(this);
             this.characterInteractState = new CharacterInteract(this);
             this.dieState = new CharacterDie(this);
+            this.knockdownState = new CharacterKnockdown(this);
 
             this.stateMachine.AddTransition(moveState, idleState, HasReachedTargetPosition());
             this.stateMachine.AddTransition(lookAtState, idleState, HasLostTarget());
@@ -1017,6 +1035,51 @@ namespace Sim {
         public void Die() {
             if (this.stateMachine == null) return;
             this.stateMachine.SetState(dieState);
+        }
+
+        // ── Renversement par véhicule (ragdoll) ──────────────────────────────────────
+
+        /// <summary>Renverse le joueur (ragdoll) côté serveur : pose l'état répliqué, diffuse
+        /// l'impulsion à tous les clients, programme la relève automatique. Sans dégâts (POC).</summary>
+        [Server]
+        public void ServerKnockDown(Vector3 impulse, Vector3 point) {
+            if (this.isKnockedDown) return;                       // déjà au sol
+            if (this._playerState == PlayerState.DIED) return;    // pas de renversement si mort
+            this.isKnockedDown = true;
+            this.RpcKnockdown(impulse, point);
+            Invoke(nameof(ServerRecoverKnockdown), KnockdownDuration);
+        }
+
+        [Server]
+        private void ServerRecoverKnockdown() {
+            this.isKnockedDown = false;
+        }
+
+        /// <summary>Impulsion one-shot du renversement, appliquée localement sur chaque client.</summary>
+        [ClientRpc]
+        private void RpcKnockdown(Vector3 impulse, Vector3 point) {
+            if (this.ragdoll != null) this.ragdoll.EnableRagdoll(impulse, point);
+        }
+
+        /// <summary>Réplique l'entrée/sortie de ragdoll sur tous les clients. À l'entrée : ragdoll
+        /// + (owner) verrouillage du déplacement. À la sortie : repos animé ; l'owner se relève sur
+        /// place (racine repositionnée sur les hanches, échantillonnée sur le NavMesh) puis Idle.</summary>
+        private void OnKnockdownChanged(bool _, bool now) {
+            if (now) {
+                if (this.ragdoll != null) this.ragdoll.EnableRagdoll(Vector3.zero, transform.position);
+                if (isLocalPlayer && this.stateMachine != null) this.stateMachine.SetState(knockdownState);
+            } else {
+                if (isLocalPlayer) {
+                    Vector3 stand = this.ragdoll != null ? this.ragdoll.HipsPosition : transform.position;
+                    if (UnityEngine.AI.NavMesh.SamplePosition(stand, out var hit, 3f, UnityEngine.AI.NavMesh.AllAreas))
+                        stand = hit.position;
+                    if (this.ragdoll != null) this.ragdoll.DisableRagdoll();
+                    transform.position = stand;
+                    this.Idle();
+                } else if (this.ragdoll != null) {
+                    this.ragdoll.DisableRagdoll();
+                }
+            }
         }
 
         [Server]

@@ -30,12 +30,24 @@ namespace Sim.UI {
         private const string PassengerKeys = "X : descendre";
 
         private VehicleController vehicle;
+        private bool asDriver;
 
         public void Show(VehicleController target, bool asDriver) {
             this.vehicle = target;
+            this.asDriver = asDriver;
+
+            // Vitesse / vie / essence / modèle : RÉSERVÉS au conducteur. Le passager ne voit que les
+            // états (KO, panne sèche, verrou). On masque donc ces éléments en mode passager. La barre
+            // vit sous son conteneur "...BarBg" (parent du fill).
             if (this.modelText != null) {
                 this.modelText.text = target != null && target.Config != null ? target.Config.modelName : string.Empty;
+                this.modelText.gameObject.SetActive(asDriver);
             }
+            if (this.healthFill != null && this.healthFill.transform.parent != null)
+                this.healthFill.transform.parent.gameObject.SetActive(asDriver);
+            if (this.fuelFill != null && this.fuelFill.transform.parent != null)
+                this.fuelFill.transform.parent.gameObject.SetActive(asDriver);
+
             if (this.keysText != null) this.keysText.text = asDriver ? DriverKeys : PassengerKeys;
             this.gameObject.SetActive(true);
         }
@@ -47,21 +59,33 @@ namespace Sim.UI {
 
         private void Update() {
             if (this.vehicle == null) return;
-            if (this.speedText != null)
-                this.speedText.text = this.vehicle.IsKO ? "KO" : $"{this.vehicle.SpeedKmh:0} km/h";
-            if (this.healthFill != null) {
-                float t = this.vehicle.HealthNormalized;
-                this.healthFill.fillAmount = t;
-                this.healthFill.color = Color.Lerp(new Color(0.9f, 0.2f, 0.15f), new Color(0.35f, 0.85f, 0.4f), t);
+
+            if (this.asDriver) {
+                if (this.speedText != null)
+                    this.speedText.text = this.vehicle.IsKO ? "KO" : $"{this.vehicle.SpeedKmh:0} km/h";
+                if (this.healthFill != null) {
+                    float t = this.vehicle.HealthNormalized;
+                    this.healthFill.fillAmount = t;
+                    this.healthFill.color = Color.Lerp(new Color(0.9f, 0.2f, 0.15f), new Color(0.35f, 0.85f, 0.4f), t);
+                }
+                if (this.fuelFill != null) {
+                    float f = this.vehicle.FuelNormalized;
+                    this.fuelFill.fillAmount = f;
+                    // Vert plein → orange → rouge sous ~20 %.
+                    this.fuelFill.color = f <= 0.2f
+                        ? Color.Lerp(new Color(0.9f, 0.2f, 0.15f), new Color(0.95f, 0.6f, 0.2f), f / 0.2f)
+                        : Color.Lerp(new Color(0.95f, 0.6f, 0.2f), new Color(0.4f, 0.8f, 0.95f), (f - 0.2f) / 0.8f);
+                }
+            } else if (this.speedText != null) {
+                // Passager : pas de vitesse, vie ni essence — uniquement les états véhicule.
+                string status = string.Empty;
+                if (this.vehicle.IsKO) status = "KO";
+                if (!this.vehicle.HasFuel)
+                    status = string.IsNullOrEmpty(status) ? "PANNE SÈCHE" : status + " · PANNE SÈCHE";
+                this.speedText.text = status;
             }
-            if (this.fuelFill != null) {
-                float f = this.vehicle.FuelNormalized;
-                this.fuelFill.fillAmount = f;
-                // Vert plein → orange → rouge sous ~20 %.
-                this.fuelFill.color = f <= 0.2f
-                    ? Color.Lerp(new Color(0.9f, 0.2f, 0.15f), new Color(0.95f, 0.6f, 0.2f), f / 0.2f)
-                    : Color.Lerp(new Color(0.95f, 0.6f, 0.2f), new Color(0.4f, 0.8f, 0.95f), (f - 0.2f) / 0.8f);
-            }
+
+            // Verrou : affiché pour le conducteur ET le passager.
             if (this.lockText != null) {
                 bool locked = this.vehicle.IsLocked;
                 this.lockText.text = locked ? "VERROUILLÉ" : "DÉVERROUILLÉ";

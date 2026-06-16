@@ -59,6 +59,8 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
 
     private PlayerAnimator      _animator;
     private CharacterStyleSetup _styleSetup;
+    private RagdollController    _ragdoll;
+    private bool                 _knockedDown;
 
     // Action LOOK instanciée depuis Resources à l'Awake — même pattern que PlayerController.SetupActions.
     private Action _lookAction;
@@ -91,6 +93,7 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     private void Awake() {
         _animator   = GetComponent<PlayerAnimator>();
         _styleSetup = GetComponent<CharacterStyleSetup>();
+        _ragdoll    = GetComponent<RagdollController>();
 
         // Charge et instancie une copie de l'asset LOOK (même pattern que PlayerController).
         // Chaque vue dispose de sa propre instance pour éviter le partage d'event delegates.
@@ -149,11 +152,42 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         _hasPrev = _hasNext = true;
     }
 
+    /// <summary>Reçu via S2C_NpcKnockdown (one-shot) : déclenche le ragdoll avec l'impulsion.</summary>
+    public void ApplyKnockdown(Vector3 impulse, Vector3 point) {
+        EnterKnockdownVisual(impulse, point);
+    }
+
+    private void EnterKnockdownVisual(Vector3 impulse, Vector3 point) {
+        _knockedDown = true;
+        if (_ragdoll != null) _ragdoll.EnableRagdoll(impulse, point);
+    }
+
+    private void ExitKnockdownVisual(Vector3 position, Quaternion rotation) {
+        _knockedDown = false;
+        if (_ragdoll != null) _ragdoll.DisableRagdoll();
+        // Le NPC se relève là où le serveur le situe (position du hit).
+        transform.position = position;
+        transform.rotation = rotation;
+        _prev = _next = new Snapshot { ServerTime = Time.time, Position = position, Rotation = rotation };
+        _hasPrev = _hasNext = true;
+        _appliedState = (NpcStateType)255; // force la ré-application de l'état animator
+    }
+
     public void PushSnapshot(Vector3 position, Quaternion rotation,
                              Vector3 velocity, NpcStateType state) {
         if (state != _currentState) {
             ClientLogger.Network("NpcStateReceived {NpcId} {From} {To}", NpcId, _currentState, state);
+            bool wasKnocked = _currentState == NpcStateType.KnockedDown;
             _currentState = state;
+            if (state == NpcStateType.KnockedDown) EnterKnockdownVisual(Vector3.zero, transform.position);
+            else if (wasKnocked)                   ExitKnockdownVisual(position, rotation);
+        }
+
+        if (_knockedDown) {
+            // Position figée : la physique ragdoll locale pilote la pose, on n'alimente pas l'interpolation.
+            _lastVelocity   = Vector3.zero;
+            _displayedSpeed = 0f;
+            return;
         }
 
         bool isSitting = state == NpcStateType.Sitting;
@@ -190,6 +224,7 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
 
     private void Update() {
         if (!_hasPrev || !_hasNext) return;
+        if (_knockedDown) return; // ragdoll local : pas d'interpolation ni d'animator
 
         if (_currentState == NpcStateType.Sitting) {
             transform.position = _next.Position;

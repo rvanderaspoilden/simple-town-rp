@@ -45,6 +45,7 @@ public class ClientNpcManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_SpawnNpc>          (OnSpawnNpc);
         NetworkClient.RegisterHandler<S2C_UpdateNpcTransform>(OnUpdateTransform);
         NetworkClient.RegisterHandler<S2C_DestroyNpc>        (OnDestroyNpc);
+        NetworkClient.RegisterHandler<S2C_NpcKnockdown>      (OnNpcKnockdown);
         ClientLogger.NetworkDebug("ClientNpcHandlersRegistered");
     }
 
@@ -52,6 +53,7 @@ public class ClientNpcManager : MonoBehaviour {
         NetworkClient.UnregisterHandler<S2C_SpawnNpc>();
         NetworkClient.UnregisterHandler<S2C_UpdateNpcTransform>();
         NetworkClient.UnregisterHandler<S2C_DestroyNpc>();
+        NetworkClient.UnregisterHandler<S2C_NpcKnockdown>();
         ClientLogger.NetworkDebug("ClientNpcHandlersUnregistered");
     }
 
@@ -94,6 +96,12 @@ public class ClientNpcManager : MonoBehaviour {
     private void OnUpdateTransform(S2C_UpdateNpcTransform msg) {
         if (_views.TryGetValue(msg.NpcId, out var view) && view != null) {
             view.PushSnapshot(msg.Position, msg.Rotation, msg.Velocity, msg.State);
+        }
+    }
+
+    private void OnNpcKnockdown(S2C_NpcKnockdown msg) {
+        if (_views.TryGetValue(msg.NpcId, out var view) && view != null) {
+            view.ApplyKnockdown(msg.Impulse, msg.Point);
         }
     }
 

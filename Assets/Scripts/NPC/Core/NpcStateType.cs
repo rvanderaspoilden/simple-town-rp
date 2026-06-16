@@ -11,5 +11,6 @@ public enum NpcStateType : byte {
     Walking             = 1,
     Sitting             = 2,
     GoingToInterestArea = 3,
-    BackToHome          = 4
+    BackToHome          = 4,
+    KnockedDown         = 5
 }

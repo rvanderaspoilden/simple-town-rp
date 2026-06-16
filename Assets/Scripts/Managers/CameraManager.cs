@@ -102,6 +102,16 @@ namespace Sim {
         void Update() {
             if (PlayerController.Local == null || PlayerController.Local.PlayerState == PlayerState.DIED) return;
 
+            // Renversé (ragdoll) : aucune interaction ni click-to-move possible.
+            if (PlayerController.Local.IsKnockedDown) {
+                if (this._hoveredOutline != null) {
+                    this._hoveredOutline.Hide();
+                    this._hoveredOutline = null;
+                }
+                HoverNameTooltip.Hide();
+                return;
+            }
+
             // Pendant la conduite, l'input est piloté par le VehicleController (WASD).
             // On neutralise le click-to-move / menu radial pour éviter qu'un clic au sol
             // déclenche un MoveTo qui se battrait avec la conduite — mais on autorise le CLIC

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AI;
 using Mirror;
 using Sim.Logging;
@@ -80,6 +81,15 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private int _npcId       = -1;
     private int _visitCount  = 0;
     private int _visitTarget = 0;
+
+    // Renversement (ragdoll) : pause l'IA jusqu'à ce temps serveur (<0 = pas renversé).
+    private float _knockdownUntil = -1f;
+    private const float KnockdownDuration = 3f;
+
+    // Registre id → contrôleur, pour que le serveur retrouve un NPC à renverser depuis son npcId
+    // (les NPC n'ont pas de NetworkIdentity).
+    private static readonly Dictionary<int, NpcAIController> _byId = new Dictionary<int, NpcAIController>();
+    public static bool TryGet(int npcId, out NpcAIController controller) => _byId.TryGetValue(npcId, out controller);
 
     // Données injectées par NpcPool.Get() via ConfigureForSpawn AVANT OnEnable.
     private NpcSpawnPoint _home;
@@ -190,6 +200,9 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         _npcId = NpcServerManager.Instance.Register(
             roomId, prefabId, transform.position, transform.rotation, styleJson, _identity);
 
+        _byId[_npcId] = this;
+        _knockdownUntil = -1f;
+
         Sim.Missions.MissionTargetHooks.RegisterNpc(this, _npcId);
 
         _visitTarget = Random.Range(minVisitsBeforeReturn, maxVisitsBeforeReturn + 1);
@@ -205,6 +218,8 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     /// </summary>
     private void OnDisable() {
         if (!NetworkServer.active || _npcId <= 0) return;
+
+        _byId.Remove(_npcId);
 
         // Libère tout siège tenu par ce NPC.
         SeatService.ReleaseAllSeats(this, roomId);
@@ -227,11 +242,21 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     /// </summary>
     private void OnDestroy() {
         if (NetworkServer.active && _npcId > 0) {
+            _byId.Remove(_npcId);
             SeatService.ReleaseAllSeats(this, roomId);
             NpcServerManager.Instance.Unregister(_npcId);
             NpcSpawnManager.Instance.OnNpcDestroyed(this);
             _npcId = -1;
         }
+    }
+
+    /// <summary>Renverse ce NPC (ragdoll) : pause l'IA ~3 s, stoppe l'agent, diffuse l'impulsion +
+    /// l'état KnockedDown aux clients. Appelé par le serveur (relais du hit véhicule).</summary>
+    public void ServerKnockDown(Vector3 impulse, Vector3 point) {
+        if (!NetworkServer.active || _npcId <= 0) return;
+        _knockdownUntil = Time.time + KnockdownDuration;
+        StopAgent();
+        NpcServerManager.Instance.Knockdown(_npcId, impulse, point);
     }
 
     // Mémo du state envoyé pour détecter les transitions et déclencher
@@ -243,6 +268,17 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
         // Suspend all AI work if the room is inactive (no players present).
         if (!RoomActivityController.Instance.IsRoomActive(roomId)) return;
+
+        // Renversé : IA en pause, on diffuse l'état KnockedDown (position figée) jusqu'à la relève.
+        if (_knockdownUntil > 0f && Time.time < _knockdownUntil) {
+            NpcServerManager.Instance.PushTransform(
+                _npcId, transform.position, transform.rotation, Vector3.zero, NpcStateType.KnockedDown);
+            if (_lastNotifiedState != NpcStateType.KnockedDown) {
+                NpcServerManager.Instance.NotifyStateChanged(_npcId, NpcStateType.KnockedDown);
+                _lastNotifiedState = NpcStateType.KnockedDown;
+            }
+            return;
+        }
 
         _stateMachine.Tick();
 

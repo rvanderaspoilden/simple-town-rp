@@ -84,8 +84,21 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SerializeField] private float groundOffset = 0f;
     [Tooltip("Aligner l'inclinaison du véhicule sur la pente du sol.")]
     [SerializeField] private bool alignToSlope = true;
-    [Tooltip("Vitesse de lissage de l'orientation (sol/pente).")]
-    [SerializeField] private float groundAlignSpeed = 10f;
+    [Tooltip("Vitesse de lissage de l'orientation (sol/pente). Plus grand = moins de latence.")]
+    [SerializeField] private float groundAlignSpeed = 14f;
+
+    [Header("Suspension")]
+    [Tooltip("Gravité appliquée au véhicule (m/s²). Garantit qu'il RETOMBE toujours au sol — il ne " +
+             "peut plus rester en l'air / voler.")]
+    [SerializeField] private float gravity = 25f;
+    [Tooltip("Raideur du ressort de suspension : réactivité de la hauteur du châssis. Plus haut = " +
+             "le châssis colle plus vite au relief (moins de latence).")]
+    [SerializeField] private float suspensionStiffness = 120f;
+    [Tooltip("Amortissement du ressort (≈ 2·√raideur pour un amorti quasi critique : rapide, sans rebond).")]
+    [SerializeField] private float suspensionDamping = 22f;
+    [Tooltip("Voie (largeur d'essieu, m) : sert à échantillonner le sol sous les 4 coins pour " +
+             "orienter le châssis sur la pente de façon stable.")]
+    [SerializeField] private float trackWidth = 1.6f;
 
     [Header("Engine audio")]
     [Tooltip("Pitch de la boucle moteur au ralenti et à pleine vitesse.")]
@@ -106,6 +119,14 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [Tooltip("Demi-extents de la boîte de balayage anti-traversée (m).")]
     [SerializeField] private Vector3 sweepHalfExtents = new Vector3(0.9f, 0.5f, 1.6f);
     [SerializeField] private float interactionRange = 3f;
+
+    [Header("Renversement des personnages (ragdoll)")]
+    [Tooltip("Vitesse mini (m/s) pour renverser un personnage percuté. En-dessous, on le traverse sans effet.")]
+    [SerializeField] private float minKnockdownSpeed = 2f;
+    [Tooltip("Force d'impulsion du ragdoll par m/s de vitesse à l'impact.")]
+    [SerializeField] private float knockImpulsePerSpeed = 12f;
+    [Tooltip("Délai mini (s) avant de pouvoir re-renverser le MÊME personnage.")]
+    [SerializeField] private float characterHitCooldown = 1f;
 
     [SyncVar(hook = nameof(OnDriverChanged))]
     private uint driverNetId;
@@ -164,6 +185,12 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private AudioSource _engineSource;
     private AudioSource _brakeSource;   // boucle de freinage, coupée dès que le frein est relâché
     private float  _lastImpactTime = -10f;
+    private int    _characterMask;   // Player | NPC : cible du renversement (séparé du masque mur)
+    private readonly Collider[] _hitBuffer = new Collider[8];
+    private readonly Dictionary<uint, float> _playerHitTime = new Dictionary<uint, float>();
+    private readonly Dictionary<int, float>  _npcHitTime    = new Dictionary<int, float>();
+    private float     _verticalVel;    // vitesse verticale (suspension + gravité), owner-side
+    private Vector3[] _suspCorners;    // offsets locaux des 4 coins échantillonnés pour l'orientation
 
     public Transform CameraAnchor => cameraAnchor;
     public Transform ExitAnchor   => exitAnchor;
@@ -324,6 +351,11 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         int itemLayer = LayerMask.NameToLayer("Item");
         _collisionMask = itemLayer >= 0 ? (obstacleMask & ~(1 << itemLayer)) : (int)obstacleMask;
 
+        // Masque des personnages renversables (Player + NPC) — indépendant du masque mur.
+        int playerLayer = LayerMask.NameToLayer("Player");
+        int npcLayer    = LayerMask.NameToLayer("NPC");
+        _characterMask  = (playerLayer >= 0 ? 1 << playerLayer : 0) | (npcLayer >= 0 ? 1 << npcLayer : 0);
+
         // Masque sol : défaut sur le layer « Ground » si non renseigné.
         if (groundMask.value == 0) {
             int g = LayerMask.NameToLayer("Ground");
@@ -345,6 +377,18 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (highSpeedSteerFactor <= 0f) highSpeedSteerFactor = 0.35f;
         if (lateralGrip <= 0f) lateralGrip = 40f;
         if (driftGrip   <= 0f) driftGrip   = 3f;
+        // Garde-fous suspension (prefabs sérialisés avant l'ajout de ces champs → 0).
+        if (gravity             <= 0f) gravity             = 25f;
+        if (suspensionStiffness <= 0f) suspensionStiffness = 120f;
+        if (suspensionDamping   <= 0f) suspensionDamping   = 22f;
+        if (trackWidth          <= 0f) trackWidth          = 1.6f;
+
+        // Offsets des 4 coins (FL, FR, RL, RR) pour échantillonner le sol et orienter le châssis.
+        float ht = trackWidth * 0.5f, hb = wheelBase * 0.5f;
+        _suspCorners = new[] {
+            new Vector3( ht, 0f,  hb), new Vector3(-ht, 0f,  hb),
+            new Vector3( ht, 0f, -hb), new Vector3(-ht, 0f, -hb)
+        };
     }
 
     public override void OnStartClient() {
@@ -408,8 +452,13 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     public bool  IsRightClickOnly()  => false;
     public void  StopInteraction()   { }
 
-    /// <summary>Action « Monter » disponible : véhicule déverrouillé + place libre.</summary>
-    private bool CanEnterAction() => _enterAction != null && !isLocked && HasFreeSeat();
+    /// <summary>Action « Monter » disponible : véhicule déverrouillé + place libre + le joueur local
+    /// n'est PAS déjà à bord (un occupant voit « Sortir », pas « Monter »).</summary>
+    private bool CanEnterAction() {
+        if (_enterAction == null || isLocked || !HasFreeSeat()) return false;
+        var local = PlayerController.Local;
+        return local != null && !IsOccupant(local.netId);
+    }
 
     /// <summary>Action « Sortir » disponible : le joueur local est à bord (conducteur ou passager).
     /// Affichée MÊME verrouillé : la tentative déclenche alors un toast d'erreur (cf. LocalRequestExit).</summary>
@@ -991,28 +1040,122 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             }
         }
 
-        ApplyGroundFollow(Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized);
+        DetectCharacterHits();
+
+        ApplySuspension(Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized);
     }
 
-    /// <summary>Cale le véhicule sur le relief : raycast vers le bas pour le Y, et oriente le
-    /// véhicule selon le cap (flatForward) + la normale de la pente. Sans sol détecté, reste à plat.</summary>
-    private void ApplyGroundFollow(Vector3 flatForward) {
-        Vector3 origin = transform.position + Vector3.up * groundRayUp;
-        Vector3 up = Vector3.up;
+    /// <summary>Conducteur uniquement : détecte les personnages (joueurs/PNJ) percutés par le
+    /// véhicule en mouvement et les signale au serveur pour un renversement (ragdoll). NE stoppe PAS
+    /// le véhicule (on plonge à travers). Cooldown par cible pour éviter le spam d'impacts.</summary>
+    private void DetectCharacterHits() {
+        if (_characterMask == 0) return;
+        float speed = _velocity.magnitude;
+        if (speed < minKnockdownSpeed) return;
 
-        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, groundRayUp + groundRayDown,
-                            groundMask, QueryTriggerInteraction.Ignore)
-            && !hit.collider.transform.IsChildOf(transform)) {
-            Vector3 p = transform.position;
-            p.y = hit.point.y + groundOffset;
-            transform.position = p;
-            if (alignToSlope) up = hit.normal;
+        int count = Physics.OverlapBoxNonAlloc(transform.position, sweepHalfExtents, _hitBuffer,
+                                               transform.rotation, _characterMask, QueryTriggerInteraction.Ignore);
+        if (count == 0) return;
+
+        Vector3 dir = speed > 0.01f ? _velocity / speed : transform.forward;
+        Vector3 impulse = (dir + Vector3.up * 0.5f).normalized * (speed * knockImpulsePerSpeed);
+
+        for (int i = 0; i < count; i++) {
+            Collider c = _hitBuffer[i];
+            if (c == null || c.transform.IsChildOf(transform)) continue;
+            Vector3 point = c.ClosestPoint(transform.position);
+
+            NetworkIdentity ni = c.GetComponentInParent<NetworkIdentity>();
+            if (ni != null) {
+                if (OnCooldown(_playerHitTime, ni.netId)) continue;
+                CmdReportCharacterHit(ni.netId, true, impulse, point);
+                continue;
+            }
+            ClientNpcView npc = c.GetComponentInParent<ClientNpcView>();
+            if (npc != null && !OnCooldown(_npcHitTime, npc.NpcId)) {
+                CmdReportCharacterHit((uint)npc.NpcId, false, impulse, point);
+            }
+        }
+    }
+
+    private bool OnCooldown<TKey>(Dictionary<TKey, float> map, TKey key) {
+        if (map.TryGetValue(key, out float last) && Time.time - last < characterHitCooldown) return true;
+        map[key] = Time.time;
+        return false;
+    }
+
+    /// <summary>Relaie le renversement au serveur, qui déclenche le ragdoll réseau sur la cible
+    /// (joueur via PlayerController, PNJ via NpcAIController). Le véhicule continue sa route.</summary>
+    [Command(requiresAuthority = false)]
+    private void CmdReportCharacterHit(uint id, bool isPlayer, Vector3 impulse, Vector3 point) {
+        if (driverNetId == 0) return; // un véhicule sans conducteur ne renverse personne
+        if (isPlayer) {
+            if (NetworkServer.spawned.TryGetValue(id, out NetworkIdentity idn)) {
+                PlayerController pc = idn.GetComponent<PlayerController>();
+                if (pc != null) pc.ServerKnockDown(impulse, point);
+            }
+        } else if (NpcAIController.TryGet((int)id, out NpcAIController npc)) {
+            npc.ServerKnockDown(impulse, point);
+        }
+    }
+
+    /// <summary>
+    /// Suspension cinématique réaliste (owner-side). Trois améliorations vs l'ancien collage instantané :
+    ///   1. RESSORT-AMORTISSEUR sur la hauteur du châssis → le sol est suivi vite mais en douceur
+    ///      (raideur élevée = peu de latence ; amorti ≈ critique = pas de rebond).
+    ///   2. GRAVITÉ permanente → le véhicule RETOMBE toujours ; impossible de rester en l'air / voler
+    ///      (en saut/relief, chute libre amortie jusqu'au sol retrouvé).
+    ///   3. ORIENTATION via la normale MOYENNE de 4 coins (sous les roues) → inclinaison stable sur
+    ///      la pente, sans à-coups d'une seule normale.
+    /// La sonde descend loin (groundRayUp + groundRayDown) pour toujours retrouver le sol sous le châssis.
+    /// </summary>
+    private void ApplySuspension(Vector3 flatForward) {
+        float dt = Time.deltaTime;
+        float probe = groundRayUp + Mathf.Max(groundRayDown, 1f);
+
+        // Sonde centrale : référence de hauteur.
+        Vector3 cOrigin = transform.position + Vector3.up * groundRayUp;
+        bool grounded = Physics.Raycast(cOrigin, Vector3.down, out RaycastHit cHit, probe,
+                                        groundMask, QueryTriggerInteraction.Ignore)
+                        && !cHit.collider.transform.IsChildOf(transform);
+
+        // Normale moyenne (orientation) : centre + 4 coins.
+        Vector3 up = Vector3.up;
+        if (alignToSlope && _suspCorners != null) {
+            Vector3 nSum = grounded ? cHit.normal : Vector3.zero;
+            int nCount = grounded ? 1 : 0;
+            for (int i = 0; i < _suspCorners.Length; i++) {
+                Vector3 o = transform.TransformPoint(_suspCorners[i]) + Vector3.up * groundRayUp;
+                if (Physics.Raycast(o, Vector3.down, out RaycastHit wh, probe, groundMask, QueryTriggerInteraction.Ignore)
+                    && !wh.collider.transform.IsChildOf(transform)) {
+                    nSum += wh.normal; nCount++;
+                }
+            }
+            if (nCount > 0) up = (nSum / nCount).normalized;
+        }
+
+        // Hauteur : ressort-amortisseur de suspension. Le ressort ne POUSSE QUE vers le haut
+        // (max(0, compression) — un ressort ne tire pas le châssis sous le sol), l'amortissement ET
+        // la gravité s'appliquent EN PERMANENCE (sinon effet trampoline), et le sol sert de butée.
+        if (grounded) {
+            float restY = cHit.point.y + groundOffset;          // hauteur de repos (châssis posé)
+            float curY = transform.position.y;
+            float compression = restY - curY;                   // >0 = suspension comprimée → pousse en haut
+            float springForce = Mathf.Max(0f, compression) * suspensionStiffness;
+            _verticalVel += (springForce - _verticalVel * suspensionDamping - gravity) * dt;
+            float newY = curY + _verticalVel * dt;
+            if (newY < restY) { newY = restY; if (_verticalVel < 0f) _verticalVel = 0f; } // butée sol
+            Vector3 p = transform.position; p.y = newY; transform.position = p;
+        } else {
+            // Pas de sol à portée : chute libre (gravité) — jamais de vol.
+            _verticalVel -= gravity * dt;
+            Vector3 p = transform.position; p.y += _verticalVel * dt; transform.position = p;
         }
 
         Vector3 fwdOnPlane = Vector3.ProjectOnPlane(flatForward, up);
         if (fwdOnPlane.sqrMagnitude < 1e-4f) return;
         Quaternion target = Quaternion.LookRotation(fwdOnPlane.normalized, up);
-        transform.rotation = Quaternion.Slerp(transform.rotation, target, groundAlignSpeed * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, target, groundAlignSpeed * dt);
     }
 
     [Server]

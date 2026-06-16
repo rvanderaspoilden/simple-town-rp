@@ -1339,6 +1339,7 @@ GameObject:
   - component: {fileID: 5136011424117637734}
   - component: {fileID: 3531423858343423897}
   - component: {fileID: 2637402649827625345}
+  - component: {fileID: 6122039501532196072}
   m_Layer: 15
   m_Name: Vehicle
   m_TagString: Untagged
@@ -1474,14 +1475,21 @@ MonoBehaviour:
   wheelBase: 2.6
   maxSteerAngle: 35
   rearAxleOffset: 1.3
+  highSpeedSteerFactor: 0.35
+  lateralGrip: 40
+  driftGrip: 3
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
   groundRayUp: 1.5
-  groundRayDown: 4
+  groundRayDown: 30
   groundOffset: 0
   alignToSlope: 1
-  groundAlignSpeed: 10
+  groundAlignSpeed: 14
+  gravity: 25
+  suspensionStiffness: 120
+  suspensionDamping: 22
+  trackWidth: 1.6
   enginePitchIdle: 0.8
   enginePitchMax: 1.7
   koParticles: {fileID: 7671116016024075010}
@@ -1492,6 +1500,9 @@ MonoBehaviour:
     m_Bits: 4097
   sweepHalfExtents: {x: 1, y: 0.5, z: 2}
   interactionRange: 3
+  minKnockdownSpeed: 2
+  knockImpulsePerSpeed: 12
+  characterHitCooldown: 1
 --- !u!114 &3531423858343423897
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1540,6 +1551,22 @@ MonoBehaviour:
   - {fileID: 2445975790522714182}
   brakeLights: []
   brakeEmission: {r: 3, g: 0.3, b: 0.15, a: 3}
+--- !u!208 &6122039501532196072
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6048379817288373512}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 1, y: 0.6, z: 2.41}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0.6, z: 0.27}
+  m_TimeToStationary: 0.5
 --- !u!1 &6464132335701942382
 GameObject:
   m_ObjectHideFlags: 0

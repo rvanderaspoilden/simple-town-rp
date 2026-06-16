@@ -31,10 +31,26 @@ public class VehicleWheels : MonoBehaviour {
     [Tooltip("Lissage du braquage visuel (plus grand = plus réactif).")]
     [SerializeField] private float steerLerp = 10f;
 
+    [Header("Suspension (visuelle, par roue)")]
+    [Tooltip("Active le débattement vertical visuel : chaque roue suit le sol (raycast) dans son puits.")]
+    [SerializeField] private bool enableSuspension = true;
+    [Tooltip("Layers du sol sondés par roue. Si vide, le layer « Ground » est utilisé.")]
+    [SerializeField] private LayerMask groundMask;
+    [Tooltip("Débattement max en COMPRESSION (roue qui remonte dans le puits, m).")]
+    [SerializeField] private float suspensionTravel = 0.15f;
+    [Tooltip("Débattement max en DÉTENTE (roue qui descend / pend, m).")]
+    [SerializeField] private float suspensionDroop = 0.12f;
+    [Tooltip("Lissage du débattement (amortisseur). Plus grand = plus réactif.")]
+    [SerializeField] private float suspensionLerp = 12f;
+    [Tooltip("Hauteur de départ du raycast roue au-dessus de la position de repos (m).")]
+    [SerializeField] private float castUp = 0.4f;
+
     private Vector3 _lastPos;
     private float   _lastYaw;
     private float[] _roll;
     private float   _steer;
+    private Vector3[] _restLocalPos;    // position locale de repos de chaque roue (puits)
+    private float[]   _suspOffset;      // débattement lissé courant par roue (le long de l'axe vertical local)
     private float   _inputSteer;          // input de braquage [-1..1] fourni par le conducteur local
     private float   _inputSteerTime = -10f;
 
@@ -48,7 +64,18 @@ public class VehicleWheels : MonoBehaviour {
     private void Awake() {
         _lastPos = transform.position;
         _lastYaw = transform.eulerAngles.y;
-        _roll = new float[allWheels != null ? allWheels.Length : 0];
+        int n = allWheels != null ? allWheels.Length : 0;
+        _roll = new float[n];
+        // Mémorise la position de repos (puits) AVANT toute modification du débattement.
+        _restLocalPos = new Vector3[n];
+        _suspOffset   = new float[n];
+        for (int i = 0; i < n; i++)
+            _restLocalPos[i] = allWheels[i] != null ? allWheels[i].localPosition : Vector3.zero;
+
+        if (groundMask.value == 0) {
+            int g = LayerMask.NameToLayer("Ground");
+            if (g >= 0) groundMask = 1 << g;
+        }
     }
 
     private void OnEnable() {
@@ -95,14 +122,40 @@ public class VehicleWheels : MonoBehaviour {
         }
         _steer = Mathf.Lerp(_steer, targetSteer, steerLerp * dt);
 
-        // Application : steer (Y) en externe, roll (X) en interne.
+        // Application : steer (Y) + roll (X) sur la rotation ; débattement vertical sur la position.
+        Vector3 up = transform.up;
         for (int i = 0; i < allWheels.Length; i++) {
             Transform w = allWheels[i];
             if (w == null) continue;
             bool steer = IsSteering(w);
             Quaternion yawQ = steer ? Quaternion.AngleAxis(_steer, Vector3.up) : Quaternion.identity;
             w.localRotation = yawQ * Quaternion.AngleAxis(_roll[i], Vector3.right);
+
+            if (enableSuspension) {
+                float target = ComputeSuspensionOffset(i, up);
+                _suspOffset[i] = Mathf.Lerp(_suspOffset[i], target, suspensionLerp * dt);
+                w.localPosition = _restLocalPos[i] + Vector3.up * _suspOffset[i];
+            }
         }
+    }
+
+    /// <summary>
+    /// Débattement vertical cible (le long de l'axe vertical local) pour la roue i : raycast sous sa
+    /// position de repos, place le CENTRE de roue à <c>contact + rayon</c>. Borné à
+    /// [-détente, +compression]. Sans sol détecté, la roue pend (détente max).
+    /// </summary>
+    private float ComputeSuspensionOffset(int i, Vector3 up) {
+        Vector3 restWorld = transform.TransformPoint(_restLocalPos[i]);
+        Vector3 origin = restWorld + up * castUp;
+        float maxDist = castUp + wheelRadius + suspensionDroop + 0.05f;
+
+        if (Physics.Raycast(origin, -up, out RaycastHit hit, maxDist, groundMask, QueryTriggerInteraction.Ignore)
+            && !hit.collider.transform.IsChildOf(transform)) {
+            Vector3 desiredCenter = hit.point + up * wheelRadius;
+            float offset = Vector3.Dot(desiredCenter - restWorld, up);
+            return Mathf.Clamp(offset, -suspensionDroop, suspensionTravel);
+        }
+        return -suspensionDroop; // roue en l'air → détente max
     }
 
     private bool IsSteering(Transform w) {

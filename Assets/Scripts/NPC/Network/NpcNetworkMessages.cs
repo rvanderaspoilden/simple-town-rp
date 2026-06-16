@@ -46,3 +46,15 @@ public struct S2C_DestroyNpc : NetworkMessage {
     public int    NpcId;
     public string RoomId;
 }
+
+/// <summary>
+/// One-shot : le NPC est renversé (ragdoll). Porte l'impulsion à appliquer pour que la chute
+/// parte dans la bonne direction. L'état persistant « renversé » transite, lui, via
+/// <see cref="S2C_UpdateNpcTransform.State"/> = <see cref="NpcStateType.KnockedDown"/>.
+/// </summary>
+public struct S2C_NpcKnockdown : NetworkMessage {
+    public int     NpcId;
+    public string  RoomId;
+    public Vector3 Impulse;   // direction * force (world space)
+    public Vector3 Point;     // point d'impact monde
+}
