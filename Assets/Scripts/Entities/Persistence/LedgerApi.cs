@@ -25,6 +25,7 @@ namespace Sim.Entities.Persistence {
         public const string RentPaid          = "rent_paid";
         public const string RentReceived      = "rent_received";
         public const string RentEvicted       = "rent_evicted";
+        public const string VehicleRepair     = "vehicle_repair";
     }
 
     public static class LedgerCounterparty {

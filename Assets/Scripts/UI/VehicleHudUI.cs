@@ -59,10 +59,22 @@ namespace Sim.UI {
 
         private void Update() {
             if (this.vehicle == null) return;
+            bool ko = this.vehicle.IsKO;
+
+            // Rappel touches → remplacé par un avertissement quand le véhicule est cassé (KO) ou
+            // en panne sèche (conducteur : la jauge passager affiche déjà l'état).
+            if (this.keysText != null) {
+                if (ko)
+                    this.keysText.text = "Véhicule cassé — à réparer";
+                else if (this.asDriver && !this.vehicle.HasFuel)
+                    this.keysText.text = "Panne sèche — réservoir vide";
+                else
+                    this.keysText.text = this.asDriver ? DriverKeys : PassengerKeys;
+            }
 
             if (this.asDriver) {
                 if (this.speedText != null)
-                    this.speedText.text = this.vehicle.IsKO ? "KO" : $"{this.vehicle.SpeedKmh:0} km/h";
+                    this.speedText.text = ko ? "CASSÉ" : $"{this.vehicle.SpeedKmh:0} km/h";
                 if (this.healthFill != null) {
                     float t = this.vehicle.HealthNormalized;
                     this.healthFill.fillAmount = t;
@@ -78,8 +90,7 @@ namespace Sim.UI {
                 }
             } else if (this.speedText != null) {
                 // Passager : pas de vitesse, vie ni essence — uniquement les états véhicule.
-                string status = string.Empty;
-                if (this.vehicle.IsKO) status = "KO";
+                string status = ko ? "CASSÉ" : string.Empty;
                 if (!this.vehicle.HasFuel)
                     status = string.IsNullOrEmpty(status) ? "PANNE SÈCHE" : status + " · PANNE SÈCHE";
                 this.speedText.text = status;

@@ -64,60 +64,22 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [Range(0.1f, 1f)] [SerializeField] private float reverseSpeedFactor = 0.4f;
     [Tooltip("Abaissement du centre de masse (m, local) pour la stabilité anti-tonneau.")]
     [SerializeField] private float centerOfMassDrop = 0.5f;
-    [Tooltip("Lissage du braquage (vitesse d'interpolation de l'angle des roues avant).")]
+    [Tooltip("Lissage du braquage (vitesse d'interpolation de l'angle des roues avant). " +
+             "Avec maxSteerAngleDeg, contrôle la FORCE/réactivité de rotation.")]
     [SerializeField] private float steerLerp = 6f;
 
-    [Header("Driving fallback (si pas de config)")]
-    [SerializeField] private float maxSpeed     = 6f;
-    [SerializeField] private float reverseSpeed = 3f;
-    [SerializeField] private float acceleration = 8f;
-    [SerializeField] private float braking      = 12f;
-    [Tooltip("Décélération en roue libre (accélérateur relâché, sans freiner). Faible = inertie.")]
-    [SerializeField] private float friction      = 1.5f;
-    [Tooltip("Empattement (m) : distance essieu avant ↔ arrière. Pilote le rayon de virage (modèle bicyclette).")]
-    [SerializeField] private float wheelBase = 2.6f;
-    [Tooltip("Angle de braquage max des roues avant (deg). Plus grand = tourne plus court.")]
-    [SerializeField] private float maxSteerAngle = 35f;
-    [Tooltip("Distance du pivot (origine du prefab) à l'essieu arrière (m). Le véhicule pivote autour de l'arrière.")]
-    [SerializeField] private float rearAxleOffset = 1.3f;
-    [Tooltip("Facteur de braquage à VITESSE MAX (1 = aucune réduction ; <1 = sous-virage). " +
-             "Simule la masse/inertie : à haute vitesse l'angle des roues est réduit → virages plus larges.")]
-    [Range(0.1f, 1f)] [SerializeField] private float highSpeedSteerFactor = 0.35f;
+    [Header("Adhérence / dérapage")]
+    [Tooltip("Adhérence latérale des roues AVANT (rigidité de friction). Plus haut = tourne plus net.")]
+    [SerializeField] private float frontGrip = 2f;
+    [Tooltip("Adhérence latérale des roues ARRIÈRE. La BAISSER fait déraper l'arrière (drift permanent).")]
+    [SerializeField] private float rearGrip = 2f;
+    [Tooltip("Adhérence latérale arrière quand le frein à main (Espace) est tenu : basse = drift à la demande.")]
+    [SerializeField] private float handbrakeRearGrip = 0.6f;
 
-    [Header("Dérapage (drift)")]
-    [Tooltip("Adhérence latérale NORMALE (m/s de glisse amortis par seconde). Élevé = aucun dérapage : " +
-             "le véhicule va exactement où il pointe.")]
-    [SerializeField] private float lateralGrip = 40f;
-    [Tooltip("Adhérence latérale en FREINANT (Espace) — basse = l'arrière décroche, la voiture glisse. " +
-             "C'est la physique de dérapage au frein.")]
-    [SerializeField] private float driftGrip = 3f;
-
-    [Header("Ground / relief")]
-    [Tooltip("Layers du sol/terrain à suivre (relief). Si vide, le layer « Ground » est utilisé.")]
-    [SerializeField] private LayerMask groundMask;
-    [Tooltip("Hauteur de départ du raycast sol au-dessus du pivot (m).")]
-    [SerializeField] private float groundRayUp = 1.5f;
-    [Tooltip("Portée du raycast sol sous le pivot (m).")]
-    [SerializeField] private float groundRayDown = 4f;
-    [Tooltip("Décalage vertical du pivot au-dessus du point de contact (m).")]
-    [SerializeField] private float groundOffset = 0f;
-    [Tooltip("Aligner l'inclinaison du véhicule sur la pente du sol.")]
-    [SerializeField] private bool alignToSlope = true;
-    [Tooltip("Vitesse de lissage de l'orientation (sol/pente). Plus grand = moins de latence.")]
-    [SerializeField] private float groundAlignSpeed = 14f;
-
-    [Header("Suspension")]
-    [Tooltip("Gravité appliquée au véhicule (m/s²). Garantit qu'il RETOMBE toujours au sol — il ne " +
-             "peut plus rester en l'air / voler.")]
-    [SerializeField] private float gravity = 25f;
-    [Tooltip("Raideur du ressort de suspension : réactivité de la hauteur du châssis. Plus haut = " +
-             "le châssis colle plus vite au relief (moins de latence).")]
-    [SerializeField] private float suspensionStiffness = 120f;
-    [Tooltip("Amortissement du ressort (≈ 2·√raideur pour un amorti quasi critique : rapide, sans rebond).")]
-    [SerializeField] private float suspensionDamping = 22f;
-    [Tooltip("Voie (largeur d'essieu, m) : sert à échantillonner le sol sous les 4 coins pour " +
-             "orienter le châssis sur la pente de façon stable.")]
-    [SerializeField] private float trackWidth = 1.6f;
+    [Header("Vitesse")]
+    [Tooltip("Vitesse max de repli (m/s) si aucune VehicleConfig n'est assignée (sinon config.maxSpeed). " +
+             "Sert de plafond au couple moteur.")]
+    [SerializeField] private float maxSpeed = 12f;
 
     [Header("Engine audio")]
     [Tooltip("Pitch de la boucle moteur au ralenti et à pleine vitesse.")]
@@ -132,10 +94,8 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [Tooltip("Dégâts infligés par (m/s) au-dessus du seuil.")]
     [SerializeField] private float impactDamageFactor = 6f;
 
-    [Header("Collision")]
-    [Tooltip("Layers bloquant l'avancée (murs, décor). Le véhicule ne les traverse pas.")]
-    [SerializeField] private LayerMask obstacleMask = ~0;
-    [Tooltip("Demi-extents de la boîte de balayage anti-traversée (m).")]
+    [Header("Détection / interaction")]
+    [Tooltip("Demi-extents de la boîte de détection des personnages percutés (renversement).")]
     [SerializeField] private Vector3 sweepHalfExtents = new Vector3(0.9f, 0.5f, 1.6f);
     [SerializeField] private float interactionRange = 3f;
 
@@ -191,6 +151,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private Action _unlockAction;
     private Action _refuelAction;
     private Action _openTrunkAction;
+    private Action _repairAction;
     private float  _currentSpeed;
     private VehicleWheels _wheels;      // animation visuelle des roues (braquage piloté par l'input du conducteur)
     private VehicleLights _lights;      // visuel des feux (piloté par lightFlags via le hook)
@@ -219,12 +180,8 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     /// <summary>Id DB si ce véhicule a été sorti d'un garage ("" sinon). Identifie un véhicule possédé sorti.</summary>
     public string    VehicleDbId  => vehicleDbId;
 
-    // ── Paramètres effectifs (config si présente, sinon valeurs de repli) ────────────
-    private float MaxSpeed     => config != null ? config.maxSpeed     : maxSpeed;
-    private float ReverseSpeed => config != null ? config.reverseSpeed : reverseSpeed;
-    private float Acceleration => config != null ? config.acceleration : acceleration;
-    private float Braking      => config != null ? config.braking      : braking;
-    private float Friction     => config != null ? config.friction     : friction;
+    // ── Vitesse max effective (config si présente, sinon repli) ──────────────────────
+    private float MaxSpeed => config != null ? config.maxSpeed : maxSpeed;
 
     /// <summary>Vitesse planaire courante (m/s), lue sur le Rigidbody. Owner-only fiable (le corps y
     /// simule) ; les copies distantes sont kinematic → ~0 (acceptable, le HUD vitesse est conducteur-only).</summary>
@@ -259,6 +216,8 @@ public class VehicleController : NetworkBehaviour, IInteractable {
 
     // ── Carburant ──────────────────────────────────────────────────────────────────
     public float MaxFuel => config != null ? config.fuelCapacity : 50f;
+    /// <summary>Coût de réparation (configuré sur le SO ; repli 500 si pas de config).</summary>
+    public int RepairCost => config != null ? config.repairCost : 500;
     /// <summary>Niveau de carburant [0..1] pour la jauge HUD. (-1 = pas encore synchronisé → plein.)</summary>
     public float FuelNormalized => fuel < 0f ? 1f : (MaxFuel > 0f ? Mathf.Clamp01(fuel / MaxFuel) : 0f);
     /// <summary>Reste-t-il du carburant ? (-1 = non initialisé → considéré plein.)</summary>
@@ -377,6 +336,11 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             _openTrunkAction = Instantiate(trunkProto);
             _openTrunkAction.OnExecute += OnOpenTrunkActionExecuted;
         }
+        Action repairProto = Resources.Load<Action>("Configurations/Actions/REPAIR");
+        if (repairProto != null) {
+            _repairAction = Instantiate(repairProto);
+            _repairAction.OnExecute += OnRepairActionExecuted;
+        }
 
         _wheels = GetComponent<VehicleWheels>();
         _lights = GetComponent<VehicleLights>();
@@ -389,12 +353,20 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (_rb != null) {
             _rb.centerOfMass += Vector3.down * centerOfMassDrop;
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
+            _rb.linearDamping = 0.05f; // léger ralentissement en roue libre → s'arrête naturellement
         }
 
         // Masque des personnages renversables (Player + NPC).
         int playerLayer = LayerMask.NameToLayer("Player");
         int npcLayer    = LayerMask.NameToLayer("NPC");
         _characterMask  = (playerLayer >= 0 ? 1 << playerLayer : 0) | (npcLayer >= 0 ? 1 << npcLayer : 0);
+
+        // La voiture (corps physique) doit TRAVERSER les personnages, pas les heurter : on désactive la
+        // collision physique entre son layer et Player/NPC. Sans effet sur les persos (déplacés en
+        // NavMesh, hors physique). Le renversement reste détecté par OverlapBox (qui ignore la matrice).
+        int selfLayer = gameObject.layer;
+        if (playerLayer >= 0) Physics.IgnoreLayerCollision(selfLayer, playerLayer, true);
+        if (npcLayer    >= 0) Physics.IgnoreLayerCollision(selfLayer, npcLayer, true);
 
         // Dégâts d'impact : tout SAUF sol, personnages (renversement) et items.
         int softLayers = _characterMask;
@@ -456,6 +428,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (_unlockAction != null) _unlockAction.OnExecute -= OnUnlockActionExecuted;
         if (_refuelAction != null) _refuelAction.OnExecute -= OnRefuelActionExecuted;
         if (_openTrunkAction != null) _openTrunkAction.OnExecute -= OnOpenTrunkActionExecuted;
+        if (_repairAction != null) _repairAction.OnExecute -= OnRepairActionExecuted;
         if (_fuelBar != null) Destroy(_fuelBar.gameObject);
     }
 
@@ -468,7 +441,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     // ── IInteractable ─────────────────────────────────────────────────────────────
 
     public float GetRange()          => interactionRange;
-    public bool  IsInteractable()    => CanEnterAction() || CanExitAction() || OwnerLockActionAvailable() || CanRefuelAction() || CanOpenTrunkAction();
+    public bool  IsInteractable()    => CanEnterAction() || CanExitAction() || OwnerLockActionAvailable() || CanRefuelAction() || CanOpenTrunkAction() || CanRepairAction();
     public bool  IsRightClickOnly()  => false;
     public void  StopInteraction()   { }
 
@@ -504,6 +477,16 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     /// Verrouillé : la tentative déclenche un toast d'erreur (cf. OnOpenTrunkActionExecuted).</summary>
     private bool CanOpenTrunkAction() => _openTrunkAction != null && HasTrunk;
 
+    /// <summary>Action « Réparer » : visible UNIQUEMENT si le véhicule est CASSÉ (KO), pour le
+    /// PROPRIÉTAIRE et depuis l'EXTÉRIEUR (le véhicule sera rangé au garage → il doit être vide).</summary>
+    private bool CanRepairAction() {
+        if (_repairAction == null || !IsKO) return false;
+        var local = PlayerController.Local;
+        if (local == null || local.CharacterData == null) return false;
+        if (local.CharacterData.Id != ownerCharacterId) return false;
+        return !IsOccupant(local.netId);
+    }
+
     /// <summary>Le joueur local est le propriétaire ET à l'extérieur → action verrouiller/déverrouiller.</summary>
     private bool OwnerLockActionAvailable() {
         var local = PlayerController.Local;
@@ -522,6 +505,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (OwnerLockActionAvailable()) list.Add(isLocked ? _unlockAction : _lockAction);
         if (CanRefuelAction()) list.Add(_refuelAction);
         if (CanOpenTrunkAction()) list.Add(_openTrunkAction);
+        if (CanRepairAction()) list.Add(_repairAction);
         return list.Count == 0 ? System.Array.Empty<Action>() : list.ToArray();
     }
 
@@ -551,6 +535,14 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     private void OnOpenTrunkActionExecuted(Action action) {
         if (isLocked) { WorldToastManager.ShowError("Véhicule verrouillé"); return; }
         CmdOpenTrunk();
+    }
+
+    /// <summary>Réparer : ouvre une confirmation (coût + rangement garage) ; confirme → CmdRepair.</summary>
+    private void OnRepairActionExecuted(Action action) {
+        Sim.UI.ConfirmDialogUI.Request(
+            "Réparer le véhicule ?",
+            $"La réparation coûte {RepairCost} BC. Le véhicule sera réparé puis renvoyé directement au garage.",
+            () => CmdRepair());
     }
 
     public bool IsLocked => isLocked;
@@ -729,6 +721,38 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         else         WorldToastManager.ShowError(message);
     }
 
+    /// <summary>Répare le véhicule cassé (KO) : débite le propriétaire de <see cref="repairCost"/>,
+    /// remet la vie au max, puis range le véhicule au garage (despawn → OnStopServer persiste vie=max ;
+    /// la place garage DB du véhicule est conservée). Propriétaire + extérieur + proximité requis.</summary>
+    [Command(requiresAuthority = false)]
+    private void CmdRepair(NetworkConnectionToClient conn = null) {
+        if (conn?.identity == null) return;
+        if (!IsKO) return;                       // seulement si cassé
+        if (IsOccupied) return;                  // doit être vide (il part au garage)
+        PlayerController pc = conn.identity.GetComponent<PlayerController>();
+        string charId = pc != null && pc.CharacterData != null ? pc.CharacterData.Id : null;
+        if (string.IsNullOrEmpty(charId) || charId != ownerCharacterId) return; // propriétaire uniquement
+        float sqr = (conn.identity.transform.position - transform.position).sqrMagnitude;
+        if (sqr > (interactionRange * 2f) * (interactionRange * 2f)) return;
+
+        PlayerBankAccount bank = conn.identity.GetComponent<PlayerBankAccount>();
+        if (bank == null) return;
+        if (bank.Money < RepairCost) { TargetRepairResult(conn, false, "Fonds insuffisants"); return; }
+
+        bank.PostLedger(-RepairCost, Sim.Entities.Persistence.LedgerReason.VehicleRepair,
+                        Sim.Entities.Persistence.LedgerCounterparty.System, "GARAGE");
+
+        health = MaxHealth;                      // réparé : la persistance au despawn écrira vie=max
+        TargetRepairResult(conn, true, "Véhicule réparé et rangé au garage");
+        NetworkServer.Destroy(gameObject);       // rangé au garage (place DB conservée)
+    }
+
+    [TargetRpc]
+    private void TargetRepairResult(NetworkConnectionToClient target, bool success, string message) {
+        if (success) WorldToastManager.ShowSuccess(message);
+        else         WorldToastManager.ShowError(message);
+    }
+
     /// <summary>Ouvre le coffre : réutilise le système de conteneurs (ContainerUI). Accès =
     /// déverrouillé pour tous, sinon propriétaire ; validé côté serveur + proximité.</summary>
     [Command(requiresAuthority = false)]
@@ -741,8 +765,12 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     }
 
     private void OnFuelChanged(float previous, float current) {
-        // Panne sèche : coupe le moteur (le HUD lit FuelNormalized chaque frame).
-        if (current == 0f && previous != 0f) StopEngine();
+        // Panne sèche : coupe le moteur + son de réservoir vide (le HUD lit FuelNormalized chaque frame).
+        if (current == 0f && previous != 0f) {
+            StopEngine();
+            if (previous > 0f && config != null && config.fuelEmpty != null)
+                AudioManager.Instance.PlayClip3D(config.fuelEmpty, transform.position);
+        }
 
         // Ravitaillement (carburant en HAUSSE, hors init -1→plein) : jauge monde « Réservoir » + SFX.
         if (previous >= 0f && current > previous + 0.001f) {
@@ -970,7 +998,8 @@ public class VehicleController : NetworkBehaviour, IInteractable {
 
         float throttle  = (IsKO || !HasFuel) ? 0f : Input.GetAxisRaw("Vertical");
         float steerIn   = Input.GetAxisRaw("Horizontal");
-        bool  handbrake = Input.GetKey(KeyCode.Space) || IsKO;
+        bool  spaceHeld = Input.GetKey(KeyCode.Space);
+        bool  handbrake = spaceHeld || IsKO;
 
         // Braquage lissé → roues avant (indices 0,1). Alimente aussi le visuel des roues.
         float targetSteer = steerIn * maxSteerAngleDeg;
@@ -979,12 +1008,23 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         if (wheelColliders[1] != null) wheelColliders[1].steerAngle = _steerAngleCurrent;
         if (_wheels != null) _wheels.SetSteerInput(maxSteerAngleDeg > 0f ? _steerAngleCurrent / maxSteerAngleDeg : 0f);
 
+        // Adhérence latérale : avant = frontGrip ; arrière = rearGrip, réduit au frein à main → DÉRAPAGE.
+        SetSideGrip(0, frontGrip);
+        SetSideGrip(1, frontGrip);
+        float rearStiffness = (spaceHeld && !IsKO) ? handbrakeRearGrip : rearGrip;
+        SetSideGrip(2, rearStiffness);
+        SetSideGrip(3, rearStiffness);
+
         // Couple moteur / frein selon l'intention et le sens de marche.
         float speedMs  = _currentSpeed;     // signé : avant = +
         float topSpeed = MaxSpeed;
         float motor = 0f, brake = handbrake ? brakeTorque : 0f;
         if (!handbrake) {
-            if (throttle > 0.01f) {
+            if (!HasFuel) {
+                // PANNE SÈCHE : plus de couple moteur ET pas de frein moteur → roue libre, le véhicule
+                // continue de rouler et s'arrête NATURELLEMENT (résistance des roues + traînée).
+                brake = 0f;
+            } else if (throttle > 0.01f) {
                 if (speedMs < -0.5f) brake = brakeTorque;                 // recule mais veut avancer → freiner
                 else if (speedMs < topSpeed) motor = throttle * motorTorque;
             } else if (throttle < -0.01f) {
@@ -1013,6 +1053,14 @@ public class VehicleController : NetworkBehaviour, IInteractable {
                 _fuelSendTimer = 0f;
             }
         }
+    }
+
+    /// <summary>Règle la rigidité de friction latérale d'une roue (adhérence/dérapage).</summary>
+    private void SetSideGrip(int i, float stiffness) {
+        if (wheelColliders == null || i >= wheelColliders.Length || wheelColliders[i] == null) return;
+        WheelFrictionCurve f = wheelColliders[i].sidewaysFriction;
+        f.stiffness = stiffness;
+        wheelColliders[i].sidewaysFriction = f;
     }
 
     /// <summary>Dégâts d'impact via la physique (conducteur uniquement). Les chocs « mous » (sol,

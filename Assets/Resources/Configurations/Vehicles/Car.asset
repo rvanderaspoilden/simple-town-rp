@@ -29,12 +29,8 @@ MonoBehaviour:
   fuelConsumption: 1.2
   fuelIdleConsumption: 0.1
   price: 100
+  repairCost: 500
   maxSpeed: 15
-  reverseSpeed: 3
-  acceleration: 8
-  braking: 12
-  friction: 1.5
-  turnSpeed: 120
   engineLoop: {fileID: 8300000, guid: bda86261998f0d34887141d2666de96e, type: 3}
   brake: {fileID: 8300000, guid: 418160fd83540d94499c3262df46c745, type: 3}
   horn: {fileID: 8300000, guid: 8d7778d785a83b04e91e5316cc9776de, type: 3}
@@ -44,6 +40,7 @@ MonoBehaviour:
   ko: {fileID: 8300000, guid: 428f46e22f61a1b468ba526f125b3d68, type: 3}
   lockSound: {fileID: 8300000, guid: 6b165381b0fae274e9f5ddc5d1d5b4db, type: 3}
   unlockSound: {fileID: 8300000, guid: 97d24e55eb3deb24a88abea945036e6e, type: 3}
-  refuel: {fileID: 8300000, guid: d4a7d2b0e89a7034381e1fcd9c5f84ed, type: 3}
+  refuel: {fileID: 8300000, guid: 0acc5659d747ac74587a98788bef0789, type: 3}
+  fuelEmpty: {fileID: 8300000, guid: 488efbf5c1553ea4faadd8597fee5239, type: 3}
   trunkOpen: {fileID: 8300000, guid: 3d8e172bfe9d4004089d127e428588eb, type: 3}
   trunkClose: {fileID: 8300000, guid: 0a9d7b25447639641b87997ab0cf9186, type: 3}

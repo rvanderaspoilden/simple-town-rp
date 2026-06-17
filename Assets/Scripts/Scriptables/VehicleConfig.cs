@@ -47,17 +47,12 @@ public class VehicleConfig : ScriptableObject {
     [Header("Shop")]
     [Tooltip("Prix d'achat au concessionnaire (BroCoins).")]
     [Min(0)] public int price = 5000;
+    [Tooltip("Coût de réparation d'un véhicule cassé (KO), en BroCoins.")]
+    [Min(0)] public int repairCost = 500;
 
-    [Header("Driving (kinematic arcade)")]
-    public float maxSpeed     = 6f;
-    public float reverseSpeed = 3f;
-    public float acceleration = 8f;
-    [Tooltip("Décélération au freinage actif (Espace ou marche arrière).")]
-    public float braking      = 12f;
-    [Tooltip("Décélération en roue libre (accélérateur relâché). Faible = inertie.")]
-    public float friction     = 1.5f;
-    [Tooltip("Vitesse de braquage (deg/s) à pleine vitesse.")]
-    public float turnSpeed    = 90f;
+    [Header("Driving")]
+    [Tooltip("Vitesse max (m/s) — plafond du couple moteur (physique WheelCollider).")]
+    public float maxSpeed = 12f;
 
     [Header("Sounds (optionnels — null = silencieux)")]
     [Tooltip("Boucle moteur, jouée tant que le véhicule est occupé ; le pitch suit la vitesse.")]
@@ -80,6 +75,8 @@ public class VehicleConfig : ScriptableObject {
     public AudioClip unlockSound;
     [Tooltip("Remplissage du réservoir (joué à chaque ravitaillement au bidon).")]
     public AudioClip refuel;
+    [Tooltip("Joué une fois quand le réservoir passe à VIDE (panne sèche).")]
+    public AudioClip fuelEmpty;
     [Tooltip("Ouverture du coffre (joué quand la grille du coffre s'ouvre).")]
     public AudioClip trunkOpen;
     [Tooltip("Fermeture du coffre (joué quand la grille du coffre se ferme).")]

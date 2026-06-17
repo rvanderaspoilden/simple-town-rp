@@ -34,7 +34,8 @@
         UNPACK,
         ENTER_VEHICLE,
         EXIT_VEHICLE,
-        REFUEL
+        REFUEL,
+        REPAIR
     }
 
 }
