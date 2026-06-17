@@ -250,13 +250,17 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         }
     }
 
-    /// <summary>Renverse ce NPC (ragdoll) : pause l'IA ~3 s, stoppe l'agent, diffuse l'impulsion +
-    /// l'état KnockedDown aux clients. Appelé par le serveur (relais du hit véhicule).</summary>
-    public void ServerKnockDown(Vector3 impulse, Vector3 point) {
-        if (!NetworkServer.active || _npcId <= 0) return;
+    /// <summary>Renverse ce NPC (ragdoll) : pause l'IA ~3 s, stoppe l'agent, diffuse l'état
+    /// KnockedDown aux clients (effondrement sur place, sans projection). Appelé par le serveur
+    /// (relais du hit véhicule). Renvoie vrai si le renversement vient de démarrer (faux si déjà au
+    /// sol) — l'appelant n'émet le son de choc qu'au renversement initial.</summary>
+    public bool ServerKnockDown() {
+        if (!NetworkServer.active || _npcId <= 0) return false;
+        if (_knockdownUntil > 0f && Time.time < _knockdownUntil) return false; // déjà au sol
         _knockdownUntil = Time.time + KnockdownDuration;
         StopAgent();
-        NpcServerManager.Instance.Knockdown(_npcId, impulse, point);
+        NpcServerManager.Instance.Knockdown(_npcId);
+        return true;
     }
 
     // Mémo du state envoyé pour détecter les transitions et déclencher

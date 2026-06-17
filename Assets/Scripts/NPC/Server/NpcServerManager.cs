@@ -157,15 +157,14 @@ public class NpcServerManager {
             npcId, previous, newState, s.RoomId);
     }
 
-    /// <summary>Diffuse l'impulsion de renversement (ragdoll) du NPC à sa room. L'état persistant
-    /// « renversé » est porté séparément par les snapshots (State = KnockedDown).</summary>
-    public void Knockdown(int npcId, Vector3 impulse, Vector3 point) {
+    /// <summary>Diffuse le renversement (ragdoll) du NPC à sa room — effondrement sur place, sans
+    /// projection. L'état persistant « renversé » est porté séparément par les snapshots
+    /// (State = KnockedDown).</summary>
+    public void Knockdown(int npcId) {
         if (!_npcs.TryGetValue(npcId, out var s)) return;
         BroadcastToRoom(s.RoomId, new S2C_NpcKnockdown {
             NpcId   = npcId,
-            RoomId  = s.RoomId,
-            Impulse = impulse,
-            Point   = point
+            RoomId  = s.RoomId
         });
     }
 

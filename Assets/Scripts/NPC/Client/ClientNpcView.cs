@@ -152,14 +152,14 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         _hasPrev = _hasNext = true;
     }
 
-    /// <summary>Reçu via S2C_NpcKnockdown (one-shot) : déclenche le ragdoll avec l'impulsion.</summary>
-    public void ApplyKnockdown(Vector3 impulse, Vector3 point) {
-        EnterKnockdownVisual(impulse, point);
+    /// <summary>Reçu via S2C_NpcKnockdown (one-shot) : déclenche l'effondrement ragdoll sur place.</summary>
+    public void ApplyKnockdown() {
+        EnterKnockdownVisual();
     }
 
-    private void EnterKnockdownVisual(Vector3 impulse, Vector3 point) {
+    private void EnterKnockdownVisual() {
         _knockedDown = true;
-        if (_ragdoll != null) _ragdoll.EnableRagdoll(impulse, point);
+        if (_ragdoll != null) _ragdoll.EnableRagdoll();
     }
 
     private void ExitKnockdownVisual(Vector3 position, Quaternion rotation) {
@@ -179,7 +179,7 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
             ClientLogger.Network("NpcStateReceived {NpcId} {From} {To}", NpcId, _currentState, state);
             bool wasKnocked = _currentState == NpcStateType.KnockedDown;
             _currentState = state;
-            if (state == NpcStateType.KnockedDown) EnterKnockdownVisual(Vector3.zero, transform.position);
+            if (state == NpcStateType.KnockedDown) EnterKnockdownVisual();
             else if (wasKnocked)                   ExitKnockdownVisual(position, rotation);
         }
 

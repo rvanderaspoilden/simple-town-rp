@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 07cbaee9330059047a5cf36df7b22e25, type: 3}
-  m_Name: Warehouse Marker
+  m_Name: Vehicle Marker
   m_EditorClassIdentifier: Assembly-CSharp::Sim.Scriptables.MinimapMarkerConfig
-  sprite: {fileID: 1498198602, guid: f6531f25a91913c4281bc37f106662d0, type: 3}
+  sprite: {fileID: -1323657925, guid: f6531f25a91913c4281bc37f106662d0, type: 3}
   color: {r: 1, g: 1, b: 1, a: 1}
-  pixelSize: 56
+  pixelSize: 48

@@ -9,7 +9,11 @@ using UnityEngine;
 /// Ragdoll Wizard).
 ///
 /// Modèle réseau : le ragdoll est COSMÉTIQUE. Chaque client simule sa propre physique à partir de la
-/// même pose + la même impulsion (état « renversé » + impulsion répliqués) — aucune physique réseau.
+/// même pose (état « renversé » répliqué) — aucune physique réseau.
+///
+/// PAS DE PROJECTION : le ragdoll s'effondre SUR PLACE sous la seule gravité (aucune impulsion). Le
+/// personnage ne part pas en vol → les hanches restent ~au-dessus de leur position de départ, donc la
+/// relève (repositionnement racine sur les hanches, échantillonné NavMesh) ne le téléporte pas au loin.
 ///
 /// Repos (animé) : les Rigidbody d'os sont kinematic → l'Animator pilote le squelette normalement.
 /// Renversé : os non-kinematic (physique), Animator désactivé, collider racine désactivé.
@@ -48,18 +52,14 @@ public class RagdollController : MonoBehaviour {
         SetBonesKinematic(true);
     }
 
-    /// <summary>Passe en ragdoll et applique l'impulsion au corps le plus proche du point d'impact.
-    /// Idempotent : si déjà en ragdoll, ajoute seulement l'impulsion.</summary>
-    public void EnableRagdoll(Vector3 impulse, Vector3 point) {
-        if (_boneBodies == null || _boneBodies.Length == 0) return;
-
-        if (!_active) {
-            _active = true;
-            if (_animator != null) _animator.enabled = false;
-            if (_rootCollider != null) _rootCollider.enabled = false;
-            SetBonesKinematic(false);
-        }
-        ApplyImpulse(impulse, point);
+    /// <summary>Passe en ragdoll : le squelette s'effondre SUR PLACE sous la gravité (aucune
+    /// impulsion, aucune projection). Idempotent : si déjà en ragdoll, ne fait rien.</summary>
+    public void EnableRagdoll() {
+        if (_boneBodies == null || _boneBodies.Length == 0 || _active) return;
+        _active = true;
+        if (_animator != null) _animator.enabled = false;
+        if (_rootCollider != null) _rootCollider.enabled = false;
+        SetBonesKinematic(false);
     }
 
     /// <summary>Repasse en mode animé (os kinematic, collider + Animator réactivés). Le squelette
@@ -84,17 +84,5 @@ public class RagdollController : MonoBehaviour {
                 rb.angularVelocity = Vector3.zero;
             }
         }
-    }
-
-    private void ApplyImpulse(Vector3 impulse, Vector3 point) {
-        if (impulse.sqrMagnitude < 0.0001f || _boneBodies == null) return;
-        Rigidbody nearest = null;
-        float best = float.MaxValue;
-        foreach (Rigidbody rb in _boneBodies) {
-            if (rb == null) continue;
-            float d = (rb.worldCenterOfMass - point).sqrMagnitude;
-            if (d < best) { best = d; nearest = rb; }
-        }
-        if (nearest != null) nearest.AddForceAtPosition(impulse, point, ForceMode.Impulse);
     }
 }

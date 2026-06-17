@@ -1554,6 +1554,8 @@ GameObject:
   - component: {fileID: 2637402649827625345}
   - component: {fileID: 6122039501532196072}
   - component: {fileID: 5480673986993109999}
+  - component: {fileID: 1981943715906573588}
+  - component: {fileID: 2674844451147327198}
   m_Layer: 15
   m_Name: Vehicle
   m_TagString: Untagged
@@ -1624,7 +1626,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
   sceneId: 0
-  _assetId: 0
+  _assetId: 2300132788
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
@@ -1697,41 +1699,18 @@ MonoBehaviour:
   reverseSpeedFactor: 0.4
   centerOfMassDrop: 0.5
   steerLerp: 6
+  frontGrip: 2
+  rearGrip: 2
+  handbrakeRearGrip: 0.6
   maxSpeed: 6
-  reverseSpeed: 3
-  acceleration: 8
-  braking: 12
-  friction: 1.5
-  wheelBase: 2.6
-  maxSteerAngle: 35
-  rearAxleOffset: 1.3
-  highSpeedSteerFactor: 0.35
-  lateralGrip: 40
-  driftGrip: 3
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  groundRayUp: 1.5
-  groundRayDown: 30
-  groundOffset: 0
-  alignToSlope: 1
-  groundAlignSpeed: 14
-  gravity: 25
-  suspensionStiffness: 120
-  suspensionDamping: 22
-  trackWidth: 1.6
   enginePitchIdle: 0.8
   enginePitchMax: 1.7
   koParticles: {fileID: 7671116016024075010}
   minImpactSpeed: 2
   impactDamageFactor: 6
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 4097
   sweepHalfExtents: {x: 1, y: 0.5, z: 2}
   interactionRange: 3
   minKnockdownSpeed: 2
-  knockImpulsePerSpeed: 12
   characterHitCooldown: 1
 --- !u!114 &3531423858343423897
 MonoBehaviour:
@@ -1832,6 +1811,32 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 2
+--- !u!114 &1981943715906573588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6048379817288373512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c901e3463e855be4394f9019cae3adbf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.UI.MinimapMarker
+  config: {fileID: 11400000, guid: a72b9c4f1d8e6a4493b27e0c8d51fa83, type: 2}
+  roomId: city
+--- !u!114 &2674844451147327198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6048379817288373512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 218551343e646ae48b58306a0bc84c1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VehicleMinimapMarker
 --- !u!1 &6464132335701942382
 GameObject:
   m_ObjectHideFlags: 0

@@ -67,6 +67,8 @@ public class VehicleConfig : ScriptableObject {
     public AudioClip doorClose;
     [Tooltip("Choc/collision (volume proportionnel à la violence de l'impact).")]
     public AudioClip impact;
+    [Tooltip("Son de choc quand le véhicule renverse un personnage (joueur/PNJ). Joué au point d'impact.")]
+    public AudioClip characterImpact;
     [Tooltip("Joué une fois quand le véhicule tombe KO (vie à 0).")]
     public AudioClip ko;
     [Tooltip("Verrouillage du véhicule.")]

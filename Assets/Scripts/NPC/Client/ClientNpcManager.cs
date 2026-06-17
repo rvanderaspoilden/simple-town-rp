@@ -101,7 +101,7 @@ public class ClientNpcManager : MonoBehaviour {
 
     private void OnNpcKnockdown(S2C_NpcKnockdown msg) {
         if (_views.TryGetValue(msg.NpcId, out var view) && view != null) {
-            view.ApplyKnockdown(msg.Impulse, msg.Point);
+            view.ApplyKnockdown();
         }
     }
 

@@ -102,8 +102,6 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [Header("Renversement des personnages (ragdoll)")]
     [Tooltip("Vitesse mini (m/s) pour renverser un personnage percuté. En-dessous, on le traverse sans effet.")]
     [SerializeField] private float minKnockdownSpeed = 2f;
-    [Tooltip("Force d'impulsion du ragdoll par m/s de vitesse à l'impact.")]
-    [SerializeField] private float knockImpulsePerSpeed = 12f;
     [Tooltip("Délai mini (s) avant de pouvoir re-renverser le MÊME personnage.")]
     [SerializeField] private float characterHitCooldown = 1f;
 
@@ -635,12 +633,19 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         string mdl = config != null ? config.id : "vehicle"; // on stocke l'id de config dans `model`
         ApiManager.Instance.StartCoroutine(
             ApiManager.Instance.EnsureVehicleCoroutine(key, mdl, row => {
-                if (row != null) ownerCharacterId = row.ownerCharacterId ?? "";
+                if (row == null) return;
+                ownerCharacterId = row.ownerCharacterId ?? "";
+                // Verrouillage par défaut au spawn dès qu'un propriétaire est connu : un véhicule de
+                // scène déjà réclamé en DB arrive verrouillé (le propriétaire doit l'ouvrir). Un
+                // véhicule de scène jamais réclamé reste déverrouillé pour que le premier conducteur
+                // puisse y entrer et s'en revendiquer la propriété (cf. ServerClaimOwnership).
+                if (!string.IsNullOrEmpty(ownerCharacterId)) isLocked = true;
             }));
     }
 
     /// <summary>Initialise un véhicule SORTI d'un garage : propriétaire connu + id DB (pour le rangement).
-    /// Pas d'appel DB (la propriété est déjà persistée).</summary>
+    /// Pas d'appel DB (la propriété est déjà persistée). Verrouillé par défaut au spawn — le
+    /// propriétaire doit le déverrouiller avant d'y entrer.</summary>
     [Server]
     public void ServerInitFromGarage(string dbId, string ownerCharId, float restoredHealth, float restoredFuel) {
         _ownershipInitialized = true;
@@ -649,6 +654,7 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         // Restaure l'état persisté (-1 = jamais sauvegardé → plein). Précède OnStartServer.
         health = restoredHealth >= 0f ? Mathf.Min(restoredHealth, MaxHealth) : MaxHealth;
         fuel   = restoredFuel   >= 0f ? Mathf.Min(restoredFuel,   MaxFuel)   : MaxFuel;
+        isLocked = true;
         _stateInitialized = true;
     }
 
@@ -785,7 +791,14 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         _fuelBar.SetProgress(FuelNormalized);
     }
 
+    // Avale le PREMIER déclenchement de OnLockedChanged par client : il correspond à l'initial sync
+    // (spawn d'un véhicule déjà verrouillé, ou observation par un late-joiner) et ne doit pas jouer
+    // le « clic » de verrou. Les toggles utilisateur ultérieurs (CmdToggleLockAsDriver /
+    // CmdSetLockAsOwner) restent sonores.
+    private bool _lockHookInitialized;
+
     private void OnLockedChanged(bool previous, bool current) {
+        if (!_lockHookInitialized) { _lockHookInitialized = true; return; }
         AudioClip clip = config != null ? (current ? config.lockSound : config.unlockSound) : null;
         if (clip != null) AudioManager.Instance.PlayClip3D(clip, transform.position);
     }
@@ -1077,8 +1090,9 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     }
 
     /// <summary>Conducteur uniquement : détecte les personnages (joueurs/PNJ) percutés par le
-    /// véhicule en mouvement et les signale au serveur pour un renversement (ragdoll). NE stoppe PAS
-    /// le véhicule (on plonge à travers). Cooldown par cible pour éviter le spam d'impacts.</summary>
+    /// véhicule en mouvement et les signale au serveur pour un renversement (ragdoll, effondrement
+    /// SUR PLACE — aucune projection). NE stoppe PAS le véhicule (on plonge à travers). Cooldown par
+    /// cible pour éviter le spam d'impacts.</summary>
     private void DetectCharacterHits() {
         if (_characterMask == 0) return;
         float speed = _velocity.magnitude;
@@ -1088,9 +1102,6 @@ public class VehicleController : NetworkBehaviour, IInteractable {
                                                transform.rotation, _characterMask, QueryTriggerInteraction.Ignore);
         if (count == 0) return;
 
-        Vector3 dir = speed > 0.01f ? _velocity / speed : transform.forward;
-        Vector3 impulse = (dir + Vector3.up * 0.5f).normalized * (speed * knockImpulsePerSpeed);
-
         for (int i = 0; i < count; i++) {
             Collider c = _hitBuffer[i];
             if (c == null || c.transform.IsChildOf(transform)) continue;
@@ -1099,12 +1110,12 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             NetworkIdentity ni = c.GetComponentInParent<NetworkIdentity>();
             if (ni != null) {
                 if (OnCooldown(_playerHitTime, ni.netId)) continue;
-                CmdReportCharacterHit(ni.netId, true, impulse, point);
+                CmdReportCharacterHit(ni.netId, true, point);
                 continue;
             }
             ClientNpcView npc = c.GetComponentInParent<ClientNpcView>();
             if (npc != null && !OnCooldown(_npcHitTime, npc.NpcId)) {
-                CmdReportCharacterHit((uint)npc.NpcId, false, impulse, point);
+                CmdReportCharacterHit((uint)npc.NpcId, false, point);
             }
         }
     }
@@ -1116,18 +1127,28 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     }
 
     /// <summary>Relaie le renversement au serveur, qui déclenche le ragdoll réseau sur la cible
-    /// (joueur via PlayerController, PNJ via NpcAIController). Le véhicule continue sa route.</summary>
+    /// (joueur via PlayerController, PNJ via NpcAIController) — effondrement sur place, sans
+    /// projection — puis diffuse le son de choc au point d'impact. Le véhicule continue sa route.</summary>
     [Command(requiresAuthority = false)]
-    private void CmdReportCharacterHit(uint id, bool isPlayer, Vector3 impulse, Vector3 point) {
+    private void CmdReportCharacterHit(uint id, bool isPlayer, Vector3 point) {
         if (driverNetId == 0) return; // un véhicule sans conducteur ne renverse personne
+        bool knocked = false;
         if (isPlayer) {
             if (NetworkServer.spawned.TryGetValue(id, out NetworkIdentity idn)) {
                 PlayerController pc = idn.GetComponent<PlayerController>();
-                if (pc != null) pc.ServerKnockDown(impulse, point);
+                if (pc != null) knocked = pc.ServerKnockDown();
             }
         } else if (NpcAIController.TryGet((int)id, out NpcAIController npc)) {
-            npc.ServerKnockDown(impulse, point);
+            knocked = npc.ServerKnockDown();
         }
+        if (knocked) RpcCharacterHitSound(point);
+    }
+
+    /// <summary>Son de choc joué au point d'impact (tous les clients) quand un personnage est renversé.</summary>
+    [ClientRpc]
+    private void RpcCharacterHitSound(Vector3 point) {
+        if (config != null && config.characterImpact != null)
+            AudioManager.Instance.PlayClip3D(config.characterImpact, point);
     }
 
     [Server]

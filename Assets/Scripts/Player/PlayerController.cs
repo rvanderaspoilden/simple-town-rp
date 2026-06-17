@@ -1039,15 +1039,18 @@ namespace Sim {
 
         // ── Renversement par véhicule (ragdoll) ──────────────────────────────────────
 
-        /// <summary>Renverse le joueur (ragdoll) côté serveur : pose l'état répliqué, diffuse
-        /// l'impulsion à tous les clients, programme la relève automatique. Sans dégâts (POC).</summary>
+        /// <summary>Renverse le joueur (ragdoll) côté serveur : pose l'état répliqué, déclenche
+        /// l'effondrement sur place sur tous les clients, programme la relève automatique. Pas de
+        /// projection ni de dégâts (POC). Renvoie vrai si le renversement vient de démarrer (faux si
+        /// déjà au sol ou mort) — l'appelant n'émet le son de choc qu'au renversement initial.</summary>
         [Server]
-        public void ServerKnockDown(Vector3 impulse, Vector3 point) {
-            if (this.isKnockedDown) return;                       // déjà au sol
-            if (this._playerState == PlayerState.DIED) return;    // pas de renversement si mort
+        public bool ServerKnockDown() {
+            if (this.isKnockedDown) return false;                 // déjà au sol
+            if (this._playerState == PlayerState.DIED) return false; // pas de renversement si mort
             this.isKnockedDown = true;
-            this.RpcKnockdown(impulse, point);
+            this.RpcKnockdown();
             Invoke(nameof(ServerRecoverKnockdown), KnockdownDuration);
+            return true;
         }
 
         [Server]
@@ -1055,10 +1058,10 @@ namespace Sim {
             this.isKnockedDown = false;
         }
 
-        /// <summary>Impulsion one-shot du renversement, appliquée localement sur chaque client.</summary>
+        /// <summary>Déclenche l'effondrement ragdoll sur place, localement sur chaque client.</summary>
         [ClientRpc]
-        private void RpcKnockdown(Vector3 impulse, Vector3 point) {
-            if (this.ragdoll != null) this.ragdoll.EnableRagdoll(impulse, point);
+        private void RpcKnockdown() {
+            if (this.ragdoll != null) this.ragdoll.EnableRagdoll();
         }
 
         /// <summary>Réplique l'entrée/sortie de ragdoll sur tous les clients. À l'entrée : ragdoll
@@ -1066,7 +1069,7 @@ namespace Sim {
         /// place (racine repositionnée sur les hanches, échantillonnée sur le NavMesh) puis Idle.</summary>
         private void OnKnockdownChanged(bool _, bool now) {
             if (now) {
-                if (this.ragdoll != null) this.ragdoll.EnableRagdoll(Vector3.zero, transform.position);
+                if (this.ragdoll != null) this.ragdoll.EnableRagdoll();
                 if (isLocalPlayer && this.stateMachine != null) this.stateMachine.SetState(knockdownState);
             } else {
                 if (isLocalPlayer) {
