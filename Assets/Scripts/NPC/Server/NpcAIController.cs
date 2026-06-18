@@ -250,15 +250,23 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         }
     }
 
-    /// <summary>Renverse ce NPC (ragdoll) : pause l'IA ~3 s, stoppe l'agent, diffuse l'état
+    /// <summary>Renverse ce NPC (ragdoll) : pause l'IA ~3 s, DÉSACTIVE l'agent, diffuse l'état
     /// KnockedDown aux clients (effondrement sur place, sans projection). Appelé par le serveur
     /// (relais du hit véhicule). Renvoie vrai si le renversement vient de démarrer (faux si déjà au
-    /// sol) — l'appelant n'émet le son de choc qu'au renversement initial.</summary>
+    /// sol) — l'appelant n'émet le son de choc qu'au renversement initial.
+    ///
+    /// CRITIQUE : on DÉSACTIVE l'agent (pas juste ResetPath) pour que le NavMeshObstacle du véhicule
+    /// (carving=true) ne POUSSE pas le transform du NPC quand le véhicule s'arrête sur le corps. Sans
+    /// ça, l'agent NPC se fait dégager hors de la zone carved, déplace transform.position, les
+    /// transforms des os du ragdoll héritent du mouvement parent — alors que leurs Rigidbody ne
+    /// suivent pas — les joints sont étirés chaque frame → corrections violentes → squelette en folie.
+    /// L'agent est réactivé automatiquement à la fin du knockdown (cf. Update).</summary>
     public bool ServerKnockDown() {
         if (!NetworkServer.active || _npcId <= 0) return false;
         if (_knockdownUntil > 0f && Time.time < _knockdownUntil) return false; // déjà au sol
         _knockdownUntil = Time.time + KnockdownDuration;
         StopAgent();
+        SetAgentEnabled(false);
         NpcServerManager.Instance.Knockdown(_npcId);
         return true;
     }
@@ -282,6 +290,14 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
                 _lastNotifiedState = NpcStateType.KnockedDown;
             }
             return;
+        }
+
+        // Sortie de knockdown : si le timer a expiré ET qu'il avait été armé, on réactive l'agent
+        // désactivé par ServerKnockDown. Le test `_knockdownUntil > 0` agit comme un edge-trigger ;
+        // on remet à -1 pour ne pas ré-enabler à chaque frame.
+        if (_knockdownUntil > 0f) {
+            _knockdownUntil = -1f;
+            SetAgentEnabled(true);
         }
 
         _stateMachine.Tick();

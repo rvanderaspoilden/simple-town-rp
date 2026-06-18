@@ -50,7 +50,7 @@ namespace Sim.Missions {
         private void OnJobNotification(MissionNotificationMessage msg) {
             if (NotificationManager.Instance == null) return;
             if (string.IsNullOrEmpty(msg.text)) return;
-            NotificationManager.Instance.AddNotification(msg.text, NotificationType.JOB);
+            NotificationManager.Instance.AddNotification(msg.text, PhoneAppIds.Career);
         }
 
         private void OnRewardNotification(MissionRewardNotificationMessage msg) {
@@ -58,7 +58,7 @@ namespace Sim.Missions {
             var text = string.IsNullOrEmpty(msg.label)
                 ? $"+{msg.amount} €"
                 : $"{msg.label} : +{msg.amount} €";
-            NotificationManager.Instance.AddNotification(text, NotificationType.BANK);
+            NotificationManager.Instance.AddNotification(text, PhoneAppIds.Bank);
         }
 
         public void ClearAll() {

@@ -420,6 +420,32 @@ namespace Sim {
         public UnityWebRequest RetrieveLedgerRequest(string characterId) =>
             BuildJsonRequest($"{this.uri}/characters/{characterId}/ledger", "GET", null);
 
+        public static event Action<List<LedgerEntryData>> OnLedgerRetrieved;
+
+        /// <summary>Public consumer of <see cref="RetrieveLedgerRequest"/>: fires
+        /// <see cref="OnLedgerRetrieved"/> on success. Backend returns a bare JSON
+        /// array — Newtonsoft handles it natively, no envelope required.</summary>
+        public void RetrieveLedger(string characterId) {
+            StartCoroutine(RetrieveLedgerCoroutine(characterId));
+        }
+
+        private IEnumerator RetrieveLedgerCoroutine(string characterId) {
+            UnityWebRequest request = RetrieveLedgerRequest(characterId);
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 200) {
+                List<LedgerEntryData> entries = null;
+                try {
+                    entries = JsonConvert.DeserializeObject<List<LedgerEntryData>>(request.downloadHandler.text);
+                } catch (Exception e) {
+                    Debug.LogError($"[ApiManager] RetrieveLedger parse failed: {e.Message}");
+                }
+                OnLedgerRetrieved?.Invoke(entries ?? new List<LedgerEntryData>());
+            } else {
+                Debug.LogError($"[ApiManager] RetrieveLedger failed code={request.responseCode}");
+            }
+        }
+
         // ── Constellation ───────────────────────────────────────────────────
 
         public static event Action<ConstellationStateData> OnConstellationRetrieved;

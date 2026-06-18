@@ -20,10 +20,28 @@ public class PhoneApplicationButton : MonoBehaviour, IPointerClickHandler, IPoin
     [SerializeField]
     private bool opensConstellation;
 
+    [Tooltip("Image used as the home-screen tile. The sprite is mirrored " +
+             "from the linked PhoneApplicationUI.Icon (single source of truth).")]
     [SerializeField]
     private Image icon;
 
     public PhoneApplicationUI Application => application;
+
+    private void Awake() {
+        SyncIconFromApp();
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate() {
+        SyncIconFromApp();
+    }
+#endif
+
+    private void SyncIconFromApp() {
+        if (icon == null || application == null) return;
+        Sprite appIcon = application.Icon;
+        if (appIcon != null) icon.sprite = appIcon;
+    }
 
     public void OnPointerClick(PointerEventData eventData) {
         HUDManager.Instance.PlaySound(clickSound, 1f);

@@ -31,10 +31,7 @@ MonoBehaviour:
   poseShape: 1
   gripPosition: {x: -0.025, y: 0.014, z: 0.019}
   gripEuler: {x: 0, y: 0, z: 241.5}
-  container:
-    slotCount: 0
-    acceptedTypes: 
-    acceptsProps: 0
+  maxStackSize: 5
   consumableType: 1
   impacts:
   - vitalNecessityType: 1

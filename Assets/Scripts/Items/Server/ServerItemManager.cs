@@ -74,6 +74,7 @@ public class ServerItemManager
         public int    EntityId;
         public int    ConfigId;
         public int    SlotIndex;
+        public int    Quantity = 1;   // taille de la pile (≥1). Mute par split/merge ; broadcasté via S2C_ContainerItem.Quantity.
         public string ItemUuid;       // pour un prop emballé (IsProp) : l'UUID du PROP (table props)
         public int    Version;
         public bool   IsProp;         // true = meuble emballé (ligne props déplacée), pas un item
@@ -134,6 +135,7 @@ public class ServerItemManager
         public int    EntityId;
         public int    ConfigId;
         public int    SlotIndex;
+        public int    Quantity = 1;   // invariant: 1 (poche = 1 item/slot, jamais de stack). Kept pour symétrie.
         public string ItemUuid;
         public int    Version;
     }
@@ -628,7 +630,7 @@ public class ServerItemManager
     // une grille (SlotCount > 0). Règle appliquée à chaque point de placement (déplacement,
     // swap, emballage de meuble).
     private static bool IsStorageItem(ItemConfig cfg)
-        => cfg != null && cfg.Container != null && cfg.Container.IsContainer;
+        => ItemContainerConfig.Of(cfg)?.IsContainer == true;
 
     /// <summary>Le conteneur (item ou prop) identifié par <paramref name="uuid"/> est-il VIDE
     /// (sa place ne contient aucun item ni meuble) ? Place inexistante = vide. Async (lecture DB),
@@ -673,10 +675,11 @@ public class ServerItemManager
             if (eid == -1) continue;
             if (!TryGetEntity(roomId, eid, out var e)) continue;
             var cfg = DatabaseManager.GetItemConfigById(e.ItemConfigId);
-            if (cfg == null || cfg.Container == null || !cfg.Container.IsContainer) continue;
+            var containerCfg = ItemContainerConfig.Of(cfg);
+            if (containerCfg == null || !containerCfg.IsContainer) continue;
             var br = GetBridge(eid);
             if (br == null || string.IsNullOrEmpty(br.Uuid)) continue;
-            pkgEntityId = eid; pkgUuid = br.Uuid; pkgCfg = cfg.Container; return true;
+            pkgEntityId = eid; pkgUuid = br.Uuid; pkgCfg = containerCfg; return true;
         }
         return false;
     }
@@ -776,6 +779,7 @@ public class ServerItemManager
             int sid = _nextEntityId++;
             session.ItemsByEntityId[sid] = new ContainerSessionItem {
                 EntityId = sid, ConfigId = configId, SlotIndex = freeSlot, ItemUuid = itemUuid, Version = version,
+                Quantity = 1,
             };
             session.SlotToEntityId[freeSlot] = sid;
             if (!string.IsNullOrEmpty(itemUuid))
@@ -890,7 +894,7 @@ public class ServerItemManager
         // place "item_container:{uuid}" → on le spawn directement en main (DB-backed),
         // pas en item monde éphémère.
         ItemConfig cfg = DatabaseManager.GetItemConfigById(msg.ItemConfigId);
-        if (cfg != null && cfg.Container != null && cfg.Container.IsContainer) {
+        if (ItemContainerConfig.Of(cfg)?.IsContainer == true) {
             int handEntity = SpawnItemInHand(roomId, msg.ItemConfigId, conn, cfg, persistent: true);
             GameLogger.Network.Info("Package AdminSpawn entity={EntityId} configId={ItemConfigId} room={RoomId} conn={ConnId}",
                 handEntity, msg.ItemConfigId, roomId, conn.connectionId);
@@ -1009,6 +1013,19 @@ public class ServerItemManager
         // handles voluntary teleport AND disconnect (PlayerRoomTracker.OnDisconnect
         // calls LeaveRoom which fires this event).
         DespawnHeldItemsKeepingDb(conn.identity.netId, roomId);
+
+        // Force the leaver to forget every other item in the room (items held by
+        // remote players, ground items). Without this the client keeps stale
+        // _items entries for those entityIds; on re-entry SendRoomSnapshot resends
+        // the same entityIds and OnSpawnItem's dedup guard silently drops them,
+        // leaving the leaver unable to see those held items until their entityId
+        // changes (i.e. until the holder themselves leaves a room and re-spawns
+        // them under a fresh id).
+        if (_rooms.TryGetValue(roomId, out var roomItems)) {
+            foreach (var entity in roomItems.Values) {
+                conn.Send(new S2C_DestroyItem { EntityId = entity.EntityId, RoomId = roomId });
+            }
+        }
     }
 
     public void OnPlayerDisconnect(NetworkConnectionToClient conn)
@@ -1647,6 +1664,9 @@ public class ServerItemManager
     // désormais portées par ResolvePlace + les IPlaceContext concrets.
     private enum PlaceKind { Unknown, HandLeft, HandRight, Container, Pocket, ItemContainer }
 
+    private static bool IsHand(PlaceKind k) => k == PlaceKind.HandLeft || k == PlaceKind.HandRight;
+    private static bool IsContainerKind(PlaceKind k) => k == PlaceKind.Container || k == PlaceKind.ItemContainer;
+
     private static int ReadSlotIndex(Dictionary<string, object> stateData) {
         if (stateData == null || !stateData.TryGetValue("slotIndex", out var v) || v == null) return 0;
         if (v is long l) return (int)l;
@@ -1779,13 +1799,14 @@ public class ServerItemManager
             foreach (var it in stateData.items) {
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId = _nextEntityId++;
+                int qty = Mathf.Max(1, it.quantity);
                 session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
-                    ItemUuid = it.Id, Version = it.version,
+                    ItemUuid = it.Id, Version = it.version, Quantity = qty,
                 };
                 if (!session.SlotToEntityId.ContainsKey(slotIndex)) session.SlotToEntityId[slotIndex] = entityId;
                 snapshot.Add(new S2C_ContainerItem {
-                    EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
+                    EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex, Quantity = qty,
                 });
                 _bridges[entityId] = new ItemDbBridge {
                     Uuid = it.Id, Version = it.version, PlaceId = placeId,
@@ -1843,7 +1864,8 @@ public class ServerItemManager
             return;
         }
         var itemCfg = DatabaseManager.GetItemConfigById(entity.ItemConfigId);
-        if (itemCfg == null || itemCfg.Container == null || !itemCfg.Container.IsContainer) {
+        var itemContainerCfg = ItemContainerConfig.Of(itemCfg);
+        if (itemContainerCfg == null || !itemContainerCfg.IsContainer) {
             conn.Send(new S2C_ItemContainerOpenFailed { EntityId = msg.EntityId, ErrorMessage = "Pas un conteneur" });
             return;
         }
@@ -1856,7 +1878,7 @@ public class ServerItemManager
         }
 
         ApiManager.Instance?.StartCoroutine(
-            OpenItemContainerCoroutine(conn, netId, msg.EntityId, bridge.Uuid, itemCfg.Container));
+            OpenItemContainerCoroutine(conn, netId, msg.EntityId, bridge.Uuid, itemContainerCfg));
     }
 
     private IEnumerator OpenItemContainerCoroutine(NetworkConnectionToClient conn, uint netId,
@@ -1911,13 +1933,14 @@ public class ServerItemManager
             foreach (var it in stateData.items) {
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId = _nextEntityId++;
+                int qty = Mathf.Max(1, it.quantity);
                 session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
-                    ItemUuid = it.Id, Version = it.version,
+                    ItemUuid = it.Id, Version = it.version, Quantity = qty,
                 };
                 if (!session.SlotToEntityId.ContainsKey(slotIndex)) session.SlotToEntityId[slotIndex] = entityId;
                 snapshot.Add(new S2C_ContainerItem {
-                    EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
+                    EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex, Quantity = qty,
                 });
                 _bridges[entityId] = new ItemDbBridge {
                     Uuid = it.Id, Version = it.version, PlaceId = placeId,
@@ -1934,11 +1957,11 @@ public class ServerItemManager
                 session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                     EntityId = entityId, ConfigId = 0, SlotIndex = slotIndex,
                     ItemUuid = p.Id, Version = p.version, IsProp = true,
-                    PropConfigId = p.configId, PropPresetId = p.presetIndex,
+                    PropConfigId = p.configId, PropPresetId = p.presetIndex, Quantity = 1,
                 };
                 if (!session.SlotToEntityId.ContainsKey(slotIndex)) session.SlotToEntityId[slotIndex] = entityId;
                 snapshot.Add(new S2C_ContainerItem {
-                    EntityId = entityId, ConfigId = 0, SlotIndex = slotIndex,
+                    EntityId = entityId, ConfigId = 0, SlotIndex = slotIndex, Quantity = 1,
                     PropConfigId = p.configId, PropPresetId = p.presetIndex,
                 });
             }
@@ -2083,7 +2106,7 @@ public class ServerItemManager
         if (conn != null && conn.isReady) {
             conn.Send(new ToastNotificationMessage {
                 text       = "Meuble emballé",
-                typeByte   = (byte)NotificationType.JOB,
+                appId      = PhoneAppIds.Career,
                 worldToast = true,
                 kindByte   = (byte)ToastKind.Success,
             });
@@ -2095,7 +2118,7 @@ public class ServerItemManager
             session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                 EntityId = entityId, ConfigId = 0, SlotIndex = freeSlot,
                 ItemUuid = propUuid, Version = newVersion, IsProp = true,
-                PropConfigId = propConfigId, PropPresetId = presetId,
+                PropConfigId = propConfigId, PropPresetId = presetId, Quantity = 1,
             };
             session.SlotToEntityId[freeSlot] = entityId;
             SendItemContainerSnapshot(conn, session);
@@ -2219,7 +2242,7 @@ public class ServerItemManager
         if (roomId == null) return;
         var player = conn.identity.GetComponent<Sim.PlayerController>();
 
-        string uuid = null; int configId = 0, version = 1, slotIndex = -1;
+        string uuid = null; int configId = 0, version = 1, slotIndex = -1, srcQty = 1;
         ItemContainerSession contSession = null; PocketSession pocketSession = null;
         bool fromContainer = false, fromPocket = false;
 
@@ -2234,11 +2257,13 @@ public class ServerItemManager
                 return;
             }
             uuid = ci.ItemUuid; configId = ci.ConfigId; version = ci.Version; slotIndex = ci.SlotIndex;
+            srcQty = Mathf.Max(1, ci.Quantity);
             fromContainer = true;
         }
         else if (_pocketByPlayer.TryGetValue(netId, out pocketSession)
             && pocketSession.ItemsByEntityId.TryGetValue(msg.EntityId, out var pi)) {
             uuid = pi.ItemUuid; configId = pi.ConfigId; version = pi.Version; slotIndex = pi.SlotIndex;
+            srcQty = 1; // invariant poche
             fromPocket = true;
         }
         else return; // introuvable
@@ -2251,6 +2276,22 @@ public class ServerItemManager
 
         // Item-monde runtime au sol.
         int worldEntity = SpawnItem(roomId, configId, dropPos, Quaternion.identity);
+
+        ItemConfig cfg = DatabaseManager.GetItemConfigById(configId);
+        string worldPlaceId = ResolveWorldPlaceId(conn, roomId);
+        bool toPersist = cfg != null && cfg.ToPersist && !string.IsNullOrEmpty(worldPlaceId);
+
+        // Source pile (qty>1) : on lâche 1 unité — la pile reste en place et la ligne DB
+        // garde son UUID. On crée une NOUVELLE ligne monde (POST qty=1) + PATCH source -=1.
+        // Invariant world items = qty 1 préservé.
+        if (srcQty > 1 && fromContainer) {
+            ApiManager.Instance?.StartCoroutine(SplitDropFromContainerCoroutine(
+                conn, contSession, msg.EntityId, configId, uuid, version, srcQty,
+                worldEntity, worldPlaceId, dropPos, toPersist));
+            GameLogger.Network.Info("DropFromInventory split-1 srcQty={Qty} uuid={Uuid} configId={Config} netId={NetId}",
+                srcQty, uuid, configId, netId);
+            return;
+        }
 
         // Retire l'entrée de la session source + bridge + snapshot.
         if (fromContainer) {
@@ -2265,14 +2306,67 @@ public class ServerItemManager
             SendPocketSnapshot(conn, pocketSession);
         }
 
-        ItemConfig cfg = DatabaseManager.GetItemConfigById(configId);
-        string worldPlaceId = ResolveWorldPlaceId(conn, roomId);
-        bool toPersist = cfg != null && cfg.ToPersist && !string.IsNullOrEmpty(worldPlaceId);
         ApiManager.Instance?.StartCoroutine(
             DropFromInventoryCoroutine(worldEntity, uuid, version, worldPlaceId, dropPos, toPersist));
 
         GameLogger.Network.Info("DropFromInventory uuid={Uuid} configId={Config} toPersist={Persist} netId={NetId}",
             uuid, configId, toPersist, netId);
+    }
+
+    /// <summary>Split-1 du flow "lâcher au sol" : la pile source garde son UUID et perd 1 unité ;
+    /// une nouvelle ligne monde qty=1 est créée (POST si persistant, sinon item-monde éphémère).
+    /// Rollback symétrique en cas d'échec.</summary>
+    private IEnumerator SplitDropFromContainerCoroutine(
+        NetworkConnectionToClient conn, ItemContainerSession contSession,
+        int srcEntityId, int configId, string srcUuid, int srcVersion, int srcQty,
+        int worldEntity, string worldPlaceId, Vector3 dropPos, bool toPersist) {
+        // 1. Si persistant : POST world item qty=1, sinon item-monde éphémère.
+        string newWorldUuid = null; int newWorldVersion = 1;
+        if (toPersist) {
+            var createBody = new CreateItemBody {
+                placeId  = worldPlaceId,
+                configId = configId,
+                quantity = 1,
+                position = new Vector3Body(dropPos),
+                rotation = new Vector3Body(Vector3.zero),
+            };
+            UnityWebRequest createReq = ApiManager.Instance.CreateItemRequest(createBody);
+            yield return createReq.SendWebRequest();
+            if (createReq.responseCode < 200 || createReq.responseCode >= 300) {
+                Debug.LogWarning($"[ServerItemManager] SplitDrop POST world failed code={createReq.responseCode} — abort, despawn runtime");
+                DespawnItem(PlayerRoomTracker.Instance.GetRoom(conn), worldEntity);
+                yield break;
+            }
+            try { var it = JsonConvert.DeserializeObject<ItemJson>(createReq.downloadHandler.text); if (it != null) { newWorldUuid = it.Id; newWorldVersion = it.version; } } catch { }
+        }
+
+        // 2. PATCH source qty -=1.
+        var patchBody = new UpdateItemBody {
+            expectedVersion = srcVersion,
+            quantity = srcQty - 1,
+        };
+        UnityWebRequest patchReq = ApiManager.Instance.UpdateItemRequest(srcUuid, patchBody);
+        yield return patchReq.SendWebRequest();
+        if (patchReq.responseCode < 200 || patchReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] SplitDrop PATCH src failed code={patchReq.responseCode} — rollback world row + despawn");
+            if (!string.IsNullOrEmpty(newWorldUuid))
+                yield return ApiManager.Instance.DeleteItemRequest(newWorldUuid).SendWebRequest();
+            DespawnItem(PlayerRoomTracker.Instance.GetRoom(conn), worldEntity);
+            yield break;
+        }
+        int srcNewVersion = srcVersion + 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(patchReq.downloadHandler.text); if (it != null) srcNewVersion = it.version; } catch { }
+
+        // 3. Met à jour la session source (qty-=1, version OCC) et bridge la cible monde.
+        if (contSession.ItemsByEntityId.TryGetValue(srcEntityId, out var si)) {
+            si.Quantity = Mathf.Max(1, srcQty - 1);
+            si.Version = srcNewVersion;
+            if (_bridges.TryGetValue(srcEntityId, out var br)) br.Version = srcNewVersion;
+        }
+        if (toPersist && !string.IsNullOrEmpty(newWorldUuid))
+            AssociateUuid(worldEntity, newWorldUuid, newWorldVersion, worldPlaceId);
+
+        SendItemContainerSnapshot(conn, contSession);
     }
 
     private IEnumerator DropFromInventoryCoroutine(int worldEntity, string uuid, int version,
@@ -2389,12 +2483,49 @@ public class ServerItemManager
             PushSnapshotsFor(conn, fromCtx, toCtx);
             return;
         }
-        if (!toCtx.IsSlotAvailableFor(msg.ToSlotIndex, msg.EntityId)) {
+
+        // ── Détection d'un merge de pile sur la cible ─────────────────────────
+        // Si le slot cible contient une pile de MÊME config avec maxStackSize>1, on bypass
+        // IsSlotAvailableFor (l'occupation est légitime) puis on dispatch MergeIntoTarget.
+        // Si la pile est pleine → refus "Slot plein".
+        bool mergeable = false;
+        int mergeTargetEntityId = -1, mergeTargetVersion = 0, mergeTargetQty = 0, mergeMaxStack = 1;
+        string mergeTargetUuid = null;
+        if (toCtx is ContainerPlaceContext cpc) {
+            mergeable = cpc.TryResolveStackMerge(msg.ToSlotIndex, itemCtx.ConfigId,
+                out mergeTargetEntityId, out mergeTargetUuid, out mergeTargetVersion, out mergeTargetQty, out mergeMaxStack);
+        } else if (toCtx is ItemContainerPlaceContext icpc) {
+            mergeable = icpc.TryResolveStackMerge(msg.ToSlotIndex, itemCtx.ConfigId,
+                out mergeTargetEntityId, out mergeTargetUuid, out mergeTargetVersion, out mergeTargetQty, out mergeMaxStack);
+        }
+        // Un item ne se merge pas avec lui-même (déposer le draggable sur son propre slot).
+        if (mergeable && mergeTargetEntityId == msg.EntityId) mergeable = false;
+
+        if (!mergeable && !toCtx.IsSlotAvailableFor(msg.ToSlotIndex, msg.EntityId)) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Slot occupé" });
             PushSnapshotsFor(conn, fromCtx, toCtx);
             return;
         }
+        if (mergeable && mergeTargetQty >= mergeMaxStack) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = InventoryToasts.SlotFull });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
+            return;
+        }
 
+        // Dispatch stratégie :
+        //   - mergeable → MergeIntoTargetCoroutine (PATCH target += k ; PATCH source -=k OU DELETE+TearDown)
+        //   - source pile (qty>1) + cible Hand/Pocket → SplitOneToTargetCoroutine (POST qty=1 ; PATCH source -=1)
+        //   - sinon → MoveItemCoroutine (PlainMove, préserve quantity)
+        if (mergeable) {
+            ApiManager.Instance?.StartCoroutine(MergeIntoTargetCoroutine(conn, msg, itemCtx, fromCtx, toCtx,
+                mergeTargetEntityId, mergeTargetUuid, mergeTargetVersion, mergeTargetQty, mergeMaxStack));
+            return;
+        }
+        bool toIsHandOrPocket = IsHand(toCtx.Kind) || toCtx.Kind == PlaceKind.Pocket;
+        if (itemCtx.Quantity > 1 && toIsHandOrPocket) {
+            ApiManager.Instance?.StartCoroutine(SplitOneToTargetCoroutine(conn, msg, itemCtx, fromCtx, toCtx, charId));
+            return;
+        }
         ApiManager.Instance?.StartCoroutine(MoveItemCoroutine(conn, msg, itemCtx, fromCtx, toCtx));
     }
 
@@ -2467,6 +2598,178 @@ public class ServerItemManager
         PropagateContainerUpdateToOtherSubscribers(conn.identity.netId, fromCtx, toCtx);
     }
 
+    // ── Split 1 : extraction d'une unité d'une pile vers une main / poche ────
+    // Source = container/itemContainer avec qty>1 ; cible = Hand ou Pocket.
+    // Crée une nouvelle ligne DB qty=1 à la cible (nouveau UUID), puis PATCH la source
+    // pour décrémenter sa quantité. Rollback : DELETE le nouveau row si PATCH source rate.
+    // Aucune modification du slot/uuid de la source — la pile reste ancrée.
+    private IEnumerator SplitOneToTargetCoroutine(NetworkConnectionToClient conn, C2S_MoveItem msg,
+        ItemCtx itemCtx, IPlaceContext fromCtx, IPlaceContext toCtx, string charId)
+    {
+        if (string.IsNullOrEmpty(itemCtx.ItemUuid)) {
+            // Pile éphémère = inattendu (les piles vivent en DB). Refus défensif.
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Pile non persistée" });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
+            yield break;
+        }
+
+        // 1. POST /items qty=1 sur la cible.
+        var createBody = new CreateItemBody {
+            placeId  = toCtx.PlaceId,
+            configId = itemCtx.ConfigId,
+            quantity = 1,
+            stateData = toCtx.HasSlotIndex
+                ? new Dictionary<string, object> { { "slotIndex", msg.ToSlotIndex } }
+                : null,
+            ownedBy = charId,
+        };
+        UnityWebRequest createReq = ApiManager.Instance.CreateItemRequest(createBody);
+        yield return createReq.SendWebRequest();
+        if (createReq.responseCode < 200 || createReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] SplitOne POST failed code={createReq.responseCode}");
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = $"Échec split ({createReq.responseCode})" });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
+            yield break;
+        }
+        string newUuid = null; int newVersion = 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(createReq.downloadHandler.text); if (it != null) { newUuid = it.Id; newVersion = it.version; } }
+        catch { }
+        if (string.IsNullOrEmpty(newUuid)) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Split sans uuid" });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
+            yield break;
+        }
+
+        // 2. PATCH source qty -=1 (place inchangée).
+        var patchBody = new UpdateItemBody {
+            expectedVersion = itemCtx.Version,
+            quantity = itemCtx.Quantity - 1,
+        };
+        UnityWebRequest patchReq = ApiManager.Instance.UpdateItemRequest(itemCtx.ItemUuid, patchBody);
+        yield return patchReq.SendWebRequest();
+        if (patchReq.responseCode < 200 || patchReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] SplitOne PATCH source failed code={patchReq.responseCode} — rollback");
+            yield return ApiManager.Instance.DeleteItemRequest(newUuid).SendWebRequest();
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = $"Échec split src ({patchReq.responseCode})" });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
+            yield break;
+        }
+        int srcNewVersion = itemCtx.Version + 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(patchReq.downloadHandler.text); if (it != null) srcNewVersion = it.version; } catch { }
+
+        // 3. Décrémente la quantité de la pile source EN PLACE (pas de tear-down) +
+        //    alloue un entityId neuf pour la cible et Install.
+        if (fromCtx is ContainerPlaceContext fromCpc)
+            fromCpc.UpdateQuantity(msg.EntityId, itemCtx.Quantity - 1, srcNewVersion);
+        else if (fromCtx is ItemContainerPlaceContext fromIcpc)
+            fromIcpc.UpdateQuantity(msg.EntityId, itemCtx.Quantity - 1, srcNewVersion);
+
+        int newEntityId = _nextEntityId++;
+        var newCtx = new ItemCtx {
+            ConfigId = itemCtx.ConfigId, ItemUuid = newUuid, Version = newVersion, Quantity = 1,
+        };
+        toCtx.Install(newEntityId, newCtx, msg.ToSlotIndex, newVersion);
+
+        conn.Send(new S2C_MoveItemResult { Success = true, EntityId = msg.EntityId });
+        PushSnapshotsFor(conn, fromCtx, toCtx);
+        PropagateContainerUpdateToOtherSubscribers(conn.identity.netId, fromCtx, toCtx);
+    }
+
+    // ── Merge dans une pile cible ────────────────────────────────────────────
+    // Source = main, poche, container ou itemContainer. Cible = pile (qty<max) de même config.
+    // Container→Container : transfère k = min(srcQty, max-tgtQty). Si source devient 0 → DELETE+TearDown.
+    // Hand/Pocket→Container : k=1. DELETE source si UUID (persistée) sinon juste TearDown (éphémère).
+    private IEnumerator MergeIntoTargetCoroutine(NetworkConnectionToClient conn, C2S_MoveItem msg,
+        ItemCtx itemCtx, IPlaceContext fromCtx, IPlaceContext toCtx,
+        int tgtEntityId, string tgtUuid, int tgtVersion, int tgtQty, int maxStack)
+    {
+        bool srcIsContainer = IsContainerKind(fromCtx.Kind);
+        int srcQty = srcIsContainer ? Mathf.Max(1, itemCtx.Quantity) : 1;
+        int k = Mathf.Min(srcQty, maxStack - tgtQty);
+        if (k <= 0) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = InventoryToasts.SlotFull });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
+            yield break;
+        }
+
+        // 1. PATCH target qty += k.
+        var tgtBody = new UpdateItemBody {
+            expectedVersion = tgtVersion,
+            quantity = tgtQty + k,
+        };
+        UnityWebRequest tgtReq = ApiManager.Instance.UpdateItemRequest(tgtUuid, tgtBody);
+        yield return tgtReq.SendWebRequest();
+        if (tgtReq.responseCode < 200 || tgtReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] Merge PATCH target failed code={tgtReq.responseCode}");
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = $"Échec merge ({tgtReq.responseCode})" });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
+            yield break;
+        }
+        int tgtNewVersion = tgtVersion + 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(tgtReq.downloadHandler.text); if (it != null) tgtNewVersion = it.version; } catch { }
+
+        // 2. Source : PATCH qty -=k OU DELETE si épuisé.
+        bool srcPersisted = !string.IsNullOrEmpty(itemCtx.ItemUuid);
+        bool srcExhausted = srcQty - k <= 0;
+        if (srcPersisted) {
+            if (srcExhausted) {
+                UnityWebRequest delReq = ApiManager.Instance.DeleteItemRequest(itemCtx.ItemUuid);
+                yield return delReq.SendWebRequest();
+                if (delReq.responseCode < 200 || delReq.responseCode >= 300) {
+                    Debug.LogWarning($"[ServerItemManager] Merge DELETE src failed code={delReq.responseCode} — rollback target");
+                    yield return RollbackTargetQuantity(tgtUuid, tgtNewVersion, tgtQty);
+                    conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Échec merge src" });
+                    PushSnapshotsFor(conn, fromCtx, toCtx);
+                    yield break;
+                }
+            } else {
+                var srcBody = new UpdateItemBody {
+                    expectedVersion = itemCtx.Version,
+                    quantity = srcQty - k,
+                };
+                UnityWebRequest srcReq = ApiManager.Instance.UpdateItemRequest(itemCtx.ItemUuid, srcBody);
+                yield return srcReq.SendWebRequest();
+                if (srcReq.responseCode < 200 || srcReq.responseCode >= 300) {
+                    Debug.LogWarning($"[ServerItemManager] Merge PATCH src failed code={srcReq.responseCode} — rollback target");
+                    yield return RollbackTargetQuantity(tgtUuid, tgtNewVersion, tgtQty);
+                    conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = $"Échec merge src ({srcReq.responseCode})" });
+                    PushSnapshotsFor(conn, fromCtx, toCtx);
+                    yield break;
+                }
+                int srcNewVersion = itemCtx.Version + 1;
+                try { var it = JsonConvert.DeserializeObject<ItemJson>(srcReq.downloadHandler.text); if (it != null) srcNewVersion = it.version; } catch { }
+                // Met à jour la session source in-place (pile partiellement vidée).
+                if (fromCtx is ContainerPlaceContext fromCpc)
+                    fromCpc.UpdateQuantity(msg.EntityId, srcQty - k, srcNewVersion);
+                else if (fromCtx is ItemContainerPlaceContext fromIcpc)
+                    fromIcpc.UpdateQuantity(msg.EntityId, srcQty - k, srcNewVersion);
+            }
+        }
+        // 3. Si la source est épuisée (ou main éphémère), tear-down de la source.
+        if (srcExhausted) fromCtx.TearDown(msg.EntityId);
+
+        // 4. Met à jour la quantité de la pile cible (session in-place).
+        if (toCtx is ContainerPlaceContext toCpc)
+            toCpc.UpdateQuantity(tgtEntityId, tgtQty + k, tgtNewVersion);
+        else if (toCtx is ItemContainerPlaceContext toIcpc)
+            toIcpc.UpdateQuantity(tgtEntityId, tgtQty + k, tgtNewVersion);
+
+        conn.Send(new S2C_MoveItemResult { Success = true, EntityId = msg.EntityId });
+        PushSnapshotsFor(conn, fromCtx, toCtx);
+        PropagateContainerUpdateToOtherSubscribers(conn.identity.netId, fromCtx, toCtx);
+    }
+
+    private IEnumerator RollbackTargetQuantity(string tgtUuid, int tgtCurrentVersion, int tgtOriginalQty) {
+        var body = new UpdateItemBody {
+            expectedVersion = tgtCurrentVersion,
+            quantity = tgtOriginalQty,
+        };
+        UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(tgtUuid, body);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300)
+            Debug.LogError($"[ServerItemManager] RollbackTargetQuantity FAILED code={req.responseCode} uuid={tgtUuid} — DB désynchronisée jusqu'au prochain snapshot");
+    }
+
     // ── Swap items (atomic two-PATCH) ────────────────────────────────────────
     // Pour hand↔container et container↔container (même placeId).
     // Le hand↔hand passe par C2S_RequestSwapHands (chemin existant).
@@ -2534,13 +2837,25 @@ public class ServerItemManager
         // refus en amont. Sinon SwapItemsCoroutine tente une PATCH avec un UUID null
         // qui foire avec une 4xx et le client voit un toast "Échec persistance A"
         // au lieu du vrai motif.
-        static bool IsHand(PlaceKind k) => k == PlaceKind.HandLeft || k == PlaceKind.HandRight;
         bool aEphemeralBadTarget = string.IsNullOrEmpty(itemA.ItemUuid) && !IsHand(ctxB.Kind);
         bool bEphemeralBadTarget = string.IsNullOrEmpty(itemB.ItemUuid) && !IsHand(ctxA.Kind);
         if (aEphemeralBadTarget || bEphemeralBadTarget) {
             int rejectedEntity = aEphemeralBadTarget ? msg.EntityIdA : msg.EntityIdB;
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = rejectedEntity,
                 ErrorMessage = InventoryToasts.NotStorable });
+            PushSnapshotsFor(conn, ctxA, ctxB);
+            return;
+        }
+
+        // Garde stack ↔ main : un swap impliquant une main et une pile (qty>1) est refusé
+        // (la main ne peut tenir qu'1 unité ; le split-1 est dispo via drag vers main libre).
+        // Idem pour main ↔ poche si jamais une pile y atterrissait par drift.
+        bool aIsHand = IsHand(ctxA.Kind), bIsHand = IsHand(ctxB.Kind);
+        bool aIsStack = itemA.Quantity > 1, bIsStack = itemB.Quantity > 1;
+        if ((aIsHand && bIsStack) || (bIsHand && aIsStack)) {
+            int rejectedEntity = aIsHand ? msg.EntityIdA : msg.EntityIdB;
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = rejectedEntity,
+                ErrorMessage = InventoryToasts.StackPickOneAtATime });
             PushSnapshotsFor(conn, ctxA, ctxB);
             return;
         }
@@ -2635,6 +2950,7 @@ public class ServerItemManager
         foreach (var it in session.ItemsByEntityId.Values) {
             items.Add(new S2C_ContainerItem {
                 EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
+                Quantity = Mathf.Max(1, it.Quantity),
             });
         }
         conn.Send(new S2C_ContainerOpened {
@@ -2652,6 +2968,7 @@ public class ServerItemManager
         foreach (var it in session.ItemsByEntityId.Values) {
             items.Add(new S2C_ContainerItem {
                 EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
+                Quantity = Mathf.Max(1, it.Quantity),
                 PropConfigId = it.IsProp ? it.PropConfigId : 0,
                 PropPresetId = it.IsProp ? it.PropPresetId : 0,
             });
@@ -2705,9 +3022,13 @@ public class ServerItemManager
             foreach (var it in state.items) {
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId  = _nextEntityId++;
+                // Invariant : la poche ne stocke jamais de stack. Clamp défensif + log si drift.
+                int dbQty = Mathf.Max(1, it.quantity);
+                if (dbQty > 1)
+                    Debug.LogWarning($"[ServerItemManager] Pocket item id={it.Id} cfg={it.configId} a quantity={dbQty}>1 en DB — clamp à 1 (invariant poche = 1/slot).");
                 session.ItemsByEntityId[entityId] = new PocketSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
-                    ItemUuid = it.Id, Version = it.version,
+                    ItemUuid = it.Id, Version = it.version, Quantity = 1,
                 };
                 if (!session.SlotToEntityId.ContainsKey(slotIndex))
                     session.SlotToEntityId[slotIndex] = entityId;
@@ -2729,6 +3050,7 @@ public class ServerItemManager
         foreach (var it in session.ItemsByEntityId.Values) {
             items.Add(new S2C_PocketItem {
                 EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
+                Quantity = Mathf.Max(1, it.Quantity),
             });
         }
         conn.Send(new S2C_PocketSync {
@@ -2764,6 +3086,7 @@ public class ServerItemManager
         public int    ConfigId;
         public string ItemUuid;
         public int    Version;
+        public int    Quantity;    // ≥1 ; pour Hand toujours 1 (invariant). Sert au dispatch stack (split-1, merge, refus swap).
     }
 
     private interface IPlaceContext {
@@ -2814,7 +3137,8 @@ public class ServerItemManager
             var bridge = _mgr.GetBridge(entityId);
             string uuid = bridge?.Uuid;
             int version = bridge?.Version ?? 0;
-            ctx = new ItemCtx { ConfigId = entity.ItemConfigId, ItemUuid = uuid, Version = version };
+            // Invariant : un item tenu en main = toujours 1 unité (pas de stack en main).
+            ctx = new ItemCtx { ConfigId = entity.ItemConfigId, ItemUuid = uuid, Version = version, Quantity = 1 };
             return true;
         }
 
@@ -2864,6 +3188,11 @@ public class ServerItemManager
         }
 
         public void Install(int entityId, ItemCtx ctx, int slotIndex, int newVersion) {
+            // Défense en profondeur : aucune main ne reçoit jamais une pile. Le dispatch
+            // de MoveItemCoroutine (SplitOneToTarget) construit un ItemCtx.Quantity=1 explicite.
+            if (ctx.Quantity != 1) {
+                Debug.LogWarning($"[ServerItemManager] HandPlaceContext.Install reçu Quantity={ctx.Quantity} (attendu 1) — clamp à 1.");
+            }
             var entity = new ItemEntity {
                 EntityId = entityId, RoomId = _roomId, ItemConfigId = ctx.ConfigId,
                 Position = _conn.identity.transform.position, Rotation = Quaternion.identity,
@@ -2908,7 +3237,7 @@ public class ServerItemManager
             if (declaredSlot >= 0 && si.SlotIndex != declaredSlot) {
                 err = "Slot conteneur incohérent"; return false;
             }
-            ctx = new ItemCtx { ConfigId = si.ConfigId, ItemUuid = si.ItemUuid, Version = si.Version };
+            ctx = new ItemCtx { ConfigId = si.ConfigId, ItemUuid = si.ItemUuid, Version = si.Version, Quantity = Mathf.Max(1, si.Quantity) };
             return true;
         }
 
@@ -2931,6 +3260,27 @@ public class ServerItemManager
             return occ == entityId;
         }
 
+        /// <summary>Renvoie true si le slot cible est occupé par une pile de même config avec
+        /// place restante (qty &lt; maxStackSize). Utilisé par MoveItemCoroutine pour distinguer
+        /// MergeIntoTarget d'un swap classique.</summary>
+        public bool TryResolveStackMerge(int slotIndex, int incomingConfigId,
+            out int targetEntityId, out string targetUuid, out int targetVersion,
+            out int targetQty, out int maxStackSize) {
+            targetEntityId = -1; targetUuid = null; targetVersion = 0; targetQty = 0; maxStackSize = 1;
+            if (!_session.SlotToEntityId.TryGetValue(slotIndex, out int occ)) return false;
+            if (!_session.ItemsByEntityId.TryGetValue(occ, out var si)) return false;
+            if (si.IsProp || si.ConfigId != incomingConfigId) return false;
+            var cfg = DatabaseManager.GetItemConfigById(si.ConfigId);
+            int max = cfg != null ? cfg.MaxStackSize : 1;
+            if (max <= 1) return false;
+            if (si.Quantity >= max) { // pile pleine — merge refusé, mais le caller distingue ce cas
+                targetEntityId = occ; targetUuid = si.ItemUuid; targetVersion = si.Version;
+                targetQty = si.Quantity; maxStackSize = max; return true;
+            }
+            targetEntityId = occ; targetUuid = si.ItemUuid; targetVersion = si.Version;
+            targetQty = si.Quantity; maxStackSize = max; return true;
+        }
+
         public void TearDown(int entityId) {
             if (!_session.ItemsByEntityId.TryGetValue(entityId, out var old)) return;
             _session.ItemsByEntityId.Remove(entityId);
@@ -2941,10 +3291,19 @@ public class ServerItemManager
         public void Install(int entityId, ItemCtx ctx, int slotIndex, int newVersion) {
             _session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                 EntityId = entityId, ConfigId = ctx.ConfigId, SlotIndex = slotIndex,
-                ItemUuid = ctx.ItemUuid, Version = newVersion,
+                ItemUuid = ctx.ItemUuid, Version = newVersion, Quantity = Mathf.Max(1, ctx.Quantity),
             };
             _session.SlotToEntityId[slotIndex] = entityId;
             _mgr._bridges[entityId] = new ItemDbBridge { Uuid = ctx.ItemUuid, Version = newVersion, PlaceId = _session.PlaceId };
+        }
+
+        /// <summary>Met à jour la quantité (et version OCC) d'une pile existante en place sans
+        /// déloger l'entityId. Utilisé après PATCH split/merge serveur-side.</summary>
+        public void UpdateQuantity(int entityId, int newQuantity, int newVersion) {
+            if (!_session.ItemsByEntityId.TryGetValue(entityId, out var si)) return;
+            si.Quantity = Mathf.Max(1, newQuantity);
+            si.Version = newVersion;
+            if (_mgr._bridges.TryGetValue(entityId, out var br)) br.Version = newVersion;
         }
     }
 
@@ -2971,7 +3330,7 @@ public class ServerItemManager
             if (declaredSlot >= 0 && si.SlotIndex != declaredSlot) {
                 err = "Slot package incohérent"; return false;
             }
-            ctx = new ItemCtx { ConfigId = si.ConfigId, ItemUuid = si.ItemUuid, Version = si.Version };
+            ctx = new ItemCtx { ConfigId = si.ConfigId, ItemUuid = si.ItemUuid, Version = si.Version, Quantity = Mathf.Max(1, si.Quantity) };
             return true;
         }
 
@@ -2994,6 +3353,21 @@ public class ServerItemManager
             return occ == entityId;
         }
 
+        /// <summary>Identique à <see cref="ContainerPlaceContext.TryResolveStackMerge"/>.</summary>
+        public bool TryResolveStackMerge(int slotIndex, int incomingConfigId,
+            out int targetEntityId, out string targetUuid, out int targetVersion,
+            out int targetQty, out int maxStackSize) {
+            targetEntityId = -1; targetUuid = null; targetVersion = 0; targetQty = 0; maxStackSize = 1;
+            if (!_session.SlotToEntityId.TryGetValue(slotIndex, out int occ)) return false;
+            if (!_session.ItemsByEntityId.TryGetValue(occ, out var si)) return false;
+            if (si.IsProp || si.ConfigId != incomingConfigId) return false;
+            var cfg = DatabaseManager.GetItemConfigById(si.ConfigId);
+            int max = cfg != null ? cfg.MaxStackSize : 1;
+            if (max <= 1) return false;
+            targetEntityId = occ; targetUuid = si.ItemUuid; targetVersion = si.Version;
+            targetQty = si.Quantity; maxStackSize = max; return true;
+        }
+
         public void TearDown(int entityId) {
             if (!_session.ItemsByEntityId.TryGetValue(entityId, out var old)) return;
             _session.ItemsByEntityId.Remove(entityId);
@@ -3004,10 +3378,18 @@ public class ServerItemManager
         public void Install(int entityId, ItemCtx ctx, int slotIndex, int newVersion) {
             _session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                 EntityId = entityId, ConfigId = ctx.ConfigId, SlotIndex = slotIndex,
-                ItemUuid = ctx.ItemUuid, Version = newVersion,
+                ItemUuid = ctx.ItemUuid, Version = newVersion, Quantity = Mathf.Max(1, ctx.Quantity),
             };
             _session.SlotToEntityId[slotIndex] = entityId;
             _mgr._bridges[entityId] = new ItemDbBridge { Uuid = ctx.ItemUuid, Version = newVersion, PlaceId = _session.PlaceId };
+        }
+
+        /// <summary>Met à jour la quantité (et version OCC) d'une pile existante.</summary>
+        public void UpdateQuantity(int entityId, int newQuantity, int newVersion) {
+            if (!_session.ItemsByEntityId.TryGetValue(entityId, out var si)) return;
+            si.Quantity = Mathf.Max(1, newQuantity);
+            si.Version = newVersion;
+            if (_mgr._bridges.TryGetValue(entityId, out var br)) br.Version = newVersion;
         }
     }
 
@@ -3032,7 +3414,8 @@ public class ServerItemManager
             if (declaredSlot >= 0 && pi.SlotIndex != declaredSlot) {
                 err = "Slot poche incohérent"; return false;
             }
-            ctx = new ItemCtx { ConfigId = pi.ConfigId, ItemUuid = pi.ItemUuid, Version = pi.Version };
+            // Invariant : la poche stocke toujours 1 item par slot — pas de stack.
+            ctx = new ItemCtx { ConfigId = pi.ConfigId, ItemUuid = pi.ItemUuid, Version = pi.Version, Quantity = 1 };
             return true;
         }
 
@@ -3070,7 +3453,7 @@ public class ServerItemManager
             }
             s.ItemsByEntityId[entityId] = new PocketSessionItem {
                 EntityId = entityId, ConfigId = ctx.ConfigId, SlotIndex = slotIndex,
-                ItemUuid = ctx.ItemUuid, Version = newVersion,
+                ItemUuid = ctx.ItemUuid, Version = newVersion, Quantity = 1,
             };
             s.SlotToEntityId[slotIndex] = entityId;
             _mgr._bridges[entityId] = new ItemDbBridge { Uuid = ctx.ItemUuid, Version = newVersion, PlaceId = _backendPlaceId };
@@ -3196,9 +3579,10 @@ public class ServerItemManager
             foreach (var it in stateData.items) {
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId = _nextEntityId++;
+                int qty = Mathf.Max(1, it.quantity);
                 session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
-                    ItemUuid = it.Id, Version = it.version,
+                    ItemUuid = it.Id, Version = it.version, Quantity = qty,
                 };
                 if (!session.SlotToEntityId.ContainsKey(slotIndex)) session.SlotToEntityId[slotIndex] = entityId;
                 _bridges[entityId] = new ItemDbBridge {

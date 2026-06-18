@@ -192,7 +192,7 @@ namespace Sim.Missions {
             if (!_active.TryGetValue(netId, out var step)) {
                 conn.Send(new ToastNotificationMessage {
                     text       = "Aucune mission ne te demande de trier des colis.",
-                    typeByte   = (byte)NotificationType.JOB,
+                    appId      = PhoneAppIds.Career,
                     worldToast = true,
                     kindByte   = (byte)ToastKind.Error,
                 });
@@ -221,7 +221,7 @@ namespace Sim.Missions {
             if (heldState == null) {
                 conn.Send(new ToastNotificationMessage {
                     text       = "Tu dois tenir un colis à trier pour utiliser ce bac.",
-                    typeByte   = (byte)NotificationType.JOB,
+                    appId      = PhoneAppIds.Career,
                     worldToast = true,
                     kindByte   = (byte)ToastKind.Error,
                 });
@@ -248,7 +248,7 @@ namespace Sim.Missions {
             // pas une notification coin d'écran. Voir Docs/FEEDBACK_UI.md.
             conn.Send(new ToastNotificationMessage {
                 text       = heldState.correct ? "Parfait !" : "Mauvais bac !",
-                typeByte   = (byte)NotificationType.JOB,
+                appId      = PhoneAppIds.Career,
                 worldToast = true,
                 kindByte   = (byte)(heldState.correct ? ToastKind.Success : ToastKind.Error),
             });

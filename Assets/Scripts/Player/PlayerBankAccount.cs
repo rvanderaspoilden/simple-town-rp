@@ -13,6 +13,12 @@ public class PlayerBankAccount : NetworkBehaviour {
     [SerializeField]
     private int money;
 
+    /// <summary>Client-side push for any UI that needs to react to the local
+    /// player's balance changing (Bank app, future wallet, etc.). Fires only
+    /// on the local player's account, on every SyncVar update including the
+    /// initial sync after spawn.</summary>
+    public static event Action<int> OnLocalMoneyChanged;
+
     private PlayerController _playerController;
 
     private void Awake() {
@@ -69,6 +75,8 @@ public class PlayerBankAccount : NetworkBehaviour {
             if (_seenFirstMoney && newAmount > old)
                 Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.MoneyReceive);
             _seenFirstMoney = true;
+
+            OnLocalMoneyChanged?.Invoke(newAmount);
         }
 
         if (!CharacterInfoPanelUI.Instance) return;
@@ -94,7 +102,7 @@ public class PlayerBankAccount : NetworkBehaviour {
             if (body.amount < 0 && connectionToClient != null) {
                 connectionToClient.Send(new ToastNotificationMessage {
                     text       = $"-{-body.amount} BC",
-                    typeByte   = (byte)NotificationType.BANK,
+                    appId      = PhoneAppIds.Bank,
                     worldToast = false,
                 });
             }

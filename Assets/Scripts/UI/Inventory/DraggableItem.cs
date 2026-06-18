@@ -11,6 +11,26 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     private ItemSlot _itemSlot;
     private ItemConfig _itemConfig;
 
+    [Header("Stack badge")]
+    [SerializeField, Tooltip("Texte « xN » affiché en coin du slot quand la pile a plus d'1 unité. " +
+        "Désactivé par défaut ; le draggable l'active/désactive via SetQuantity. Authoré dans le prefab.")]
+    private TMPro.TMP_Text quantityBadge;
+
+    private int _quantity = 1;
+    /// <summary>Taille de pile (≥1). 1 = item simple, pas de badge. >1 = badge "xN" visible
+    /// + règles stack (split-1 vers main/poche, refus swap pile↔main).</summary>
+    public int Quantity => _quantity;
+    public void SetQuantity(int q) {
+        _quantity = Mathf.Max(1, q);
+        RefreshQuantityBadge();
+    }
+    private void RefreshQuantityBadge() {
+        if (quantityBadge == null) return;
+        bool show = _quantity > 1;
+        quantityBadge.gameObject.SetActive(show);
+        if (show) quantityBadge.text = "x" + _quantity;
+    }
+
     // ── Animation parameters (tunable per-prefab) ─────────────────────────────
     [Header("Animation — Lift au pickup")]
     [SerializeField, Tooltip("Échelle du draggable pendant un drag.")]
@@ -134,7 +154,12 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
             effects = _itemConfig.ID == FuelCanister.ConfigId
                 ? FormatCanisterFuel(_entityId, _itemConfig)
                 : FormatEffects(_itemConfig as ConsumableConfig);
-            container = FormatContainer(_itemConfig.Container);
+            container = FormatContainer(Sim.Scriptables.ItemContainerConfig.Of(_itemConfig));
+        }
+        // Pile : affiche "Pile : N" en tête des effects pour qu'on le voie immédiatement.
+        if (_quantity > 1) {
+            string stackLine = $"<color=#8FE36B>Pile : {_quantity}</color>";
+            effects = string.IsNullOrEmpty(effects) ? stackLine : stackLine + "\n" + effects;
         }
         if (icon != null || !string.IsNullOrEmpty(label)) Sim.ItemTooltipUI.Show(icon, label, desc, effects, container);
     }
@@ -289,6 +314,8 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         _draggable = true; // réinitialise pour la prochaine location depuis le pool
         _propConfigId = 0;
         _propPresetId = 0;
+        // Le pool peut réémettre un draggable déjà utilisé avec un Quantity hérité — reset à 1.
+        SetQuantity(1);
         Sim.ItemTooltipUI.Hide(); // au cas où ce draggable était survolé au moment du release
     }
 

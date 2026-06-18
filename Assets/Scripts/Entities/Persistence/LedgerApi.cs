@@ -63,4 +63,19 @@ namespace Sim.Entities.Persistence {
         public int money;
         public string entryId;
     }
+
+    /// <summary>One row of GET /characters/:id/ledger. Field names mirror the
+    /// backend <c>LedgerEntry</c> shape; deserialized via Newtonsoft.Json which
+    /// handles bare JSON arrays natively (no envelope needed).</summary>
+    [Serializable]
+    public class LedgerEntryData {
+        [JsonProperty("_id")] public string id;
+        public string characterId;
+        public int amount;             // signed: +credit / -debit
+        public int balanceAfter;
+        public string reason;
+        public string counterpartyType; // "player" | "system"
+        public string counterpartyId;
+        public string createdAt;       // ISO8601
+    }
 }

@@ -1,10 +1,11 @@
+using System;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class NotificationUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler {
+public class NotificationUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler {
     [Header("Settings")]
     [SerializeField]
     private TextMeshProUGUI messageTxt;
@@ -29,6 +30,8 @@ public class NotificationUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 
     private bool _autoHideSet;
 
+    private Action _onClick;
+
     private void Awake() {
         this._canvasGroup = GetComponent<CanvasGroup>();
         this._canvasGroup.alpha = 0;
@@ -38,10 +41,11 @@ public class NotificationUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         this.transform.localScale = Vector3.zero;
     }
 
-    public void Setup(string message, NotificationTemplateConfig templateConfig) {
-        this.titleTxt.text = templateConfig.Title;
+    public void Setup(string message, string title, Sprite iconSprite, Action onClick = null) {
+        this.titleTxt.text = title;
         this.messageTxt.text = message;
-        this.icon.sprite = templateConfig.Icon;
+        this.icon.sprite = iconSprite;
+        this._onClick = onClick;
 
         this._canvasGroup.DOFade(1, .3f);
         this.transform.DOScale(Vector3.one, 1f).SetEase(Ease.OutBounce);
@@ -80,5 +84,18 @@ public class NotificationUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     public void OnPointerExit(PointerEventData eventData) {
         this.headerImage.DOComplete();
         this.headerImage.DOFade(0, .3f);
+    }
+
+    public void OnPointerClick(PointerEventData eventData) {
+        // Clicks on the close button are consumed by its own Button handler and
+        // never reach this method, so we don't need to filter them here.
+        if (this._hiding || this._onClick == null) return;
+
+        Action action = this._onClick;
+        this._onClick = null; // single-shot guard
+        try { action(); }
+        catch (Exception e) { Debug.LogError($"[NotificationUI] onClick threw: {e}"); }
+
+        this.Hide();
     }
 }

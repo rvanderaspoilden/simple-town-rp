@@ -102,6 +102,7 @@ public struct S2C_ContainerItem
     public int EntityId;     // id éphémère alloué pour la session
     public int ConfigId;     // ItemConfig.ID
     public int SlotIndex;    // position dans la grille
+    public int Quantity;     // taille de la pile (≥1). 1 = pas de badge ; >1 = badge "xN" + règles stack (split-1 vers main/poche, refus swap pile↔main).
     public int PropConfigId; // >0 = meuble emballé (icône PropsConfig.Sprite, non-draggable) ; 0 = item normal
     public int PropPresetId; // variant du meuble emballé (pour la preview au déballage)
 }
@@ -148,7 +149,7 @@ public struct S2C_ContainerVisualState : NetworkMessage
 public struct C2S_CloseContainer : NetworkMessage { public bool ItemContainer; }
 
 // ── Item-as-container (« package ») ───────────────────────────────────────────
-// Un item tenu en main peut être lui-même un conteneur (ItemConfig.Container).
+// Un item tenu en main peut être lui-même un conteneur (ItemContainerConfig.Container).
 // Place backend "item_container:{itemUuid}" (owner_id = uuid de l'item package).
 // Même machinerie que les conteneurs de prop (sessions, snapshot, move/swap) ;
 // seul l'identifiant d'ouverture change (EntityId de l'item au lieu d'un PropId).
@@ -215,12 +216,14 @@ public struct C2S_DropFromInventory : NetworkMessage
 // EnsurePlaces) et tient les entityId éphémères des items en poche le temps
 // de la session réseau.
 
-/// <summary>Une entrée d'item dans la poche (slot 0 = gauche, slot 1 = droite).</summary>
+/// <summary>Une entrée d'item dans la poche (slot 0 = gauche, slot 1 = droite). Quantity toujours 1
+/// en pratique (poche = 1 item par slot, pas de stacking), kept pour symétrie avec S2C_ContainerItem.</summary>
 public struct S2C_PocketItem
 {
     public int EntityId;
     public int ConfigId;
     public int SlotIndex;
+    public int Quantity;
 }
 
 /// <summary>

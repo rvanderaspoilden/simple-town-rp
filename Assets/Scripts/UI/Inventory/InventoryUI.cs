@@ -286,7 +286,11 @@ public class InventoryUI : MonoBehaviour
         var container = ContainerPanelUI.QuickMoveTarget();
         if (container == null || !container.IsOpen) return;     // pas de conteneur ouvert → no-op
 
-        int targetSlot = container.FindFirstFreeSlot();
+        // Priorité : remplir une pile existante mergeable (règle utilisateur) avant
+        // de chercher un slot vide. Pour un item non empilable FindMergeableSlotFor
+        // renvoie -1 → fallback immédiat sur FindFirstFreeSlot.
+        int targetSlot = container.FindMergeableSlotFor(item.ItemConfig);
+        if (targetSlot < 0) targetSlot = container.FindFirstFreeSlot();
         if (targetSlot < 0) {
             WorldToastManager.ShowError(InventoryToasts.ContainerFull);
             return;
@@ -535,6 +539,7 @@ public class InventoryUI : MonoBehaviour
             DraggableItem d = _draggableItemPool.Get();
             d.SetConfiguration(cfg);
             d.SetEntityId(entry.EntityId);
+            d.SetQuantity(Mathf.Max(1, entry.Quantity)); // poche = 1 item/slot, kept pour symétrie wire
             target.SetItem(d);
         }
     }

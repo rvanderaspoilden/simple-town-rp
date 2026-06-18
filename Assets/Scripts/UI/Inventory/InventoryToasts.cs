@@ -14,4 +14,6 @@ public static class InventoryToasts
     public const string NestedStorageMustBeEmpty = "Videz ce conteneur avant de le ranger";
     public const string OtherHandBusy        = "L'autre main n'est pas libre";
     public const string AlreadyHoldingTwoHand = "Vous portez déjà un objet à deux mains";
+    public const string SlotFull             = "Slot plein";
+    public const string StackPickOneAtATime  = "Pile — prends 1 à la fois";
 }

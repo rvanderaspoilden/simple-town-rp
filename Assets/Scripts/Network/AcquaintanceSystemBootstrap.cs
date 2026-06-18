@@ -214,11 +214,11 @@ namespace Sim {
         }
 
         private static void OnAcquaintanceResult(S2C_AcquaintanceResult msg) {
-            if (!msg.accepted) NotificationManager.Instance?.AddNotification("Votre demande a été refusée.", NotificationType.SUPPORT);
+            if (!msg.accepted) NotificationManager.Instance?.AddNotification("Votre demande a été refusée.", PhoneAppIds.Contacts);
         }
 
         private static void OnContactResult(S2C_ContactResult msg) {
-            if (!msg.accepted) NotificationManager.Instance?.AddNotification("Votre demande de contact a été refusée.", NotificationType.SUPPORT);
+            if (!msg.accepted) NotificationManager.Instance?.AddNotification("Votre demande de contact a été refusée.", PhoneAppIds.Contacts);
         }
 
         private static void OnRelationshipUpdate(S2C_RelationshipUpdate msg) {
@@ -228,12 +228,12 @@ namespace Sim {
             string text = state == RelationshipState.Contact
                 ? $"{msg.otherFullName} et vous êtes désormais contacts."
                 : $"Vous avez fait connaissance avec {msg.otherFullName}.";
-            NotificationManager.Instance?.AddNotification(text, NotificationType.BANK);
+            NotificationManager.Instance?.AddNotification(text, PhoneAppIds.Contacts);
         }
 
         private static void OnRelationshipRemoved(S2C_RelationshipRemoved msg) {
             ClientRelationshipManager.Instance.Remove(msg.otherCharacterId);
-            NotificationManager.Instance?.AddNotification("Contact retiré.", NotificationType.BANK);
+            NotificationManager.Instance?.AddNotification("Contact retiré.", PhoneAppIds.Contacts);
         }
 
         private static void OnPlayGreet(S2C_PlayGreet msg) {

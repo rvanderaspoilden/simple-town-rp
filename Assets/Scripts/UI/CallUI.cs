@@ -96,7 +96,7 @@ namespace Sim {
             StopRing();
             string notif = BuildEndNotification(reason);
             if (!string.IsNullOrEmpty(notif)) {
-                NotificationManager.Instance?.AddNotification(notif, NotificationType.SUPPORT);
+                NotificationManager.Instance?.AddNotification(notif, PhoneAppIds.Contacts);
             }
         }
 

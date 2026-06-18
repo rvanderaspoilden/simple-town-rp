@@ -48,6 +48,24 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     private bool rejectsNonPocketable = false;
     public bool RejectsNonPocketable => rejectsNonPocketable;
 
+    /// <summary>True si le placeId vise un slot de main (hand_left:… ou hand_right:…).</summary>
+    private static bool IsHandPlaceId(string placeId)
+        => !string.IsNullOrEmpty(placeId)
+           && (placeId.StartsWith("hand_left:") || placeId.StartsWith("hand_right:"));
+
+    /// <summary>True si le slot courant contient une pile dans laquelle <paramref name="incoming"/>
+    /// peut se merger : même config, config empilable, ET il reste de la place (qty &lt; max).
+    /// Quand la pile est PLEINE, on retourne false → l'OnDrop tombe sur la branche
+    /// <see cref="MustSwapWith"/>, ce qui permet un swap fallback (règle utilisateur :
+    /// « si les deux slots sont full alors tu effectue un swap »).</summary>
+    private bool CanMergeStack(DraggableItem incoming) {
+        if (_item == null || incoming == null) return false;
+        if (_item.ItemConfig == null || incoming.ItemConfig == null) return false;
+        if (_item.ItemConfig != incoming.ItemConfig) return false;
+        if (!_item.ItemConfig.IsStackable) return false;
+        return _item.Quantity < _item.ItemConfig.MaxStackSize;
+    }
+
     public delegate void ItemMoved(ItemSlot origin, ItemSlot target);
     public delegate void ItemsSwapped(ItemSlot slotA, DraggableItem itemA, ItemSlot slotB, DraggableItem itemB);
 
@@ -106,6 +124,22 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
             return;
         }
 
+        // Garde stack ↔ main (côté client) : un swap impliquant une main et une pile (qty>1)
+        // est refusé d'avance — feedback immédiat sans round-trip. Cible OU origine en main +
+        // l'autre côté est une pile → snap-back + toast. (Identique au gate serveur dans
+        // HandleSwapItems pour éviter le détour PATCH/snap-back différé.)
+        if (_item != null && draggableItem != _item) {
+            bool originIsHand = originSlot != null && IsHandPlaceId(originSlot.PlaceId);
+            bool targetIsHand = IsHandPlaceId(_placeId);
+            bool targetIsStack  = _item.Quantity > 1;
+            bool draggedIsStack = draggableItem.Quantity > 1;
+            if ((originIsHand && targetIsStack) || (targetIsHand && draggedIsStack)) {
+                WorldToastManager.ShowError(InventoryToasts.StackPickOneAtATime);
+                if (originSlot != null) originSlot.SnapBackInto(draggableItem);
+                return;
+            }
+        }
+
         // Imbrication de conteneur : désormais AUTORISÉE si le conteneur déposé est vide. Le
         // client ne connaît pas toujours le contenu → on laisse le serveur trancher
         // (GateNestedContainer) ; en cas de refus il renvoie le toast + un snapshot qui
@@ -114,6 +148,17 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
         if (draggableItem == _item) {
             // Même slot → re-ancre animé (drag annulé sur soi-même).
             this.SetItem(draggableItem, animate: true);
+        } else if (CanMergeStack(draggableItem)) {
+            // Slot occupé par une pile de même config empilable → route comme un MOVE
+            // (PAS un swap, quel que soit le CanSwap des deux slots) : le serveur détecte le
+            // merge dans HandleMoveItem et dispatch MergeIntoTargetCoroutine. Le draggable
+            // d'origine est libéré visuellement ; la pile cible se rechargera via le snapshot
+            // serveur poussé après le merge. Si la pile cible est pleine (qty == max), le
+            // serveur refuse avec InventoryToasts.SlotFull et resnapshote → reconcilie.
+            draggableItem.ItemSlot.Clear();
+            this.SetItem(draggableItem, animate: true);
+            OnItemMove?.Invoke(originSlot, this);
+            Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.ItemMove);
         } else if (MustSwapWith(draggableItem)) {
             // CanSwap requis sur les deux slots. hand↔hand est traité localement
             // (PlayerHands.Swap), hand↔container et container↔container passent par

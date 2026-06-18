@@ -362,9 +362,25 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         // La voiture (corps physique) doit TRAVERSER les personnages, pas les heurter : on désactive la
         // collision physique entre son layer et Player/NPC. Sans effet sur les persos (déplacés en
         // NavMesh, hors physique). Le renversement reste détecté par OverlapBox (qui ignore la matrice).
+        // Idem pour le layer Ragdoll : pendant la chute, les os ne doivent PAS être traînés par le
+        // collider véhicule — sinon chaque client (NetworkTransform interpolé légèrement différemment)
+        // traîne le corps dans une direction divergente, et le ragdoll s'éloigne du NavMesh. Isolé du
+        // véhicule, le ragdoll ne réagit qu'à la gravité et au sol → même chute visible partout.
         int selfLayer = gameObject.layer;
-        if (playerLayer >= 0) Physics.IgnoreLayerCollision(selfLayer, playerLayer, true);
-        if (npcLayer    >= 0) Physics.IgnoreLayerCollision(selfLayer, npcLayer, true);
+        int ragdollLayer = LayerMask.NameToLayer("Ragdoll");
+
+        // Les WheelColliders sont posés sur des GameObjects ENFANTS séparés (WC_*) qui sont sur le
+        // layer Default — donc les ignores ci-dessous ne les couvriraient pas. On les ré-aligne sur
+        // le layer véhicule pour que la matrice de collision filtre AUSSI les roues. Sans ça, les
+        // roues bousculent les os ragdoll (suspension + rotation) quand le véhicule reste sur le
+        // corps ou y roule vite → squelette qui s'agite dans tous les sens.
+        foreach (WheelCollider wc in wheelColliders) {
+            if (wc != null) wc.gameObject.layer = selfLayer;
+        }
+
+        if (playerLayer  >= 0) Physics.IgnoreLayerCollision(selfLayer, playerLayer,  true);
+        if (npcLayer     >= 0) Physics.IgnoreLayerCollision(selfLayer, npcLayer,     true);
+        if (ragdollLayer >= 0) Physics.IgnoreLayerCollision(selfLayer, ragdollLayer, true);
 
         // Dégâts d'impact : tout SAUF sol, personnages (renversement) et items.
         int softLayers = _characterMask;

@@ -88,6 +88,21 @@ namespace Sim {
             this.actionBarCanvasGroup.interactable = true;
         }
 
+        /// <summary>Resolve a phone app by its stable string id (see PhoneAppIds).
+        /// Returns null when no app with that id is registered on this controller.
+        /// Used by NotificationManager to source the notification's title + icon
+        /// from the owning app.</summary>
+        public PhoneApplicationUI GetApp(string appId) {
+            if (string.IsNullOrEmpty(appId) || this.applications == null) return null;
+            for (int i = 0; i < this.applications.Count; i++) {
+                PhoneApplicationButton btn = this.applications[i];
+                if (btn == null) continue;
+                PhoneApplicationUI app = btn.Application;
+                if (app != null && app.AppId == appId) return app;
+            }
+            return null;
+        }
+
         /// <summary>Unlock/open the phone (if closed) and switch to the given app.
         /// Used by network events (e.g. an incoming call) to surface an app
         /// without user input.</summary>

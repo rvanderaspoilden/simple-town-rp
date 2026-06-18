@@ -37,7 +37,7 @@ namespace Sim.Missions {
                 if (NotificationManager.Instance != null) {
                     NotificationManager.Instance.AddNotification(
                         "Aucune mission ne te demande d'utiliser cette machine.",
-                        NotificationType.JOB);
+                        PhoneAppIds.Career);
                 }
                 return;
             }

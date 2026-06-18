@@ -105,7 +105,7 @@ namespace Sim {
                 NetworkConnectionToClient ownerConn = RefreshBalance(charge.ownerId, charge.ownerBalance);
                 ownerConn?.Send(new ToastNotificationMessage {
                     text = $"Loyer reçu : +{charge.amount} €",
-                    typeByte = (byte)NotificationType.BANK,
+                    appId = PhoneAppIds.Bank,
                 });
             }
         }
@@ -147,7 +147,7 @@ namespace Sim {
 
             conn.Send(new ToastNotificationMessage {
                 text = "Vous avez été expulsé de votre logement pour loyer impayé.",
-                typeByte = (byte)NotificationType.BANK,
+                appId = PhoneAppIds.Bank,
             });
         }
 

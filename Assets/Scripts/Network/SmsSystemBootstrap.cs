@@ -108,11 +108,25 @@ namespace Sim {
                     NetworkClient.Send(new C2S_SmsMarkRead { otherCharacterId = msg.senderCharacterId });
                 }
             } else {
-                NotificationManager.Instance?.AddNotification($"SMS de {msg.senderName}", NotificationType.SUPPORT);
+                // Capture sender info in locals so the click closure stays stable
+                // even if msg gets reused/freed by the network reader.
+                string senderId   = msg.senderCharacterId;
+                string senderName = msg.senderName;
+                NotificationManager.Instance?.AddNotification(
+                    $"SMS de {senderName}",
+                    PhoneAppIds.Contacts,
+                    () => OpenContactsConversation(senderId, senderName));
                 // Refresh unread badges (Contacts app listens to OnUnreadRetrieved).
                 string localId = PlayerController.Local?.CharacterData?.Id;
                 if (!string.IsNullOrEmpty(localId)) ApiManager.Instance.RetrieveUnread(localId);
             }
+        }
+
+        private static void OpenContactsConversation(string contactId, string contactName) {
+            ContactsUI contacts = ContactsUI.Instance;
+            if (contacts == null) return;
+            PhoneControllerUI.Instance?.ForceOpenApp(contacts);
+            contacts.OpenConversation(contactId, contactName);
         }
     }
 }

@@ -76,7 +76,7 @@ public static class PropInteractionRouter {
                     if (conn.isReady)
                         conn.Send(new ToastNotificationMessage {
                             text       = $"+{pts} points Ingénieux",
-                            typeByte   = (byte)NotificationType.BANK,
+                            appId      = PhoneAppIds.Bank,
                             worldToast = true,
                             kindByte   = (byte)ToastKind.Success,
                         });
@@ -124,7 +124,7 @@ public static class PropInteractionRouter {
             if (conn.isReady)
                 conn.Send(new ToastNotificationMessage {
                     text       = $"+{pts} Environnement",
-                    typeByte   = (byte)NotificationType.BANK,
+                    appId      = PhoneAppIds.Bank,
                     worldToast = true,
                     kindByte   = (byte)ToastKind.Success,
                 });
@@ -454,7 +454,7 @@ public static class PropInteractionRouter {
                 conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
                 conn.Send(new ToastNotificationMessage {
                     text = "Termine ta mission avant d'acheter.",
-                    typeByte = (byte)NotificationType.BANK,
+                    appId = PhoneAppIds.Bank,
                     worldToast = true,
                     kindByte = (byte)ToastKind.Error
                 });
@@ -468,7 +468,7 @@ public static class PropInteractionRouter {
                 conn.Send(new S2C_DispenserPurchaseResult { PropId = msg.PropId, Success = false, ItemId = -1 });
                 conn.Send(new ToastNotificationMessage {
                     text = "Mains pleines : impossible d'acheter cet objet.",
-                    typeByte = (byte)NotificationType.BANK,
+                    appId = PhoneAppIds.Bank,
                     worldToast = true,
                     kindByte = (byte)ToastKind.Error
                 });

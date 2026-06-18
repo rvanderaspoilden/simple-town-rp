@@ -174,6 +174,22 @@ public class ContainerPanelUI : MonoBehaviour
         return -1;
     }
 
+    /// <summary>Premier slot actif contenant une pile mergeable pour <paramref name="cfg"/>
+    /// (même config, IsStackable, qty &lt; max). -1 si aucun. Utilisé par le double-clic
+    /// pour préférer le stack-fill sur un slot libre (règle utilisateur).</summary>
+    public int FindMergeableSlotFor(ItemConfig cfg)
+    {
+        if (cfg == null || !cfg.IsStackable) return -1;
+        for (int i = 0; i < _slots.Count; i++) {
+            var slot = _slots[i];
+            if (slot == null || !slot.gameObject.activeSelf) continue;
+            var d = slot.Item;
+            if (d == null || d.ItemConfig != cfg) continue;
+            if (d.Quantity < cfg.MaxStackSize) return i;
+        }
+        return -1;
+    }
+
     /// <summary>Nombre de slots actifs vides (espace restant).</summary>
     public int FreeSlotCount()
     {
@@ -282,7 +298,7 @@ public class ContainerPanelUI : MonoBehaviour
         _heldDriven          = false;
         _isItemContainer     = true;
         _currentItemEntityId = entityId;
-        PlayItemContainerOpenSound(ClientItemManager.Instance.GetItem(entityId)?.Configuration?.Container);
+        PlayItemContainerOpenSound(Sim.Scriptables.ItemContainerConfig.Of(ClientItemManager.Instance.GetItem(entityId)?.Configuration));
         OpenOptimisticCore(slotCount, displayName);
     }
 
@@ -337,7 +353,7 @@ public class ContainerPanelUI : MonoBehaviour
 
     private void AutoOpenHeldContainer(ItemBehaviour colis)
     {
-        var container = colis.Configuration != null ? colis.Configuration.Container : null;
+        var container = Sim.Scriptables.ItemContainerConfig.Of(colis.Configuration);
         int slotCount = container != null ? container.SlotCount : 0;
         if (slotCount <= 0) return;
 
@@ -613,6 +629,7 @@ public class ContainerPanelUI : MonoBehaviour
                 d.SetDraggable(true);
             }
             d.SetEntityId(entry.EntityId);
+            d.SetQuantity(entry.Quantity); // badge "xN" si >1 (meubles emballés Quantity=1 → pas de badge)
             _slots[entry.SlotIndex].SetItem(d);
             _spawnedItems.Add(d);
         }

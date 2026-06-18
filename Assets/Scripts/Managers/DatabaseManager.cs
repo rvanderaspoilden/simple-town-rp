@@ -23,7 +23,6 @@ namespace Sim {
         public static List<ShopCategoryConfig> ShopCategoryConfigs;
         public static List<ItemConfig> ItemConfigs;
         public static GameConfiguration GameConfiguration;
-        public static List<NotificationTemplateConfig> NotificationTemplateConfigs;
         public static List<SubGameConfiguration> SubGameConfigurations;
         public static List<BuildingConfig> BuildingConfigurations;
         public static List<MinimapRoomMapConfig> MinimapRoomMapConfigs;
@@ -55,9 +54,6 @@ namespace Sim {
 
             MoodConfigs = Resources.LoadAll<MoodConfig>("Configurations/Moods").ToList();
             Debug.Log("Mood Configs loaded : " + MoodConfigs.Count);
-
-            NotificationTemplateConfigs = Resources.LoadAll<NotificationTemplateConfig>("Configurations/Notifications").ToList();
-            Debug.Log("Notification Template Configs loaded : " + NotificationTemplateConfigs.Count);
 
             SubGameConfigurations = Resources.LoadAll<SubGameConfiguration>("Configurations/Sub Games").ToList();
             Debug.Log("Sub Game Configs loaded : " + SubGameConfigurations.Count);

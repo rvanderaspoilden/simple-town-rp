@@ -273,19 +273,6 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     private void OnLookExecuted(Action action) {
         ClientLogger.Network("[NPCInteraction] LOOK action requested {NpcId} {FullName}", NpcId, FullName);
         PlayerController.Local?.Look(transform);
-        string moodDesc = GetMoodDescription(Mood);
-        NotificationManager.Instance?.AddNotification($"{FullName} {moodDesc}", NotificationType.BANK);
-        ClientLogger.Network("[NPCInteraction] LOOK result displayed {NpcId}", NpcId);
-    }
-
-    private static string GetMoodDescription(MoodEnum mood) {
-        return mood switch {
-            MoodEnum.HAPPY   => "looks happy.",
-            MoodEnum.SAD     => "looks sad.",
-            MoodEnum.ANGRY   => "looks angry.",
-            MoodEnum.INJURED => "looks injured.",
-            MoodEnum.SICK    => "looks sick.",
-            _                => "seems to be in their own world."
-        };
+        ClientLogger.Network("[NPCInteraction] LOOK applied {NpcId}", NpcId);
     }
 }

@@ -2,6 +2,7 @@ using Mirror;
 using Sim;
 using Sim.Enums;
 using Sim.Interactables;
+using Sim.Scriptables;
 using Action = Sim.Interactables.Action;
 
 /// <summary>
@@ -35,7 +36,7 @@ public class PackageItemBehaviour : ItemBehaviour
     private void SendOpenRequest()
     {
         if (!NetworkClient.isConnected) return;
-        int slotCount = Configuration?.Container != null ? Configuration.Container.SlotCount : 0;
+        int slotCount = ItemContainerConfig.Of(Configuration)?.SlotCount ?? 0;
         if (slotCount <= 0) return;
 
         string displayName = Configuration != null ? Configuration.Label : null;

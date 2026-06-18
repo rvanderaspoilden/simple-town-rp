@@ -58,11 +58,12 @@ public class ItemConfig : ScriptableObject {
     [SerializeField]
     private Vector3 gripEuler;
 
-    [Header("Container (package)")]
-    [Tooltip("Si SlotCount > 0, l'item est lui-même un conteneur (« package ») : ouvre une grille " +
-             "comme un conteneur de prop. Réutilise la même ContainerConfig que les props.")]
-    [SerializeField]
-    private ContainerConfig container = new ContainerConfig();
+    [Header("Stacking")]
+    [Tooltip("Capacité max d'une pile dans un slot de conteneur (prop, colis, coffre véhicule). " +
+             "1 = non empilable (défaut). >1 = empilable jusqu'à cette valeur. Mains et poches " +
+             "restent à 1 unité par slot quelle que soit cette valeur (split-1 implicite à l'extraction).")]
+    [SerializeField] [Min(1)]
+    private int maxStackSize = 1;
 
     public int ID => id;
 
@@ -96,5 +97,7 @@ public class ItemConfig : ScriptableObject {
 
     public bool HasGripOverride => gripPosition != Vector3.zero || gripEuler != Vector3.zero;
 
-    public ContainerConfig Container => container;
+    public int MaxStackSize => Mathf.Max(1, maxStackSize);
+
+    public bool IsStackable => MaxStackSize > 1;
 }

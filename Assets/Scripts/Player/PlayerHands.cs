@@ -125,8 +125,7 @@ public class PlayerHands : MonoBehaviour
     }
 
     private static bool IsContainer(ItemBehaviour item) =>
-        item != null && item.Configuration != null
-        && item.Configuration.Container != null && item.Configuration.Container.IsContainer;
+        item != null && Sim.Scriptables.ItemContainerConfig.Of(item.Configuration)?.IsContainer == true;
 
     /// <summary>L'item-conteneur (« colis ») actuellement tenu, ou null. Sert à l'affichage
     /// automatique de la grille du conteneur dès qu'un colis est en main.</summary>
@@ -147,8 +146,8 @@ public class PlayerHands : MonoBehaviour
         get
         {
             ItemBehaviour colis = HeldContainerItem;
-            return colis != null && colis.Configuration != null
-                && colis.Configuration.Container != null && colis.Configuration.Container.AcceptsProps;
+            return colis != null
+                && Sim.Scriptables.ItemContainerConfig.Of(colis.Configuration)?.AcceptsProps == true;
         }
     }
 

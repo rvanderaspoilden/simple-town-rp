@@ -42,7 +42,7 @@ namespace Sim {
             if (senderBank.Money < msg.amount) {
                 conn.Send(new ToastNotificationMessage {
                     text       = "Fonds insuffisants.",
-                    typeByte   = (byte)NotificationType.BANK,
+                    appId      = PhoneAppIds.Bank,
                     worldToast = false,
                 });
                 return;
@@ -63,12 +63,12 @@ namespace Sim {
             // sender side is already fired automatically by PostLedger).
             conn.Send(new ToastNotificationMessage {
                 text       = $"Argent envoyé à {receiverName} : -{msg.amount} BC",
-                typeByte   = (byte)NotificationType.BANK,
+                appId      = PhoneAppIds.Bank,
                 worldToast = false,
             });
             targetConn?.Send(new ToastNotificationMessage {
                 text       = $"Argent reçu de {senderName} : +{msg.amount} BC",
-                typeByte   = (byte)NotificationType.BANK,
+                appId      = PhoneAppIds.Bank,
                 worldToast = false,
             });
 

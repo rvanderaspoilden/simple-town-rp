@@ -71,7 +71,7 @@ namespace Sim.Missions {
 
                 conn.Send(new ToastNotificationMessage {
                     text = $"{label} : +{amount} €",
-                    typeByte = (byte)NotificationType.BANK,
+                    appId = PhoneAppIds.Bank,
                 });
 
                 GameLogger.System.Debug("CareerPayout {NetId} {Profession} {Amount}",

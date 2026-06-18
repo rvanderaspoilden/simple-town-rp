@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using DG.Tweening;
 using Sim;
 using UnityEngine;
-using UnityEngine.Playables;
 using UnityEngine.UI;
 
 public class NotificationManager : MonoBehaviour {
@@ -32,20 +30,35 @@ public class NotificationManager : MonoBehaviour {
         }
     }
 
-    public void AddNotification(string message, NotificationType type) {
+    /// <summary>Push a notification whose visual identity (header title + icon)
+    /// is sourced from the phone app identified by <paramref name="appId"/>.
+    /// Optional <paramref name="onClick"/> fires when the user clicks the
+    /// notification body (the close button keeps its own dismiss-only behavior);
+    /// the notification auto-dismisses after invoking the callback.
+    /// Drops the notification silently when no matching app is registered —
+    /// notifications are decorative; a missing app must never throw.</summary>
+    public void AddNotification(string message, string appId, Action onClick = null) {
+        PhoneApplicationUI app = PhoneControllerUI.Instance != null
+            ? PhoneControllerUI.Instance.GetApp(appId)
+            : null;
+        if (app == null) {
+            Debug.LogWarning($"[NotificationManager] No phone app registered with id '{appId}' — dropping notification: {message}");
+            return;
+        }
+
         if (this.notificationContainer.childCount >= 5) {
             Destroy(this.notificationContainer.GetChild(0).gameObject);
         }
 
         NotificationUI notification = Instantiate(this.notificationPrefab, this.notificationContainer);
-        notification.Setup(message, DatabaseManager.NotificationTemplateConfigs.Find(x => x.NotificationType == type));
+        notification.Setup(message, app.DisplayName, app.Icon, onClick);
 
         HUDManager.Instance.PlaySound(this.sound, 1f);
 
         if (notification.transform.GetSiblingIndex() == 0) {
             notification.SetAutoHide(5);
         }
-        
+
         LayoutRebuilder.ForceRebuildLayoutImmediate(notification.RectTransform);
         LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)this.notificationContainer);
     }
@@ -83,11 +96,4 @@ public class NotificationManager : MonoBehaviour {
                 .OnComplete(() => this._isMovingNotifications = false);
         }
     }
-}
-
-public enum NotificationType {
-    BANK,
-    HOSPITAL,
-    JOB,
-    SUPPORT
 }

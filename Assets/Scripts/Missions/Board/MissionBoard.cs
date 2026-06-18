@@ -66,7 +66,7 @@ namespace Sim.Missions {
                 : "";
             if (playerJob != ProfessionId) {
                 NotificationManager.Instance?.AddNotification(
-                    "Tu n'es pas employé pour ce métier.", NotificationType.JOB);
+                    "Tu n'es pas employé pour ce métier.", PhoneAppIds.Career);
                 return;
             }
 

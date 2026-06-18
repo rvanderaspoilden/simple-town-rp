@@ -102,7 +102,7 @@ namespace Sim.Missions {
                 if (NotificationManager.Instance != null) {
                     NotificationManager.Instance.AddNotification(
                         "Aucune mission ne te demande de trier des colis.",
-                        NotificationType.JOB);
+                        PhoneAppIds.Career);
                 }
                 return;
             }

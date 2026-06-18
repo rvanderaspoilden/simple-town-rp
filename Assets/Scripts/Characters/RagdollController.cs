@@ -15,6 +15,13 @@ using UnityEngine;
 /// personnage ne part pas en vol → les hanches restent ~au-dessus de leur position de départ, donc la
 /// relève (repositionnement racine sur les hanches, échantillonné NavMesh) ne le téléporte pas au loin.
 ///
+/// PAS DE CLAMP DE POSITION : on NE force PAS la position des hanches en physique active. Un write
+/// direct sur transform.position d'un Rigidbody dynamique connecté à des joints fait exploser le
+/// solveur (les joints tirent comme des malades pour rattraper la téléportation → squelette qui vole
+/// dans tous les sens). L'invariant « reste sur le NavMesh » est porté par l'isolation véhicule↔os
+/// dans VehicleController.Awake (matrice de collision) : avec aucune force externe, la dérive
+/// horizontale sous la seule gravité est marginale.
+///
 /// Repos (animé) : les Rigidbody d'os sont kinematic → l'Animator pilote le squelette normalement.
 /// Renversé : os non-kinematic (physique), Animator désactivé, collider racine désactivé.
 /// </summary>
@@ -28,6 +35,10 @@ public class RagdollController : MonoBehaviour {
 
     /// <summary>Le ragdoll est-il actuellement actif (physique en cours) ?</summary>
     public bool IsRagdolling => _active;
+
+    /// <summary>Transform des hanches — utilisé par la caméra TPS du joueur renversé pour suivre le
+    /// corps pendant la chute (cf. PlayerController.OnKnockdownChanged).</summary>
+    public Transform Hips => _hips;
 
     /// <summary>Position monde des hanches — sert à repositionner la racine à la relève.</summary>
     public Vector3 HipsPosition => _hips != null ? _hips.position : transform.position;
@@ -47,6 +58,51 @@ public class RagdollController : MonoBehaviour {
             if (ragdollLayer >= 0 && rb.gameObject.layer == ragdollLayer) bodies.Add(rb);
         }
         _boneBodies = bodies.ToArray();
+
+        // Isolation PAR COLLIDER : on positionne explicitement Collider.excludeLayers sur chaque os
+        // pour exclure les layers Interactable/Player/NPC/Item de la détection de contact. C'est une
+        // garantie locale (par-instance) qui court-circuite tout ce qui pourrait passer outre la
+        // matrice globale (IgnoreLayerCollision sur le véhicule) — WheelCollider, CCD à haute vitesse,
+        // contacts spéculatifs Unity. Les os ne réagissent ainsi QU'aux layers physiques inertes
+        // (sol/murs/décor/props sur Default/Ground/Wall/Door/Props) et à eux-mêmes (Ragdoll, bone-bone).
+        LayerMask exclude = 0;
+        foreach (string n in new[] { "Interactable", "Player", "NPC", "Item" }) {
+            int l = LayerMask.NameToLayer(n);
+            if (l >= 0) exclude |= (1 << l);
+        }
+        foreach (Rigidbody rb in _boneBodies) {
+            if (rb == null) continue;
+            foreach (Collider col in rb.GetComponents<Collider>()) {
+                if (col != null) col.excludeLayers = exclude;
+            }
+        }
+
+        // Stabilisation des CharacterJoint posés par RagdollBuilder :
+        //   - enableProjection=true (défaut) téléporte chaque frame les os pour respecter la
+        //     contrainte ; quand on entre en ragdoll depuis une pose extrême (NPC frappé en pleine
+        //     marche), les limites sont déjà violées → corrections violentes → squelette qui vole.
+        //   - twistLimitSpring / swingLimitSpring vides = limites DURES → les forces correctrices
+        //     sont brutales. On ajoute des springs souples (faible spring + amortissement) pour
+        //     ramener doucement les os dans les limites au lieu de les snapper.
+        //   - Limites de swing élargies de 35° à 60° (twist de 20° à 45°) pour absorber les poses
+        //     de marche sans déclencher la correction.
+        //   - CollisionDetectionMode passé en Discrete : ContinuousDynamic (défaut RagdollBuilder)
+        //     est conçu pour des corps rapides et engendre des contacts spéculatifs instables sur
+        //     des os connectés par joints. Discrete est plus stable pour un ragdoll au sol.
+        SoftJointLimitSpring softSpring = new SoftJointLimitSpring { spring = 50f, damper = 10f };
+        foreach (Rigidbody rb in _boneBodies) {
+            if (rb == null) continue;
+            rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
+            CharacterJoint joint = rb.GetComponent<CharacterJoint>();
+            if (joint == null) continue;
+            joint.enableProjection  = false;
+            joint.twistLimitSpring  = softSpring;
+            joint.swingLimitSpring  = softSpring;
+            joint.lowTwistLimit  = new SoftJointLimit { limit = -45f };
+            joint.highTwistLimit = new SoftJointLimit { limit =  45f };
+            joint.swing1Limit    = new SoftJointLimit { limit =  60f };
+            joint.swing2Limit    = new SoftJointLimit { limit =  60f };
+        }
 
         // État de repos : os kinematic (pilotés par l'animation).
         SetBonesKinematic(true);

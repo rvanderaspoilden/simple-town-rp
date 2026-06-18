@@ -582,7 +582,7 @@ public class SimpleTownNetwork : NetworkManager
             {
                 conn.Send(new ToastNotificationMessage {
                     text = $"Fonds insuffisants ({price} €).",
-                    typeByte = (byte)NotificationType.BANK,
+                    appId = PhoneAppIds.Bank,
                     worldToast = true,
                     kindByte = (byte)ToastKind.Error,
                 });
@@ -734,7 +734,7 @@ public class SimpleTownNetwork : NetworkManager
         else if (NotificationManager.Instance != null)
         {
             // Messages persistants / périodiques (salaire, etc.) → notification coin d'écran.
-            NotificationManager.Instance.AddNotification(message.text, message.Type);
+            NotificationManager.Instance.AddNotification(message.text, message.appId);
         }
     }
 

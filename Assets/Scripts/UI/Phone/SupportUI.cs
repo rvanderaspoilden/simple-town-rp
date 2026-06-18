@@ -52,7 +52,7 @@ public class SupportUI : PhoneApplicationUI {
             if (ok) {
                 if (messageField != null) messageField.text = string.Empty;
                 SetFeedback("Rapport envoyé. Merci !");
-                NotificationManager.Instance?.AddNotification("Rapport envoyé. Merci !", NotificationType.SUPPORT);
+                NotificationManager.Instance?.AddNotification("Rapport envoyé. Merci !", PhoneAppIds.Support);
             } else {
                 SetFeedback("Échec de l'envoi — réessayez.");
             }

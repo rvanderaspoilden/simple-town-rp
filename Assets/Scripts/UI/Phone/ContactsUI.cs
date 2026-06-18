@@ -161,6 +161,14 @@ public class ContactsUI : PhoneApplicationUI {
         if (callView != null) callView.SetActive(false);
     }
 
+    /// <summary>Open the SMS conversation with the given contact, switching from
+    /// the list view. Safe to call from outside (e.g. when the player taps an
+    /// SMS notification) — assumes the Contacts app itself was already brought
+    /// to the foreground via <see cref="PhoneControllerUI.ForceOpenApp"/>.</summary>
+    public void OpenConversation(string contactId, string contactName) {
+        ShowConversation(contactId, contactName);
+    }
+
     private void ShowConversation(string contactId, string contactName) {
         if (listView != null) listView.SetActive(false);
         if (conversationView != null) {

@@ -129,7 +129,7 @@ public class TrashBehaviour : PropBehaviourBase
     private void RequestThrow(int entityId, ItemBehaviour item)
     {
         ItemConfig cfg = item != null ? item.Configuration : null;
-        bool isContainer = cfg != null && cfg.Container != null && cfg.Container.IsContainer;
+        bool isContainer = Sim.Scriptables.ItemContainerConfig.Of(cfg)?.IsContainer == true;
 
         if (isContainer) {
             string label = !string.IsNullOrEmpty(cfg.Label) ? cfg.Label : "ce colis";

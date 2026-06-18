@@ -1065,17 +1065,24 @@ namespace Sim {
         }
 
         /// <summary>Réplique l'entrée/sortie de ragdoll sur tous les clients. À l'entrée : ragdoll
-        /// + (owner) verrouillage du déplacement. À la sortie : repos animé ; l'owner se relève sur
-        /// place (racine repositionnée sur les hanches, échantillonnée sur le NavMesh) puis Idle.</summary>
+        /// + (owner) verrouillage du déplacement + caméra owner réorientée sur les hanches (suit le
+        /// corps pendant la chute). À la sortie : repos animé ; l'owner se relève sur place (racine
+        /// repositionnée sur les hanches, échantillonnée sur le NavMesh) puis Idle, et la caméra
+        /// revient sur la cible tête habituelle.</summary>
         private void OnKnockdownChanged(bool _, bool now) {
             if (now) {
                 if (this.ragdoll != null) this.ragdoll.EnableRagdoll();
-                if (isLocalPlayer && this.stateMachine != null) this.stateMachine.SetState(knockdownState);
+                if (isLocalPlayer) {
+                    if (this.stateMachine != null) this.stateMachine.SetState(knockdownState);
+                    if (this.ragdoll != null && this.ragdoll.Hips != null)
+                        CameraManager.Instance.SetCameraTarget(this.ragdoll.Hips);
+                }
             } else {
                 if (isLocalPlayer) {
                     Vector3 stand = this.ragdoll != null ? this.ragdoll.HipsPosition : transform.position;
                     if (UnityEngine.AI.NavMesh.SamplePosition(stand, out var hit, 3f, UnityEngine.AI.NavMesh.AllAreas))
                         stand = hit.position;
+                    CameraManager.Instance.SetCameraTarget(this.GetHeadTargetForCamera());
                     if (this.ragdoll != null) this.ragdoll.DisableRagdoll();
                     transform.position = stand;
                     this.Idle();
@@ -1122,7 +1129,7 @@ namespace Sim {
         public void TargetRevive(NetworkConnection conn) {
             ClientLogger.Player("PlayerRevivedClient {PlayerNetId}", netId);
             Invoke(nameof(Idle), 1f);
-            NotificationManager.Instance.AddNotification("20 BC vous ont été volé lors de votre évanouissement. Les voleurs sont partout, faites attention à votre argent.", NotificationType.BANK);
+            NotificationManager.Instance.AddNotification("20 BC vous ont été volé lors de votre évanouissement. Les voleurs sont partout, faites attention à votre argent.", PhoneAppIds.Bank);
             ClientLogger.UI("ReviveNotificationShown");
         }
 

@@ -62,7 +62,7 @@ namespace Sim {
                         ApiManager.Instance.CreateGaragedVehicleCoroutine(charId, vehId, placeId, v => {
                             if (v != null && conn != null)
                                 conn.Send(new ToastNotificationMessage {
-                                    text = $"{config.modelName} acheté !", typeByte = (byte)NotificationType.BANK, worldToast = false });
+                                    text = $"{config.modelName} acheté !", appId = PhoneAppIds.Bank, worldToast = false });
                         }));
                 }));
         }
