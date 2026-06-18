@@ -4,6 +4,7 @@ using Sim;
 using Sim.Enums;
 using Sim.Logging;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.UI;
 using Action = Sim.Interactables.Action;
 
@@ -94,6 +95,14 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         _animator   = GetComponent<PlayerAnimator>();
         _styleSetup = GetComponent<CharacterStyleSetup>();
         _ragdoll    = GetComponent<RagdollController>();
+
+        // Le NavMeshAgent vit côté serveur (NpcAIController). Sur le client il est un vestige
+        // du prefab et DOIT être désactivé : sinon, quand la NavMeshObstacle du véhicule
+        // (carving=true) creuse la NavMesh sous le NPC à l'arrêt, l'agent éjecte le transform
+        // hors de la zone carved → les os du ragdoll, enfants du transform, suivent en physique
+        // dynamique → les joints s'étirent → squelette qui s'agite dans tous les directions.
+        // Pattern identique au PlayerController.OnStartClient (agent désactivé sur les remotes).
+        if (TryGetComponent(out NavMeshAgent agent)) agent.enabled = false;
 
         // Charge et instancie une copie de l'asset LOOK (même pattern que PlayerController).
         // Chaque vue dispose de sa propre instance pour éviter le partage d'event delegates.

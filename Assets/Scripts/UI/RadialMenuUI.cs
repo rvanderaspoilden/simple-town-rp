@@ -96,8 +96,28 @@ namespace Sim.UI {
                 this.Center();
             } else if(this.gameObject.activeSelf){
                 this.Close();
+                return;
+            }
+
+            // Close-on-outside-click : si l'utilisateur clique (gauche ou droit) hors du
+            // rayon des boutons, on ferme. Le frame d'ouverture est ignoré pour ne pas se
+            // refermer aussitôt avec le clic qui a ouvert le menu.
+            if (!this.gameObject.activeSelf) return;
+            if (Time.frameCount == this._openedFrame) return;
+            if (!Input.GetMouseButtonDown(0) && !Input.GetMouseButtonDown(1)) return;
+
+            Vector3 origin = this.GetPosition();
+            Vector2 mouse = Input.mousePosition;
+            // Marge de tolérance : on accepte les clics sur les boutons (positionnés à
+            // distance ≈ radius) plus une marge pour leur taille propre.
+            float clickRadius = this.radius + Mathf.Abs(this.buttonRadiusOffset) + 40f;
+            if (Vector2.Distance(new Vector2(origin.x, origin.y), mouse) > clickRadius) {
+                this.Close();
             }
         }
+
+        // Frame d'ouverture pour éviter qu'un clic d'ouverture referme aussitôt le menu.
+        private int _openedFrame = -1;
 
         public void Center() {
             float radiansOfSeparation = (Mathf.PI * 2) / this.radialMenuButtons.Count;
@@ -199,6 +219,7 @@ namespace Sim.UI {
             // Positionne tout sur la frame d'apparition pour éviter un « téléport » visible
             // depuis l'ancienne position (sinon le 1er placement n'a lieu qu'au prochain Update).
             this.Center();
+            this._openedFrame = Time.frameCount;
         }
 
         private void ClearButtons() {

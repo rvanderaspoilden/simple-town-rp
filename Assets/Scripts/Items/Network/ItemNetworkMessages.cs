@@ -261,6 +261,19 @@ public struct S2C_MoveItemResult : NetworkMessage
 }
 
 /// <summary>
+/// Client → server : divise une pile dans un autre slot du MÊME conteneur. <see cref="EntityId"/>
+/// = entité source (pile à diviser), <see cref="ToSlotIndex"/> = slot cible (libre, validé client),
+/// <see cref="Quantity"/> = nombre d'unités à extraire (1..srcQty-1). Le serveur POST une nouvelle
+/// ligne qty=Quantity au slot cible et PATCH la source qty-=Quantity.
+/// </summary>
+public struct C2S_SplitItem : NetworkMessage
+{
+    public int EntityId;
+    public int ToSlotIndex;
+    public int Quantity;
+}
+
+/// <summary>
 /// Client → server : échange atomique de deux items entre deux places (hand↔container,
 /// container↔container même placeId). Le hand↔hand passe par C2S_RequestSwapHands.
 /// Chaque slot doit être référencé par son place (UUID pour conteneur, "hand_*:charId"

@@ -19,6 +19,7 @@ public static class ItemSystemBootstrap
         NetworkServer.RegisterHandler<C2S_CloseContainer>(ServerItemManager.Instance.HandleCloseContainer);
         NetworkServer.RegisterHandler<C2S_MoveItem>(ServerItemManager.Instance.HandleMoveItem);
         NetworkServer.RegisterHandler<C2S_SwapItems>(ServerItemManager.Instance.HandleSwapItems);
+        NetworkServer.RegisterHandler<C2S_SplitItem>(ServerItemManager.Instance.HandleSplitItem);
         NetworkServer.RegisterHandler<C2S_PackProp>(ServerItemManager.Instance.HandlePackProp);
         NetworkServer.RegisterHandler<C2S_UnpackProp>(ServerItemManager.Instance.HandleUnpackProp);
         NetworkServer.RegisterHandler<C2S_DropFromInventory>(ServerItemManager.Instance.HandleDropFromInventory);
@@ -44,6 +45,7 @@ public static class ItemSystemBootstrap
         NetworkServer.UnregisterHandler<C2S_CloseContainer>();
         NetworkServer.UnregisterHandler<C2S_MoveItem>();
         NetworkServer.UnregisterHandler<C2S_SwapItems>();
+        NetworkServer.UnregisterHandler<C2S_SplitItem>();
         NetworkServer.UnregisterHandler<C2S_PackProp>();
         NetworkServer.UnregisterHandler<C2S_UnpackProp>();
         NetworkServer.UnregisterHandler<C2S_DropFromInventory>();

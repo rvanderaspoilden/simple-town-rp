@@ -724,8 +724,10 @@ public class ServerItemManager
             || TryGetHeldPackage(netId, roomId, out _, out _, out _);
     }
 
-    // Cœur partagé : crée un item (config) dans le colis tenu — ensure place + slot libre +
-    // POST item + maj session live. Utilisé par le ramassage ET SpawnItemIntoInventory.
+    // Cœur partagé : ajoute un item (config) dans le colis tenu. Politique : MERGE D'ABORD
+    // dans une pile existante de même config avec place restante (qty < MaxStackSize),
+    // sinon POST une nouvelle ligne dans le premier slot libre. Utilisé par le ramassage ET
+    // SpawnItemIntoInventory.
     private IEnumerator CreateItemInPackageCoroutine(NetworkConnectionToClient conn, uint netId, int configId,
         string charId, string pkgUuid, ContainerConfig pkgCfg, System.Action onSuccess, System.Action<string> onFail) {
         string placeKey = $"item_container:{pkgUuid}";
@@ -747,21 +749,63 @@ public class ServerItemManager
         UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
         yield return stateReq.SendWebRequest();
         var occupied = new HashSet<int>();
+        PlaceStateJson stateData = null;
         if (stateReq.responseCode == 200) {
             try {
-                var sd = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
-                if (sd?.items != null) foreach (var it in sd.items) occupied.Add(ReadSlotIndex(it.stateData));
+                stateData = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
+                if (stateData?.items != null) foreach (var it in stateData.items) occupied.Add(ReadSlotIndex(it.stateData));
                 // Les meubles emballés occupent aussi des slots → ne pas écraser leur place.
-                if (sd?.props != null) foreach (var p in sd.props) occupied.Add(ReadSlotIndex(p.stateData));
+                if (stateData?.props != null) foreach (var p in stateData.props) occupied.Add(ReadSlotIndex(p.stateData));
             } catch { }
         }
-        int freeSlot = -1;
-        for (int i = 0; i < pkgCfg.SlotCount; i++) if (!occupied.Contains(i)) { freeSlot = i; break; }
-        if (freeSlot < 0) { onFail?.Invoke("Colis plein"); yield break; }
 
         var itemCfg = DatabaseManager.GetItemConfigById(configId);
         if (IsStorageItem(itemCfg)) { onFail?.Invoke(InventoryToasts.NoNestedStorage); yield break; }
         if (itemCfg != null && !pkgCfg.Accepts(itemCfg.Type)) { onFail?.Invoke("Refusé par le colis"); yield break; }
+
+        // ── Tentative MERGE : pile de même config avec place restante. ─────────
+        // Évite « Colis plein » quand un slot occupé pourrait absorber une unité supplémentaire.
+        int maxStack = itemCfg != null ? itemCfg.MaxStackSize : 1;
+        if (maxStack > 1 && stateData?.items != null) {
+            foreach (var it in stateData.items) {
+                if (it.configId != configId) continue;
+                int curQty = Mathf.Max(1, it.quantity);
+                if (curQty >= maxStack) continue;
+                int slotIdx = ReadSlotIndex(it.stateData);
+                var mergeBody = new UpdateItemBody {
+                    expectedVersion = it.version,
+                    quantity = curQty + 1,
+                };
+                UnityWebRequest mergeReq = ApiManager.Instance.UpdateItemRequest(it.Id, mergeBody);
+                yield return mergeReq.SendWebRequest();
+                if (mergeReq.responseCode < 200 || mergeReq.responseCode >= 300) {
+                    Debug.LogWarning($"[ServerItemManager] CreateItemInPackage merge PATCH failed code={mergeReq.responseCode} — fallback free slot");
+                    break; // tombe sur la branche free-slot ci-dessous
+                }
+                int newVersion = it.version + 1;
+                try { var item = JsonConvert.DeserializeObject<ItemJson>(mergeReq.downloadHandler.text); if (item != null) newVersion = item.version; } catch { }
+                // Si le colis est ouvert chez l'opener, met à jour la session in-place.
+                if (_openItemContainerByPlayer.TryGetValue(netId, out var openSess) && openSess.PlaceId == placeId) {
+                    foreach (var kv in openSess.ItemsByEntityId) {
+                        if (kv.Value.ItemUuid == it.Id) {
+                            kv.Value.Quantity = curQty + 1;
+                            kv.Value.Version = newVersion;
+                            if (_bridges.TryGetValue(kv.Key, out var br)) br.Version = newVersion;
+                            break;
+                        }
+                    }
+                    SendItemContainerSnapshot(conn, openSess);
+                }
+                GameLogger.Network.Info("ItemMergeInPackage configId={C} slot={S} newQty={Q} netId={N}",
+                    configId, slotIdx, curQty + 1, netId);
+                onSuccess?.Invoke();
+                yield break;
+            }
+        }
+
+        int freeSlot = -1;
+        for (int i = 0; i < pkgCfg.SlotCount; i++) if (!occupied.Contains(i)) { freeSlot = i; break; }
+        if (freeSlot < 0) { onFail?.Invoke("Colis plein"); yield break; }
 
         var body = new CreateItemBody {
             placeId = placeId, configId = configId, quantity = 1, ownedBy = charId,
@@ -2861,6 +2905,126 @@ public class ServerItemManager
         }
 
         ApiManager.Instance?.StartCoroutine(SwapItemsCoroutine(conn, msg, ctxA, itemA, ctxB, itemB));
+    }
+
+    // ── Split d'une pile dans un autre slot du MÊME conteneur ─────────────────
+    // Source = entité dans le conteneur ouvert chez le joueur (prop OU item-container).
+    // Cible = slot LIBRE dans le même conteneur. Crée une nouvelle ligne DB qty=K + PATCH
+    // source qty-=K. Rollback symétrique. Le client valide qu'un slot libre existe avant
+    // d'envoyer le message ; le serveur revalide (course possible avec un autre move).
+    public void HandleSplitItem(NetworkConnectionToClient conn, C2S_SplitItem msg) {
+        if (conn?.identity == null) return;
+        uint netId = conn.identity.netId;
+        var player = conn.identity.GetComponent<Sim.PlayerController>();
+        string charId = player?.CharacterData?.Id;
+        if (string.IsNullOrEmpty(charId)) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Sans caractère" });
+            return;
+        }
+
+        // Localise la session conteneur courante (prop OU item-container) qui contient l'entité source.
+        ContainerSession propSess = null;
+        ItemContainerSession itemSess = null;
+        ContainerSessionItem srcSI = null;
+        if (_openContainerByPlayer.TryGetValue(netId, out var ps) && ps.ItemsByEntityId.TryGetValue(msg.EntityId, out var ci1)) {
+            propSess = ps; srcSI = ci1;
+        } else if (_openItemContainerByPlayer.TryGetValue(netId, out var ips) && ips.ItemsByEntityId.TryGetValue(msg.EntityId, out var ci2)) {
+            itemSess = ips; srcSI = ci2;
+        }
+        if (srcSI == null || srcSI.IsProp) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Item introuvable" });
+            return;
+        }
+
+        int srcQty = Mathf.Max(1, srcSI.Quantity);
+        int k = Mathf.Clamp(msg.Quantity, 1, srcQty - 1);
+        if (k <= 0) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Quantité invalide" });
+            return;
+        }
+
+        string placeId = propSess != null ? propSess.PlaceId : itemSess.PlaceId;
+        var slotMap = propSess != null ? propSess.SlotToEntityId : itemSess.SlotToEntityId;
+        int slotCount = propSess != null ? propSess.Config.SlotCount : itemSess.Config.SlotCount;
+        int toSlot = msg.ToSlotIndex;
+        if (toSlot < 0 || toSlot >= slotCount || slotMap.ContainsKey(toSlot)) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Slot cible indisponible" });
+            return;
+        }
+
+        ApiManager.Instance?.StartCoroutine(SplitItemCoroutine(conn, netId, msg.EntityId, srcSI, k, placeId, toSlot, charId));
+    }
+
+    private IEnumerator SplitItemCoroutine(NetworkConnectionToClient conn, uint netId, int srcEntityId,
+        ContainerSessionItem srcSI, int k, string placeId, int toSlot, string charId)
+    {
+        int srcQty = Mathf.Max(1, srcSI.Quantity);
+        int srcVersion = srcSI.Version;
+        string srcUuid = srcSI.ItemUuid;
+        int configId = srcSI.ConfigId;
+        if (string.IsNullOrEmpty(srcUuid)) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = srcEntityId, ErrorMessage = "Pile non persistée" });
+            yield break;
+        }
+
+        // 1. POST nouvelle ligne qty=k au slot cible.
+        var createBody = new CreateItemBody {
+            placeId = placeId, configId = configId, quantity = k, ownedBy = charId,
+            stateData = new Dictionary<string, object> { { "slotIndex", toSlot } },
+        };
+        UnityWebRequest createReq = ApiManager.Instance.CreateItemRequest(createBody);
+        yield return createReq.SendWebRequest();
+        if (createReq.responseCode < 200 || createReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] Split POST failed code={createReq.responseCode}");
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = srcEntityId, ErrorMessage = $"Échec split ({createReq.responseCode})" });
+            yield break;
+        }
+        string newUuid = null; int newVersion = 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(createReq.downloadHandler.text); if (it != null) { newUuid = it.Id; newVersion = it.version; } }
+        catch { }
+        if (string.IsNullOrEmpty(newUuid)) {
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = srcEntityId, ErrorMessage = "Split sans uuid" });
+            yield break;
+        }
+
+        // 2. PATCH source qty -=k.
+        var patchBody = new UpdateItemBody { expectedVersion = srcVersion, quantity = srcQty - k };
+        UnityWebRequest patchReq = ApiManager.Instance.UpdateItemRequest(srcUuid, patchBody);
+        yield return patchReq.SendWebRequest();
+        if (patchReq.responseCode < 200 || patchReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] Split PATCH src failed code={patchReq.responseCode} — rollback");
+            yield return ApiManager.Instance.DeleteItemRequest(newUuid).SendWebRequest();
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = srcEntityId, ErrorMessage = $"Échec split src ({patchReq.responseCode})" });
+            yield break;
+        }
+        int srcNewVersion = srcVersion + 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(patchReq.downloadHandler.text); if (it != null) srcNewVersion = it.version; } catch { }
+
+        // 3. Met à jour la session in-place + alloue entityId pour la nouvelle pile.
+        srcSI.Quantity = srcQty - k;
+        srcSI.Version = srcNewVersion;
+        if (_bridges.TryGetValue(srcEntityId, out var srcBridge)) srcBridge.Version = srcNewVersion;
+
+        int newEntityId = _nextEntityId++;
+        var newSI = new ContainerSessionItem {
+            EntityId = newEntityId, ConfigId = configId, SlotIndex = toSlot,
+            ItemUuid = newUuid, Version = newVersion, Quantity = k,
+        };
+        if (_openContainerByPlayer.TryGetValue(netId, out var ps) && ps.PlaceId == placeId) {
+            ps.ItemsByEntityId[newEntityId] = newSI;
+            ps.SlotToEntityId[toSlot] = newEntityId;
+            SendContainerSnapshot(conn, ps);
+            PropagateContainerUpdateToOtherSubscribers(netId, new ContainerPlaceContext(this, ps), new ContainerPlaceContext(this, ps));
+        } else if (_openItemContainerByPlayer.TryGetValue(netId, out var ips) && ips.PlaceId == placeId) {
+            ips.ItemsByEntityId[newEntityId] = newSI;
+            ips.SlotToEntityId[toSlot] = newEntityId;
+            SendItemContainerSnapshot(conn, ips);
+        }
+        _bridges[newEntityId] = new ItemDbBridge { Uuid = newUuid, Version = newVersion, PlaceId = placeId };
+
+        conn.Send(new S2C_MoveItemResult { Success = true, EntityId = srcEntityId });
+        GameLogger.Network.Info("SplitItem netId={NetId} src={SrcEid} (qty {SrcOld}→{SrcNew}) → slot={ToSlot} qty={K} newUuid={NewUuid}",
+            netId, srcEntityId, srcQty, srcQty - k, toSlot, k, newUuid);
     }
 
     private IEnumerator SwapItemsCoroutine(NetworkConnectionToClient conn, C2S_SwapItems msg,

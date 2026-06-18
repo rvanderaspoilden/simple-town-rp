@@ -74,6 +74,30 @@ public class InventoryActionMenu : MonoBehaviour {
         this._canvasGroup.blocksRaycasts = true;
         this._canvasGroup.interactable = true;
         this._canvasGroup.DOFade(1, .3f);
+        // Le clic qui a OUVERT le menu peut encore être détecté par Update ce même frame.
+        // On le mémorise pour ignorer le close-on-outside-click pendant cette frame.
+        this._openedFrame = Time.frameCount;
+    }
+
+    // Frame d'ouverture pour éviter qu'un clic d'ouverture (Input.GetMouseButtonDown
+    // toujours true à la frame de Setup) referme aussitôt le menu.
+    private int _openedFrame = -1;
+
+    /// <summary>Ferme le menu si l'utilisateur clique (gauche ou droit) HORS du rect du menu.
+    /// Les clics sur les boutons internes restent gérés par eux (OnPointerClick).</summary>
+    private void Update() {
+        if (this._canvasGroup == null || !this._canvasGroup.blocksRaycasts) return;
+        if (Time.frameCount == this._openedFrame) return; // skip same-frame as Show
+        if (!Input.GetMouseButtonDown(0) && !Input.GetMouseButtonDown(1)) return;
+
+        if (this._rect == null) return;
+        Camera cam = (this._canvas != null && this._canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            ? this._canvas.worldCamera : null;
+        bool inside = RectTransformUtility.RectangleContainsScreenPoint(this._rect, Input.mousePosition, cam);
+        if (inside) return; // click ON a button → laisse l'event system propager
+
+        this.DisposeTransient();
+        this.Hide();
     }
 
     /// <summary>Place le menu au niveau du curseur. Le pivot bascule vers le centre écran
@@ -100,35 +124,51 @@ public class InventoryActionMenu : MonoBehaviour {
         }
     }
 
-    // ── Action transitoire : menu contextuel à UNE action câblée à un callback ────
-    // Réutilisé par ContainerPanelUI (Poser / Lâcher) et InventoryUI (Lâcher poche).
-    private Action _transientAction;
-    private System.Action _transientCallback;
+    // ── Actions transitoires : menu contextuel câblé à des callbacks ad-hoc ──────
+    // Réutilisé par ContainerPanelUI (Poser / Lâcher / Diviser) et InventoryUI (Lâcher poche).
+    private readonly List<Action> _transientActions = new List<Action>();
+    private readonly List<System.Action> _transientCallbacks = new List<System.Action>();
 
     /// <summary>Affiche le menu avec UNE action clonée de <paramref name="proto"/> ; au clic,
     /// exécute <paramref name="onExecute"/> puis se ferme. Gère le cycle de vie du clone.</summary>
     public void ShowSingleAction(Action proto, System.Action onExecute) {
         if (proto == null) return;
+        ShowMultiAction(new List<Action> { proto }, new List<System.Action> { onExecute });
+    }
+
+    /// <summary>Affiche un menu à plusieurs actions clonées (<paramref name="protos"/>) chacune
+    /// câblée à son callback (<paramref name="onExecutes"/>, même ordre/taille).</summary>
+    public void ShowMultiAction(List<Action> protos, List<System.Action> onExecutes) {
+        if (protos == null || onExecutes == null || protos.Count == 0) return;
         DisposeTransient();
-        _transientAction = Instantiate(proto);
-        _transientCallback = onExecute;
-        _transientAction.OnExecute += OnTransientExecuted;
-        Setup(new List<Action> { _transientAction });
+        var clones = new List<Action>(protos.Count);
+        for (int i = 0; i < protos.Count; i++) {
+            if (protos[i] == null) continue;
+            Action clone = Instantiate(protos[i]);
+            clone.OnExecute += OnTransientExecuted;
+            _transientActions.Add(clone);
+            _transientCallbacks.Add(i < onExecutes.Count ? onExecutes[i] : null);
+            clones.Add(clone);
+        }
+        Setup(clones);
     }
 
     private void OnTransientExecuted(Action a) {
-        System.Action cb = _transientCallback;
+        int idx = _transientActions.IndexOf(a);
+        System.Action cb = (idx >= 0 && idx < _transientCallbacks.Count) ? _transientCallbacks[idx] : null;
         DisposeTransient();
         Hide();
         cb?.Invoke();
     }
 
     private void DisposeTransient() {
-        if (_transientAction == null) return;
-        _transientAction.OnExecute -= OnTransientExecuted;
-        Destroy(_transientAction);
-        _transientAction = null;
-        _transientCallback = null;
+        foreach (var a in _transientActions) {
+            if (a == null) continue;
+            a.OnExecute -= OnTransientExecuted;
+            Destroy(a);
+        }
+        _transientActions.Clear();
+        _transientCallbacks.Clear();
     }
 
     private void OnDestroy() {

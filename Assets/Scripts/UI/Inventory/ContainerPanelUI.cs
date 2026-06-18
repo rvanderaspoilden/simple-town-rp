@@ -81,6 +81,7 @@ public class ContainerPanelUI : MonoBehaviour
     // InventoryActionMenu.ShowSingleAction.
     private Sim.Interactables.Action _protoPoser;
     private Sim.Interactables.Action _protoDrop;
+    private Sim.Interactables.Action _protoSplit;
     private UnityEngine.CanvasGroup _slotsGroup;
 
     private void Awake()
@@ -125,12 +126,14 @@ public class ContainerPanelUI : MonoBehaviour
             ClientItemManager.ItemContainerOpenFailed += OnItemContainerOpenFailed;
             PackageItemBehaviour.OnItemContainerOpenRequested += OnItemContainerOpenRequested;
             PlayerHands.OnHandChanged                 += OnLocalHandsChanged;
-            DraggableItem.OnRightClick                += OnEntryRightClicked;
         } else {
             ClientItemManager.ContainerOpened     += OnContainerOpened;
             ClientItemManager.ContainerOpenFailed += OnContainerOpenFailed;
             StorageContainerBehaviour.OnOpenRequested += OnOptimisticOpenRequested;
         }
+        // Le menu contextuel (clic droit) sert les deux canaux : SPLIT s'applique à toute
+        // pile (qty>1) du conteneur ouvert, peu importe son type (prop ou item-container).
+        DraggableItem.OnRightClick            += OnEntryRightClicked;
         DraggableItem.OnDoubleClick           += OnItemDoubleClicked;
         _subscribed = true;
     }
@@ -143,12 +146,12 @@ public class ContainerPanelUI : MonoBehaviour
             ClientItemManager.ItemContainerOpenFailed -= OnItemContainerOpenFailed;
             PackageItemBehaviour.OnItemContainerOpenRequested -= OnItemContainerOpenRequested;
             PlayerHands.OnHandChanged                 -= OnLocalHandsChanged;
-            DraggableItem.OnRightClick                -= OnEntryRightClicked;
         } else {
             ClientItemManager.ContainerOpened     -= OnContainerOpened;
             ClientItemManager.ContainerOpenFailed -= OnContainerOpenFailed;
             StorageContainerBehaviour.OnOpenRequested -= OnOptimisticOpenRequested;
         }
+        DraggableItem.OnRightClick            -= OnEntryRightClicked;
         DraggableItem.OnDoubleClick           -= OnItemDoubleClicked;
         _subscribed = false;
     }
@@ -211,32 +214,79 @@ public class ContainerPanelUI : MonoBehaviour
 
     /// <summary>
     /// Clic droit sur une entrée de la grille → menu contextuel HUD :
-    ///  - meuble emballé → « Poser » (mode placement, le serveur déplace le meuble, UUID conservé) ;
-    ///  - item normal, SI le colis ouvert est tenu en main → « Lâcher » (au sol).
+    ///  - meuble emballé (canal Item) → « Poser » (mode placement, UUID conservé) ;
+    ///  - item normal (canal Item, colis tenu) → « Lâcher » (au sol) ;
+    ///  - item normal avec quantité &gt; 1 (les deux canaux) → « Diviser » (modale slider/text).
     /// </summary>
     private void OnEntryRightClicked(DraggableItem item)
     {
-        if (!IsItemChannel || !IsOpen || item == null || item.ItemSlot == null) return;
+        if (!IsOpen || item == null || item.ItemSlot == null) return;
         if (!OwnsSlot(item.ItemSlot)) return;
 
         var menu = InventoryActionMenu.Shared;
         if (menu == null) return;
 
-        if (item.IsPackedProp) {
+        // Canal Item : meuble emballé → POSER en priorité (déballage build-mode).
+        if (IsItemChannel && item.IsPackedProp) {
             if (_protoPoser == null) _protoPoser = Resources.Load<Sim.Interactables.Action>("Configurations/Actions/POSER");
             if (_protoPoser == null) return;
             int cfgId = item.PropConfigId, preset = item.PropPresetId, pkg = _currentItemEntityId, slot = item.ItemSlot.SlotIndex;
             menu.ShowSingleAction(_protoPoser, () => StartUnpack(cfgId, preset, pkg, slot));
-        } else {
-            // « Lâcher » uniquement si le colis ouvert est actuellement tenu en main.
-            if (!IsLocalHeldEntity(_currentItemEntityId)) return;
-            if (_protoDrop == null) _protoDrop = Resources.Load<Sim.Interactables.Action>("Configurations/Actions/DROP");
-            if (_protoDrop == null) return;
-            int eid = item.EntityId;
-            menu.ShowSingleAction(_protoDrop, () => {
-                if (NetworkClient.isConnected) NetworkClient.Send(new C2S_DropFromInventory { EntityId = eid });
-            });
+            return;
         }
+
+        // Construit la liste d'actions disponibles pour un item normal.
+        var protos = new List<Sim.Interactables.Action>();
+        var callbacks = new List<System.Action>();
+
+        // SPLIT (les deux canaux) : disponible si pile (qty>1) ET au moins un slot libre dans
+        // CE conteneur (sinon la division n'aurait nulle part où aller — on évite de proposer
+        // une action qui échouerait avec un toast « Conteneur plein »).
+        if (item.Quantity > 1 && FindFirstFreeSlot() >= 0) {
+            if (_protoSplit == null) _protoSplit = Resources.Load<Sim.Interactables.Action>("Configurations/Actions/SPLIT");
+            if (_protoSplit != null) {
+                int eid = item.EntityId;
+                int qty = item.Quantity;
+                string label = item.ItemConfig != null ? item.ItemConfig.Label : null;
+                protos.Add(_protoSplit);
+                callbacks.Add(() => RequestSplit(eid, qty, label));
+            }
+        }
+
+        // LÂCHER (canal Item) : uniquement si le colis ouvert est tenu en main.
+        if (IsItemChannel && IsLocalHeldEntity(_currentItemEntityId)) {
+            if (_protoDrop == null) _protoDrop = Resources.Load<Sim.Interactables.Action>("Configurations/Actions/DROP");
+            if (_protoDrop != null) {
+                int eid = item.EntityId;
+                protos.Add(_protoDrop);
+                callbacks.Add(() => { if (NetworkClient.isConnected) NetworkClient.Send(new C2S_DropFromInventory { EntityId = eid }); });
+            }
+        }
+
+        if (protos.Count == 0) return;
+        if (protos.Count == 1) {
+            menu.ShowSingleAction(protos[0], callbacks[0]);
+        } else {
+            menu.ShowMultiAction(protos, callbacks);
+        }
+    }
+
+    /// <summary>Ouvre la modale Diviser ; à la validation, vérifie qu'un slot libre existe
+    /// dans CE conteneur et envoie <see cref="C2S_SplitItem"/>. Sinon toast d'erreur.</summary>
+    private void RequestSplit(int sourceEntityId, int sourceQty, string itemLabel) {
+        int maxSplit = sourceQty - 1;
+        if (maxSplit <= 0) return;
+        string title = string.IsNullOrEmpty(itemLabel) ? "Diviser la pile" : $"Diviser — {itemLabel}";
+        Sim.UI.SplitDialogUI.Request(title, 1, maxSplit, Mathf.Max(1, maxSplit / 2), chosen => {
+            int freeSlot = FindFirstFreeSlot();
+            if (freeSlot < 0) { WorldToastManager.ShowError(InventoryToasts.ContainerFull); return; }
+            if (!NetworkClient.isConnected) return;
+            NetworkClient.Send(new C2S_SplitItem {
+                EntityId = sourceEntityId,
+                ToSlotIndex = freeSlot,
+                Quantity = chosen,
+            });
+        });
     }
 
     private void StartUnpack(int propConfigId, int presetId, int packageEntityId, int slotIndex)
