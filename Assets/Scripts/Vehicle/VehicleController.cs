@@ -144,7 +144,6 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     [SyncVar(hook = nameof(OnPassenger2Changed))] private uint passenger2NetId;
 
     private Action _enterAction;
-    private Action _exitAction;
     private Action _lockAction;
     private Action _unlockAction;
     private Action _refuelAction;
@@ -306,12 +305,6 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             _enterAction = Instantiate(proto);
             _enterAction.OnExecute += OnEnterActionExecuted;
         }
-        Action exitProto = Resources.Load<Action>("Configurations/Actions/EXIT_VEHICLE");
-        if (exitProto != null) {
-            _exitAction = Instantiate(exitProto);
-            _exitAction.OnExecute += OnExitActionExecuted;
-        }
-
         // Lock / unlock / coffre : configs DÉDIÉES au véhicule (icône + libellé personnalisables
         // sans impacter les actions génériques LOCK/UNLOCK/OPEN des portes & conteneurs).
         Action lockProto = Resources.Load<Action>("Configurations/Actions/VEHICLE_LOCK");
@@ -437,7 +430,6 @@ public class VehicleController : NetworkBehaviour, IInteractable {
 
     private void OnDestroy() {
         if (_enterAction != null) _enterAction.OnExecute -= OnEnterActionExecuted;
-        if (_exitAction != null) _exitAction.OnExecute -= OnExitActionExecuted;
         if (_lockAction != null) _lockAction.OnExecute -= OnLockActionExecuted;
         if (_unlockAction != null) _unlockAction.OnExecute -= OnUnlockActionExecuted;
         if (_refuelAction != null) _refuelAction.OnExecute -= OnRefuelActionExecuted;
@@ -455,24 +447,26 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     // ── IInteractable ─────────────────────────────────────────────────────────────
 
     public float GetRange()          => interactionRange;
-    public bool  IsInteractable()    => CanEnterAction() || CanExitAction() || OwnerLockActionAvailable() || CanRefuelAction() || CanOpenTrunkAction() || CanRepairAction();
+    /// <summary>Aucune interaction au survol quand le joueur local est à bord — la sortie passe
+    /// EXCLUSIVEMENT par la touche X (cf. <see cref="LocalRequestExit"/> dans Update). Survol = ouvrir
+    /// le contextuel d'un coffre / faire le plein / verrouiller depuis l'extérieur uniquement.</summary>
+    public bool  IsInteractable()    => !LocalIsOnboard()
+                                     && (CanEnterAction() || OwnerLockActionAvailable()
+                                         || CanRefuelAction() || CanOpenTrunkAction() || CanRepairAction());
     public bool  IsRightClickOnly()  => false;
     public void  StopInteraction()   { }
 
+    private bool LocalIsOnboard() {
+        var local = PlayerController.Local;
+        return local != null && IsOccupant(local.netId);
+    }
+
     /// <summary>Action « Monter » disponible : véhicule déverrouillé + place libre + le joueur local
-    /// n'est PAS déjà à bord (un occupant voit « Sortir », pas « Monter »).</summary>
+    /// n'est PAS déjà à bord.</summary>
     private bool CanEnterAction() {
         if (_enterAction == null || isLocked || !HasFreeSeat()) return false;
         var local = PlayerController.Local;
         return local != null && !IsOccupant(local.netId);
-    }
-
-    /// <summary>Action « Sortir » disponible : le joueur local est à bord (conducteur ou passager).
-    /// Affichée MÊME verrouillé : la tentative déclenche alors un toast d'erreur (cf. LocalRequestExit).</summary>
-    private bool CanExitAction() {
-        if (_exitAction == null) return false;
-        var local = PlayerController.Local;
-        return local != null && IsOccupant(local.netId);
     }
 
     /// <summary>Action « Mettre de l'essence » : visible dès que le joueur local tient un bidon
@@ -513,9 +507,10 @@ public class VehicleController : NetworkBehaviour, IInteractable {
     public bool IsOwnedBy(string characterId) => !string.IsNullOrEmpty(ownerCharacterId) && ownerCharacterId == characterId;
 
     public Action[] GetActions(bool withPriority = false) {
+        // Survol bloqué dès que le joueur est à bord (sortie = touche X uniquement).
+        if (LocalIsOnboard()) return System.Array.Empty<Action>();
         var list = new List<Action>(4);
         if (CanEnterAction()) list.Add(_enterAction);
-        if (CanExitAction()) list.Add(_exitAction);
         if (OwnerLockActionAvailable()) list.Add(isLocked ? _unlockAction : _lockAction);
         if (CanRefuelAction()) list.Add(_refuelAction);
         if (CanOpenTrunkAction()) list.Add(_openTrunkAction);
@@ -528,11 +523,10 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         CmdEnterVehicle();
     }
 
-    private void OnExitActionExecuted(Action action) => LocalRequestExit();
-
-    /// <summary>Point d'entrée CLIENT unique de la sortie (clic « Sortir » OU touche X, conducteur
-    /// comme passager). Verrouillé → toast d'erreur, aucune Command. Sinon dispatch conducteur /
-    /// passager. isLocked est répliqué → le contrôle client est fiable (le serveur revalide aussi).</summary>
+    /// <summary>Point d'entrée CLIENT unique de la sortie (touche X, conducteur comme passager — il
+    /// n'y a plus d'action contextuelle « Sortir »). Verrouillé → toast d'erreur, aucune Command.
+    /// Sinon dispatch conducteur / passager. isLocked est répliqué → le contrôle client est fiable
+    /// (le serveur revalide aussi).</summary>
     public void LocalRequestExit() {
         var local = PlayerController.Local;
         if (local == null) return;
@@ -543,7 +537,22 @@ public class VehicleController : NetworkBehaviour, IInteractable {
 
     private void OnLockActionExecuted(Action action)   => CmdSetLockAsOwner(true);
     private void OnUnlockActionExecuted(Action action) => CmdSetLockAsOwner(false);
-    private void OnRefuelActionExecuted(Action action) => CmdRefuel();
+    private void OnRefuelActionExecuted(Action action) {
+        // Pré-check client : on connaît le niveau du bidon tenu (répliqué via S2C_ItemFuel sur
+        // FuelCanisterBehaviour). Bidon vide → toast immédiat, pas de round-trip serveur.
+        FuelCanisterBehaviour canister = LocalHeldCanister();
+        if (canister != null && canister.Fuel <= 0f) { WorldToastManager.ShowError("Bidon vide"); return; }
+        CmdRefuel();
+    }
+
+    /// <summary>Bidon (FuelCanisterBehaviour) tenu par le joueur local, ou null s'il n'en tient
+    /// aucun. La main droite est privilégiée si les deux en tiennent un.</summary>
+    private static FuelCanisterBehaviour LocalHeldCanister() {
+        var local = PlayerController.Local;
+        if (local == null || local.PlayerHands == null) return null;
+        return (local.PlayerHands.RightHandItem as FuelCanisterBehaviour)
+            ?? (local.PlayerHands.LeftHandItem as FuelCanisterBehaviour);
+    }
 
     /// <summary>Ouverture du coffre : verrouillé → toast d'erreur, aucune Command (le serveur revalide).</summary>
     private void OnOpenTrunkActionExecuted(Action action) {

@@ -300,6 +300,7 @@ namespace Sim {
             this.Collider = GetComponent<Collider>();
             this.characterStyleSetup = GetComponent<CharacterStyleSetup>();
             this.ragdoll = GetComponent<RagdollController>();
+            this._navPathScratch = new NavMeshPath();
         }
 
         public override void OnStartClient() {
@@ -956,12 +957,31 @@ namespace Sim {
         }
 
         public void MoveTo(Vector3 targetPoint, bool isRunning = false) {
+            // Agent désactivé (knockdown, conduite, mort, hors NavMesh) : on ignore silencieusement.
+            // Pas une erreur utilisateur — pas de toast.
+            if (this.navMeshAgent == null || !this.navMeshAgent.enabled || !this.navMeshAgent.isOnNavMesh) return;
+
+            // SetDestination snappe le point sur la NavMesh la plus proche mais ne dit pas si une
+            // route existe : un clic derrière un mur ou sur une île NavMesh isolée laisserait le
+            // joueur figé sans feedback. On précalcule le chemin et on rejette tout PathPartial /
+            // PathInvalid avec un toast d'erreur — la marche n'est engagée que si PathComplete.
+            if (!this.navMeshAgent.CalculatePath(targetPoint, _navPathScratch)
+                || _navPathScratch.status != NavMeshPathStatus.PathComplete) {
+                WorldToastManager.ShowError("Inaccessible");
+                return;
+            }
+
             this.stateMachine.SetState(moveState);
             this.navMeshAgent.speed = (isRunning ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier();
             this.navMeshAgent.SetDestination(targetPoint);
 
             HUDManager.Instance.CloseInventory();
         }
+
+        // Réutilisé par MoveTo pour éviter une alloc à chaque clic. NavMeshPath NE PEUT PAS être
+        // construit dans un field initializer ni un constructeur Unity — il faut attendre Awake
+        // (sinon la ref native sous-jacente est nulle et CalculatePath jette une NRE).
+        private NavMeshPath _navPathScratch;
 
         // Bonus de vitesse passif issu des nœuds de constellation débloqués (ex. nœud
         // Vitesse du Livreur). Lu sur le provider du joueur LOCAL — le mouvement est

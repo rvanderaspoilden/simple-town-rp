@@ -22,8 +22,8 @@ using UnityEngine;
 /// concurrents ; chaque toast suit son ancre et se détruit seul (~2.6s).
 ///
 /// CONVENTION (obligatoire) — tout feedback de résultat d'action passe par <see cref="ShowError"/>
-/// (échec/refus : rouge + ⚠ + secousse + SON) ou <see cref="ShowSuccess"/> (réussite : vert + ✓ +
-/// rebond, SILENCIEUX). Ne jamais reconstruire un toast à la main ni utiliser <see cref="Show"/>
+/// (échec/refus : rouge + secousse + SON) ou <see cref="ShowSuccess"/> (réussite : vert + rebond,
+/// SILENCIEUX). Ne jamais reconstruire un toast à la main ni utiliser <see cref="Show"/>
 /// neutre pour un résultat d'action — c'est réservé aux floaties cosmétiques (emoji social via
 /// <see cref="ShowAbove"/>). Côté serveur : <c>ToastNotificationMessage</c> avec <c>worldToast=true</c>
 /// DOIT porter un <c>kindByte</c> (ToastKind.Error/Success), jamais Neutral. Seul l'ERREUR sonne.
@@ -38,6 +38,12 @@ public class WorldToastManager : MonoBehaviour
 
     private static WorldToastManager _instance;
     private readonly List<WorldToast> _active = new List<WorldToast>();
+    // Dédup : clé (anchor|kind|title|subtitle) → toast vivant (ou null pendant un délai en attente).
+    // Tant qu'une entrée existe, un appel identique est ignoré silencieusement — évite les rafales
+    // (clic maintenu sur une destination inaccessible = MoveTo 60×/s) et les doublons de codepath
+    // (deux systèmes qui produisent le même message dans la même frame). L'entrée est libérée
+    // quand le toast termine son animation OU si la résolution d'ancre échoue.
+    private readonly Dictionary<string, WorldToast> _activeByKey = new Dictionary<string, WorldToast>();
 
     /// <summary>
     /// Toast LOCAL au-dessus du joueur local (aucun réseau). Cas par défaut.
@@ -50,7 +56,7 @@ public class WorldToastManager : MonoBehaviour
     public static void Show(string message, float delay = 0f, Color? accent = null)
         => Show(message, null, delay, accent);
 
-    /// <summary>Toast d'ERREUR local (template commun : rouge + icône ⚠ + son + secousse).</summary>
+    /// <summary>Toast d'ERREUR local (template commun : rouge + son + secousse).</summary>
     public static void ShowError(string message, float delay = 0f)
         => ShowKind(0u, message, null, delay, DefaultAccent, ToastKind.Error);
 
@@ -58,7 +64,7 @@ public class WorldToastManager : MonoBehaviour
     public static void ShowError(string title, string subtitle, float delay = 0f)
         => ShowKind(0u, title, subtitle, delay, DefaultAccent, ToastKind.Error);
 
-    /// <summary>Toast de SUCCÈS local (template commun : vert + icône ✓ + son + rebond).</summary>
+    /// <summary>Toast de SUCCÈS local (template commun : vert + rebond, silencieux).</summary>
     public static void ShowSuccess(string message, float delay = 0f)
         => ShowKind(0u, message, null, delay, DefaultAccent, ToastKind.Success);
 
@@ -78,8 +84,17 @@ public class WorldToastManager : MonoBehaviour
     private static void ShowKind(uint anchorNetId, string title, string subtitle, float delay, Color accent, ToastKind kind)
     {
         Ensure();
-        _instance.StartCoroutine(_instance.ShowRoutine(anchorNetId, title, subtitle, delay, accent, kind));
+        string key = MakeDedupKey(anchorNetId, title, subtitle, kind);
+        // Tant qu'une entrée existe pour cette clé (toast vivant ou en attente d'un délai), on
+        // ignore. On RÉSERVE la clé immédiatement (valeur null) — la coroutine la peuplera avec
+        // l'instance après création.
+        if (_instance._activeByKey.ContainsKey(key)) return;
+        _instance._activeByKey[key] = null;
+        _instance.StartCoroutine(_instance.ShowRoutine(anchorNetId, title, subtitle, delay, accent, kind, key));
     }
+
+    private static string MakeDedupKey(uint anchorNetId, string title, string subtitle, ToastKind kind)
+        => $"{anchorNetId}|{(int)kind}|{title}|{subtitle}";
 
     private static void Ensure()
     {
@@ -89,12 +104,17 @@ public class WorldToastManager : MonoBehaviour
         _instance = go.AddComponent<WorldToastManager>();
     }
 
-    private IEnumerator ShowRoutine(uint anchorNetId, string title, string subtitle, float delay, Color accent, ToastKind kind)
+    private IEnumerator ShowRoutine(uint anchorNetId, string title, string subtitle, float delay, Color accent, ToastKind kind, string dedupKey)
     {
         if (delay > 0f) yield return new WaitForSeconds(delay);
 
         Transform anchor = ResolveAnchor(anchorNetId);
-        if (anchor == null) yield break;
+        if (anchor == null) {
+            // Pas d'ancre : on libère la clé pour qu'un appel ultérieur (joueur enfin spawné, etc.)
+            // puisse passer. Sans cela, la clé resterait bloquée à jamais.
+            _activeByKey.Remove(dedupKey);
+            yield break;
+        }
 
         PlayKindSound(kind);
 
@@ -103,7 +123,11 @@ public class WorldToastManager : MonoBehaviour
 
         WorldToast toast = WorldToast.Create(title, subtitle, accent, kind);
         _active.Add(toast);
-        toast.Play(anchor, heightOffset, () => _active.Remove(toast));
+        _activeByKey[dedupKey] = toast;
+        toast.Play(anchor, heightOffset, () => {
+            _active.Remove(toast);
+            _activeByKey.Remove(dedupKey);
+        });
     }
 
     // ── Sons par template ──────────────────────────────────────────────────────────

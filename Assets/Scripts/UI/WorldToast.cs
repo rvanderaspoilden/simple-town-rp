@@ -15,7 +15,7 @@ using UnityEngine.UI;
 /// color — reuse it for "+1 Crédit Social", "+10 XP", etc.
 /// </summary>
 /// <summary>Visual/audio template applied to a toast. Neutral = the cozy default ;
-/// Error/Success share a common style (color + icon + sound + animation).</summary>
+/// Error/Success share a common style (color + sound + animation).</summary>
 public enum ToastKind { Neutral = 0, Error = 1, Success = 2 }
 
 public class WorldToast : MonoBehaviour
@@ -25,11 +25,10 @@ public class WorldToast : MonoBehaviour
     private static readonly Color PanelTint = new Color(0.12f, 0.14f, 0.18f, 0.82f); // dark gray-blue, translucent
     private static readonly Color ShadowCol = new Color(0f, 0f, 0f, 0.35f);
 
-    // Shared error/success templates (color + icon).
+    // Shared error/success templates (color only — pas d'icône texte : les glyphes Unicode ⚠/✓
+    // ne sont pas dans l'atlas TMP par défaut et sortaient en tofu).
     private static readonly Color ErrorColor   = new Color(0.95f, 0.38f, 0.34f, 1f);
     private static readonly Color SuccessColor = new Color(0.46f, 0.86f, 0.52f, 1f);
-    private const string ErrorIcon   = "⚠ ";
-    private const string SuccessIcon = "✓ ";
 
     private const float WorldScale = 0.0045f;
 
@@ -56,10 +55,9 @@ public class WorldToast : MonoBehaviour
     private void Build(string title, string subtitle, Color accent, ToastKind kind)
     {
         _kind = kind;
-        // Error/Success override the accent with their shared template color + add an icon.
-        string icon = string.Empty;
-        if (kind == ToastKind.Error)   { accent = ErrorColor;   icon = ErrorIcon; }
-        else if (kind == ToastKind.Success) { accent = SuccessColor; icon = SuccessIcon; }
+        // Error/Success override the accent with their shared template color.
+        if (kind == ToastKind.Error)        accent = ErrorColor;
+        else if (kind == ToastKind.Success) accent = SuccessColor;
         var canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
         canvas.overrideSorting = true;
@@ -108,14 +106,14 @@ public class WorldToast : MonoBehaviour
         string accentHex = ColorUtility.ToHtmlStringRGB(accent);
         if (string.IsNullOrEmpty(subtitle))
         {
-            // Simple ligne. Neutral = off-white ; Error/Success = couleur + icône du template.
+            // Simple ligne. Neutral = off-white ; Error/Success = couleur du template.
             label.text = _kind == ToastKind.Neutral
                 ? $"<size=26>{title}</size>"
-                : $"<size=26><b><color=#{accentHex}>{icon}{title}</color></b></size>";
+                : $"<size=26><b><color=#{accentHex}>{title}</color></b></size>";
         }
         else
         {
-            label.text = $"<size=22>{icon}{title}</size>\n<size=30><b><color=#{accentHex}>{subtitle}</color></b></size>";
+            label.text = $"<size=22>{title}</size>\n<size=30><b><color=#{accentHex}>{subtitle}</color></b></size>";
         }
 
         // Auto-size the panel to hug the text (+ padding) so the rounded background always
