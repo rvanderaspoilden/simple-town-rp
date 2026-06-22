@@ -1,4 +1,4 @@
-﻿{
+{
     "m_SGVersion": 2,
     "m_Type": "UnityEditor.ShaderGraph.GraphData",
     "m_ObjectId": "34abf045fed3495094f9cd1693b3c62c",
@@ -131,12 +131,6 @@
         },
         {
             "m_Id": "f573b268bfcd48868925cc0c57c7ce32"
-        },
-        {
-            "m_Id": "aa00deadc0deeeee0000000000000001"
-        },
-        {
-            "m_Id": "aa00deadc0deeeee0000000000000002"
         }
     ],
     "m_GroupDatas": [],
@@ -347,9 +341,9 @@
             },
             "m_InputSlot": {
                 "m_Node": {
-                    "m_Id": "aa00deadc0deeeee0000000000000001"
+                    "m_Id": "36c782e36d684ade841fec466989aec4"
                 },
-                "m_SlotId": 2
+                "m_SlotId": 0
             }
         },
         {
@@ -532,48 +526,6 @@
                     "m_Id": "5acb28e21049404c958d1508e685228b"
                 },
                 "m_SlotId": 0
-            }
-        },
-        {
-            "m_OutputSlot": {
-                "m_Node": {
-                    "m_Id": "aa00deadc0deeeee0000000000000001"
-                },
-                "m_SlotId": 3
-            },
-            "m_InputSlot": {
-                "m_Node": {
-                    "m_Id": "36c782e36d684ade841fec466989aec4"
-                },
-                "m_SlotId": 0
-            }
-        },
-        {
-            "m_OutputSlot": {
-                "m_Node": {
-                    "m_Id": "aa00deadc0deeeee0000000000000002"
-                },
-                "m_SlotId": 0
-            },
-            "m_InputSlot": {
-                "m_Node": {
-                    "m_Id": "aa00deadc0deeeee0000000000000001"
-                },
-                "m_SlotId": 0
-            }
-        },
-        {
-            "m_OutputSlot": {
-                "m_Node": {
-                    "m_Id": "287e1f1e3f73455b96a87da4f84043a9"
-                },
-                "m_SlotId": 0
-            },
-            "m_InputSlot": {
-                "m_Node": {
-                    "m_Id": "aa00deadc0deeeee0000000000000001"
-                },
-                "m_SlotId": 1
             }
         }
     ],
@@ -4021,179 +3973,3 @@
     }
 }
 
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.CustomFunctionNode",
-    "m_ObjectId": "aa00deadc0deeeee0000000000000001",
-    "m_Group": {
-        "m_Id": ""
-    },
-    "m_Name": "TreeVisionDither (Custom Function)",
-    "m_DrawState": {
-        "m_Expanded": true,
-        "m_Position": {
-            "serializedVersion": "2",
-            "x": 800.0,
-            "y": 750.0,
-            "width": 240.0,
-            "height": 162.0
-        }
-    },
-    "m_Slots": [
-        {
-            "m_Id": "aa00deadc0deeeee0000000000000003"
-        },
-        {
-            "m_Id": "aa00deadc0deeeee0000000000000004"
-        },
-        {
-            "m_Id": "aa00deadc0deeeee0000000000000005"
-        },
-        {
-            "m_Id": "aa00deadc0deeeee0000000000000006"
-        }
-    ],
-    "synonyms": [],
-    "m_Precision": 0,
-    "m_PreviewExpanded": false,
-    "m_PreviewMode": 0,
-    "m_CustomColors": {
-        "m_SerializableColors": []
-    },
-    "m_SourceType": 0,
-    "m_FunctionName": "TreeVisionDither",
-    "m_FunctionSource": "c0d1c18330c914b43b4f4ebf0433a85a",
-    "m_FunctionBody": "Enter function body here..."
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.ScreenPositionNode",
-    "m_ObjectId": "aa00deadc0deeeee0000000000000002",
-    "m_Group": {
-        "m_Id": ""
-    },
-    "m_Name": "Screen Position",
-    "m_DrawState": {
-        "m_Expanded": true,
-        "m_Position": {
-            "serializedVersion": "2",
-            "x": 500.0,
-            "y": 750.0,
-            "width": 208.0,
-            "height": 116.0
-        }
-    },
-    "m_Slots": [
-        {
-            "m_Id": "aa00deadc0deeeee0000000000000007"
-        }
-    ],
-    "synonyms": [],
-    "m_Precision": 0,
-    "m_PreviewExpanded": false,
-    "m_PreviewMode": 0,
-    "m_CustomColors": {
-        "m_SerializableColors": []
-    },
-    "m_ScreenSpaceType": 0
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector2MaterialSlot",
-    "m_ObjectId": "aa00deadc0deeeee0000000000000003",
-    "m_Id": 0,
-    "m_DisplayName": "ScreenUV",
-    "m_SlotType": 0,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "ScreenUV",
-    "m_StageCapability": 3,
-    "m_Value": {
-        "x": 0.0,
-        "y": 0.0
-    },
-    "m_DefaultValue": {
-        "x": 0.0,
-        "y": 0.0
-    },
-    "m_Labels": []
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector3MaterialSlot",
-    "m_ObjectId": "aa00deadc0deeeee0000000000000004",
-    "m_Id": 1,
-    "m_DisplayName": "WorldPos",
-    "m_SlotType": 0,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "WorldPos",
-    "m_StageCapability": 3,
-    "m_Value": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0
-    },
-    "m_DefaultValue": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0
-    },
-    "m_Labels": []
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
-    "m_ObjectId": "aa00deadc0deeeee0000000000000005",
-    "m_Id": 2,
-    "m_DisplayName": "InAlpha",
-    "m_SlotType": 0,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "InAlpha",
-    "m_StageCapability": 3,
-    "m_Value": 1.0,
-    "m_DefaultValue": 1.0,
-    "m_Labels": []
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
-    "m_ObjectId": "aa00deadc0deeeee0000000000000006",
-    "m_Id": 3,
-    "m_DisplayName": "OutAlpha",
-    "m_SlotType": 1,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "OutAlpha",
-    "m_StageCapability": 3,
-    "m_Value": 0.0,
-    "m_DefaultValue": 0.0,
-    "m_Labels": []
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
-    "m_ObjectId": "aa00deadc0deeeee0000000000000007",
-    "m_Id": 0,
-    "m_DisplayName": "Out",
-    "m_SlotType": 1,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "Out",
-    "m_StageCapability": 3,
-    "m_Value": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0,
-        "w": 0.0
-    },
-    "m_DefaultValue": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0,
-        "w": 0.0
-    },
-    "m_Labels": []
-}

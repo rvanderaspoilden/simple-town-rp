@@ -2140,6 +2140,7 @@ GameObject:
   - component: {fileID: 2049593766679326412}
   - component: {fileID: 6354742311832656645}
   - component: {fileID: 6299830124472866413}
+  - component: {fileID: 3838054831176465578}
   m_Layer: 0
   m_Name: Camera Manager
   m_TagString: Untagged
@@ -2279,6 +2280,36 @@ MonoBehaviour:
   recenterAtRest: 0
   recenterAtSpeed: 220
   responseLerp: 4
+--- !u!114 &3838054831176465578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8584576505696706517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c66ae84be836671428cc16d79ab14ee0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.CameraWallFader
+  wallMask:
+    serializedVersion: 2
+    m_Bits: 0
+  castRadius: 0.35
+  targetHeight: 1.1
+  castInterval: 0
+  maxFade: 1
+  fadeInSpeed: 7
+  fadeOutSpeed: 5
+  restoreGrace: 0.4
+  clickThroughThreshold: 0.5
+  style: 1
+  visionWorldRadius: 1.7
+  visionSoftness: 0.4
+  affectTrees: 1
+  treeFadeStrength: 1
+  fullWallShaderName: Sim/WallDither
+  visionCircleShaderName: Sim/WallVisionCircle
 --- !u!1 &8970865839490662414
 GameObject:
   m_ObjectHideFlags: 0
