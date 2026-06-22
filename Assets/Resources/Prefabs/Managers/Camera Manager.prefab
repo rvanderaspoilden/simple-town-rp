@@ -2141,6 +2141,7 @@ GameObject:
   - component: {fileID: 6354742311832656645}
   - component: {fileID: 6299830124472866413}
   - component: {fileID: 3838054831176465578}
+  - component: {fileID: 6094987192799188722}
   m_Layer: 0
   m_Name: Camera Manager
   m_TagString: Untagged
@@ -2310,6 +2311,23 @@ MonoBehaviour:
   treeFadeStrength: 1
   fullWallShaderName: Sim/WallDither
   visionCircleShaderName: Sim/WallVisionCircle
+--- !u!114 &6094987192799188722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8584576505696706517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 441ecc50aedd5634bb4ec7e3a9f197c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.InteriorAtmosphere
+  backdropColor: {r: 0.09, g: 0.07, b: 0.06, a: 1}
+  softness: 3
+  boundsPadding: 0.6
+  ceilingPadding: 1
+  transitionSpeed: 2.5
 --- !u!1 &8970865839490662414
 GameObject:
   m_ObjectHideFlags: 0

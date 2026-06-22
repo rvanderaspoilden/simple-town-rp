@@ -106,7 +106,8 @@ MonoBehaviour:
   - {fileID: -9136311304891116996}
   - {fileID: -3884568817346638990}
   - {fileID: -40433759470989155}
-  m_RendererFeatureMap: 3c529442464d358134f2ffffffffffff
+  - {fileID: 6241208519609000230}
+  m_RendererFeatureMap: 3c529442464d358134f2ffffffffffffbcd4fdffffffffff
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -135,3 +136,18 @@ MonoBehaviour:
   m_DepthTextureFormat: 0
   m_AccurateGbufferNormals: 0
   m_IntermediateTextureMode: 1
+--- !u!114 &6241208519609000230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e18e8496488608f4b9ad07cec8851a75, type: 3}
+  m_Name: Interior Fog
+  m_EditorClassIdentifier: Assembly-CSharp::InteriorFogFeature
+  m_Active: 1
+  settings:
+    renderPassEvent: 500

@@ -42,6 +42,15 @@ public class Roof : MonoBehaviour {
     public  static bool IsMinimapCovered => _minimapHiderCount > 0;
     public  static event System.Action<bool> OnMinimapCoverageChanged;
 
+    // ── Local interior (interior atmosphere) ──────────────────────────────────
+    // Roofs (real interiors only — hideMinimap == true) currently covering the local
+    // player. LocalInterior exposes the innermost one (smallest XZ footprint), so the
+    // InteriorAtmosphere fog seals the smallest enclosing room. Driven off the same
+    // player trigger as the minimap coverage above.
+    private static readonly HashSet<Roof> _localInteriorRoofs = new HashSet<Roof>();
+    public  static Roof LocalInterior { get; private set; }
+    public  static event System.Action<Roof> OnLocalInteriorChanged;
+
     // Keys for the built-in interior trigger on this GameObject.
     private static readonly object PlayerKey = new object();
     private static readonly object CameraKey = new object();
@@ -73,6 +82,9 @@ public class Roof : MonoBehaviour {
         return b;
     }
 
+    /// <summary>World-space top of this roof's visual extent — used as the interior ceiling height.</summary>
+    public float CeilingY => GetXZFootprint().max.y;
+
     private void Awake() {
         this.renderersToHide.ForEach(x => x.material = new Material(x.material));
         if (this.preventClickChild != null) this.preventClickChild.SetActive(true);
@@ -97,6 +109,7 @@ public class Roof : MonoBehaviour {
         // any per-frame cost.
         if (PlayerController.Local && other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
             AddHider(PlayerKey);
+            AddLocalInterior(); // defensive, for late-spawned/teleported-in local players
         } else if (other.CompareTag("MainCamera")) {
             AddHider(CameraKey);
         }
@@ -105,6 +118,7 @@ public class Roof : MonoBehaviour {
     private void OnTriggerEnter(Collider other) {
         if (PlayerController.Local && other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
             SetMinimapCoverage(true);
+            AddLocalInterior();
         }
     }
 
@@ -112,6 +126,7 @@ public class Roof : MonoBehaviour {
         if (PlayerController.Local && other.CompareTag("Player") && other.gameObject == PlayerController.Local.gameObject) {
             RemoveHider(PlayerKey);
             SetMinimapCoverage(false);
+            RemoveLocalInterior();
         } else if (other.CompareTag("MainCamera")) {
             RemoveHider(CameraKey);
         }
@@ -124,6 +139,34 @@ public class Roof : MonoBehaviour {
         _hiders.Remove(CameraKey);
         Refresh();
         SetMinimapCoverage(false);
+        RemoveLocalInterior();
+    }
+
+    // ── Local interior selection ──────────────────────────────────────────────
+
+    private void AddLocalInterior() {
+        if (!hideMinimap) return; // canopies/awnings opt out of being treated as interiors
+        if (_localInteriorRoofs.Add(this)) RecomputeLocalInterior();
+    }
+
+    private void RemoveLocalInterior() {
+        if (_localInteriorRoofs.Remove(this)) RecomputeLocalInterior();
+    }
+
+    // Innermost (smallest XZ footprint) wins so overlapping roofs seal the tightest room.
+    private static void RecomputeLocalInterior() {
+        Roof best = null;
+        float bestArea = float.MaxValue;
+        foreach (Roof r in _localInteriorRoofs) {
+            if (r == null) continue;
+            Bounds b = r.GetXZFootprint();
+            float area = b.size.x * b.size.z;
+            if (area < bestArea) { bestArea = area; best = r; }
+        }
+        if (best != LocalInterior) {
+            LocalInterior = best;
+            OnLocalInteriorChanged?.Invoke(best);
+        }
     }
 
     private void SetMinimapCoverage(bool covering) {
