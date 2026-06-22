@@ -30,7 +30,9 @@ namespace Sim {
         [SerializeField] private float boundsPadding = 0.6f;
 
         [Header("Camera-height gate")]
-        [Tooltip("Height band (metres) above the roof over which the fog ramps from off to full as the camera rises. The fog is off while the camera is at or below the roof line, full once it is this many metres above it.")]
+        [Tooltip("Vertical offset (metres) applied to the auto-detected roof height the gate keys to. Use it to slide the fog up or down in Y: positive raises the line (camera must climb higher before the fog seals in), negative lowers it (fog kicks in sooner / sits lower).")]
+        [SerializeField] private float roofHeightOffset = 0f;
+        [Tooltip("Height band (metres) above the roof line over which the fog ramps from off to full as the camera rises. The fog is off while the camera is at or below the roof line, full once it is this many metres above it.")]
         [SerializeField] private float roofFogHeight = 2.5f;
 
         [Header("Transition")]
@@ -75,7 +77,8 @@ namespace Sim {
             // doorways read naturally.
             float camFactor = 1f;
             if (cam != null) {
-                float t = Mathf.InverseLerp(_roofY, _roofY + Mathf.Max(roofFogHeight, 0.01f), cam.transform.position.y);
+                float roofLine = _roofY + roofHeightOffset;
+                float t = Mathf.InverseLerp(roofLine, roofLine + Mathf.Max(roofFogHeight, 0.01f), cam.transform.position.y);
                 camFactor = Mathf.SmoothStep(0f, 1f, t);
             }
 

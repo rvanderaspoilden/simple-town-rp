@@ -27,6 +27,10 @@ public class Roof : MonoBehaviour {
     [SerializeField]
     private bool hideMinimap = true;
 
+    [Tooltip("Optional manual interior ceiling height (world Y) for the InteriorAtmosphere fog's camera-height gate. Leave negative to auto-compute from the top of the hidden renderers. Set it on tall buildings whose hidden shell rises far above the walkable floor (e.g. the multi-storey hotel) so the fog keys to the real room ceiling instead of the building top.")]
+    [SerializeField]
+    private float interiorCeilingYOverride = -1f;
+
     private readonly HashSet<object> _hiders = new HashSet<object>();
 
     // Tracks whether the local player is currently inside this specific roof's
@@ -82,8 +86,13 @@ public class Roof : MonoBehaviour {
         return b;
     }
 
-    /// <summary>World-space top of this roof's visual extent — used as the interior ceiling height.</summary>
-    public float CeilingY => GetXZFootprint().max.y;
+    /// <summary>
+    /// World-space interior ceiling height used by the InteriorAtmosphere fog's camera-height gate.
+    /// Defaults to the top of this roof's hidden renderers, but can be overridden per building for
+    /// tall shells whose hidden geometry rises far above the walkable floor (see
+    /// <see cref="interiorCeilingYOverride"/>).
+    /// </summary>
+    public float CeilingY => interiorCeilingYOverride >= 0f ? interiorCeilingYOverride : GetXZFootprint().max.y;
 
     private void Awake() {
         this.renderersToHide.ForEach(x => x.material = new Material(x.material));
