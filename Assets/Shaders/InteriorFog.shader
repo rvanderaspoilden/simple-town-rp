@@ -1,13 +1,16 @@
-// Fullscreen "interior atmosphere": while the local player is inside a building, every
-// pixel whose reconstructed world position falls OUTSIDE the current room's bounds (and
-// the sky) is blended toward a soft cosy backdrop colour, sealing the interior. Driven
-// entirely by globals published by InteriorAtmosphere — no per-object material work.
+// Fullscreen "interior atmosphere": while the local player is inside a building AND the camera
+// sits above the roof line, every pixel whose reconstructed world position falls OUTSIDE the
+// room's XZ footprint (and the sky) is blended toward a soft cosy backdrop colour, sealing the
+// interior. The "above the roof" gate lives in InteriorAtmosphere (C#): it ramps _InteriorBlend
+// up only as the camera climbs through a few-unit band at the roof height, so a normal top-down
+// view is sealed but zooming the camera down to an eye-level view below the roof fades the fog
+// out and reveals the exterior through doors / windows naturally. Driven entirely by globals
+// published by InteriorAtmosphere — no per-object material work.
 //
-//   _InteriorBlend    0..1 master (0 = feature inert)
+//   _InteriorBlend    0..1 master (0 = feature inert) — already folded with the camera-height gate
 //   _InteriorCenter   world XZ centre of the room (xy used)
 //   _InteriorExtents  world XZ half-size of the room (xy used)
-//   _InteriorCeilingY world Y above which fragments fade out
-//   _InteriorSoftness world-unit fade band past the walls / ceiling
+//   _InteriorSoftness world-unit fade band past the walls
 //   _InteriorColor    backdrop colour the exterior melts into
 //   _InteriorInvVP    inverse GPU view-projection (pushed from C# for blit-pass safety)
 Shader "Hidden/InteriorFog"
@@ -34,7 +37,6 @@ Shader "Hidden/InteriorFog"
 
             float4 _InteriorCenter;
             float4 _InteriorExtents;
-            float  _InteriorCeilingY;
             float  _InteriorSoftness;
             float4 _InteriorColor;
             float  _InteriorBlend;
@@ -60,14 +62,14 @@ Shader "Hidden/InteriorFog"
 
                 float3 worldPos = ComputeWorldSpacePosition(uv, rawDepth, _InteriorInvVP);
 
-                // Distance outside the padded room box, measured in XZ (0 inside the room).
+                // Distance outside the padded room footprint, measured in XZ (0 inside the room).
+                // The interior always stays fully clear; the fade band starts at the wall line.
                 float2 d = abs(worldPos.xz - _InteriorCenter.xy) - _InteriorExtents.xy;
                 float distXZ = length(max(d, 0.0));
                 float soft = max(_InteriorSoftness, 1e-3);
 
                 float outsideXZ = smoothstep(0.0, soft, distXZ);
-                float aboveCeil = smoothstep(0.0, soft, worldPos.y - _InteriorCeilingY);
-                float outside   = max(skyAmount, max(outsideXZ, aboveCeil));
+                float outside   = max(skyAmount, outsideXZ);
 
                 float fog = saturate(outside) * saturate(_InteriorBlend);
                 return half4(lerp(sceneColor.rgb, _InteriorColor.rgb, fog), sceneColor.a);
