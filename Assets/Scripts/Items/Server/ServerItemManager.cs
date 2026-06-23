@@ -851,49 +851,66 @@ public class ServerItemManager
     public void HandleDrop(NetworkConnectionToClient conn, C2S_RequestDropItem msg)
     {
         if (conn.identity == null) return;
-        uint playerNetId = conn.identity.netId;
-        string roomId    = PlayerRoomTracker.Instance.GetRoom(conn);
 
-        GameLogger.Network.Debug("Item DropRequest player={PlayerNetId} hand={Hand}", playerNetId, msg.Hand);
+        GameLogger.Network.Debug("Item DropRequest player={PlayerNetId} hand={Hand}", conn.identity.netId, msg.Hand);
 
-        if (roomId == null)
-        {
-            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Pas dans une pièce" });
-            return;
-        }
-
-        if (!_playerHands.TryGetValue(playerNetId, out var handState))
-        {
-            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Aucun objet en main" });
-            return;
-        }
-
-        int entityId = handState.GetEntityId(msg.Hand);
-        if (entityId == -1)
-        {
-            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Main vide" });
-            return;
-        }
-
-        if (!TryGetEntity(roomId, entityId, out var entity))
-        {
-            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = "Objet introuvable" });
-            return;
-        }
-
-        // Drop position: slightly in front of player
+        // Drop position: slightly in front of player, snapped to the ground.
         Vector3 dropPos = conn.identity.transform.position + conn.identity.transform.forward * 0.6f;
         if (Physics.Raycast(dropPos + Vector3.up, Vector3.down, out var hit, 5f, 1 << 9))
             dropPos = hit.point;
 
-        entity.Position  = dropPos;
-        entity.Rotation  = Quaternion.identity;
+        if (DetachAndPlace(conn, msg.Hand, dropPos, Quaternion.identity, out string error))
+            conn.Send(new S2C_DropResult { Success = true, Hand = msg.Hand });
+        else
+            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = error });
+    }
+
+    /// <summary>
+    /// « Poser » l'item tenu à un emplacement explicite (le personnage a déjà marché jusqu'au
+    /// point de pose côté client). Même détachement/persistance que le drop, mais la position
+    /// vient du message (choisie par le joueur), pas du « devant le joueur ».
+    /// </summary>
+    public void HandlePoseHeldItem(NetworkConnectionToClient conn, C2S_PoseHeldItem msg)
+    {
+        if (conn.identity == null) return;
+
+        GameLogger.Network.Debug("Item PoseRequest player={PlayerNetId} hand={Hand}", conn.identity.netId, msg.Hand);
+
+        if (DetachAndPlace(conn, msg.Hand, msg.Position, msg.Rotation, out string error))
+            conn.Send(new S2C_DropResult { Success = true, Hand = msg.Hand });
+        else
+            conn.Send(new S2C_DropResult { Success = false, Hand = msg.Hand, ErrorMessage = error });
+    }
+
+    /// <summary>
+    /// Détache l'item tenu dans <paramref name="hand"/> et le pose à la position/rotation monde
+    /// données : maj de l'entité, libération de la main, persistance pilotée par ItemConfig.ToPersist
+    /// (UNIFORME, aucun cas spécial colis), puis broadcast <see cref="S2C_ItemDetachedFromHand"/> à
+    /// la room. Partagé par le drop (devant le joueur) et la pose (emplacement choisi). Renvoie faux
+    /// + <paramref name="error"/> en cas d'échec de validation (pas dans une pièce, main vide…).
+    /// </summary>
+    private bool DetachAndPlace(NetworkConnectionToClient conn, HandType hand,
+        Vector3 worldPos, Quaternion worldRot, out string error)
+    {
+        error = null;
+        uint playerNetId = conn.identity.netId;
+        string roomId    = PlayerRoomTracker.Instance.GetRoom(conn);
+
+        if (roomId == null)         { error = "Pas dans une pièce"; return false; }
+        if (!_playerHands.TryGetValue(playerNetId, out var handState)) { error = "Aucun objet en main"; return false; }
+
+        int entityId = handState.GetEntityId(hand);
+        if (entityId == -1)         { error = "Main vide"; return false; }
+        if (!TryGetEntity(roomId, entityId, out var entity)) { error = "Objet introuvable"; return false; }
+
+        entity.Position = worldPos;
+        entity.Rotation = worldRot;
         ClearHolderHandState(entity);
 
-        GameLogger.Network.Info("Item Drop player={PlayerNetId} entity={EntityId} hand={Hand} room={RoomId}",
-            playerNetId, entityId, msg.Hand, roomId);
+        GameLogger.Network.Info("Item DetachPlace player={PlayerNetId} entity={EntityId} hand={Hand} room={RoomId}",
+            playerNetId, entityId, hand, roomId);
 
-        // Persistance au drop, pilotée par ItemConfig.ToPersist (UNIFORME — aucun cas
+        // Persistance au lâcher, pilotée par ItemConfig.ToPersist (UNIFORME — aucun cas
         // spécial colis) :
         //  - ToPersist → l'item devient un item-monde PERSISTANT : on PATCH sa place vers la
         //    place de la pièce + sa position (UUID conservé → survit au redémarrage et se
@@ -902,27 +919,21 @@ public class ServerItemManager
         //  - sinon → on supprime sa ligne DB (item-monde éphémère, comportement historique).
         ItemConfig dropCfg = DatabaseManager.GetItemConfigById(entity.ItemConfigId);
         if (dropCfg != null && dropCfg.ToPersist) {
-            // Place-monde résolue selon le lieu : place de l'appartement si on y est,
-            // sinon la place "city" (anchor de persistance de la rue/entrepôt). Le PATCH
-            // conserve l'UUID + écrit la position → rechargé au sol au prochain boot.
             string worldPlaceId = ResolveWorldPlaceId(conn, roomId);
             if (!string.IsNullOrEmpty(worldPlaceId) && GetBridge(entityId) != null)
-                PersistMoveToWorldAsync(entityId, worldPlaceId, dropPos, entity.Rotation);
-            // Pas de place-monde résolue ou pas de ligne DB : on conserve la ligne telle
-            // quelle (jamais de delete) — l'UUID survit.
+                PersistMoveToWorldAsync(entityId, worldPlaceId, worldPos, worldRot);
         }
         else if (entity.Persistent) {
             PersistDropAsync(entityId);
         }
 
-        conn.Send(new S2C_DropResult { Success = true, Hand = msg.Hand });
-
         BroadcastToRoom(roomId, new S2C_ItemDetachedFromHand
         {
             EntityId      = entityId,
-            WorldPosition = dropPos,
-            WorldRotation = Quaternion.identity
+            WorldPosition = worldPos,
+            WorldRotation = worldRot
         });
+        return true;
     }
 
     public void HandleAdminSpawn(NetworkConnectionToClient conn, C2S_AdminSpawnItem msg)

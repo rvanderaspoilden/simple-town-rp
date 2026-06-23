@@ -139,7 +139,7 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
         UnsubscribeActions(_heldActions);
 
         _groundActions = BuildActions(_config.UnEquippedActions);
-        _heldActions   = BuildActions(_config.EquippedActions);
+        _heldActions   = BuildHeldActions();
 
         SubscribeActions(_groundActions);
         SubscribeActions(_heldActions);
@@ -149,6 +149,30 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
     {
         if (source == null) return Array.Empty<Action>();
         return source.Select(Instantiate).ToArray();
+    }
+
+    // Actions « équipé » du config + l'action PLACE (« Poser ») injectée pour TOUT item tenu
+    // (pas authorée par config, comme DROP) : poser l'item à un emplacement choisi après avoir
+    // marché jusque-là. Cf. ItemPlacementController.
+    private Action[] BuildHeldActions()
+    {
+        Action[] configured = BuildActions(_config.EquippedActions);
+        Action place = LoadPlaceAction();
+        if (place == null) return configured;
+
+        var combined = new Action[configured.Length + 1];
+        Array.Copy(configured, combined, configured.Length);
+        combined[configured.Length] = place;
+        return combined;
+    }
+
+    private static Action _placeActionTemplate;
+
+    private static Action LoadPlaceAction()
+    {
+        if (_placeActionTemplate == null)
+            _placeActionTemplate = Resources.Load<Action>("Configurations/Actions/PLACE");
+        return _placeActionTemplate != null ? Instantiate(_placeActionTemplate) : null;
     }
 
     private void SubscribeActions(Action[] list)
@@ -173,6 +197,10 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
 
             case ActionTypeEnum.DROP:
                 NetworkClient.Send(new C2S_RequestDropItem { Hand = _holderHand });
+                break;
+
+            case ActionTypeEnum.PLACE:
+                ItemPlacementController.Instance.Begin(this);
                 break;
 
             case ActionTypeEnum.CLEAN:

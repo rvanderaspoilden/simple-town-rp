@@ -36,7 +36,8 @@
         EXIT_VEHICLE,
         REFUEL,
         REPAIR,
-        SPLIT
+        SPLIT,
+        PLACE
     }
 
 }

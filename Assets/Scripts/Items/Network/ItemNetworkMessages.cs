@@ -71,6 +71,19 @@ public struct C2S_RequestDropItem : NetworkMessage
     public HandType Hand;
 }
 
+/// <summary>
+/// Client → server: « poser » l'item tenu à un emplacement choisi. Émis SEULEMENT une fois
+/// que le personnage a marché jusqu'au point de pose (cf. CharacterPoser / ItemPlacementController).
+/// Le serveur détache l'item de la main et le place à <see cref="Position"/>/<see cref="Rotation"/>
+/// (même chemin que le drop, mais position explicite au lieu du « devant le joueur »).
+/// </summary>
+public struct C2S_PoseHeldItem : NetworkMessage
+{
+    public HandType   Hand;
+    public Vector3    Position;
+    public Quaternion Rotation;
+}
+
 /// <summary>Server → requesting client only: result of a drop attempt.</summary>
 public struct S2C_DropResult : NetworkMessage
 {

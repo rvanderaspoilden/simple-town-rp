@@ -1042,6 +1042,27 @@ namespace Sim {
             this.stateMachine.SetState(new CharacterPropsBuilding(this, duration, onComplete, onCancel));
         }
 
+        /// <summary>Démarre la « pose » d'un item tenu : le personnage marche jusqu'à
+        /// <paramref name="standPoint"/> (point accessible le plus proche de l'emplacement choisi),
+        /// puis à l'arrivée déclenche <paramref name="onArrive"/> (envoi de la requête de pose).
+        /// Interrompu (annulé via <paramref name="onCancel"/>) si un autre state prend la main avant
+        /// l'arrivée (clic-déplacement, interaction…). Renvoie faux si aucun chemin complet n'existe
+        /// vers <paramref name="standPoint"/> (l'appelant garde alors l'item en main et notifie).</summary>
+        public bool StartItemPose(Vector3 standPoint, System.Action onArrive, System.Action onCancel = null) {
+            if (this.navMeshAgent == null || !this.navMeshAgent.enabled || !this.navMeshAgent.isOnNavMesh) return false;
+
+            // Même garde que MoveTo : on n'engage la marche que si un chemin COMPLET existe (sinon
+            // le personnage resterait figé sans jamais « arriver », bloquant la pose pour toujours).
+            if (!this.navMeshAgent.CalculatePath(standPoint, _navPathScratch)
+                || _navPathScratch.status != NavMeshPathStatus.PathComplete) {
+                return false;
+            }
+
+            this.navMeshAgent.speed = walkSpeed * MoveSpeedPerkMultiplier();
+            this.stateMachine.SetState(new CharacterPoser(this, standPoint, onArrive, onCancel));
+            return true;
+        }
+
         public void Sleep(ISeatBehavior props, Transform couchTransform) {
             this.stateMachine.SetState(new CharacterSleep(this, props, couchTransform));
         }

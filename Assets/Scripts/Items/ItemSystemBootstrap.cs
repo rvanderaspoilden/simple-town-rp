@@ -10,6 +10,7 @@ public static class ItemSystemBootstrap
     {
         NetworkServer.RegisterHandler<C2S_RequestPickupItem>(ServerItemManager.Instance.HandlePickup);
         NetworkServer.RegisterHandler<C2S_RequestDropItem>(ServerItemManager.Instance.HandleDrop);
+        NetworkServer.RegisterHandler<C2S_PoseHeldItem>(ServerItemManager.Instance.HandlePoseHeldItem);
         NetworkServer.RegisterHandler<C2S_RequestSwapHands>(ServerItemManager.Instance.HandleSwap);
         NetworkServer.RegisterHandler<C2S_AdminSpawnItem>(ServerItemManager.Instance.HandleAdminSpawn);
 
@@ -38,6 +39,7 @@ public static class ItemSystemBootstrap
     {
         NetworkServer.UnregisterHandler<C2S_RequestPickupItem>();
         NetworkServer.UnregisterHandler<C2S_RequestDropItem>();
+        NetworkServer.UnregisterHandler<C2S_PoseHeldItem>();
         NetworkServer.UnregisterHandler<C2S_RequestSwapHands>();
         NetworkServer.UnregisterHandler<C2S_AdminSpawnItem>();
         NetworkServer.UnregisterHandler<C2S_OpenContainer>();

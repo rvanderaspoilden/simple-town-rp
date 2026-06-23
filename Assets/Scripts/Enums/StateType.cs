@@ -5,5 +5,6 @@
         PAINTING,
         UNPACKAGING,
         MOVING_PROPS,
+        PLACING_ITEM,
     }
 }
