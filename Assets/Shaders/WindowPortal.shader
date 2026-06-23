@@ -12,6 +12,8 @@ Shader "Sim/WindowPortal"
 {
     Properties
     {
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull (Back hides the rear face)", Float) = 2
+
         _FallbackColor ("Fallback (no portal)", Color) = (0.12, 0.13, 0.16, 1)
 
         [Header(Glass)]
@@ -30,7 +32,10 @@ Shader "Sim/WindowPortal"
         Pass
         {
             Name "WindowPortal"
-            Cull Off
+            // Back-face is culled so a window read from behind (e.g. the rear of a free-standing
+            // portal panel) shows nothing instead of a mirrored skyline. Flip to Front in the
+            // material if a given window mesh is wound the other way.
+            Cull [_Cull]
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -41,6 +46,7 @@ Shader "Sim/WindowPortal"
             SAMPLER(sampler_ExteriorRT);
 
             CBUFFER_START(UnityPerMaterial)
+                float  _Cull;
                 float4 _FallbackColor;
                 float4 _GlassTint;
                 float  _FresnelPower;
