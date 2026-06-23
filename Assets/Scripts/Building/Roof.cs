@@ -31,7 +31,37 @@ public class Roof : MonoBehaviour {
     [SerializeField]
     private float interiorCeilingYOverride = -1f;
 
+    [Header("Fade")]
+    [Tooltip("Dissolve-in speed in _Fade units/sec when the roof is hidden (player steps inside).")]
+    [SerializeField] private float hideFadeSpeed = 6f;
+    [Tooltip("Dissolve-out (reveal) speed in _Fade units/sec when the roof becomes visible again.")]
+    [SerializeField] private float showFadeSpeed = 6f;
+    [Tooltip("Screen-space dither dissolve shader used to fade the roof in/out. Falls back to a hard enable/disable toggle if not found.")]
+    [SerializeField] private string ditherShaderName = "Sim/WallDither";
+
     private readonly HashSet<object> _hiders = new HashSet<object>();
+
+    // ── Fade state ────────────────────────────────────────────────────────────
+    // The roof no longer pops in/out: instead of toggling Renderer.enabled it dissolves
+    // through the Sim/WallDither shader (_Fade 0 = solid, 1 = fully see-through). Each
+    // renderer is swapped to a dither variant of its own material only while a transition
+    // is running, and restored to the original once fully visible, so an idle-visible roof
+    // keeps its exact look. A fully-hidden roof disables its renderers (zero draw cost,
+    // same as the old behaviour) once the dissolve completes.
+    private static readonly int FadeId = Shader.PropertyToID("_Fade");
+    private Shader _ditherShader;
+    private MaterialPropertyBlock _fadeBlock;
+    private FadeSlot[] _slots;
+    private float _fade;        // 0 = fully visible, 1 = fully hidden (dissolved out)
+    private float _targetFade;  // 0 or 1
+    private bool _fading;
+
+    private sealed class FadeSlot {
+        public MeshRenderer renderer;
+        public Material[] original; // captured on first conversion, restored when fully visible
+        public Material[] dither;   // cached dither variants of the originals
+        public bool converted;      // renderer currently showing its dither materials
+    }
 
     // Tracks whether the local player is currently inside this specific roof's
     // trigger, so we add/remove our contribution to the global minimap-hider
@@ -95,7 +125,17 @@ public class Roof : MonoBehaviour {
     public float CeilingY => interiorCeilingYOverride >= 0f ? interiorCeilingYOverride : GetXZFootprint().max.y;
 
     private void Awake() {
-        this.renderersToHide.ForEach(x => x.material = new Material(x.material));
+        _fadeBlock = new MaterialPropertyBlock();
+        _ditherShader = Shader.Find(ditherShaderName);
+
+        _slots = new FadeSlot[this.renderersToHide.Count];
+        for (int i = 0; i < this.renderersToHide.Count; i++) {
+            MeshRenderer r = this.renderersToHide[i];
+            // Own material instance per roof so each one fades (and restores) independently.
+            if (r != null) r.material = new Material(r.material);
+            _slots[i] = new FadeSlot { renderer = r };
+        }
+
         if (this.preventClickChild != null) this.preventClickChild.SetActive(true);
     }
 
@@ -146,7 +186,9 @@ public class Roof : MonoBehaviour {
         // Drop interior occupants so a re-enabled roof starts visible.
         _hiders.Remove(PlayerKey);
         _hiders.Remove(CameraKey);
-        Refresh();
+        // Snap (no animation — Update won't run while disabled) so a re-enabled roof is
+        // already in the correct visible/hidden state.
+        SnapToState();
         SetMinimapCoverage(false);
         RemoveLocalInterior();
     }
@@ -195,12 +237,149 @@ public class Roof : MonoBehaviour {
     }
 
     private void Show() {
-        this.renderersToHide.ForEach(x => x.enabled = true);
-        if (this.preventClickChild != null) this.preventClickChild.SetActive(true);
+        if (_ditherShader == null || _slots == null) { HardSetVisible(true); return; }
+        SetPreventClick(true);
+        if (_targetFade != 0f) { _targetFade = 0f; _fading = true; }
     }
 
     private void Hide() {
-        this.renderersToHide.ForEach(x => x.enabled = false);
-        if (this.preventClickChild != null) this.preventClickChild.SetActive(false);
+        if (_ditherShader == null || _slots == null) { HardSetVisible(false); return; }
+        SetPreventClick(false);
+        if (_targetFade != 1f) { _targetFade = 1f; _fading = true; }
+    }
+
+    // ── Fade driver ───────────────────────────────────────────────────────────
+
+    private void Update() {
+        if (!_fading) return;
+
+        float speed = (_targetFade > _fade) ? hideFadeSpeed : showFadeSpeed;
+        _fade = Mathf.MoveTowards(_fade, _targetFade, speed * Time.deltaTime);
+
+        for (int i = 0; i < _slots.Length; i++) {
+            FadeSlot s = _slots[i];
+            if (s == null || s.renderer == null) continue;
+
+            if (_fade > 0.0001f) {
+                EnsureConverted(s);
+                if (!s.renderer.enabled) s.renderer.enabled = true;
+                s.renderer.GetPropertyBlock(_fadeBlock);
+                _fadeBlock.SetFloat(FadeId, _fade);
+                s.renderer.SetPropertyBlock(_fadeBlock);
+            } else {
+                // Fully visible again: clear the override and restore the original material.
+                if (s.converted) {
+                    s.renderer.GetPropertyBlock(_fadeBlock);
+                    _fadeBlock.SetFloat(FadeId, 0f);
+                    s.renderer.SetPropertyBlock(_fadeBlock);
+                    RestoreOriginal(s);
+                }
+                if (!s.renderer.enabled) s.renderer.enabled = true;
+            }
+        }
+
+        if (Mathf.Approximately(_fade, _targetFade)) {
+            _fading = false;
+            // Fully hidden: drop draw cost entirely (as the old hard toggle did). The
+            // renderers re-enable themselves on the next show transition.
+            if (_fade >= 1f) {
+                for (int i = 0; i < _slots.Length; i++) {
+                    if (_slots[i]?.renderer != null) _slots[i].renderer.enabled = false;
+                }
+            }
+        }
+    }
+
+    // Instantly force the roof to a coherent visible/hidden state with no animation. Used on
+    // disable, where Update won't run, so a re-enabled roof starts correct.
+    private void SnapToState() {
+        bool hidden = _hiders.Count > 0;
+        _targetFade = hidden ? 1f : 0f;
+        _fade       = _targetFade;
+        _fading     = false;
+
+        if (_slots != null) {
+            for (int i = 0; i < _slots.Length; i++) {
+                FadeSlot s = _slots[i];
+                if (s == null || s.renderer == null) continue;
+                if (hidden) {
+                    s.renderer.enabled = false;
+                } else {
+                    if (s.converted) RestoreOriginal(s);
+                    s.renderer.GetPropertyBlock(_fadeBlock);
+                    _fadeBlock.SetFloat(FadeId, 0f);
+                    s.renderer.SetPropertyBlock(_fadeBlock);
+                    s.renderer.enabled = true;
+                }
+            }
+        }
+        SetPreventClick(!hidden);
+    }
+
+    private void HardSetVisible(bool visible) {
+        for (int i = 0; i < this.renderersToHide.Count; i++) {
+            if (this.renderersToHide[i] != null) this.renderersToHide[i].enabled = visible;
+        }
+        SetPreventClick(visible);
+    }
+
+    private void SetPreventClick(bool active) {
+        if (this.preventClickChild != null && this.preventClickChild.activeSelf != active)
+            this.preventClickChild.SetActive(active);
+    }
+
+    // ── Dither material swap (only while transitioning) ───────────────────────
+
+    private void EnsureConverted(FadeSlot s) {
+        if (s.converted || s.renderer == null || _ditherShader == null) return;
+        Material[] src = s.renderer.sharedMaterials;
+        if (s.original == null) s.original = src;
+        if (s.dither == null) {
+            s.dither = new Material[src.Length];
+            for (int i = 0; i < src.Length; i++) s.dither[i] = BuildDither(src[i]);
+        }
+        s.renderer.sharedMaterials = s.dither;
+        s.converted = true;
+    }
+
+    private void RestoreOriginal(FadeSlot s) {
+        if (!s.converted || s.renderer == null) return;
+        if (s.original != null) s.renderer.sharedMaterials = s.original;
+        s.converted = false;
+    }
+
+    // Builds a Sim/WallDither variant carrying the source material's maps/colour, so the
+    // dissolving roof looks like itself while it fades. (Idle-visible roofs use the real
+    // original material; this only shows during the transition.)
+    private Material BuildDither(Material source) {
+        if (source == null || _ditherShader == null) return source;
+        Material m = new Material(_ditherShader) { name = source.name + " (" + _ditherShader.name + ")" };
+
+        if (source.HasProperty("_BaseMap")) {
+            m.SetTexture("_BaseMap", source.GetTexture("_BaseMap"));
+            m.SetTextureScale("_BaseMap", source.GetTextureScale("_BaseMap"));
+            m.SetTextureOffset("_BaseMap", source.GetTextureOffset("_BaseMap"));
+        } else if (source.HasProperty("_MainTex")) {
+            m.SetTexture("_BaseMap", source.GetTexture("_MainTex"));
+            m.SetTextureScale("_BaseMap", source.GetTextureScale("_MainTex"));
+            m.SetTextureOffset("_BaseMap", source.GetTextureOffset("_MainTex"));
+        }
+
+        if (source.HasProperty("_BaseColor")) m.SetColor("_BaseColor", source.GetColor("_BaseColor"));
+        else if (source.HasProperty("_Color")) m.SetColor("_BaseColor", source.GetColor("_Color"));
+
+        if (source.HasProperty("_BumpMap")) {
+            Texture bump = source.GetTexture("_BumpMap");
+            if (bump != null) {
+                m.SetTexture("_BumpMap", bump);
+                m.SetFloat("_BumpScale", source.HasProperty("_BumpScale") ? source.GetFloat("_BumpScale") : 1f);
+                m.EnableKeyword("_NORMALMAP");
+            }
+        }
+
+        if (source.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", source.GetFloat("_Smoothness"));
+        if (source.HasProperty("_Metallic")) m.SetFloat("_Metallic", source.GetFloat("_Metallic"));
+
+        return m;
     }
 }
