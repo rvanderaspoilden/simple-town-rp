@@ -31,6 +31,16 @@ public class ClientPropManager : MonoBehaviour {
     // propId → GameObject for runtime-spawned props only (we own these and Destroy on remove).
     private readonly Dictionary<int, GameObject> _spawnedGOs = new Dictionary<int, GameObject>();
 
+    /// <summary>
+    /// Runtime-spawned prop GameObjects (apartment furniture, doors, lights…) by propId.
+    /// Used by <see cref="Sim.ApartmentController"/> to cull props within an apartment it hides.
+    /// Read-only — callers must not mutate the dictionary.
+    /// </summary>
+    public IReadOnlyDictionary<int, GameObject> SpawnedRuntimeProps => _spawnedGOs;
+
+    /// <summary>Fired when a runtime prop GameObject is (re)spawned client-side. (propId, go)</summary>
+    public static event System.Action<int, GameObject> OnRuntimePropSpawned;
+
     // ── Unity lifecycle ───────────────────────────────────────────────────────
 
     private void Awake() {
@@ -202,6 +212,7 @@ public class ClientPropManager : MonoBehaviour {
                     PropStateHeader hostHeader = PropStateHeader.ReadFrom(msg.Payload);
                     Debug.Log($"[PropSpawn] (host) Reusing server GO propId={msg.PropId} prefabId={msg.PrefabId} presetId={hostHeader.PresetId} isBuilt={hostHeader.IsBuilt}");
                     hostBehaviour.ApplyState(msg.Type, msg.Payload);
+                    OnRuntimePropSpawned?.Invoke(msg.PropId, hostGo);
                 }
                 ClientLogger.NetworkDebug("PropSpawnHostReused {PropId} {PrefabId} {RoomId}", msg.PropId, msg.PrefabId, msg.RoomId);
                 return;
@@ -230,6 +241,7 @@ public class ClientPropManager : MonoBehaviour {
             behaviour.ApplyState(msg.Type, msg.Payload);
         }
         _spawnedGOs[msg.PropId] = go;
+        OnRuntimePropSpawned?.Invoke(msg.PropId, go);
 
         ClientLogger.NetworkDebug("PropSpawned {PropId} {PrefabId} {RoomId}", msg.PropId, msg.PrefabId, msg.RoomId);
     }

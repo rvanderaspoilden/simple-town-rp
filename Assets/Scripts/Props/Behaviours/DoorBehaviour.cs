@@ -48,6 +48,16 @@ public class DoorBehaviour : PropBehaviourBase {
     private DoorLockState _lockState = DoorLockState.UNLOCKED;
     private int           _displayedNumber = -1;
 
+    /// <summary>True for an apartment's corridor-facing front door (carries a door number).</summary>
+    public bool IsFrontDoor => _displayedNumber > 0;
+
+    /// <summary>
+    /// Fired on every front-door state apply (front doors only). Lets each
+    /// <see cref="Sim.ApartmentController"/> cull its interior unless its own front door
+    /// is open. (doorNumber, isOpen)
+    /// </summary>
+    public static event System.Action<int, bool> OnFrontDoorStateChanged;
+
     // ── IInteractable overrides ───────────────────────────────────────────────
 
     public override bool IsInteractable() {
@@ -119,6 +129,12 @@ public class DoorBehaviour : PropBehaviourBase {
         // Inner doors keep the gate closed regardless of their open state.
         if (roofRevealTrigger != null) {
             roofRevealTrigger.GateOpen = _isOpen && _displayedNumber > 0;
+        }
+
+        // Front doors notify their apartment so it can show/hide its interior. Fire on
+        // every apply (cheap; the apartment dedupes) so late-subscribed apartments stay in sync.
+        if (_displayedNumber > 0) {
+            OnFrontDoorStateChanged?.Invoke(_displayedNumber, _isOpen);
         }
     }
 

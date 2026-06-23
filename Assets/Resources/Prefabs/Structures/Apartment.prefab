@@ -6054,18 +6054,14 @@ MonoBehaviour:
     purchasePrice: 0
     rentPrice: 0
     preset: 
-    sceneData:
-      walls: []
-      grounds: []
-      buckets: []
-      props: []
+    tenantSince: 0
+    lastRentCollectedAt: 0
   tenant:
     _id: 
     user_id: 
     identity:
       firstname: 
       lastname: 
-      originCountry: 
       job: 0
     money: 0
     health:
@@ -6091,6 +6087,8 @@ MonoBehaviour:
       skinColorPercent: 0
       gender: 0
     mood: 0
+    currentProfessionId: 
+    jobs: []
   associatedHallController: {fileID: 0}
   state: 0
   frontDoorPrefabConfig: {fileID: 11400000, guid: 7f933f9ec207f9b45a889cd39db10533,
@@ -7509,6 +7507,8 @@ MonoBehaviour:
   renderersToHide:
   - {fileID: 7543621669472947554}
   preventClickChild: {fileID: 4156072288462038612}
+  hideMinimap: 1
+  interiorCeilingYOverride: -1
 --- !u!1 &4156072288462038612
 GameObject:
   m_ObjectHideFlags: 0

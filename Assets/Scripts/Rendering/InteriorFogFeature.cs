@@ -48,6 +48,9 @@ public class InteriorFogFeature : ScriptableRendererFeature {
         if (_fogMaterial == null) return;
         var camType = renderingData.cameraData.cameraType;
         if (camType != CameraType.Game && camType != CameraType.SceneView) return;
+        // Skip cameras rendering to a RenderTexture (e.g. the exterior-portal camera): the fog
+        // must never touch the diorama that is meant to read as the world *outside* the window.
+        if (renderingData.cameraData.camera.targetTexture != null) return;
         // Cheap CPU-side gate: nothing to do unless a client is inside a building.
         if (Shader.GetGlobalFloat(BlendId) < 0.01f) return;
         renderer.EnqueuePass(_pass);

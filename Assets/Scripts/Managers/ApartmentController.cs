@@ -87,10 +87,19 @@ namespace Sim {
             this.katarinaConfiguration.container.SetActive(false);
 
             ClientPropManager.OnRoomStateReceived += OnRoomStateReceived;
+
+            // Client interior culling: only the apartment the local player stands in, or one
+            // whose front door is open, keeps its interior rendered (see #region below).
+            Roof.OnLocalInteriorChanged           += OnLocalInteriorChanged;
+            DoorBehaviour.OnFrontDoorStateChanged += OnFrontDoorStateChanged;
+            ClientPropManager.OnRuntimePropSpawned += OnRuntimePropSpawned;
         }
 
         private void OnDestroy() {
             ClientPropManager.OnRoomStateReceived -= OnRoomStateReceived;
+            Roof.OnLocalInteriorChanged           -= OnLocalInteriorChanged;
+            DoorBehaviour.OnFrontDoorStateChanged -= OnFrontDoorStateChanged;
+            ClientPropManager.OnRuntimePropSpawned -= OnRuntimePropSpawned;
 
             if (NetworkServer.active) {
                 ServerApartmentRegistry.Instance.Unregister(this.ApartmentKey);
@@ -851,6 +860,104 @@ namespace Sim {
 
         #endregion
 
+        #region Client Interior Culling
+
+        // A hall instantiates EVERY apartment on the floor, but from the corridor the local
+        // player only ever sees the one they stand in (or one whose front door swung open).
+        // To avoid rendering the rest, an apartment keeps its interior hidden unless:
+        //   • the local player is inside it          (Roof.LocalInterior == this.roof), or
+        //   • its corridor-facing front door is open (DoorBehaviour open state).
+        // "Interior" = the preset container + grounds (static geometry) + every runtime prop
+        // (furniture, inner doors, lights, delivery box) whose position falls in this
+        // apartment's XZ footprint — but NEVER the front door itself, which stays visible so
+        // it can still be seen and interacted with from the hall. Renderers are toggled (not
+        // GameObjects) so server-side prop logic and network state stay intact in host mode.
+
+        private bool _playerInside;
+        private bool _frontDoorOpen;
+        private bool _interiorVisible = true;
+        private bool _cullingInitialized;
+
+        private readonly List<Renderer> _staticRenderers      = new List<Renderer>();
+        private readonly HashSet<Renderer> _hiddenPropRenderers = new HashSet<Renderer>();
+
+        private void InitInteriorCulling() {
+            _staticRenderers.Clear();
+            if (this.currentConfiguration.container != null)
+                _staticRenderers.AddRange(this.currentConfiguration.container.GetComponentsInChildren<Renderer>(true));
+            if (this.grounds != null) {
+                foreach (Ground g in this.grounds) {
+                    if (g != null) _staticRenderers.AddRange(g.GetComponentsInChildren<Renderer>(true));
+                }
+            }
+            _cullingInitialized = false; // force the first apply (container was just shown)
+            RecomputeVisibility();
+        }
+
+        private void OnLocalInteriorChanged(Roof current) {
+            bool inside = current != null && current == this.roof;
+            if (inside == _playerInside) return;
+            _playerInside = inside;
+            RecomputeVisibility();
+        }
+
+        private void OnFrontDoorStateChanged(int doorNumber, bool isOpen) {
+            if (doorNumber != this.doorNumber) return;
+            if (isOpen == _frontDoorOpen) return;
+            _frontDoorOpen = isOpen;
+            RecomputeVisibility();
+        }
+
+        private void RecomputeVisibility() {
+            bool visible = _playerInside || _frontDoorOpen;
+            if (_cullingInitialized && visible == _interiorVisible) return;
+            _cullingInitialized = true;
+            _interiorVisible = visible;
+
+            foreach (Renderer r in _staticRenderers) {
+                if (r != null) r.enabled = visible;
+            }
+
+            if (visible) {
+                foreach (Renderer r in _hiddenPropRenderers) {
+                    if (r != null) r.enabled = true;
+                }
+                _hiddenPropRenderers.Clear();
+            } else if (ClientPropManager.Instance != null) {
+                foreach (var kv in ClientPropManager.Instance.SpawnedRuntimeProps) {
+                    HidePropIfInside(kv.Value);
+                }
+            }
+        }
+
+        // A prop that spawns into an already-hidden apartment must start hidden too.
+        private void OnRuntimePropSpawned(int propId, GameObject go) {
+            if (_interiorVisible) return;
+            HidePropIfInside(go);
+        }
+
+        private void HidePropIfInside(GameObject go) {
+            if (go == null || this.roof == null) return;
+            if (!InFootprintXZ(this.roof.GetXZFootprint(), go.transform.position)) return;
+
+            // The front door belongs to this apartment's footprint edge but must stay visible.
+            DoorBehaviour door = go.GetComponent<DoorBehaviour>();
+            if (door != null && door.IsFrontDoor) return;
+
+            foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true)) {
+                if (r != null && r.enabled) {
+                    r.enabled = false;
+                    _hiddenPropRenderers.Add(r);
+                }
+            }
+        }
+
+        private static bool InFootprintXZ(Bounds b, Vector3 p) {
+            return p.x >= b.min.x && p.x <= b.max.x && p.z >= b.min.z && p.z <= b.max.z;
+        }
+
+        #endregion
+
         // ── Internal helpers ──────────────────────────────────────────────────
 
         private void ApplyPresetName(string name) {
@@ -875,6 +982,8 @@ namespace Sim {
             this.currentConfiguration.container.SetActive(true);
             SetGroundsActive(true);
             Debug.Log($"[Apartment] Applying door number {this.doorNumber} preset={name}");
+
+            InitInteriorCulling();
         }
 
         /// <summary>

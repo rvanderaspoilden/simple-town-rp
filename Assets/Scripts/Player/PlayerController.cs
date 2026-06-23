@@ -963,11 +963,10 @@ namespace Sim {
 
             // SetDestination snappe le point sur la NavMesh la plus proche mais ne dit pas si une
             // route existe : un clic derrière un mur ou sur une île NavMesh isolée laisserait le
-            // joueur figé sans feedback. On précalcule le chemin et on rejette tout PathPartial /
-            // PathInvalid avec un toast d'erreur — la marche n'est engagée que si PathComplete.
+            // joueur figé. On précalcule le chemin et on ignore silencieusement tout PathPartial /
+            // PathInvalid — la marche n'est engagée que si PathComplete.
             if (!this.navMeshAgent.CalculatePath(targetPoint, _navPathScratch)
                 || _navPathScratch.status != NavMeshPathStatus.PathComplete) {
-                WorldToastManager.ShowError("Inaccessible");
                 return;
             }
 
