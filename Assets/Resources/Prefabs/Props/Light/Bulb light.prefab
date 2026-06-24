@@ -101,6 +101,7 @@ GameObject:
   - component: {fileID: 2352109056675780090}
   - component: {fileID: 2352109056675780093}
   - component: {fileID: 1449397831767230975}
+  - component: {fileID: 8766464562133372140}
   m_Layer: 10
   m_Name: Point Light
   m_TagString: Untagged
@@ -116,13 +117,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2352109056675780091}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.517, z: -0.012}
+  m_LocalRotation: {x: 0.70710677, y: 0, z: 0, w: 0.70710677}
+  m_LocalPosition: {x: 0, y: -0.087, z: -0.012}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2823448847699544338}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!108 &2352109056675780093
 Light:
   m_ObjectHideFlags: 0
@@ -132,16 +133,16 @@ Light:
   m_GameObject: {fileID: 2352109056675780091}
   m_Enabled: 1
   serializedVersion: 13
-  m_Type: 2
+  m_Type: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 1.94
-  m_Range: 5.383971
-  m_SpotAngle: 30
-  m_InnerSpotAngle: 21.80208
+  m_Intensity: 3.27
+  m_Range: 5.41
+  m_SpotAngle: 151.95683
+  m_InnerSpotAngle: 32.194244
   m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
     m_Type: 2
-    m_Resolution: -1
+    m_Resolution: 8192
     m_CustomResolution: -1
     m_Strength: 1
     m_Bias: 0.02
@@ -176,7 +177,7 @@ Light:
   m_Lightmapping: 4
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 0.89
+  m_BounceIntensity: 2.47
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
@@ -217,6 +218,24 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &8766464562133372140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2352109056675780091}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71c71511f5138bc43b805e82d5a379c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.BulbLightRangeFitter
+  shellMask:
+    serializedVersion: 2
+    m_Bits: 0
+  margin: 0.3
+  minRange: 1.5
+  horizontalRays: 8
 --- !u!1 &3199024030437757864
 GameObject:
   m_ObjectHideFlags: 0
