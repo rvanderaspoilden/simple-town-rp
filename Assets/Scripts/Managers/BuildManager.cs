@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Mirror;
 using Sim.Building;
 using Sim.Entities;
@@ -6,6 +7,7 @@ using Sim.Scriptables;
 using Sim.UI;
 using Sim.Utils;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.EventSystems;
 
 namespace Sim {
@@ -78,6 +80,12 @@ namespace Sim {
         private Vector3 originPosition;
 
         private Quaternion originRotation;
+
+        // World items (ItemBehaviour) resting on the edited prop's posable surface. They are
+        // reparented under the prop so they ride along while it's moved, then on confirm their
+        // new world positions are persisted (C2S_MoveWorldItem) and on cancel they revert with
+        // the prop — so an item posed on a table/shelf never ends up floating after a move.
+        private readonly List<ItemBehaviour> carriedItems = new List<ItemBehaviour>();
 
         private Vector3 currentPropsBounds;
 
@@ -274,6 +282,23 @@ namespace Sim {
                         }
                     }
                 }
+
+                // The BoxCast above only catches props (layer 10). World items posed on the surface
+                // live on the Item layer (19) and aren't PropBehaviourBase, so detect + carry them
+                // separately: parenting them under the prop makes them follow the surface during the
+                // move (handled at confirm/cancel by ReleaseCarriedItems).
+                RaycastHit[] itemHits = new RaycastHit[30];
+                var itemCount = Physics.BoxCastNonAlloc(
+                    this.originPosition + new Vector3(0, colliderBounds.y, 0),
+                    colliderBounds, Vector3.up, itemHits, Quaternion.identity, 0.05f, (1 << 19));
+
+                for (int i = 0; i < itemCount; i++) {
+                    Collider c = itemHits[i].collider;
+                    if (c == null) continue;
+                    ItemBehaviour item = c.GetComponentInParent<ItemBehaviour>();
+                    if (item == null || item.IsHeld || this.carriedItems.Contains(item)) continue;
+                    this.CarryItem(item);
+                }
             }
 
             this.isEditing = true;
@@ -290,6 +315,44 @@ namespace Sim {
             } else {
                 WallVisibilityUI.Instance.Bind(this.apartmentController);
             }
+        }
+
+        /// <summary>Attache un item-monde au prop en cours d'édition pour qu'il suive la surface
+        /// pendant le déplacement (position monde préservée). Sa navmesh obstacle est désactivée le
+        /// temps du transport.</summary>
+        private void CarryItem(ItemBehaviour item) {
+            this.carriedItems.Add(item);
+            NavMeshObstacle obstacle = item.GetComponentInChildren<NavMeshObstacle>(true);
+            if (obstacle != null) obstacle.enabled = false;
+            item.transform.SetParent(this.currentPropBehaviour.transform, true);
+        }
+
+        /// <summary>Détache les items transportés. <paramref name="persist"/> = true (validation) :
+        /// chaque item est repositionné côté serveur (C2S_MoveWorldItem) à sa nouvelle position monde.
+        /// false (annulation) : le prop est déjà revenu à l'origine, les items reviennent avec lui ;
+        /// on les détache juste et on réactive leur navmesh obstacle.</summary>
+        private void ReleaseCarriedItems(bool persist) {
+            foreach (ItemBehaviour item in this.carriedItems) {
+                if (item == null) continue;
+
+                Vector3 worldPos = item.transform.position;
+                Quaternion worldRot = item.transform.rotation;
+
+                item.transform.SetParent(null, true);
+
+                NavMeshObstacle obstacle = item.GetComponentInChildren<NavMeshObstacle>(true);
+                if (obstacle != null) obstacle.enabled = true;
+
+                if (persist && NetworkClient.active) {
+                    NetworkClient.Send(new C2S_MoveWorldItem {
+                        EntityId = item.Identity.EntityId,
+                        Position = worldPos,
+                        Rotation = worldRot
+                    });
+                }
+            }
+
+            this.carriedItems.Clear();
         }
 
         public void Init(PaintBucketBehaviour paintBucket) {
@@ -330,6 +393,12 @@ namespace Sim {
         public ApartmentController CurrentApartment => apartmentController;
 
         public void Cancel() {
+            // Ignore les annulations parasites : le HUD de pose (BuildPreviewPanelUI) est
+            // partagé avec la pose d'item (ItemPlacementController) qui réutilise PanelTypeEnum.BUILD.
+            // En build mode réel, le mode n'est jamais NONE au moment d'annuler (POSING/VALIDATING/PAINT),
+            // donc ce garde ne bloque aucune annulation légitime mais évite un NRE sur apartmentController.
+            if (this.mode == BuildModeEnum.NONE) return;
+
             // Annuler un déballage laisse le meuble dans le colis (aucun message envoyé).
             this.unpackPackageEntityId = -1;
             this.unpackSlotIndex       = -1;
@@ -390,6 +459,9 @@ namespace Sim {
                     } else {
                         OnValidatePropEdit?.Invoke(this.currentPropBehaviour);
                     }
+
+                    // Persiste la nouvelle position des items posés qui ont suivi la surface.
+                    this.ReleaseCarriedItems(persist: true);
                 } else if (this.currentPropBehaviour != null) {
                     if (this.unpackPackageEntityId >= 0) {
                         // Déballage : on déplace le meuble existant (le serveur résout via
@@ -433,6 +505,10 @@ namespace Sim {
                             child.transform.parent = this.currentPropBehaviour.transform.parent;
                         }
                     }
+
+                    // Le prop est revenu à l'origine ci-dessus : les items posés reviennent avec lui.
+                    // On les détache (sans rien persister) — annulation = aucun changement.
+                    this.ReleaseCarriedItems(persist: false);
 
                     this.currentPreview.Destroy();
                     this.currentPropBehaviour = null;
@@ -606,7 +682,18 @@ namespace Sim {
                 return CommonUtils.GetLayerMaskSurfacesToPose(this.currentPropBehaviour);
             }
 
-            return (1 << 11);
+            // VALIDATING: a left-click on the prop re-grabs it (back to POSING) so the user can
+            // reposition without first cancelling/validating. The prop's build collider normally
+            // sits on the "Preview" layer (11), but PlacementFeedback moves its renderer
+            // GameObjects onto "Place Valid"/"Place Invalid" for the validity outline — so a prop
+            // whose collider shares a GameObject with a renderer ends up on a validity layer.
+            // Accept all three so the re-grab click lands regardless of the prop's layout.
+            int mask = (1 << 11);
+            int valid   = LayerMask.NameToLayer("Place Valid");
+            int invalid = LayerMask.NameToLayer("Place Invalid");
+            if (valid   >= 0) mask |= (1 << valid);
+            if (invalid >= 0) mask |= (1 << invalid);
+            return mask;
         }
 
         private void SetMode(BuildModeEnum mode) {

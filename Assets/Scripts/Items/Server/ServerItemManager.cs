@@ -883,6 +883,47 @@ public class ServerItemManager
     }
 
     /// <summary>
+    /// Repositionne un item-monde DÉJÀ posé (pas en main) vers une nouvelle position/rotation.
+    /// Émis quand on déplace en build mode un prop dont la surface posable portait des items :
+    /// l'item suit la surface pour ne pas « flotter ». Même persistance/broadcast que
+    /// <see cref="DetachAndPlace"/>, mais aucune main n'est impliquée (on ne touche pas
+    /// <see cref="_playerHands"/>) : on met simplement à jour l'entité existante.
+    /// </summary>
+    public void HandleMoveWorldItem(NetworkConnectionToClient conn, C2S_MoveWorldItem msg)
+    {
+        if (conn.identity == null) return;
+
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (roomId == null) return;
+        if (!TryGetEntity(roomId, msg.EntityId, out var entity)) return;
+        // Un item tenu n'est pas « posé » : ne jamais le téléporter via ce chemin.
+        if (entity.IsHeld) return;
+
+        entity.Position = msg.Position;
+        entity.Rotation = msg.Rotation;
+
+        GameLogger.Network.Info("Item MoveWorld player={PlayerNetId} entity={EntityId} room={RoomId}",
+            conn.identity.netId, msg.EntityId, roomId);
+
+        // Persistance pilotée par ItemConfig.ToPersist (UUID conservé) : seul un item-monde
+        // persistant a une position stockée à mettre à jour. Un item non-persistant n'a déjà
+        // plus de ligne DB (supprimée à son drop initial) — rien à faire ici.
+        ItemConfig cfg = DatabaseManager.GetItemConfigById(entity.ItemConfigId);
+        if (cfg != null && cfg.ToPersist) {
+            string worldPlaceId = ResolveWorldPlaceId(conn, roomId);
+            if (!string.IsNullOrEmpty(worldPlaceId) && GetBridge(msg.EntityId) != null)
+                PersistMoveToWorldAsync(msg.EntityId, worldPlaceId, msg.Position, msg.Rotation);
+        }
+
+        BroadcastToRoom(roomId, new S2C_ItemDetachedFromHand
+        {
+            EntityId      = msg.EntityId,
+            WorldPosition = msg.Position,
+            WorldRotation = msg.Rotation
+        });
+    }
+
+    /// <summary>
     /// Détache l'item tenu dans <paramref name="hand"/> et le pose à la position/rotation monde
     /// données : maj de l'entité, libération de la main, persistance pilotée par ItemConfig.ToPersist
     /// (UNIFORME, aucun cas spécial colis), puis broadcast <see cref="S2C_ItemDetachedFromHand"/> à

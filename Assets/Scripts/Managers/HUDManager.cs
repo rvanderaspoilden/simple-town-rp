@@ -21,6 +21,10 @@ namespace Sim {
         [SerializeField]
         private HelpPanel helpPanel;
 
+        [Tooltip("Image-only panel shown while posing a held item (PanelTypeEnum.POSE).")]
+        [SerializeField]
+        private GameObject posePanel;
+
         [SerializeField]
         private ChatInputUI chatInputUI;
 
@@ -117,14 +121,24 @@ namespace Sim {
                 this.buildPreviewPanelUI.gameObject.SetActive(true);
                 this.helpPanel.gameObject.SetActive(true);
                 this.defaultViewUI.gameObject.SetActive(false);
+                if (this.posePanel != null) this.posePanel.SetActive(false);
+            } else if (panelType == PanelTypeEnum.POSE) {
+                // Dedicated minimal "Mode Pose" HUD: just an image; no validate/cancel buttons
+                // (confirm = click, cancel = Esc / right-click, handled by ItemPlacementController).
+                if (this.posePanel != null) this.posePanel.SetActive(true);
+                this.defaultViewUI.gameObject.SetActive(false);
+                this.helpPanel.gameObject.SetActive(false);
+                this.buildPreviewPanelUI.gameObject.SetActive(false);
             } else if (panelType == PanelTypeEnum.DEFAULT) {
                 this.defaultViewUI.gameObject.SetActive(true);
                 this.helpPanel.gameObject.SetActive(false);
                 this.buildPreviewPanelUI.gameObject.SetActive(false);
+                if (this.posePanel != null) this.posePanel.SetActive(false);
             } else {
                 this.defaultViewUI.gameObject.SetActive(false);
                 this.helpPanel.gameObject.SetActive(false);
                 this.buildPreviewPanelUI.gameObject.SetActive(false);
+                if (this.posePanel != null) this.posePanel.SetActive(false);
             }
         }
 

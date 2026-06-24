@@ -42,6 +42,10 @@ namespace Sim.Building {
 
         private PropsRenderer propsRenderer;
 
+        // Validity feedback (outline + floating badge), shared by item ghosts and build-mode props.
+        // Replaces the old green/red renderer tint. Owns the layer-swap outline + the billboard.
+        private PlacementFeedback feedback;
+
         // Original collider trigger state, restored on Destroy().
         // BuildPreview relies on OnTriggerStay/Exit; if the prop's collider is solid
         // (isTrigger=false), no trigger callbacks fire and overlap state never updates.
@@ -58,12 +62,34 @@ namespace Sim.Building {
 
         public static event PlaceableState OnPlaceableStateChanged;
 
+        // Free placement (held-item "Poser"): the preview is added to an item ghost that has
+        // no PropBehaviourBase and no PropsRenderer. It behaves like a ground prop but in the
+        // open city — no buildable-area requirement, no wall/roof handling. Validity is purely
+        // collision (haveFreeArea) + ground underneath (detectGround). Driven by
+        // ItemPlacementController. Real props (currentProps != null) are completely unaffected.
+        private bool IsFreePlacement => this.currentProps == null;
+
+        // Free placement only: the prop hierarchy that owns the Posable Surface currently under the
+        // cursor (set each frame by ItemPlacementController). That prop is the support the item rests
+        // ON — its colliders must never count as obstacles, otherwise the table/shelf body blocks
+        // its own surface. Mirrors how a ground prop posed on a surface doesn't collide with it.
+        public Transform freeSupport;
+
         private void Awake() {
             this.colliderTriggered = new List<Collider>();
             this.navMeshObstacle = GetComponentInChildren<NavMeshObstacle>();
             this.currentProps = GetComponent<PropBehaviourBase>();
             this.propsRenderer = GetComponent<PropsRenderer>();
             this.collider = GetComponent<Collider>();
+
+            // A prop entered for editing is almost always hovered at that instant, so HoverOutline
+            // has already moved its renderers onto the "Outline" layer (saving their real layers to
+            // restore on hover-end). If left active, the PlacementFeedback added below would capture
+            // "Outline" as the renderers' "original" layer and restore them there on teardown —
+            // leaving the prop permanently outlined (looking stuck in edit mode) with a corrupted
+            // layer state. Release the hover outline now so the true layers are captured.
+            HoverOutline hoverOutline = GetComponent<HoverOutline>();
+            if (hoverOutline != null) hoverOutline.Hide();
 
             if (navMeshObstacle) {
                 // disable this to avoid collision with player agent
@@ -95,6 +121,10 @@ namespace Sim.Building {
             // change — `isInBuildableArea` would stay false forever and the preview
             // would be stuck red. Seed overlap state explicitly via OverlapBox.
             SeedOverlapState();
+
+            // Outline + badge validity feedback. Added last so it captures the renderers' real
+            // (authored) layers, not the "Preview" root layer set above.
+            this.feedback = this.gameObject.AddComponent<PlacementFeedback>();
         }
 
         private void SeedOverlapState() {
@@ -143,6 +173,28 @@ namespace Sim.Building {
         }
 
         private void RouteOverlap(Collider other) {
+            if (IsFreePlacement) {
+                // Held-item placement in the open city: any penetrating collider that isn't a
+                // support surface (Ground / Posable Surface) or the local player standing next to
+                // the spot blocks the placement. Posable Surface is the resting surface (tables,
+                // counters), never an obstacle — same surfaces ItemPlacementController snaps onto.
+                // Logical zone volumes (Buildable Area / Roof / Dissonance / Geographic Area) are
+                // not physical obstacles and must be ignored — free placement has no buildable-area
+                // requirement, so a building's buildable zone must not block a street-side pose.
+                if (other.CompareTag("Buildable Area") || other.CompareTag("Roof")
+                    || other.CompareTag("Dissonance") || other.CompareTag("Geographic Area")) return;
+                // The prop that provides the surface we're resting on is the support, not an obstacle.
+                if (this.freeSupport != null && other.transform.IsChildOf(this.freeSupport)) return;
+                int layer = other.gameObject.layer;
+                if (layer != LayerMask.NameToLayer("Ground")
+                    && layer != LayerMask.NameToLayer("Posable Surface")
+                    && layer != LayerMask.NameToLayer("Player")
+                    && !this.colliderTriggered.Contains(other)) {
+                    this.colliderTriggered.Add(other);
+                }
+                return;
+            }
+
             if (other.CompareTag("Buildable Area")) {
                 if (this.buildableArea != other) {
                     this.buildableArea = other;
@@ -196,7 +248,14 @@ namespace Sim.Building {
         }
 
         private void Update() {
-            if (this.currentProps.IsRoofProps()) {
+            if (IsFreePlacement) {
+                // Held-item placement: a valid support is Ground (9) OR Posable Surface (16)
+                // directly below — the same surfaces ItemPlacementController snaps the ghost onto.
+                // Start slightly above the pivot and use trigger-collide so trigger-mode posable
+                // surfaces (tables, counters) still register.
+                this.detectGround = Physics.Raycast(this.transform.position + Vector3.up * 0.1f,
+                    Vector3.down, 10.2f, (1 << 9) | (1 << 16), QueryTriggerInteraction.Collide);
+            } else if (this.currentProps.IsRoofProps()) {
                 // Roof props must hang under a roof — check there's roof geometry within a small
                 // radius. CheckSphere works whether the position is inside the surface collider
                 // or just below it, and respects trigger colliders regardless of the global
@@ -208,7 +267,7 @@ namespace Sim.Building {
                 this.detectGround = false;
             }
 
-            if (this.currentProps.IsWallProps()) {
+            if (!IsFreePlacement && this.currentProps.IsWallProps()) {
                 this.validRotation = this.CheckWallPropsIntegrity();
             } else {
                 this.validRotation = true;
@@ -222,7 +281,7 @@ namespace Sim.Building {
          * Return true if it's valid
          */
         private bool CheckConnectedToWallConstraint() {
-            if (!this.currentProps.GetConfiguration().NeedToBeConnectedToWall()) {
+            if (IsFreePlacement || !this.currentProps.GetConfiguration().NeedToBeConnectedToWall()) {
                 return true;
             }
 
@@ -273,10 +332,17 @@ namespace Sim.Building {
         private void CheckValidity() {
             if (navMeshObstacle && navMeshObstacle.enabled) return;
 
-            this.haveFreeArea = this.colliderTriggered.Count(x => x.gameObject.activeInHierarchy) == 0;
-            this.placeable = this.haveFreeArea && this.detectGround && this.validRotation && this.isInBuildableArea;
+            this.haveFreeArea = this.colliderTriggered.Count(x => x.gameObject.activeInHierarchy
+                && !(this.IsFreePlacement && this.freeSupport != null && x.transform.IsChildOf(this.freeSupport))) == 0;
+            // Free placement (held item) has no buildable area — the open city counts as buildable.
+            bool areaOk = this.IsFreePlacement || this.isInBuildableArea;
+            this.placeable = this.haveFreeArea && this.detectGround && this.validRotation && areaOk;
 
-            this.propsRenderer.SetPreviewState(this.placeable ? PreviewStateEnum.VALID : PreviewStateEnum.ERROR);
+            // Validity feedback is now the outline + floating badge (PlacementFeedback), not a
+            // green/red renderer tint — so we no longer drive PropsRenderer's ERROR/VALID state here.
+            if (this.feedback != null) {
+                this.feedback.SetValid(this.placeable);
+            }
 
             OnPlaceableStateChanged?.Invoke(this.placeable);
         }
@@ -295,7 +361,15 @@ namespace Sim.Building {
                 this.addedKinematicRigidbody = null;
             }
 
-            this.propsRenderer.SetPreviewState(PreviewStateEnum.NONE);
+            if (this.propsRenderer != null) {
+                this.propsRenderer.SetPreviewState(PreviewStateEnum.NONE);
+            }
+
+            // Remove the outline (restore renderer layers) and the badge before re-layering the root.
+            if (this.feedback != null) {
+                this.feedback.Clear();
+                this.feedback = null;
+            }
 
             this.gameObject.layer = LayerMask.NameToLayer("Props");
 

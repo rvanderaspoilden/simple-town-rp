@@ -953,20 +953,38 @@ namespace Sim {
             this.interactableTarget = interactable;
             this.interactionOriginPoint = targetPoint;
             this.showRadialMenuWithPriority = showPriorityActions;
-            MoveTo(targetPoint, isRunning);
+            // Interaction : la cible est la surface d'un prop (souvent hors NavMesh) → on autorise un
+            // chemin partiel pour marcher au plus près, la portée étant ensuite validée par CanInteractWith.
+            MoveTo(targetPoint, isRunning, allowPartialPath: true);
         }
 
-        public void MoveTo(Vector3 targetPoint, bool isRunning = false) {
+        /// <param name="allowPartialPath">Pour une INTERACTION : le point visé est la surface d'un prop,
+        /// souvent HORS NavMesh → la garde de chemin est sautée et on laisse SetDestination snapper sur la
+        /// NavMesh la plus proche et marcher au plus près (la portée réelle est validée ensuite par
+        /// CanInteractWith). Pour un clic au sol on garde false (chemin COMPLET exigé, sinon le joueur
+        /// partirait vers un point inaccessible).</param>
+        public void MoveTo(Vector3 targetPoint, bool isRunning = false, bool allowPartialPath = false) {
+            // Pose assise/couchée : une commande de déplacement = « se lever et y aller ». On quitte
+            // d'abord la pose (son OnExit réactive l'agent + le collider et restaure la position sur la
+            // NavMesh) AVANT la garde agent.enabled ci-dessous — sinon le clic serait ignoré et le
+            // joueur resterait coincé sur le siège.
+            if (this.PlayerState == PlayerState.SITTING || this.PlayerState == PlayerState.SLEEPING) {
+                this.ExitPose();
+            }
+
             // Agent désactivé (knockdown, conduite, mort, hors NavMesh) : on ignore silencieusement.
             // Pas une erreur utilisateur — pas de toast.
             if (this.navMeshAgent == null || !this.navMeshAgent.enabled || !this.navMeshAgent.isOnNavMesh) return;
 
-            // SetDestination snappe le point sur la NavMesh la plus proche mais ne dit pas si une
-            // route existe : un clic derrière un mur ou sur une île NavMesh isolée laisserait le
-            // joueur figé. On précalcule le chemin et on ignore silencieusement tout PathPartial /
-            // PathInvalid — la marche n'est engagée que si PathComplete.
-            if (!this.navMeshAgent.CalculatePath(targetPoint, _navPathScratch)
-                || _navPathScratch.status != NavMeshPathStatus.PathComplete) {
+            // Clic au sol : on précalcule le chemin et on exige PathComplete — sinon le joueur
+            // partirait silencieusement vers un point inaccessible (derrière un mur, île NavMesh isolée).
+            // Pour une INTERACTION (allowPartialPath) on saute cette garde : le point visé est la surface
+            // d'un prop, souvent HORS NavMesh, où CalculatePath échoue (PathInvalid). On laisse alors
+            // SetDestination snapper sur la NavMesh la plus proche et marcher au plus près — la portée
+            // réelle est validée ensuite par CanInteractWith (qui déclenche l'ouverture du menu).
+            if (!allowPartialPath
+                && (!this.navMeshAgent.CalculatePath(targetPoint, _navPathScratch)
+                    || _navPathScratch.status != NavMeshPathStatus.PathComplete)) {
                 return;
             }
 
@@ -975,6 +993,18 @@ namespace Sim {
             this.navMeshAgent.SetDestination(targetPoint);
 
             HUDManager.Instance.CloseInventory();
+        }
+
+        /// <summary>Sort d'une pose assise/couchée en repassant par idle : l'OnExit du state (CharacterSit
+        /// /CharacterSleep) réactive le NavMeshAgent + le collider et restaure la position d'avant la pose.
+        /// On neutralise temporairement la cible d'interaction pour empêcher CharacterIdle.OnEnter d'ouvrir
+        /// un menu (ou de purger la cible) au passage — le flux « marcher jusqu'au prop puis interagir »
+        /// a encore besoin de cette cible une fois la marche engagée.</summary>
+        private void ExitPose() {
+            IInteractable pending = this.interactableTarget;
+            this.interactableTarget = null;
+            this.Idle();
+            this.interactableTarget = pending;
         }
 
         // Réutilisé par MoveTo pour éviter une alloc à chaque clic. NavMeshPath NE PEUT PAS être

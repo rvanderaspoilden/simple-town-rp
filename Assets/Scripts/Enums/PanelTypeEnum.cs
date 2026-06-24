@@ -3,6 +3,7 @@
     {
         DEFAULT,
         BUILD,
-        NONE
-    }   
+        NONE,
+        POSE
+    }
 }

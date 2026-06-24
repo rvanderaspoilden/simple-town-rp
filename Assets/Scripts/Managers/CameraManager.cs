@@ -338,13 +338,21 @@ namespace Sim {
             this.SetCurrentMode(CameraModeEnum.FPS);
         }
 
-        // The Outline layer must always be in the camera culling mask so that props
-        // moved to that layer by HoverOutline.Show() remain visible while outlined.
+        // Outline-driving layers must always be in the camera culling mask so that objects moved
+        // onto them stay visible while outlined (the URP outline pass renders from the camera's
+        // cull results): "Outline" (HoverOutline), "MissionHighlight", and the placement-validity
+        // layers "Place Valid" / "Place Invalid" (PlacementFeedback, item & prop placement).
+        private static readonly string[] OutlineDrivenLayers = {
+            "MissionHighlight", "Place Valid", "Place Invalid"
+        };
+
         private LayerMask WithOutlineLayer(LayerMask mask) {
             int l1 = LayerMask.NameToLayer(HoverOutline.OutlineLayerName);
             if (l1 >= 0) mask |= (1 << l1);
-            int l2 = LayerMask.NameToLayer("MissionHighlight");
-            if (l2 >= 0) mask |= (1 << l2);
+            foreach (string layerName in OutlineDrivenLayers) {
+                int l = LayerMask.NameToLayer(layerName);
+                if (l >= 0) mask |= (1 << l);
+            }
             return mask;
         }
 

@@ -84,6 +84,20 @@ public struct C2S_PoseHeldItem : NetworkMessage
     public Quaternion Rotation;
 }
 
+/// <summary>
+/// Client → server : repositionner un item-monde DÉJÀ posé (pas en main). Émis quand on
+/// déplace en build mode un prop dont la surface posable portait des items : chaque item suit
+/// la surface et doit être repositionné pour ne pas « flotter ». Le serveur met à jour l'entité,
+/// persiste si l'item est ToPersist, puis rebroadcast via <see cref="S2C_ItemDetachedFromHand"/>
+/// (téléportation sur tous les clients de la room).
+/// </summary>
+public struct C2S_MoveWorldItem : NetworkMessage
+{
+    public int        EntityId;
+    public Vector3    Position;
+    public Quaternion Rotation;
+}
+
 /// <summary>Server → requesting client only: result of a drop attempt.</summary>
 public struct S2C_DropResult : NetworkMessage
 {
