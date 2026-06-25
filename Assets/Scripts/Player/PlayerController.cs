@@ -65,6 +65,17 @@ namespace Sim {
         [Tooltip("Vitesse de course (m/s) — appliquée quand MoveTo est appelée avec isRunning=true (double clic sur le sol).")]
         [SerializeField] private float runSpeed = 3.0f;
 
+        [Header("Keyboard movement (experimental)")]
+        [Tooltip("Active le déplacement clavier direct (ZQSD) relatif caméra, en plus du click-to-move.")]
+        [SerializeField] private bool keyboardMovementEnabled = true;
+        [Tooltip("Vitesse de rotation (deg/s) du personnage vers la direction de déplacement clavier.")]
+        [SerializeField] private float freeMoveTurnSpeed = 720f;
+        [SerializeField] private KeyCode forwardKey = KeyCode.Z;
+        [SerializeField] private KeyCode backKey = KeyCode.S;
+        [SerializeField] private KeyCode leftKey = KeyCode.Q;
+        [SerializeField] private KeyCode rightKey = KeyCode.D;
+        [SerializeField] private KeyCode runKey = KeyCode.LeftShift;
+
         [Header("Only for debug")]
         [SerializeField]
         private NavMeshAgent navMeshAgent;
@@ -258,6 +269,8 @@ namespace Sim {
         private CharacterIdle idleState;
 
         private CharacterMove moveState;
+
+        private CharacterFreeMove freeMoveState;
 
         private CharacterLookAt lookAtState;
 
@@ -685,6 +698,8 @@ namespace Sim {
         private void Update() {
             if (!isLocalPlayer || this.stateMachine == null) return;
 
+            this.HandleKeyboardMovementEntry();
+
             this.stateMachine.Tick();
 
             // Voice push-to-talk indicator: the talking bubble follows the same "V" key
@@ -783,6 +798,7 @@ namespace Sim {
 
             this.idleState = new CharacterIdle(this);
             this.moveState = new CharacterMove(this);
+            this.freeMoveState = new CharacterFreeMove(this);
             this.lookAtState = new CharacterLookAt(this);
             this.characterInteractState = new CharacterInteract(this);
             this.dieState = new CharacterDie(this);
@@ -1020,6 +1036,72 @@ namespace Sim {
             var provider = pc != null ? pc.Provider : null;
             if (provider == null) return 1f;
             return Sim.Constellation.ConstellationPerks.MoveSpeedMultiplier(provider.State.IsUnlocked);
+        }
+
+        // ── Déplacement clavier direct (ZQSD) — expérimental ─────────────────────────
+
+        /// <summary>Lit l'axe directionnel ZQSD brut : x = D(droite) − Q(gauche), y = Z(avant) − S(arrière).</summary>
+        public Vector2 ReadMoveAxis() {
+            float x = 0f, y = 0f;
+            if (Input.GetKey(forwardKey)) y += 1f;
+            if (Input.GetKey(backKey)) y -= 1f;
+            if (Input.GetKey(rightKey)) x += 1f;
+            if (Input.GetKey(leftKey)) x -= 1f;
+            return new Vector2(x, y);
+        }
+
+        /// <summary>Engage l'état de déplacement clavier direct dès qu'un input ZQSD est détecté,
+        /// uniquement depuis un état « libre de marcher » (idle / click-to-move). Coexiste avec le
+        /// click-to-move ; neutralisé pendant la frappe UI, le knockdown, la conduite et la mort.</summary>
+        private void HandleKeyboardMovementEntry() {
+            if (!keyboardMovementEnabled) return;
+            if (this.stateMachine.CurrentState == freeMoveState) return; // déjà en déplacement clavier
+            if (IsTypingInInputField()) return;
+            if (this.isKnockedDown || this.IsDriving || this.IsPassenger) return;
+            if (this._playerState == PlayerState.DIED) return;
+
+            IState current = this.stateMachine.CurrentState;
+            if (current != idleState && current != moveState) return; // pas depuis sit/sleep/interact/...
+
+            if (this.ReadMoveAxis().sqrMagnitude > 0.01f) {
+                this.stateMachine.SetState(freeMoveState);
+            }
+        }
+
+        /// <summary>Pilote le personnage en ZQSD relatif à la caméra via NavMeshAgent.Move (contraint à
+        /// la NavMesh). Renvoie false en l'absence d'input directionnel — l'état CharacterFreeMove
+        /// retombe alors sur idle. Course avec la touche dédiée (Maj). Owner local uniquement.</summary>
+        public bool TickFreeMove() {
+            Vector2 axis = this.ReadMoveAxis();
+            if (axis.sqrMagnitude < 0.01f) {
+                this.animator.SetVelocity(0f);
+                return false;
+            }
+
+            // Base caméra aplatie sur le plan horizontal : ZQSD est relatif à l'orientation de la vue.
+            Transform cam = CameraManager.Instance != null ? CameraManager.Instance.Camera.transform : null;
+            Vector3 forward = cam != null ? Vector3.ProjectOnPlane(cam.forward, Vector3.up).normalized : Vector3.forward;
+            Vector3 right = cam != null ? Vector3.ProjectOnPlane(cam.right, Vector3.up).normalized : Vector3.right;
+
+            Vector3 dir = forward * axis.y + right * axis.x;
+            if (dir.sqrMagnitude > 1f) dir.Normalize();
+            if (dir.sqrMagnitude < 0.0001f) {
+                this.animator.SetVelocity(0f);
+                return false;
+            }
+
+            bool running = Input.GetKey(runKey);
+            float speed = (running ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier();
+
+            if (this.navMeshAgent != null && this.navMeshAgent.enabled && this.navMeshAgent.isOnNavMesh) {
+                this.navMeshAgent.Move(dir * speed * Time.deltaTime);
+            }
+
+            Quaternion targetRot = Quaternion.LookRotation(dir.normalized, Vector3.up);
+            this.transform.rotation = Quaternion.RotateTowards(this.transform.rotation, targetRot, freeMoveTurnSpeed * Time.deltaTime);
+
+            this.animator.SetVelocity(speed);
+            return true;
         }
 
         public void LookAt(Transform target) {
