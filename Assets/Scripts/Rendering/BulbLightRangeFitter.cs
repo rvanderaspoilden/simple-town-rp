@@ -26,8 +26,16 @@ namespace Sim {
         [Tooltip("Horizontal rays used to detect surrounding walls.")]
         [SerializeField] private int horizontalRays = 8;
 
+        [Tooltip("Dim the bulb in proportion to the fitted range so a small room doesn't get a blown-out hot pool.")]
+        [SerializeField] private bool scaleIntensityWithRange = true;
+
+        [Tooltip("Lowest fraction of the authored intensity, reached when the range is clamped to minRange.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float minIntensityFactor = 0.4f;
+
         private Light _light;
         private float _authoredRange;
+        private float _authoredIntensity;
         private Vector3 _lastPos;
         private Quaternion _lastRot;
         private bool _hasShell;
@@ -35,6 +43,7 @@ namespace Sim {
         private void Awake() {
             _light = GetComponent<Light>();
             _authoredRange = _light.range;
+            _authoredIntensity = _light.intensity;
             if (shellMask.value == 0) shellMask = LayerMask.GetMask("Ground", "Wall", "Roof");
         }
 
@@ -64,6 +73,13 @@ namespace Sim {
             }
 
             _light.range = Mathf.Clamp(nearest + margin, minRange, _authoredRange);
+
+            // Smaller room -> shorter range -> steeper falloff, so trim intensity in step to
+            // keep the pool gentle instead of blowing out under a low ceiling.
+            if (scaleIntensityWithRange) {
+                float t = Mathf.InverseLerp(minRange, _authoredRange, _light.range);
+                _light.intensity = _authoredIntensity * Mathf.Lerp(minIntensityFactor, 1f, t);
+            }
         }
 
         private float CastDist(Vector3 origin, Vector3 dir) {
