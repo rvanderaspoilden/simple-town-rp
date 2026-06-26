@@ -26,6 +26,14 @@ public class ClientNpcManager : MonoBehaviour {
 
     private readonly Dictionary<int, ClientNpcView> _views = new Dictionary<int, ClientNpcView>();
 
+    /// <summary>Réponse du serveur à une demande de catalogue : (npcId, libellé marchand, entrées).
+    /// La modale <c>MerchantShopUI</c> s'abonne et s'ouvre à réception.</summary>
+    public static event System.Action<int, string, MerchantCatalogEntry[]> OnMerchantCatalogReceived;
+
+    /// <summary>Résultat d'un achat : (npcId, itemConfigId, success, reasonCode). La modale
+    /// affiche le toast et rafraîchit l'affordabilité.</summary>
+    public static event System.Action<int, int, bool, byte> OnMerchantBuyResult;
+
     private void Awake() {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
@@ -46,6 +54,8 @@ public class ClientNpcManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_UpdateNpcTransform>(OnUpdateTransform);
         NetworkClient.RegisterHandler<S2C_DestroyNpc>        (OnDestroyNpc);
         NetworkClient.RegisterHandler<S2C_NpcKnockdown>      (OnNpcKnockdown);
+        NetworkClient.RegisterHandler<S2C_MerchantCatalog>   (OnMerchantCatalog);
+        NetworkClient.RegisterHandler<S2C_MerchantBuyResult> (OnMerchantBuyResultMsg);
         ClientLogger.NetworkDebug("ClientNpcHandlersRegistered");
     }
 
@@ -54,7 +64,31 @@ public class ClientNpcManager : MonoBehaviour {
         NetworkClient.UnregisterHandler<S2C_UpdateNpcTransform>();
         NetworkClient.UnregisterHandler<S2C_DestroyNpc>();
         NetworkClient.UnregisterHandler<S2C_NpcKnockdown>();
+        NetworkClient.UnregisterHandler<S2C_MerchantCatalog>();
+        NetworkClient.UnregisterHandler<S2C_MerchantBuyResult>();
         ClientLogger.NetworkDebug("ClientNpcHandlersUnregistered");
+    }
+
+    // ── Merchant : requêtes C2S + relais des réponses S2C ───────────────────────
+
+    /// <summary>Demande le catalogue d'un marchand (à l'ouverture de la boutique).</summary>
+    public void RequestMerchantCatalog(int npcId) {
+        if (!NetworkClient.isConnected) return;
+        NetworkClient.Send(new C2S_RequestMerchantCatalog { NpcId = npcId });
+    }
+
+    /// <summary>Demande l'achat d'un item au marchand.</summary>
+    public void RequestBuy(int npcId, int itemConfigId) {
+        if (!NetworkClient.isConnected) return;
+        NetworkClient.Send(new C2S_MerchantBuy { NpcId = npcId, ItemConfigId = itemConfigId });
+    }
+
+    private void OnMerchantCatalog(S2C_MerchantCatalog msg) {
+        OnMerchantCatalogReceived?.Invoke(msg.NpcId, msg.MerchantLabel, msg.Entries);
+    }
+
+    private void OnMerchantBuyResultMsg(S2C_MerchantBuyResult msg) {
+        OnMerchantBuyResult?.Invoke(msg.NpcId, msg.ItemConfigId, msg.Success, msg.ReasonCode);
     }
 
     public void ClearAll() {

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using AI;
 using Mirror;
 using Sim.Logging;
+using Sim.NPC;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -78,6 +79,15 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private NpcBackToHomeState        _backHomeState;
     private NpcSitState               _sitState;
 
+    // Sous-graphe marchand (instancié seulement si ce NPC est attitré à un stand).
+    private NpcMerchantState          _merchantState;
+    private NpcMerchantPauseState     _merchantPause;
+
+    // Config marchand re-dérivée à CHAQUE ConfigureForSpawn depuis le home. Ne JAMAIS l'effacer
+    // dans ResetForPool : sinon un GO recyclé spawnerait marchand sur un point non-marchand (ou
+    // l'inverse).
+    private MerchantConfig            _merchant;
+
     private int _npcId       = -1;
     private int _visitCount  = 0;
     private int _visitTarget = 0;
@@ -112,8 +122,16 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     public float         MaxSitSeconds       => maxSitSeconds;
     public float         MaxSeatSearchDistance => maxSeatSearchDistance;
 
+    public MerchantConfig Merchant   => _merchant;
+    public bool           IsMerchant => _merchant != null;
+
     public void SetAgentEnabled(bool value) {
         if (_agent != null) _agent.enabled = value;
+    }
+
+    /// <summary>Oriente le NPC face à l'orientation autorée de son stand (home).</summary>
+    public void FaceHome() {
+        if (_home != null) transform.rotation = _home.Rotation;
     }
 
     /// <summary>Mémorise le dernier point d'intérêt visité pour éviter de le re-piquer.</summary>
@@ -127,6 +145,8 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
                                    string newRoomId, string newPrefabId) {
         _home         = home;
         _identity     = identity;
+        // Re-dérivé à chaque spawn : un stand non-marchand donne null → comportement standard.
+        _merchant     = home != null ? home.MerchantConfig : null;
         this.roomId   = newRoomId   ?? this.roomId;
         this.prefabId = !string.IsNullOrEmpty(newPrefabId) ? newPrefabId : this.prefabId;
     }
@@ -147,6 +167,9 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         _goToState           = null;
         _backHomeState       = null;
         _sitState            = null;
+        _merchantState       = null;
+        _merchantPause       = null;
+        // NB : on n'efface PAS _merchant ici (re-dérivé dans ConfigureForSpawn, appelé AVANT).
         GameLogger.Network.Debug("[NPCPool] ResetForPool complete {PrefabId} {FullName}",
             prefabId, _identity.FullName);
     }
@@ -333,6 +356,11 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     // ── State machine wiring ──────────────────────────────────────────────────
 
     private void BuildStateMachine() {
+        if (IsMerchant) {
+            BuildMerchantStateMachine();
+            return;
+        }
+
         _stateMachine  = new StateMachine();
         _idleState     = new NpcIdleState(this);
         _goToState     = new NpcGoToInterestAreaState(this);
@@ -350,6 +378,24 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         _stateMachine.AddTransition(_sitState,  _idleState, () => _sitState.HasFinished);
 
         _stateMachine.SetState(_idleState);
+    }
+
+    /// <summary>
+    /// Sous-graphe marchand : tient le stand ↔ courte pause. Aucune arête vers BackToHome →
+    /// le marchand ne despawn jamais par compteur de visites ; il tient le stand tant que la
+    /// room est active.
+    /// </summary>
+    private void BuildMerchantStateMachine() {
+        _stateMachine  = new StateMachine();
+        _merchantState = new NpcMerchantState(this);
+        _merchantPause = new NpcMerchantPauseState(this);
+
+        _stateMachine.AddTransition(_merchantState, _merchantPause,
+            () => _merchantState.WantsPause);
+        _stateMachine.AddTransition(_merchantPause, _merchantState,
+            () => _merchantPause.HasFinished);
+
+        _stateMachine.SetState(_merchantState);
     }
 
     private bool DecideSit() => Random.value < sitProbability;

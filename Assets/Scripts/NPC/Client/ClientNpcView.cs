@@ -66,6 +66,12 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     // Action LOOK instanciée depuis Resources à l'Awake — même pattern que PlayerController.SetupActions.
     private Action _lookAction;
 
+    // Action BUY (boutique marchand) instanciée comme LOOK. Exposée seulement quand le NPC tient
+    // son stand (état Merchant) ; sinon masquée. Tous les NPC l'instancient, mais l'état Merchant
+    // n'arrive que pour les vrais marchands → BUY n'apparaît jamais sur un NPC standard.
+    private Action _buyAction;
+    private bool   _isMerchantTending;
+
     public int      NpcId     { get; private set; }
     public string   RoomId    { get; private set; }
     public string   FirstName { get; private set; }
@@ -78,13 +84,21 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     /// <summary>Portée d'interaction NPC (mètres).</summary>
     public float GetRange() => 3f;
 
-    public bool IsInteractable() => _lookAction != null;
+    public bool IsInteractable() => _lookAction != null || _buyAction != null;
 
     public bool IsRightClickOnly() => false;
 
     public void StopInteraction() { }
 
     public Action[] GetActions(bool withPriority = false) {
+        // Marchand qui tient son stand : BUY est l'action prioritaire (clic gauche → boutique) ;
+        // LOOK reste dans le radial (clic droit). Hors mode Merchant, comportement LOOK standard.
+        if (_isMerchantTending && _buyAction != null) {
+            if (withPriority) return new[] { _buyAction };
+            return _lookAction != null ? new[] { _buyAction, _lookAction }
+                                       : new[] { _buyAction };
+        }
+
         if (_lookAction == null) return Array.Empty<Action>();
         return new[] { _lookAction };
     }
@@ -114,6 +128,15 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         else {
             Debug.LogWarning("[ClientNpcView] LOOK action asset not found at Resources/Configurations/Actions/LOOK");
         }
+
+        Action buyTemplate = Resources.Load<Action>("Configurations/Actions/BUY_MERCHANT");
+        if (buyTemplate != null) {
+            _buyAction = UnityEngine.Object.Instantiate(buyTemplate);
+            _buyAction.OnExecute += OnBuyExecuted;
+        }
+        else {
+            Debug.LogWarning("[ClientNpcView] BUY_MERCHANT action asset not found at Resources/Configurations/Actions/BUY_MERCHANT");
+        }
     }
 
     private void OnDestroy() {
@@ -121,6 +144,11 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
             _lookAction.OnExecute -= OnLookExecuted;
             UnityEngine.Object.Destroy(_lookAction);
             _lookAction = null;
+        }
+        if (_buyAction != null) {
+            _buyAction.OnExecute -= OnBuyExecuted;
+            UnityEngine.Object.Destroy(_buyAction);
+            _buyAction = null;
         }
     }
 
@@ -184,6 +212,10 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
 
     public void PushSnapshot(Vector3 position, Quaternion rotation,
                              Vector3 velocity, NpcStateType state) {
+        // Mode marchand : ne tient son stand (interactable BUY) que dans l'état Merchant. Pendant
+        // ses pauses il repasse Idle/Walking → BUY masqué automatiquement.
+        _isMerchantTending = state == NpcStateType.Merchant;
+
         if (state != _currentState) {
             ClientLogger.Network("NpcStateReceived {NpcId} {From} {To}", NpcId, _currentState, state);
             bool wasKnocked = _currentState == NpcStateType.KnockedDown;
@@ -283,5 +315,12 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         ClientLogger.Network("[NPCInteraction] LOOK action requested {NpcId} {FullName}", NpcId, FullName);
         PlayerController.Local?.Look(transform);
         ClientLogger.Network("[NPCInteraction] LOOK applied {NpcId}", NpcId);
+    }
+
+    private void OnBuyExecuted(Action action) {
+        ClientLogger.Network("[NPCInteraction] BUY action requested {NpcId} {FullName}", NpcId, FullName);
+        // Tourne le joueur vers le marchand, puis demande le catalogue (la modale s'ouvre à réception).
+        PlayerController.Local?.Look(transform);
+        ClientNpcManager.Instance?.RequestMerchantCatalog(NpcId);
     }
 }

@@ -30,6 +30,12 @@ public static class NpcSystemBootstrap {
         Object.DontDestroyOnLoad(_serverTickerGO);
         _serverTickerGO.AddComponent<NpcServerTicker>();
 
+        // Handlers C2S marchand (seuls points d'entrée C2S NPC à ce jour).
+        NetworkServer.RegisterHandler<C2S_RequestMerchantCatalog>(
+            NpcMerchantService.Instance.HandleCatalogRequest);
+        NetworkServer.RegisterHandler<C2S_MerchantBuy>(
+            NpcMerchantService.Instance.HandleBuy);
+
         GameLogger.Network.Info("NpcSystemServerStarted");
     }
 
@@ -39,6 +45,9 @@ public static class NpcSystemBootstrap {
         PlayerRoomTracker.OnPlayerEnterRoom -= Server_OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerEnterRoom -= RoomActivityController.Instance.HandlePlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom -= RoomActivityController.Instance.HandlePlayerLeaveRoom;
+
+        NetworkServer.UnregisterHandler<C2S_RequestMerchantCatalog>();
+        NetworkServer.UnregisterHandler<C2S_MerchantBuy>();
 
         if (_serverTickerGO != null) {
             Object.Destroy(_serverTickerGO);
