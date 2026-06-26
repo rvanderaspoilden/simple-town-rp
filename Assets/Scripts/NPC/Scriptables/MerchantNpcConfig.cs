@@ -3,19 +3,20 @@ using UnityEngine;
 
 namespace Sim.NPC {
     /// <summary>
-    /// Configuration d'un NPC marchand. Asset autoré par un designer puis assigné au champ
-    /// <c>merchantConfig</c> d'un <see cref="NpcSpawnPoint"/> : le spawn point devient alors un
-    /// « stand » et le NPC qui en sort tient ce stand (état <see cref="NpcStateType.Merchant"/>,
-    /// interactable côté client → action BUY).
+    /// NPC marchand. Sous-classe de <see cref="NpcConfig"/> : le NPC issu d'un
+    /// <see cref="NpcSpawnPoint"/> portant cet asset tient un « stand » (état
+    /// <see cref="NpcStateType.Merchant"/>, interactable côté client). Le transform du point EST le
+    /// stand. Friction designer minimale : poser le point, assigner un asset MerchantNpcConfig.
     ///
-    /// La présence (non-null) de cette config est l'unique commutateur : pas de prefab ni de
-    /// controller dédié. Le sous-graphe marchand est câblé dans <c>NpcAIController.BuildStateMachine</c>
-    /// quand <c>IsMerchant</c> est vrai.
+    /// Le TYPE de la config est l'unique commutateur (<c>config is MerchantNpcConfig</c> →
+    /// <see cref="IsMerchant"/>) : pas de prefab ni de controller dédié. Le sous-graphe marchand est
+    /// câblé dans <c>NpcAIController.BuildStateMachine</c> quand <c>IsMerchant</c> est vrai.
     ///
     /// VEND DES ITEMS UNIQUEMENT (objets à main, <see cref="ItemConfig"/>) — pas de props/meubles.
     /// </summary>
-    [CreateAssetMenu(menuName = "Configurations/Merchant", fileName = "New Merchant")]
-    public class MerchantConfig : ScriptableObject {
+    [CreateAssetMenu(menuName = "Configurations/Merchant NPC", fileName = "New Merchant NPC")]
+    public class MerchantNpcConfig : NpcConfig {
+        [Header("Marchand")]
         [Tooltip("Libellé affiché en en-tête de la boutique (ex : « Étal de Marius »).")]
         [SerializeField] private string merchantLabel = "Marchand";
 
@@ -39,6 +40,8 @@ namespace Sim.NPC {
 
         [Tooltip("Rayon (m) autour du stand dans lequel le marchand erre pendant une pause.")]
         [SerializeField] private float pauseWanderRadius = 2.5f;
+
+        public override bool IsMerchant => true;
 
         public string MerchantLabel => merchantLabel;
         public IReadOnlyList<ItemPrice> Catalog => catalog;

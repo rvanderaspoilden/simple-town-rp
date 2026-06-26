@@ -10,7 +10,6 @@ using UnityEngine;
 /// <summary>Ordonne au client d'instancier un NPC localement.</summary>
 public struct S2C_SpawnNpc : NetworkMessage {
     public int        NpcId;
-    public string     PrefabId;
     public string     RoomId;
     public Vector3    Position;
     public Quaternion Rotation;
@@ -26,6 +25,13 @@ public struct S2C_SpawnNpc : NetworkMessage {
     public string FirstName;
     public string LastName;
     public byte   Mood;       // MoodEnum cast en byte
+
+    /// <summary>
+    /// Id de la NpcConfig (vide pour un passant sans config). Le client recharge l'asset via
+    /// DatabaseManager.GetNpcConfigById pour en dériver le label marchand, le dialogue et la
+    /// nature marchande. Constant après le spawn.
+    /// </summary>
+    public string ConfigId;
 }
 
 /// <summary>

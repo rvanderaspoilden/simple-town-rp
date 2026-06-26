@@ -23,9 +23,6 @@ public class NpcSpawnManager {
     public float  RespawnDelaySeconds = 20f;
     public string RoomId              = "city";
 
-    /// <summary>Prefab par défaut utilisé si un NpcSpawnPoint n'en spécifie pas.</summary>
-    public GameObject DefaultPrefab;
-
     /// <summary>Database de noms (chargée par le bootstrap).</summary>
     public NpcNameDatabase NameDatabase;
 
@@ -105,9 +102,12 @@ public class NpcSpawnManager {
     // ── Spawn / despawn ───────────────────────────────────────────────────────
 
     private void SpawnAt(NpcSpawnPoint point) {
-        GameObject prefab = point.NpcPrefab != null ? point.NpcPrefab : DefaultPrefab;
+        // Config résolue ici (avec fallback « default ») : elle porte le prefab serveur à instancier
+        // ET sera injectée telle quelle dans le NPC via ConfigureForSpawn (source unique).
+        NpcConfig cfg = point.NpcConfig != null ? point.NpcConfig : Sim.DatabaseManager.DefaultNpcConfig;
+        GameObject prefab = cfg != null ? cfg.ServerPrefab : null;
         if (prefab == null) {
-            GameLogger.Network.Warning("NpcSpawnNoPrefab {SpawnPoint}", point.name);
+            GameLogger.Network.Warning("NpcSpawnNoServerPrefab {SpawnPoint}", point.name);
             return;
         }
 
@@ -115,7 +115,7 @@ public class NpcSpawnManager {
 
         // NpcPool.Get() appelle ConfigureForSpawn + ResetForPool + SetActive(true) → OnEnable.
         NpcAIController ai = NpcPool.Instance.Get(
-            prefab, point, identity, RoomId, point.PrefabId,
+            prefab, point, identity, RoomId, cfg,
             point.Position, point.Rotation);
 
         if (ai == null) {

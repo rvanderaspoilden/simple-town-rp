@@ -27,6 +27,10 @@ namespace Sim {
         public static List<BuildingConfig> BuildingConfigurations;
         public static List<MinimapRoomMapConfig> MinimapRoomMapConfigs;
         public static List<VehicleConfig> VehicleConfigs;
+        public static List<Sim.NPC.NpcConfig> NpcConfigs;
+
+        /// <summary>NpcConfig de fallback (id == "default") pour les NPC sans config explicite.</summary>
+        public static Sim.NPC.NpcConfig DefaultNpcConfig { get; private set; }
 
         // Lookups O(1) construits au chargement.
         private static Dictionary<int, PropsConfig> _propsById;
@@ -34,6 +38,7 @@ namespace Sim {
         private static Dictionary<int, ItemConfig> _itemsById;
         private static Dictionary<string, MinimapRoomMapConfig> _minimapByRoomId;
         private static Dictionary<string, VehicleConfig> _vehiclesById;
+        private static Dictionary<string, Sim.NPC.NpcConfig> _npcConfigsById;
 
         public static DatabaseManager Instance;
 
@@ -89,6 +94,21 @@ namespace Sim {
                     _vehiclesById[v.modelName] = v;
             }
             Debug.Log($"Vehicle configs loaded : {VehicleConfigs.Count}");
+
+            NpcConfigs = Resources.LoadAll<Sim.NPC.NpcConfig>("Configurations/NPCs").ToList();
+            _npcConfigsById = new Dictionary<string, Sim.NPC.NpcConfig>();
+            foreach (var n in NpcConfigs) {
+                if (n == null || string.IsNullOrEmpty(n.Id)) continue;
+                if (_npcConfigsById.ContainsKey(n.Id)) {
+                    Debug.LogWarning($"[DatabaseManager] Duplicate NpcConfig id '{n.Id}'");
+                    continue;
+                }
+                _npcConfigsById[n.Id] = n;
+                if (n.Id == "default") DefaultNpcConfig = n;
+            }
+            if (DefaultNpcConfig == null)
+                Debug.LogWarning("[DatabaseManager] No NpcConfig with id 'default' — passersby will have no dialogue.");
+            Debug.Log($"NPC configs loaded : {NpcConfigs.Count}");
 
             RegisterPrefabs();
 
@@ -163,6 +183,11 @@ namespace Sim {
         public static VehicleConfig GetVehicleConfigById(string id)
             => _vehiclesById != null && !string.IsNullOrEmpty(id)
                && _vehiclesById.TryGetValue(id, out var v) ? v : null;
+
+        /// <summary>Résout une config NPC par son id. Retourne null si introuvable.</summary>
+        public static Sim.NPC.NpcConfig GetNpcConfigById(string id)
+            => _npcConfigsById != null && !string.IsNullOrEmpty(id)
+               && _npcConfigsById.TryGetValue(id, out var n) ? n : null;
 
         public static ShopCategoryConfig GetShopCategoryByPropsType(PropsType propsType) {
             return ShopCategoryConfigs.Find(config => config.PropsType == propsType);

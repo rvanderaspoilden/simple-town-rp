@@ -15,7 +15,7 @@ using UnityEngine.AI;
 ///   pour être compatible avec NpcPool — le même GO est réactivé plusieurs fois.
 ///
 ///   Ordre garanti par NpcPool.Get() :
-///     1. ConfigureForSpawn()  — injecte home / identity / roomId / prefabId
+///     1. ConfigureForSpawn()  — injecte home / identity / roomId / config
 ///     2. ResetForPool()       — efface tout état transient de la vie précédente
 ///     3. SetActive(true)      — déclenche OnEnable → Register + BuildStateMachine
 ///
@@ -30,11 +30,6 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     public Transform Transform  => transform;
 
     [Header("Identification")]
-    [Tooltip("PrefabId tel que référencé dans NpcPrefabDatabase (résolu côté client). " +
-             "Peut être surchargé par NpcSpawnManager via ConfigureForSpawn.")]
-    [SerializeField]
-    private string prefabId = "default";
-
     [Tooltip("Room dans laquelle ce NPC est diffusé. POC = \"city\".")]
     [SerializeField]
     private string roomId = "city";
@@ -83,10 +78,10 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private NpcMerchantState          _merchantState;
     private NpcMerchantPauseState     _merchantPause;
 
-    // Config marchand re-dérivée à CHAQUE ConfigureForSpawn depuis le home. Ne JAMAIS l'effacer
-    // dans ResetForPool : sinon un GO recyclé spawnerait marchand sur un point non-marchand (ou
-    // l'inverse).
-    private MerchantConfig            _merchant;
+    // Config NPC re-dérivée à CHAQUE ConfigureForSpawn depuis le home. Ne JAMAIS l'effacer dans
+    // ResetForPool : sinon un GO recyclé spawnerait avec la mauvaise config (marchand sur un point
+    // non-marchand, ou l'inverse).
+    private NpcConfig                 _config;
 
     private int _npcId       = -1;
     private int _visitCount  = 0;
@@ -112,7 +107,6 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
     public int           NpcId               => _npcId;
     public string        RoomId              => roomId;
-    public string        PrefabId            => prefabId;
     public NpcSpawnPoint Home                => _home;
     public Vector3       HomePosition        => _home != null ? _home.Position : transform.position;
     public NpcIdentity   Identity            => _identity;
@@ -122,8 +116,10 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     public float         MaxSitSeconds       => maxSitSeconds;
     public float         MaxSeatSearchDistance => maxSeatSearchDistance;
 
-    public MerchantConfig Merchant   => _merchant;
-    public bool           IsMerchant => _merchant != null;
+    public NpcConfig         Config     => _config;
+    public string            ConfigId   => _config != null ? _config.Id : null;
+    public MerchantNpcConfig Merchant   => _config as MerchantNpcConfig;
+    public bool              IsMerchant => _config != null && _config.IsMerchant;
 
     public void SetAgentEnabled(bool value) {
         if (_agent != null) _agent.enabled = value;
@@ -139,16 +135,16 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
     /// <summary>
     /// Appelé par NpcPool.Get() avant SetActive(true).
-    /// Injecte les données de spawn (home, identité, room).
+    /// Injecte les données de spawn (home, identité, room, config résolue).
     /// </summary>
     public void ConfigureForSpawn(NpcSpawnPoint home, NpcIdentity identity,
-                                   string newRoomId, string newPrefabId) {
-        _home         = home;
-        _identity     = identity;
-        // Re-dérivé à chaque spawn : un stand non-marchand donne null → comportement standard.
-        _merchant     = home != null ? home.MerchantConfig : null;
-        this.roomId   = newRoomId   ?? this.roomId;
-        this.prefabId = !string.IsNullOrEmpty(newPrefabId) ? newPrefabId : this.prefabId;
+                                   string newRoomId, NpcConfig config) {
+        _home       = home;
+        _identity   = identity;
+        // Config résolue par le NpcSpawnManager (avec fallback « default »). Re-affectée à CHAQUE
+        // spawn : un GO recyclé adopte la config du point courant (marchand ↔ passant).
+        _config     = config;
+        this.roomId = newRoomId ?? this.roomId;
     }
 
     /// <summary>
@@ -169,9 +165,9 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         _sitState            = null;
         _merchantState       = null;
         _merchantPause       = null;
-        // NB : on n'efface PAS _merchant ici (re-dérivé dans ConfigureForSpawn, appelé AVANT).
-        GameLogger.Network.Debug("[NPCPool] ResetForPool complete {PrefabId} {FullName}",
-            prefabId, _identity.FullName);
+        // NB : on n'efface PAS _config ici (re-affecté dans ConfigureForSpawn, appelé AVANT).
+        GameLogger.Network.Debug("[NPCPool] ResetForPool complete {ConfigId} {FullName}",
+            ConfigId, _identity.FullName);
     }
 
     public void IncrementVisitCount() => _visitCount++;
@@ -221,7 +217,8 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         }
 
         _npcId = NpcServerManager.Instance.Register(
-            roomId, prefabId, transform.position, transform.rotation, styleJson, _identity);
+            roomId, transform.position, transform.rotation, styleJson, _identity,
+            ConfigId);
 
         _byId[_npcId] = this;
         _knockdownUntil = -1f;

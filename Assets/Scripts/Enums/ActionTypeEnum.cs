@@ -37,7 +37,8 @@
         REFUEL,
         REPAIR,
         SPLIT,
-        PLACE
+        PLACE,
+        TALK
     }
 
 }

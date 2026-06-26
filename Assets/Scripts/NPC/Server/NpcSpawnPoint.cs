@@ -7,27 +7,21 @@ using UnityEngine;
 /// Le <see cref="NpcSpawnManager"/> garde un slot occupé tant qu'un NPC est
 /// vivant pour ce point (évite le double-spawn).
 ///
-/// MARCHAND — si <see cref="merchantConfig"/> est assigné, ce point devient un « stand » :
-/// le NPC qui en sort tient le stand (interactable, vend des items). Le transform du point
-/// EST le stand. Friction designer minimale : poser le point, assigner un asset MerchantConfig.
+/// CONFIG — l'unique champ à renseigner est <see cref="npcConfig"/> : il porte les prefabs
+/// (serveur + client), le dialogue et l'éventuelle nature MARCHANDE (via la sous-classe
+/// <see cref="MerchantNpcConfig"/>). Vide → le NPC adopte le NpcConfig « default » (passant
+/// standard). Un point marchand devient un « stand » : le NPC tient le stand, interactable, vend des
+/// items. Le transform du point EST le stand. Friction designer minimale : poser le point, assigner
+/// un asset NpcConfig.
 /// </summary>
 public class NpcSpawnPoint : MonoBehaviour {
-    [Tooltip("Prefab NPC associé à ce point. Peut être laissé vide pour utiliser le prefab par défaut du SpawnManager.")]
-    [SerializeField] private GameObject npcPrefab;
+    [Tooltip("Config consolidée du NPC (prefabs + dialogue + éventuelle nature marchande). " +
+             "Vide → NPC passant standard (config « default »).")]
+    [SerializeField] private NpcConfig npcConfig;
 
-    [Tooltip("PrefabId tel que référencé dans NpcPrefabDatabase côté client.")]
-    [SerializeField] private string prefabId = "default";
-
-    [Tooltip("Optionnel. Si assigné, le NPC issu de ce point est un MARCHAND attitré à ce stand.")]
-    [SerializeField] private MerchantConfig merchantConfig;
-
-    public GameObject NpcPrefab => npcPrefab;
-    public string     PrefabId  => prefabId;
+    public NpcConfig  NpcConfig => npcConfig;
     public Vector3    Position  => transform.position;
     public Quaternion Rotation  => transform.rotation;
-
-    public MerchantConfig MerchantConfig => merchantConfig;
-    public bool           IsMerchant     => merchantConfig != null;
 
     /// <summary>True si un NPC est actuellement vivant pour ce point.</summary>
     public bool IsOccupied { get; set; }

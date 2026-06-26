@@ -18,12 +18,6 @@ using UnityEngine;
 public class ClientNpcManager : MonoBehaviour {
     public static ClientNpcManager Instance { get; private set; }
 
-    [Tooltip("Référence à la NpcPrefabDatabase (placée sous Resources si chargée par DatabaseManager).")]
-    [SerializeField] private NpcPrefabDatabase prefabDatabase;
-
-    [Tooltip("Chemin Resources (sans extension) si prefabDatabase n'est pas assigné.")]
-    [SerializeField] private string prefabDatabaseResourcePath = "Configurations/Databases/NPC Database";
-
     private readonly Dictionary<int, ClientNpcView> _views = new Dictionary<int, ClientNpcView>();
 
     /// <summary>Réponse du serveur à une demande de catalogue : (npcId, libellé marchand, entrées).
@@ -38,13 +32,6 @@ public class ClientNpcManager : MonoBehaviour {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        if (prefabDatabase == null && !string.IsNullOrEmpty(prefabDatabaseResourcePath)) {
-            prefabDatabase = Resources.Load<NpcPrefabDatabase>(prefabDatabaseResourcePath);
-        }
-        if (prefabDatabase == null) {
-            ClientLogger.NetworkWarning("ClientNpcManager: NpcPrefabDatabase not found at {Path}", prefabDatabaseResourcePath);
-        }
 
         ClientLogger.Network("ClientNpcManagerInitialized");
     }
@@ -105,13 +92,14 @@ public class ClientNpcManager : MonoBehaviour {
             ClientLogger.NetworkDebug("NpcSpawnDuplicate {NpcId}", msg.NpcId);
             return;
         }
-        if (prefabDatabase == null) {
-            ClientLogger.NetworkWarning("NpcSpawnNoDatabase {NpcId} {PrefabId}", msg.NpcId, msg.PrefabId);
-            return;
-        }
-        GameObject prefab = prefabDatabase.GetPrefab(msg.PrefabId);
+
+        // Réplication par id : on recharge la NpcConfig (fallback « default ») et on en tire le
+        // prefab VISUEL. Plus de NpcPrefabDatabase : la config porte les deux prefabs.
+        NpcConfig config = Sim.DatabaseManager.GetNpcConfigById(msg.ConfigId)
+                           ?? Sim.DatabaseManager.DefaultNpcConfig;
+        GameObject prefab = config != null ? config.ClientPrefab : null;
         if (prefab == null) {
-            ClientLogger.NetworkWarning("NpcSpawnPrefabNotFound {NpcId} {PrefabId}", msg.NpcId, msg.PrefabId);
+            ClientLogger.NetworkWarning("NpcSpawnNoClientPrefab {NpcId} {ConfigId}", msg.NpcId, msg.ConfigId);
             return;
         }
 
@@ -121,10 +109,10 @@ public class ClientNpcManager : MonoBehaviour {
 
         ClientNpcView view = go.GetComponent<ClientNpcView>();
         if (view == null) view = go.AddComponent<ClientNpcView>();
-        view.Init(msg.NpcId, msg.RoomId, msg.StyleJson, msg.FirstName, msg.LastName, msg.Mood);
+        view.Init(msg.NpcId, msg.RoomId, msg.StyleJson, msg.FirstName, msg.LastName, msg.Mood, msg.ConfigId);
 
         _views[msg.NpcId] = view;
-        ClientLogger.NetworkDebug("NpcSpawned {NpcId} {PrefabId} {RoomId}", msg.NpcId, msg.PrefabId, msg.RoomId);
+        ClientLogger.NetworkDebug("NpcSpawned {NpcId} {ConfigId} {RoomId}", msg.NpcId, msg.ConfigId, msg.RoomId);
     }
 
     private void OnUpdateTransform(S2C_UpdateNpcTransform msg) {

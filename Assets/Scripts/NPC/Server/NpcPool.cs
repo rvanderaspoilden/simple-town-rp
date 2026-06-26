@@ -13,7 +13,7 @@ using UnityEngine;
 /// Usage contract:
 ///   <code>
 ///     NpcAIController npc = NpcPool.Instance.Get(
-///         prefab, spawnPoint, identity, roomId, prefabId, position, rotation);
+///         prefab, spawnPoint, identity, roomId, config, position, rotation);
 ///     // ... NPC lives ...
 ///     NpcPool.Instance.Release(npc);
 ///   </code>
@@ -59,7 +59,7 @@ public class NpcPool {
     /// <see cref="NpcAIController"/>.
     /// </summary>
     public NpcAIController Get(GameObject prefab, NpcSpawnPoint home, NpcIdentity identity,
-                                string roomId, string prefabId,
+                                string roomId, Sim.NPC.NpcConfig config,
                                 Vector3 position, Quaternion rotation) {
         if (prefab == null) {
             GameLogger.Network.Warning("NpcPoolGetNullPrefab");
@@ -86,8 +86,8 @@ public class NpcPool {
         }
 
         // Configure spawn data before the NPC's OnEnable registers it with the
-        // NpcServerManager (needs final roomId / prefabId / identity).
-        ai.ConfigureForSpawn(home, identity, roomId, prefabId);
+        // NpcServerManager (needs final roomId / config / identity).
+        ai.ConfigureForSpawn(home, identity, roomId, config);
         ai.ResetForPool();
 
         ai.gameObject.SetActive(true);  // triggers OnEnable → Register

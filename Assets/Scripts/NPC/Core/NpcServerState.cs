@@ -6,7 +6,6 @@ using UnityEngine;
 /// </summary>
 public class NpcServerState {
     public int    NpcId;
-    public string PrefabId;
     public string RoomId;
 
     /// <summary>JSON du Style (cohérent avec PlayerController.rawCharacterData).</summary>
@@ -14,6 +13,10 @@ public class NpcServerState {
 
     /// <summary>Identité (nom, mood) — constante après le spawn.</summary>
     public NpcIdentity Identity;
+
+    /// <summary>Id de la NpcConfig (vide pour un passant) — constant après le spawn. Le client
+    /// recharge l'asset via DatabaseManager.GetNpcConfigById pour le label marchand et le dialogue.</summary>
+    public string ConfigId;
 
     public Vector3      Position;
     public Quaternion   Rotation;

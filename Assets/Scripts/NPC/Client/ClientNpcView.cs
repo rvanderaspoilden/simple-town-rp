@@ -3,6 +3,8 @@ using Interaction;
 using Sim;
 using Sim.Enums;
 using Sim.Logging;
+using Sim.NPC;
+using Sim.UI;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
@@ -63,14 +65,16 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     private RagdollController    _ragdoll;
     private bool                 _knockedDown;
 
-    // Action LOOK instanciée depuis Resources à l'Awake — même pattern que PlayerController.SetupActions.
+    // Actions TALK / LOOK instanciées depuis Resources à l'Awake — même pattern que
+    // PlayerController.SetupActions. Chaque vue a sa propre copie (pas de partage d'event delegates).
+    private Action _talkAction;
     private Action _lookAction;
 
-    // Action BUY (boutique marchand) instanciée comme LOOK. Exposée seulement quand le NPC tient
-    // son stand (état Merchant) ; sinon masquée. Tous les NPC l'instancient, mais l'état Merchant
-    // n'arrive que pour les vrais marchands → BUY n'apparaît jamais sur un NPC standard.
-    private Action _buyAction;
-    private bool   _isMerchantTending;
+    // Config du NPC, rechargée depuis Resources via DatabaseManager.GetNpcConfigById(ConfigId) à l'Init.
+    // Fallback sur DatabaseManager.DefaultNpcConfig pour les passants sans config. Porte la nature
+    // marchande (label + merchant) et le dialogue.
+    private string    _configId;
+    private NpcConfig _config;
 
     public int      NpcId     { get; private set; }
     public string   RoomId    { get; private set; }
@@ -79,24 +83,30 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     public MoodEnum Mood      { get; private set; }
     public string   FullName  => string.IsNullOrEmpty(LastName) ? FirstName : $"{FirstName} {LastName}";
 
+    /// <summary>Config résolue du NPC (jamais null après Init si un NpcConfig « default » existe).</summary>
+    public NpcConfig Config        => _config;
+    public bool      IsMerchant    => _config != null && _config.IsMerchant;
+    /// <summary>Libellé marchand (null si non-marchand). Dérivé de la config rechargée par id.</summary>
+    public string    MerchantLabel => (_config as MerchantNpcConfig)?.MerchantLabel;
+
     // ── IInteractable ─────────────────────────────────────────────────────────
 
     /// <summary>Portée d'interaction NPC (mètres).</summary>
     public float GetRange() => 3f;
 
-    public bool IsInteractable() => _lookAction != null || _buyAction != null;
+    public bool IsInteractable() => _talkAction != null || _lookAction != null;
 
     public bool IsRightClickOnly() => false;
 
     public void StopInteraction() { }
 
     public Action[] GetActions(bool withPriority = false) {
-        // Marchand qui tient son stand : BUY est l'action prioritaire (clic gauche → boutique) ;
-        // LOOK reste dans le radial (clic droit). Hors mode Merchant, comportement LOOK standard.
-        if (_isMerchantTending && _buyAction != null) {
-            if (withPriority) return new[] { _buyAction };
-            return _lookAction != null ? new[] { _buyAction, _lookAction }
-                                       : new[] { _buyAction };
+        // TALK est l'action prioritaire (clic gauche → dialogue) pour TOUS les NPC ; LOOK reste
+        // disponible dans le radial (clic droit). Le shop marchand s'ouvre via une réponse de dialogue.
+        if (_talkAction != null) {
+            if (withPriority) return new[] { _talkAction };
+            return _lookAction != null ? new[] { _talkAction, _lookAction }
+                                       : new[] { _talkAction };
         }
 
         if (_lookAction == null) return Array.Empty<Action>();
@@ -118,37 +128,37 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         // Pattern identique au PlayerController.OnStartClient (agent désactivé sur les remotes).
         if (TryGetComponent(out NavMeshAgent agent)) agent.enabled = false;
 
-        // Charge et instancie une copie de l'asset LOOK (même pattern que PlayerController).
+        // Charge et instancie une copie des assets TALK / LOOK (même pattern que PlayerController).
         // Chaque vue dispose de sa propre instance pour éviter le partage d'event delegates.
-        Action template = Resources.Load<Action>("Configurations/Actions/LOOK");
-        if (template != null) {
-            _lookAction = UnityEngine.Object.Instantiate(template);
+        Action talkTemplate = Resources.Load<Action>("Configurations/Actions/TALK");
+        if (talkTemplate != null) {
+            _talkAction = UnityEngine.Object.Instantiate(talkTemplate);
+            _talkAction.OnExecute += OnTalkExecuted;
+        }
+        else {
+            Debug.LogWarning("[ClientNpcView] TALK action asset not found at Resources/Configurations/Actions/TALK");
+        }
+
+        Action lookTemplate = Resources.Load<Action>("Configurations/Actions/LOOK");
+        if (lookTemplate != null) {
+            _lookAction = UnityEngine.Object.Instantiate(lookTemplate);
             _lookAction.OnExecute += OnLookExecuted;
         }
         else {
             Debug.LogWarning("[ClientNpcView] LOOK action asset not found at Resources/Configurations/Actions/LOOK");
         }
-
-        Action buyTemplate = Resources.Load<Action>("Configurations/Actions/BUY_MERCHANT");
-        if (buyTemplate != null) {
-            _buyAction = UnityEngine.Object.Instantiate(buyTemplate);
-            _buyAction.OnExecute += OnBuyExecuted;
-        }
-        else {
-            Debug.LogWarning("[ClientNpcView] BUY_MERCHANT action asset not found at Resources/Configurations/Actions/BUY_MERCHANT");
-        }
     }
 
     private void OnDestroy() {
+        if (_talkAction != null) {
+            _talkAction.OnExecute -= OnTalkExecuted;
+            UnityEngine.Object.Destroy(_talkAction);
+            _talkAction = null;
+        }
         if (_lookAction != null) {
             _lookAction.OnExecute -= OnLookExecuted;
             UnityEngine.Object.Destroy(_lookAction);
             _lookAction = null;
-        }
-        if (_buyAction != null) {
-            _buyAction.OnExecute -= OnBuyExecuted;
-            UnityEngine.Object.Destroy(_buyAction);
-            _buyAction = null;
         }
     }
 
@@ -156,12 +166,18 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
 
     /// <summary>Initialise le NPC à la réception d'un S2C_SpawnNpc.</summary>
     public void Init(int npcId, string roomId, string styleJson,
-                     string firstName, string lastName, byte mood) {
-        NpcId     = npcId;
-        RoomId    = roomId;
-        FirstName = firstName ?? string.Empty;
-        LastName  = lastName  ?? string.Empty;
-        Mood      = (MoodEnum)mood;
+                     string firstName, string lastName, byte mood, string configId = null) {
+        NpcId         = npcId;
+        RoomId        = roomId;
+        FirstName     = firstName ?? string.Empty;
+        LastName      = lastName  ?? string.Empty;
+        Mood          = (MoodEnum)mood;
+
+        // Recharge la config par id (réplication par id). Fallback sur la config « default »
+        // pour les passants sans config → tout le monde a au moins un dialogue par défaut.
+        _configId = configId ?? string.Empty;
+        _config   = DatabaseManager.GetNpcConfigById(_configId);
+        if (_config == null) _config = DatabaseManager.DefaultNpcConfig;
 
         if (_styleSetup != null && !string.IsNullOrEmpty(styleJson)) {
             try {
@@ -212,10 +228,6 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
 
     public void PushSnapshot(Vector3 position, Quaternion rotation,
                              Vector3 velocity, NpcStateType state) {
-        // Mode marchand : ne tient son stand (interactable BUY) que dans l'état Merchant. Pendant
-        // ses pauses il repasse Idle/Walking → BUY masqué automatiquement.
-        _isMerchantTending = state == NpcStateType.Merchant;
-
         if (state != _currentState) {
             ClientLogger.Network("NpcStateReceived {NpcId} {From} {To}", NpcId, _currentState, state);
             bool wasKnocked = _currentState == NpcStateType.KnockedDown;
@@ -317,10 +329,21 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         ClientLogger.Network("[NPCInteraction] LOOK applied {NpcId}", NpcId);
     }
 
-    private void OnBuyExecuted(Action action) {
-        ClientLogger.Network("[NPCInteraction] BUY action requested {NpcId} {FullName}", NpcId, FullName);
-        // Tourne le joueur vers le marchand, puis demande le catalogue (la modale s'ouvre à réception).
+    private void OnTalkExecuted(Action action) {
+        ClientLogger.Network("[NPCInteraction] TALK action requested {NpcId} {FullName}", NpcId, FullName);
+
+        // Dialogue de cette config, sinon fallback sur le dialogue de la config « default ».
+        DialogueConfig dialogue = _config != null ? _config.Dialogue : null;
+        if (dialogue == null && DatabaseManager.DefaultNpcConfig != null)
+            dialogue = DatabaseManager.DefaultNpcConfig.Dialogue;
+
+        if (dialogue == null) {
+            ClientLogger.Network("[NPCInteraction] TALK no dialogue {NpcId}", NpcId);
+            return;
+        }
+
+        // Tourne le joueur vers le NPC, puis ouvre la modale de dialogue.
         PlayerController.Local?.Look(transform);
-        ClientNpcManager.Instance?.RequestMerchantCatalog(NpcId);
+        DialogueUI.Instance?.Show(NpcId, FullName, dialogue);
     }
 }

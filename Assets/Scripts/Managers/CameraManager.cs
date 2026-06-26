@@ -313,7 +313,7 @@ namespace Sim {
             }
 
             ClientNpcView npc = col.GetComponentInParent<ClientNpcView>();
-            if (npc != null) return $"[PNJ] {npc.FullName}";
+            if (npc != null) return $"[{(npc.IsMerchant ? npc.MerchantLabel : "PNJ")}] {npc.FullName}";
 
             return null;
         }

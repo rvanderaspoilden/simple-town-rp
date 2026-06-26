@@ -14,7 +14,7 @@ using UnityEngine;
 ///   ServerPropManager).
 ///
 /// Lifecycle :
-///   - Register(roomId, prefabId, position, rotation)  → assigne npcId, broadcast Spawn
+///   - Register(roomId, position, rotation)  → assigne npcId, broadcast Spawn
 ///   - PushTransform(npcId, position, rotation, velocity, animState)
 ///         → appelé par NpcAIController dans son Update
 ///         → throttle interne : on agrège, le tick configurable décide quand envoyer
@@ -63,24 +63,25 @@ public class NpcServerManager {
     /// Enregistre un nouveau NPC dans une room et broadcast son spawn aux clients
     /// déjà présents dans cette room. Retourne le npcId attribué.
     /// </summary>
-    public int Register(string roomId, string prefabId, Vector3 position, Quaternion rotation,
-                         string styleJson = null, NpcIdentity identity = default) {
+    public int Register(string roomId, Vector3 position, Quaternion rotation,
+                         string styleJson = null, NpcIdentity identity = default,
+                         string configId = null) {
         if (!NetworkServer.active) {
-            GameLogger.Network.Warning("NpcRegisterNotServer {PrefabId} {RoomId}", prefabId, roomId);
+            GameLogger.Network.Warning("NpcRegisterNotServer {ConfigId} {RoomId}", configId, roomId);
             return -1;
         }
-        if (string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(prefabId)) {
-            GameLogger.Network.Warning("NpcRegisterInvalidArgs {PrefabId} {RoomId}", prefabId, roomId);
+        if (string.IsNullOrEmpty(roomId)) {
+            GameLogger.Network.Warning("NpcRegisterInvalidArgs {ConfigId} {RoomId}", configId, roomId);
             return -1;
         }
 
         int id = _nextId++;
         var state = new NpcServerState {
             NpcId          = id,
-            PrefabId       = prefabId,
             RoomId         = roomId,
             StyleJson      = styleJson ?? string.Empty,
             Identity       = identity,
+            ConfigId       = configId ?? string.Empty,
             Position       = position,
             Rotation       = rotation,
             Velocity       = Vector3.zero,
@@ -101,18 +102,18 @@ public class NpcServerManager {
 
         BroadcastToRoom(roomId, new S2C_SpawnNpc {
             NpcId     = id,
-            PrefabId  = prefabId,
             RoomId    = roomId,
             Position  = position,
             Rotation  = rotation,
             StyleJson = state.StyleJson,
             FirstName = identity.FirstName ?? string.Empty,
             LastName  = identity.LastName  ?? string.Empty,
-            Mood      = (byte)identity.Mood
+            Mood      = (byte)identity.Mood,
+            ConfigId  = state.ConfigId
         });
 
-        GameLogger.Network.Info("NpcRegistered {NpcId} {PrefabId} {RoomId} {Position}",
-            id, prefabId, roomId, position);
+        GameLogger.Network.Info("NpcRegistered {NpcId} {ConfigId} {RoomId} {Position}",
+            id, state.ConfigId, roomId, position);
         return id;
     }
 
@@ -232,14 +233,14 @@ public class NpcServerManager {
 
             conn.Send(new S2C_SpawnNpc {
                 NpcId     = s.NpcId,
-                PrefabId  = s.PrefabId,
                 RoomId    = s.RoomId,
                 Position  = s.Position,
                 Rotation  = s.Rotation,
                 StyleJson = s.StyleJson,
                 FirstName = s.Identity.FirstName ?? string.Empty,
                 LastName  = s.Identity.LastName  ?? string.Empty,
-                Mood      = (byte)s.Identity.Mood
+                Mood      = (byte)s.Identity.Mood,
+                ConfigId  = s.ConfigId ?? string.Empty
             });
             // Envoie immédiatement un transform pour amorcer l'interpolation
             // avec velocity et animationState courants.
