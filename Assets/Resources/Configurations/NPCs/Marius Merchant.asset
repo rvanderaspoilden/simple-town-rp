@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Marius Merchant
   m_EditorClassIdentifier: Assembly-CSharp::Sim.NPC.MerchantNpcConfig
   id: marius
-  serverPrefab: {fileID: 9127969945890360167, guid: 1b319b6614ae1994aa1d0cb61d45c2dd, type: 3}
-  clientPrefab: {fileID: 8664680214882990904, guid: 42ad9c80648ff644585819d8ea413669, type: 3}
+  serverPrefab: {fileID: 9127969945890360167, guid: 1b319b6614ae1994aa1d0cb61d45c2dd,
+    type: 3}
+  clientPrefab: {fileID: 8664680214882990904, guid: 42ad9c80648ff644585819d8ea413669,
+    type: 3}
   dialogue:
     rootNodeId: root
     nodes:
@@ -24,31 +26,31 @@ MonoBehaviour:
       options:
       - text: Montre-moi tes articles.
         action: 2
-        nextNodeId:
+        nextNodeId: 
       - text: Qu'est-ce que tu vends ?
         action: 0
         nextNodeId: wares
       - text: Juste de passage, merci.
         action: 1
-        nextNodeId:
+        nextNodeId: 
     - id: wares
       npcText: "Un peu de tout : de quoi te d\xE9panner en ville. Jette un oeil !"
       options:
       - text: D'accord, montre-moi.
         action: 2
-        nextNodeId:
+        nextNodeId: 
       - text: Une autre fois.
         action: 1
-        nextNodeId:
+        nextNodeId: 
   merchantLabel: Marchand
   catalog:
   - item: {fileID: 11400000, guid: b7c76504be888a240b6ac184a18b0568, type: 2}
     price: 50
   - item: {fileID: 11400000, guid: 47b237ea07a0e9249a333213e0bf7d95, type: 2}
     price: 30
-  pauseProbability: 0.149
-  minTendSeconds: 300
-  maxTendSeconds: 600
-  minPauseSeconds: 50
-  maxPauseSeconds: 120
+  pauseProbability: 0.833
+  minTendSeconds: 10
+  maxTendSeconds: 20
+  minPauseSeconds: 10
+  maxPauseSeconds: 20
   pauseWanderRadius: 10
