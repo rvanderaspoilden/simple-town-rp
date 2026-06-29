@@ -131,6 +131,10 @@ namespace Sim.UI {
         }
 
         public void Hide() {
+            // Release la session d'interaction NPC avant de cleaner _npcId.
+            if (this._npcId >= 0) {
+                NpcInteractionSession.End(this._npcId);
+            }
             this._npcId = -1;
             this.ClearRows();
             this.gameObject.SetActive(false);

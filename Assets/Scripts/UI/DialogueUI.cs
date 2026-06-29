@@ -29,6 +29,10 @@ namespace Sim.UI {
         private DialogueConfig _dialogue;
         private readonly List<DialogueOptionButton> _options = new List<DialogueOptionButton>();
 
+        // Posé par la branche OpenShop avant Hide() pour éviter de libérer la session NPC : la
+        // boutique reprend la même session, pas de release+reacquire serveur.
+        private bool _suppressEndOnHide;
+
         private void Awake() {
             if (Instance != null && Instance != this) { Destroy(this.gameObject); return; }
             Instance = this;
@@ -99,6 +103,7 @@ namespace Sim.UI {
 
                 case DialogueAction.OpenShop:
                     int npcId = this._npcId;
+                    this._suppressEndOnHide = true; // la session passe au shop, pas de release.
                     this.Hide();
                     ClientNpcManager.Instance?.RequestMerchantCatalog(npcId);
                     break;
@@ -118,6 +123,13 @@ namespace Sim.UI {
         }
 
         public void Hide() {
+            // Release la session d'interaction NPC avant de cleaner _npcId — sauf si la branche
+            // OpenShop a posé le flag (la session passe à MerchantShopUI sans release intermédiaire).
+            if (!this._suppressEndOnHide && this._npcId >= 0) {
+                NpcInteractionSession.End(this._npcId);
+            }
+            this._suppressEndOnHide = false;
+
             this._npcId    = -1;
             this._dialogue = null;
             this.ClearOptions();

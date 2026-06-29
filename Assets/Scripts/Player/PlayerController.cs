@@ -819,9 +819,16 @@ namespace Sim {
                 return true; // force transition to idleState to reset movement cleanly
             }
 
+            // Pour une cible mobile (NPC qui marche, joueur, véhicule en mouvement), on évalue la
+            // portée + LoS contre la position COURANTE de la cible — pas le point figé au clic.
+            // Pour les props statiques, on garde le point d'origine (la surface cliquée du prop).
+            Vector3 evalPoint = (this.interactableTarget != null)
+                ? this.interactableTarget.transform.position
+                : this.interactionOriginPoint;
+
             return (this.interactableTarget != null &&
                     this.navMeshAgent.remainingDistance > this.navMeshAgent.stoppingDistance &&
-                    this.CanInteractWith(this.interactableTarget, this.interactionOriginPoint)) ||
+                    this.CanInteractWith(this.interactableTarget, evalPoint)) ||
                    (!this.navMeshAgent.hasPath && MarkerController.Instance.IsActive());
         };
 
@@ -1060,6 +1067,10 @@ namespace Sim {
             if (this.isKnockedDown || this.IsDriving || this.IsPassenger) return;
             if (this._playerState == PlayerState.DIED) return;
 
+            // Symétrique au click-to-move (CameraManager n'appelle ManageInteraction qu'en mode FREE) :
+            // le clavier ne doit pas faire bouger le joueur en BUILD/DRIVE/FPS.
+            if (CameraManager.Instance != null && CameraManager.Instance.GetMode() != CameraModeEnum.FREE) return;
+
             IState current = this.stateMachine.CurrentState;
             if (current != idleState && current != moveState) return; // pas depuis sit/sleep/interact/...
 
@@ -1072,6 +1083,13 @@ namespace Sim {
         /// la NavMesh). Renvoie false en l'absence d'input directionnel — l'état CharacterFreeMove
         /// retombe alors sur idle. Course avec la touche dédiée (Maj). Owner local uniquement.</summary>
         public bool TickFreeMove() {
+            // Sortie immédiate si le mode caméra a quitté FREE en cours de déplacement (entrée
+            // build, passager, FPS) : on retombe en idle pour ne pas continuer à driver l'agent.
+            if (CameraManager.Instance != null && CameraManager.Instance.GetMode() != CameraModeEnum.FREE) {
+                this.animator.SetVelocity(0f);
+                return false;
+            }
+
             Vector2 axis = this.ReadMoveAxis();
             if (axis.sqrMagnitude < 0.01f) {
                 this.animator.SetVelocity(0f);

@@ -18,8 +18,9 @@ namespace Sim {
         private CanvasGroup _group;
         private TextMeshProUGUI _label;
 
-        private static readonly Vector2 CursorOffset = new Vector2(16f, -16f);
-        private static readonly Vector2 Padding = new Vector2(10f, 6f);
+        private static readonly Vector2 CursorOffset = new Vector2(22f, -22f);
+        private static readonly Vector2 Padding = new Vector2(18f, 12f);
+        private const float LabelFontSize = 20f;
 
         public static void Show(string fullName) {
             if (string.IsNullOrEmpty(fullName)) { Hide(); return; }
@@ -71,7 +72,7 @@ namespace Sim {
             GameObject textGo = new GameObject("Label");
             textGo.transform.SetParent(panelGo.transform, false);
             t._label = textGo.AddComponent<TextMeshProUGUI>();
-            t._label.fontSize = 11f;
+            t._label.fontSize = LabelFontSize;
             t._label.color = Color.white;
             t._label.alignment = TextAlignmentOptions.Center;
             t._label.raycastTarget = false;

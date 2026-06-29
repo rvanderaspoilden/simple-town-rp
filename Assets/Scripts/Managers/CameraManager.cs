@@ -37,6 +37,15 @@ namespace Sim {
         [Tooltip("Hauteur d'écran de référence pour la tolérance (px). La tolérance réelle est mise à l'échelle par Screen.height / cette valeur.")]
         [SerializeField] private float magneticToleranceReferenceHeight = 1080f;
 
+        [Tooltip("Rayon (m) du magnétisme spécifique aux NPCs : élargit la zone de scan pour pouvoir " +
+                 "attraper un NPC qui marche un peu plus loin que le rayon standard. Mis à plat avec " +
+                 "magneticCandidateRadius via Max() pour conserver la portée standard sur les autres types.")]
+        [SerializeField] private float magneticNpcCandidateRadius = 5f;
+        [Tooltip("Multiplicateur de tolérance écran (px) appliqué UNIQUEMENT aux NPCs. >1 = visée plus " +
+                 "tolérante sur les NPCs mobiles (par défaut 1.8× = 70px → 126px). Permet de viser un " +
+                 "NPC en marche sans précision millimétrique.")]
+        [SerializeField] private float magneticNpcScreenToleranceMultiplier = 1.8f;
+
         private float _lastLeftDownTime = -10f;
         private bool _pendingRunRequest;
 
@@ -196,13 +205,22 @@ namespace Sim {
             // 2. Fallback magnétique : interactable à portée le plus proche du curseur à l'écran.
             if (!this.magneticTargetingEnabled || PlayerController.Local == null) return false;
 
+            // Scan élargi : on prend le plus grand des deux rayons (standard vs NPC) pour pouvoir
+            // attraper des NPCs au-delà du rayon standard. Le filtrage par type se fait ensuite.
             Vector3 playerPos = PlayerController.Local.transform.position;
-            Collider[] candidates = Physics.OverlapSphere(playerPos, this.magneticCandidateRadius, this.InteractionMask, QueryTriggerInteraction.Ignore);
+            float    scanRadius = Mathf.Max(this.magneticCandidateRadius, this.magneticNpcCandidateRadius);
+            Collider[] candidates = Physics.OverlapSphere(playerPos, scanRadius, this.InteractionMask, QueryTriggerInteraction.Ignore);
             if (candidates.Length == 0) return false;
 
             float refHeight = this.magneticToleranceReferenceHeight > 0f ? this.magneticToleranceReferenceHeight : 1080f;
-            float tol = this.magneticScreenTolerancePixels * (Screen.height / refHeight);
-            float tolSqr = tol * tol;
+            float screenScale = Screen.height / refHeight;
+            float baseTol = this.magneticScreenTolerancePixels * screenScale;
+            float baseTolSqr = baseTol * baseTol;
+            float npcTol = this.magneticScreenTolerancePixels * this.magneticNpcScreenToleranceMultiplier * screenScale;
+            float npcTolSqr = npcTol * npcTol;
+            float baseRadiusSqr = this.magneticCandidateRadius * this.magneticCandidateRadius;
+            float npcRadiusSqr  = this.magneticNpcCandidateRadius * this.magneticNpcCandidateRadius;
+
             Vector2 mouse = Input.mousePosition;
             float bestSqr = float.MaxValue;
 
@@ -211,10 +229,19 @@ namespace Sim {
                 if (!cand.IsAlive() || !cand.IsInteractable()) continue;
                 if (!WithinPlanarRange(playerPos, cand.transform.position, cand.GetRange())) continue;
 
+                // NPCs : magnétisme boosté (rayon élargi + tolérance écran ×N) car cibles mobiles.
+                bool  isNpc       = cand is ClientNpcView;
+                float candRadSqr  = isNpc ? npcRadiusSqr : baseRadiusSqr;
+                float candTolSqr  = isNpc ? npcTolSqr   : baseTolSqr;
+
+                Vector3 delta = cand.transform.position - playerPos;
+                delta.y = 0f;
+                if (delta.sqrMagnitude > candRadSqr) continue;
+
                 Vector3 sp = this.camera.WorldToScreenPoint(c.bounds.center);
                 if (sp.z <= 0f) continue; // candidat derrière la caméra
                 float dSqr = ((Vector2)sp - mouse).sqrMagnitude;
-                if (dSqr > tolSqr || dSqr >= bestSqr) continue;
+                if (dSqr > candTolSqr || dSqr >= bestSqr) continue;
 
                 bestSqr = dSqr;
                 interactable = cand; col = c; point = c.bounds.center;
@@ -228,6 +255,15 @@ namespace Sim {
         /// menu radial si à portée (CanInteractWith = portée + ligne de vue), sinon s'en approche.
         /// </summary>
         private void HandleInteractableClick(IInteractable interactable, Vector3 point, bool leftMouseClick) {
+            // Si la cible est un NPC, on demande IMMÉDIATEMENT au serveur de freezer l'agent (et
+            // de l'orienter vers nous) — couvre clic gauche TALK et clic droit radial. Indépendant
+            // de la portée : le NPC s'arrête dès le clic, ce qui rend l'approche triviale même s'il
+            // marchait. Idempotent : un nouveau clic = heartbeat ; clic sur un autre NPC = transition
+            // propre via NpcInteractionSession.
+            if (interactable is ClientNpcView npcView) {
+                NpcInteractionSession.Begin(npcView);
+            }
+
             bool canInteract = PlayerController.Local.CanInteractWith(interactable, point);
             Action[] actions = interactable.GetActions();
 

@@ -18,6 +18,8 @@ public static class NpcSystemBootstrap {
         PlayerRoomTracker.OnPlayerEnterRoom += Server_OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerEnterRoom += RoomActivityController.Instance.HandlePlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom += RoomActivityController.Instance.HandlePlayerLeaveRoom;
+        // Release des interactions sur leave/déco (PlayerRoomTracker.OnDisconnect appelle LeaveRoom).
+        PlayerRoomTracker.OnPlayerLeaveRoom += NpcInteractionService.Instance.OnPlayerLeaveRoom;
 
         // Charge la database de noms et configure le SpawnManager.
         NpcSpawnManager.Instance.NameDatabase =
@@ -30,11 +32,17 @@ public static class NpcSystemBootstrap {
         Object.DontDestroyOnLoad(_serverTickerGO);
         _serverTickerGO.AddComponent<NpcServerTicker>();
 
-        // Handlers C2S marchand (seuls points d'entrée C2S NPC à ce jour).
+        // Handlers C2S marchand.
         NetworkServer.RegisterHandler<C2S_RequestMerchantCatalog>(
             NpcMerchantService.Instance.HandleCatalogRequest);
         NetworkServer.RegisterHandler<C2S_MerchantBuy>(
             NpcMerchantService.Instance.HandleBuy);
+
+        // Handlers C2S interaction (freeze overlay : clic NPC → NPC s'arrête + face joueur).
+        NetworkServer.RegisterHandler<C2S_NpcRequestInteraction>(
+            NpcInteractionService.Instance.HandleRequest);
+        NetworkServer.RegisterHandler<C2S_NpcEndInteraction>(
+            NpcInteractionService.Instance.HandleEnd);
 
         GameLogger.Network.Info("NpcSystemServerStarted");
     }
@@ -45,9 +53,12 @@ public static class NpcSystemBootstrap {
         PlayerRoomTracker.OnPlayerEnterRoom -= Server_OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerEnterRoom -= RoomActivityController.Instance.HandlePlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom -= RoomActivityController.Instance.HandlePlayerLeaveRoom;
+        PlayerRoomTracker.OnPlayerLeaveRoom -= NpcInteractionService.Instance.OnPlayerLeaveRoom;
 
         NetworkServer.UnregisterHandler<C2S_RequestMerchantCatalog>();
         NetworkServer.UnregisterHandler<C2S_MerchantBuy>();
+        NetworkServer.UnregisterHandler<C2S_NpcRequestInteraction>();
+        NetworkServer.UnregisterHandler<C2S_NpcEndInteraction>();
 
         if (_serverTickerGO != null) {
             Object.Destroy(_serverTickerGO);
@@ -57,6 +68,7 @@ public static class NpcSystemBootstrap {
         NpcSpawnManager.Instance.Reset();   // retourne les NPC actifs au pool
         NpcPool.Instance.Dispose();         // détruit tous les GOs poolés
         NpcServerManager.Instance.Reset();
+        NpcInteractionService.Instance.Reset();
         InterestPointRegistry.Instance.Reset();
         RoomActivityController.Instance.Reset();
         GameLogger.Network.Info("NpcSystemServerStopped");
@@ -97,5 +109,6 @@ public class NpcServerTicker : MonoBehaviour {
         if (!NetworkServer.active) return;
         NpcServerManager.Instance.Tick(Time.deltaTime);
         NpcSpawnManager.Instance.Tick(Time.deltaTime);
+        NpcInteractionService.Instance.Tick(Time.deltaTime);
     }
 }

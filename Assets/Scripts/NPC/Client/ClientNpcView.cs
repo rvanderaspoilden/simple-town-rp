@@ -65,10 +65,9 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     private RagdollController    _ragdoll;
     private bool                 _knockedDown;
 
-    // Actions TALK / LOOK instanciées depuis Resources à l'Awake — même pattern que
+    // Action TALK instanciée depuis Resources à l'Awake — même pattern que
     // PlayerController.SetupActions. Chaque vue a sa propre copie (pas de partage d'event delegates).
     private Action _talkAction;
-    private Action _lookAction;
 
     // Config du NPC, rechargée depuis Resources via DatabaseManager.GetNpcConfigById(ConfigId) à l'Init.
     // Fallback sur DatabaseManager.DefaultNpcConfig pour les passants sans config. Porte la nature
@@ -94,23 +93,17 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     /// <summary>Portée d'interaction NPC (mètres).</summary>
     public float GetRange() => 3f;
 
-    public bool IsInteractable() => _talkAction != null || _lookAction != null;
+    public bool IsInteractable() => _talkAction != null;
 
     public bool IsRightClickOnly() => false;
 
     public void StopInteraction() { }
 
     public Action[] GetActions(bool withPriority = false) {
-        // TALK est l'action prioritaire (clic gauche → dialogue) pour TOUS les NPC ; LOOK reste
-        // disponible dans le radial (clic droit). Le shop marchand s'ouvre via une réponse de dialogue.
-        if (_talkAction != null) {
-            if (withPriority) return new[] { _talkAction };
-            return _lookAction != null ? new[] { _talkAction, _lookAction }
-                                       : new[] { _talkAction };
-        }
-
-        if (_lookAction == null) return Array.Empty<Action>();
-        return new[] { _lookAction };
+        // TALK est la seule action proposée sur un NPC (clic gauche TALK, clic droit radial avec
+        // la même unique entrée). Le shop marchand s'ouvre via une réponse de dialogue.
+        if (_talkAction == null) return Array.Empty<Action>();
+        return new[] { _talkAction };
     }
 
     // ── Unity lifecycle ───────────────────────────────────────────────────────
@@ -128,7 +121,7 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         // Pattern identique au PlayerController.OnStartClient (agent désactivé sur les remotes).
         if (TryGetComponent(out NavMeshAgent agent)) agent.enabled = false;
 
-        // Charge et instancie une copie des assets TALK / LOOK (même pattern que PlayerController).
+        // Charge et instancie une copie de l'asset TALK (même pattern que PlayerController).
         // Chaque vue dispose de sa propre instance pour éviter le partage d'event delegates.
         Action talkTemplate = Resources.Load<Action>("Configurations/Actions/TALK");
         if (talkTemplate != null) {
@@ -138,27 +131,20 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         else {
             Debug.LogWarning("[ClientNpcView] TALK action asset not found at Resources/Configurations/Actions/TALK");
         }
-
-        Action lookTemplate = Resources.Load<Action>("Configurations/Actions/LOOK");
-        if (lookTemplate != null) {
-            _lookAction = UnityEngine.Object.Instantiate(lookTemplate);
-            _lookAction.OnExecute += OnLookExecuted;
-        }
-        else {
-            Debug.LogWarning("[ClientNpcView] LOOK action asset not found at Resources/Configurations/Actions/LOOK");
-        }
     }
 
     private void OnDestroy() {
+        // Si une session d'interaction pointait sur ce NPC (despawn pendant un dialogue,
+        // changement de room, fermeture serveur), on ferme silencieusement : le serveur a
+        // déjà cleané via OnNpcDespawned, inutile de renvoyer un C2S End.
+        if (NpcInteractionSession.ActiveNpcId == NpcId) {
+            NpcInteractionSession.EndSilent(NpcId);
+        }
+
         if (_talkAction != null) {
             _talkAction.OnExecute -= OnTalkExecuted;
             UnityEngine.Object.Destroy(_talkAction);
             _talkAction = null;
-        }
-        if (_lookAction != null) {
-            _lookAction.OnExecute -= OnLookExecuted;
-            UnityEngine.Object.Destroy(_lookAction);
-            _lookAction = null;
         }
     }
 
@@ -269,8 +255,11 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         }
         _hasPrev = _hasNext = true;
 
-        _lastVelocity   = isSitting ? Vector3.zero : velocity;
-        _displayedSpeed = isSitting ? 0f : velocity.magnitude;
+        // Interacting (freeze overlay serveur) = NPC immobile debout : vélocité forcée à 0 pour
+        // garantir l'animation Idle (la vélocité reçue est déjà 0 côté serveur, mais on est ceinture-bretelles).
+        bool forceStill = isSitting || state == NpcStateType.Interacting;
+        _lastVelocity   = forceStill ? Vector3.zero : velocity;
+        _displayedSpeed = forceStill ? 0f : velocity.magnitude;
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
@@ -322,12 +311,6 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     }
 
     // ── Interaction handlers ──────────────────────────────────────────────────
-
-    private void OnLookExecuted(Action action) {
-        ClientLogger.Network("[NPCInteraction] LOOK action requested {NpcId} {FullName}", NpcId, FullName);
-        PlayerController.Local?.Look(transform);
-        ClientLogger.Network("[NPCInteraction] LOOK applied {NpcId}", NpcId);
-    }
 
     private void OnTalkExecuted(Action action) {
         ClientLogger.Network("[NPCInteraction] TALK action requested {NpcId} {FullName}", NpcId, FullName);

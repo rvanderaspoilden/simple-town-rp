@@ -91,6 +91,15 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private float _knockdownUntil = -1f;
     private const float KnockdownDuration = 3f;
 
+    // Freeze d'interaction (overlay transverse, pas un état de la state machine).
+    // Le compteur d'owners est la List.Count : tant qu'au moins un joueur tient le lock, on
+    // skip _stateMachine.Tick() et on rotate vers l'owner le plus proche. Le service serveur
+    // (NpcInteractionService) maintient le mapping conn↔npc et les timeouts, et appelle
+    // ServerBeginInteraction / ServerEndInteraction qui poussent/retirent les Transforms ici.
+    private readonly List<Transform> _interactionOwners = new List<Transform>(4);
+    private const float InteractionRotationSpeedDeg = 360f;
+    private const float InteractionFaceMinDistanceSqr = 0.01f; // 0.1m horizontal squared
+
     // Registre id → contrôleur, pour que le serveur retrouve un NPC à renverser depuis son npcId
     // (les NPC n'ont pas de NetworkIdentity).
     private static readonly Dictionary<int, NpcAIController> _byId = new Dictionary<int, NpcAIController>();
@@ -120,6 +129,54 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     public string            ConfigId   => _config != null ? _config.Id : null;
     public MerchantNpcConfig Merchant   => _config as MerchantNpcConfig;
     public bool              IsMerchant => _config != null && _config.IsMerchant;
+
+    /// <summary>True tant qu'au moins un joueur tient le lock d'interaction sur ce NPC.</summary>
+    public bool IsInteractionLocked => _interactionOwners.Count > 0;
+
+    /// <summary>
+    /// Pose un lock d'interaction pour cet owner (Transform du joueur). Idempotent : si déjà
+    /// owner, ne fait rien. Au passage 0 → 1+, l'agent est DÉSACTIVÉ (même raison que knockdown :
+    /// éviter qu'un NavMeshObstacle ne pousse le transform) et la state machine cesse d'être
+    /// tickée (les timers internes — Merchant._tendTimer, etc. — restent figés). Appelé
+    /// exclusivement par NpcInteractionService.
+    /// </summary>
+    public void ServerBeginInteraction(Transform playerTransform) {
+        if (playerTransform == null) return;
+        if (_interactionOwners.Contains(playerTransform)) return;
+        bool wasLocked = IsInteractionLocked;
+        _interactionOwners.Add(playerTransform);
+        if (!wasLocked) {
+            StopAgent();
+            SetAgentEnabled(false);
+        }
+    }
+
+    /// <summary>
+    /// Retire le lock pour cet owner. Au passage 1 → 0, l'agent est RÉACTIVÉ et la state machine
+    /// reprend son tick naturel (Merchant repart en Tending pile où il en était). Idempotent.
+    /// Appelé exclusivement par NpcInteractionService.
+    /// </summary>
+    public void ServerEndInteraction(Transform playerTransform) {
+        if (playerTransform == null) return;
+        if (!_interactionOwners.Remove(playerTransform)) return;
+        if (!IsInteractionLocked) {
+            SetAgentEnabled(true);
+            // Force un broadcast frais au prochain Tick (sortie d'Interacting → vrai état IA).
+            _lastNotifiedState = (NpcStateType)255;
+        }
+    }
+
+    /// <summary>
+    /// Vide la liste des owners (release brutal, ex : knockdown ou despawn). Réactive l'agent si
+    /// nécessaire. NE notifie PAS les clients ici — c'est le rôle du NpcInteractionService qui
+    /// envoie les Responses + nettoie ses dicts.
+    /// </summary>
+    public void ServerForceReleaseAllInteractions() {
+        if (_interactionOwners.Count == 0) return;
+        _interactionOwners.Clear();
+        SetAgentEnabled(true);
+        _lastNotifiedState = (NpcStateType)255;
+    }
 
     public void SetAgentEnabled(bool value) {
         if (_agent != null) _agent.enabled = value;
@@ -165,6 +222,7 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         _sitState            = null;
         _merchantState       = null;
         _merchantPause       = null;
+        _interactionOwners.Clear();
         // NB : on n'efface PAS _config ici (re-affecté dans ConfigureForSpawn, appelé AVANT).
         GameLogger.Network.Debug("[NPCPool] ResetForPool complete {ConfigId} {FullName}",
             ConfigId, _identity.FullName);
@@ -246,6 +304,12 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
         Sim.Missions.MissionTargetHooks.UnregisterNpc(this);
 
+        // Nettoie silencieusement le service d'interaction : le S2C_DestroyNpc qui suit
+        // déclenche déjà la fermeture des sessions côté client (via OnNpcDestroyed event),
+        // pas besoin d'envoyer de Response refus.
+        NpcInteractionService.Instance?.OnNpcDespawned(_npcId);
+        ServerForceReleaseAllInteractions();
+
         // Désenregistre (broadcast S2C_DestroyNpc aux clients).
         NpcServerManager.Instance.Unregister(_npcId);
 
@@ -285,6 +349,10 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         if (!NetworkServer.active || _npcId <= 0) return false;
         if (_knockdownUntil > 0f && Time.time < _knockdownUntil) return false; // déjà au sol
         _knockdownUntil = Time.time + KnockdownDuration;
+        // Force la fin de toutes les interactions en cours : les owners ferment leurs modales
+        // via Response(KnockedDown). Vidage local des Transforms ensuite.
+        NpcInteractionService.Instance?.ReleaseAllForNpc(_npcId, NpcInteractionReason.KnockedDown);
+        ServerForceReleaseAllInteractions();
         StopAgent();
         SetAgentEnabled(false);
         NpcServerManager.Instance.Knockdown(_npcId);
@@ -320,6 +388,14 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
             SetAgentEnabled(true);
         }
 
+        // Freeze d'interaction : tant qu'un joueur tient le lock, on skip _stateMachine.Tick()
+        // (timers internes figés : NpcMerchantState._tendTimer reste où il en était), on rotate
+        // vers l'owner le plus proche, et on diffuse l'état Interacting.
+        if (IsInteractionLocked) {
+            TickInteractionOverlay();
+            return;
+        }
+
         _stateMachine.Tick();
 
         // L'état logique vient directement de la state machine (source unique).
@@ -347,6 +423,52 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         if (current != _lastNotifiedState) {
             NpcServerManager.Instance.NotifyStateChanged(_npcId, current);
             _lastNotifiedState = current;
+        }
+    }
+
+    /// <summary>
+    /// Tick du freeze d'interaction. Filtre les Transforms devenus null (despawn joueur),
+    /// rotate vers l'owner le plus proche horizontalement, diffuse Interacting au snapshot.
+    /// Si la liste tombe à 0 après filtrage, on libère le freeze et la state machine reprend
+    /// au tick suivant.
+    /// </summary>
+    private void TickInteractionOverlay() {
+        // Purge des Transforms despawned (Unity ==null check).
+        for (int i = _interactionOwners.Count - 1; i >= 0; i--) {
+            if (_interactionOwners[i] == null) _interactionOwners.RemoveAt(i);
+        }
+        if (_interactionOwners.Count == 0) {
+            SetAgentEnabled(true);
+            _lastNotifiedState = (NpcStateType)255;
+            return;
+        }
+
+        // Cible la plus proche, distance horizontale (XZ).
+        Vector3 self = transform.position;
+        Transform closest = _interactionOwners[0];
+        float bestSqr = float.PositiveInfinity;
+        for (int i = 0; i < _interactionOwners.Count; i++) {
+            Vector3 d = _interactionOwners[i].position - self;
+            d.y = 0f;
+            float sqr = d.sqrMagnitude;
+            if (sqr < bestSqr) { bestSqr = sqr; closest = _interactionOwners[i]; }
+        }
+
+        // Rotation vers le joueur (skippée si quasi-superposé pour éviter la singularité).
+        if (bestSqr >= InteractionFaceMinDistanceSqr) {
+            Vector3 dir = closest.position - self;
+            dir.y = 0f;
+            Quaternion target = Quaternion.LookRotation(dir.normalized, Vector3.up);
+            transform.rotation = Quaternion.RotateTowards(
+                transform.rotation, target, InteractionRotationSpeedDeg * Time.deltaTime);
+        }
+
+        // Snapshot Interacting : vélocité forcée à 0 (l'agent est désactivé).
+        NpcServerManager.Instance.PushTransform(
+            _npcId, transform.position, transform.rotation, Vector3.zero, NpcStateType.Interacting);
+        if (_lastNotifiedState != NpcStateType.Interacting) {
+            NpcServerManager.Instance.NotifyStateChanged(_npcId, NpcStateType.Interacting);
+            _lastNotifiedState = NpcStateType.Interacting;
         }
     }
 

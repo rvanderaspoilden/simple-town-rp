@@ -9,6 +9,10 @@
 /// Merchant = le NPC tient son stand (immobile, interactable côté client → action
 /// BUY). Pendant ses pauses il repasse en Idle/Walking (donc BUY masqué). Aucune
 /// animation dédiée : Merchant retombe sur l'idle debout par défaut.
+///
+/// Interacting = overlay transverse (pas un état de la state machine) : le NPC est
+/// figé par un ou plusieurs joueurs qui interagissent. Côté client : idle visuel
+/// (vélocité 0). Cf. NpcInteractionService / NpcAIController.ServerBeginInteraction.
 /// </summary>
 public enum NpcStateType : byte {
     Idle                = 0,
@@ -17,5 +21,6 @@ public enum NpcStateType : byte {
     GoingToInterestArea = 3,
     BackToHome          = 4,
     KnockedDown         = 5,
-    Merchant            = 6
+    Merchant            = 6,
+    Interacting         = 7
 }
