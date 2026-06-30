@@ -376,10 +376,11 @@ namespace Sim {
 
         // Outline-driving layers must always be in the camera culling mask so that objects moved
         // onto them stay visible while outlined (the URP outline pass renders from the camera's
-        // cull results): "Outline" (HoverOutline), "MissionHighlight", and the placement-validity
-        // layers "Place Valid" / "Place Invalid" (PlacementFeedback, item & prop placement).
+        // cull results): "Outline" (HoverOutline), "MissionHighlight", the placement-validity
+        // layers "Place Valid" / "Place Invalid" (PlacementFeedback, item & prop placement),
+        // and "Paint Hover" (PaintHoverOutline proxy that traces the hovered wall face / ground).
         private static readonly string[] OutlineDrivenLayers = {
-            "MissionHighlight", "Place Valid", "Place Invalid"
+            "MissionHighlight", "Place Valid", "Place Invalid", "Paint Hover"
         };
 
         private LayerMask WithOutlineLayer(LayerMask mask) {

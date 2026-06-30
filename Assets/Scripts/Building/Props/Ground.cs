@@ -51,18 +51,24 @@ namespace Sim.Building {
                 this.preview = true;
             }
             this.SetCoverSettings(settings);
+            EnsureOutline();
         }
 
-        /// <summary>Reverts to the pre-preview settings, no-op if not in preview.</summary>
+        /// <summary>Reverts to the pre-preview settings, no-op if not in preview. Drops the outline
+        /// since the ground is back to its committed state.</summary>
         [Client]
         public void ErasePaint() {
             if (this.preview) this.ResetPreview();
+            DisposeOutline();
         }
 
-        // ── Hover preview ────────────────────────────────────────────────────
-        // Visual-only swap; does NOT modify currentCover so cancelling without painting
-        // leaves no trace in the ground's state.
-        private bool     _isHovering;
+        // ── Hover & paint-preview outline ────────────────────────────────────
+        // The ground has a single face, so the outline is a single proxy. A ground gets an outline
+        // as soon as it's part of the committed paint preview (this.preview) — that outline lives
+        // until validate/cancel/erase. While the player is purely hovering (no click), the outline
+        // also shows; EndHoverPreview drops it only if the ground is NOT in committed preview.
+        private bool _isHovering;
+        private PaintHoverOutline _outline;
 
         [Client]
         public void HoverApply(CoverSettings settings) {
@@ -71,31 +77,58 @@ namespace Sim.Building {
             Material mat = new Material(coverConfig.GetMaterial());
             if (coverConfig.AllowCustomColor()) mat.color = settings.additionalColor;
             this.renderer.material = mat;
+            EnsureOutline();
             _isHovering = true;
         }
 
+        /// <summary>Roll back the hover-preview material swap. Outline survives if the ground is
+        /// part of the committed paint preview, otherwise it is dropped.</summary>
         [Client]
-        public void ClearHover() {
+        public void EndHoverPreview() {
             if (!_isHovering) return;
             _isHovering = false;
             this.ApplyPaint(); // re-render from real state (currentCover)
+            if (!this.preview) DisposeOutline();
         }
 
-        /// <summary>Drop the hover flag without re-rendering — call when the ground has just been painted.</summary>
+        /// <summary>Drop the hover-preview bookkeeping WITHOUT re-rendering — the caller is about
+        /// to apply the real paint. Outline stays.</summary>
         [Client]
         public void ConsumeHover() {
             _isHovering = false;
         }
 
+        /// <summary>Full reset: roll back any hover material AND drop the outline. Called on paint
+        /// mode exit (validate/cancel/mode change) — never during a drag.</summary>
+        [Client]
+        public void ClearHover() {
+            EndHoverPreview();
+            DisposeOutline();
+        }
+
+        public void EnsureOutline() {
+            if (_outline != null) return;
+            MeshFilter mf = GetComponent<MeshFilter>();
+            Mesh source = mf != null ? mf.sharedMesh : null;
+            _outline = PaintHoverOutline.Build(this.transform, source);
+        }
+
+        private void DisposeOutline() {
+            if (_outline != null) { _outline.Dispose(); _outline = null; }
+        }
+
         [Client]
         public void ApplyModification() {
             this.preview = false;
+            DisposeOutline();
+            _isHovering = false;
         }
 
         [Client]
         public void ResetPreview() {
             this.SetCoverSettings(this.oldCoverSettings);
             this.preview = false;
+            DisposeOutline();
         }
 
         public void SetCoverSettings(CoverSettings settings) {

@@ -33,6 +33,12 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
         public float gradientSpeed = 2f;
         public float gradientFrequency = 6f;
 
+        [Header("Halo (drop-shadow ring around the main outline)")]
+        [Tooltip("Couleur du halo derrière l'outline principal. Alpha = 0 désactive (cas par défaut).")]
+        [ColorUsage(true, true)] public Color haloColor = new Color(0f, 0f, 0f, 0f);
+        [Tooltip("Largeur additionnelle du halo (en pixels) au-delà de Thickness.")]
+        [Range(0, 8)] public int haloThickness = 0;
+
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
     }
 
@@ -78,6 +84,8 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
         private static readonly int GradientColorId  = Shader.PropertyToID("_GradientColor");
         private static readonly int GradientSpeedId  = Shader.PropertyToID("_GradientSpeed");
         private static readonly int GradientFreqId   = Shader.PropertyToID("_GradientFrequency");
+        private static readonly int HaloColorId      = Shader.PropertyToID("_HaloColor");
+        private static readonly int HaloThicknessId  = Shader.PropertyToID("_HaloThickness");
 
         private static readonly List<ShaderTagId> ShaderTags = new List<ShaderTagId> {
             new ShaderTagId("SRPDefaultUnlit"),
@@ -184,6 +192,8 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
                     d.material.SetColor(GradientColorId, _settings.gradientColor);
                     d.material.SetFloat(GradientSpeedId, _settings.gradientSpeed);
                     d.material.SetFloat(GradientFreqId, _settings.gradientFrequency);
+                    d.material.SetColor(HaloColorId, _settings.haloColor);
+                    d.material.SetFloat(HaloThicknessId, _settings.haloThickness * pulse);
                     ctx.cmd.SetGlobalTexture(MaskTexId, d.mask);
                     Blitter.BlitTexture(ctx.cmd, d.source, new Vector4(1, 1, 0, 0), d.material, 0);
                 });

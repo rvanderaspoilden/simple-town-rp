@@ -134,6 +134,7 @@ MonoBehaviour:
   - {fileID: 6241208519609000230}
   - {fileID: -5504197975826516402}
   - {fileID: 3727050330268974565}
+  - {fileID: 5418031208540211776}
   m_RendererFeatureMap: 3c529442464d358134f2ffffffffffffbcd4fdffffffffff4eb66f7d1a299db3e53daf538724b933
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
@@ -202,4 +203,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InteriorFogFeature
   m_Active: 1
   settings:
+    renderPassEvent: 500
+--- !u!114 &5418031208540211776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c40d6ddfd2f136f4fb0bc0603c9addc0, type: 3}
+  m_Name: Paint Hover Outline
+  m_EditorClassIdentifier: Assembly-CSharp::OutlineRendererFeature
+  m_Active: 1
+  settings:
+    outlineLayer:
+      serializedVersion: 2
+      m_Bits: 268435456
+    outlineColor: {r: 1, g: 1, b: 1, a: 1}
+    thickness: 2
+    usePulse: 0
+    useGradient: 1
+    gradientColor: {r: 0.45, g: 0.85, b: 1, a: 1}
+    gradientSpeed: 2.5
+    gradientFrequency: 7
+    haloColor: {r: 0.04, g: 0.05, b: 0.1, a: 0.85}
+    haloThickness: 3
     renderPassEvent: 500

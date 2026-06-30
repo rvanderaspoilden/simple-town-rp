@@ -101,6 +101,13 @@ namespace Sim {
         private int                 _hoverWallSubmesh = -1;
         private Sim.Building.Ground _hoverGround;
 
+        // Drag-select tracking (mouse held in paint mode). Every wall/ground whose face was
+        // painted during the current drag is recorded so we can clear all outlines in one go
+        // when the mouse is released.
+        private readonly HashSet<Sim.Building.Wall>   _dragWalls   = new HashSet<Sim.Building.Wall>();
+        private readonly HashSet<Sim.Building.Ground> _dragGrounds = new HashSet<Sim.Building.Ground>();
+        private bool _paintMouseHeldLastFrame;
+
         public delegate void ValidatePropCreation(PropsConfig propsConfig, int presetId, Vector3 position, Quaternion rotation);
 
         public static event ValidatePropCreation OnValidatePropCreation;
@@ -736,24 +743,31 @@ namespace Sim {
         private void Painting() {
             bool leftHeld  = Input.GetMouseButton(0);
             bool rightHeld = Input.GetMouseButton(1);
+            bool mouseHeld = leftHeld || rightHeld;
 
             bool overUI = EventSystem.current.IsPointerOverGameObject();
             bool isWallPaint = this.mode == BuildModeEnum.WALL_PAINT;
 
+            // No release-edge clear: outlines persist on every face that's part of the committed
+            // paint preview until the player validates / cancels / exits paint mode (those paths
+            // all flow through ClearAllHover or Wall/Ground.ApplyModification, which wipe).
+            _paintMouseHeldLastFrame = mouseHeld;
+
             // Hover preview when no paint button is held.
-            if (!leftHeld && !rightHeld) {
+            if (!mouseHeld) {
                 _lastPaintTargetId = 0;
                 _lastPaintSubmesh  = -1;
 
                 if (overUI || !TryPaintRaycast(isWallPaint, out RaycastHit hoverHit, out bool isTarget) || !isTarget) {
-                    ClearAllHover();
+                    EndHoverPreviewOnly();
                     return;
                 }
                 ApplyHoverPreview(hoverHit, isWallPaint);
                 return;
             }
 
-            ClearAllHover();
+            // Mouse held → drag/paint. Keep outlines alive so the selection contour grows
+            // face by face. ClearAllHover would erase them — don't call it here.
             if (overUI) return;
 
             if (!TryPaintRaycast(isWallPaint, out hit, out bool hitIsTarget) || !hitIsTarget) return;
@@ -767,13 +781,20 @@ namespace Sim {
                 int submesh = wall.GetSubmeshFromHit(hit);
                 if (submesh < 0) return;
 
+                // Reconcile hover → drag once per drag (idempotent thereafter, _hoverWall is nulled).
+                ReconcileHoverToDrag(wall, submesh);
+
                 int targetId = wall.GetInstanceID();
                 if (targetId == _lastPaintTargetId && submesh == _lastPaintSubmesh && erase == _lastPaintWasErase) return;
 
-                // Idempotence: skip when the face is already in the desired state.
+                // Idempotence: skip the paint call when the face is already in the desired state.
+                // Only the paint side ensures the outline; on the erase side the face is original
+                // and shouldn't be outlined.
                 bool alreadyPainted = wall.IsFacePaintedWith(submesh, this.currentOpenedBucket);
                 bool alreadyOriginal = !wall.IsFacePainted(submesh);
                 if ((!erase && alreadyPainted) || (erase && alreadyOriginal)) {
+                    if (!erase) wall.OutlineFace(submesh);
+                    _dragWalls.Add(wall);
                     _lastPaintTargetId = targetId; _lastPaintSubmesh = submesh; _lastPaintWasErase = erase;
                     return;
                 }
@@ -781,21 +802,29 @@ namespace Sim {
                 _lastPaintTargetId = targetId; _lastPaintSubmesh = submesh; _lastPaintWasErase = erase;
 
                 wall.ConsumeHover();
+                // ApplyPaintOnFace adds the outline; ErasePaintOnFace removes it. The wall's
+                // paint-preview state is the single source of truth for outline presence.
                 if (erase) wall.ErasePaintOnFace(submesh);
                 else       wall.ApplyPaintOnFace(submesh, this.currentOpenedBucket);
+                _dragWalls.Add(wall);
 
                 PlayPaintSfx(hit.point);
             } else {
                 Ground ground = hit.collider.GetComponent<Ground>();
                 if (ground == null || !ground.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) return;
 
+                ReconcileHoverToDrag(ground);
+
                 int targetId = ground.GetInstanceID();
                 if (targetId == _lastPaintTargetId && erase == _lastPaintWasErase) return;
 
-                // Idempotence: skip when the ground is already in the desired state.
+                // Same split as walls: paint-idempotent ensures the outline, erase-idempotent
+                // leaves it absent.
                 bool alreadyPainted  = ground.IsPaintedWith(this.currentOpenedBucket);
                 bool alreadyOriginal = !ground.IsPreview();
                 if ((!erase && alreadyPainted) || (erase && alreadyOriginal)) {
+                    if (!erase) ground.EnsureOutline();
+                    _dragGrounds.Add(ground);
                     _lastPaintTargetId = targetId; _lastPaintSubmesh = 0; _lastPaintWasErase = erase;
                     return;
                 }
@@ -803,17 +832,59 @@ namespace Sim {
                 _lastPaintTargetId = targetId; _lastPaintSubmesh = 0; _lastPaintWasErase = erase;
 
                 ground.ConsumeHover();
+                // ApplyPaint ensures the outline; ErasePaint drops it.
                 if (erase) ground.ErasePaint();
                 else       ground.ApplyPaint(this.currentOpenedBucket.GetCoverSettings());
+                _dragGrounds.Add(ground);
 
                 PlayPaintSfx(hit.point);
             }
         }
 
+        /// <summary>One-shot hover→drag reconcile for walls: if the face being painted matches the
+        /// hovered face, drop the preview-material bookkeeping (the outline persists). Otherwise
+        /// end the previous hover preview — the saved material is restored and the previous-hover
+        /// outline drops only if that face is NOT in the committed paint preview (i.e. it was a
+        /// pure hover, not yet painted). Painted faces keep their outline.</summary>
+        private void ReconcileHoverToDrag(Wall aimedWall, int aimedSubmesh) {
+            if (_hoverWall != null) {
+                if (_hoverWall == aimedWall && _hoverWallSubmesh == aimedSubmesh) aimedWall.ConsumeHover();
+                else                                                              _hoverWall.EndHoverPreview();
+                _hoverWall = null;
+                _hoverWallSubmesh = -1;
+            }
+            if (_hoverGround != null) {
+                _hoverGround.EndHoverPreview();
+                _hoverGround = null;
+            }
+        }
+
+        private void ReconcileHoverToDrag(Ground aimedGround) {
+            if (_hoverGround != null) {
+                if (_hoverGround == aimedGround) aimedGround.ConsumeHover();
+                else                             _hoverGround.EndHoverPreview();
+                _hoverGround = null;
+            }
+            if (_hoverWall != null) {
+                _hoverWall.EndHoverPreview();
+                _hoverWall = null;
+                _hoverWallSubmesh = -1;
+            }
+        }
+
+        private void ClearDragOutlines() {
+            foreach (Wall w in _dragWalls)   if (w != null) w.ClearHover();
+            foreach (Ground g in _dragGrounds) if (g != null) g.ClearHover();
+            _dragWalls.Clear();
+            _dragGrounds.Clear();
+        }
+
         /// <summary>
-        /// Raycast for paint mode: the first non-hidden hit wins. Hidden props (FORCE_HIDE)
-        /// and hidden walls (disabled collider) don't block. Returns true if the first
-        /// active hit is on the requested target surface; false if blocked or nothing was hit.
+        /// Raycast for paint mode: only the target surface layer(s) are queried. Props are
+        /// EXCLUDED from the mask so a door, a low piece of furniture, or anything else parented
+        /// in front of a wall/ground never blocks the brush — the player can paint the surface
+        /// underneath. Hidden walls (disabled collider) are also transparent by construction.
+        /// Returns true if the first hit is the requested target surface; false otherwise.
         /// </summary>
         private bool TryPaintRaycast(bool isWallPaint, out RaycastHit firstActive, out bool isTarget) {
             firstActive = default;
@@ -821,41 +892,33 @@ namespace Sim {
 
             int wallLayer   = 12;
             int groundLayer = 9;
-            int propsLayer  = 10;
             int targetLayer = isWallPaint ? wallLayer : groundLayer;
             int mask = isWallPaint
-                ? ((1 << wallLayer)  | (1 << propsLayer))
-                : ((1 << groundLayer)| (1 << wallLayer) | (1 << propsLayer));
+                ? (1 << wallLayer)
+                : ((1 << groundLayer) | (1 << wallLayer));
 
             RaycastHit[] hits = Physics.RaycastAll(this.camera.ScreenPointToRay(Input.mousePosition), 100, mask);
             if (hits.Length == 0) return false;
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
-            foreach (var h in hits) {
-                if (h.collider.gameObject.layer == propsLayer) {
-                    var pr = h.collider.GetComponentInParent<Sim.Building.PropsRenderer>();
-                    if (pr != null && pr.IsCurrentlyHidden()) continue;
-                }
-                firstActive = h;
-                isTarget = h.collider.gameObject.layer == targetLayer;
-                return true;
-            }
-            return false;
+            firstActive = hits[0];
+            isTarget = firstActive.collider.gameObject.layer == targetLayer;
+            return true;
         }
 
         private void ApplyHoverPreview(RaycastHit hoverHit, bool isWallPaint) {
             if (isWallPaint) {
                 Wall wall = hoverHit.collider.GetComponent<Wall>();
                 if (wall == null || !wall.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
-                    ClearAllHover();
+                    EndHoverPreviewOnly();
                     return;
                 }
                 int submesh = wall.GetSubmeshFromHit(hoverHit);
-                if (submesh < 0) { ClearAllHover(); return; }
+                if (submesh < 0) { EndHoverPreviewOnly(); return; }
 
                 if (_hoverWall != wall || _hoverWallSubmesh != submesh) {
-                    if (_hoverWall != null) _hoverWall.ClearHover();
-                    if (_hoverGround != null) { _hoverGround.ClearHover(); _hoverGround = null; }
+                    if (_hoverWall != null && _hoverWall != wall) _hoverWall.EndHoverPreview();
+                    if (_hoverGround != null) { _hoverGround.EndHoverPreview(); _hoverGround = null; }
                     _hoverWall = wall;
                     _hoverWallSubmesh = submesh;
                     _hoverWall.HoverFace(submesh, this.currentOpenedBucket);
@@ -863,22 +926,34 @@ namespace Sim {
             } else {
                 Ground ground = hoverHit.collider.GetComponent<Ground>();
                 if (ground == null || !ground.ApartmentController.IsTenant(PlayerController.Local.CharacterData)) {
-                    ClearAllHover();
+                    EndHoverPreviewOnly();
                     return;
                 }
 
                 if (_hoverGround != ground) {
-                    if (_hoverGround != null) _hoverGround.ClearHover();
-                    if (_hoverWall != null) { _hoverWall.ClearHover(); _hoverWall = null; _hoverWallSubmesh = -1; }
+                    if (_hoverGround != null) _hoverGround.EndHoverPreview();
+                    if (_hoverWall != null) { _hoverWall.EndHoverPreview(); _hoverWall = null; _hoverWallSubmesh = -1; }
                     _hoverGround = ground;
                     _hoverGround.HoverApply(this.currentOpenedBucket.GetCoverSettings());
                 }
             }
         }
 
+        /// <summary>Drop only the transient hover-preview material swap. Outlines on faces that
+        /// are part of the committed paint preview SURVIVE. Use when the cursor leaves a target
+        /// or moves to a non-paintable surface — the player keeps seeing what they've painted.</summary>
+        private void EndHoverPreviewOnly() {
+            if (_hoverWall != null) { _hoverWall.EndHoverPreview(); _hoverWall = null; _hoverWallSubmesh = -1; }
+            if (_hoverGround != null) { _hoverGround.EndHoverPreview(); _hoverGround = null; }
+        }
+
+        /// <summary>Full wipe: end any hover preview AND destroy every paint-preview outline on
+        /// the walls/grounds that participated in the session. Called on paint mode exit
+        /// (validate/cancel/mode change) only.</summary>
         private void ClearAllHover() {
             if (_hoverWall != null) { _hoverWall.ClearHover(); _hoverWall = null; _hoverWallSubmesh = -1; }
             if (_hoverGround != null) { _hoverGround.ClearHover(); _hoverGround = null; }
+            ClearDragOutlines();
         }
 
         private void PlayPaintSfx(Vector3 worldPos) {
@@ -896,11 +971,13 @@ namespace Sim {
                 foreach (Wall wall in this.apartmentController.GetComponentsInChildren<Wall>()) {
                     if (wall.ApartmentController != this.apartmentController) continue;
                     wall.ApplyPaintOnAllFaces(this.currentOpenedBucket);
+                    _dragWalls.Add(wall);
                 }
             } else if (this.mode == BuildModeEnum.GROUND_PAINT) {
                 foreach (Ground ground in this.apartmentController.GetComponentsInChildren<Ground>()) {
                     if (ground.ApartmentController != this.apartmentController) continue;
                     ground.ApplyPaint(this.currentOpenedBucket.GetCoverSettings());
+                    _dragGrounds.Add(ground);
                 }
             }
             PlayPaintSfx(this.apartmentController.transform.position);
