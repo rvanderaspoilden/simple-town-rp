@@ -929,8 +929,9 @@ public class VehicleController : NetworkBehaviour, IInteractable {
             AudioManager.Instance.PlayClip3D(config.impact, transform.position, 0.4f + 0.6f * severity);
         }
 
-        // Passage KO.
-        if (current == 0f && previous != 0f) {
+        // Passage KO : transition réelle alive → KO uniquement (ignore la sync initiale -1 → 0
+        // sur les clients qui rejoignent un véhicule déjà KO, sinon le son se rejouerait à chaque spawn).
+        if (previous > 0f && current == 0f) {
             StopEngine();
             if (config != null && config.ko != null)
                 AudioManager.Instance.PlayClip3D(config.ko, transform.position);
