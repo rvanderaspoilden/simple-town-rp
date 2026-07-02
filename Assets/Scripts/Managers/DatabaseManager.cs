@@ -27,6 +27,7 @@ namespace Sim {
         public static List<BuildingConfig> BuildingConfigurations;
         public static List<MinimapRoomMapConfig> MinimapRoomMapConfigs;
         public static List<VehicleConfig> VehicleConfigs;
+        public static List<LandConfig> LandConfigs;
         public static List<Sim.NPC.NpcConfig> NpcConfigs;
 
         /// <summary>NpcConfig de fallback (id == "default") pour les NPC sans config explicite.</summary>
@@ -38,6 +39,7 @@ namespace Sim {
         private static Dictionary<int, ItemConfig> _itemsById;
         private static Dictionary<string, MinimapRoomMapConfig> _minimapByRoomId;
         private static Dictionary<string, VehicleConfig> _vehiclesById;
+        private static Dictionary<int, LandConfig> _landsById;
         private static Dictionary<string, Sim.NPC.NpcConfig> _npcConfigsById;
 
         public static DatabaseManager Instance;
@@ -94,6 +96,18 @@ namespace Sim {
                     _vehiclesById[v.modelName] = v;
             }
             Debug.Log($"Vehicle configs loaded : {VehicleConfigs.Count}");
+
+            LandConfigs = Resources.LoadAll<LandConfig>("Configurations/Lands").ToList();
+            _landsById = new Dictionary<int, LandConfig>();
+            foreach (var l in LandConfigs) {
+                if (l == null || l.id <= 0) continue;
+                if (_landsById.ContainsKey(l.id)) {
+                    Debug.LogWarning($"[DatabaseManager] Duplicate LandConfig id {l.id}");
+                    continue;
+                }
+                _landsById[l.id] = l;
+            }
+            Debug.Log($"Land configs loaded : {LandConfigs.Count}");
 
             NpcConfigs = Resources.LoadAll<Sim.NPC.NpcConfig>("Configurations/NPCs").ToList();
             _npcConfigsById = new Dictionary<string, Sim.NPC.NpcConfig>();
@@ -183,6 +197,11 @@ namespace Sim {
         public static VehicleConfig GetVehicleConfigById(string id)
             => _vehiclesById != null && !string.IsNullOrEmpty(id)
                && _vehiclesById.TryGetValue(id, out var v) ? v : null;
+
+        /// <summary>Résout une config de terrain par son id. Retourne null si introuvable.</summary>
+        public static LandConfig GetLandConfigById(int id)
+            => _landsById != null && id > 0
+               && _landsById.TryGetValue(id, out var l) ? l : null;
 
         /// <summary>Résout une config NPC par son id. Retourne null si introuvable.</summary>
         public static Sim.NPC.NpcConfig GetNpcConfigById(string id)

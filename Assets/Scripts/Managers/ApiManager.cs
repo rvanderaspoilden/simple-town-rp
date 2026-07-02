@@ -649,6 +649,30 @@ namespace Sim {
             onPlaceId?.Invoke(placeId);
         }
 
+        /// <summary>GET /places/lookup?key= — returns the full place (with ownerId) WITHOUT
+        /// creating it, or null when no place matches the key. Server-side — used at boot to
+        /// resolve land parcel ownership without the side effect of POST /places.</summary>
+        public IEnumerator LookupPlaceByKeyCoroutine(string placeKey, Action<PlaceJson> onDone) {
+            UnityWebRequest request = LookupPlaceByKeyRequest(placeKey);
+            yield return request.SendWebRequest();
+
+            PlaceJson place = null;
+            if (request.responseCode == 200) {
+                string body = request.downloadHandler.text;
+                // The endpoint serializes `null` when no place matches the key.
+                if (!string.IsNullOrEmpty(body) && body.Trim() != "null") {
+                    try {
+                        place = JsonConvert.DeserializeObject<PlaceJson>(body);
+                    } catch (Exception e) {
+                        Debug.LogError($"[ApiManager] LookupPlaceByKey parse failed: {e.Message}");
+                    }
+                }
+            } else {
+                Debug.LogError($"[ApiManager] LookupPlaceByKey failed code={request.responseCode} body={request.downloadHandler.text}");
+            }
+            onDone?.Invoke(place);
+        }
+
         /// <summary>POST /vehicles — creates a purchased vehicle in the owner's garage. Server-side.</summary>
         public IEnumerator CreateGaragedVehicleCoroutine(string ownerCharacterId, string modelId, string placeId, Action<VehicleData> onDone) {
             UnityWebRequest request = BuildJsonRequest($"{this.uri}/vehicles", "POST",
@@ -765,6 +789,30 @@ namespace Sim {
             }
 
             RentTickResponse response = JsonConvert.DeserializeObject<RentTickResponse>(request.downloadHandler.text);
+            onDone?.Invoke(response);
+        }
+
+        // ── Land rent ─────────────────────────────────────────────────────────
+
+        /// <summary>POST /places/land-rent/tick — server-driven land rent collection
+        /// pass at the given in-game time. Charges due parcels (catch-up), credits the
+        /// city treasury, and evicts non-payers. Returns the evictions for the caller
+        /// to act on (vacate parcel + notify the online tenant).</summary>
+        public UnityWebRequest LandRentTickRequest(long nowInGameSeconds) =>
+            BuildJsonRequest($"{this.uri}/places/land-rent/tick", "POST",
+                new LandRentTickBody { nowInGameSeconds = nowInGameSeconds });
+
+        public IEnumerator LandRentTickCoroutine(long nowInGameSeconds, Action<LandRentTickResponse> onDone) {
+            UnityWebRequest request = LandRentTickRequest(nowInGameSeconds);
+            yield return request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success) {
+                Debug.LogError($"[ApiManager] LandRentTick failed code={request.responseCode} body={request.downloadHandler.text}");
+                onDone?.Invoke(null);
+                yield break;
+            }
+
+            LandRentTickResponse response = JsonConvert.DeserializeObject<LandRentTickResponse>(request.downloadHandler.text);
             onDone?.Invoke(response);
         }
 
@@ -982,6 +1030,15 @@ namespace Sim {
 
         public UnityWebRequest GetPlaceStateRequest(string placeId) =>
             BuildJsonRequest($"{this.uri}/places/{placeId}/state", "GET", null);
+
+        public UnityWebRequest LookupPlaceByKeyRequest(string placeKey) =>
+            BuildJsonRequest($"{this.uri}/places/lookup?key={UnityWebRequest.EscapeURL(placeKey)}", "GET", null);
+
+        /// <summary>POST /places/:id/sell-land — atomically moves the seller's land props
+        /// into a transit place, destroys their items, and deletes the land place row.
+        /// Returns { transitPlaceId }. The refund ledger entry is posted separately.</summary>
+        public UnityWebRequest SellLandRequest(string placeId, string characterId) =>
+            BuildJsonRequest($"{this.uri}/places/{placeId}/sell-land", "POST", new { characterId });
 
         public UnityWebRequest CreatePropRequest(CreatePropBody body) =>
             BuildJsonRequest($"{this.uri}/props", "POST", body);

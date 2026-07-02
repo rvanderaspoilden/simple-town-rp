@@ -190,11 +190,11 @@ public class PropInteractionDispatcher : MonoBehaviour {
 
     // ── Build prop (delivery → spawn → save) ──────────────────────────────────
 
-    public void BuildProp(NetworkConnectionToClient conn, C2S_BuildProp msg, ApartmentController apt) {
-        StartCoroutine(BuildPropCoroutine(conn, msg, apt));
+    public void BuildProp(NetworkConnectionToClient conn, C2S_BuildProp msg, IBuildableSpace space) {
+        StartCoroutine(BuildPropCoroutine(conn, msg, space));
     }
 
-    private IEnumerator BuildPropCoroutine(NetworkConnectionToClient conn, C2S_BuildProp msg, ApartmentController apt) {
+    private IEnumerator BuildPropCoroutine(NetworkConnectionToClient conn, C2S_BuildProp msg, IBuildableSpace space) {
         // 1. Consume the delivery and capture the materialized prop UUID. The
         // DELETE endpoint returns the deleted row so we get its prop_id in the
         // same round-trip (avoids an extra GET).
@@ -233,47 +233,47 @@ public class PropInteractionDispatcher : MonoBehaviour {
             }.Serialize();
         }
 
-        // 3. Spawn the prop in the apartment room
+        // 3. Spawn the prop in the buildable space's room
         int newPropId = ServerPropManager.Instance.SpawnProp(
-            apt.RoomId, msg.PropConfigId, msg.Position, msg.Rotation,
+            space.RoomId, msg.PropConfigId, msg.Position, msg.Rotation,
             initialPayloadOverride: initialPayload,
             headerOverride:         header,
-            ownerCharId:            apt.TenantId
+            ownerCharId:            space.OwnerCharId
         );
         if (newPropId < 0) {
             conn.Send(new S2C_BuildAck { Success = false });
             yield break;
         }
-        apt.TrackProp(newPropId);
+        space.TrackProp(newPropId);
 
         // NB : le crédit de points Ingenious + toast a été DÉPLACÉ sur l'action BUILD
         // (PropInteractionRouter.HandleGeneric / BuildRequest) — c'est la vraie
         // construction. Le placement ne fait que créer le prop (à construire si toBuild).
 
-        // 4. Reparent server-side instance under apartment props container (for hierarchy queries)
+        // 4. Reparent server-side instance under the space's props container (for hierarchy queries)
         GameObject go = ServerPropManager.Instance.GetSpawnedGameObject(newPropId);
-        if (go != null && apt.PropsContainer != null) {
-            go.transform.SetParent(apt.PropsContainer);
+        if (go != null && space.PropsContainer != null) {
+            go.transform.SetParent(space.PropsContainer);
             go.transform.position = msg.Position;
             go.transform.rotation = msg.Rotation;
         }
 
         // 4b. Bridge runtime int propId → persistent UUID, and PATCH the prop's
         // new location in the DB. The buy flow created the prop in the transit
-        // place; the build flow moves it to the apartment.
+        // place; the build flow moves it to the space's place.
         if (!string.IsNullOrEmpty(propUuid)) {
             ServerPropManager.Instance.AssociateUuid(newPropId, propUuid);
-            yield return PatchBuiltPropLocation(propUuid, apt, msg, isBuilt);
+            yield return PatchBuiltPropLocation(propUuid, space, msg, isBuilt);
         }
 
         // 5. Refresh delivery box count (the build consumed a delivery)
         if (msg.DeliveryBoxPropId > 0) {
-            string tenantCharId = apt.TenantId;
-            if (!string.IsNullOrEmpty(tenantCharId)) {
-                Debug.Log($"[PropInteractionDispatcher] BuildProp consumed delivery — refreshing box {msg.DeliveryBoxPropId} for tenant {tenantCharId} room={apt.RoomId}");
-                RefreshDeliveryBoxCount(msg.DeliveryBoxPropId, apt.RoomId, tenantCharId);
+            string ownerCharId = space.OwnerCharId;
+            if (!string.IsNullOrEmpty(ownerCharId)) {
+                Debug.Log($"[PropInteractionDispatcher] BuildProp consumed delivery — refreshing box {msg.DeliveryBoxPropId} for owner {ownerCharId} room={space.RoomId}");
+                RefreshDeliveryBoxCount(msg.DeliveryBoxPropId, space.RoomId, ownerCharId);
             } else {
-                Debug.LogWarning($"[PropInteractionDispatcher] BuildProp: skipping delivery box refresh — apt.TenantId empty (apt={apt.ApartmentKey} room={apt.RoomId})");
+                Debug.LogWarning($"[PropInteractionDispatcher] BuildProp: skipping delivery box refresh — space.OwnerCharId empty (place={space.PlaceId} room={space.RoomId})");
             }
         } else {
             Debug.LogWarning($"[PropInteractionDispatcher] BuildProp: skipping delivery box refresh — msg.DeliveryBoxPropId={msg.DeliveryBoxPropId} (client did not provide a box id)");
@@ -309,10 +309,10 @@ public class PropInteractionDispatcher : MonoBehaviour {
     /// transfer PATCHed it), so a hardcoded expectedVersion=1 would 409 and leave the
     /// bridge stale — breaking any later list/buy on the prop.
     /// </summary>
-    private IEnumerator PatchBuiltPropLocation(string propUuid, ApartmentController apt, C2S_BuildProp msg, bool isBuilt) {
-        string aptPlaceId = apt.HomeData?.Id;
-        if (string.IsNullOrEmpty(aptPlaceId)) {
-            Debug.LogWarning($"[PropInteractionDispatcher] PatchBuiltPropLocation: apartment has no HomeData.Id (apt={apt.ApartmentKey}), skipping PATCH");
+    private IEnumerator PatchBuiltPropLocation(string propUuid, IBuildableSpace space, C2S_BuildProp msg, bool isBuilt) {
+        string placeId = space.PlaceId;
+        if (string.IsNullOrEmpty(placeId)) {
+            Debug.LogWarning($"[PropInteractionDispatcher] PatchBuiltPropLocation: space has no PlaceId (room={space.RoomId}), skipping PATCH");
             yield break;
         }
 
@@ -335,7 +335,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
 
         UpdatePropBody body = new UpdatePropBody {
             expectedVersion = currentVersion,
-            placeId  = aptPlaceId,
+            placeId  = placeId,
             position = new Vector3Body(msg.Position),
             rotation = new Vector3Body(msg.Rotation.eulerAngles),
             isBuilt  = isBuilt,
@@ -351,7 +351,7 @@ public class PropInteractionDispatcher : MonoBehaviour {
 
         // Update to the new server-reported version so subsequent PATCHes match.
         TrackVersionFromResponse(runtimeId, req.downloadHandler.text);
-        Debug.Log($"[PropInteractionDispatcher] Prop {propUuid} moved from transit to apt={apt.ApartmentKey} (version {currentVersion} → +1)");
+        Debug.Log($"[PropInteractionDispatcher] Prop {propUuid} moved from transit to place={placeId} (version {currentVersion} → +1)");
     }
 
     // ── Public DB-sync helpers (called from runtime state handlers) ───────────

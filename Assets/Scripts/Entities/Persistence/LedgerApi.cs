@@ -26,15 +26,18 @@ namespace Sim.Entities.Persistence {
         public const string RentReceived      = "rent_received";
         public const string RentEvicted       = "rent_evicted";
         public const string VehicleRepair     = "vehicle_repair";
+        public const string LandPurchase      = "land_purchase";
+        public const string LandSale          = "land_sale";
     }
 
     public static class LedgerCounterparty {
-        public const string Player    = "player";
-        public const string System    = "system";
-        public const string Shop      = "SHOP";
-        public const string Dispenser = "DISPENSER";
-        public const string Job       = "JOB";
-        public const string Bank      = "BANK";
+        public const string Player     = "player";
+        public const string System     = "system";
+        public const string Shop       = "SHOP";
+        public const string Dispenser  = "DISPENSER";
+        public const string Job        = "JOB";
+        public const string Bank       = "BANK";
+        public const string LandOffice = "LAND_OFFICE";
     }
 
     [Serializable]

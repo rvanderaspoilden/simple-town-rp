@@ -568,8 +568,10 @@ namespace Sim {
             if (current) {
                 DefaultViewUI.Instance.SetLocationText(current.LocationText);
 
-                if (current.Type == GeographicType.APARTMENT) {
-                    DefaultViewUI.Instance.SetTenantText($"Locataire: {current.GetComponentInParent<ApartmentController>().TenantFullName}");
+                ApartmentController apt = current.Type == GeographicType.APARTMENT
+                    ? current.GetComponentInParent<ApartmentController>() : null;
+                if (apt != null) {
+                    DefaultViewUI.Instance.SetTenantText($"Locataire: {apt.TenantFullName}");
                 } else {
                     DefaultViewUI.Instance.SetTenantText(string.Empty);
                 }

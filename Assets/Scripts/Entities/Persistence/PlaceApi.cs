@@ -43,6 +43,7 @@ namespace Sim.Entities.Persistence {
         public string ownerId;
         public string tenantId;
         public Dictionary<string, object> properties;
+        public string createdAt;   // ISO8601 — used as the land purchase date
     }
 
     // ── Prop ────────────────────────────────────────────────────────────────

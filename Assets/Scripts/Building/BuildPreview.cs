@@ -22,6 +22,11 @@ namespace Sim.Building {
         [SerializeField]
         private bool isInBuildableArea;
 
+        // Whether the player is allowed to build on the currently-overlapped zone (apt tenant /
+        // land owner). Resolved once when the zone is entered; containment is re-checked per frame.
+        [SerializeField]
+        private bool canBuildHere;
+
         [SerializeField]
         private PropBehaviourBase currentProps;
 
@@ -198,8 +203,11 @@ namespace Sim.Building {
             if (other.CompareTag("Buildable Area")) {
                 if (this.buildableArea != other) {
                     this.buildableArea = other;
-                    ApartmentController apt = this.buildableArea.GetComponentInParent<ApartmentController>();
-                    this.isInBuildableArea = apt != null && apt.IsTenant(PlayerController.Local.CharacterData);
+                    // Resolve via IBuildableSpace (apartment OR land parcel) so both grant a build
+                    // zone. CanBuild = IsTenant for apartments, owner == character for land.
+                    // Actual in-area state is containment-checked per frame in CheckValidity.
+                    IBuildableSpace space = this.buildableArea.GetComponentInParent<IBuildableSpace>();
+                    this.canBuildHere = space != null && space.CanBuild(PlayerController.Local.CharacterData);
                 }
                 return;
             }
@@ -211,7 +219,7 @@ namespace Sim.Building {
                 if (this.buildableArea != other) {
                     this.buildableArea = other;
                     ApartmentController apt = other.GetComponentInParent<ApartmentController>();
-                    this.isInBuildableArea = apt != null && apt.IsTenant(PlayerController.Local.CharacterData);
+                    this.canBuildHere = apt != null && apt.IsTenant(PlayerController.Local.CharacterData);
                 }
                 return;
             }
@@ -322,6 +330,7 @@ namespace Sim.Building {
         private void OnTriggerExit(Collider other) {
             if (buildableArea == other) {
                 buildableArea = null;
+                this.canBuildHere = false;
                 this.isInBuildableArea = false;
             }
 
@@ -334,6 +343,13 @@ namespace Sim.Building {
 
             this.haveFreeArea = this.colliderTriggered.Count(x => x.gameObject.activeInHierarchy
                 && !(this.IsFreePlacement && this.freeSupport != null && x.transform.IsChildOf(this.freeSupport))) == 0;
+
+            // Re-evaluate buildable-area membership every frame: the prop must be allowed here AND
+            // its whole footprint must stay inside the zone (no overhang). Overlap alone is not
+            // enough — otherwise a large prop (e.g. a bed) could poke outside the parcel/room.
+            if (!this.IsFreePlacement) {
+                this.isInBuildableArea = this.canBuildHere && this.IsFootprintInsideBuildableArea();
+            }
             // Free placement (held item) has no buildable area — the open city counts as buildable.
             bool areaOk = this.IsFreePlacement || this.isInBuildableArea;
             this.placeable = this.haveFreeArea && this.detectGround && this.validRotation && areaOk;
@@ -345,6 +361,52 @@ namespace Sim.Building {
             }
 
             OnPlaceableStateChanged?.Invoke(this.placeable);
+        }
+
+        /// <summary>
+        /// True when the prop's full horizontal footprint fits inside the buildable zone. Only the
+        /// tagged "Buildable Area" BoxCollider enforces containment (apartments + land parcels);
+        /// roof surfaces keep the legacy "any overlap = inside" behavior. The Y axis is ignored so
+        /// a tall prop's top doesn't fail the height-limited box — only X/Z overhang is rejected.
+        /// </summary>
+        private bool IsFootprintInsideBuildableArea() {
+            if (this.buildableArea == null || this.collider == null) return false;
+            if (!this.buildableArea.CompareTag("Buildable Area")) return true; // roof surface: no containment
+            if (!(this.buildableArea is BoxCollider areaBox)) return true;      // non-box zone: skip
+
+            Transform at = areaBox.transform;
+            Vector3 c    = areaBox.center;
+            Vector3 half = areaBox.size * 0.5f;
+            const float eps = 0.05f; // small tolerance so flush edges aren't rejected by jitter
+
+            foreach (Vector3 world in this.GetColliderWorldCorners()) {
+                Vector3 local = at.InverseTransformPoint(world);
+                if (local.x < c.x - half.x - eps || local.x > c.x + half.x + eps) return false;
+                if (local.z < c.z - half.z - eps || local.z > c.z + half.z + eps) return false;
+            }
+            return true;
+        }
+
+        /// <summary>8 world-space corners of the prop's collider — the oriented box when it's a
+        /// BoxCollider (accounts for rotation), else the world AABB.</summary>
+        private IEnumerable<Vector3> GetColliderWorldCorners() {
+            if (this.collider is BoxCollider box) {
+                Vector3 c = box.center;
+                Vector3 e = box.size * 0.5f;
+                for (int sx = -1; sx <= 1; sx += 2)
+                    for (int sy = -1; sy <= 1; sy += 2)
+                        for (int sz = -1; sz <= 1; sz += 2)
+                            yield return this.transform.TransformPoint(
+                                c + new Vector3(sx * e.x, sy * e.y, sz * e.z));
+            } else {
+                Bounds b = this.collider.bounds;
+                Vector3 c = b.center;
+                Vector3 e = b.extents;
+                for (int sx = -1; sx <= 1; sx += 2)
+                    for (int sy = -1; sy <= 1; sy += 2)
+                        for (int sz = -1; sz <= 1; sz += 2)
+                            yield return c + new Vector3(sx * e.x, sy * e.y, sz * e.z);
+            }
         }
 
         public void Destroy() {

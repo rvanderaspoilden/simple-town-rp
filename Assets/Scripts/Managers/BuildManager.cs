@@ -75,6 +75,11 @@ namespace Sim {
 
         private ApartmentController apartmentController;
 
+        // The buildable space currently being edited — an apartment OR a land parcel. The
+        // apartmentController above is this same reference cast to ApartmentController (null for
+        // land), kept around for the wall/paint paths that are apartment-only.
+        private IBuildableSpace currentSpace;
+
         private bool isEditing;
 
         private Vector3 originPosition;
@@ -197,16 +202,7 @@ namespace Sim {
 
             this.SetMode(BuildModeEnum.POSING);
 
-            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
-
-            PropsVisibilityUI.Instance.Bind(this.apartmentController);
-
-            if (propsConfig.GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
-                this.apartmentController.SetWallVisibility(VisibilityModeEnum.FORCE_HIDE);
-                WallVisibilityUI.Instance.Bind(this.apartmentController, VisibilityModeEnum.FORCE_HIDE);
-            } else {
-                WallVisibilityUI.Instance.Bind(this.apartmentController);
-            }
+            this.ResolveBuildSpace(propsConfig.GetSurfaceToPose() == BuildSurfaceEnum.GROUND);
         }
 
         public void Init(PropsConfig propsConfig) {
@@ -221,16 +217,7 @@ namespace Sim {
 
             this.SetMode(BuildModeEnum.POSING);
 
-            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
-
-            PropsVisibilityUI.Instance.Bind(this.apartmentController);
-
-            if (propsConfig.GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
-                this.apartmentController.SetWallVisibility(VisibilityModeEnum.FORCE_HIDE);
-                WallVisibilityUI.Instance.Bind(this.apartmentController, VisibilityModeEnum.FORCE_HIDE);
-            } else {
-                WallVisibilityUI.Instance.Bind(this.apartmentController);
-            }
+            this.ResolveBuildSpace(propsConfig.GetSurfaceToPose() == BuildSurfaceEnum.GROUND);
         }
 
         /// <summary>Déballage : entre en mode placement pour re-poser un meuble emballé.
@@ -250,16 +237,7 @@ namespace Sim {
 
             this.SetMode(BuildModeEnum.POSING);
 
-            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
-
-            PropsVisibilityUI.Instance.Bind(this.apartmentController);
-
-            if (propsConfig.GetSurfaceToPose() == BuildSurfaceEnum.GROUND) {
-                this.apartmentController.SetWallVisibility(VisibilityModeEnum.FORCE_HIDE);
-                WallVisibilityUI.Instance.Bind(this.apartmentController, VisibilityModeEnum.FORCE_HIDE);
-            } else {
-                WallVisibilityUI.Instance.Bind(this.apartmentController);
-            }
+            this.ResolveBuildSpace(propsConfig.GetSurfaceToPose() == BuildSurfaceEnum.GROUND);
         }
 
         public void Edit(PropBehaviourBase behaviour) {
@@ -312,16 +290,7 @@ namespace Sim {
 
             this.SetMode(BuildModeEnum.POSING);
 
-            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
-
-            PropsVisibilityUI.Instance.Bind(this.apartmentController);
-
-            if (behaviour.IsGroundProps()) {
-                this.apartmentController.SetWallVisibility(VisibilityModeEnum.FORCE_HIDE);
-                WallVisibilityUI.Instance.Bind(this.apartmentController, VisibilityModeEnum.FORCE_HIDE);
-            } else {
-                WallVisibilityUI.Instance.Bind(this.apartmentController);
-            }
+            this.ResolveBuildSpace(behaviour.IsGroundProps());
         }
 
         /// <summary>Attache un item-monde au prop en cours d'édition pour qu'il suive la surface
@@ -368,7 +337,8 @@ namespace Sim {
                 ? BuildModeEnum.WALL_PAINT
                 : BuildModeEnum.GROUND_PAINT);
 
-            this.apartmentController = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<ApartmentController>();
+            this.currentSpace = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<IBuildableSpace>();
+            this.apartmentController = this.currentSpace as ApartmentController;
 
             PropsVisibilityUI.Instance.Bind(this.apartmentController);
             WallVisibilityUI.Instance.Bind(this.apartmentController);
@@ -399,6 +369,31 @@ namespace Sim {
 
         public ApartmentController CurrentApartment => apartmentController;
 
+        /// <summary>The space currently in build mode — an <see cref="ApartmentController"/> or a
+        /// <see cref="LandParcelController"/>. Used by the send-sites to route prop create/edit/remove
+        /// to the right C2S message family.</summary>
+        public IBuildableSpace CurrentSpace => currentSpace;
+
+        /// <summary>Resolves the buildable space (apartment or land parcel) under the local player and
+        /// wires the visibility UI. Land has no walls (<see cref="IBuildableSpace.HasWalls"/> = false):
+        /// its props live in the shared "city" room, so the wall-hide / wall-visibility controls are
+        /// skipped and everything stays visible.</summary>
+        private void ResolveBuildSpace(bool groundProp) {
+            this.currentSpace = PlayerController.Local.CurrentGeographicArea.GetComponentInParent<IBuildableSpace>();
+            this.apartmentController = this.currentSpace as ApartmentController;
+
+            PropsVisibilityUI.Instance.Bind(this.apartmentController);
+
+            if (this.currentSpace == null || !this.currentSpace.HasWalls) return;
+
+            if (groundProp) {
+                this.apartmentController.SetWallVisibility(VisibilityModeEnum.FORCE_HIDE);
+                WallVisibilityUI.Instance.Bind(this.apartmentController, VisibilityModeEnum.FORCE_HIDE);
+            } else {
+                WallVisibilityUI.Instance.Bind(this.apartmentController);
+            }
+        }
+
         public void Cancel() {
             // Ignore les annulations parasites : le HUD de pose (BuildPreviewPanelUI) est
             // partagé avec la pose d'item (ItemPlacementController) qui réutilise PanelTypeEnum.BUILD.
@@ -411,8 +406,10 @@ namespace Sim {
             this.unpackSlotIndex       = -1;
             this.Reset();
             this.SetMode(BuildModeEnum.NONE);
-            this.apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
-            this.apartmentController.SetPropsVisibility(VisibilityModeEnum.AUTO);
+            if (this.apartmentController != null) {
+                this.apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
+                this.apartmentController.SetPropsVisibility(VisibilityModeEnum.AUTO);
+            }
             OnCancel?.Invoke();
         }
 
@@ -493,8 +490,10 @@ namespace Sim {
                 OnValidatePaintModification?.Invoke();
             }
 
-            this.apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
-            this.apartmentController.SetPropsVisibility(VisibilityModeEnum.AUTO);
+            if (this.apartmentController != null) {
+                this.apartmentController.SetWallVisibility(VisibilityModeEnum.AUTO);
+                this.apartmentController.SetPropsVisibility(VisibilityModeEnum.AUTO);
+            }
 
             this.SetMode(BuildModeEnum.NONE);
         }

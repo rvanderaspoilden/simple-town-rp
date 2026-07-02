@@ -189,6 +189,26 @@ namespace Sim {
             // Placement instantané : crée le prop (en état "à construire" si toBuild).
             // La construction temporisée (barre de progression) se fait ENSUITE via
             // l'action BUILD sur le prop (PropBehaviourBase.DoAction).
+            //
+            // Un lot de terrain partage la room "city" (pas de routage par connexion comme
+            // les appartements) → on émet la variante land portant le parcelId.
+            if (BuildManager.Instance.CurrentSpace is Sim.Building.LandParcelController land) {
+                NetworkClient.Send(new C2S_BuildLandProp {
+                    ParcelId          = land.ConfigId,
+                    DeliveryBoxPropId = boxId.PropId,
+                    DeliveryId        = this.currentDelivery._id,
+                    PropConfigId      = propsConfig.GetId(),
+                    PresetId          = presetId,
+                    Position          = position,
+                    Rotation          = rotation,
+                    PaintConfigId     = paintConfigId,
+                    ColorR            = r,
+                    ColorG            = g,
+                    ColorB            = b,
+                });
+                return;
+            }
+
             NetworkClient.Send(new C2S_BuildProp {
                 RoomId            = boxId.RoomId,
                 DeliveryBoxPropId = boxId.PropId,
@@ -211,12 +231,21 @@ namespace Sim {
                 return;
             }
 
-            NetworkClient.Send(new C2S_EditProp {
-                RoomId   = id.RoomId,
-                PropId   = id.PropId,
-                Position = behaviour.transform.position,
-                Rotation = behaviour.transform.rotation,
-            });
+            if (BuildManager.Instance.CurrentSpace is Sim.Building.LandParcelController land) {
+                NetworkClient.Send(new C2S_EditLandProp {
+                    ParcelId = land.ConfigId,
+                    PropId   = id.PropId,
+                    Position = behaviour.transform.position,
+                    Rotation = behaviour.transform.rotation,
+                });
+            } else {
+                NetworkClient.Send(new C2S_EditProp {
+                    RoomId   = id.RoomId,
+                    PropId   = id.PropId,
+                    Position = behaviour.transform.position,
+                    Rotation = behaviour.transform.rotation,
+                });
+            }
 
             BuildManager.Instance.EditionIsValidated();
             this.player.SetState(StateType.FREE);

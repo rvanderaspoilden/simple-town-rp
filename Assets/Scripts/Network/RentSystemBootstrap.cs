@@ -45,6 +45,7 @@ namespace Sim {
 
         private float _accumulator;
         private bool _inFlight;
+        private bool _landInFlight;
 
         private void Update() {
             if (!NetworkServer.active) return;
@@ -53,7 +54,6 @@ namespace Sim {
             if (_accumulator < tickIntervalSeconds) return;
             _accumulator = 0f;
 
-            if (_inFlight) return;
             RunTick();
         }
 
@@ -64,10 +64,17 @@ namespace Sim {
             long now = (long)TimeManager.CurrentTime.TotalSeconds;
             if (now <= 0) return; // clock not hydrated yet
 
-            _inFlight = true;
             // Run on the ApiManager (DontDestroyOnLoad) so an in-flight request
-            // survives this scheduler being destroyed on server stop.
-            api.StartCoroutine(api.RentTickCoroutine(now, OnTickDone));
+            // survives this scheduler being destroyed on server stop. Home and
+            // land rent are independent sweeps with their own in-flight guards.
+            if (!_inFlight) {
+                _inFlight = true;
+                api.StartCoroutine(api.RentTickCoroutine(now, OnTickDone));
+            }
+            if (!_landInFlight) {
+                _landInFlight = true;
+                api.StartCoroutine(api.LandRentTickCoroutine(now, OnLandTickDone));
+            }
         }
 
         private void OnTickDone(RentTickResponse response) {
@@ -90,6 +97,47 @@ namespace Sim {
             if (response.paid > 0 || evictionCount > 0) {
                 GameLogger.System.Info("RentTick paid={Paid} evicted={Evicted}", response.paid, evictionCount);
             }
+        }
+
+        // ── Land rent ─────────────────────────────────────────────────────────
+        private void OnLandTickDone(LandRentTickResponse response) {
+            _landInFlight = false;
+            if (response == null) return;
+
+            int evictionCount = response.evictions?.Count ?? 0;
+            if (evictionCount > 0) {
+                foreach (LandRentEvictionDto eviction in response.evictions) {
+                    HandleLandEviction(eviction);
+                }
+            }
+
+            if (response.charges != null) {
+                foreach (LandRentChargeDto charge in response.charges) {
+                    // Rent always flows to the city treasury (no player owner), so only
+                    // refresh the debited tenant's money SyncVar — silently, like homes.
+                    RefreshBalance(charge.tenantId, charge.tenantBalance);
+                }
+            }
+
+            if (response.paid > 0 || evictionCount > 0) {
+                GameLogger.System.Info("LandRentTick paid={Paid} evicted={Evicted}", response.paid, evictionCount);
+            }
+        }
+
+        // Backend already vacated the land place (props → transit, items destroyed,
+        // place deleted). Tear down the parcel's RUNTIME occupancy + broadcast so every
+        // client's For-Sale sign returns to available, then notify the online tenant.
+        private void HandleLandEviction(LandRentEvictionDto eviction) {
+            if (eviction == null || string.IsNullOrEmpty(eviction.placeId)) return;
+
+            LandSystemBootstrap.ServerVacateByPlaceId(eviction.placeId);
+
+            if (string.IsNullOrEmpty(eviction.characterId)) return;
+            NetworkConnectionToClient conn = FindConnectionByCharacter(eviction.characterId);
+            conn?.Send(new ToastNotificationMessage {
+                text = "Bail résilié : loyer du terrain impayé.",
+                appId = PhoneAppIds.Bank,
+            });
         }
 
         // collect_rent mutated characters.money in the DB directly, so refresh the

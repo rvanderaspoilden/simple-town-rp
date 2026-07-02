@@ -360,6 +360,7 @@ public class SimpleTownNetwork : NetworkManager
         Sim.SmsSystemBootstrap.OnServerStart();
         Sim.CallSystemBootstrap.OnServerStart();
         Sim.VehicleSystemBootstrap.OnServerStart();
+        Sim.LandSystemBootstrap.OnServerStart();
 
         // Initialize all BuildingBehavior instances (scene objects, possibly inactive).
         // Replaces the former NetworkBehaviour.OnStartServer hook on each building.
@@ -415,6 +416,7 @@ public class SimpleTownNetwork : NetworkManager
         Sim.AcquaintanceSystemBootstrap.OnClientStart();
         Sim.SmsSystemBootstrap.OnClientStart();
         Sim.CallSystemBootstrap.OnClientStart();
+        Sim.LandSystemBootstrap.OnClientStart();
         ClientLogger.Network("ClientStarted {Active}", NetworkClient.active);
     }
 
@@ -436,6 +438,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkServer.UnregisterHandler<CreateDeliveryRequest>();
         NetworkServer.UnregisterHandler<TeleportMessage>();
 
+        Sim.LandSystemBootstrap.OnServerStop();
         Sim.VehicleSystemBootstrap.OnServerStop();
         Sim.CallSystemBootstrap.OnServerStop();
         Sim.SmsSystemBootstrap.OnServerStop();
@@ -473,6 +476,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.UnregisterHandler<S2C_HallDespawn>();
         NetworkClient.UnregisterHandler<S2C_ApartmentSpawn>();
 
+        Sim.LandSystemBootstrap.OnClientStop();
         Sim.CallSystemBootstrap.OnClientStop();
         Sim.SmsSystemBootstrap.OnClientStop();
         Sim.AcquaintanceSystemBootstrap.OnClientStop();
@@ -1082,6 +1086,9 @@ public class SimpleTownNetwork : NetworkManager
         // handles the loading screen for them.
         conn.Send(new UpdateCityDataMessage { City = this.cityData, ShouldHideLoading = spawnInCity });
         GameLogger.Network.Debug("CityDataSent {ConnectionId} {ShouldHideLoading}", conn.connectionId, spawnInCity);
+
+        // Replicate current land ownership so the player's For-Sale signs hide on owned parcels.
+        Sim.LandSystemBootstrap.SendSnapshot(conn);
     }
 
     #endregion

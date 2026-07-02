@@ -12,7 +12,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Sim {
-    public class ApartmentController : MonoBehaviour {
+    public class ApartmentController : MonoBehaviour, IBuildableSpace {
         [Header("Settings")]
         [SerializeField]
         private Transform frontDoorSpawn;
@@ -935,6 +935,12 @@ namespace Sim {
         public Identity TenantIdentity => tenantIdentity;
 
         public bool IsTenant(CharacterData character) => character.Id == this.tenantId;
+
+        // ── IBuildableSpace ──────────────────────────────────────────────────
+        public bool CanBuild(CharacterData character) => IsTenant(character);
+        public string PlaceId => homeData?.Id;
+        public string OwnerCharId => tenantId;
+        public bool HasWalls => true;
 
         public string PresetName => presetName;
 
