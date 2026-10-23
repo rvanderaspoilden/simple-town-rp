@@ -1,6 +1,8 @@
 ---
 name: script-read
 description: Read a `.cs` script file and return its content as a string. Supports a 1-based `lineFrom`/`lineTo` slice for partial reads. Pair with 'script-update-or-create' to write back.
+metadata:
+  generated-by: mcp-plugin-dotnet
 ---
 
 # Script / Read
@@ -77,19 +79,5 @@ Read the /unity-initial-setup skill for detailed installation instructions.
 
 ## Output
 
-### Output JSON Schema
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "result": {
-      "type": "string"
-    }
-  },
-  "required": [
-    "result"
-  ]
-}
-```
+This tool does not return structured output.
 

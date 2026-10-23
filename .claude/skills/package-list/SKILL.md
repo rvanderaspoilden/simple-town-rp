@@ -1,6 +1,8 @@
 ---
 name: package-list
 description: List all UPM packages installed in the Unity project — name, version, source, description. Optionally filter by source (registry, embedded, local, git, built-in, local tarball), by name/display/description substring, and by direct-dependency-only.
+metadata:
+  generated-by: mcp-plugin-dotnet
 ---
 
 # Package Manager / List Installed
@@ -79,58 +81,5 @@ Read the /unity-initial-setup skill for detailed installation instructions.
 
 ## Output
 
-### Output JSON Schema
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "result": {
-      "$ref": "#/$defs/System.Collections.Generic.List(AIGD.PackageData)"
-    }
-  },
-  "$defs": {
-    "AIGD.PackageData": {
-      "type": "object",
-      "properties": {
-        "Name": {
-          "type": "string",
-          "description": "The official Unity name of the package used as the package ID."
-        },
-        "DisplayName": {
-          "type": "string",
-          "description": "The display name of the package."
-        },
-        "Version": {
-          "type": "string",
-          "description": "The version of the package."
-        },
-        "Description": {
-          "type": "string",
-          "description": "A brief description of the package."
-        },
-        "Source": {
-          "type": "string",
-          "description": "The source of the package (Registry, Embedded, Local, Git, etc.)."
-        },
-        "Category": {
-          "type": "string",
-          "description": "The category of the package."
-        }
-      },
-      "description": "Package information returned from package list operation."
-    },
-    "System.Collections.Generic.List(AIGD.PackageData)": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/AIGD.PackageData",
-        "description": "Package information returned from package list operation."
-      }
-    }
-  },
-  "required": [
-    "result"
-  ]
-}
-```
+This tool does not return structured output.
 

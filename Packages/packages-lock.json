@@ -15,7 +15,7 @@
       "hash": "acc1c7bc9ea34c33b830e40316fca52553878d29"
     },
     "com.ivanmurzak.unity.mcp": {
-      "version": "0.81.0",
+      "version": "1.4.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -26,51 +26,51 @@
       "url": "https://package.openupm.com"
     },
     "com.ivanmurzak.unity.mcp.animation": {
-      "version": "1.2.19",
+      "version": "2.0.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.ivanmurzak.unity.mcp": "0.81.0",
+        "com.ivanmurzak.unity.mcp": "1.0.0",
         "com.unity.modules.animation": "1.0.0"
       },
       "url": "https://package.openupm.com"
     },
     "com.ivanmurzak.unity.mcp.cinemachine": {
-      "version": "1.0.5",
+      "version": "2.0.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.ivanmurzak.unity.mcp": "0.81.0",
+        "com.ivanmurzak.unity.mcp": "1.0.0",
         "com.unity.cinemachine": "3.1.6"
       },
       "url": "https://package.openupm.com"
     },
     "com.ivanmurzak.unity.mcp.particlesystem": {
-      "version": "1.2.19",
+      "version": "2.0.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.ivanmurzak.unity.mcp": "0.81.0",
+        "com.ivanmurzak.unity.mcp": "1.0.0",
         "com.unity.modules.particlesystem": "1.0.0"
       },
       "url": "https://package.openupm.com"
     },
     "com.ivanmurzak.unity.mcp.splines": {
-      "version": "1.0.5",
+      "version": "2.0.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.ivanmurzak.unity.mcp": "0.81.0",
+        "com.ivanmurzak.unity.mcp": "1.0.0",
         "com.unity.splines": "2.8.4"
       },
       "url": "https://package.openupm.com"
     },
     "com.ivanmurzak.unity.mcp.terrain": {
-      "version": "1.0.5",
+      "version": "2.0.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.ivanmurzak.unity.mcp": "0.81.0",
+        "com.ivanmurzak.unity.mcp": "1.0.0",
         "com.unity.modules.terrain": "1.0.0",
         "com.unity.modules.terrainphysics": "1.0.0"
       },
