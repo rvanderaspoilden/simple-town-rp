@@ -150,6 +150,9 @@ namespace Sim {
             this.radialMenuUI.Close();
         }
 
+        /// <summary>True while the radial context menu is open (consumed by CursorLock in TPS mode).</summary>
+        public bool IsContextMenuOpen => this.radialMenuUI != null && this.radialMenuUI.gameObject.activeSelf;
+
         public void ShowInventory() {
             this.inventoryUI.gameObject.SetActive(true);
         }

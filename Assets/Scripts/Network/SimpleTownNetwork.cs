@@ -285,8 +285,8 @@ public class SimpleTownNetwork : NetworkManager
         {
             var msg = new CreateCharacterMessage
             {
-                userId = "b6844cac-a0aa-416f-9129-d5896437ed38",
-                characterId = "b6f052bd-79a4-482b-9075-351db5ca852d"
+                userId = "a6664980-62c1-4972-8808-1bcdf10109d3",
+                characterId = "a872a1f8-07be-412a-a7ba-c9072c1129eb"
             };
             NetworkClient.Send(msg);
             ClientLogger.Network("SendCreateCharacter {UserId} {CharacterId} (Spectus)", msg.userId, msg.characterId);

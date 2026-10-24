@@ -1,5 +1,6 @@
 ﻿<Solution>
   <Project Path="Unity.AI.Sound.csproj" />
+  <Project Path="Unity.AI.Toolkit.Asset.csproj" />
   <Project Path="Unity.PlasticSCM.Editor.csproj" />
   <Project Path="Unity.AppUI.csproj" />
   <Project Path="Unity.ShaderGraph.Editor.csproj" />
@@ -44,6 +45,7 @@
   <Project Path="Unity.Cinemachine.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Runtime.csproj" />
   <Project Path="Unity.Burst.CodeGen.csproj" />
+  <Project Path="Unity.InputSystem.csproj" />
   <Project Path="UnityEngine.TestRunner.csproj" />
   <Project Path="Unity.2D.Tilemap.Editor.csproj" />
   <Project Path="Unity.Splines.Editor.csproj" />
@@ -110,7 +112,6 @@
   <Project Path="Unity.AI.Generators.Asset.csproj" />
   <Project Path="Boxophobic.Utils.Editor.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.ParticleSystem.Editor.csproj" />
-  <Project Path="Unity.AI.Toolkit.Asset.csproj" />
   <Project Path="Unity.Collections.CodeGen.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Terrain.Editor.csproj" />
   <Project Path="Unity.DedicatedServer.Editor.csproj" />
@@ -127,6 +128,7 @@
   <Project Path="Unity.Settings.Editor.csproj" />
   <Project Path="Unity.AI.Assistant.API.Editor.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Editor.Rql.Mathematics.csproj" />
+  <Project Path="Unity.InputSystem.TestFramework.csproj" />
   <Project Path="Unity.AI.Generators.Tools.csproj" />
   <Project Path="Unity.AI.Navigation.Editor.ConversionSystem.csproj" />
   <Project Path="Unity.ProBuilder.AssetIdRemapUtility.csproj" />
@@ -148,6 +150,7 @@
   <Project Path="Unity.CollabProxy.Editor.csproj" />
   <Project Path="Unity.DedicatedServer.CliArguments.Editor.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.TestFiles.csproj" />
+  <Project Path="Unity.StarterAssets.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Animation.Editor.csproj" />
   <Project Path="Unity.2D.Common.Runtime.csproj" />
   <Project Path="Unity.DedicatedServer.MultiplayerRoles.Editor.csproj" />
@@ -155,6 +158,7 @@
   <Project Path="com.IvanMurzak.Unity.MCP.DependencyResolver.csproj" />
   <Project Path="NavMeshComponentsEditor.csproj" />
   <Project Path="Boxophobic.PolyverseSkies.Runtime.csproj" />
+  <Project Path="Unity.StarterAssets.Editor.csproj" />
   <Project Path="Unity.Animation.Rigging.DocCodeExamples.csproj" />
   <Project Path="Unity.PathTracing.Editor.csproj" />
   <Project Path="Unity.AI.Assistant.Bridge.Editor.csproj" />
@@ -162,8 +166,10 @@
   <Project Path="Mirror.CompilerSymbols.csproj" />
   <Project Path="ParrelSync.csproj" />
   <Project Path="Unity.AI.Generators.Sdk.csproj" />
+  <Project Path="Unity.InputSystem.ForUI.csproj" />
   <Project Path="Unity.InternalAPIEngineBridge.004.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Editor.Rql.Lighting.csproj" />
+  <Project Path="Unity.InputSystem.DocCodeSamples.csproj" />
   <Project Path="Polyperfect.Common.csproj" />
   <Project Path="Sirenix.OdinInspector.Modules.UnityMathematics.csproj" />
   <Project Path="Unity.AI.Tracing.csproj" />
@@ -204,6 +210,7 @@
   <Project Path="Unity.MemoryProfiler.csproj" />
   <Project Path="Unity.InferenceEngine.ONNX.Editor.csproj" />
   <Project Path="Boxophobic.PolyverseSkies.Scripts.csproj" />
+  <Project Path="URPWizard.csproj" />
   <Project Path="Unity.InferenceEngine.iOSBLAS.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Config.Runtime.csproj" />
 </Solution>

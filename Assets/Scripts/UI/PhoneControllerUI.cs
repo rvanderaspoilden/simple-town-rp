@@ -39,6 +39,9 @@ namespace Sim {
 
         private bool phoneOpened;
 
+        /// <summary>True while the phone panel is open (consumed by CursorLock in TPS mode).</summary>
+        public bool IsOpened => this.phoneOpened;
+
         private float defaultPhoneAnchorPosY;
 
         private RectTransform rectTransform;

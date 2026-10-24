@@ -7,6 +7,7 @@ namespace Sim.Enums {
         FREE,
         BUILD,
         FPS,
-        DRIVE
+        DRIVE,
+        TPS
     }
 }

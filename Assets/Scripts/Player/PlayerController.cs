@@ -76,6 +76,17 @@ namespace Sim {
         [SerializeField] private KeyCode rightKey = KeyCode.D;
         [SerializeField] private KeyCode runKey = KeyCode.LeftShift;
 
+        [Header("TPS movement (Starter Assets feel)")]
+        [Tooltip("Temps de lissage (s) de la rotation du corps vers la direction de déplacement en mode TPS (SmoothDampAngle, valeur Starter Assets).")]
+        [SerializeField] private float tpsRotationSmoothTime = 0.12f;
+        [Tooltip("Taux de lissage de la vitesse (accélération/décélération) en mode TPS (valeur Starter Assets).")]
+        [SerializeField] private float tpsSpeedChangeRate = 10f;
+
+        // Vélocités internes du lissage TPS (SmoothDampAngle + lerp de vitesse).
+        private float tpsRotationVelocity;
+        private float tpsCurrentSpeed;
+        private Vector3 tpsLastMoveDirection;
+
         [Header("Only for debug")]
         [SerializeField]
         private NavMeshAgent navMeshAgent;
@@ -1070,8 +1081,12 @@ namespace Sim {
             if (this._playerState == PlayerState.DIED) return;
 
             // Symétrique au click-to-move (CameraManager n'appelle ManageInteraction qu'en mode FREE) :
-            // le clavier ne doit pas faire bouger le joueur en BUILD/DRIVE/FPS.
-            if (CameraManager.Instance != null && CameraManager.Instance.GetMode() != CameraModeEnum.FREE) return;
+            // le clavier ne doit pas faire bouger le joueur en BUILD/DRIVE/FPS. Le mode TPS épaule
+            // est lui piloté exclusivement au clavier.
+            if (CameraManager.Instance != null) {
+                CameraModeEnum camMode = CameraManager.Instance.GetMode();
+                if (camMode != CameraModeEnum.FREE && camMode != CameraModeEnum.TPS) return;
+            }
 
             IState current = this.stateMachine.CurrentState;
             if (current != idleState && current != moveState) return; // pas depuis sit/sleep/interact/...
@@ -1085,16 +1100,29 @@ namespace Sim {
         /// la NavMesh). Renvoie false en l'absence d'input directionnel — l'état CharacterFreeMove
         /// retombe alors sur idle. Course avec la touche dédiée (Maj). Owner local uniquement.</summary>
         public bool TickFreeMove() {
-            // Sortie immédiate si le mode caméra a quitté FREE en cours de déplacement (entrée
+            // Sortie immédiate si le mode caméra a quitté FREE/TPS en cours de déplacement (entrée
             // build, passager, FPS) : on retombe en idle pour ne pas continuer à driver l'agent.
-            if (CameraManager.Instance != null && CameraManager.Instance.GetMode() != CameraModeEnum.FREE) {
-                this.animator.SetVelocity(0f);
+            CameraModeEnum camMode = CameraManager.Instance != null ? CameraManager.Instance.GetMode() : CameraModeEnum.FREE;
+            if (camMode != CameraModeEnum.FREE && camMode != CameraModeEnum.TPS) {
+                this.ResetFreeMove();
                 return false;
             }
 
+            bool tps = camMode == CameraModeEnum.TPS;
+
             Vector2 axis = this.ReadMoveAxis();
             if (axis.sqrMagnitude < 0.01f) {
-                this.animator.SetVelocity(0f);
+                // Feel Starter Assets : relâcher ZQSD ne stoppe pas net — la vitesse décélère
+                // en glissant sur le dernier cap, puis l'état retombe sur idle.
+                if (tps && this.tpsCurrentSpeed > 0.1f && this.tpsLastMoveDirection.sqrMagnitude > 0.0001f) {
+                    this.tpsCurrentSpeed = Mathf.Lerp(this.tpsCurrentSpeed, 0f, Time.deltaTime * this.tpsSpeedChangeRate);
+                    if (this.navMeshAgent != null && this.navMeshAgent.enabled && this.navMeshAgent.isOnNavMesh) {
+                        this.navMeshAgent.Move(this.tpsLastMoveDirection * this.tpsCurrentSpeed * Time.deltaTime);
+                    }
+                    this.animator.SetVelocity(this.tpsCurrentSpeed);
+                    return true;
+                }
+                this.ResetFreeMove();
                 return false;
             }
 
@@ -1106,22 +1134,49 @@ namespace Sim {
             Vector3 dir = forward * axis.y + right * axis.x;
             if (dir.sqrMagnitude > 1f) dir.Normalize();
             if (dir.sqrMagnitude < 0.0001f) {
-                this.animator.SetVelocity(0f);
+                this.ResetFreeMove();
                 return false;
             }
 
             bool running = Input.GetKey(runKey);
-            float speed = (running ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier();
+            float targetSpeed = (running ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier();
+            float speed;
+            if (tps) {
+                // Feel Starter Assets : la vitesse accélère/décélère progressivement au lieu de
+                // sauter instantanément entre marche et course (bande de snap 0.1 comme chez eux).
+                this.tpsCurrentSpeed = Mathf.Lerp(this.tpsCurrentSpeed, targetSpeed, Time.deltaTime * this.tpsSpeedChangeRate);
+                if (Mathf.Abs(this.tpsCurrentSpeed - targetSpeed) < 0.1f) this.tpsCurrentSpeed = targetSpeed;
+                speed = this.tpsCurrentSpeed;
+                this.tpsLastMoveDirection = dir.normalized;
+            } else {
+                speed = targetSpeed;
+            }
 
             if (this.navMeshAgent != null && this.navMeshAgent.enabled && this.navMeshAgent.isOnNavMesh) {
                 this.navMeshAgent.Move(dir * speed * Time.deltaTime);
             }
 
-            Quaternion targetRot = Quaternion.LookRotation(dir.normalized, Vector3.up);
-            this.transform.rotation = Quaternion.RotateTowards(this.transform.rotation, targetRot, freeMoveTurnSpeed * Time.deltaTime);
+            if (tps) {
+                // Feel Starter Assets : rotation lissée (SmoothDampAngle) vers le cap de déplacement.
+                float targetYaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+                float yaw = Mathf.SmoothDampAngle(this.transform.eulerAngles.y, targetYaw, ref this.tpsRotationVelocity, this.tpsRotationSmoothTime);
+                this.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            } else {
+                Quaternion targetRot = Quaternion.LookRotation(dir.normalized, Vector3.up);
+                this.transform.rotation = Quaternion.RotateTowards(this.transform.rotation, targetRot, freeMoveTurnSpeed * Time.deltaTime);
+            }
 
             this.animator.SetVelocity(speed);
             return true;
+        }
+
+        /// <summary>Remet à zéro l'animator et les vélocités de lissage TPS quand le déplacement
+        /// clavier s'arrête ou est interrompu.</summary>
+        private void ResetFreeMove() {
+            this.animator.SetVelocity(0f);
+            this.tpsCurrentSpeed = 0f;
+            this.tpsRotationVelocity = 0f;
+            this.tpsLastMoveDirection = Vector3.zero;
         }
 
         public void LookAt(Transform target) {

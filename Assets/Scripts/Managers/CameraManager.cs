@@ -1,8 +1,10 @@
+using AI;
 using AI.States;
 using Interaction;
 using Sim.Entities;
 using Sim.Enums;
 using Sim.Interactables;
+using Sim.UI;
 using Sim.Utils;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -46,6 +48,18 @@ namespace Sim {
                  "NPC en marche sans précision millimétrique.")]
         [SerializeField] private float magneticNpcScreenToleranceMultiplier = 1.8f;
 
+        [Header("TPS (shoulder) mode")]
+        [Tooltip("Bascule vue classique ↔ TPS épaule (uniquement depuis/vers le mode FREE).")]
+        [SerializeField] private KeyCode toggleTpsKey = KeyCode.F5;
+        [Tooltip("Touche d'interaction au crosshair en mode TPS (ouvre le menu radial de la cible visée).")]
+        [SerializeField] private KeyCode interactKey = KeyCode.E;
+        [Tooltip("Portée (m) du raycast crosshair centre-écran. Le gate réel d'interaction reste CanInteractWith (portée + ligne de vue depuis le joueur).")]
+        [SerializeField] private float crosshairMaxDistance = 30f;
+        [Tooltip("Rayon (m) du SphereCast d'aim-assist quand le ray exact ne touche rien d'interactable (remplace le magnétisme curseur). 0 = désactivé.")]
+        [SerializeField] private float crosshairAimAssistRadius = 0.25f;
+        [Tooltip("Portée (m, plan XZ) pour ouvrir le menu contextuel d'un joueur distant visé au crosshair.")]
+        [SerializeField] private float crosshairPlayerRange = 4f;
+
         private float _lastLeftDownTime = -10f;
         private bool _pendingRunRequest;
 
@@ -54,6 +68,12 @@ namespace Sim {
         private ThirdPersonCamera tpsCamera;
 
         private DriveCamera driveCamera;
+
+        private TpsShoulderCamera tpsShoulderCamera;
+
+        // Préférence utilisateur posée par la touche de bascule : les retours au mode « à pied »
+        // (sortie build/véhicule/sub-game) restaurent TPS plutôt que FREE quand elle est vraie.
+        private bool tpsPreferred;
 
         private float lastCameraPosition;
 
@@ -81,10 +101,12 @@ namespace Sim {
             this.buildCamera = GetComponent<BuildCamera>();
             this.tpsCamera = GetComponent<ThirdPersonCamera>();
             this.driveCamera = GetComponent<DriveCamera>();
+            this.tpsShoulderCamera = GetComponent<TpsShoulderCamera>();
 
             this.buildCamera.enabled = false;
             this.tpsCamera.enabled = false;
             if (this.driveCamera != null) this.driveCamera.enabled = false;
+            if (this.tpsShoulderCamera != null) this.tpsShoulderCamera.enabled = false;
             this.fpsCamera.SetActive(false);
 
             DontDestroyOnLoad(this.gameObject);
@@ -109,6 +131,9 @@ namespace Sim {
         }
 
         void Update() {
+            this.HandleTpsToggle();
+            this.ApplyTpsCursorLock();
+
             if (PlayerController.Local == null || PlayerController.Local.PlayerState == PlayerState.DIED) return;
 
             // Renversé (ragdoll) : aucune interaction ni click-to-move possible.
@@ -133,12 +158,177 @@ namespace Sim {
             if (this.currentMode == CameraModeEnum.FREE) {
                 this.ManageInteraction();
                 this.ManageHover();
+            } else if (this.currentMode == CameraModeEnum.TPS) {
+                this.ManageCrosshairInteraction();
             } else {
                 if (this._hoveredOutline != null) {
                     this._hoveredOutline.Hide();
                     this._hoveredOutline = null;
                 }
                 HoverNameTooltip.Hide();
+            }
+        }
+
+        // ── Mode TPS épaule (bascule + verrou curseur + interaction crosshair) ────────
+
+        /// <summary>Bascule FREE ↔ TPS sur la touche dédiée. Uniquement depuis les modes « à
+        /// pied » — build, drive et sub-games gardent leur caméra, la préférence est restaurée
+        /// en sortant (RestoreFreeMode).</summary>
+        private void HandleTpsToggle() {
+            if (this.tpsShoulderCamera == null || !Input.GetKeyDown(this.toggleTpsKey)) return;
+            if (PlayerController.Local == null || PlayerController.Local.IsKnockedDown) return;
+            if (this.currentMode != CameraModeEnum.FREE && this.currentMode != CameraModeEnum.TPS) return;
+
+            this.tpsPreferred = this.currentMode != CameraModeEnum.TPS;
+            this.SetCurrentMode(this.tpsPreferred ? CameraModeEnum.TPS : CameraModeEnum.FREE);
+        }
+
+        /// <summary>Mode « à pied » courant selon la préférence utilisateur : TPS si la bascule
+        /// est active, sinon FREE. À utiliser partout où on rend la main à la caméra à pied.</summary>
+        private CameraModeEnum PreferredFreeMode => this.tpsPreferred && this.tpsShoulderCamera != null
+            ? CameraModeEnum.TPS
+            : CameraModeEnum.FREE;
+
+        /// <summary>Verrouille le curseur en mode TPS tant qu'aucune UI bloquante n'est ouverte ;
+        /// le libère sinon (et dans tous les autres modes). Pilote aussi la visibilité globale
+        /// du crosshair.</summary>
+        private void ApplyTpsCursorLock() {
+            bool tps = this.currentMode == CameraModeEnum.TPS;
+
+            // Déconnexion / retour menu avec TPS encore actif : on retombe sur la caméra classique
+            // (la préférence est conservée pour la prochaine session de jeu).
+            if (tps && PlayerController.Local == null) {
+                this.SetCurrentMode(CameraModeEnum.FREE);
+                tps = false;
+            }
+
+            bool wantLocked = tps
+                              && PlayerController.Local != null
+                              && PlayerController.Local.PlayerState != PlayerState.DIED
+                              && !PlayerController.Local.IsKnockedDown
+                              && !SubGameController.IsActive
+                              && !CursorLock.IsBlockingUiOpen();
+
+            CursorLock.Apply(wantLocked);
+
+            if (!wantLocked && CrosshairUI.Instance != null) CrosshairUI.Instance.Hide();
+        }
+
+        /// <summary>Raycast crosshair centre-écran : première touche qui n'appartient pas au
+        /// joueur local (la caméra épaule peut raser sa propre capsule).</summary>
+        private bool TryCrosshairHit(Ray ray, out RaycastHit hit) {
+            hit = default;
+            RaycastHit[] hits = Physics.RaycastAll(ray.origin, ray.direction, this.crosshairMaxDistance, this.InteractionMask, QueryTriggerInteraction.Ignore);
+            if (hits.Length == 0) return false;
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            foreach (RaycastHit h in hits) {
+                PlayerController pc = h.collider.GetComponentInParent<PlayerController>();
+                if (pc != null && pc.isLocalPlayer) continue;
+                hit = h;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Équivalent TPS de ManageInteraction + ManageHover : résout la cible au centre de
+        /// l'écran (ray exact puis SphereCast d'aim-assist), surligne + nourrit le CrosshairUI,
+        /// et ouvre le menu radial existant sur la touche d'interaction. Pas de click-to-move ni
+        /// d'approche automatique : hors portée, la cible est nommée mais pas actionnable.
+        /// </summary>
+        private void ManageCrosshairInteraction() {
+            if (SubGameController.IsActive || Cursor.lockState != CursorLockMode.Locked) {
+                if (this._hoveredOutline != null) {
+                    this._hoveredOutline.Hide();
+                    this._hoveredOutline = null;
+                }
+                HoverNameTooltip.Hide();
+                return;
+            }
+
+            IInteractable interactable = null;
+            PlayerController remotePlayer = null;
+            Collider targetCollider = null;
+            Vector3 targetPoint = Vector3.zero;
+
+            Ray ray = this.camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            if (this.TryCrosshairHit(ray, out RaycastHit hit)) {
+                targetCollider = hit.collider;
+                targetPoint = hit.point;
+
+                IInteractable exact = hit.collider.GetComponentInParent<IInteractable>();
+                if (exact.IsAlive() && exact.IsInteractable()) {
+                    interactable = exact;
+                } else {
+                    PlayerController pc = hit.collider.GetComponentInParent<PlayerController>();
+                    if (pc != null && !pc.isLocalPlayer) remotePlayer = pc;
+                }
+            }
+
+            // Aim-assist : si le ray exact ne vise rien d'utile, un SphereCast fin attrape
+            // l'interactable presque centré (remplace le magnétisme curseur du mode FREE).
+            if (interactable == null && remotePlayer == null && this.crosshairAimAssistRadius > 0f
+                && Physics.SphereCast(ray, this.crosshairAimAssistRadius, out RaycastHit assistHit, this.crosshairMaxDistance, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
+                IInteractable assist = assistHit.collider.GetComponentInParent<IInteractable>();
+                PlayerController assistPc = assistHit.collider.GetComponentInParent<PlayerController>();
+                if ((assistPc == null || !assistPc.isLocalPlayer) && assist.IsAlive() && assist.IsInteractable()) {
+                    interactable = assist;
+                    targetCollider = assistHit.collider;
+                    targetPoint = assistHit.collider.bounds.center;
+                }
+            }
+
+            HoverOutline outlineTarget = null;
+            string hoverName = null;
+            bool canInteract = false;
+
+            if (interactable != null) {
+                GameObject host = interactable.transform.gameObject;
+                outlineTarget = host.GetComponent<HoverOutline>();
+                if (outlineTarget == null) outlineTarget = host.AddComponent<HoverOutline>();
+                hoverName = this.ResolveHoverName(targetCollider);
+                canInteract = PlayerController.Local.CanInteractWith(interactable, targetPoint);
+            } else if (remotePlayer != null) {
+                GameObject host = remotePlayer.gameObject;
+                outlineTarget = host.GetComponent<HoverOutline>();
+                if (outlineTarget == null) outlineTarget = host.AddComponent<HoverOutline>();
+                hoverName = this.ResolveHoverName(targetCollider);
+                canInteract = WithinPlanarRange(PlayerController.Local.transform.position, remotePlayer.transform.position, this.crosshairPlayerRange);
+            }
+
+            if (outlineTarget != this._hoveredOutline) {
+                if (this._hoveredOutline != null) this._hoveredOutline.Hide();
+                this._hoveredOutline = outlineTarget;
+                if (this._hoveredOutline != null) this._hoveredOutline.Show();
+            }
+
+            // Le nom s'affiche sous le réticule (CrosshairUI), pas via le tooltip curseur.
+            HoverNameTooltip.Hide();
+            if (CrosshairUI.Instance != null) {
+                if (interactable != null || remotePlayer != null) CrosshairUI.Instance.Show(hoverName, canInteract);
+                else CrosshairUI.Instance.ShowDefault();
+            }
+
+            if (!canInteract || !Input.GetKeyDown(this.interactKey)) return;
+
+            // Même préparation que HandleInteractableClick : un NPC visé est freezé immédiatement.
+            if (interactable is ClientNpcView npcView) {
+                NpcInteractionSession.Begin(npcView);
+            }
+
+            IState current = PlayerController.Local.CurrentState();
+            if (current.GetType() == typeof(CharacterMove) || current.GetType() == typeof(CharacterFreeMove)) {
+                PlayerController.Local.Idle();
+            }
+
+            if (interactable != null) {
+                PlayerController.Local.LookAt(interactable.transform);
+                HUDManager.Instance.ShowContextMenu(interactable.GetActions(), interactable.transform);
+            } else if (remotePlayer != null) {
+                PlayerController.Local.LookAt(remotePlayer.transform);
+                HUDManager.Instance.ShowContextMenu(remotePlayer.GetContextActions(), remotePlayer.transform);
             }
         }
 
@@ -361,7 +551,7 @@ namespace Sim {
         private void OnStateChanged(PlayerController player, StateType state) {
             if (player.isLocalPlayer) {
                 if (state == StateType.FREE) {
-                    this.SetCurrentMode(CameraModeEnum.FREE);
+                    this.SetCurrentMode(this.PreferredFreeMode);
                 } else {
                     this.SetCurrentMode(CameraModeEnum.BUILD);
                 }
@@ -398,6 +588,7 @@ namespace Sim {
             this.buildCamera.enabled = mode == CameraModeEnum.BUILD;
             this.tpsCamera.enabled = mode == CameraModeEnum.FREE;
             if (this.driveCamera != null) this.driveCamera.enabled = mode == CameraModeEnum.DRIVE;
+            if (this.tpsShoulderCamera != null) this.tpsShoulderCamera.enabled = mode == CameraModeEnum.TPS;
             this.fpsCamera.SetActive(mode == CameraModeEnum.FPS);
 
             if (this.currentMode == CameraModeEnum.BUILD) {
@@ -405,6 +596,9 @@ namespace Sim {
                 this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
             } else if (this.currentMode == CameraModeEnum.FREE) {
                 this.tpsCamera.Setup(this.buildCamera.GetVirtualCamera());
+                this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
+            } else if (this.currentMode == CameraModeEnum.TPS) {
+                this.tpsShoulderCamera.Setup();
                 this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
             } else if (this.currentMode == CameraModeEnum.DRIVE) {
                 this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
@@ -420,10 +614,10 @@ namespace Sim {
             this.SetCurrentMode(CameraModeEnum.DRIVE);
         }
 
-        /// <summary>Rend la main à la caméra "à pied" (FREE) à la sortie du véhicule.</summary>
+        /// <summary>Rend la main à la caméra "à pied" (FREE ou TPS selon la préférence) à la sortie du véhicule.</summary>
         public void ExitVehicleCamera() {
             if (this.driveCamera != null) this.driveCamera.SetVehicle(null);
-            this.SetCurrentMode(CameraModeEnum.FREE);
+            this.SetCurrentMode(this.PreferredFreeMode);
         }
 
         /// <summary>
