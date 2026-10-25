@@ -2,11 +2,10 @@ using Sim;
 
 namespace AI.States {
     /// <summary>
-    /// Déplacement clavier direct (ZQSD), relatif à la caméra — mode « third-person
-    /// controller » expérimental qui coexiste avec le click-to-move. La logique de
-    /// steering vit dans PlayerController.TickFreeMove (accès caméra + vitesses +
-    /// perks) ; cet état ne fait qu'orchestrer l'entrée/sortie. Sans input directionnel,
-    /// on retombe sur idle.
+    /// Déplacement clavier direct (ZQSD), relatif à la caméra TPS épaule — le seul mode
+    /// de déplacement du joueur. La logique de steering vit dans
+    /// PlayerController.TickFreeMove (accès caméra + vitesses + perks) ; cet état ne fait
+    /// qu'orchestrer l'entrée/sortie. Sans input directionnel, on retombe sur idle.
     /// </summary>
     public class CharacterFreeMove : IState {
         private readonly PlayerController player;
@@ -18,9 +17,9 @@ namespace AI.States {
         public void OnEnter() {
             this.player.PlayerState = PlayerState.MOVING;
 
-            // On purge un éventuel chemin de click-to-move pour que les deux pilotes de
-            // l'agent ne se battent pas (l'un suit un chemin, l'autre fait du Move direct).
-            if (this.player.NavMeshAgent.hasPath) this.player.NavMeshAgent.ResetPath();
+            // On purge un éventuel chemin d'agent (marche scriptée/bot) pour que les deux
+            // pilotes ne se battent pas (l'un suit un chemin, l'autre fait du Move direct).
+            if (this.player.NavMeshAgent.enabled && this.player.NavMeshAgent.hasPath) this.player.NavMeshAgent.ResetPath();
         }
 
         public void Tick() {

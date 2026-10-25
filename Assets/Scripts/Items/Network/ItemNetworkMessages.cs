@@ -72,8 +72,8 @@ public struct C2S_RequestDropItem : NetworkMessage
 }
 
 /// <summary>
-/// Client → server: « poser » l'item tenu à un emplacement choisi. Émis SEULEMENT une fois
-/// que le personnage a marché jusqu'au point de pose (cf. CharacterPoser / ItemPlacementController).
+/// Client → server: « poser » l'item tenu à un emplacement choisi. Émis à la validation de
+/// l'emplacement en mode pose (cf. ItemPlacementController).
 /// Le serveur détache l'item de la main et le place à <see cref="Position"/>/<see cref="Rotation"/>
 /// (même chemin que le drop, mais position explicite au lieu du « devant le joueur »).
 /// </summary>

@@ -180,6 +180,9 @@ namespace Sim.StressTest {
 
         private IEnumerator MoveLoop() {
             Debug.Log("[Bot] Local player ready — starting move loop");
+            // Full TPS : au spawn le joueur local est débranché de la NavMesh (CharacterController).
+            // Les bots errent via MoveTo/NavMeshAgent → on les re-branche explicitement sur l'agent.
+            PlayerController.Local.SetNavMeshBound(true);
             while (this._running && NetworkClient.isConnected && PlayerController.Local != null) {
                 Vector3 origin = PlayerController.Local.transform.position;
                 if (this.TrySampleNavMesh(origin, this.wanderRadius, out Vector3 target)) {

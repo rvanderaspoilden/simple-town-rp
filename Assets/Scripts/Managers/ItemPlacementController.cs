@@ -13,19 +13,14 @@ using UnityEngine.EventSystems;
 /// « Mode Pose » (PanelTypeEnum.POSE, sans bouton Valider/Annuler) — est affiché. La validité
 /// n'est PLUS rendue en teintant le renderer : <see cref="BuildPreview"/> affiche une pastille
 /// au-dessus de l'objet et un outline vert/rouge (<see cref="Sim.Building.PlacementFeedback"/>).
-/// Puis, à la validation, le personnage marche jusqu'au point de pose avant que l'item ne quitte
-/// la main (cf. <see cref="AI.States.CharacterPoser"/>).
 ///
 /// Cycle :
 ///   Idle → Begin() → Positioning (ghost + BuildPreview, BUILD camera + HUD « Mode Pose »,
 ///     validation = clic-gauche / Entrée, uniquement si BuildPreview.IsPlaceable()) →
-///   PendingStart (1 frame : retour FREE + StartItemPose) → Walking (le perso marche) →
-///   arrivée → envoi C2S_PoseHeldItem (l'item se détache et apparaît à l'emplacement) → Idle.
+///   envoi C2S_PoseHeldItem (l'item se détache et apparaît à l'emplacement) → retour TPS → Idle.
+///   (Full TPS : plus de marche automatique vers le point de pose — l'item se pose directement.)
 ///
-/// Annulation à TOUT moment :
-///   - Pendant Positioning : clic-droit / Échap → ghost détruit, retour FREE, item gardé.
-///   - Pendant Walking : tout autre state qui prend la main (clic-déplacement, interaction) →
-///     CharacterPoser.OnExit sans complétion → onCancel ici → la requête n'est jamais envoyée.
+/// Annulation pendant Positioning : clic-droit / Échap → ghost détruit, retour TPS, item gardé.
 ///
 /// Le BuildPreview gère lui-même la détection de collision (l'item ne traverse plus les objets)
 /// et la surface posable (sol / Posable Surface). En placement « libre » (item, pas de
@@ -35,14 +30,9 @@ using UnityEngine.EventSystems;
 /// </summary>
 public class ItemPlacementController : MonoBehaviour
 {
-    private enum Phase { Idle, Positioning, PendingStart, Walking }
+    private enum Phase { Idle, Positioning }
 
     // ── Tuning ────────────────────────────────────────────────────────────────
-    // Rayon pour snapper le point de marche calculé vers la NavMesh la plus proche.
-    private const float StandSampleRadius = 2.0f;
-    // Distance d'arrêt EN DEÇA de l'emplacement (vers le joueur) : le personnage s'arrête à
-    // bout de bras et pose l'objet devant lui au lieu de marcher dessus (plus réaliste).
-    private const float StandOffset       = 0.8f;
     private const float CursorRayLength   = 200f;
 
     private Phase    _phase = Phase.Idle;
@@ -51,11 +41,6 @@ public class ItemPlacementController : MonoBehaviour
 
     private GameObject _ghost;
     private BuildPreview _preview;
-
-    // Emplacement choisi, retenu pendant la marche jusqu'à l'arrivée.
-    private Vector3    _pendingPos;
-    private Quaternion _pendingRot;
-    private Vector3    _pendingStandPoint;
 
     private static int _poseSurfaceMask = -1;
 
@@ -91,9 +76,7 @@ public class ItemPlacementController : MonoBehaviour
         if (player == null) return;
 
         // Reset propre si une pose était déjà en cours.
-        if (_phase == Phase.Walking)
-            player.Idle();        // interrompt la marche → CharacterPoser.OnExit → OnPoseCancelled → Idle
-        else if (_phase != Phase.Idle)
+        if (_phase != Phase.Idle)
             Abort();
 
         _item = item;
@@ -103,7 +86,7 @@ public class ItemPlacementController : MonoBehaviour
 
         SpawnGhost(item.Configuration.ID, player.transform.position);
 
-        player.SetState(StateType.PLACING_ITEM);          // → caméra BUILD + click-to-move suspendu
+        player.SetState(StateType.PLACING_ITEM);          // → caméra BUILD (curseur libre)
         HUDManager.Instance?.DisplayPanel(PanelTypeEnum.POSE); // → HUD dédié « Mode Pose » (image only)
         _phase = Phase.Positioning;
     }
@@ -112,11 +95,7 @@ public class ItemPlacementController : MonoBehaviour
 
     private void Update()
     {
-        switch (_phase)
-        {
-            case Phase.Positioning: TickPositioning(); break;
-            case Phase.PendingStart: TickPendingStart(); break;
-        }
+        if (_phase == Phase.Positioning) TickPositioning();
     }
 
     private void TickPositioning()
@@ -171,93 +150,36 @@ public class ItemPlacementController : MonoBehaviour
 
         if (Input.GetMouseButtonUp(1)) { Abort(); return; }
 
-        // Confirmation sur le RELÂCHEMENT du clic gauche (bouton lâché = pas de MoveTo parasite au
-        // retour en mode FREE, cf. CameraManager.ManageInteraction qui exige GetMouseButton(0)).
+        // Confirmation sur le RELÂCHEMENT du clic gauche.
         if (Input.GetMouseButtonUp(0) && IsPlaceable()) Confirm();
     }
 
     private bool IsPlaceable() => _preview != null && _preview.IsPlaceable();
 
+    /// <summary>Emplacement validé : on demande directement au serveur de détacher et poser
+    /// l'item (full TPS — plus de marche automatique), puis retour caméra TPS.</summary>
     private void Confirm()
     {
-        _pendingPos        = _ghost.transform.position;
-        _pendingRot        = _ghost.transform.rotation;
-        _pendingStandPoint = ComputeStandPoint(_pendingPos);
+        Vector3    pos  = _ghost.transform.position;
+        Quaternion rot  = _ghost.transform.rotation;
+        HandType   hand = _hand;
 
         DestroyGhost();
         HUDManager.Instance?.DisplayPanel(PanelTypeEnum.DEFAULT);
-        // Bascule FREE + démarrage de la marche différés d'une frame (handoff caméra propre).
-        _phase = Phase.PendingStart;
-    }
+        PlayerController.Local?.SetState(StateType.FREE); // retour caméra TPS
 
-    /// <summary>Point de marche : on s'arrête à <see cref="StandOffset"/> mètres EN DEÇA de
-    /// l'emplacement choisi (dans la direction du joueur), de sorte que le personnage termine sa
-    /// marche un peu avant et pose l'objet devant lui. Si le joueur est déjà plus proche que cet
-    /// offset, on reste sur place (jamais de recul). Le résultat est snappé sur la NavMesh.</summary>
-    private Vector3 ComputeStandPoint(Vector3 placementPoint)
-    {
-        Vector3 target = placementPoint;
-
-        PlayerController player = PlayerController.Local;
-        if (player != null)
-        {
-            Vector3 toPlayer = player.transform.position - placementPoint;
-            toPlayer.y = 0f;
-            float dist = toPlayer.magnitude;
-            if (dist > 0.0001f)
-            {
-                // Clamp à la distance joueur→emplacement pour ne jamais reculer au-delà du joueur.
-                float offset = Mathf.Min(StandOffset, dist);
-                target = placementPoint + (toPlayer / dist) * offset;
-            }
-        }
-
-        if (NavMesh.SamplePosition(target, out NavMeshHit navHit, StandSampleRadius, NavMesh.AllAreas))
-            return navHit.position;
-        return target;
-    }
-
-    private void TickPendingStart()
-    {
-        PlayerController player = PlayerController.Local;
-        if (player == null) { ResetState(); return; }
-
-        player.SetState(StateType.FREE); // retour caméra/locomotion normales avant la marche
-
-        if (player.StartItemPose(_pendingStandPoint, OnArrive, OnPoseCancelled))
-        {
-            _phase = Phase.Walking;
-        }
-        else
-        {
-            WorldToastManager.ShowError("Emplacement inaccessible");
-            ResetState();
-        }
-    }
-
-    // ── Callbacks CharacterPoser ────────────────────────────────────────────────
-
-    /// <summary>Le personnage est arrivé : on demande au serveur de détacher et poser l'item.</summary>
-    private void OnArrive()
-    {
         NetworkClient.Send(new C2S_PoseHeldItem
         {
-            Hand     = _hand,
-            Position = _pendingPos,
-            Rotation = _pendingRot
+            Hand     = hand,
+            Position = pos,
+            Rotation = rot
         });
-        ResetState();
-    }
-
-    /// <summary>La marche a été interrompue (déplacement / interaction) : l'item reste en main.</summary>
-    private void OnPoseCancelled()
-    {
         ResetState();
     }
 
     // ── Annulation / cleanup ────────────────────────────────────────────────────
 
-    /// <summary>Annulation pendant le positionnement : ghost détruit, retour FREE, item gardé.</summary>
+    /// <summary>Annulation pendant le positionnement : ghost détruit, retour TPS, item gardé.</summary>
     private void Abort()
     {
         DestroyGhost();

@@ -515,9 +515,12 @@ public class ServerItemManager
             return;
         }
 
-        // Distance check
+        ItemConfig config = DatabaseManager.ItemConfigs.Find(x => x.ID == entity.ItemConfigId);
+
+        // Distance check — portée définie dans la config de l'item (+ tolérance réseau).
         Vector3 playerPos = conn.identity.transform.position;
-        if (Vector3.Distance(playerPos, entity.Position) > 3f)
+        float pickupRange = (config != null ? config.RangeToInteract : 1.5f) + 1.5f;
+        if (Vector3.Distance(playerPos, entity.Position) > pickupRange)
         {
             conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Trop loin" });
             return;
@@ -525,7 +528,6 @@ public class ServerItemManager
 
         // Find a free hand
         var handState = GetOrCreateHandState(playerNetId);
-        ItemConfig config = DatabaseManager.ItemConfigs.Find(x => x.ID == entity.ItemConfigId);
 
         HandType? assignedHand = ResolveHand(config, playerNetId);
         if (!assignedHand.HasValue)
@@ -1294,6 +1296,21 @@ public class ServerItemManager
     }
 
     /// <summary>
+    /// Config de l'arme (WeaponConfig) actuellement tenue en main par le joueur dans sa
+    /// pièce, ou null. Consommé par PlayerShooter.CmdFire pour valider un tir côté serveur
+    /// — un client ne peut pas tirer sans arme réellement en main.
+    /// </summary>
+    public WeaponConfig GetHeldWeaponConfig(uint playerNetId, string roomId)
+    {
+        if (roomId == null || !_rooms.TryGetValue(roomId, out var roomItems)) return null;
+        foreach (var entity in roomItems.Values) {
+            if (entity.HolderNetId != playerNetId) continue;
+            if (DatabaseManager.GetItemConfigById(entity.ItemConfigId) is WeaponConfig weapon) return weapon;
+        }
+        return null;
+    }
+
+    /// <summary>
     /// Vrai si le joueur porte au moins un item de **mission** en main. Le critère est
     /// le verrou propriétaire (AuthorizedNetId != 0), posé uniquement par les steps de
     /// mission (PickupPackage / SortItems / UseMachine via SetAuthorizedHolder) — PAS par
@@ -1955,11 +1972,12 @@ public class ServerItemManager
         bool held = entity.HolderNetId == netId
             || (_playerHands.TryGetValue(netId, out var hands)
                 && (hands.LeftEntityId == msg.EntityId || hands.RightEntityId == msg.EntityId));
-        if (!held && Vector3.Distance(conn.identity.transform.position, entity.Position) > 3f) {
+        var itemCfg = DatabaseManager.GetItemConfigById(entity.ItemConfigId);
+        float openRange = (itemCfg != null ? itemCfg.RangeToInteract : 1.5f) + 1.5f;
+        if (!held && Vector3.Distance(conn.identity.transform.position, entity.Position) > openRange) {
             conn.Send(new S2C_ItemContainerOpenFailed { EntityId = msg.EntityId, ErrorMessage = "Trop loin" });
             return;
         }
-        var itemCfg = DatabaseManager.GetItemConfigById(entity.ItemConfigId);
         var itemContainerCfg = ItemContainerConfig.Of(itemCfg);
         if (itemContainerCfg == null || !itemContainerCfg.IsContainer) {
             conn.Send(new S2C_ItemContainerOpenFailed { EntityId = msg.EntityId, ErrorMessage = "Pas un conteneur" });

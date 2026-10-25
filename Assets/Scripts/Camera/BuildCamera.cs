@@ -66,13 +66,14 @@ namespace Sim {
             }
         }
 
-        public void Setup(CinemachineFreeLook originCamera) {
+        /// <summary>Entre en mode build : recentre la cible sur le joueur et oriente l'orbite
+        /// sur le cap courant de la caméra de rendu (on arrive depuis la caméra TPS épaule),
+        /// à mi-hauteur, pour que le blend Cinemachine parte d'une pose cohérente.</summary>
+        public void Setup() {
             this.SetTargetPosition(PlayerController.Local.transform.position, true);
-            this.SetVirtualCameraRotation(originCamera.m_XAxis.Value, originCamera.m_YAxis.Value);
-        }
-
-        public CinemachineFreeLook GetVirtualCamera() {
-            return this.freelookCamera;
+            Transform renderCam = this.camera != null ? this.camera.transform : null;
+            float yaw = renderCam != null ? renderCam.eulerAngles.y : 0f;
+            this.SetVirtualCameraRotation(yaw, 0.5f);
         }
 
         /**

@@ -7,7 +7,7 @@ namespace Sim {
     /// Starter Assets ThirdPersonController camera: a pivot transform glued to the player's head
     /// carries the mouse-driven yaw/pitch, and a CM3 CinemachineCamera with ThirdPersonFollow
     /// trails it (shoulder offset + built-in obstacle avoidance).
-    /// Same lifecycle pattern as ThirdPersonCamera/BuildCamera: CameraManager enables this
+    /// Same lifecycle pattern as BuildCamera: CameraManager enables this
     /// component per mode, and OnEnable/OnDisable toggles the virtual-camera GameObject so the
     /// CinemachineBrain blends to/from it.
     /// </summary>
@@ -77,7 +77,7 @@ namespace Sim {
         private void SnapPivot() {
             if (this.cameraPivot == null || PlayerController.Local == null) return;
 
-            Transform head = PlayerController.Local.GetHeadTargetForCamera();
+            Transform head = PlayerController.Local.GetCameraFollowTarget();
             if (head != null) this.cameraPivot.position = head.position;
             this.cameraPivot.rotation = Quaternion.Euler(this.pitch, this.yaw, 0f);
         }

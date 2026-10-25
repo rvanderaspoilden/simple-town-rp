@@ -1,10 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-namespace Sim.Enums {
+﻿namespace Sim.Enums {
     public enum CameraModeEnum {
-        FREE,
         BUILD,
         FPS,
         DRIVE,

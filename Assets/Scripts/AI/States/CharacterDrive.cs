@@ -28,7 +28,7 @@ namespace AI.States {
         }
 
         public void OnEnter() {
-            this.player.NavMeshAgent.enabled = false;
+            this.player.SetLocomotionEnabled(false);
             this.player.Collider.enabled = false;
             this.player.PlayerState = PlayerState.SITTING;
             this.player.IsDriving = true;
@@ -61,14 +61,13 @@ namespace AI.States {
             this.player.transform.rotation = Quaternion.identity;
 
             this.player.Collider.enabled = true;
-            this.player.NavMeshAgent.enabled = true;
+            this.player.SetLocomotionEnabled(true);
 
             // Masque le HUD de conduite.
             HUDManager.Instance.HideVehicleHud();
 
-            // Rend la main à la caméra "à pied" (FREE), recalée sur la tête du joueur.
+            // Rend la main à la caméra TPS.
             CameraManager.Instance.ExitVehicleCamera();
-            CameraManager.Instance.SetCameraTarget(this.player.GetHeadTargetForCamera());
         }
     }
 }

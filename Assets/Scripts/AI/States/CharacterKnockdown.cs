@@ -18,7 +18,7 @@ namespace AI.States {
 
         public void OnEnter() {
             this.player.transform.DOComplete(); // stoppe un éventuel tween LookAt
-            this.player.NavMeshAgent.enabled = false;
+            this.player.SetLocomotionEnabled(false);
             this.player.Collider.enabled = false;
             HUDManager.Instance.CloseContextMenu();
             HUDManager.Instance.CloseInventory();
@@ -28,7 +28,7 @@ namespace AI.States {
 
         public void OnExit() {
             this.player.Collider.enabled = true;
-            this.player.NavMeshAgent.enabled = true;
+            this.player.SetLocomotionEnabled(true);
         }
     }
 }

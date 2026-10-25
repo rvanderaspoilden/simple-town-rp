@@ -9,11 +9,23 @@ namespace Sim {
                  "Toute action absente de cette liste cache le renderer de l'item tenu (ex: SIT, SLEEP).")]
         [SerializeField] private List<CharacterAnimatorAction> actionsKeepingHeldItemsVisible = new();
 
+        [Header("Starter Assets footsteps")]
+        [Tooltip("Sons de pas joués par les AnimationEvents OnFootstep embarqués dans les clips " +
+                 "de locomotion Starter Assets (un au hasard). Vide = silencieux mais sans erreur.")]
+        [SerializeField] private AudioClip[] footstepAudioClips;
+        [Tooltip("Son joué par l'AnimationEvent OnLand des clips d'atterrissage Starter Assets.")]
+        [SerializeField] private AudioClip landingAudioClip;
+        [Range(0f, 1f)]
+        [SerializeField] private float footstepAudioVolume = 0.5f;
+
         private Animator animator;
         private PlayerHands playerHands;
         private CharacterAnimatorAction currentAction = CharacterAnimatorAction.NONE;
 
         private int velocityHash;
+        private int groundedHash;
+        private int jumpHash;
+        private int freeFallHash;
         private int moodHash;
         private int actionHash;
         private int rightHandPoseHash;
@@ -25,6 +37,9 @@ namespace Sim {
             this.animator = GetComponent<Animator>();
             this.playerHands = GetComponent<PlayerHands>();
             this.velocityHash = Animator.StringToHash("Velocity");
+            this.groundedHash = Animator.StringToHash("Grounded");
+            this.jumpHash = Animator.StringToHash("Jump");
+            this.freeFallHash = Animator.StringToHash("FreeFall");
             this.moodHash = Animator.StringToHash("MoodType");
             this.actionHash = Animator.StringToHash("Action");
             this.rightHandPoseHash = Animator.StringToHash("RightHandPose");
@@ -37,8 +52,46 @@ namespace Sim {
             this.animator.SetFloat(velocityHash, value);
         }
 
+        // Saut TPS (états Jump/InAir du Base Layer, pattern Starter Assets).
+        public void SetGrounded(bool value) {
+            this.animator.SetBool(groundedHash, value);
+        }
+
+        public void SetJump(bool value) {
+            this.animator.SetBool(jumpHash, value);
+        }
+
+        public void SetFreeFall(bool value) {
+            this.animator.SetBool(freeFallHash, value);
+        }
+
         public void SetMood(float value) {
             this.animator.SetFloat(moodHash, value);
+        }
+
+        // ── AnimationEvents des clips Starter Assets ──────────────────────────────
+        // Les clips de locomotion/atterrissage du pack embarquent OnFootstep/OnLand :
+        // sans ces récepteurs, Unity log "AnimationEvent has no receiver". Même logique
+        // que leur ThirdPersonController : on ne joue le son que si le clip émetteur pèse
+        // assez dans le blend (évite les doubles pas pendant les transitions). Tourne sur
+        // toutes les copies (local + distant), les pas des autres Broz sont donc audibles.
+
+        private void OnFootstep(AnimationEvent animationEvent) {
+            if (animationEvent.animatorClipInfo.weight <= 0.5f) return;
+            if (this.footstepAudioClips == null || this.footstepAudioClips.Length == 0) return;
+            int index = Random.Range(0, this.footstepAudioClips.Length);
+            AudioSource.PlayClipAtPoint(this.footstepAudioClips[index], this.GetFootstepAudioPoint(), this.footstepAudioVolume);
+        }
+
+        private void OnLand(AnimationEvent animationEvent) {
+            if (animationEvent.animatorClipInfo.weight <= 0.5f) return;
+            if (this.landingAudioClip == null) return;
+            AudioSource.PlayClipAtPoint(this.landingAudioClip, this.GetFootstepAudioPoint(), this.footstepAudioVolume);
+        }
+
+        // Centre de la capsule (y 0.9), équivalent du _controller.center du pack.
+        private Vector3 GetFootstepAudioPoint() {
+            return this.transform.TransformPoint(new Vector3(0f, 0.9f, 0f));
         }
 
         public void SetAction(CharacterAnimatorAction action) {

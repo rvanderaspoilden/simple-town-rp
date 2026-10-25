@@ -19,7 +19,7 @@ namespace AI.States {
         }
 
         public void OnEnter() {
-            this.player.NavMeshAgent.enabled = false;
+            this.player.SetLocomotionEnabled(false);
             this.player.Collider.enabled = false;
             this.player.PlayerState = PlayerState.SLEEPING;
 
@@ -49,7 +49,7 @@ namespace AI.States {
 
             this.player.transform.position = lastPosition;
             this.player.Collider.enabled = true;
-            this.player.NavMeshAgent.enabled = true;
+            this.player.SetLocomotionEnabled(true);
         }
     }
 }

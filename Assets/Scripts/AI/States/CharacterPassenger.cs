@@ -22,7 +22,7 @@ namespace AI.States {
         }
 
         public void OnEnter() {
-            this.player.NavMeshAgent.enabled = false;
+            this.player.SetLocomotionEnabled(false);
             this.player.Collider.enabled = false;
             this.player.PlayerState = PlayerState.SITTING;
             this.player.IsPassenger = true;
@@ -61,10 +61,9 @@ namespace AI.States {
             this.player.transform.rotation = Quaternion.identity;
 
             this.player.Collider.enabled = true;
-            this.player.NavMeshAgent.enabled = true;
+            this.player.SetLocomotionEnabled(true);
 
             CameraManager.Instance.ExitVehicleCamera();
-            CameraManager.Instance.SetCameraTarget(this.player.GetHeadTargetForCamera());
         }
     }
 }

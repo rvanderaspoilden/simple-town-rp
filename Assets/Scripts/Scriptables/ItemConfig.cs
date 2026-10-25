@@ -39,6 +39,10 @@ public class ItemConfig : ScriptableObject {
     [SerializeField]
     private bool allowedInPocket = true;
 
+    [Tooltip("Portée (m) d'interaction avec l'item posé au monde (ramassage, ouverture de colis…). Gate client ET validation serveur (+tolérance réseau).")]
+    [SerializeField]
+    private float rangeToInteract = 1.5f;
+
     [SerializeField]
     private Texture2D cursor;
 
@@ -84,6 +88,8 @@ public class ItemConfig : ScriptableObject {
     public bool ToPersist => toPersist;
 
     public bool AllowedInPocket => allowedInPocket;
+
+    public float RangeToInteract => rangeToInteract;
 
     public Texture2D Cursor => cursor;
 

@@ -1,20 +1,14 @@
-﻿using System;
-using Sim.Building;
-using Sim.Enums;
-using Sim.Scriptables;
+﻿using Sim.Enums;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 
 namespace Sim {
+    /// <summary>
+    /// Curseurs custom du mode BUILD (rotation, déplacement, peinture). En TPS le curseur
+    /// hardware est verrouillé/masqué (CursorLock) et le feedback de visée passe par le
+    /// crosshair — plus de curseurs de survol « click-to-move ».
+    /// </summary>
     public class CursorManager : MonoBehaviour {
         [Header("Settings")]
-        [SerializeField]
-        private Texture2D buildCursor;
-
-        [SerializeField]
-        private Texture2D socialCursor;
-
         [SerializeField]
         private Texture2D rotationCursor;
 
@@ -35,10 +29,6 @@ namespace Sim {
         [SerializeField]
         private Texture2D currentCursor;
 
-        private new Camera camera;
-
-        private RaycastHit hit;
-
         public static CursorManager Instance;
 
         private void Awake() {
@@ -50,33 +40,24 @@ namespace Sim {
 
             DontDestroyOnLoad(this.gameObject);
 
-            this.SetCamera(Camera.main);
-
-            SceneManager.sceneLoaded += SceneLoaded;
             LoadingManager.OnStateChanged += LoadingStateChanged;
         }
 
         private void OnDestroy() {
-            SceneManager.sceneLoaded -= SceneLoaded;
             LoadingManager.OnStateChanged -= LoadingStateChanged;
         }
 
         private void Update() {
             if (!CameraManager.Instance) return;
 
+            bool buildMode = CameraManager.Instance.GetMode() == CameraModeEnum.BUILD;
+
             // Paint mode wins over the generic build-camera cursors.
-            if (CameraManager.Instance.GetMode() == CameraModeEnum.BUILD && TrySetPaintCursor()) return;
+            if (buildMode && TrySetPaintCursor()) return;
 
-            Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
-
-            if (CameraManager.Instance.GetMode() == CameraModeEnum.FREE && !EventSystem.current.IsPointerOverGameObject() &&
-                Physics.Raycast(ray.origin, ray.direction, out hit, 100)) {
-                if (!this.IsProps() && !this.IsCharacter()) {
-                    this.SetCursor(null);
-                }
-            } else if (CameraManager.Instance.GetMode() == CameraModeEnum.BUILD && Input.GetMouseButton(2)) {
+            if (buildMode && Input.GetMouseButton(2)) {
                 this.SetCursor(this.rotationCursor);
-            } else if (CameraManager.Instance.GetMode() == CameraModeEnum.BUILD &&
+            } else if (buildMode &&
                        (Input.GetMouseButton(1) || Input.GetAxis("Horizontal") != 0f || Input.GetAxis("Vertical") != 0f)) {
                 this.SetCursor(this.moveCursor);
             } else {
@@ -119,50 +100,6 @@ namespace Sim {
         private void LoadingStateChanged(bool isActive) {
             Cursor.lockState = isActive ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !isActive;
-        }
-
-        private bool IsProps() {
-            PropBehaviourBase behaviour = hit.collider.GetComponentInParent<PropBehaviourBase>();
-
-            if (behaviour != null) {
-                // Magasin physique : pas de curseur custom sur les props d'expo → curseur par défaut.
-                if (behaviour.IsShopDisplay) {
-                    this.SetCursor(null);
-                    return true;
-                }
-                // Pas d'action possible sur ce prop (ex. poubelle sans sac en main) →
-                // curseur par défaut. Le curseur custom n'apparaît que si le prop est interactif.
-                if (!behaviour.IsInteractable()) {
-                    this.SetCursor(null);
-                    return true;
-                }
-                PropsConfig cfg = behaviour.GetConfiguration();
-                this.SetCursor(behaviour.IsBuilt() ? cfg?.GetCursor() : this.buildCursor);
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool IsCharacter() {
-            PlayerController player = hit.collider.GetComponent<PlayerController>();
-
-            if (player != null && player != PlayerController.Local) {
-                // Default cursor over other characters (the name tooltip is the
-                // hover feedback now, not a social cursor).
-                this.SetCursor(null);
-                return true;
-            }
-
-            return false;
-        }
-
-        private void SceneLoaded(Scene scene, LoadSceneMode mode) {
-            if (mode == LoadSceneMode.Single) this.SetCamera(Camera.main);
-        }
-
-        private void SetCamera(Camera camera) {
-            this.camera = camera;
         }
     }
 }

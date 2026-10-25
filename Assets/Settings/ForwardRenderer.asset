@@ -50,6 +50,8 @@ MonoBehaviour:
     gradientColor: {r: 1, g: 1, b: 1, a: 1}
     gradientSpeed: 2
     gradientFrequency: 6
+    haloColor: {r: 0, g: 0, b: 0, a: 0}
+    haloThickness: 0
     renderPassEvent: 500
 --- !u!114 &-3884568817346638990
 MonoBehaviour:
@@ -75,6 +77,8 @@ MonoBehaviour:
     gradientColor: {r: 0.9622642, g: 0.41535896, b: 0, a: 1}
     gradientSpeed: 2
     gradientFrequency: 6
+    haloColor: {r: 0, g: 0, b: 0, a: 0}
+    haloThickness: 0
     renderPassEvent: 500
 --- !u!114 &-40433759470989155
 MonoBehaviour:
@@ -100,6 +104,8 @@ MonoBehaviour:
     gradientColor: {r: 1, g: 1, b: 0.75, a: 1}
     gradientSpeed: 2.5
     gradientFrequency: 6
+    haloColor: {r: 0, g: 0, b: 0, a: 0}
+    haloThickness: 0
     renderPassEvent: 500
 --- !u!114 &11400000
 MonoBehaviour:
@@ -135,7 +141,8 @@ MonoBehaviour:
   - {fileID: -5504197975826516402}
   - {fileID: 3727050330268974565}
   - {fileID: 5418031208540211776}
-  m_RendererFeatureMap: 3c529442464d358134f2ffffffffffffbcd4fdffffffffff4eb66f7d1a299db3e53daf538724b933
+  - {fileID: 7947047501085698698}
+  m_RendererFeatureMap: 3c529442464d358134f2ffffffffffffbcd4fdffffffffff4eb66f7d1a299db3e53daf538724b9338a6a5ed39895496e
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -188,21 +195,8 @@ MonoBehaviour:
     gradientColor: {r: 1, g: 1, b: 1, a: 1}
     gradientSpeed: 2
     gradientFrequency: 6
-    renderPassEvent: 500
---- !u!114 &6241208519609000230
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e18e8496488608f4b9ad07cec8851a75, type: 3}
-  m_Name: Interior Fog
-  m_EditorClassIdentifier: Assembly-CSharp::InteriorFogFeature
-  m_Active: 1
-  settings:
+    haloColor: {r: 0, g: 0, b: 0, a: 0}
+    haloThickness: 0
     renderPassEvent: 500
 --- !u!114 &5418031208540211776
 MonoBehaviour:
@@ -231,3 +225,39 @@ MonoBehaviour:
     haloColor: {r: 0.04, g: 0.05, b: 0.1, a: 0.85}
     haloThickness: 3
     renderPassEvent: 500
+--- !u!114 &6241208519609000230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e18e8496488608f4b9ad07cec8851a75, type: 3}
+  m_Name: Interior Fog
+  m_EditorClassIdentifier: Assembly-CSharp::InteriorFogFeature
+  m_Active: 1
+  settings:
+    renderPassEvent: 500
+--- !u!114 &7947047501085698698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1614fc811f8f184697d9bee70ab9fe5, type: 3}
+  m_Name: DecalRendererFeature
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalRendererFeature
+  m_Active: 1
+  m_Settings:
+    technique: 2
+    maxDrawDistance: 1000
+    decalLayers: 0
+    dBufferSettings:
+      surfaceData: 2
+    screenSpaceSettings:
+      normalBlend: 0

@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30b950d51bed6204e9e5ff1d51da3a9c, type: 3}
+  m_Name: Glock
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponConfig
+  id: 103
+  label: Glock
+  description: Pistolet. Clic droit pour viser, clic gauche pour tirer.
+  type: 3
+  handleType: 0
+  unEquippedActions:
+  - {fileID: 11400000, guid: fa73a1da35281ac4794f59016aab77cd, type: 2}
+  equippedActions:
+  - {fileID: 11400000, guid: 875ebf10bf5a7c24084772ff5e3be913, type: 2}
+  prefab: {fileID: 4827277355194067242, guid: 92ecdf8a0db06a84e8ac9d2d124e5af1, type: 3}
+  toPersist: 0
+  allowedInPocket: 1
+  rangeToInteract: 1.5
+  cursor: {fileID: 0}
+  icon: {fileID: 0}
+  poseShape: 1
+  gripPosition: {x: 0.0055, y: -0.0119, z: -0.0003}
+  gripEuler: {x: 0, y: 0, z: 294.307}
+  maxStackSize: 1
+  fireInterval: 0.35
+  maxRange: 40
+  fireSound: {fileID: 8300000, guid: c749fec3199d20845bf6020d437d340d, type: 3}
+  fireSoundVolume: 0.8

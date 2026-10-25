@@ -147,8 +147,7 @@ public class InventoryUI : MonoBehaviour
 
         // Ferme l'inventaire (et donc le container via OnDisable) dès que le joueur
         // commence à marcher — cohérent avec la règle "HUD fermé pendant le mouvement".
-        var agent = PlayerController.Local?.NavMeshAgent;
-        if (agent != null && agent.velocity.sqrMagnitude > 0.01f)
+        if (PlayerController.Local != null && PlayerController.Local.CurrentMoveSpeed > 0.1f)
             HUDManager.Instance.CloseInventory();
     }
 

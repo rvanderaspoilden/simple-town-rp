@@ -9,83 +9,51 @@ using Sim.Utils;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.Serialization;
 
 namespace Sim {
+    /// <summary>
+    /// Pilote les modes caméra du jeu. Le mode « à pied » est le TPS épaule
+    /// (<see cref="TpsShoulderCamera"/>, curseur verrouillé, interaction au crosshair) ;
+    /// BUILD / DRIVE / FPS gardent leurs caméras dédiées et rendent la main au TPS en sortant.
+    /// L'ancienne vue click-to-move (mode FREE, caméra orbitale + curseur magnétique) a été retirée.
+    /// </summary>
     public class CameraManager : MonoBehaviour {
         [Header("Settings")]
+        [FormerlySerializedAs("layerMaskInFreeMode")]
         [SerializeField]
-        private LayerMask layerMaskInFreeMode;
+        private LayerMask interactionLayerMask;
 
         [SerializeField]
         private LayerMask defaultCullingMask;
-        
+
         [SerializeField]
         private LayerMask fpsCullingMask;
-        
+
         [SerializeField]
         private GameObject fpsCamera;
 
-        [Header("Run on double click")]
-        [Tooltip("Fenêtre temporelle entre deux mouseDown gauche pour qu'ils soient considérés comme un double clic et déclenchent la course.")]
-        [SerializeField] private float doubleClickWindow = 0.3f;
-
-        [Header("Curseur magnétique")]
-        [Tooltip("Si le curseur ne touche pas pile un item/prop, on cible automatiquement l'interactable à portée le plus proche du curseur à l'écran.")]
-        [SerializeField] private bool magneticTargetingEnabled = true;
-        [Tooltip("Rayon (m) autour du joueur dans lequel chercher les interactables candidats (≈ portée d'interaction max).")]
-        [SerializeField] private float magneticCandidateRadius = 3.5f;
-        [Tooltip("Tolérance écran (px, à la résolution de référence) : un candidat n'est aimanté que si sa projection est à moins de cette distance du curseur.")]
-        [SerializeField] private float magneticScreenTolerancePixels = 70f;
-        [Tooltip("Hauteur d'écran de référence pour la tolérance (px). La tolérance réelle est mise à l'échelle par Screen.height / cette valeur.")]
-        [SerializeField] private float magneticToleranceReferenceHeight = 1080f;
-
-        [Tooltip("Rayon (m) du magnétisme spécifique aux NPCs : élargit la zone de scan pour pouvoir " +
-                 "attraper un NPC qui marche un peu plus loin que le rayon standard. Mis à plat avec " +
-                 "magneticCandidateRadius via Max() pour conserver la portée standard sur les autres types.")]
-        [SerializeField] private float magneticNpcCandidateRadius = 5f;
-        [Tooltip("Multiplicateur de tolérance écran (px) appliqué UNIQUEMENT aux NPCs. >1 = visée plus " +
-                 "tolérante sur les NPCs mobiles (par défaut 1.8× = 70px → 126px). Permet de viser un " +
-                 "NPC en marche sans précision millimétrique.")]
-        [SerializeField] private float magneticNpcScreenToleranceMultiplier = 1.8f;
-
         [Header("TPS (shoulder) mode")]
-        [Tooltip("Bascule vue classique ↔ TPS épaule (uniquement depuis/vers le mode FREE).")]
-        [SerializeField] private KeyCode toggleTpsKey = KeyCode.F5;
-        [Tooltip("Touche d'interaction au crosshair en mode TPS (ouvre le menu radial de la cible visée).")]
+        [Tooltip("Touche d'interaction au crosshair (ouvre le menu radial de la cible visée).")]
         [SerializeField] private KeyCode interactKey = KeyCode.E;
-        [Tooltip("Portée (m) du raycast crosshair centre-écran. Le gate réel d'interaction reste CanInteractWith (portée + ligne de vue depuis le joueur).")]
+        [Tooltip("Portée (m) du raycast crosshair centre-écran (nommage/outline). Le gate réel d'interaction reste CanInteractWith : portée de la config du prop/item + ligne de vue.")]
         [SerializeField] private float crosshairMaxDistance = 30f;
-        [Tooltip("Rayon (m) du SphereCast d'aim-assist quand le ray exact ne touche rien d'interactable (remplace le magnétisme curseur). 0 = désactivé.")]
+        [Tooltip("Rayon (m) du SphereCast d'aim-assist quand le ray exact ne touche rien d'interactable. 0 = désactivé.")]
         [SerializeField] private float crosshairAimAssistRadius = 0.25f;
         [Tooltip("Portée (m, plan XZ) pour ouvrir le menu contextuel d'un joueur distant visé au crosshair.")]
         [SerializeField] private float crosshairPlayerRange = 4f;
-
-        private float _lastLeftDownTime = -10f;
-        private bool _pendingRunRequest;
+        [Tooltip("Maintenir cette touche libère le curseur pour interagir avec l'UI (la caméra et le crosshair sont suspendus pendant l'appui).")]
+        [SerializeField] private KeyCode freeCursorKey = KeyCode.LeftAlt;
 
         private BuildCamera buildCamera;
-
-        private ThirdPersonCamera tpsCamera;
 
         private DriveCamera driveCamera;
 
         private TpsShoulderCamera tpsShoulderCamera;
 
-        // Préférence utilisateur posée par la touche de bascule : les retours au mode « à pied »
-        // (sortie build/véhicule/sub-game) restaurent TPS plutôt que FREE quand elle est vraie.
-        private bool tpsPreferred;
-
-        private float lastCameraPosition;
-
-        private RaycastHit hit;
-
-        private CameraModeEnum currentMode;
-
-        private float mouseClickTimer;
+        private CameraModeEnum currentMode = CameraModeEnum.TPS;
 
         private new Camera camera;
-
-        private bool startLeftClickValid;
 
         public static CameraManager Instance;
 
@@ -99,12 +67,10 @@ namespace Sim {
 
             this.camera = GetComponentInChildren<Camera>();
             this.buildCamera = GetComponent<BuildCamera>();
-            this.tpsCamera = GetComponent<ThirdPersonCamera>();
             this.driveCamera = GetComponent<DriveCamera>();
             this.tpsShoulderCamera = GetComponent<TpsShoulderCamera>();
 
             this.buildCamera.enabled = false;
-            this.tpsCamera.enabled = false;
             if (this.driveCamera != null) this.driveCamera.enabled = false;
             if (this.tpsShoulderCamera != null) this.tpsShoulderCamera.enabled = false;
             this.fpsCamera.SetActive(false);
@@ -126,87 +92,52 @@ namespace Sim {
             return this.camera.GetUniversalAdditionalCameraData();
         }
 
-        public void SetCameraTarget(Transform target) {
-            this.tpsCamera.SetCameraTarget(target);
-        }
-
         void Update() {
-            this.HandleTpsToggle();
             this.ApplyTpsCursorLock();
 
             if (PlayerController.Local == null || PlayerController.Local.PlayerState == PlayerState.DIED) return;
 
-            // Renversé (ragdoll) : aucune interaction ni click-to-move possible.
+            // Renversé (ragdoll) : aucune interaction possible.
             if (PlayerController.Local.IsKnockedDown) {
-                if (this._hoveredOutline != null) {
-                    this._hoveredOutline.Hide();
-                    this._hoveredOutline = null;
-                }
-                HoverNameTooltip.Hide();
+                this.ClearHoverFeedback();
                 return;
             }
 
             // Pendant la conduite, l'input est piloté par le VehicleController (WASD).
-            // On neutralise le click-to-move / menu radial pour éviter qu'un clic au sol
-            // déclenche un MoveTo qui se battrait avec la conduite — mais on autorise le CLIC
-            // sur le véhicule occupé pour ouvrir son menu contextuel (« Sortir », etc.).
+            // On neutralise l'interaction générique — mais on autorise le CLIC sur le
+            // véhicule occupé pour ouvrir son menu contextuel (« Sortir », etc.).
             if (PlayerController.Local.IsDriving || PlayerController.Local.IsPassenger) {
                 this.ManageVehicleOccupantInteraction();
                 return;
             }
 
-            if (this.currentMode == CameraModeEnum.FREE) {
-                this.ManageInteraction();
-                this.ManageHover();
-            } else if (this.currentMode == CameraModeEnum.TPS) {
+            if (this.currentMode == CameraModeEnum.TPS) {
                 this.ManageCrosshairInteraction();
             } else {
-                if (this._hoveredOutline != null) {
-                    this._hoveredOutline.Hide();
-                    this._hoveredOutline = null;
-                }
-                HoverNameTooltip.Hide();
+                this.ClearHoverFeedback();
             }
         }
 
-        // ── Mode TPS épaule (bascule + verrou curseur + interaction crosshair) ────────
-
-        /// <summary>Bascule FREE ↔ TPS sur la touche dédiée. Uniquement depuis les modes « à
-        /// pied » — build, drive et sub-games gardent leur caméra, la préférence est restaurée
-        /// en sortant (RestoreFreeMode).</summary>
-        private void HandleTpsToggle() {
-            if (this.tpsShoulderCamera == null || !Input.GetKeyDown(this.toggleTpsKey)) return;
-            if (PlayerController.Local == null || PlayerController.Local.IsKnockedDown) return;
-            if (this.currentMode != CameraModeEnum.FREE && this.currentMode != CameraModeEnum.TPS) return;
-
-            this.tpsPreferred = this.currentMode != CameraModeEnum.TPS;
-            this.SetCurrentMode(this.tpsPreferred ? CameraModeEnum.TPS : CameraModeEnum.FREE);
+        private void ClearHoverFeedback() {
+            if (this._hoveredOutline != null) {
+                this._hoveredOutline.Hide();
+                this._hoveredOutline = null;
+            }
+            HoverNameTooltip.Hide();
         }
 
-        /// <summary>Mode « à pied » courant selon la préférence utilisateur : TPS si la bascule
-        /// est active, sinon FREE. À utiliser partout où on rend la main à la caméra à pied.</summary>
-        private CameraModeEnum PreferredFreeMode => this.tpsPreferred && this.tpsShoulderCamera != null
-            ? CameraModeEnum.TPS
-            : CameraModeEnum.FREE;
+        // ── Mode TPS épaule (verrou curseur + interaction crosshair) ──────────────────
 
         /// <summary>Verrouille le curseur en mode TPS tant qu'aucune UI bloquante n'est ouverte ;
         /// le libère sinon (et dans tous les autres modes). Pilote aussi la visibilité globale
         /// du crosshair.</summary>
         private void ApplyTpsCursorLock() {
-            bool tps = this.currentMode == CameraModeEnum.TPS;
-
-            // Déconnexion / retour menu avec TPS encore actif : on retombe sur la caméra classique
-            // (la préférence est conservée pour la prochaine session de jeu).
-            if (tps && PlayerController.Local == null) {
-                this.SetCurrentMode(CameraModeEnum.FREE);
-                tps = false;
-            }
-
-            bool wantLocked = tps
+            bool wantLocked = this.currentMode == CameraModeEnum.TPS
                               && PlayerController.Local != null
                               && PlayerController.Local.PlayerState != PlayerState.DIED
                               && !PlayerController.Local.IsKnockedDown
                               && !SubGameController.IsActive
+                              && !Input.GetKey(this.freeCursorKey)
                               && !CursorLock.IsBlockingUiOpen();
 
             CursorLock.Apply(wantLocked);
@@ -233,18 +164,14 @@ namespace Sim {
         }
 
         /// <summary>
-        /// Équivalent TPS de ManageInteraction + ManageHover : résout la cible au centre de
-        /// l'écran (ray exact puis SphereCast d'aim-assist), surligne + nourrit le CrosshairUI,
-        /// et ouvre le menu radial existant sur la touche d'interaction. Pas de click-to-move ni
-        /// d'approche automatique : hors portée, la cible est nommée mais pas actionnable.
+        /// Résout la cible au centre de l'écran (ray exact puis SphereCast d'aim-assist),
+        /// surligne + nourrit le CrosshairUI, et ouvre le menu radial existant sur la touche
+        /// d'interaction. Pas d'approche automatique : hors portée, la cible est nommée mais
+        /// pas actionnable.
         /// </summary>
         private void ManageCrosshairInteraction() {
             if (SubGameController.IsActive || Cursor.lockState != CursorLockMode.Locked) {
-                if (this._hoveredOutline != null) {
-                    this._hoveredOutline.Hide();
-                    this._hoveredOutline = null;
-                }
-                HoverNameTooltip.Hide();
+                this.ClearHoverFeedback();
                 return;
             }
 
@@ -268,7 +195,7 @@ namespace Sim {
             }
 
             // Aim-assist : si le ray exact ne vise rien d'utile, un SphereCast fin attrape
-            // l'interactable presque centré (remplace le magnétisme curseur du mode FREE).
+            // l'interactable presque centré.
             if (interactable == null && remotePlayer == null && this.crosshairAimAssistRadius > 0f
                 && Physics.SphereCast(ray, this.crosshairAimAssistRadius, out RaycastHit assistHit, this.crosshairMaxDistance, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
                 IInteractable assist = assistHit.collider.GetComponentInParent<IInteractable>();
@@ -289,6 +216,9 @@ namespace Sim {
                 outlineTarget = host.GetComponent<HoverOutline>();
                 if (outlineTarget == null) outlineTarget = host.AddComponent<HoverOutline>();
                 hoverName = this.ResolveHoverName(targetCollider);
+                // Viser cible, mais la distance d'interaction reste la portée définie dans la
+                // config du prop/item (PropsConfig.rangeToInteract / ItemConfig.rangeToInteract)
+                // via CanInteractWith (portée + ligne de vue), revalidée serveur.
                 canInteract = PlayerController.Local.CanInteractWith(interactable, targetPoint);
             } else if (remotePlayer != null) {
                 GameObject host = remotePlayer.gameObject;
@@ -313,7 +243,7 @@ namespace Sim {
 
             if (!canInteract || !Input.GetKeyDown(this.interactKey)) return;
 
-            // Même préparation que HandleInteractableClick : un NPC visé est freezé immédiatement.
+            // Un NPC visé est freezé immédiatement (le serveur stoppe son agent).
             if (interactable is ClientNpcView npcView) {
                 NpcInteractionSession.Begin(npcView);
             }
@@ -351,175 +281,12 @@ namespace Sim {
                     int l = LayerMask.NameToLayer("MissionHighlight");
                     _missionLayerBit = l >= 0 ? (1 << l) : 0;
                 }
-                return this.layerMaskInFreeMode | _outlineLayerBit | _missionLayerBit;
+                return this.interactionLayerMask | _outlineLayerBit | _missionLayerBit;
             }
         }
 
         private static bool WithinPlanarRange(Vector3 a, Vector3 b, float range) {
             return Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z)) <= range;
-        }
-
-        /// <summary>Vrai si le curseur vise exactement (raycast) un joueur distant — sert à
-        /// protéger l'interaction sociale (clic droit) du magnétisme items/props.</summary>
-        private bool IsCursorOverRemotePlayer() {
-            Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
-                PlayerController pc = h.collider.GetComponentInParent<PlayerController>();
-                return pc != null && !pc.isLocalPlayer;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Résout l'interactable visé par le curseur, de façon TOLÉRANTE. D'abord un raycast
-        /// exact (visée précise + visée d'objets hors portée pour s'en approcher conservées) ;
-        /// si rien d'interactable n'est touché, on aimante sur l'interactable À PORTÉE dont la
-        /// projection écran est la plus proche du curseur (dans une petite tolérance en pixels).
-        /// Utilisé par le survol ET le clic → l'objet surligné est toujours celui qu'on interagit.
-        /// La forgiveness ne concerne QUE la précision du curseur ; la portée/ligne de vue reste
-        /// vérifiée par CanInteractWith (et revalidée serveur).
-        /// </summary>
-        private bool TryResolveInteractable(out IInteractable interactable, out Collider col, out Vector3 point) {
-            interactable = null; col = null; point = Vector3.zero;
-
-            // 1. Raycast exact d'abord.
-            Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
-                IInteractable exact = h.collider.GetComponentInParent<IInteractable>();
-                if (exact.IsAlive() && exact.IsInteractable()) {
-                    interactable = exact; col = h.collider; point = h.point;
-                    return true;
-                }
-            }
-
-            // 2. Fallback magnétique : interactable à portée le plus proche du curseur à l'écran.
-            if (!this.magneticTargetingEnabled || PlayerController.Local == null) return false;
-
-            // Scan élargi : on prend le plus grand des deux rayons (standard vs NPC) pour pouvoir
-            // attraper des NPCs au-delà du rayon standard. Le filtrage par type se fait ensuite.
-            Vector3 playerPos = PlayerController.Local.transform.position;
-            float    scanRadius = Mathf.Max(this.magneticCandidateRadius, this.magneticNpcCandidateRadius);
-            Collider[] candidates = Physics.OverlapSphere(playerPos, scanRadius, this.InteractionMask, QueryTriggerInteraction.Ignore);
-            if (candidates.Length == 0) return false;
-
-            float refHeight = this.magneticToleranceReferenceHeight > 0f ? this.magneticToleranceReferenceHeight : 1080f;
-            float screenScale = Screen.height / refHeight;
-            float baseTol = this.magneticScreenTolerancePixels * screenScale;
-            float baseTolSqr = baseTol * baseTol;
-            float npcTol = this.magneticScreenTolerancePixels * this.magneticNpcScreenToleranceMultiplier * screenScale;
-            float npcTolSqr = npcTol * npcTol;
-            float baseRadiusSqr = this.magneticCandidateRadius * this.magneticCandidateRadius;
-            float npcRadiusSqr  = this.magneticNpcCandidateRadius * this.magneticNpcCandidateRadius;
-
-            Vector2 mouse = Input.mousePosition;
-            float bestSqr = float.MaxValue;
-
-            foreach (Collider c in candidates) {
-                IInteractable cand = c.GetComponentInParent<IInteractable>();
-                if (!cand.IsAlive() || !cand.IsInteractable()) continue;
-                if (!WithinPlanarRange(playerPos, cand.transform.position, cand.GetRange())) continue;
-
-                // NPCs : magnétisme boosté (rayon élargi + tolérance écran ×N) car cibles mobiles.
-                bool  isNpc       = cand is ClientNpcView;
-                float candRadSqr  = isNpc ? npcRadiusSqr : baseRadiusSqr;
-                float candTolSqr  = isNpc ? npcTolSqr   : baseTolSqr;
-
-                Vector3 delta = cand.transform.position - playerPos;
-                delta.y = 0f;
-                if (delta.sqrMagnitude > candRadSqr) continue;
-
-                Vector3 sp = this.camera.WorldToScreenPoint(c.bounds.center);
-                if (sp.z <= 0f) continue; // candidat derrière la caméra
-                float dSqr = ((Vector2)sp - mouse).sqrMagnitude;
-                if (dSqr > candTolSqr || dSqr >= bestSqr) continue;
-
-                bestSqr = dSqr;
-                interactable = cand; col = c; point = c.bounds.center;
-            }
-
-            return interactable != null;
-        }
-
-        /// <summary>
-        /// Applique le clic sur un interactable résolu (visée exacte OU magnétique) : ouvre le
-        /// menu radial si à portée (CanInteractWith = portée + ligne de vue), sinon s'en approche.
-        /// </summary>
-        private void HandleInteractableClick(IInteractable interactable, Vector3 point, bool leftMouseClick) {
-            // Si la cible est un NPC, on demande IMMÉDIATEMENT au serveur de freezer l'agent (et
-            // de l'orienter vers nous) — couvre clic gauche TALK et clic droit radial. Indépendant
-            // de la portée : le NPC s'arrête dès le clic, ce qui rend l'approche triviale même s'il
-            // marchait. Idempotent : un nouveau clic = heartbeat ; clic sur un autre NPC = transition
-            // propre via NpcInteractionSession.
-            if (interactable is ClientNpcView npcView) {
-                NpcInteractionSession.Begin(npcView);
-            }
-
-            bool canInteract = PlayerController.Local.CanInteractWith(interactable, point);
-            Action[] actions = interactable.GetActions();
-
-            if (leftMouseClick && (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
-                                   PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle))) {
-                actions = interactable.GetActions(true);
-                canInteract = canInteract || (actions.Length == 1 && actions[0].Type.Equals(ActionTypeEnum.LOOK));
-            }
-
-            if (canInteract) {
-                if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove)) {
-                    PlayerController.Local.Idle();
-                } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
-                    PlayerController.Local.LookAt(interactable.transform);
-                }
-
-                HUDManager.Instance.ShowContextMenu(actions, interactable.transform, leftMouseClick);
-            } else {
-                PlayerController.Local.SetTarget(point, interactable, leftMouseClick, _pendingRunRequest);
-            }
-        }
-
-        /// <summary>
-        /// Per-frame hover highlight: raycasts under the cursor and outlines the
-        /// IInteractable being pointed at (toggling the outline as the hovered target
-        /// changes). Works for any IInteractable — props, doors, NPCs, items, job
-        /// boards… — not just PropBehaviourBase.
-        /// </summary>
-        private void ManageHover() {
-            HoverOutline target = null;
-            string hoverName = null;
-
-            bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-            if (!overUI) {
-                // Résolution tolérante (visée exacte + magnétisme) : le même objet est surligné
-                // au survol et interagi au clic.
-                if (TryResolveInteractable(out IInteractable interactable, out Collider col, out _)) {
-                    GameObject host = interactable.transform.gameObject;
-                    target = host.GetComponent<HoverOutline>();
-                    if (target == null) target = host.AddComponent<HoverOutline>();
-                    hoverName = ResolveHoverName(col);
-                } else {
-                    // Joueurs distants / NPC : pas IInteractable (interaction au clic droit via
-                    // GetContextActions) mais on veut quand même les surligner au survol. Grandes
-                    // capsules → pas de souci d'ergonomie, un raycast exact dédié suffit.
-                    Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
-                    if (Physics.Raycast(ray.origin, ray.direction, out RaycastHit h, 100, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
-                        PlayerController pc = h.collider.GetComponentInParent<PlayerController>();
-                        if (pc != null && !pc.isLocalPlayer) {
-                            GameObject host = pc.gameObject;
-                            target = host.GetComponent<HoverOutline>();
-                            if (target == null) target = host.AddComponent<HoverOutline>();
-                        }
-                        hoverName = ResolveHoverName(h.collider);
-                    }
-                }
-            }
-
-            if (target != this._hoveredOutline) {
-                if (this._hoveredOutline != null) this._hoveredOutline.Hide();
-                this._hoveredOutline = target;
-                if (this._hoveredOutline != null) this._hoveredOutline.Show();
-            }
-
-            if (!string.IsNullOrEmpty(hoverName)) HoverNameTooltip.Show(hoverName);
-            else HoverNameTooltip.Hide();
         }
 
         /// <summary>
@@ -550,11 +317,7 @@ namespace Sim {
 
         private void OnStateChanged(PlayerController player, StateType state) {
             if (player.isLocalPlayer) {
-                if (state == StateType.FREE) {
-                    this.SetCurrentMode(this.PreferredFreeMode);
-                } else {
-                    this.SetCurrentMode(CameraModeEnum.BUILD);
-                }
+                this.SetCurrentMode(state == StateType.FREE ? CameraModeEnum.TPS : CameraModeEnum.BUILD);
             }
         }
 
@@ -586,16 +349,16 @@ namespace Sim {
         public void SetCurrentMode(CameraModeEnum mode) {
             this.currentMode = mode;
             this.buildCamera.enabled = mode == CameraModeEnum.BUILD;
-            this.tpsCamera.enabled = mode == CameraModeEnum.FREE;
             if (this.driveCamera != null) this.driveCamera.enabled = mode == CameraModeEnum.DRIVE;
             if (this.tpsShoulderCamera != null) this.tpsShoulderCamera.enabled = mode == CameraModeEnum.TPS;
             this.fpsCamera.SetActive(mode == CameraModeEnum.FPS);
 
+            // En TPS le joueur local quitte la NavMesh (CharacterController physique) ;
+            // les autres modes le rattachent à l'agent (build, drive, bots).
+            if (PlayerController.Local != null) PlayerController.Local.SetNavMeshBound(mode != CameraModeEnum.TPS);
+
             if (this.currentMode == CameraModeEnum.BUILD) {
-                this.buildCamera.Setup(this.tpsCamera.GetVirtualCamera());
-                this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
-            } else if (this.currentMode == CameraModeEnum.FREE) {
-                this.tpsCamera.Setup(this.buildCamera.GetVirtualCamera());
+                this.buildCamera.Setup();
                 this.camera.cullingMask = this.WithOutlineLayer(this.defaultCullingMask);
             } else if (this.currentMode == CameraModeEnum.TPS) {
                 this.tpsShoulderCamera.Setup();
@@ -614,16 +377,16 @@ namespace Sim {
             this.SetCurrentMode(CameraModeEnum.DRIVE);
         }
 
-        /// <summary>Rend la main à la caméra "à pied" (FREE ou TPS selon la préférence) à la sortie du véhicule.</summary>
+        /// <summary>Rend la main à la caméra TPS à la sortie du véhicule.</summary>
         public void ExitVehicleCamera() {
             if (this.driveCamera != null) this.driveCamera.SetVehicle(null);
-            this.SetCurrentMode(this.PreferredFreeMode);
+            this.SetCurrentMode(CameraModeEnum.TPS);
         }
 
         /// <summary>
         /// Interaction réduite quand le joueur local est À BORD d'un véhicule (conducteur ou passager).
-        /// Le click-to-move et le survol génériques restent neutralisés (ils se battraient avec la
-        /// conduite), mais le CLIC GAUCHE sur le véhicule occupé ouvre son menu contextuel (« Sortir »).
+        /// Le survol générique reste neutralisé (il se battrait avec la conduite), mais le CLIC GAUCHE
+        /// sur le véhicule occupé ouvre son menu contextuel (« Sortir »).
         /// Le curseur reste libre en conduite (la vue se pilote à la molette), donc le clic est fiable.
         /// </summary>
         private void ManageVehicleOccupantInteraction() {
@@ -650,97 +413,6 @@ namespace Sim {
                 if (this._hoveredOutline != null) this._hoveredOutline.Show();
             }
             HoverNameTooltip.Hide();
-        }
-
-        private void ManageInteraction() {
-            if (SubGameController.IsActive) return;
-
-            bool leftMouseClick = Input.GetMouseButtonUp(0);
-            bool leftMousePressed = Input.GetMouseButton(0);
-            bool rightMouseClick = Input.GetMouseButtonUp(1);
-
-            if (Input.GetMouseButtonDown(0)) {
-                this.startLeftClickValid = !EventSystem.current.IsPointerOverGameObject();
-                if (this.startLeftClickValid) {
-                    // Détection double clic : le 2e mouseDown dans la fenêtre arme
-                    // _pendingRunRequest. Un simple clic le remet à false — le flag
-                    // se réarme proprement à chaque nouveau cycle de clic.
-                    bool isDouble = (Time.unscaledTime - _lastLeftDownTime) <= doubleClickWindow;
-                    _pendingRunRequest = isDouble;
-                    _lastLeftDownTime = Time.unscaledTime;
-                }
-            }
-
-            if (((leftMouseClick || leftMousePressed) && !this.startLeftClickValid) || EventSystem.current.IsPointerOverGameObject()) {
-                return;
-            }
-
-            Ray ray = this.camera.ScreenPointToRay(Input.mousePosition);
-
-            if (!(leftMouseClick || rightMouseClick || leftMousePressed)) return;
-
-            // Résolution magnétique de l'interactable, sur le clic UP (pas le maintien gauche =
-            // déplacement continu). Si un interactable à portée est proche du curseur, on l'aimante.
-            // Exception : le clic droit visant un joueur distant (interaction sociale) garde la
-            // priorité sur le magnétisme — les joueurs sont de grandes capsules, la visée exacte suffit.
-            bool exactOnRemotePlayer = rightMouseClick && IsCursorOverRemotePlayer();
-            if ((leftMouseClick || rightMouseClick) && !exactOnRemotePlayer) {
-                if (TryResolveInteractable(out IInteractable magnet, out _, out Vector3 magnetPoint)) {
-                    // Clic gauche : un interactable "clic droit uniquement" ne réagit pas → on
-                    // laisse retomber sur le chemin RaycastAll (déplacement / objet derrière).
-                    if (!(leftMouseClick && magnet.IsRightClickOnly())) {
-                        HandleInteractableClick(magnet, magnetPoint, leftMouseClick);
-                        return;
-                    }
-                }
-            }
-
-            // Ignore trigger colliders: props can host triggers for occupancy detection (e.g. DoorPropSource)
-            // and we don't want those to intercept the click — only solid geometry should be hit.
-            RaycastHit[] hits = Physics.RaycastAll(ray.origin, ray.direction, 100, this.InteractionMask, QueryTriggerInteraction.Ignore);
-            if (hits.Length == 0) return;
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-            bool useLeftClickFilter = leftMouseClick || leftMousePressed;
-            bool hasHit = false;
-            foreach (RaycastHit h in hits) {
-                if (useLeftClickFilter) {
-                    IInteractable ii = h.collider.GetComponentInParent<IInteractable>();
-                    if (ii != null && ii.IsRightClickOnly()) continue;
-                }
-                hit = h;
-                hasHit = true;
-                break;
-            }
-            if (!hasHit) return;
-
-            {
-                IInteractable interactable = hit.collider.GetComponentInParent<IInteractable>();
-                PlayerController player = hit.collider.GetComponent<PlayerController>();
-
-                if (interactable != null && !leftMousePressed) {
-                    if (interactable.IsInteractable()) {
-                        HandleInteractableClick(interactable, hit.point, leftMouseClick);
-                    } else {
-                        PlayerController.Local.SetTarget(hit.point, interactable, false, _pendingRunRequest);
-                    }
-                } else if (interactable == null && leftMousePressed && hit.collider.gameObject.layer.Equals(LayerMask.NameToLayer("Ground"))) {
-                    PlayerController.Local.MoveTo(hit.point, _pendingRunRequest);
-                } else if (rightMouseClick && player) {
-                    if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterMove) ||
-                        PlayerController.Local.CurrentState().GetType() == typeof(CharacterInteract)) {
-                        PlayerController.Local.Idle();
-                    }
-
-                    if (player == PlayerController.Local) {
-                        HUDManager.Instance.CloseContextMenu();
-                        HUDManager.Instance.ToggleInventory();
-                    } else if (PlayerController.Local.CurrentState().GetType() == typeof(CharacterIdle)) {
-                        PlayerController.Local.LookAt(player.transform);
-                        HUDManager.Instance.ShowContextMenu(player.GetContextActions(), player.transform);
-                    }
-                }
-            }
         }
     }
 }

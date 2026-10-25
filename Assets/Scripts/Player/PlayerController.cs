@@ -61,15 +61,11 @@ namespace Sim {
 
         [Header("Movement")]
         [Tooltip("Vitesse de marche normale (m/s) — appliquée au NavMeshAgent à chaque MoveTo non-running.")]
-        [SerializeField] private float walkSpeed = 1.5f;
+        [SerializeField] private float walkSpeed = 2f;
         [Tooltip("Vitesse de course (m/s) — appliquée quand MoveTo est appelée avec isRunning=true (double clic sur le sol).")]
-        [SerializeField] private float runSpeed = 3.0f;
+        [SerializeField] private float runSpeed = 5.335f;
 
-        [Header("Keyboard movement (experimental)")]
-        [Tooltip("Active le déplacement clavier direct (ZQSD) relatif caméra, en plus du click-to-move.")]
-        [SerializeField] private bool keyboardMovementEnabled = true;
-        [Tooltip("Vitesse de rotation (deg/s) du personnage vers la direction de déplacement clavier.")]
-        [SerializeField] private float freeMoveTurnSpeed = 720f;
+        [Header("Keyboard movement (ZQSD)")]
         [SerializeField] private KeyCode forwardKey = KeyCode.Z;
         [SerializeField] private KeyCode backKey = KeyCode.S;
         [SerializeField] private KeyCode leftKey = KeyCode.Q;
@@ -86,6 +82,40 @@ namespace Sim {
         private float tpsRotationVelocity;
         private float tpsCurrentSpeed;
         private Vector3 tpsLastMoveDirection;
+
+        [Header("TPS physics (unbound from NavMesh, Starter Assets values)")]
+        [Tooltip("Gravité appliquée au CharacterController en mode TPS (Starter Assets : -15).")]
+        [SerializeField] private float tpsGravity = -15f;
+        [Tooltip("Décalage vertical du check de sol (Starter Assets : -0.14).")]
+        [SerializeField] private float tpsGroundedOffset = -0.14f;
+        [Tooltip("Rayon du CheckSphere de sol (Starter Assets : 0.28).")]
+        [SerializeField] private float tpsGroundedRadius = 0.28f;
+        [Tooltip("Layers considérés comme sol en TPS (Default + Ground + Wall).")]
+        [SerializeField] private LayerMask tpsGroundLayers = (1 << 0) | (1 << 9) | (1 << 12);
+
+        [Header("TPS jump (Starter Assets values)")]
+        [Tooltip("Touche de saut en mode TPS.")]
+        [SerializeField] private KeyCode jumpKey = KeyCode.Space;
+        [Tooltip("Hauteur de saut (m) — Starter Assets : 1.2.")]
+        [SerializeField] private float tpsJumpHeight = 1.2f;
+        [Tooltip("Délai (s) avant de pouvoir resauter après un atterrissage — Starter Assets : 0.5.")]
+        [SerializeField] private float tpsJumpTimeout = 0.5f;
+        [Tooltip("Délai (s) en l'air avant de passer en chute libre (anim InAir) — évite le flicker dans les escaliers. Starter Assets : 0.15.")]
+        [SerializeField] private float tpsFallTimeout = 0.15f;
+
+        // Mode TPS : le joueur est piloté par ce CharacterController (physique, non relié
+        // à la NavMesh) ; le NavMeshAgent ne sert plus qu'aux déplacements scriptés (bots).
+        private CharacterController characterController;
+        private float tpsVerticalVelocity;
+        private float tpsJumpTimeoutDelta;
+        private float tpsFallTimeoutDelta;
+        private const float TpsTerminalVelocity = 53f;
+
+        // Bascule centralisée agent ↔ CharacterController : les states (sit, drive, KO…)
+        // coupent la locomotion via SetLocomotionEnabled, la caméra choisit le mover via
+        // SetNavMeshBound. ApplyLocomotion() réconcilie les deux.
+        private bool locomotionEnabled = true;
+        private bool navMeshBound = true;
 
         [Header("Only for debug")]
         [SerializeField]
@@ -316,6 +346,7 @@ namespace Sim {
 
         private void Awake() {
             this.navMeshAgent = GetComponent<NavMeshAgent>();
+            this.characterController = GetComponent<CharacterController>();
             this.rigidbody = GetComponent<Rigidbody>();
             this.animator = GetComponent<PlayerAnimator>();
             this.playerHands = GetComponent<PlayerHands>();
@@ -366,9 +397,11 @@ namespace Sim {
                 this.stateMachine.SetState(idleState);
             }
 
-            CameraManager.Instance.SetCameraTarget(this.GetHeadTargetForCamera());
             this.navMeshAgent.updateRotation = false;
             Local = this;
+            // Full TPS : la caméra épaule est le seul mode « à pied » — on l'active dès le
+            // spawn (débranche aussi l'agent NavMesh au profit du CharacterController).
+            CameraManager.Instance.SetCurrentMode(CameraModeEnum.TPS);
             HUDManager.Instance.DisplayPanel(PanelTypeEnum.DEFAULT);
             CharacterInfoPanelUI.Instance.Setup(this.characterData);
             CharacterInfoPanelUI.Instance.Setup(this.characterHome);
@@ -715,6 +748,8 @@ namespace Sim {
 
             this.stateMachine.Tick();
 
+            this.TickTpsGravity();
+
             // Voice push-to-talk indicator: the talking bubble follows the same "V" key
             // used by VoiceRoomAdapter to transmit voice.
             bool talkKeyHeld = Input.GetKey(KeyCode.V);
@@ -983,22 +1018,13 @@ namespace Sim {
             }
         }
 
-        public void SetTarget(Vector3 targetPoint, IInteractable interactable, bool showPriorityActions = false, bool isRunning = false) {
-            string targetName = (interactable as UnityEngine.Object)?.name ?? interactable?.GetType().Name ?? "null";
-            Debug.Log($"[Interaction] Started interaction target={targetName}");
-            this.interactableTarget = interactable;
-            this.interactionOriginPoint = targetPoint;
-            this.showRadialMenuWithPriority = showPriorityActions;
-            // Interaction : la cible est la surface d'un prop (souvent hors NavMesh) → on autorise un
-            // chemin partiel pour marcher au plus près, la portée étant ensuite validée par CanInteractWith.
-            MoveTo(targetPoint, isRunning, allowPartialPath: true);
-        }
-
-        /// <param name="allowPartialPath">Pour une INTERACTION : le point visé est la surface d'un prop,
-        /// souvent HORS NavMesh → la garde de chemin est sautée et on laisse SetDestination snapper sur la
-        /// NavMesh la plus proche et marcher au plus près (la portée réelle est validée ensuite par
-        /// CanInteractWith). Pour un clic au sol on garde false (chemin COMPLET exigé, sinon le joueur
-        /// partirait vers un point inaccessible).</param>
+        /// <summary>Déplacement scripté via NavMeshAgent (bots de stress-test, marches
+        /// automatisées). Le joueur humain se déplace au clavier en TPS — ce chemin n'est
+        /// plus branché sur un clic. Nécessite un agent actif (SetNavMeshBound(true)).</summary>
+        /// <param name="allowPartialPath">Le point visé peut être hors NavMesh → la garde de chemin
+        /// est sautée et on laisse SetDestination snapper sur la NavMesh la plus proche et marcher
+        /// au plus près. Sinon un chemin COMPLET est exigé (le joueur partirait vers un point
+        /// inaccessible).</param>
         public void MoveTo(Vector3 targetPoint, bool isRunning = false, bool allowPartialPath = false) {
             // Pose assise/couchée : une commande de déplacement = « se lever et y aller ». On quitte
             // d'abord la pose (son OnExit réactive l'agent + le collider et restaure la position sur la
@@ -1070,55 +1096,181 @@ namespace Sim {
             return new Vector2(x, y);
         }
 
-        /// <summary>Engage l'état de déplacement clavier direct dès qu'un input ZQSD est détecté,
-        /// uniquement depuis un état « libre de marcher » (idle / click-to-move). Coexiste avec le
-        /// click-to-move ; neutralisé pendant la frappe UI, le knockdown, la conduite et la mort.</summary>
+        /// <summary>Engage l'état de déplacement clavier dès qu'un input ZQSD est détecté.
+        /// Bouger QUITTE l'état en cours (LookAt, Interact, build chronométré, pose
+        /// assise/couchée via ExitPose) — leurs OnExit font le ménage. Neutralisé pendant
+        /// la frappe UI, le knockdown, la conduite et la mort.</summary>
         private void HandleKeyboardMovementEntry() {
-            if (!keyboardMovementEnabled) return;
             if (this.stateMachine.CurrentState == freeMoveState) return; // déjà en déplacement clavier
             if (IsTypingInInputField()) return;
             if (this.isKnockedDown || this.IsDriving || this.IsPassenger) return;
             if (this._playerState == PlayerState.DIED) return;
 
-            // Symétrique au click-to-move (CameraManager n'appelle ManageInteraction qu'en mode FREE) :
-            // le clavier ne doit pas faire bouger le joueur en BUILD/DRIVE/FPS. Le mode TPS épaule
-            // est lui piloté exclusivement au clavier.
-            if (CameraManager.Instance != null) {
-                CameraModeEnum camMode = CameraManager.Instance.GetMode();
-                if (camMode != CameraModeEnum.FREE && camMode != CameraModeEnum.TPS) return;
+            // Le clavier ne doit pas faire bouger le joueur en BUILD/DRIVE/FPS : seul le
+            // mode TPS épaule est piloté au clavier.
+            if (CameraManager.Instance != null && CameraManager.Instance.GetMode() != CameraModeEnum.TPS) return;
+
+            if (this.ReadMoveAxis().sqrMagnitude <= 0.01f) return;
+
+            // Modale marchande ouverte : elle bloque aussi les interactions — on ne
+            // s'échappe pas du shop en marchant.
+            if (Sim.UI.MerchantShopUI.Instance != null && Sim.UI.MerchantShopUI.Instance.gameObject.activeSelf) return;
+
+            // Dialogue NPC ouvert : bouger le quitte proprement (Hide libère la session NPC).
+            if (Sim.UI.DialogueUI.Instance != null && Sim.UI.DialogueUI.Instance.gameObject.activeSelf) {
+                Sim.UI.DialogueUI.Instance.Hide();
             }
 
-            IState current = this.stateMachine.CurrentState;
-            if (current != idleState && current != moveState) return; // pas depuis sit/sleep/interact/...
+            // Pose assise/couchée : « se lever et y aller », comme MoveTo (ExitPose réactive la
+            // locomotion et restaure la position).
+            if (this.PlayerState == PlayerState.SITTING || this.PlayerState == PlayerState.SLEEPING) {
+                this.ExitPose();
+            }
 
-            if (this.ReadMoveAxis().sqrMagnitude > 0.01f) {
-                this.stateMachine.SetState(freeMoveState);
+            // Locomotion coupée (téléport en cours…) : pas de déplacement.
+            if (!this.locomotionEnabled) return;
+
+            // Depuis n'importe quel autre état (LookAt après un NPC ou « Regarder », Interact,
+            // build chronométré, click-to-move…) : l'entrée en déplacement déclenche leurs OnExit
+            // (StopInteraction, annulation du build, fermeture du radial via Idle.OnExit).
+            this.stateMachine.SetState(freeMoveState);
+        }
+
+        // ── Locomotion : NavMeshAgent (build/bots) ↔ CharacterController (TPS) ───────
+
+        /// <summary>Choisit le mover du joueur local : true = NavMeshAgent (build, drive, bots),
+        /// false = CharacterController physique (TPS, non relié à la NavMesh). Appelé par
+        /// CameraManager à chaque changement de mode caméra.</summary>
+        public void SetNavMeshBound(bool bound) {
+            if (this.navMeshBound == bound) return;
+            this.navMeshBound = bound;
+
+            // Une marche agent en cours ne peut pas survivre sans agent : on coupe le
+            // path et on retombe sur idle avant de désactiver l'agent.
+            if (!bound && this.navMeshAgent != null && this.navMeshAgent.enabled) {
+                if (this.navMeshAgent.hasPath) this.navMeshAgent.ResetPath();
+                if (this.stateMachine != null && this.stateMachine.CurrentState == this.moveState) this.Idle();
+            }
+
+            this.ApplyLocomotion();
+        }
+
+        /// <summary>Coupe/rétablit la locomotion du joueur local (remplace les accès directs
+        /// NavMeshAgent.enabled des states sit/drive/KO/teleport…) : le bon mover est
+        /// réactivé selon le mode caméra courant.</summary>
+        public void SetLocomotionEnabled(bool enabled) {
+            this.locomotionEnabled = enabled;
+            this.ApplyLocomotion();
+        }
+
+        private void ApplyLocomotion() {
+            bool agentOn = this.locomotionEnabled && this.navMeshBound;
+            bool controllerOn = this.locomotionEnabled && !this.navMeshBound && this.characterController != null;
+
+            if (this.navMeshAgent != null && this.navMeshAgent.enabled != agentOn) {
+                // Réactivation de l'agent : le joueur a pu quitter la NavMesh en TPS — on le
+                // recale sur le point de mesh le plus proche pour éviter un agent off-mesh.
+                if (agentOn && NavMesh.SamplePosition(this.transform.position, out NavMeshHit hit, 3f, NavMesh.AllAreas)) {
+                    this.transform.position = hit.position;
+                }
+                this.navMeshAgent.enabled = agentOn;
+            }
+
+            if (this.characterController != null && this.characterController.enabled != controllerOn) {
+                // Activation du CC : la position courante vient parfois d'être posée pour un agent
+                // navmesh (téléport) et peut être incrustée dans le sol — un CC incrusté ne peut
+                // plus bouger (la dépénétration bloque Move). On recale sur la NavMesh avec une
+                // petite marge verticale avant d'activer, symétrique du snap agent ci-dessus.
+                if (controllerOn && NavMesh.SamplePosition(this.transform.position, out NavMeshHit ccHit, 3f, NavMesh.AllAreas)) {
+                    this.transform.position = ccHit.position + Vector3.up * 0.05f;
+                }
+                this.characterController.enabled = controllerOn;
+            }
+
+            if (!controllerOn) {
+                this.tpsVerticalVelocity = 0f;
+                // Remet l'animator au sol : sans CC, Grounded n'est plus mis à jour et un
+                // FreeFall resté à true bloquerait l'état InAir.
+                if (this.animator != null) {
+                    this.animator.SetGrounded(true);
+                    this.animator.SetJump(false);
+                    this.animator.SetFreeFall(false);
+                }
             }
         }
 
-        /// <summary>Pilote le personnage en ZQSD relatif à la caméra via NavMeshAgent.Move (contraint à
-        /// la NavMesh). Renvoie false en l'absence d'input directionnel — l'état CharacterFreeMove
-        /// retombe alors sur idle. Course avec la touche dédiée (Maj). Owner local uniquement.</summary>
+        /// <summary>Gravité + saut façon Starter Assets (JumpAndGravity), appliqués tant que le
+        /// CharacterController est actif (même à l'arrêt : marcher hors d'un rebord en idle doit
+        /// faire tomber). Alimente les bools Grounded/Jump/FreeFall de l'animator.</summary>
+        private void TickTpsGravity() {
+            if (this.characterController == null || !this.characterController.enabled) return;
+
+            Vector3 spherePosition = new Vector3(this.transform.position.x,
+                this.transform.position.y - this.tpsGroundedOffset, this.transform.position.z);
+            bool grounded = Physics.CheckSphere(spherePosition, this.tpsGroundedRadius,
+                this.tpsGroundLayers, QueryTriggerInteraction.Ignore);
+            this.animator.SetGrounded(grounded);
+
+            if (grounded) {
+                this.tpsFallTimeoutDelta = this.tpsFallTimeout;
+                this.animator.SetJump(false);
+                this.animator.SetFreeFall(false);
+
+                if (this.tpsVerticalVelocity < 0f) {
+                    this.tpsVerticalVelocity = -2f; // colle au sol sans accumuler (valeur Starter Assets)
+                }
+
+                // Saut : seulement curseur verrouillé (pas de saut en tapant Espace dans une UI).
+                if (this.tpsJumpTimeoutDelta <= 0f
+                    && Input.GetKey(this.jumpKey)
+                    && Cursor.lockState == CursorLockMode.Locked
+                    && !IsTypingInInputField()) {
+                    // Vitesse verticale nécessaire pour atteindre la hauteur voulue : v = √(h × -2g).
+                    this.tpsVerticalVelocity = Mathf.Sqrt(this.tpsJumpHeight * -2f * this.tpsGravity);
+                    this.animator.SetJump(true);
+                }
+
+                if (this.tpsJumpTimeoutDelta >= 0f) {
+                    this.tpsJumpTimeoutDelta -= Time.deltaTime;
+                }
+            } else {
+                this.tpsJumpTimeoutDelta = this.tpsJumpTimeout;
+
+                // Chute libre après un court délai (évite le flicker InAir dans les escaliers).
+                if (this.tpsFallTimeoutDelta >= 0f) {
+                    this.tpsFallTimeoutDelta -= Time.deltaTime;
+                } else {
+                    this.animator.SetFreeFall(true);
+                }
+            }
+
+            if (this.tpsVerticalVelocity > -TpsTerminalVelocity) {
+                this.tpsVerticalVelocity += this.tpsGravity * Time.deltaTime;
+            }
+
+            this.characterController.Move(new Vector3(0f, this.tpsVerticalVelocity, 0f) * Time.deltaTime);
+        }
+
+        /// <summary>Pilote le personnage en ZQSD relatif à la caméra TPS (CharacterController,
+        /// physique libre). Renvoie false en l'absence d'input directionnel — l'état
+        /// CharacterFreeMove retombe alors sur idle. Course avec la touche dédiée (Maj).
+        /// Owner local uniquement.</summary>
         public bool TickFreeMove() {
-            // Sortie immédiate si le mode caméra a quitté FREE/TPS en cours de déplacement (entrée
-            // build, passager, FPS) : on retombe en idle pour ne pas continuer à driver l'agent.
-            CameraModeEnum camMode = CameraManager.Instance != null ? CameraManager.Instance.GetMode() : CameraModeEnum.FREE;
-            if (camMode != CameraModeEnum.FREE && camMode != CameraModeEnum.TPS) {
+            // Sortie immédiate si le mode caméra a quitté le TPS en cours de déplacement (entrée
+            // build, passager, FPS) : on retombe en idle pour ne pas continuer à driver le mover.
+            CameraModeEnum camMode = CameraManager.Instance != null ? CameraManager.Instance.GetMode() : CameraModeEnum.TPS;
+            if (camMode != CameraModeEnum.TPS) {
                 this.ResetFreeMove();
                 return false;
             }
-
-            bool tps = camMode == CameraModeEnum.TPS;
 
             Vector2 axis = this.ReadMoveAxis();
             if (axis.sqrMagnitude < 0.01f) {
                 // Feel Starter Assets : relâcher ZQSD ne stoppe pas net — la vitesse décélère
                 // en glissant sur le dernier cap, puis l'état retombe sur idle.
-                if (tps && this.tpsCurrentSpeed > 0.1f && this.tpsLastMoveDirection.sqrMagnitude > 0.0001f) {
+                if (this.tpsCurrentSpeed > 0.1f && this.tpsLastMoveDirection.sqrMagnitude > 0.0001f) {
                     this.tpsCurrentSpeed = Mathf.Lerp(this.tpsCurrentSpeed, 0f, Time.deltaTime * this.tpsSpeedChangeRate);
-                    if (this.navMeshAgent != null && this.navMeshAgent.enabled && this.navMeshAgent.isOnNavMesh) {
-                        this.navMeshAgent.Move(this.tpsLastMoveDirection * this.tpsCurrentSpeed * Time.deltaTime);
-                    }
+                    this.MoveOnFoot(this.tpsLastMoveDirection * this.tpsCurrentSpeed * Time.deltaTime);
                     this.animator.SetVelocity(this.tpsCurrentSpeed);
                     return true;
                 }
@@ -1140,34 +1292,32 @@ namespace Sim {
 
             bool running = Input.GetKey(runKey);
             float targetSpeed = (running ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier();
-            float speed;
-            if (tps) {
-                // Feel Starter Assets : la vitesse accélère/décélère progressivement au lieu de
-                // sauter instantanément entre marche et course (bande de snap 0.1 comme chez eux).
-                this.tpsCurrentSpeed = Mathf.Lerp(this.tpsCurrentSpeed, targetSpeed, Time.deltaTime * this.tpsSpeedChangeRate);
-                if (Mathf.Abs(this.tpsCurrentSpeed - targetSpeed) < 0.1f) this.tpsCurrentSpeed = targetSpeed;
-                speed = this.tpsCurrentSpeed;
-                this.tpsLastMoveDirection = dir.normalized;
-            } else {
-                speed = targetSpeed;
-            }
 
-            if (this.navMeshAgent != null && this.navMeshAgent.enabled && this.navMeshAgent.isOnNavMesh) {
-                this.navMeshAgent.Move(dir * speed * Time.deltaTime);
-            }
+            // Feel Starter Assets : la vitesse accélère/décélère progressivement au lieu de
+            // sauter instantanément entre marche et course (bande de snap 0.1 comme chez eux).
+            this.tpsCurrentSpeed = Mathf.Lerp(this.tpsCurrentSpeed, targetSpeed, Time.deltaTime * this.tpsSpeedChangeRate);
+            if (Mathf.Abs(this.tpsCurrentSpeed - targetSpeed) < 0.1f) this.tpsCurrentSpeed = targetSpeed;
+            this.tpsLastMoveDirection = dir.normalized;
 
-            if (tps) {
-                // Feel Starter Assets : rotation lissée (SmoothDampAngle) vers le cap de déplacement.
-                float targetYaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-                float yaw = Mathf.SmoothDampAngle(this.transform.eulerAngles.y, targetYaw, ref this.tpsRotationVelocity, this.tpsRotationSmoothTime);
-                this.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-            } else {
-                Quaternion targetRot = Quaternion.LookRotation(dir.normalized, Vector3.up);
-                this.transform.rotation = Quaternion.RotateTowards(this.transform.rotation, targetRot, freeMoveTurnSpeed * Time.deltaTime);
-            }
+            this.MoveOnFoot(dir * this.tpsCurrentSpeed * Time.deltaTime);
 
-            this.animator.SetVelocity(speed);
+            // Feel Starter Assets : rotation lissée (SmoothDampAngle) vers le cap de déplacement.
+            float targetYaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+            float yaw = Mathf.SmoothDampAngle(this.transform.eulerAngles.y, targetYaw, ref this.tpsRotationVelocity, this.tpsRotationSmoothTime);
+            this.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+
+            this.animator.SetVelocity(this.tpsCurrentSpeed);
             return true;
+        }
+
+        /// <summary>Applique un déplacement horizontal au bon mover : CharacterController quand il
+        /// est actif (TPS, physique libre), sinon NavMeshAgent (fallback, contraint à la NavMesh).</summary>
+        private void MoveOnFoot(Vector3 planarMotion) {
+            if (this.characterController != null && this.characterController.enabled) {
+                this.characterController.Move(planarMotion);
+            } else if (this.navMeshAgent != null && this.navMeshAgent.enabled && this.navMeshAgent.isOnNavMesh) {
+                this.navMeshAgent.Move(planarMotion);
+            }
         }
 
         /// <summary>Remet à zéro l'animator et les vélocités de lissage TPS quand le déplacement
@@ -1229,27 +1379,6 @@ namespace Sim {
             this.stateMachine.SetState(new CharacterPropsBuilding(this, duration, onComplete, onCancel));
         }
 
-        /// <summary>Démarre la « pose » d'un item tenu : le personnage marche jusqu'à
-        /// <paramref name="standPoint"/> (point accessible le plus proche de l'emplacement choisi),
-        /// puis à l'arrivée déclenche <paramref name="onArrive"/> (envoi de la requête de pose).
-        /// Interrompu (annulé via <paramref name="onCancel"/>) si un autre state prend la main avant
-        /// l'arrivée (clic-déplacement, interaction…). Renvoie faux si aucun chemin complet n'existe
-        /// vers <paramref name="standPoint"/> (l'appelant garde alors l'item en main et notifie).</summary>
-        public bool StartItemPose(Vector3 standPoint, System.Action onArrive, System.Action onCancel = null) {
-            if (this.navMeshAgent == null || !this.navMeshAgent.enabled || !this.navMeshAgent.isOnNavMesh) return false;
-
-            // Même garde que MoveTo : on n'engage la marche que si un chemin COMPLET existe (sinon
-            // le personnage resterait figé sans jamais « arriver », bloquant la pose pour toujours).
-            if (!this.navMeshAgent.CalculatePath(standPoint, _navPathScratch)
-                || _navPathScratch.status != NavMeshPathStatus.PathComplete) {
-                return false;
-            }
-
-            this.navMeshAgent.speed = walkSpeed * MoveSpeedPerkMultiplier();
-            this.stateMachine.SetState(new CharacterPoser(this, standPoint, onArrive, onCancel));
-            return true;
-        }
-
         public void Sleep(ISeatBehavior props, Transform couchTransform) {
             this.stateMachine.SetState(new CharacterSleep(this, props, couchTransform));
         }
@@ -1301,15 +1430,13 @@ namespace Sim {
                 if (this.ragdoll != null) this.ragdoll.EnableRagdoll();
                 if (isLocalPlayer) {
                     if (this.stateMachine != null) this.stateMachine.SetState(knockdownState);
-                    if (this.ragdoll != null && this.ragdoll.Hips != null)
-                        CameraManager.Instance.SetCameraTarget(this.ragdoll.Hips);
+                    // La caméra TPS suit les hanches du ragdoll via GetCameraFollowTarget().
                 }
             } else {
                 if (isLocalPlayer) {
                     Vector3 stand = this.ragdoll != null ? this.ragdoll.HipsPosition : transform.position;
                     if (UnityEngine.AI.NavMesh.SamplePosition(stand, out var hit, 3f, UnityEngine.AI.NavMesh.AllAreas))
                         stand = hit.position;
-                    CameraManager.Instance.SetCameraTarget(this.GetHeadTargetForCamera());
                     if (this.ragdoll != null) this.ragdoll.DisableRagdoll();
                     transform.position = stand;
                     this.Idle();
@@ -1377,6 +1504,13 @@ namespace Sim {
         public Transform GetHeadTargetForCamera() {
             return this.headTargetForCamera;
         }
+
+        /// <summary>Point d'ancrage de la caméra TPS : la tête en temps normal, les hanches du
+        /// ragdoll pendant un renversement (la racine ne suit pas le corps qui s'effondre).</summary>
+        public Transform GetCameraFollowTarget() {
+            if (this.isKnockedDown && this.ragdoll != null && this.ragdoll.Hips != null) return this.ragdoll.Hips;
+            return this.headTargetForCamera;
+        }
         
         public void SetHeadTargetPosition(Vector3 localPosition) {
             this.headTargetForCamera.localPosition = localPosition;
@@ -1401,6 +1535,14 @@ namespace Sim {
         public StateMachine StateMachine => stateMachine;
 
         public NavMeshAgent NavMeshAgent => navMeshAgent;
+
+        /// <summary>Vitesse de déplacement à pied courante, quel que soit le mover actif
+        /// (agent en FREE, CharacterController en TPS). Consommée par les UI qui se
+        /// ferment dès que le joueur marche.</summary>
+        public float CurrentMoveSpeed =>
+            this.navMeshAgent != null && this.navMeshAgent.enabled
+                ? this.navMeshAgent.velocity.magnitude
+                : this.tpsCurrentSpeed;
 
         public Vector3 IdleHeadPosition => idleHeadPosition;
 

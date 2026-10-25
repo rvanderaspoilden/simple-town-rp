@@ -86,7 +86,7 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
 
     // ── IInteractable ─────────────────────────────────────────────────────────
 
-    public float GetRange() => 1.5f;
+    public float GetRange() => _config != null ? _config.RangeToInteract : 1.5f;
 
     public bool IsInteractable()
     {

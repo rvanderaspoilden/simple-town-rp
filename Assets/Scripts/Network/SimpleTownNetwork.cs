@@ -840,9 +840,9 @@ public class SimpleTownNetwork : NetworkManager
         PlayerController.Local.CmdSetTeleporting(true);
         yield return new WaitForSeconds(1f);
         PlayerController.Local.ResetGeographicArea();
-        PlayerController.Local.NavMeshAgent.enabled = false;
+        PlayerController.Local.SetLocomotionEnabled(false);
         PlayerController.Local.transform.position = destination;
-        PlayerController.Local.NavMeshAgent.enabled = true;
+        PlayerController.Local.SetLocomotionEnabled(true);
         yield return new WaitForSeconds(2f);
         // Position has propagated by now — reveal the character at its destination.
         PlayerController.Local.CmdSetTeleporting(false);

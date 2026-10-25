@@ -13,7 +13,7 @@ namespace Sim.Building.BuildingController_implem {
             
             // Move it in character state
             PlayerController playerController = PlayerController.Local;
-            playerController.NavMeshAgent.enabled = false;
+            playerController.SetLocomotionEnabled(false);
             playerController.Collider.enabled = false;
             playerController.transform.position = playerPositionPoint.position;
             playerController.transform.rotation = playerPositionPoint.rotation;
