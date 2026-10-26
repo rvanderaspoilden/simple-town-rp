@@ -1,6 +1,7 @@
 using Mirror;
 using Sim.Enums;
 using Sim.Logging;
+using Sim.UI;
 using UnityEngine;
 
 namespace Sim {
@@ -96,6 +97,13 @@ namespace Sim {
         private const float PitchSyncThreshold = 1.5f;
         private const float MaxOriginDistance = 3f;
 
+        // Capsule analytique des personnages pour la résolution de tir serveur : les PNJ
+        // serveur n'ont AUCUN collider (vues client-side) et ceux des joueurs varient selon
+        // le mode — le raycast ne sert qu'au décor, les personnages sont testés sur leur
+        // position serveur.
+        private const float CharacterCapsuleHeight = 1.8f;
+        private const float CharacterCapsuleRadius = 0.45f;
+
         private PlayerController player;
         private PlayerHands hands;
         private Animator animator;
@@ -134,6 +142,11 @@ namespace Sim {
         /// déplacement (marche ralentie, course coupée).</summary>
         public bool IsAiming => (isLocalPlayer ? this.localAiming : this.aiming) && this.HeldWeapon != null;
 
+        /// <summary>Owner local : vrai quand le réticule est sur un personnage (joueur distant
+        /// ou PNJ) ET que la ligne canon→cible est dégagée — consommé par le point rouge des
+        /// réticules (CrosshairUI / ScopeOverlayUI).</summary>
+        public bool HasTargetLock { get; private set; }
+
         /// <summary>Arme actuellement tenue par CE joueur (copie locale ou distante), sinon null.</summary>
         public WeaponBehaviour HeldWeapon {
             get {
@@ -152,6 +165,10 @@ namespace Sim {
                 this.localAiming = wantAim;
                 this.CmdSetAiming(wantAim);
             }
+
+            // Point rouge : actif dès que l'état de tir est permis (visée OU hip fire) — le
+            // réticule est toujours à l'écran en TPS, le verrou couvre toutes les visées.
+            this.UpdateTargetLock(this.CanAim());
 
             // Tir possible même SANS viser (hip fire) tant que l'état le permet : l'arme est
             // d'abord LEVÉE en posture de visée (fenêtre hipPostureUntil consommée par
@@ -256,6 +273,73 @@ namespace Sim {
             }
         }
 
+        // ── Verrou de cible (point rouge) ──────────────────────────────────────────
+
+        /// <summary>Recalcule le verrou de cible de l'owner et le pousse aux deux réticules
+        /// (crosshair TPS et overlay lunette — un seul est visible à la fois).</summary>
+        private void UpdateTargetLock(bool active) {
+            this.HasTargetLock = active && this.ComputeTargetLock();
+            if (CrosshairUI.Instance != null) CrosshairUI.Instance.SetTargetLock(this.HasTargetLock);
+            if (ScopeOverlayUI.Instance != null) ScopeOverlayUI.Instance.SetTargetLock(this.HasTargetLock);
+        }
+
+        /// <summary>Vrai si le réticule centre-écran est sur un personnage (joueur distant ou
+        /// PNJ) ET que rien n'obstrue la ligne CANON→point visé — la caméra épaule voit
+        /// par-dessus des obstacles (murets, capots...) que le canon ne franchit pas.</summary>
+        private bool ComputeTargetLock() {
+            WeaponBehaviour weapon = this.HeldWeapon;
+            Camera cam = CameraManager.Instance != null ? CameraManager.Instance.Camera : null;
+            if (weapon == null || cam == null) return false;
+            float range = weapon.WeaponConfiguration != null ? weapon.WeaponConfiguration.MaxRange : 40f;
+
+            // 1) Un personnage sous le réticule ? (vues client : copies distantes de joueurs
+            //    + ClientNpcView — le premier impact décide, un décor devant = pas de cible.)
+            Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Component targetRoot = null;
+            Vector3 targetPoint = Vector3.zero;
+            RaycastHit[] hits = Physics.RaycastAll(ray.origin, ray.direction, range,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (RaycastHit h in hits) {
+                PlayerController pc = h.collider.GetComponentInParent<PlayerController>();
+                if (pc != null && pc.isLocalPlayer) continue; // sa propre capsule / son arme
+
+                if (pc != null) {
+                    targetRoot = pc;
+                    targetPoint = h.point;
+                } else {
+                    ClientNpcView npc = h.collider.GetComponentInParent<ClientNpcView>();
+                    if (npc != null) {
+                        targetRoot = npc;
+                        targetPoint = h.point;
+                    }
+                }
+                break;
+            }
+            if (targetRoot == null) return false;
+
+            // 2) Ligne canon→point visé dégagée ? Le premier impact non-local doit appartenir
+            //    à la cible elle-même ; rien sur la ligne = dégagé aussi.
+            Vector3 muzzle = weapon.MuzzlePosition;
+            Vector3 toTarget = targetPoint - muzzle;
+            float dist = toTarget.magnitude;
+            if (dist < 0.05f) return true;
+
+            RaycastHit[] line = Physics.RaycastAll(muzzle, toTarget / dist, dist - 0.02f,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(line, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (RaycastHit h in line) {
+                PlayerController pc = h.collider.GetComponentInParent<PlayerController>();
+                if (pc != null && pc.isLocalPlayer) continue;
+                if (pc != null && (Component)pc == targetRoot) return true;
+
+                ClientNpcView npc = h.collider.GetComponentInParent<ClientNpcView>();
+                if (npc != null && (Component)npc == targetRoot) return true;
+                return false; // obstacle avant la cible
+            }
+            return true;
+        }
+
         private void SyncPitch() {
             WeaponBehaviour weapon = this.HeldWeapon;
             Vector3 shoulder = this.GetShoulderPosition(weapon != null && weapon.HolderHand == HandType.Left);
@@ -342,25 +426,55 @@ namespace Sim {
             Vector3 end = origin + direction * cfg.MaxRange;
             Vector3 hitNormal = -direction;
             bool surfaceHit = false;
+
+            // 1) Occlusion DÉCOR : premier obstacle qui n'est ni le tireur ni un personnage.
+            //    Les personnages sont résolus ANALYTIQUEMENT (étape 2) : les PNJ serveur n'ont
+            //    AUCUN collider (les vues collisionnées sont client-side, le rayon les
+            //    traversait — « tirer sur un PNJ ne fait rien ») et les colliders des joueurs
+            //    varient selon le mode — le raycast ne fait donc foi que pour le décor.
+            float decorDist = cfg.MaxRange;
             RaycastHit[] hits = Physics.RaycastAll(origin, direction, cfg.MaxRange,
                 Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
             foreach (RaycastHit h in hits) {
-                PlayerController hitPlayer = h.collider.GetComponentInParent<PlayerController>();
-                if (hitPlayer == this.player) continue; // sa propre capsule / son arme
-
+                if (h.collider.GetComponentInParent<PlayerController>() != null) continue;
+                if (h.collider.GetComponentInParent<ClientNpcView>() != null) continue; // vue PNJ (host)
+                if (h.collider.GetComponentInParent<NpcAIController>() != null) continue;
+                decorDist = h.distance;
                 end = h.point;
                 hitNormal = h.normal;
-                if (hitPlayer != null) {
-                    bool knocked = hitPlayer.ServerKnockDown();
-                    GameLogger.Player.Info("PlayerShot {ShooterNetId} {TargetNetId} {Knocked}",
-                        netId, hitPlayer.netId, knocked);
-                } else {
-                    // Décor touché (pas un joueur) → décal d'impact côté clients.
-                    surfaceHit = true;
-                }
+                surfaceHit = true;
                 break;
+            }
+
+            // 2) PERSONNAGES : capsule analytique sur les positions serveur — la plus proche
+            //    touchée AVANT le décor gagne (joueurs via les connexions, PNJ via le registre).
+            PlayerController hitPlayer = null;
+            NpcAIController hitNpc = null;
+            float best = decorDist;
+            foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values) {
+                PlayerController pc = conn?.identity != null ? conn.identity.GetComponent<PlayerController>() : null;
+                if (pc == null || pc == this.player) continue;
+                if (RayHitsCapsule(origin, direction, best, pc.transform.position, out float d) && d < best) {
+                    best = d;
+                    hitPlayer = pc;
+                }
+            }
+            foreach (NpcAIController npc in NpcAIController.AllActive) {
+                if (RayHitsCapsule(origin, direction, best, npc.transform.position, out float d) && d < best) {
+                    best = d;
+                    hitNpc = npc;
+                    hitPlayer = null;
+                }
+            }
+
+            if (hitPlayer != null || hitNpc != null) {
+                end = origin + direction * best;
+                hitNormal = -direction;
+                surfaceHit = false; // pas de décal d'impact sur un personnage
+                bool knocked = hitPlayer != null ? hitPlayer.ServerKnockDown() : hitNpc.ServerKnockDown();
+                GameLogger.Player.Info("CharacterShot {ShooterNetId} {Target} {Knocked}",
+                    netId, hitPlayer != null ? "player:" + hitPlayer.netId : "npc:" + hitNpc.OccupantId, knocked);
             }
 
             this.RpcFired(end, hitNormal, surfaceHit);
@@ -579,6 +693,33 @@ namespace Sim {
             if (this.player.IsKnockedDown || this.player.IsDriving || this.player.IsPassenger) return false;
             PlayerState state = this.player.PlayerState;
             return state != PlayerState.DIED && state != PlayerState.SITTING && state != PlayerState.SLEEPING;
+        }
+
+        /// <summary>Intersection approchée rayon ↔ capsule verticale de personnage (pieds à
+        /// basePos, hauteur/rayon des constantes de classe) : vrai si le rayon passe à moins
+        /// du rayon de l'axe de la capsule, avec l'abscisse du point d'approche dans dist.
+        /// Paire de points la plus proche entre le rayon (origin + t·dir, t ∈ [0, maxDist],
+        /// dir normalisé) et l'axe (p0 + s·seg, s ∈ [0, 1]) — formule standard (Ericson).</summary>
+        private static bool RayHitsCapsule(Vector3 origin, Vector3 dir, float maxDist, Vector3 basePos, out float dist) {
+            Vector3 p0 = basePos + Vector3.up * CharacterCapsuleRadius;
+            Vector3 seg = Vector3.up * Mathf.Max(0.01f, CharacterCapsuleHeight - 2f * CharacterCapsuleRadius);
+
+            Vector3 r = origin - p0;
+            float b = Vector3.Dot(dir, seg);
+            float c = Vector3.Dot(seg, seg);
+            float d = Vector3.Dot(dir, r);
+            float e = Vector3.Dot(seg, r);
+            float denom = c - b * b; // a = dir·dir = 1
+
+            float t = denom > 1e-5f ? (b * e - c * d) / denom : -d; // parallèle : projection de p0
+            t = Mathf.Clamp(t, 0f, maxDist);
+            float s = Mathf.Clamp01((b * t + e) / c);
+            t = Mathf.Clamp(Vector3.Dot(p0 + seg * s - origin, dir), 0f, maxDist);
+
+            Vector3 onRay = origin + dir * t;
+            Vector3 onAxis = p0 + seg * s;
+            dist = t;
+            return (onRay - onAxis).sqrMagnitude <= CharacterCapsuleRadius * CharacterCapsuleRadius;
         }
 
         /// <summary>Déviation aléatoire dans un cône de demi-angle donné (deg) autour de dir.</summary>

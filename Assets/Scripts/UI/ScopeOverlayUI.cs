@@ -12,6 +12,10 @@ namespace Sim.UI {
         [SerializeField]
         private GameObject root;
 
+        [Tooltip("Center red dot — shown while a character (player/NPC) is under the reticle AND the muzzle has a clear line of fire (driven by PlayerShooter).")]
+        [SerializeField]
+        private GameObject targetDot;
+
         public static ScopeOverlayUI Instance;
 
         /// <summary>True while the scope overlay is on screen (the regular crosshair must hide).</summary>
@@ -37,6 +41,12 @@ namespace Sim.UI {
 
         public void Hide() {
             if (this.root != null && this.root.activeSelf) this.root.SetActive(false);
+        }
+
+        /// <summary>Red target-lock dot (clear shot on a player/NPC) — set every frame by the
+        /// local PlayerShooter; the dot lives under the root so Hide() masks it too.</summary>
+        public void SetTargetLock(bool locked) {
+            if (this.targetDot != null && this.targetDot.activeSelf != locked) this.targetDot.SetActive(locked);
         }
     }
 }

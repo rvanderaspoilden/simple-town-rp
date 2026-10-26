@@ -105,6 +105,11 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private static readonly Dictionary<int, NpcAIController> _byId = new Dictionary<int, NpcAIController>();
     public static bool TryGet(int npcId, out NpcAIController controller) => _byId.TryGetValue(npcId, out controller);
 
+    /// <summary>PNJ serveur actifs. Pour les systèmes qui doivent les toucher SANS collider
+    /// (le GO serveur n'en porte aucun, les vues collisionnées sont client-side) — ex. le tir
+    /// (PlayerShooter.CmdFire), qui teste une capsule analytique sur ces positions.</summary>
+    public static Dictionary<int, NpcAIController>.ValueCollection AllActive => _byId.Values;
+
     // Données injectées par NpcPool.Get() via ConfigureForSpawn AVANT OnEnable.
     private NpcSpawnPoint _home;
     private NpcIdentity   _identity = NpcIdentity.Empty;
