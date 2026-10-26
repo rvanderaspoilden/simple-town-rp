@@ -1617,6 +1617,65 @@ public class ServerItemManager
         done(false, "Aucune munition compatible sur vous");
     }
 
+    /// <summary>Compte les BALLES de réserve du joueur pour l'arme donnée : boîtes de
+    /// munitions compatibles dans la poche + le sac/colis tenu (exactement ce que le
+    /// rechargement peut consommer), une boîte valant un chargeur plein (magazineSize).
+    /// Async (un sac fermé se lit en DB) ; <paramref name="done"/>(balles). Affichage HUD
+    /// uniquement — la consommation réelle revalide tout au moment du reload.</summary>
+    public void CountAmmoReserve(NetworkConnectionToClient conn, WeaponConfig weapon, System.Action<int> done) {
+        if (conn?.identity == null || ApiManager.Instance == null || weapon == null) { done(0); return; }
+        ApiManager.Instance.StartCoroutine(CountAmmoReserveCoroutine(conn, weapon, done));
+    }
+
+    private IEnumerator CountAmmoReserveCoroutine(NetworkConnectionToClient conn, WeaponConfig weapon, System.Action<int> done) {
+        uint netId = conn.identity.netId;
+        int boxes = 0;
+
+        // Poche (session en mémoire).
+        if (_pocketByPlayer.TryGetValue(netId, out var pocket)) {
+            foreach (var it in pocket.ItemsByEntityId.Values) {
+                if (DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ammo
+                    && ammo.AmmoCategory == weapon.AmmoCategory) boxes += Mathf.Max(1, it.Quantity);
+            }
+        }
+
+        // Sac/colis tenu : session ouverte = comptage mémoire, sinon lecture DB.
+        string roomId = PlayerRoomTracker.Instance != null ? PlayerRoomTracker.Instance.GetRoom(conn) : null;
+        if (roomId != null && TryGetHeldPackage(netId, roomId, out _, out string pkgUuid, out _)) {
+            if (_openItemContainerByPlayer.TryGetValue(netId, out var ics) && ics.PackageItemUuid == pkgUuid) {
+                foreach (var it in ics.ItemsByEntityId.Values) {
+                    if (!it.IsProp && DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ammo
+                        && ammo.AmmoCategory == weapon.AmmoCategory) boxes += Mathf.Max(1, it.Quantity);
+                }
+            } else {
+                var createBody = new CreatePlaceBody { placeKey = "item_container:" + pkgUuid, type = "container", ownerId = pkgUuid };
+                UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
+                yield return createReq.SendWebRequest();
+                string placeId = null;
+                if (createReq.responseCode >= 200 && createReq.responseCode < 300) {
+                    try { placeId = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text)?.Id; } catch { }
+                }
+                if (!string.IsNullOrEmpty(placeId)) {
+                    UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
+                    yield return stateReq.SendWebRequest();
+                    if (stateReq.responseCode == 200) {
+                        try {
+                            var state = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
+                            if (state?.items != null) {
+                                foreach (var it in state.items) {
+                                    if (DatabaseManager.GetItemConfigById(it.configId) is AmmoConfig ammo
+                                        && ammo.AmmoCategory == weapon.AmmoCategory) boxes += Mathf.Max(1, it.quantity);
+                                }
+                            }
+                        } catch { }
+                    }
+                }
+            }
+        }
+
+        done(boxes * weapon.MagazineSize);
+    }
+
     /// <summary>Retire UNE unité de la ligne d'item munitions : stack → PATCH quantity-1
     /// (OCC), dernière unité → DELETE. <paramref name="cb"/>(ok, nouvelle version OCC).</summary>
     private IEnumerator ConsumeAmmoRow(string uuid, int version, int quantity, System.Action<bool, int> cb) {

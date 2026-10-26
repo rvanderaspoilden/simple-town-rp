@@ -94,16 +94,19 @@ namespace Sim.UI {
             if (this.targetDot != null && this.targetDot.activeSelf != locked) this.targetDot.SetActive(locked);
         }
 
-        /// <summary>Compteur de munitions « chargées/chargeur » (ou « Recharge… ») — poussé
-        /// chaque frame par le PlayerShooter local quand une arme est tenue. loaded &lt; 0 =
-        /// état encore inconnu (réponse serveur en route).</summary>
-        public void SetAmmo(int loaded, int magazineSize, bool reloading) {
+        /// <summary>Compteur de munitions « chargées/chargeur | réserve » (ou « Recharge… »)
+        /// — poussé chaque frame par le PlayerShooter local quand une arme est tenue.
+        /// loaded/reserve &lt; 0 = valeur encore inconnue (réponse serveur en route) :
+        /// le chargeur s'affiche « – », la réserve est omise.</summary>
+        public void SetAmmo(int loaded, int magazineSize, int reserve, bool reloading) {
             if (this.ammoText == null) return;
             string text = reloading ? "Recharge…"
-                : (loaded < 0 ? "–/" + magazineSize : loaded + "/" + magazineSize);
+                : (loaded < 0 ? "–" : loaded.ToString()) + "/" + magazineSize
+                  + (reserve >= 0 ? " | " + reserve : "");
             if (text != this.lastAmmoText) {
                 this.lastAmmoText = text;
                 this.ammoText.text = text;
+                // Rouge : chargeur vide ; une réserve à 0 en plus = plus rien à tirer du tout.
                 this.ammoText.color = !reloading && loaded == 0 ? this.ammoEmptyColor : this.ammoColor;
             }
             if (!this.ammoText.gameObject.activeSelf) this.ammoText.gameObject.SetActive(true);

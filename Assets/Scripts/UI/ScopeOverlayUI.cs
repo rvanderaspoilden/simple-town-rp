@@ -64,12 +64,14 @@ namespace Sim.UI {
             if (this.targetDot != null && this.targetDot.activeSelf != locked) this.targetDot.SetActive(locked);
         }
 
-        /// <summary>Compteur de munitions « chargées/chargeur » (ou « Recharge… ») — poussé
-        /// chaque frame par le PlayerShooter local ; vit sous le root, donc masqué hors lunette.</summary>
-        public void SetAmmo(int loaded, int magazineSize, bool reloading) {
+        /// <summary>Compteur de munitions « chargées/chargeur | réserve » (ou « Recharge… »)
+        /// — poussé chaque frame par le PlayerShooter local ; vit sous le root, donc masqué
+        /// hors lunette. loaded/reserve &lt; 0 = valeur encore inconnue.</summary>
+        public void SetAmmo(int loaded, int magazineSize, int reserve, bool reloading) {
             if (this.ammoText == null) return;
             string text = reloading ? "Recharge…"
-                : (loaded < 0 ? "–/" + magazineSize : loaded + "/" + magazineSize);
+                : (loaded < 0 ? "–" : loaded.ToString()) + "/" + magazineSize
+                  + (reserve >= 0 ? " | " + reserve : "");
             if (text != this.lastAmmoText) {
                 this.lastAmmoText = text;
                 this.ammoText.text = text;

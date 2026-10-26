@@ -140,10 +140,21 @@ namespace Sim {
         private float localReloadingUntil;
         private WeaponBehaviour ammoQueriedWeapon;
 
+        // Réserve (owner) : balles supplémentaires portées (boîtes compatibles poche + sac
+        // tenu, × un chargeur par boîte), poussée par TargetAmmoReserve. -1 = inconnue.
+        private int localAmmoReserve = -1;
+
         // Serveur
         private double serverNextFireTime;
         private double serverReloadingUntil;
         private bool serverReloadConsuming;
+
+        // Serveur : resynchronisation périodique de la réserve HUD — un sac fermé se lit en
+        // DB, on recompte par intervalle (+ resync immédiat au changement d'arme et au reload).
+        private const float ReserveSyncInterval = 3f;
+        private double serverNextReserveSync;
+        private bool serverReserveComputing;
+        private int serverLastSentReserve = -1;
 
         private void Awake() {
             this.player = GetComponent<PlayerController>();
@@ -172,6 +183,7 @@ namespace Sim {
         }
 
         private void Update() {
+            if (isServer) this.ServerTickReserve();
             if (!isLocalPlayer) return;
 
             // Changement d'arme (équipée/lâchée/échangée) : le chargeur local devient inconnu,
@@ -180,6 +192,7 @@ namespace Sim {
             if (heldNow != this.ammoQueriedWeapon) {
                 this.ammoQueriedWeapon = heldNow;
                 this.localLoadedAmmo = -1;
+                this.localAmmoReserve = -1;
                 this.localReloadingUntil = 0f;
                 if (heldNow != null) this.CmdQueryAmmo();
             }
@@ -411,8 +424,33 @@ namespace Sim {
             }
 
             bool reloading = Time.time < this.localReloadingUntil;
-            if (CrosshairUI.Instance != null) CrosshairUI.Instance.SetAmmo(this.localLoadedAmmo, cfg.MagazineSize, reloading);
-            if (ScopeOverlayUI.Instance != null) ScopeOverlayUI.Instance.SetAmmo(this.localLoadedAmmo, cfg.MagazineSize, reloading);
+            if (CrosshairUI.Instance != null)
+                CrosshairUI.Instance.SetAmmo(this.localLoadedAmmo, cfg.MagazineSize, this.localAmmoReserve, reloading);
+            if (ScopeOverlayUI.Instance != null)
+                ScopeOverlayUI.Instance.SetAmmo(this.localLoadedAmmo, cfg.MagazineSize, this.localAmmoReserve, reloading);
+        }
+
+        /// <summary>Serveur : recompte périodiquement la réserve de munitions portée (poche +
+        /// sac tenu) de CE joueur et la pousse à l'owner quand elle change. Le recompte est
+        /// async (sac fermé lu en DB) — jamais plus d'un en vol.</summary>
+        private void ServerTickReserve() {
+            if (this.serverReserveComputing || NetworkTime.time < this.serverNextReserveSync) return;
+            if (connectionToClient == null || ServerItemManager.Instance == null) return;
+            this.serverNextReserveSync = NetworkTime.time + ReserveSyncInterval;
+
+            string roomId = PlayerRoomTracker.Instance != null
+                ? PlayerRoomTracker.Instance.GetRoom(connectionToClient)
+                : null;
+            if (!ServerItemManager.Instance.TryGetHeldWeapon(netId, roomId, out _, out WeaponConfig cfg)) return;
+
+            this.serverReserveComputing = true;
+            ServerItemManager.Instance.CountAmmoReserve(connectionToClient, cfg, rounds => {
+                if (this == null) return; // joueur déconnecté pendant la lecture DB
+                this.serverReserveComputing = false;
+                if (rounds == this.serverLastSentReserve) return;
+                this.serverLastSentReserve = rounds;
+                this.TargetAmmoReserve(rounds);
+            });
         }
 
         private void SyncPitch() {
@@ -483,6 +521,11 @@ namespace Sim {
             if (ServerItemManager.Instance == null
                 || !ServerItemManager.Instance.TryGetHeldWeapon(netId, roomId, out int weaponEntityId, out WeaponConfig cfg)) return;
             this.TargetAmmo(ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg));
+
+            // Nouvelle arme en main : l'owner a remis sa réserve à « inconnue » — recompte
+            // immédiat et renvoi forcé (même valeur comprise).
+            this.serverLastSentReserve = -1;
+            this.serverNextReserveSync = 0;
         }
 
         [Command]
@@ -510,6 +553,7 @@ namespace Sim {
             ServerItemManager.Instance.ConsumeAmmoItem(connectionToClient, cfg.AmmoCategory, (ok, error) => {
                 if (this == null) return; // joueur déconnecté pendant l'aller-retour backend
                 this.serverReloadConsuming = false;
+                this.serverNextReserveSync = 0; // réserve possiblement changée (boîte consommée ou stock désynchronisé)
                 if (!ok) {
                     this.serverReloadingUntil = 0;
                     this.TargetReloadResult(false, error);
@@ -541,6 +585,11 @@ namespace Sim {
         [TargetRpc]
         private void TargetAmmo(int loaded) {
             this.localLoadedAmmo = loaded;
+        }
+
+        [TargetRpc]
+        private void TargetAmmoReserve(int rounds) {
+            this.localAmmoReserve = rounds;
         }
 
         [TargetRpc]
