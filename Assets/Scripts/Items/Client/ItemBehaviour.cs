@@ -109,6 +109,10 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
             {
                 var hands = PlayerController.Local.PlayerHands;
                 bool canAcquire = hands.CanHandleItem(_config.HandleType) || hands.IsHoldingContainer();
+                // Munitions : jamais en main — ramassables si une poche est libre ou qu'un
+                // sac est tenu (le serveur route et revalide).
+                if (_config is AmmoConfig)
+                    canAcquire = ClientItemManager.LocalPocketHasFreeSlot() || hands.IsHoldingContainer();
                 // Règle d'armement : une seule arme à la fois (même à une main) — le serveur
                 // revalide (ResolveHand), ceci n'est que le hint visuel sur l'action PICK.
                 if (_config is WeaponConfig

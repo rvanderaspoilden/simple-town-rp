@@ -71,6 +71,16 @@ public class ClientItemManager
     /// </summary>
     public static S2C_PocketSync? LastPocketSnapshot { get; private set; }
 
+    /// <summary>Hint client : la poche locale a-t-elle un slot libre ? Basé sur le dernier
+    /// snapshot (vrai si encore inconnu — le serveur revalide). Consommé par l'action PICK
+    /// des items jamais équipables en main (munitions).</summary>
+    public static bool LocalPocketHasFreeSlot() {
+        if (!LastPocketSnapshot.HasValue) return true;
+        S2C_PocketSync snapshot = LastPocketSnapshot.Value;
+        int count = snapshot.Items != null ? snapshot.Items.Length : 0;
+        return count < snapshot.SlotCount;
+    }
+
     private void OnContainerOpened(S2C_ContainerOpened msg) {
         Debug.Log($"[Container] Opened propId={msg.PropId} placeId={msg.PlaceId} slots={msg.SlotCount} items={msg.Items?.Length}");
         ContainerOpened?.Invoke(msg);

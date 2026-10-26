@@ -550,6 +550,14 @@ public class ServerItemManager
         HandType? assignedHand = ResolveHand(config, playerNetId);
         if (!assignedHand.HasValue)
         {
+            // Munitions (jamais équipables en main) : la poche d'abord, sinon le sac tenu
+            // via le fallback colis ci-dessous, sinon échec avec un message dédié.
+            if (config is AmmoConfig && TryGetFreePocketSlot(playerNetId, out PocketSession ammoPocket, out int ammoSlot)) {
+                ApiManager.Instance?.StartCoroutine(
+                    PickupToPocketCoroutine(conn, roomId, msg.EntityId, entity, ammoPocket, ammoSlot));
+                return;
+            }
+
             // Mains pleines : si le joueur tient un colis (item-conteneur), l'item ramassé
             // va dans un slot libre du colis (même fermé). Plein → toast + pas de ramassage.
             if (TryGetHeldPackage(playerNetId, roomId, out _, out string pkgUuid, out ContainerConfig pkgCfg)) {
@@ -564,7 +572,8 @@ public class ServerItemManager
                     onFail: err => conn.Send(new S2C_PickupResult { Success = false, EntityId = worldEntityId, ErrorMessage = err })));
                 return;
             }
-            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Mains pleines" });
+            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId,
+                ErrorMessage = config is AmmoConfig ? InventoryToasts.AmmoNoStorage : "Mains pleines" });
             return;
         }
 
@@ -722,6 +731,13 @@ public class ServerItemManager
         if (ResolveHand(config, netId).HasValue) {
             SpawnItemInHand(roomId, configId, conn, config, persistent);
             onSuccess?.Invoke();
+            return;
+        }
+        // Munitions (jamais équipables en main) : poche d'abord, puis le colis tenu ci-dessous.
+        if (config is AmmoConfig && TryGetFreePocketSlot(netId, out PocketSession ammoPocket, out int ammoSlot)) {
+            string ammoCharId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+            ApiManager.Instance?.StartCoroutine(
+                CreateItemInPocketCoroutine(conn, configId, ammoCharId, ammoPocket, ammoSlot, onSuccess, onFail));
             return;
         }
         if (TryGetHeldPackage(netId, roomId, out _, out string pkgUuid, out ContainerConfig pkgCfg)) {
@@ -1279,6 +1295,11 @@ public class ServerItemManager
         // main) bloque l'équipement de toute autre arme, quelle que soit la main libre.
         if (config is WeaponConfig && HoldsWeapon(netId)) return null;
 
+        // Munitions : JAMAIS équipables en main. Elles se rangent hors main — le ramassage
+        // et le spawn inventaire routent vers la poche puis le sac tenu (chokepoint unique :
+        // couvre pickup, achats, CanFitInHand...).
+        if (config is AmmoConfig) return null;
+
         if (config.HandleType == ItemHandleType.TWO_HAND)
             return (state.RightEntityId == -1 && state.LeftEntityId == -1) ? HandType.Right : (HandType?)null;
 
@@ -1461,6 +1482,109 @@ public class ServerItemManager
                 if (!it.IsProp && it.ItemUuid == uuid) { slotIndex = it.SlotIndex; return true; }
         slotIndex = 0;
         return false;
+    }
+
+    /// <summary>Premier slot de poche libre du joueur. Faux si la session poche n'est pas
+    /// (encore) ouverte ou si la poche est pleine.</summary>
+    private bool TryGetFreePocketSlot(uint netId, out PocketSession session, out int slotIndex) {
+        slotIndex = -1;
+        if (!_pocketByPlayer.TryGetValue(netId, out session)) return false;
+        for (int i = 0; i < PocketCapacity; i++) {
+            if (!session.SlotToEntityId.ContainsKey(i)) { slotIndex = i; return true; }
+        }
+        return false;
+    }
+
+    /// <summary>Ramassage d'un item-monde DIRECTEMENT vers une poche — pour les items jamais
+    /// équipables en main (munitions). Item bridgé → PATCH de sa ligne vers la place poche
+    /// (uuid conservé) ; éphémère → nouvelle ligne. L'entité monde est retirée de la room en
+    /// PRÉSERVANT la ligne DB (contrairement à DespawnItem qui la supprime). Un seul flux
+    /// poche par joueur en pratique (ses propres actions) — pas de re-check du slot après
+    /// l'aller-retour backend.</summary>
+    private IEnumerator PickupToPocketCoroutine(NetworkConnectionToClient conn, string roomId,
+        int entityId, ItemEntity entity, PocketSession pocket, int slotIndex) {
+        string itemUuid = null;
+        int version = 0;
+        ItemDbBridge bridge = GetBridge(entityId);
+
+        if (bridge != null && !string.IsNullOrEmpty(bridge.Uuid)) {
+            var body = new UpdateItemBody {
+                expectedVersion = bridge.Version,
+                placeId = pocket.PlaceId,
+                stateData = new Dictionary<string, object> { { "slotIndex", slotIndex } },
+            };
+            UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(bridge.Uuid, body);
+            yield return req.SendWebRequest();
+            if (req.responseCode < 200 || req.responseCode >= 300) {
+                Debug.LogWarning($"[ServerItemManager] PickupToPocket PATCH failed code={req.responseCode} uuid={bridge.Uuid}");
+                conn.Send(new S2C_PickupResult { Success = false, EntityId = entityId, ErrorMessage = "Objet introuvable" });
+                yield break;
+            }
+            itemUuid = bridge.Uuid;
+            version = bridge.Version + 1;
+            try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) version = it.version; } catch { }
+        } else {
+            string charId = conn.identity != null ? conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id : null;
+            var body = new CreateItemBody {
+                placeId = pocket.PlaceId, configId = entity.ItemConfigId, quantity = 1, ownedBy = charId,
+                stateData = new Dictionary<string, object> { { "slotIndex", slotIndex } },
+            };
+            UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+            yield return req.SendWebRequest();
+            if (req.responseCode < 200 || req.responseCode >= 300) {
+                conn.Send(new S2C_PickupResult { Success = false, EntityId = entityId, ErrorMessage = "Erreur stockage" });
+                yield break;
+            }
+            try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) { itemUuid = it.Id; version = it.version; } } catch { }
+        }
+
+        // Retire l'entité du monde en GARDANT sa ligne DB (l'item vit maintenant en poche).
+        if (_rooms.TryGetValue(roomId, out var roomItems) && roomItems.Remove(entityId))
+            BroadcastToRoom(roomId, new S2C_DestroyItem { EntityId = entityId, RoomId = roomId });
+        _bridges.Remove(entityId);
+
+        int pocketEntityId = _nextEntityId++;
+        pocket.ItemsByEntityId[pocketEntityId] = new PocketSessionItem {
+            EntityId = pocketEntityId, ConfigId = entity.ItemConfigId, SlotIndex = slotIndex,
+            ItemUuid = itemUuid, Version = version, Quantity = 1,
+        };
+        pocket.SlotToEntityId[slotIndex] = pocketEntityId;
+        if (!string.IsNullOrEmpty(itemUuid))
+            _bridges[pocketEntityId] = new ItemDbBridge { Uuid = itemUuid, Version = version, PlaceId = pocket.PlaceId };
+
+        SendPocketSnapshot(conn, pocket);
+        conn.Send(new S2C_PickupResult { Success = true, EntityId = entityId });
+        GameLogger.Network.Info("Item PickupToPocket netId={NetId} config={ConfigId} slot={Slot} uuid={Uuid}",
+            conn.identity != null ? conn.identity.netId : 0, entity.ItemConfigId, slotIndex, itemUuid);
+    }
+
+    /// <summary>Crée un NOUVEL item directement dans la poche du joueur — spawn admin /
+    /// récompense d'un item jamais équipable en main (munitions).</summary>
+    private IEnumerator CreateItemInPocketCoroutine(NetworkConnectionToClient conn, int configId, string charId,
+        PocketSession pocket, int slotIndex, System.Action onSuccess, System.Action<string> onFail) {
+        var body = new CreateItemBody {
+            placeId = pocket.PlaceId, configId = configId, quantity = 1, ownedBy = charId,
+            stateData = new Dictionary<string, object> { { "slotIndex", slotIndex } },
+        };
+        UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300) { onFail?.Invoke("Erreur stockage"); yield break; }
+        string itemUuid = null;
+        int version = 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) { itemUuid = it.Id; version = it.version; } } catch { }
+
+        int entityId = _nextEntityId++;
+        pocket.ItemsByEntityId[entityId] = new PocketSessionItem {
+            EntityId = entityId, ConfigId = configId, SlotIndex = slotIndex,
+            ItemUuid = itemUuid, Version = version, Quantity = 1,
+        };
+        pocket.SlotToEntityId[slotIndex] = entityId;
+        if (!string.IsNullOrEmpty(itemUuid))
+            _bridges[entityId] = new ItemDbBridge { Uuid = itemUuid, Version = version, PlaceId = pocket.PlaceId };
+        SendPocketSnapshot(conn, pocket);
+        GameLogger.Network.Info("Item SpawnInPocket netId={NetId} config={ConfigId} slot={Slot} uuid={Uuid}",
+            conn.identity != null ? conn.identity.netId : 0, configId, slotIndex, itemUuid);
+        onSuccess?.Invoke();
     }
 
     /// <summary>Chargeur à publier dans un snapshot d'inventaire (tooltip client) : -1 si
@@ -3781,6 +3905,12 @@ public class ServerItemManager
 
         public bool ValidateAsTarget(int slotIndex, int configId, out string err) {
             err = null;
+            // Munitions : jamais en main — refuse tout move/swap dont la destination est
+            // une main (le ramassage les route déjà vers poche/sac).
+            if (DatabaseManager.GetItemConfigById(configId) is AmmoConfig) {
+                err = InventoryToasts.AmmoNotHoldable;
+                return false;
+            }
             // Garde TWO_HAND : un item à deux mains nécessite que l'AUTRE main soit
             // libre ; et inversement, si l'autre main porte un TWO_HAND, cette main
             // ne peut accueillir aucun item (cohérence d'état serveur, sinon le
