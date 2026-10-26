@@ -195,8 +195,11 @@ namespace Sim {
                 Vector3 dir = (this.aimPoint - muzzle).normalized;
                 if (dir.sqrMagnitude < 0.5f) dir = this.transform.forward;
 
-                float spread = (cfg != null ? cfg.SpreadAngle : 4f)
-                               * (this.localAiming ? this.aimSpreadFactor : 1f);
+                // Visée à la lunette (sniper) : dispersion NULLE — le tir part exactement sur
+                // le réticule ; sinon réduction classique en visée, pleine en hip fire.
+                bool scoped = this.localAiming && cfg != null && cfg.ScopedAim;
+                float spread = scoped ? 0f
+                    : (cfg != null ? cfg.SpreadAngle : 4f) * (this.localAiming ? this.aimSpreadFactor : 1f);
                 this.CmdFire(muzzle, ApplySpread(dir, spread));
                 if (!this.localAiming) this.hipPostureUntil = Time.time + this.hipFirePostureDuration;
             }

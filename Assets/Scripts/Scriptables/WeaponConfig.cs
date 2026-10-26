@@ -25,6 +25,21 @@ public class WeaponConfig : ItemConfig {
     [SerializeField]
     private float spreadAngle = 4f;
 
+    [Header("Lunette (visée FPS sniper)")]
+    [Tooltip("Visée à la lunette : pendant la visée (clic droit) la caméra passe en vue FPS à l'œil du personnage avec un zoom fort (scopeFov) et une sensibilité réduite (scopeSensitivityFactor). Le corps du joueur local est masqué (ombre conservée). La dispersion est NULLE à la lunette.")]
+    [SerializeField]
+    private bool scopedAim;
+
+    [Range(1f, 40f)]
+    [Tooltip("FOV (deg) de la lunette — plus petit = zoom plus fort (8 ≈ x5 depuis le FOV 40 de la vcam TPS).")]
+    [SerializeField]
+    private float scopeFov = 8f;
+
+    [Range(0.01f, 1f)]
+    [Tooltip("Facteur de sensibilité souris pendant la visée à la lunette (remplace le aimSensitivityFactor de la caméra TPS, qui est pensé pour un zoom léger).")]
+    [SerializeField]
+    private float scopeSensitivityFactor = 0.1f;
+
     [Tooltip("Son du coup de feu, joué en 3D à la bouche du canon sur tous les clients.")]
     [SerializeField]
     private AudioClip fireSound;
@@ -42,6 +57,12 @@ public class WeaponConfig : ItemConfig {
     public float RecoilKick => Mathf.Clamp(recoilKick, 0.05f, 1f);
 
     public float SpreadAngle => Mathf.Clamp(spreadAngle, 0f, 15f);
+
+    public bool ScopedAim => scopedAim;
+
+    public float ScopeFov => Mathf.Clamp(scopeFov, 1f, 40f);
+
+    public float ScopeSensitivityFactor => Mathf.Clamp(scopeSensitivityFactor, 0.01f, 1f);
 
     public AudioClip FireSound => fireSound;
 

@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30b950d51bed6204e9e5ff1d51da3a9c, type: 3}
+  m_Name: Sniper
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponConfig
+  id: 105
+  label: Sniper
+  description: "Fusil de pr\xE9cision \xE0 lunette. Clic droit pour viser \xE0 la
+    lunette (vue FPS, zoom fort), clic gauche pour tirer."
+  type: 3
+  handleType: 1
+  unEquippedActions:
+  - {fileID: 11400000, guid: fa73a1da35281ac4794f59016aab77cd, type: 2}
+  equippedActions:
+  - {fileID: 11400000, guid: 875ebf10bf5a7c24084772ff5e3be913, type: 2}
+  prefab: {fileID: 1792814874209208592, guid: 5b7dd72bd6886ab4f949967c32ff536b, type: 3}
+  toPersist: 0
+  allowedInPocket: 0
+  rangeToInteract: 1.5
+  cursor: {fileID: 0}
+  icon: {fileID: 0}
+  poseShape: 0
+  gripPosition: {x: 0.0055, y: -0.0119, z: -0.0003}
+  gripEuler: {x: 0, y: 0, z: 294.307}
+  maxStackSize: 1
+  fireInterval: 1.5
+  automatic: 0
+  maxRange: 200
+  recoilKick: 1
+  spreadAngle: 2
+  scopedAim: 1
+  scopeFov: 8
+  scopeSensitivityFactor: 0.1
+  fireSound: {fileID: 8300000, guid: c749fec3199d20845bf6020d437d340d, type: 3}
+  fireSoundVolume: 0.9

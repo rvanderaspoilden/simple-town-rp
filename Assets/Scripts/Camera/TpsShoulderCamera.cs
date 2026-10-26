@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Sim {
     /// <summary>
@@ -47,10 +49,29 @@ namespace Sim {
         [SerializeField]
         private float aimSensitivityFactor = 0.6f;
 
+        [Header("Visée lunette (arme WeaponConfig.scopedAim)")]
+        [Tooltip("Vitesse du fondu TPS ↔ œil (0→1 par s) : la caméra glisse de l'épaule jusqu'à l'œil en entrant à la lunette. FOV et sensibilité de lunette viennent de la WeaponConfig (scopeFov / scopeSensitivityFactor).")]
+        [SerializeField]
+        private float scopeBlendSpeed = 5f;
+
+        [Range(0f, 1f)]
+        [Tooltip("Seuil du fondu au-delà duquel le corps du joueur local (et son arme) passe en ombre seule — la caméra est quasi dans la tête.")]
+        [SerializeField]
+        private float scopeHideBodyThreshold = 0.6f;
+
         private float yaw;
         private float pitch;
         private float defaultFov = -1f;
         private PlayerShooter localShooter;
+
+        // Lunette : fondu épaule→œil appliqué sur le ThirdPersonFollow de la vcam.
+        private CinemachineThirdPersonFollow follow;
+        private float defaultCameraDistance;
+        private Vector3 defaultShoulderOffset;
+        private float defaultVerticalArmLength;
+        private float scopeBlend;
+        private bool bodyHidden;
+        private readonly List<KeyValuePair<Renderer, ShadowCastingMode>> hiddenRenderers = new();
 
         private void OnEnable() {
             if (this.virtualCamera != null) this.virtualCamera.gameObject.SetActive(true);
@@ -58,6 +79,11 @@ namespace Sim {
 
         private void OnDisable() {
             if (this.virtualCamera != null) this.virtualCamera.gameObject.SetActive(false);
+            // Sortie de mode en pleine lunette (véhicule, build...) : la vcam doit rendre la
+            // main avec sa pose d'épaule d'origine et le corps redevenir visible.
+            this.scopeBlend = 0f;
+            this.ApplyScopeRig();
+            this.SetLocalBodyHidden(false);
         }
 
         /// <summary>Current camera yaw (deg) — the heading ZQSD movement is relative to.</summary>
@@ -80,29 +106,103 @@ namespace Sim {
             if (PlayerController.Local == null) return;
 
             bool aiming = this.IsLocalPlayerAiming();
+            // Arme à lunette (sniper) : la visée passe en FPS — FOV et sensibilité de la config.
+            WeaponConfig scopedCfg = aiming ? this.ScopedWeaponConfig : null;
 
             // Mouse look only while the gameplay cursor is locked — a freed cursor means some UI
             // is open (radial, phone, inventory...) and the camera must not drift under it.
             if (Cursor.lockState == CursorLockMode.Locked) {
-                float sensitivity = this.mouseSensitivity * (aiming ? this.aimSensitivityFactor : 1f);
+                float aimFactor = scopedCfg != null ? scopedCfg.ScopeSensitivityFactor : this.aimSensitivityFactor;
+                float sensitivity = this.mouseSensitivity * (aiming ? aimFactor : 1f);
                 this.yaw += Input.GetAxis("Mouse X") * sensitivity;
                 this.pitch -= Input.GetAxis("Mouse Y") * sensitivity;
                 this.pitch = Mathf.Clamp(this.pitch, this.bottomClamp, this.topClamp);
             }
 
             this.SnapPivot();
-            this.TickAimZoom(aiming);
+            this.TickAimZoom(aiming, scopedCfg);
+            this.TickScope(scopedCfg != null);
         }
 
         /// <summary>Zoom immersif de visée : le FOV de la virtual camera fond vers aimFov
-        /// pendant la visée et revient au FOV d'origine de la lens sinon.</summary>
-        private void TickAimZoom(bool aiming) {
+        /// (ou le scopeFov de l'arme à lunette) pendant la visée et revient au FOV d'origine
+        /// de la lens sinon.</summary>
+        private void TickAimZoom(bool aiming, WeaponConfig scopedCfg) {
             if (this.virtualCamera == null) return;
             if (this.defaultFov <= 0f) this.defaultFov = this.virtualCamera.Lens.FieldOfView;
 
-            float target = aiming ? this.aimFov : this.defaultFov;
+            float target = aiming ? (scopedCfg != null ? scopedCfg.ScopeFov : this.aimFov) : this.defaultFov;
+            // La lunette couvre une plage de FOV bien plus large que le zoom épaule : vitesse
+            // proportionnelle à l'écart pour que l'entrée/sortie reste à durée comparable.
+            float speed = this.aimZoomSpeed * (scopedCfg != null || this.scopeBlend > 0.001f ? 3f : 1f);
             this.virtualCamera.Lens.FieldOfView = Mathf.MoveTowards(
-                this.virtualCamera.Lens.FieldOfView, target, Time.deltaTime * this.aimZoomSpeed);
+                this.virtualCamera.Lens.FieldOfView, target, Time.deltaTime * speed);
+        }
+
+        /// <summary>Config de l'arme tenue si c'est une arme à lunette (scopedAim), sinon null.</summary>
+        private WeaponConfig ScopedWeaponConfig {
+            get {
+                WeaponBehaviour weapon = this.localShooter != null ? this.localShooter.HeldWeapon : null;
+                WeaponConfig cfg = weapon != null ? weapon.WeaponConfiguration : null;
+                return cfg != null && cfg.ScopedAim ? cfg : null;
+            }
+        }
+
+        /// <summary>Fondu épaule → œil de la lunette : le ThirdPersonFollow de la vcam glisse
+        /// vers distance/épaule zéro (la caméra finit SUR le pivot, collé à la tête) ; le corps
+        /// du joueur local passe en ombre seule au-delà du seuil pour ne pas voir l'intérieur
+        /// du crâne. Purement local — les copies distantes gardent la posture de visée TPS.</summary>
+        private void TickScope(bool scoped) {
+            float target = scoped ? 1f : 0f;
+            if (!Mathf.Approximately(this.scopeBlend, target)) {
+                this.scopeBlend = Mathf.MoveTowards(this.scopeBlend, target, Time.deltaTime * this.scopeBlendSpeed);
+                this.ApplyScopeRig();
+            }
+
+            this.SetLocalBodyHidden(this.scopeBlend > this.scopeHideBodyThreshold);
+        }
+
+        /// <summary>Applique le fondu de lunette courant sur le ThirdPersonFollow (les valeurs
+        /// d'épaule d'origine de la vcam sont capturées au premier appel).</summary>
+        private void ApplyScopeRig() {
+            if (this.follow == null) {
+                this.follow = this.virtualCamera != null
+                    ? this.virtualCamera.GetComponent<CinemachineThirdPersonFollow>() : null;
+                if (this.follow == null) return;
+                this.defaultCameraDistance = this.follow.CameraDistance;
+                this.defaultShoulderOffset = this.follow.ShoulderOffset;
+                this.defaultVerticalArmLength = this.follow.VerticalArmLength;
+            }
+
+            this.follow.CameraDistance = Mathf.Lerp(this.defaultCameraDistance, 0f, this.scopeBlend);
+            this.follow.ShoulderOffset = Vector3.Lerp(this.defaultShoulderOffset, Vector3.zero, this.scopeBlend);
+            this.follow.VerticalArmLength = Mathf.Lerp(this.defaultVerticalArmLength, 0f, this.scopeBlend);
+        }
+
+        /// <summary>Masque/révèle le joueur local (corps + items tenus) pour la vue lunette :
+        /// les renderers passent en ShadowsOnly (l'ombre portée reste au sol) et retrouvent
+        /// leur mode d'origine en sortant. La liste est recapturée à chaque entrée — l'arme
+        /// tenue peut changer entre deux visées.</summary>
+        private void SetLocalBodyHidden(bool hidden) {
+            if (hidden == this.bodyHidden) return;
+            this.bodyHidden = hidden;
+
+            if (hidden) {
+                if (PlayerController.Local == null) return;
+                this.hiddenRenderers.Clear();
+                foreach (Renderer r in PlayerController.Local.GetComponentsInChildren<Renderer>()) {
+                    if (r.shadowCastingMode == ShadowCastingMode.ShadowsOnly) continue;
+                    this.hiddenRenderers.Add(new KeyValuePair<Renderer, ShadowCastingMode>(r, r.shadowCastingMode));
+                    r.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                }
+            } else {
+                foreach (KeyValuePair<Renderer, ShadowCastingMode> entry in this.hiddenRenderers) {
+                    // Une arme lâchée pendant la lunette a quitté la hiérarchie mais vit
+                    // toujours : on lui rend quand même son mode d'origine.
+                    if (entry.Key != null) entry.Key.shadowCastingMode = entry.Value;
+                }
+                this.hiddenRenderers.Clear();
+            }
         }
 
         private bool IsLocalPlayerAiming() {
