@@ -36,5 +36,12 @@ MonoBehaviour:
   automatic: 1
   maxRange: 60
   recoilKick: 0.3
+  spreadAngle: 4
+  ammoCategory: 1
+  magazineSize: 30
+  reloadDuration: 2.2
+  scopedAim: 0
+  scopeFov: 8
+  scopeSensitivityFactor: 0.1
   fireSound: {fileID: 8300000, guid: c749fec3199d20845bf6020d437d340d, type: 3}
   fireSoundVolume: 0.9

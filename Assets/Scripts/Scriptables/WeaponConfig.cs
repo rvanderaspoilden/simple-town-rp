@@ -25,6 +25,20 @@ public class WeaponConfig : ItemConfig {
     [SerializeField]
     private float spreadAngle = 4f;
 
+    [Header("Munitions & rechargement")]
+    [Tooltip("Famille de munitions consommée au rechargement (item AmmoConfig de la même famille) : LIGHT = arme de poing, MEDIUM = fusil d'assaut, HEAVY = sniper.")]
+    [SerializeField]
+    private AmmoCategory ammoCategory;
+
+    [Tooltip("Capacité du chargeur (balles). Chaque tir en consomme une ; chargeur vide = tir impossible. R (ou clic à vide) recharge en consommant UNE boîte de munitions de la famille, trouvée dans la poche puis dans un sac/colis tenu.")]
+    [Min(1)]
+    [SerializeField]
+    private int magazineSize = 10;
+
+    [Tooltip("Durée (s) du rechargement : tir bloqué pendant ce temps, le chargeur se remplit à la fin.")]
+    [SerializeField]
+    private float reloadDuration = 1.5f;
+
     [Header("Lunette (visée FPS sniper)")]
     [Tooltip("Visée à la lunette : pendant la visée (clic droit) la caméra passe en vue FPS à l'œil du personnage avec un zoom fort (scopeFov) et une sensibilité réduite (scopeSensitivityFactor). Le corps du joueur local est masqué (ombre conservée). La dispersion est NULLE à la lunette.")]
     [SerializeField]
@@ -57,6 +71,12 @@ public class WeaponConfig : ItemConfig {
     public float RecoilKick => Mathf.Clamp(recoilKick, 0.05f, 1f);
 
     public float SpreadAngle => Mathf.Clamp(spreadAngle, 0f, 15f);
+
+    public AmmoCategory AmmoCategory => ammoCategory;
+
+    public int MagazineSize => Mathf.Max(1, magazineSize);
+
+    public float ReloadDuration => Mathf.Max(0.1f, reloadDuration);
 
     public bool ScopedAim => scopedAim;
 

@@ -1,3 +1,4 @@
+using System.Collections;
 using Mirror;
 using Sim.Enums;
 using Sim.Logging;
@@ -80,6 +81,10 @@ namespace Sim {
         [Tooltip("Durée (s) de la posture de visée autour d'un tir SANS visée : l'arme est levée, le coup part une fois la posture montée, puis l'arme redescend au repos à l'expiration.")]
         [SerializeField] private float hipFirePostureDuration = 0.7f;
 
+        [Header("Munitions & rechargement")]
+        [Tooltip("Touche de rechargement : consomme une boîte de munitions de la famille de l'arme (poche puis sac tenu) et remplit le chargeur après WeaponConfig.reloadDuration. Un clic de tir à vide recharge aussi.")]
+        [SerializeField] private KeyCode reloadKey = KeyCode.R;
+
         [Header("Recul")]
         [Tooltip("Angle (deg) du kick du canon vers le haut au tir.")]
         [SerializeField] private float recoilAngle = 14f;
@@ -128,8 +133,17 @@ namespace Sim {
         // Côté du bras armé, mémorisé pour que le fondu de sortie reste sur le bon bras.
         private bool ikLeftHand;
 
+        // Munitions (owner) : miroir du chargeur serveur (TargetAmmo). -1 = inconnu, en
+        // attente de la réponse à CmdQueryAmmo après un changement d'arme — le tir reste
+        // permis tant que c'est inconnu, le serveur fait foi.
+        private int localLoadedAmmo = -1;
+        private float localReloadingUntil;
+        private WeaponBehaviour ammoQueriedWeapon;
+
         // Serveur
         private double serverNextFireTime;
+        private double serverReloadingUntil;
+        private bool serverReloadConsuming;
 
         private void Awake() {
             this.player = GetComponent<PlayerController>();
@@ -160,6 +174,17 @@ namespace Sim {
         private void Update() {
             if (!isLocalPlayer) return;
 
+            // Changement d'arme (équipée/lâchée/échangée) : le chargeur local devient inconnu,
+            // le serveur renvoie son état (TargetAmmo) — l'état vit sur l'ITEM côté serveur.
+            WeaponBehaviour heldNow = this.HeldWeapon;
+            if (heldNow != this.ammoQueriedWeapon) {
+                this.ammoQueriedWeapon = heldNow;
+                this.localLoadedAmmo = -1;
+                this.localReloadingUntil = 0f;
+                if (heldNow != null) this.CmdQueryAmmo();
+            }
+            this.UpdateAmmoHud(heldNow);
+
             bool wantAim = this.CanAim() && Input.GetMouseButton(1);
             if (wantAim != this.localAiming) {
                 this.localAiming = wantAim;
@@ -169,6 +194,9 @@ namespace Sim {
             // Point rouge : actif dès que l'état de tir est permis (visée OU hip fire) — le
             // réticule est toujours à l'écran en TPS, le verrou couvre toutes les visées.
             this.UpdateTargetLock(this.CanAim());
+
+            // Rechargement manuel (R) — mêmes gardes que le tir (arme tenue, TPS, curseur verrouillé).
+            if (this.CanAim() && Input.GetKeyDown(this.reloadKey)) this.TryStartReload();
 
             // Tir possible même SANS viser (hip fire) tant que l'état le permet : l'arme est
             // d'abord LEVÉE en posture de visée (fenêtre hipPostureUntil consommée par
@@ -203,9 +231,25 @@ namespace Sim {
                 if (Time.time >= this.hipPostureUntil) this.hipShotQueued = false;
             }
 
+            // Rechargement en cours : aucun tir ne part (le serveur le refuse aussi).
+            if (Time.time < this.localReloadingUntil) {
+                this.hipShotQueued = false;
+                return;
+            }
+
+            // Chargeur vide : le CLIC de tir recharge au lieu de tirer (un GetMouseButtonDown
+            // sec — pas de spam de reload en maintenant la rafale d'une automatique).
+            if (this.localLoadedAmmo == 0) {
+                this.hipShotQueued = false;
+                if (Input.GetMouseButtonDown(0)) this.TryStartReload();
+                return;
+            }
+
             bool fireNow = raised && (wantsFire || this.hipShotQueued);
             if (fireNow && Time.time >= this.nextFireTime) {
                 this.hipShotQueued = false;
+                // Décompte optimiste (resynchronisé par TargetAmmo à chaque tir serveur).
+                if (this.localLoadedAmmo > 0) this.localLoadedAmmo--;
                 this.nextFireTime = Time.time + (cfg != null ? cfg.FireInterval : 0.35f);
 
                 Vector3 muzzle = weapon.MuzzlePosition;
@@ -340,6 +384,37 @@ namespace Sim {
             return true;
         }
 
+        // ── Munitions & rechargement (owner) ──────────────────────────────────────
+
+        /// <summary>Demande un rechargement au serveur : consomme une boîte de munitions de la
+        /// famille de l'arme (poche puis sac tenu), chargeur rempli après ReloadDuration. Le
+        /// blocage local du tir est optimiste — annulé par TargetReloadResult en cas d'échec.</summary>
+        private void TryStartReload() {
+            WeaponBehaviour weapon = this.HeldWeapon;
+            WeaponConfig cfg = weapon != null ? weapon.WeaponConfiguration : null;
+            if (cfg == null) return;
+            if (Time.time < this.localReloadingUntil) return;
+            if (this.localLoadedAmmo >= 0 && this.localLoadedAmmo >= cfg.MagazineSize) return; // déjà plein
+
+            this.localReloadingUntil = Time.time + cfg.ReloadDuration;
+            this.CmdReload();
+        }
+
+        /// <summary>Pousse l'état du chargeur aux deux réticules (crosshair TPS et overlay
+        /// lunette — un seul est visible). Sans arme en main, le compteur disparaît.</summary>
+        private void UpdateAmmoHud(WeaponBehaviour weapon) {
+            WeaponConfig cfg = weapon != null ? weapon.WeaponConfiguration : null;
+            if (cfg == null) {
+                if (CrosshairUI.Instance != null) CrosshairUI.Instance.ClearAmmo();
+                if (ScopeOverlayUI.Instance != null) ScopeOverlayUI.Instance.ClearAmmo();
+                return;
+            }
+
+            bool reloading = Time.time < this.localReloadingUntil;
+            if (CrosshairUI.Instance != null) CrosshairUI.Instance.SetAmmo(this.localLoadedAmmo, cfg.MagazineSize, reloading);
+            if (ScopeOverlayUI.Instance != null) ScopeOverlayUI.Instance.SetAmmo(this.localLoadedAmmo, cfg.MagazineSize, reloading);
+        }
+
         private void SyncPitch() {
             WeaponBehaviour weapon = this.HeldWeapon;
             Vector3 shoulder = this.GetShoulderPosition(weapon != null && weapon.HolderHand == HandType.Left);
@@ -398,22 +473,109 @@ namespace Sim {
             this.aimPitch = Mathf.Clamp(value, -this.pitchClamp, this.pitchClamp);
         }
 
+        /// <summary>Owner → serveur : le chargeur de l'arme tenue a changé de main locale —
+        /// renvoie son état (l'état vit sur l'ITEM serveur, il suit l'arme au drop/échange).</summary>
+        [Command]
+        private void CmdQueryAmmo() {
+            string roomId = PlayerRoomTracker.Instance != null
+                ? PlayerRoomTracker.Instance.GetRoom(connectionToClient)
+                : null;
+            if (ServerItemManager.Instance == null
+                || !ServerItemManager.Instance.TryGetHeldWeapon(netId, roomId, out int weaponEntityId, out WeaponConfig cfg)) return;
+            this.TargetAmmo(ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg));
+        }
+
+        [Command]
+        private void CmdReload() {
+            if (this.serverReloadConsuming || NetworkTime.time < this.serverReloadingUntil) return;
+
+            string roomId = PlayerRoomTracker.Instance != null
+                ? PlayerRoomTracker.Instance.GetRoom(connectionToClient)
+                : null;
+            if (ServerItemManager.Instance == null
+                || !ServerItemManager.Instance.TryGetHeldWeapon(netId, roomId, out int weaponEntityId, out WeaponConfig cfg)) {
+                this.TargetReloadResult(false, null);
+                return;
+            }
+            if (ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg) >= cfg.MagazineSize) {
+                this.TargetReloadResult(false, null); // déjà plein — silencieux, juste déverrouiller le client
+                return;
+            }
+
+            // Tir bloqué pendant TOUT le rechargement, consommation DB comprise ; la boîte
+            // est consommée d'abord (pas d'annulation), le chargeur se remplit à l'échéance.
+            this.serverReloadConsuming = true;
+            this.serverReloadingUntil = NetworkTime.time + cfg.ReloadDuration;
+            double reloadEnd = this.serverReloadingUntil;
+            ServerItemManager.Instance.ConsumeAmmoItem(connectionToClient, cfg.AmmoCategory, (ok, error) => {
+                if (this == null) return; // joueur déconnecté pendant l'aller-retour backend
+                this.serverReloadConsuming = false;
+                if (!ok) {
+                    this.serverReloadingUntil = 0;
+                    this.TargetReloadResult(false, error);
+                    return;
+                }
+                this.StartCoroutine(this.ServerFinishReload(reloadEnd, cfg.AmmoCategory));
+            });
+        }
+
+        /// <summary>Fin de rechargement serveur : à l'échéance, remplit le chargeur de l'arme
+        /// ENCORE tenue si elle consomme la même famille de munitions (arme lâchée/changée
+        /// entre-temps → la boîte consommée est perdue, cas limite accepté).</summary>
+        private IEnumerator ServerFinishReload(double reloadEnd, AmmoCategory category) {
+            while (NetworkTime.time < reloadEnd) yield return null;
+
+            string roomId = PlayerRoomTracker.Instance != null
+                ? PlayerRoomTracker.Instance.GetRoom(connectionToClient)
+                : null;
+            if (ServerItemManager.Instance != null
+                && ServerItemManager.Instance.TryGetHeldWeapon(netId, roomId, out int weaponEntityId, out WeaponConfig cfg)
+                && cfg.AmmoCategory == category) {
+                ServerItemManager.Instance.SetWeaponLoadedAmmo(weaponEntityId, cfg.MagazineSize);
+                this.TargetAmmo(cfg.MagazineSize);
+                GameLogger.Player.Info("WeaponReloaded {PlayerNetId} {Category} {Magazine}", netId, category, cfg.MagazineSize);
+            }
+            this.TargetReloadResult(true, null);
+        }
+
+        [TargetRpc]
+        private void TargetAmmo(int loaded) {
+            this.localLoadedAmmo = loaded;
+        }
+
+        [TargetRpc]
+        private void TargetReloadResult(bool success, string error) {
+            if (success) return;
+            this.localReloadingUntil = 0f; // déverrouille le tir local
+            if (!string.IsNullOrEmpty(error)) WorldToastManager.ShowError(error);
+        }
+
         [Command]
         private void CmdFire(Vector3 origin, Vector3 direction) {
             string roomId = PlayerRoomTracker.Instance != null
                 ? PlayerRoomTracker.Instance.GetRoom(connectionToClient)
                 : null;
-            WeaponConfig cfg = ServerItemManager.Instance != null
-                ? ServerItemManager.Instance.GetHeldWeaponConfig(netId, roomId)
-                : null;
-            if (cfg == null) {
+            if (ServerItemManager.Instance == null
+                || !ServerItemManager.Instance.TryGetHeldWeapon(netId, roomId, out int weaponEntityId, out WeaponConfig cfg)) {
                 GameLogger.Player.Warning("FireRejected_NoWeapon {PlayerNetId}", netId);
                 return;
             }
 
+            // Rechargement en cours : aucun tir.
+            if (this.serverReloadConsuming || NetworkTime.time < this.serverReloadingUntil) return;
+
             // Cadence revalidée serveur (petite tolérance réseau).
             if (NetworkTime.time < this.serverNextFireTime) return;
             this.serverNextFireTime = NetworkTime.time + cfg.FireInterval * 0.9f;
+
+            // Chargeur : une balle par tir, vide = refus (le client gate déjà — resync au cas où).
+            int loadedAmmo = ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg);
+            if (loadedAmmo <= 0) {
+                this.TargetAmmo(0);
+                return;
+            }
+            ServerItemManager.Instance.SetWeaponLoadedAmmo(weaponEntityId, loadedAmmo - 1);
+            this.TargetAmmo(loadedAmmo - 1);
 
             // Origine plausible : la bouche du canon doit rester proche du corps du tireur.
             if ((origin - this.transform.position).sqrMagnitude > MaxOriginDistance * MaxOriginDistance) {

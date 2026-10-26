@@ -163,6 +163,13 @@ public class ServerItemManager
         // pickup) passe ici, donc le flag est garanti cohérent.
         foreach (var room in _rooms.Values)
             if (room.TryGetValue(entityId, out var e)) { e.Persistent = true; break; }
+
+        // Chargeur d'arme suivi sous la clé éphémère "e:{entityId}" (persist pickup
+        // asynchrone) : migre vers l'uuid, stable pour le reste de la session serveur.
+        if (!string.IsNullOrEmpty(uuid) && _weaponAmmoByKey.TryGetValue("e:" + entityId, out int loadedAmmo)) {
+            _weaponAmmoByKey.Remove("e:" + entityId);
+            _weaponAmmoByKey[uuid] = loadedAmmo;
+        }
     }
 
     public void UpdateBridgeVersion(int entityId, int version) {
@@ -222,6 +229,7 @@ public class ServerItemManager
         _openContainerByPlayer.Clear();
         _openItemContainerByPlayer.Clear();
         _pocketByPlayer.Clear();
+        _weaponAmmoByKey.Clear();
         _nextEntityId = 1;
         GameLogger.Network.Info("ServerItemManagerReset");
     }
@@ -1329,13 +1337,199 @@ public class ServerItemManager
     /// — un client ne peut pas tirer sans arme réellement en main.
     /// </summary>
     public WeaponConfig GetHeldWeaponConfig(uint playerNetId, string roomId)
+        => TryGetHeldWeapon(playerNetId, roomId, out _, out WeaponConfig weapon) ? weapon : null;
+
+    /// <summary>Comme <see cref="GetHeldWeaponConfig"/> mais renvoie aussi l'entityId de
+    /// l'arme — nécessaire pour adresser son chargeur (Get/SetWeaponLoadedAmmo).</summary>
+    public bool TryGetHeldWeapon(uint playerNetId, string roomId, out int weaponEntityId, out WeaponConfig config)
     {
-        if (roomId == null || !_rooms.TryGetValue(roomId, out var roomItems)) return null;
+        weaponEntityId = -1;
+        config = null;
+        if (roomId == null || !_rooms.TryGetValue(roomId, out var roomItems)) return false;
         foreach (var entity in roomItems.Values) {
             if (entity.HolderNetId != playerNetId) continue;
-            if (DatabaseManager.GetItemConfigById(entity.ItemConfigId) is WeaponConfig weapon) return weapon;
+            if (DatabaseManager.GetItemConfigById(entity.ItemConfigId) is WeaponConfig weapon) {
+                weaponEntityId = entity.EntityId;
+                config = weapon;
+                return true;
+            }
         }
-        return null;
+        return false;
+    }
+
+    // ── Chargeurs d'armes (munitions) ─────────────────────────────────────────
+    // État VOLATILE du chargeur de chaque arme. Clé = uuid DB de l'item (stable sur
+    // drop / room change / reconnect pendant la session serveur) ou "e:{entityId}" le
+    // temps que le bridge arrive (persist pickup asynchrone) — AssociateUuid migre la
+    // clé. Une arme jamais vue a son chargeur PLEIN (comme le bidon d'essence spawn
+    // plein) ; au restart serveur tout redevient plein (pas de persistance DB en V1).
+
+    private readonly Dictionary<string, int> _weaponAmmoByKey = new Dictionary<string, int>();
+
+    private string WeaponAmmoKey(int entityId) {
+        var bridge = GetBridge(entityId);
+        return bridge != null && !string.IsNullOrEmpty(bridge.Uuid) ? bridge.Uuid : "e:" + entityId;
+    }
+
+    /// <summary>Balles restantes dans le chargeur de l'arme <paramref name="weaponEntityId"/>.
+    /// Première consultation = chargeur plein (mémorisé).</summary>
+    public int GetWeaponLoadedAmmo(int weaponEntityId, WeaponConfig config) {
+        string key = WeaponAmmoKey(weaponEntityId);
+        if (_weaponAmmoByKey.TryGetValue(key, out int loaded)) return loaded;
+        int full = config != null ? config.MagazineSize : 0;
+        _weaponAmmoByKey[key] = full;
+        return full;
+    }
+
+    public void SetWeaponLoadedAmmo(int weaponEntityId, int value) {
+        _weaponAmmoByKey[WeaponAmmoKey(weaponEntityId)] = Mathf.Max(0, value);
+    }
+
+    /// <summary>
+    /// Consomme UNE boîte de munitions de la famille <paramref name="category"/> dans
+    /// l'inventaire du joueur : sa POCHE d'abord (session déjà en mémoire), puis un
+    /// SAC/COLIS tenu en main (contenu lu en DB — stacks décrémentés). Asynchrone
+    /// (aller-retour backend) ; <paramref name="done"/>(succès, motif d'échec FR).
+    /// Le chargeur lui-même appartient à l'appelant (PlayerShooter) — ici on ne
+    /// détruit que l'item consommé et on re-pousse les snapshots d'UI concernés.
+    /// </summary>
+    public void ConsumeAmmoItem(NetworkConnectionToClient conn, AmmoCategory category, System.Action<bool, string> done) {
+        if (conn?.identity == null || ApiManager.Instance == null) { done(false, "Pas de joueur"); return; }
+        ApiManager.Instance.StartCoroutine(ConsumeAmmoCoroutine(conn, category, done));
+    }
+
+    private IEnumerator ConsumeAmmoCoroutine(NetworkConnectionToClient conn, AmmoCategory category, System.Action<bool, string> done) {
+        uint netId = conn.identity.netId;
+
+        // 1) POCHE : jamais de stack (invariant 1 item/slot) → DELETE sec.
+        if (_pocketByPlayer.TryGetValue(netId, out var pocket)) {
+            PocketSessionItem found = null;
+            foreach (var it in pocket.ItemsByEntityId.Values) {
+                if (DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ammo && ammo.AmmoCategory == category) {
+                    found = it;
+                    break;
+                }
+            }
+            if (found != null) {
+                UnityWebRequest del = ApiManager.Instance.DeleteItemRequest(found.ItemUuid);
+                yield return del.SendWebRequest();
+                if (del.responseCode >= 200 && del.responseCode < 300) {
+                    pocket.ItemsByEntityId.Remove(found.EntityId);
+                    pocket.SlotToEntityId.Remove(found.SlotIndex);
+                    _bridges.Remove(found.EntityId);
+                    SendPocketSnapshot(conn, pocket);
+                    GameLogger.Network.Info("AmmoConsumed netId={NetId} category={Category} source=pocket uuid={Uuid}",
+                        netId, category, found.ItemUuid);
+                    done(true, null);
+                    yield break;
+                }
+                // Ligne morte/désynchronisée (404/409) : on tente encore le sac tenu.
+                Debug.LogWarning($"[ServerItemManager] ConsumeAmmo pocket DELETE failed code={del.responseCode} uuid={found.ItemUuid}");
+            }
+        }
+
+        // 2) SAC/COLIS TENU EN MAIN.
+        string roomId = PlayerRoomTracker.Instance != null ? PlayerRoomTracker.Instance.GetRoom(conn) : null;
+        if (roomId != null && TryGetHeldPackage(netId, roomId, out _, out string pkgUuid, out _)) {
+            // 2a) Sa session est OUVERTE (UI affichée) : versions OCC déjà en mémoire.
+            if (_openItemContainerByPlayer.TryGetValue(netId, out var ics) && ics.PackageItemUuid == pkgUuid) {
+                ContainerSessionItem entry = null;
+                foreach (var it in ics.ItemsByEntityId.Values) {
+                    if (!it.IsProp && DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ammo
+                        && ammo.AmmoCategory == category) {
+                        entry = it;
+                        break;
+                    }
+                }
+                if (entry == null) { done(false, "Aucune munition compatible sur vous"); yield break; }
+
+                int qty = Mathf.Max(1, entry.Quantity);
+                bool rowOk = false; int newVersion = entry.Version;
+                yield return ConsumeAmmoRow(entry.ItemUuid, entry.Version, qty, (ok, v) => { rowOk = ok; newVersion = v; });
+                if (!rowOk) { done(false, "Munitions introuvables (réessayez)"); yield break; }
+
+                if (qty > 1) {
+                    entry.Quantity = qty - 1;
+                    entry.Version = newVersion;
+                    if (_bridges.TryGetValue(entry.EntityId, out var br)) br.Version = newVersion;
+                } else {
+                    ics.ItemsByEntityId.Remove(entry.EntityId);
+                    ics.SlotToEntityId.Remove(entry.SlotIndex);
+                    _bridges.Remove(entry.EntityId);
+                }
+                SendItemContainerSnapshot(conn, ics);
+                GameLogger.Network.Info("AmmoConsumed netId={NetId} category={Category} source=openBag uuid={Uuid}",
+                    netId, category, entry.ItemUuid);
+                done(true, null);
+                yield break;
+            }
+
+            // 2b) Sac fermé : contenu lu en DB (place item_container:{uuid}, créée au besoin).
+            var createBody = new CreatePlaceBody { placeKey = "item_container:" + pkgUuid, type = "container", ownerId = pkgUuid };
+            UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
+            yield return createReq.SendWebRequest();
+            string placeId = null;
+            if (createReq.responseCode >= 200 && createReq.responseCode < 300) {
+                try { placeId = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text)?.Id; } catch { }
+            }
+            if (!string.IsNullOrEmpty(placeId)) {
+                UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
+                yield return stateReq.SendWebRequest();
+                ItemJson row = null;
+                if (stateReq.responseCode == 200) {
+                    try {
+                        var state = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
+                        if (state?.items != null) {
+                            foreach (var it in state.items) {
+                                if (DatabaseManager.GetItemConfigById(it.configId) is AmmoConfig ammo
+                                    && ammo.AmmoCategory == category) {
+                                    row = it;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (System.Exception e) {
+                        Debug.LogWarning($"[ServerItemManager] ConsumeAmmo bag state parse: {e.Message}");
+                    }
+                }
+                if (row != null) {
+                    bool rowOk = false;
+                    yield return ConsumeAmmoRow(row.Id, row.version, Mathf.Max(1, row.quantity), (ok, _) => rowOk = ok);
+                    if (rowOk) {
+                        GameLogger.Network.Info("AmmoConsumed netId={NetId} category={Category} source=bag uuid={Uuid}",
+                            netId, category, row.Id);
+                        done(true, null);
+                        yield break;
+                    }
+                }
+            }
+        }
+
+        done(false, "Aucune munition compatible sur vous");
+    }
+
+    /// <summary>Retire UNE unité de la ligne d'item munitions : stack → PATCH quantity-1
+    /// (OCC), dernière unité → DELETE. <paramref name="cb"/>(ok, nouvelle version OCC).</summary>
+    private IEnumerator ConsumeAmmoRow(string uuid, int version, int quantity, System.Action<bool, int> cb) {
+        if (quantity > 1) {
+            var body = new UpdateItemBody { expectedVersion = version, quantity = quantity - 1 };
+            UnityWebRequest patch = ApiManager.Instance.UpdateItemRequest(uuid, body);
+            yield return patch.SendWebRequest();
+            if (patch.responseCode < 200 || patch.responseCode >= 300) {
+                Debug.LogWarning($"[ServerItemManager] ConsumeAmmoRow PATCH failed code={patch.responseCode} uuid={uuid}");
+                cb(false, version);
+                yield break;
+            }
+            int newVersion = version + 1;
+            try { var it = JsonConvert.DeserializeObject<ItemJson>(patch.downloadHandler.text); if (it != null) newVersion = it.version; } catch { }
+            cb(true, newVersion);
+        } else {
+            UnityWebRequest del = ApiManager.Instance.DeleteItemRequest(uuid);
+            yield return del.SendWebRequest();
+            bool ok = del.responseCode >= 200 && del.responseCode < 300;
+            if (!ok) Debug.LogWarning($"[ServerItemManager] ConsumeAmmoRow DELETE failed code={del.responseCode} uuid={uuid}");
+            cb(ok, version);
+        }
     }
 
     /// <summary>

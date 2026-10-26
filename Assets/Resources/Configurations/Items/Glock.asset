@@ -32,6 +32,15 @@ MonoBehaviour:
   gripEuler: {x: 0, y: 0, z: 294.307}
   maxStackSize: 1
   fireInterval: 0.35
+  automatic: 0
   maxRange: 40
+  recoilKick: 1
+  spreadAngle: 4
+  ammoCategory: 0
+  magazineSize: 12
+  reloadDuration: 1.2
+  scopedAim: 0
+  scopeFov: 8
+  scopeSensitivityFactor: 0.1
   fireSound: {fileID: 8300000, guid: c749fec3199d20845bf6020d437d340d, type: 3}
   fireSoundVolume: 0.8
