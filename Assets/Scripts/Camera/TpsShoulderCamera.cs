@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Sim.UI;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -69,7 +70,13 @@ namespace Sim {
         private float defaultCameraDistance;
         private Vector3 defaultShoulderOffset;
         private float defaultVerticalArmLength;
+        private Vector3 defaultDamping;
         private float scopeBlend;
+        // Hauteur de l'œil au-dessus du ROOT du joueur, figée à l'entrée en lunette : la
+        // caméra scopée s'ancre sur le root (stable) et non sur l'os de tête animé, sinon la
+        // respiration/idle se transmet à la vue — insupportable à 8° de FOV.
+        private float scopeEyeHeight = -1f;
+        private bool scopeEntered;
         private bool bodyHidden;
         private readonly List<KeyValuePair<Renderer, ShadowCastingMode>> hiddenRenderers = new();
 
@@ -82,8 +89,10 @@ namespace Sim {
             // Sortie de mode en pleine lunette (véhicule, build...) : la vcam doit rendre la
             // main avec sa pose d'épaule d'origine et le corps redevenir visible.
             this.scopeBlend = 0f;
+            this.scopeEntered = false;
             this.ApplyScopeRig();
             this.SetLocalBodyHidden(false);
+            if (ScopeOverlayUI.Instance != null) ScopeOverlayUI.Instance.Hide();
         }
 
         /// <summary>Current camera yaw (deg) — the heading ZQSD movement is relative to.</summary>
@@ -119,9 +128,10 @@ namespace Sim {
                 this.pitch = Mathf.Clamp(this.pitch, this.bottomClamp, this.topClamp);
             }
 
+            // Le fondu de lunette AVANT SnapPivot : l'ancrage œil du pivot dépend du blend courant.
+            this.TickScope(scopedCfg != null);
             this.SnapPivot();
             this.TickAimZoom(aiming, scopedCfg);
-            this.TickScope(scopedCfg != null);
         }
 
         /// <summary>Zoom immersif de visée : le FOV de la virtual camera fond vers aimFov
@@ -153,13 +163,30 @@ namespace Sim {
         /// du joueur local passe en ombre seule au-delà du seuil pour ne pas voir l'intérieur
         /// du crâne. Purement local — les copies distantes gardent la posture de visée TPS.</summary>
         private void TickScope(bool scoped) {
+            // Hauteur d'œil (re)capturée à chaque ENTRÉE en lunette — la pose de la tête au
+            // moment de viser fait foi, ensuite elle est figée (mouse-only).
+            if (scoped && !this.scopeEntered && PlayerController.Local != null) {
+                Transform head = PlayerController.Local.GetCameraFollowTarget();
+                if (head != null) {
+                    this.scopeEyeHeight = head.position.y - PlayerController.Local.transform.position.y;
+                }
+            }
+            this.scopeEntered = scoped;
+
             float target = scoped ? 1f : 0f;
             if (!Mathf.Approximately(this.scopeBlend, target)) {
                 this.scopeBlend = Mathf.MoveTowards(this.scopeBlend, target, Time.deltaTime * this.scopeBlendSpeed);
                 this.ApplyScopeRig();
             }
 
-            this.SetLocalBodyHidden(this.scopeBlend > this.scopeHideBodyThreshold);
+            // Corps masqué ET overlay de lunette sur le même seuil : le fondu noir de
+            // l'overlay couvre la transition épaule→œil.
+            bool engaged = this.scopeBlend > this.scopeHideBodyThreshold;
+            this.SetLocalBodyHidden(engaged);
+            if (ScopeOverlayUI.Instance != null) {
+                if (engaged) ScopeOverlayUI.Instance.Show();
+                else ScopeOverlayUI.Instance.Hide();
+            }
         }
 
         /// <summary>Applique le fondu de lunette courant sur le ThirdPersonFollow (les valeurs
@@ -172,11 +199,15 @@ namespace Sim {
                 this.defaultCameraDistance = this.follow.CameraDistance;
                 this.defaultShoulderOffset = this.follow.ShoulderOffset;
                 this.defaultVerticalArmLength = this.follow.VerticalArmLength;
+                this.defaultDamping = this.follow.Damping;
             }
 
             this.follow.CameraDistance = Mathf.Lerp(this.defaultCameraDistance, 0f, this.scopeBlend);
             this.follow.ShoulderOffset = Vector3.Lerp(this.defaultShoulderOffset, Vector3.zero, this.scopeBlend);
             this.follow.VerticalArmLength = Mathf.Lerp(this.defaultVerticalArmLength, 0f, this.scopeBlend);
+            // Damping coupé à la lunette : le moindre retard de suivi se lit comme un bougé
+            // parasite au zoom fort — la caméra ne doit répondre qu'à la souris.
+            this.follow.Damping = Vector3.Lerp(this.defaultDamping, Vector3.zero, this.scopeBlend);
         }
 
         /// <summary>Masque/révèle le joueur local (corps + items tenus) pour la vue lunette :
@@ -217,7 +248,17 @@ namespace Sim {
             if (this.cameraPivot == null || PlayerController.Local == null) return;
 
             Transform head = PlayerController.Local.GetCameraFollowTarget();
-            if (head != null) this.cameraPivot.position = head.position;
+            Vector3 position = head != null ? head.position : this.cameraPivot.position;
+
+            // Lunette : l'œil est ancré sur le ROOT du joueur (hauteur figée à l'entrée) —
+            // l'os de tête animé (respiration, idle, tourne-corps) ne transmet plus son
+            // bougé ; la caméra ne bouge qu'avec la souris et le déplacement réel du joueur.
+            if (this.scopeBlend > 0f && this.scopeEyeHeight > 0f) {
+                Vector3 eye = PlayerController.Local.transform.position + Vector3.up * this.scopeEyeHeight;
+                position = Vector3.Lerp(position, eye, this.scopeBlend);
+            }
+
+            this.cameraPivot.position = position;
             this.cameraPivot.rotation = Quaternion.Euler(this.pitch, this.yaw, 0f);
         }
 

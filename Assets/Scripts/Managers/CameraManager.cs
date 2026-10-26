@@ -237,7 +237,9 @@ namespace Sim {
             // Le nom s'affiche sous le réticule (CrosshairUI), pas via le tooltip curseur.
             HoverNameTooltip.Hide();
             if (CrosshairUI.Instance != null) {
-                if (interactable != null || remotePlayer != null) CrosshairUI.Instance.Show(hoverName, canInteract);
+                // À la lunette (sniper), l'overlay porte son propre réticule plein écran.
+                if (ScopeOverlayUI.IsScopeVisible) CrosshairUI.Instance.Hide();
+                else if (interactable != null || remotePlayer != null) CrosshairUI.Instance.Show(hoverName, canInteract);
                 else CrosshairUI.Instance.ShowDefault();
             }
 
