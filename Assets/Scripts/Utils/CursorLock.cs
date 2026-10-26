@@ -41,8 +41,9 @@ namespace Sim.Utils {
             Cursor.visible = !wantLocked;
         }
 
-        /// <summary>True when a UI text input field currently has keyboard focus.</summary>
-        private static bool IsTypingInInputField() {
+        /// <summary>True when a UI text input field currently has keyboard focus. Public :
+        /// aussi utilisé pour inhiber les raccourcis clavier globaux (ex. I = inventaire).</summary>
+        public static bool IsTypingInInputField() {
             UnityEngine.EventSystems.EventSystem es = UnityEngine.EventSystems.EventSystem.current;
             GameObject sel = es != null ? es.currentSelectedGameObject : null;
             if (sel == null) return false;

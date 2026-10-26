@@ -79,6 +79,7 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
     /// </summary>
     public void SetRenderersVisible(bool visible)
     {
+        RenderersVisible = visible;
         if (_renderers == null) return;
         foreach (var r in _renderers)
             if (r != null) r.enabled = visible;
@@ -108,6 +109,11 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
             {
                 var hands = PlayerController.Local.PlayerHands;
                 bool canAcquire = hands.CanHandleItem(_config.HandleType) || hands.IsHoldingContainer();
+                // Règle d'armement : une seule arme à la fois (même à une main) — le serveur
+                // revalide (ResolveHand), ceci n'est que le hint visuel sur l'action PICK.
+                if (_config is WeaponConfig
+                    && (hands.RightHandItem is WeaponBehaviour || hands.LeftHandItem is WeaponBehaviour))
+                    canAcquire = false;
                 foreach (var a in _groundActions)
                     if (a.Type == ActionTypeEnum.PICK)
                         a.IsForbidden = !canAcquire;
@@ -128,6 +134,10 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
     public ItemIdentity Identity      => _identity;
     public ItemConfig   Configuration => _config;
     public bool         IsHeld        => _isHeld;
+
+    /// <summary>Dernier état posé par SetRenderersVisible : false quand une action du porteur
+    /// cache l'item (SIT, SLEEP…). Lu par PlayerShooter pour couper l'IK de portage.</summary>
+    public bool RenderersVisible { get; private set; } = true;
     public uint         HolderNetId   => _holderNetId;
     public HandType     HolderHand    => _holderHand;
 

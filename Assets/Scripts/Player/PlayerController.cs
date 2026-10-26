@@ -64,6 +64,12 @@ namespace Sim {
         [SerializeField] private float walkSpeed = 2f;
         [Tooltip("Vitesse de course (m/s) — appliquée quand MoveTo est appelée avec isRunning=true (double clic sur le sol).")]
         [SerializeField] private float runSpeed = 5.335f;
+        [Range(0.2f, 1f)]
+        [Tooltip("Facteur appliqué à la vitesse de MARCHE pendant la visée d'une arme (la course est coupée en visée).")]
+        [SerializeField] private float aimWalkFactor = 0.6f;
+
+        // Visée arme (PlayerShooter sur le même root) — ralentit la marche et coupe la course.
+        private PlayerShooter playerShooter;
 
         [Header("Keyboard movement (ZQSD)")]
         [SerializeField] private KeyCode forwardKey = KeyCode.Z;
@@ -355,6 +361,7 @@ namespace Sim {
             this.Collider = GetComponent<Collider>();
             this.characterStyleSetup = GetComponent<CharacterStyleSetup>();
             this.ragdoll = GetComponent<RagdollController>();
+            this.playerShooter = GetComponent<PlayerShooter>();
             this._navPathScratch = new NavMeshPath();
         }
 
@@ -1290,8 +1297,11 @@ namespace Sim {
                 return false;
             }
 
-            bool running = Input.GetKey(runKey);
+            // Visée arme : course coupée et marche ralentie (précision + immersion).
+            bool aimingWeapon = this.playerShooter != null && this.playerShooter.IsAiming;
+            bool running = !aimingWeapon && Input.GetKey(runKey);
             float targetSpeed = (running ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier();
+            if (aimingWeapon) targetSpeed *= this.aimWalkFactor;
 
             // Feel Starter Assets : la vitesse accélère/décélère progressivement au lieu de
             // sauter instantanément entre marche et course (bande de snap 0.1 comme chez eux).

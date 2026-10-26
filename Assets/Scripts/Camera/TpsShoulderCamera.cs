@@ -33,8 +33,24 @@ namespace Sim {
         [SerializeField]
         private float topClamp = 70f;
 
+        [Header("Visée (zoom arme)")]
+        [Tooltip("FOV (deg) pendant la visée d'une arme — fondu depuis le FOV par défaut de la lens (40 sur la vcam TPS), retour auto en fin de visée.")]
+        [SerializeField]
+        private float aimFov = 30f;
+
+        [Tooltip("Vitesse du fondu de FOV (deg/s).")]
+        [SerializeField]
+        private float aimZoomSpeed = 120f;
+
+        [Range(0.1f, 1f)]
+        [Tooltip("Facteur de sensibilité souris pendant la visée (zoomé → gestes plus fins).")]
+        [SerializeField]
+        private float aimSensitivityFactor = 0.6f;
+
         private float yaw;
         private float pitch;
+        private float defaultFov = -1f;
+        private PlayerShooter localShooter;
 
         private void OnEnable() {
             if (this.virtualCamera != null) this.virtualCamera.gameObject.SetActive(true);
@@ -63,15 +79,38 @@ namespace Sim {
         private void LateUpdate() {
             if (PlayerController.Local == null) return;
 
+            bool aiming = this.IsLocalPlayerAiming();
+
             // Mouse look only while the gameplay cursor is locked — a freed cursor means some UI
             // is open (radial, phone, inventory...) and the camera must not drift under it.
             if (Cursor.lockState == CursorLockMode.Locked) {
-                this.yaw += Input.GetAxis("Mouse X") * this.mouseSensitivity;
-                this.pitch -= Input.GetAxis("Mouse Y") * this.mouseSensitivity;
+                float sensitivity = this.mouseSensitivity * (aiming ? this.aimSensitivityFactor : 1f);
+                this.yaw += Input.GetAxis("Mouse X") * sensitivity;
+                this.pitch -= Input.GetAxis("Mouse Y") * sensitivity;
                 this.pitch = Mathf.Clamp(this.pitch, this.bottomClamp, this.topClamp);
             }
 
             this.SnapPivot();
+            this.TickAimZoom(aiming);
+        }
+
+        /// <summary>Zoom immersif de visée : le FOV de la virtual camera fond vers aimFov
+        /// pendant la visée et revient au FOV d'origine de la lens sinon.</summary>
+        private void TickAimZoom(bool aiming) {
+            if (this.virtualCamera == null) return;
+            if (this.defaultFov <= 0f) this.defaultFov = this.virtualCamera.Lens.FieldOfView;
+
+            float target = aiming ? this.aimFov : this.defaultFov;
+            this.virtualCamera.Lens.FieldOfView = Mathf.MoveTowards(
+                this.virtualCamera.Lens.FieldOfView, target, Time.deltaTime * this.aimZoomSpeed);
+        }
+
+        private bool IsLocalPlayerAiming() {
+            // Référence re-résolue au respawn (le PlayerController.Local change d'instance).
+            if (this.localShooter == null || this.localShooter.gameObject != PlayerController.Local.gameObject) {
+                this.localShooter = PlayerController.Local.GetComponent<PlayerShooter>();
+            }
+            return this.localShooter != null && this.localShooter.IsAiming;
         }
 
         private void SnapPivot() {

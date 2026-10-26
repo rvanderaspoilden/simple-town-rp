@@ -526,6 +526,14 @@ public class ServerItemManager
             return;
         }
 
+        // Règle d'armement : une seule arme à la fois. Rejet EXPLICITE avant ResolveHand
+        // (message dédié, et évite qu'une arme parte dans le colis tenu via le fallback).
+        if (config is WeaponConfig && HoldsWeapon(playerNetId))
+        {
+            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Vous tenez déjà une arme" });
+            return;
+        }
+
         // Find a free hand
         var handState = GetOrCreateHandState(playerNetId);
 
@@ -1257,10 +1265,30 @@ public class ServerItemManager
         var state = GetOrCreateHandState(netId);
         if (config == null) return FreeHandRespectingTwoHand(state);
 
+        // Règle d'armement : UNE seule arme à la fois — une arme déjà en main (même à une
+        // main) bloque l'équipement de toute autre arme, quelle que soit la main libre.
+        if (config is WeaponConfig && HoldsWeapon(netId)) return null;
+
         if (config.HandleType == ItemHandleType.TWO_HAND)
             return (state.RightEntityId == -1 && state.LeftEntityId == -1) ? HandType.Right : (HandType?)null;
 
         return FreeHandRespectingTwoHand(state);
+    }
+
+    /// <summary>Le joueur tient-il déjà une arme (WeaponConfig) dans l'une de ses mains ?</summary>
+    private bool HoldsWeapon(uint netId)
+    {
+        var state = GetOrCreateHandState(netId);
+        return EntityIsWeapon(state.RightEntityId) || EntityIsWeapon(state.LeftEntityId);
+    }
+
+    private bool EntityIsWeapon(int entityId)
+    {
+        if (entityId == -1) return false;
+        foreach (var room in _rooms.Values)
+            if (room.TryGetValue(entityId, out var e))
+                return DatabaseManager.GetItemConfigById(e.ItemConfigId) is WeaponConfig;
+        return false;
     }
 
     /// <summary>Tenir un item 2 mains bloque les DEUX mains, même s'il n'occupe qu'un slot

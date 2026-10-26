@@ -1719,6 +1719,9 @@ MonoBehaviour:
   mouseSensitivity: 1.5
   bottomClamp: -30
   topClamp: 70
+  aimFov: 30
+  aimZoomSpeed: 120
+  aimSensitivityFactor: 0.6
 --- !u!1 &8776632124653166675
 GameObject:
   m_ObjectHideFlags: 0

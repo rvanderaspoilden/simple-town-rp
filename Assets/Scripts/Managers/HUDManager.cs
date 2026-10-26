@@ -83,6 +83,18 @@ namespace Sim {
             this.HideVehicleHud();
         }
 
+        private void Update() {
+            // Raccourci global : I ouvre/ferme l'inventaire. Inhibé hors gameplay (pas de
+            // joueur local = menu principal), en sub-game et pendant une saisie de texte.
+            // La fermeture par Escape/marche reste gérée par InventoryUI.
+            if (Input.GetKeyDown(KeyCode.I)
+                && PlayerController.Local != null
+                && !SubGameController.IsActive
+                && !Sim.Utils.CursorLock.IsTypingInInputField()) {
+                this.ToggleInventory();
+            }
+        }
+
         public void ShowVehicleHud(VehicleController vehicle, bool asDriver) {
             if (this.vehicleHudUI != null) this.vehicleHudUI.Show(vehicle, asDriver);
         }

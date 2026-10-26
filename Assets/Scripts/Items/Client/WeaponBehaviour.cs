@@ -15,6 +15,7 @@ public class WeaponBehaviour : ItemBehaviour {
     private const float RecoilRecoverSpeed = 8f;
 
     private Transform _muzzle;
+    private Transform _foregrip;
 
     // Recul du modèle : offset local décroissant appliqué par-dessus la position de grip.
     private float _recoil;
@@ -34,10 +35,21 @@ public class WeaponBehaviour : ItemBehaviour {
         }
     }
 
+    /// <summary>Garde-main (enfant "Foregrip" du prefab) : cible IK de la main de SOUTIEN
+    /// pour les armes TWO_HAND (ex. AK-47). Null si le prefab n'en a pas (arme à une main).</summary>
+    public Transform Foregrip {
+        get {
+            if (_foregrip == null) _foregrip = transform.Find("Foregrip");
+            return _foregrip;
+        }
+    }
+
     public override void OnDetachedFromHand() {
         base.OnDetachedFromHand();
-        // Au sol, plus de recul en cours ni de position de repos « main » valable.
-        if (_restCaptured) transform.localPosition = _restLocalPosition;
+        // Au sol, plus de recul en cours ni de position de repos « main » valable. NE PAS
+        // restaurer _restLocalPosition ici : le manager vient de poser l'arme au sol
+        // (position MONDE, déparentée) — réécrire l'ancienne position locale de main la
+        // téléporterait près de l'origine du monde (bug « l'arme disparaît au drop »).
         _recoil = 0f;
         _restCaptured = false;
     }
