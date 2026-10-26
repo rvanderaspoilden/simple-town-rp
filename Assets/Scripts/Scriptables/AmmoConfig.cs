@@ -14,4 +14,14 @@ public class AmmoConfig : ItemConfig {
     private AmmoCategory ammoCategory;
 
     public AmmoCategory AmmoCategory => ammoCategory;
+
+    /// <summary>Libellé FR d'une famille de munitions, partagé par les tooltips (arme et boîte).</summary>
+    public static string CategoryLabel(AmmoCategory category) {
+        switch (category) {
+            case AmmoCategory.LIGHT:  return "légères (arme de poing)";
+            case AmmoCategory.MEDIUM: return "moyennes (fusil d'assaut)";
+            case AmmoCategory.HEAVY:  return "lourdes (fusil de précision)";
+            default:                  return category.ToString();
+        }
+    }
 }

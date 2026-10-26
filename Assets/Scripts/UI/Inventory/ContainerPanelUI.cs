@@ -680,6 +680,7 @@ public class ContainerPanelUI : MonoBehaviour
             }
             d.SetEntityId(entry.EntityId);
             d.SetQuantity(entry.Quantity); // badge "xN" si >1 (meubles emballés Quantity=1 → pas de badge)
+            d.SetLoadedAmmo(entry.LoadedAmmo); // arme : chargeur affiché dans la tooltip
             _slots[entry.SlotIndex].SetItem(d);
             _spawnedItems.Add(d);
         }

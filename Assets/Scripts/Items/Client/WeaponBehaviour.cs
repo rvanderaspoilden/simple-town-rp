@@ -44,6 +44,15 @@ public class WeaponBehaviour : ItemBehaviour {
         }
     }
 
+    /// <summary>Action « Recharger » du menu d'inventaire (clic droit sur l'arme en main) —
+    /// route vers le PlayerShooter local, mêmes gardes et flux serveur que la touche R.</summary>
+    protected override void HandleSpecialAction(Sim.Interactables.Action action) {
+        if (action.Type != Sim.Enums.ActionTypeEnum.RELOAD) return;
+        if (Sim.PlayerController.Local == null) return;
+        Sim.PlayerShooter shooter = Sim.PlayerController.Local.GetComponent<Sim.PlayerShooter>();
+        if (shooter != null) shooter.RequestReload();
+    }
+
     public override void OnDetachedFromHand() {
         base.OnDetachedFromHand();
         // Au sol, plus de recul en cours ni de position de repos « main » valable. NE PAS

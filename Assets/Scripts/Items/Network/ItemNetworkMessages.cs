@@ -132,6 +132,7 @@ public struct S2C_ContainerItem
     public int Quantity;     // taille de la pile (≥1). 1 = pas de badge ; >1 = badge "xN" + règles stack (split-1 vers main/poche, refus swap pile↔main).
     public int PropConfigId; // >0 = meuble emballé (icône PropsConfig.Sprite, non-draggable) ; 0 = item normal
     public int PropPresetId; // variant du meuble emballé (pour la preview au déballage)
+    public int LoadedAmmo;   // arme : balles dans le chargeur (tooltip). -1 = pas une arme.
 }
 
 /// <summary>Client → server : le joueur ouvre un conteneur (prop avec PropsConfig.Container.IsContainer).</summary>
@@ -251,6 +252,7 @@ public struct S2C_PocketItem
     public int ConfigId;
     public int SlotIndex;
     public int Quantity;
+    public int LoadedAmmo;   // arme : balles dans le chargeur (tooltip). -1 = pas une arme.
 }
 
 /// <summary>

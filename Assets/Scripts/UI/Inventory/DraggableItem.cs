@@ -17,6 +17,12 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     private TMPro.TMP_Text quantityBadge;
 
     private int _quantity = 1;
+
+    // Arme : balles dans le chargeur, publié par les snapshots serveur (poche/conteneur).
+    // -1 = inconnu ici — la tooltip retombe alors sur le PlayerShooter local si ce
+    // draggable représente l'arme actuellement tenue (slots mains, pas de snapshot).
+    private int _loadedAmmo = -1;
+    public void SetLoadedAmmo(int loaded) => _loadedAmmo = loaded;
     /// <summary>Taille de pile (≥1). 1 = item simple, pas de badge. >1 = badge "xN" visible
     /// + règles stack (split-1 vers main/poche, refus swap pile↔main).</summary>
     public int Quantity => _quantity;
@@ -151,9 +157,10 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
             if (p != null) { icon = p.Sprite; label = p.GetDisplayName(); desc = p.Description; container = FormatContainer(p.Container); }
         } else if (_itemConfig != null) {
             icon = _itemConfig.Icon; label = _itemConfig.Label; desc = _itemConfig.Description;
-            effects = _itemConfig.ID == FuelCanister.ConfigId
-                ? FormatCanisterFuel(_entityId, _itemConfig)
-                : FormatEffects(_itemConfig as ConsumableConfig);
+            if (_itemConfig.ID == FuelCanister.ConfigId) effects = FormatCanisterFuel(_entityId, _itemConfig);
+            else if (_itemConfig is WeaponConfig weaponCfg) effects = FormatWeaponAmmo(weaponCfg);
+            else if (_itemConfig is AmmoConfig ammoCfg) effects = FormatAmmoBox(ammoCfg);
+            else effects = FormatEffects(_itemConfig as ConsumableConfig);
             container = FormatContainer(Sim.Scriptables.ItemContainerConfig.Of(_itemConfig));
         }
         // Pile : affiche "Pile : N" en tête des effects pour qu'on le voie immédiatement.
@@ -188,6 +195,36 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         float pct = capacity > 0f ? Mathf.Clamp01(fuel / capacity) : 0f;
         string color = pct <= 0.001f ? "#E8836B" : (pct < 0.34f ? "#E8C36B" : "#8FE36B");
         return $"<color={color}>Réservoir : {fuel:0} / {capacity:0} L</color>";
+    }
+
+    /// <summary>Détails d'une arme pour la tooltip : famille de munitions compatible + état
+    /// du chargeur. Le chargeur vient du snapshot d'inventaire (_loadedAmmo, poche/conteneur) ;
+    /// pour l'arme TENUE (slots mains, pas de snapshot) il vient du PlayerShooter local.</summary>
+    private string FormatWeaponAmmo(WeaponConfig cfg) {
+        int loaded = _loadedAmmo;
+        if (loaded < 0 && Sim.PlayerController.Local != null) {
+            var shooter = Sim.PlayerController.Local.GetComponent<Sim.PlayerShooter>();
+            var behaviour = ClientItemManager.Instance != null
+                ? ClientItemManager.Instance.GetItem(_entityId) as WeaponBehaviour : null;
+            if (shooter != null && behaviour != null && shooter.HeldWeapon == behaviour)
+                loaded = shooter.LocalLoadedAmmo;
+        }
+
+        string magazine;
+        if (loaded < 0) {
+            magazine = $"Chargeur : ? / {cfg.MagazineSize}";
+        } else {
+            float pct = cfg.MagazineSize > 0 ? Mathf.Clamp01((float)loaded / cfg.MagazineSize) : 0f;
+            string color = loaded == 0 ? "#E8836B" : (pct < 0.34f ? "#E8C36B" : "#8FE36B");
+            magazine = $"<color={color}>Chargeur : {loaded} / {cfg.MagazineSize}</color>";
+        }
+        return $"Munitions : {AmmoConfig.CategoryLabel(cfg.AmmoCategory)}\n{magazine}";
+    }
+
+    /// <summary>Détails d'une boîte de munitions pour la tooltip : famille servie + règle de
+    /// rechargement (une boîte remplit un chargeur).</summary>
+    private static string FormatAmmoBox(AmmoConfig cfg) {
+        return $"Munitions : {AmmoConfig.CategoryLabel(cfg.AmmoCategory)}\n<color=#8FE36B>1 boîte = 1 chargeur plein</color>";
     }
 
     /// <summary>Met en forme les effets d'un consommable (faim/soif/fatigue) pour la tooltip.</summary>
@@ -316,6 +353,7 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         _propPresetId = 0;
         // Le pool peut réémettre un draggable déjà utilisé avec un Quantity hérité — reset à 1.
         SetQuantity(1);
+        _loadedAmmo = -1; // idem pour le chargeur publié par un snapshot précédent
         Sim.ItemTooltipUI.Hide(); // au cas où ce draggable était survolé au moment du release
     }
 

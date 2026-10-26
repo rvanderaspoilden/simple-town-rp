@@ -539,6 +539,7 @@ public class InventoryUI : MonoBehaviour
             d.SetConfiguration(cfg);
             d.SetEntityId(entry.EntityId);
             d.SetQuantity(Mathf.Max(1, entry.Quantity)); // poche = 1 item/slot, kept pour symétrie wire
+            d.SetLoadedAmmo(entry.LoadedAmmo);           // arme : chargeur affiché dans la tooltip
             target.SetItem(d);
         }
     }

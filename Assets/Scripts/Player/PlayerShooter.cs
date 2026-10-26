@@ -399,6 +399,28 @@ namespace Sim {
 
         // ── Munitions & rechargement (owner) ──────────────────────────────────────
 
+        /// <summary>Chargeur de l'arme tenue tel que connu par l'owner local (-1 = inconnu).
+        /// Consommé par la tooltip d'inventaire du slot main.</summary>
+        public int LocalLoadedAmmo => this.localLoadedAmmo;
+
+        /// <summary>Vrai si l'option « Recharger » doit être proposée pour cette arme tenue :
+        /// chargeur pas plein, pas de rechargement en cours, et une boîte compatible en stock
+        /// (réserve encore inconnue = proposé, le serveur tranchera).</summary>
+        public bool CanOfferReload(WeaponBehaviour weapon) {
+            if (!isLocalPlayer || weapon == null || weapon != this.HeldWeapon) return false;
+            WeaponConfig cfg = weapon.WeaponConfiguration;
+            if (cfg == null) return false;
+            if (Time.time < this.localReloadingUntil) return false;
+            if (this.localLoadedAmmo >= 0 && this.localLoadedAmmo >= cfg.MagazineSize) return false;
+            return this.localAmmoReserve != 0;
+        }
+
+        /// <summary>Rechargement demandé depuis l'UI (action « Recharger » du menu de l'arme)
+        /// — mêmes gardes que la touche R.</summary>
+        public void RequestReload() {
+            if (isLocalPlayer) this.TryStartReload();
+        }
+
         /// <summary>Demande un rechargement au serveur : consomme une boîte de munitions de la
         /// famille de l'arme (poche puis sac tenu), chargeur rempli après ReloadDuration. Le
         /// blocage local du tir est optimiste — annulé par TargetReloadResult en cas d'échec.</summary>

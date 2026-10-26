@@ -1463,6 +1463,15 @@ public class ServerItemManager
         return false;
     }
 
+    /// <summary>Chargeur à publier dans un snapshot d'inventaire (tooltip client) : -1 si
+    /// l'item n'est pas une arme, sinon l'état mémoire (défaut plein, sans l'écrire).</summary>
+    private static int SnapshotLoadedAmmo(int configId, string uuid) {
+        if (!(DatabaseManager.GetItemConfigById(configId) is WeaponConfig cfg)) return -1;
+        var mgr = Instance;
+        if (mgr != null && !string.IsNullOrEmpty(uuid) && mgr._weaponAmmoByKey.TryGetValue(uuid, out int loaded)) return loaded;
+        return cfg.MagazineSize;
+    }
+
     /// <summary>Réhydrate le chargeur d'une arme depuis sa ligne DB (stateData.loadedAmmo) —
     /// appelé partout où des items sont (re)chargés depuis le backend. No-op si la session
     /// serveur connaît déjà cette arme (la mémoire fait foi) ou si la ligne n'a pas la clé
@@ -2314,6 +2323,7 @@ public class ServerItemManager
                 if (!session.SlotToEntityId.ContainsKey(slotIndex)) session.SlotToEntityId[slotIndex] = entityId;
                 snapshot.Add(new S2C_ContainerItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex, Quantity = qty,
+                    LoadedAmmo = SnapshotLoadedAmmo(it.configId, it.Id),
                 });
                 _bridges[entityId] = new ItemDbBridge {
                     Uuid = it.Id, Version = it.version, PlaceId = placeId,
@@ -2450,6 +2460,7 @@ public class ServerItemManager
                 if (!session.SlotToEntityId.ContainsKey(slotIndex)) session.SlotToEntityId[slotIndex] = entityId;
                 snapshot.Add(new S2C_ContainerItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex, Quantity = qty,
+                    LoadedAmmo = SnapshotLoadedAmmo(it.configId, it.Id),
                 });
                 _bridges[entityId] = new ItemDbBridge {
                     Uuid = it.Id, Version = it.version, PlaceId = placeId,
@@ -2472,6 +2483,7 @@ public class ServerItemManager
                 snapshot.Add(new S2C_ContainerItem {
                     EntityId = entityId, ConfigId = 0, SlotIndex = slotIndex, Quantity = 1,
                     PropConfigId = p.configId, PropPresetId = p.presetIndex,
+                    LoadedAmmo = -1,
                 });
             }
         }
@@ -3572,6 +3584,7 @@ public class ServerItemManager
             items.Add(new S2C_ContainerItem {
                 EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
                 Quantity = Mathf.Max(1, it.Quantity),
+                LoadedAmmo = it.IsProp ? -1 : SnapshotLoadedAmmo(it.ConfigId, it.ItemUuid),
             });
         }
         conn.Send(new S2C_ContainerOpened {
@@ -3592,6 +3605,7 @@ public class ServerItemManager
                 Quantity = Mathf.Max(1, it.Quantity),
                 PropConfigId = it.IsProp ? it.PropConfigId : 0,
                 PropPresetId = it.IsProp ? it.PropPresetId : 0,
+                LoadedAmmo = it.IsProp ? -1 : SnapshotLoadedAmmo(it.ConfigId, it.ItemUuid),
             });
         }
         conn.Send(new S2C_ItemContainerOpened {
@@ -3673,6 +3687,7 @@ public class ServerItemManager
             items.Add(new S2C_PocketItem {
                 EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
                 Quantity = Mathf.Max(1, it.Quantity),
+                LoadedAmmo = SnapshotLoadedAmmo(it.ConfigId, it.ItemUuid),
             });
         }
         conn.Send(new S2C_PocketSync {

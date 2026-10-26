@@ -38,7 +38,8 @@
         REPAIR,
         SPLIT,
         PLACE,
-        TALK
+        TALK,
+        RELOAD
     }
 
 }
