@@ -230,6 +230,7 @@ public class ServerItemManager
         _openItemContainerByPlayer.Clear();
         _pocketByPlayer.Clear();
         _weaponAmmoByKey.Clear();
+        _ammoPersistPending.Clear();
         _nextEntityId = 1;
         GameLogger.Network.Info("ServerItemManagerReset");
     }
@@ -459,6 +460,7 @@ public class ServerItemManager
 
             Vector3    wpos = it.position.ToVector3();
             Quaternion wrot = Quaternion.Euler(it.rotation != null ? it.rotation.ToVector3() : Vector3.zero);
+            SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData); // arme au sol : réhydrate son chargeur
             SpawnPersistentWorldFromDb(roomId, it.configId, wpos, wrot, it.Id, it.version, placeId);
             count++;
         }
@@ -1383,6 +1385,113 @@ public class ServerItemManager
 
     public void SetWeaponLoadedAmmo(int weaponEntityId, int value) {
         _weaponAmmoByKey[WeaponAmmoKey(weaponEntityId)] = Mathf.Max(0, value);
+        QueueWeaponAmmoPersist(weaponEntityId);
+    }
+
+    // ── Persistance du chargeur (stateData.loadedAmmo sur la ligne de l'arme) ──
+    // Le PATCH backend REMPLACE stateData intégralement : l'écriture réinjecte donc le
+    // slotIndex courant si l'arme est posée dans une poche/un conteneur ouvert. Débouncé
+    // (une écriture par rafale) ; déclenché par chaque Set (tir/reload). À la relecture
+    // (restore mains/poche/conteneurs/items-monde), SeedWeaponAmmoFromDb réhydrate la
+    // mémoire — qui garde toujours la priorité sur la DB (plus fraîche que le débounce).
+
+    private const string StateKeyLoadedAmmo = "loadedAmmo";
+    private const float AmmoPersistDebounce = 1.2f;
+
+    private readonly HashSet<string> _ammoPersistPending = new HashSet<string>();
+
+    private void QueueWeaponAmmoPersist(int weaponEntityId) {
+        ItemDbBridge bridge = GetBridge(weaponEntityId);
+        // Pas encore de ligne DB (persist pickup asynchrone) : AssociateUuid migrera la clé
+        // mémoire, le prochain changement de chargeur persistera.
+        if (bridge == null || string.IsNullOrEmpty(bridge.Uuid) || ApiManager.Instance == null) return;
+        if (!_ammoPersistPending.Add(bridge.Uuid)) return; // écriture déjà programmée
+        ApiManager.Instance.StartCoroutine(PersistWeaponAmmoCoroutine(bridge.Uuid));
+    }
+
+    private IEnumerator PersistWeaponAmmoCoroutine(string uuid) {
+        yield return new WaitForSeconds(AmmoPersistDebounce);
+        _ammoPersistPending.Remove(uuid);
+        if (!_weaponAmmoByKey.TryGetValue(uuid, out int loaded)) yield break;
+
+        // Bridge re-résolu PAR UUID au moment de l'écriture : l'arme a pu changer de place
+        // (et d'entityId) pendant le débounce. Plus de bridge = plus adressable (ex. room
+        // vidée) — la valeur reste en mémoire, un prochain Set re-tentera.
+        if (!TryGetBridgeByUuid(uuid, out int entityId, out ItemDbBridge bridge)) yield break;
+
+        var state = new Dictionary<string, object> { { StateKeyLoadedAmmo, loaded } };
+        if (TryGetSlotIndexByUuid(uuid, out int slotIndex)) state["slotIndex"] = slotIndex;
+
+        var body = new UpdateItemBody { expectedVersion = bridge.Version, stateData = state };
+        UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(uuid, body);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            // 409/404 possibles si la ligne a bougé entre-temps : on abandonne sans bruit
+            // majeur — la mémoire serveur reste juste, la DB se rattrapera au prochain Set.
+            Debug.LogWarning($"[ServerItemManager] PersistWeaponAmmo failed code={req.responseCode} uuid={uuid}");
+            yield break;
+        }
+        try {
+            var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
+            if (it != null) UpdateBridgeVersion(entityId, it.version);
+        } catch { }
+    }
+
+    private bool TryGetBridgeByUuid(string uuid, out int entityId, out ItemDbBridge bridge) {
+        foreach (var kv in _bridges) {
+            if (kv.Value.Uuid == uuid) { entityId = kv.Key; bridge = kv.Value; return true; }
+        }
+        entityId = -1;
+        bridge = null;
+        return false;
+    }
+
+    /// <summary>Slot occupé par l'item <paramref name="uuid"/> dans une session poche ou
+    /// conteneur ouvert — pour le réécrire dans un PATCH stateData (remplacement intégral).
+    /// Faux = l'item est en main ou au sol (pas de slotIndex).</summary>
+    private bool TryGetSlotIndexByUuid(string uuid, out int slotIndex) {
+        foreach (var s in _pocketByPlayer.Values)
+            foreach (var it in s.ItemsByEntityId.Values)
+                if (it.ItemUuid == uuid) { slotIndex = it.SlotIndex; return true; }
+        foreach (var s in _openContainerByPlayer.Values)
+            foreach (var it in s.ItemsByEntityId.Values)
+                if (!it.IsProp && it.ItemUuid == uuid) { slotIndex = it.SlotIndex; return true; }
+        foreach (var s in _openItemContainerByPlayer.Values)
+            foreach (var it in s.ItemsByEntityId.Values)
+                if (!it.IsProp && it.ItemUuid == uuid) { slotIndex = it.SlotIndex; return true; }
+        slotIndex = 0;
+        return false;
+    }
+
+    /// <summary>Réhydrate le chargeur d'une arme depuis sa ligne DB (stateData.loadedAmmo) —
+    /// appelé partout où des items sont (re)chargés depuis le backend. No-op si la session
+    /// serveur connaît déjà cette arme (la mémoire fait foi) ou si la ligne n'a pas la clé
+    /// (arme jamais tirée = chargeur plein par défaut).</summary>
+    public void SeedWeaponAmmoFromDb(int configId, string uuid, Dictionary<string, object> stateData) {
+        if (string.IsNullOrEmpty(uuid) || stateData == null) return;
+        if (_weaponAmmoByKey.ContainsKey(uuid)) return;
+        if (!(DatabaseManager.GetItemConfigById(configId) is WeaponConfig cfg)) return;
+        if (!stateData.TryGetValue(StateKeyLoadedAmmo, out object raw) || raw == null) return;
+        try {
+            _weaponAmmoByKey[uuid] = Mathf.Clamp(System.Convert.ToInt32(raw), 0, cfg.MagazineSize);
+        } catch (System.Exception e) {
+            Debug.LogWarning($"[ServerItemManager] SeedWeaponAmmoFromDb parse uuid={uuid}: {e.Message}");
+        }
+    }
+
+    /// <summary>stateData d'un PATCH de déplacement d'inventaire. Le backend REMPLACE le
+    /// dict : une destination à slotIndex doit donc réinjecter les clés applicatives qui
+    /// survivent au move — le chargeur d'une arme suivie. Une destination SANS slotIndex
+    /// (main) renvoie null : champ omis du PATCH, stateData DB préservé tel quel.</summary>
+    private Dictionary<string, object> MoveStateData(int configId, string uuid, bool hasSlotIndex, int slotIndex) {
+        if (!hasSlotIndex) return null;
+        var state = new Dictionary<string, object> { { "slotIndex", slotIndex } };
+        if (!string.IsNullOrEmpty(uuid)
+            && DatabaseManager.GetItemConfigById(configId) is WeaponConfig
+            && _weaponAmmoByKey.TryGetValue(uuid, out int loaded)) {
+            state[StateKeyLoadedAmmo] = loaded;
+        }
+        return state;
     }
 
     /// <summary>
@@ -1939,6 +2048,9 @@ public class ServerItemManager
                 continue;
             }
 
+            // Arme restaurée en main : réhydrate son chargeur depuis stateData.loadedAmmo.
+            SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData);
+
             // Re-create the runtime entity attached to the player in the current room.
             int entityId = _nextEntityId++;
             var entity = new ItemEntity {
@@ -2135,6 +2247,7 @@ public class ServerItemManager
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId = _nextEntityId++;
                 int qty = Mathf.Max(1, it.quantity);
+                SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData); // arme stockée : réhydrate son chargeur
                 session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
                     ItemUuid = it.Id, Version = it.version, Quantity = qty,
@@ -2270,6 +2383,7 @@ public class ServerItemManager
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId = _nextEntityId++;
                 int qty = Mathf.Max(1, it.quantity);
+                SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData); // arme stockée : réhydrate son chargeur
                 session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
                     ItemUuid = it.Id, Version = it.version, Quantity = qty,
@@ -2900,9 +3014,7 @@ public class ServerItemManager
             var body = new UpdateItemBody {
                 expectedVersion = itemCtx.Version,
                 placeId         = toCtx.PlaceId,
-                stateData       = toCtx.HasSlotIndex
-                    ? new Dictionary<string, object> { { "slotIndex", msg.ToSlotIndex } }
-                    : null,
+                stateData       = MoveStateData(itemCtx.ConfigId, itemCtx.ItemUuid, toCtx.HasSlotIndex, msg.ToSlotIndex),
             };
             GameLogger.Network.Info("MoveItem PATCH start uuid={Uuid} version={Version} from={From} to={To} slot={Slot}",
                 itemCtx.ItemUuid, itemCtx.Version, msg.FromPlaceId, msg.ToPlaceId, msg.ToSlotIndex);
@@ -3339,9 +3451,7 @@ public class ServerItemManager
         var bodyA = new UpdateItemBody {
             expectedVersion = itemA.Version,
             placeId         = ctxB.PlaceId,
-            stateData       = ctxB.HasSlotIndex
-                ? new Dictionary<string, object> { { "slotIndex", msg.SlotIndexB } }
-                : null,
+            stateData       = MoveStateData(itemA.ConfigId, itemA.ItemUuid, ctxB.HasSlotIndex, msg.SlotIndexB),
         };
         UnityWebRequest reqA = ApiManager.Instance.UpdateItemRequest(itemA.ItemUuid, bodyA);
         yield return reqA.SendWebRequest();
@@ -3358,9 +3468,7 @@ public class ServerItemManager
         var bodyB = new UpdateItemBody {
             expectedVersion = itemB.Version,
             placeId         = ctxA.PlaceId,
-            stateData       = ctxA.HasSlotIndex
-                ? new Dictionary<string, object> { { "slotIndex", msg.SlotIndexA } }
-                : null,
+            stateData       = MoveStateData(itemB.ConfigId, itemB.ItemUuid, ctxA.HasSlotIndex, msg.SlotIndexA),
         };
         UnityWebRequest reqB = ApiManager.Instance.UpdateItemRequest(itemB.ItemUuid, bodyB);
         yield return reqB.SendWebRequest();
@@ -3372,9 +3480,7 @@ public class ServerItemManager
             var rollback = new UpdateItemBody {
                 expectedVersion = newVersionA,
                 placeId         = ctxA.PlaceId,
-                stateData       = ctxA.HasSlotIndex
-                    ? new Dictionary<string, object> { { "slotIndex", msg.SlotIndexA } }
-                    : null,
+                stateData       = MoveStateData(itemA.ConfigId, itemA.ItemUuid, ctxA.HasSlotIndex, msg.SlotIndexA),
             };
             UnityWebRequest reqRb = ApiManager.Instance.UpdateItemRequest(itemA.ItemUuid, rollback);
             yield return reqRb.SendWebRequest();
@@ -3482,6 +3588,7 @@ public class ServerItemManager
                 int dbQty = Mathf.Max(1, it.quantity);
                 if (dbQty > 1)
                     Debug.LogWarning($"[ServerItemManager] Pocket item id={it.Id} cfg={it.configId} a quantity={dbQty}>1 en DB — clamp à 1 (invariant poche = 1/slot).");
+                SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData); // arme en poche : réhydrate son chargeur
                 session.ItemsByEntityId[entityId] = new PocketSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
                     ItemUuid = it.Id, Version = it.version, Quantity = 1,
@@ -4036,6 +4143,7 @@ public class ServerItemManager
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId = _nextEntityId++;
                 int qty = Mathf.Max(1, it.quantity);
+                SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData); // arme stockée : réhydrate son chargeur
                 session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
                     ItemUuid = it.Id, Version = it.version, Quantity = qty,
