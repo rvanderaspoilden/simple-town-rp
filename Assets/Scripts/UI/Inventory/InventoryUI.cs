@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using Sim;
@@ -5,12 +6,30 @@ using UnityEngine;
 
 public class InventoryUI : MonoBehaviour
 {
+    [Header("Identité (nom + argent)")]
+    [SerializeField, Tooltip("Nom du personnage, affiché en tête de l'inventaire (ex-Character Information).")]
+    private TMPro.TextMeshProUGUI nameText;
+    [SerializeField, Tooltip("Argent détenu, affiché en tête de l'inventaire (ex-Character Information).")]
+    private TMPro.TextMeshProUGUI moneyText;
+
     [Header("Settings")]
-    [SerializeField] private ItemSlot leftHandSlot;
-    [SerializeField] private ItemSlot rightHandSlot;
-    [SerializeField] private ItemSlot bothHandSlot;
-    [SerializeField] private ItemSlot leftPocketSlot;
-    [SerializeField] private ItemSlot rightPocketSlot;
+    [SerializeField, Tooltip("Slot unique « en main » (item actif, 1H ou 2H).")]
+    private ItemSlot rightHandSlot;
+    [SerializeField, Tooltip("Slot équipement « sac à dos » (conteneur wearable porté).")]
+    private ItemSlot backpackSlot;
+    [SerializeField, Tooltip("Carte de détail de l'item sélectionné (panneau de droite).")]
+    private ItemDetailCardUI detailCard;
+    [Header("Poche (grille)")]
+    [SerializeField, Tooltip("Template désactivé, cloné pour chaque slot de poche (SlotCount serveur).")]
+    private ItemSlot pocketSlotTemplate;
+    [SerializeField, Tooltip("Parent (GridLayoutGroup) recevant les slots de poche clonés.")]
+    private Transform pocketGrid;
+
+    // Slots poche clonés depuis le template — indexés par SlotIndex.
+    private readonly List<ItemSlot> _pocketSlots = new List<ItemSlot>();
+
+    // Slots affichés avant le premier S2C_PocketSync (le snapshot serveur fait autorité ensuite).
+    private const int DefaultPocketSlotCount = 8;
 
     [SerializeField] private Transform     poolContainer;
     [SerializeField] private DraggableItem draggableItemPrefab;
@@ -23,24 +42,15 @@ public class InventoryUI : MonoBehaviour
 
     private GenericPool<DraggableItem> _draggableItemPool;
 
-    // Vrai quand un drag TWO_HAND a forcé l'affichage de bothHandSlot (mains libres) en
-    // masquant les single-hand slots. À la fin du drag, on restaure le layout via UpdateUI
-    // sauf si bothHandSlot a effectivement reçu le drop (auquel cas OnPlayerHandChanged
-    // refresh proprement après confirmation serveur).
-    private bool _layoutForcedDuringDrag;
-
     private void Awake()
     {
         EnsurePool();
 
-        // Les slots mains autorisent le swap hand↔hand (prédiction locale via Swap()).
-        // Les poches aussi (pocket↔pocket, pocket↔hand, pocket↔container).
-        // Les slots conteneur gardent CanSwap=false par défaut (activé dans ContainerPanelUI).
-        if (leftHandSlot)    leftHandSlot.CanSwap    = true;
-        if (rightHandSlot)   rightHandSlot.CanSwap   = true;
-        if (bothHandSlot)    bothHandSlot.CanSwap    = true;
-        if (leftPocketSlot)  { leftPocketSlot.CanSwap  = true; leftPocketSlot.SlotIndex  = 0; }
-        if (rightPocketSlot) { rightPocketSlot.CanSwap = true; rightPocketSlot.SlotIndex = 1; }
+        // Vue main purement indicative : ni drag, ni drop, ni swap — le slot actif de
+        // la hotbar est la seule autorité sur l'item porté. Les poches gardent le swap
+        // visuel (pocket↔pocket, pocket↔container).
+        if (rightHandSlot) rightHandSlot.AcceptsDrops = false;
+        EnsurePocketSlots(DefaultPocketSlotCount);
     }
 
     /// <summary>
@@ -56,9 +66,86 @@ public class InventoryUI : MonoBehaviour
             OnCreateDraggableItem, OnGetDraggableItem, OnReleaseDraggableItem);
     }
 
+    /// <summary>
+    /// Clone le template jusqu'à disposer de <paramref name="count"/> slots de poche.
+    /// Idempotent — appelé à l'Awake (valeur par défaut) puis à chaque snapshot
+    /// (SlotCount serveur = PocketCapacity, autoritaire). Un excédent est désactivé.
+    /// </summary>
+    private void EnsurePocketSlots(int count)
+    {
+        if (pocketSlotTemplate == null || pocketGrid == null) return;
+        while (_pocketSlots.Count < count) {
+            ItemSlot slot = Instantiate(pocketSlotTemplate, pocketGrid);
+            slot.name      = $"Pocket Slot {_pocketSlots.Count}";
+            slot.SlotIndex = _pocketSlots.Count;
+            slot.CanSwap   = true;
+            slot.gameObject.SetActive(true);
+            _pocketSlots.Add(slot);
+        }
+        for (int i = 0; i < _pocketSlots.Count; i++)
+            if (_pocketSlots[i]) _pocketSlots[i].gameObject.SetActive(i < count);
+
+        string charId = PlayerController.Local != null ? PlayerController.Local.CharacterData?.Id : null;
+        if (!string.IsNullOrEmpty(charId))
+            foreach (ItemSlot s in _pocketSlots) if (s) s.PlaceId = $"pocket:{charId}";
+    }
+
+    private bool IsPocketSlot(ItemSlot slot) => slot != null && _pocketSlots.Contains(slot);
+
+    /// <summary>Premier slot de poche libre (grille) — utilisé par « Ranger » de la carte de détail.</summary>
+    public bool TryFindFreePocketSlot(out int slotIndex)
+    {
+        slotIndex = -1;
+        foreach (ItemSlot s in _pocketSlots)
+            if (s != null && s.gameObject.activeSelf && s.Item == null) { slotIndex = s.SlotIndex; return true; }
+        return false;
+    }
+
+    // ── Carte de détail (sélection) ─────────────────────────────────────────
+
+    /// <summary>Re-résout la sélection de la carte après un refresh : garde l'item
+    /// sélectionné s'il est toujours dans nos slots, sinon retombe sur le premier
+    /// item de l'inventaire (poche → main → sac), sinon masque la carte.</summary>
+    private void RefreshDetailCard()
+    {
+        if (detailCard == null || !gameObject.activeInHierarchy) return;
+        DraggableItem current = FindDraggableByEntity(detailCard.SelectedEntityId);
+        if (current == null) current = FindFirstInventoryItem();
+        if (current != null) detailCard.Show(current);
+        else detailCard.Clear();
+    }
+
+    private DraggableItem FindDraggableByEntity(int entityId)
+    {
+        if (entityId <= 0) return null;
+        foreach (ItemSlot s in _pocketSlots)
+            if (s != null && s.Item != null && s.Item.EntityId == entityId) return s.Item;
+        if (rightHandSlot != null && rightHandSlot.Item != null && rightHandSlot.Item.EntityId == entityId) return rightHandSlot.Item;
+        if (backpackSlot  != null && backpackSlot.Item  != null && backpackSlot.Item.EntityId  == entityId) return backpackSlot.Item;
+        return null;
+    }
+
+    private DraggableItem FindFirstInventoryItem()
+    {
+        foreach (ItemSlot s in _pocketSlots)
+            if (s != null && s.gameObject.activeSelf && s.Item != null) return s.Item;
+        if (rightHandSlot != null && rightHandSlot.Item != null) return rightHandSlot.Item;
+        if (backpackSlot  != null && backpackSlot.Item  != null) return backpackSlot.Item;
+        return null;
+    }
+
     private void OnEnable()
     {
+        // Sélection par défaut à l'ouverture : premier item de l'inventaire
+        // (RefreshDetailCard choisit après le refresh des slots).
+        if (detailCard) detailCard.Clear();
         UpdateUI();
+        // Identité (nom + argent) : rafraîchie à chaque ouverture depuis la source
+        // autoritaire (le panneau est inactif au démarrage, donc pas de singleton
+        // persistant) + live tant qu'il est ouvert.
+        RefreshIdentity();
+        PlayerBankAccount.OnLocalMoneyChanged += OnLocalMoneyChanged;
+        PlayerController.OnCharacterDataChanged += OnCharacterDataChanged;
         // Reset défensif : si l'inventaire a été désactivé pendant un drag, les slots
         // peuvent rester dimés (OnDragEnded fire après OnDisable → handler déjà désinscrit).
         ResetDropAcceptance();
@@ -87,9 +174,11 @@ public class InventoryUI : MonoBehaviour
     {
         // Release par slot — NE PAS pool.Dispose() car le pool est aussi consommé par
         // ContainerPanelUI, et un Dispose() global libérerait ses draggables aussi.
-        ReleaseSlot(leftHandSlot);
         ReleaseSlot(rightHandSlot);
-        ReleaseSlot(bothHandSlot);
+        ReleaseSlot(backpackSlot);
+
+        PlayerBankAccount.OnLocalMoneyChanged -= OnLocalMoneyChanged;
+        PlayerController.OnCharacterDataChanged -= OnCharacterDataChanged;
 
         DraggableItem.OnLeftClick   -= OnItemLeftClicked;
         DraggableItem.OnRightClick  -= OnItemRightClicked;
@@ -145,10 +234,32 @@ public class InventoryUI : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
             HUDManager.Instance.CloseInventory();
 
-        // Ferme l'inventaire (et donc le container via OnDisable) dès que le joueur
-        // commence à marcher — cohérent avec la règle "HUD fermé pendant le mouvement".
-        if (PlayerController.Local != null && PlayerController.Local.CurrentMoveSpeed > 0.1f)
-            HUDManager.Instance.CloseInventory();
+        // Inventaire classique (migration hotbar) : on ne ferme PLUS l'inventaire quand le
+        // joueur bouge. En TPS, tpsCurrentSpeed est une vitesse amortie — l'ancienne règle
+        // « HUD fermé pendant le mouvement » refermait le panneau dans la frame d'ouverture
+        // tant qu'elle n'était pas retombée à zéro (toggle I inutilisable en marchant).
+    }
+
+    // ── Identité (nom + argent) ───────────────────────────────────────────────
+
+    private void RefreshIdentity()
+    {
+        PlayerController local = PlayerController.Local;
+        if (local == null) return;
+        if (nameText != null && local.CharacterData != null)
+            nameText.text = local.CharacterData.Identity.FullName;
+        if (moneyText != null && local.PlayerBankAccount != null)
+            moneyText.text = local.PlayerBankAccount.Money.ToString();
+    }
+
+    private void OnLocalMoneyChanged(int amount)
+    {
+        if (moneyText != null) moneyText.text = amount.ToString();
+    }
+
+    private void OnCharacterDataChanged(Sim.Entities.CharacterData data)
+    {
+        if (nameText != null && data != null) nameText.text = data.Identity.FullName;
     }
 
     private void OnPlayerHandChanged()
@@ -158,7 +269,12 @@ public class InventoryUI : MonoBehaviour
         UpdateUI();
     }
 
-    private void OnItemLeftClicked(DraggableItem draggableItem)   => CloseCurrentActionMenu();
+    private void OnItemLeftClicked(DraggableItem draggableItem)
+    {
+        CloseCurrentActionMenu();
+        // Clic gauche = sélection pour la carte de détail (slots inventaire ET conteneurs).
+        if (detailCard && draggableItem != null) detailCard.Show(draggableItem);
+    }
     private void OnItemStartDrag(DraggableItem draggableItem) {
         CloseCurrentActionMenu();
         ApplyDropAcceptanceForDrag(draggableItem);
@@ -167,79 +283,21 @@ public class InventoryUI : MonoBehaviour
 
     /// <summary>
     /// Désactive visuellement (alpha + raycasts) les slots inventaire qui ne peuvent pas
-    /// accueillir <paramref name="dragged"/> en fonction des contraintes connues :
-    ///  - TWO_HAND entrant : besoin des DEUX mains libres ; refusé en poche
-    ///  - Single-hand : refusé en main(s) si une main porte déjà un TWO_HAND ;
-    ///                  refusé en poche si !ItemConfig.AllowedInPocket
-    ///  - bothHandSlot : accepte un single-hand pour swap, refuse TWO_HAND
-    /// Le slot d'origine reste toujours accepté (pour permettre une annulation propre).
-    /// Cohérent avec <see cref="TryFindQuickMoveTargetForItem"/> et la validation serveur
-    /// (HandPlaceContext / PocketPlaceContext.ValidateAsTarget).
+    /// accueillir <paramref name="dragged"/> :
+    ///  - poches : refusé si !ItemConfig.AllowedInPocket ;
+    ///  - slot main : jamais (vue indicative — l'item actif se choisit via la hotbar).
+    /// Le slot d'origine reste toujours accepté (annulation propre). Le serveur revalide
+    /// de toute façon (HandPlaceContext / PocketPlaceContext.ValidateAsTarget).
     /// </summary>
     private void ApplyDropAcceptanceForDrag(DraggableItem dragged) {
         if (dragged == null || dragged.ItemConfig == null) return;
 
-        ItemConfig cfg = dragged.ItemConfig;
-        bool isTwoHand       = cfg.HandleType == ItemHandleType.TWO_HAND;
-        bool allowedInPocket = cfg.AllowedInPocket;
+        bool allowedInPocket = dragged.ItemConfig.AllowedInPocket;
 
-        var hands = PlayerController.Local != null ? PlayerController.Local.PlayerHands : null;
-        bool rightHeldTwoHand = hands != null && hands.RightHandItem != null
-            && hands.RightHandItem.Configuration != null
-            && hands.RightHandItem.Configuration.HandleType == ItemHandleType.TWO_HAND;
-        bool leftHeldTwoHand  = hands != null && hands.LeftHandItem != null
-            && hands.LeftHandItem.Configuration  != null
-            && hands.LeftHandItem.Configuration.HandleType  == ItemHandleType.TWO_HAND;
-        bool handsBlockedByTwoHand = rightHeldTwoHand || leftHeldTwoHand;
-
-        bool handsAcceptSingle;
-        bool bothHandAccepts;
-        if (isTwoHand) {
-            // Un TWO_HAND ne peut entrer en main que si les DEUX mains sont libres.
-            bool bothFree = hands != null && hands.RightHandItem == null && hands.LeftHandItem == null;
-            // Les single-hand slots ne reçoivent JAMAIS un TWO_HAND : on dirige le joueur
-            // vers bothHandSlot, qui est le seul slot main sémantiquement correct pour
-            // l'objet à deux mains. handsAcceptSingle reste à false même si mains libres.
-            handsAcceptSingle = false;
-            bothHandAccepts   = bothFree;
-
-            // Quand bothHandSlot est inactif (cas habituel : aucun TWO_HAND porté) ET
-            // que les mains sont libres, on le force visible pendant la durée du drag
-            // pour donner une cible explicite. Les single-hand slots sont masqués pour
-            // éviter une redondance visuelle (3 slots de main = confusion).
-            if (bothFree && bothHandSlot != null && !bothHandSlot.gameObject.activeSelf) {
-                _layoutForcedDuringDrag = true;
-                if (leftHandSlot)  leftHandSlot.gameObject.SetActive(false);
-                if (rightHandSlot) rightHandSlot.gameObject.SetActive(false);
-                bothHandSlot.gameObject.SetActive(true);
-                string charId = PlayerController.Local?.CharacterData?.Id;
-                if (!string.IsNullOrEmpty(charId)) bothHandSlot.PlaceId = $"hand_right:{charId}";
-            }
-        } else {
-            handsAcceptSingle = !handsBlockedByTwoHand;
-            // bothHandSlot accueille les swaps quand un TWO_HAND est porté.
-            // Cas particulier : drag depuis une poche → le swap déplacerait le TWO_HAND
-            // en poche. Si le TWO_HAND n'est pas AllowedInPocket, le serveur refusera.
-            // On le bloque visuellement ici pour cohérence avec le rejet pocket.
-            bothHandAccepts = handsBlockedByTwoHand;
-            if (bothHandAccepts) {
-                bool draggedFromPocket = dragged.ItemSlot != null
-                    && (dragged.ItemSlot == leftPocketSlot || dragged.ItemSlot == rightPocketSlot);
-                if (draggedFromPocket) {
-                    var heldTwoHand = rightHeldTwoHand ? hands.RightHandItem : hands.LeftHandItem;
-                    bool heldPocketable = heldTwoHand != null
-                        && heldTwoHand.Configuration != null
-                        && heldTwoHand.Configuration.AllowedInPocket;
-                    if (!heldPocketable) bothHandAccepts = false;
-                }
-            }
-        }
-
-        if (leftHandSlot)   leftHandSlot.SetDropAcceptance(handsAcceptSingle);
-        if (rightHandSlot)  rightHandSlot.SetDropAcceptance(handsAcceptSingle);
-        if (bothHandSlot)   bothHandSlot.SetDropAcceptance(bothHandAccepts);
-        if (leftPocketSlot)  leftPocketSlot.SetDropAcceptance(allowedInPocket && !isTwoHand);
-        if (rightPocketSlot) rightPocketSlot.SetDropAcceptance(allowedInPocket && !isTwoHand);
+        if (rightHandSlot) rightHandSlot.SetDropAcceptance(false);
+        bool isWearable = Sim.Scriptables.ItemContainerConfig.Of(dragged.ItemConfig)?.Wearable == true;
+        if (backpackSlot) backpackSlot.SetDropAcceptance(isWearable);
+        foreach (ItemSlot s in _pocketSlots) if (s) s.SetDropAcceptance(allowedInPocket);
 
         // L'origine reste toujours active : permet une annulation immédiate sans devoir
         // sortir le pointeur de la zone, et évite que le drop sur soi-même soit refusé.
@@ -247,27 +305,9 @@ public class InventoryUI : MonoBehaviour
     }
 
     private void ResetDropAcceptance(DraggableItem dragged = null) {
-        if (leftHandSlot)    leftHandSlot.SetDropAcceptance(true);
-        if (rightHandSlot)   rightHandSlot.SetDropAcceptance(true);
-        if (bothHandSlot)    bothHandSlot.SetDropAcceptance(true);
-        if (leftPocketSlot)  leftPocketSlot.SetDropAcceptance(true);
-        if (rightPocketSlot) rightPocketSlot.SetDropAcceptance(true);
-
-        if (_layoutForcedDuringDrag) {
-            _layoutForcedDuringDrag = false;
-            // Détection client-optimistic : on regarde dragged.ItemSlot (set par
-            // ItemSlot.SetItem au moment de l'OnDrop, AVANT que OnItemMoved appelle
-            // targetSlot.Clear() pour le release différé du placeholder). bothHand._item
-            // peut déjà être null à ce stade, mais ItemSlot du draggable est intact.
-            //
-            // Si le drop a atterri sur bothHandSlot → on laisse le layout optimiste
-            // (bothHand visible) jusqu'à la confirmation serveur :
-            //   - succès → OnPlayerHandChanged → UpdateUI repopule proprement
-            //   - échec  → OnMoveItemResultReceived → UpdateUI rollback vers single-hand
-            // Sinon (snap-back ou drop ailleurs) → restaure le layout immédiatement.
-            bool droppedOnBothHand = dragged != null && dragged.ItemSlot == bothHandSlot;
-            if (!droppedOnBothHand) UpdateUI();
-        }
+        if (rightHandSlot) rightHandSlot.SetDropAcceptance(true);
+        if (backpackSlot)  backpackSlot.SetDropAcceptance(true);
+        foreach (ItemSlot s in _pocketSlots) if (s) s.SetDropAcceptance(true);
     }
 
     /// <summary>
@@ -278,8 +318,7 @@ public class InventoryUI : MonoBehaviour
     {
         if (item == null || item.ItemSlot == null) return;
         var src = item.ItemSlot;
-        bool srcIsOurs = src == leftHandSlot || src == rightHandSlot || src == bothHandSlot
-                      || src == leftPocketSlot || src == rightPocketSlot;
+        bool srcIsOurs = src == backpackSlot || IsPocketSlot(src);
         if (!srcIsOurs) return;
 
         var container = ContainerPanelUI.QuickMoveTarget();
@@ -306,11 +345,10 @@ public class InventoryUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Choisit une destination "main/poche" libre pour un quick-move depuis un conteneur.
-    /// Priorité : main droite → main gauche → poche slot 0 → poche slot 1. Pour un item
-    /// TWO_HAND, n'autorise que les mains, et seulement si les DEUX sont libres.
-    /// Retourne le placeKey wire ("hand_right:{charId}" / "pocket:{charId}") + slotIndex,
-    /// ou false si rien de libre n'est compatible.
+    /// Choisit une destination « main/poche » libre pour un quick-move depuis un conteneur.
+    /// Priorité : premier slot de poche libre (item pocketable) ; la main ne sert qu'aux
+    /// objets encombrants — même politique que le ramassage serveur. Retourne le placeKey
+    /// wire ("pocket:{charId}" / "hand_right:{charId}") + slotIndex, ou false sinon.
     /// </summary>
     public bool TryFindQuickMoveTargetForItem(DraggableItem item, out string placeKey, out int slotIndex)
     {
@@ -321,47 +359,21 @@ public class InventoryUI : MonoBehaviour
 
         var hands = PlayerController.Local.PlayerHands;
         ItemConfig cfg = item != null ? item.ItemConfig : null;
-        bool isTwoHand = cfg != null && cfg.HandleType == ItemHandleType.TWO_HAND;
 
-        // Détecte si une main porte déjà un TWO_HAND : dans ce cas les DEUX mains sont
-        // bloquées (cohérent avec HandPlaceContext.ValidateAsTarget côté serveur). Sans
-        // ce check, un single-hand entrant tenterait hand_left → serveur refuse avec
-        // "Vous portez déjà un objet à deux mains" alors qu'une poche libre conviendrait.
-        bool rightHeldIsTwoHand = hands.RightHandItem != null
-            && hands.RightHandItem.Configuration != null
-            && hands.RightHandItem.Configuration.HandleType == ItemHandleType.TWO_HAND;
-        bool leftHeldIsTwoHand  = hands.LeftHandItem  != null
-            && hands.LeftHandItem.Configuration  != null
-            && hands.LeftHandItem.Configuration.HandleType  == ItemHandleType.TWO_HAND;
-        bool handsBlocked = rightHeldIsTwoHand || leftHeldIsTwoHand;
-
-        if (isTwoHand) {
-            // TWO_HAND entrant : besoin des DEUX mains libres ; sinon fallback impossible.
-            if (!handsBlocked && hands.RightHandItem == null && hands.LeftHandItem == null) {
-                placeKey = $"hand_right:{charId}";
-                return true;
+        // Item pocketable → premier slot de poche libre (sinon false → toast
+        // « Pas de place dans l'inventaire » plutôt qu'un MoveItem refusé serveur).
+        bool allowedInPocket = cfg != null && cfg.AllowedInPocket;
+        if (allowedInPocket) {
+            foreach (ItemSlot s in _pocketSlots) {
+                if (s != null && s.gameObject.activeSelf && s.Item == null) {
+                    placeKey = $"pocket:{charId}"; slotIndex = s.SlotIndex; return true;
+                }
             }
             return false;
         }
 
-        // Single-hand : tente les mains seulement si pas de TWO_HAND déjà porté.
-        if (!handsBlocked) {
-            if (hands.RightHandItem == null) { placeKey = $"hand_right:{charId}"; return true; }
-            if (hands.LeftHandItem  == null) { placeKey = $"hand_left:{charId}";  return true; }
-        }
-
-        // Poches : seulement si l'item est explicitement pocketable. Sinon, on saute
-        // les poches → false retourné → toast "Pas de place dans l'inventaire" plutôt
-        // qu'un MoveItem refusé par le serveur.
-        bool allowedInPocket = cfg != null && cfg.AllowedInPocket;
-        if (allowedInPocket) {
-            if (leftPocketSlot != null && leftPocketSlot.Item == null) {
-                placeKey = $"pocket:{charId}"; slotIndex = 0; return true;
-            }
-            if (rightPocketSlot != null && rightPocketSlot.Item == null) {
-                placeKey = $"pocket:{charId}"; slotIndex = 1; return true;
-            }
-        }
+        // Objet encombrant (non pocketable) : en main si elle est libre.
+        if (hands.RightHandItem == null) { placeKey = $"hand_right:{charId}"; return true; }
         return false;
     }
 
@@ -373,12 +385,8 @@ public class InventoryUI : MonoBehaviour
         // Re-clic sur le même slot → toggle fermeture.
         if (currentActionMenu != null && _menuSlot == slot) { CloseCurrentActionMenu(); return; }
 
-        if (slot == leftHandSlot) { DisplayLeftActionMenu(); _menuSlot = slot; }
-        else if (slot == rightHandSlot || slot == bothHandSlot) {
-            // Item TWO_HAND : posé en bothHandSlot ; actions sur RightHandItem.
-            DisplayRightActionMenu(); _menuSlot = slot;
-        }
-        else if (slot == leftPocketSlot || slot == rightPocketSlot) {
+        // Vue main indicative : pas de menu contextuel sur le slot main.
+        if (IsPocketSlot(slot)) {
             // Item en poche → action « Lâcher » (au sol).
             DisplayPocketDropMenu(draggableItem); _menuSlot = slot;
         }
@@ -456,21 +464,13 @@ public class InventoryUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Swap visuel déjà appliqué dans ItemSlot.OnDrop. On route :
-    ///  • hand↔hand   → PlayerHands.Swap() (C2S_RequestSwapHands)
-    ///  • le reste    → C2S_SwapItems (un seul aller-retour serveur, deux PATCH atomiques).
+    /// Swap visuel déjà appliqué dans ItemSlot.OnDrop, routé via C2S_SwapItems
+    /// (un seul aller-retour serveur, deux PATCH atomiques).
     /// Sur échec serveur le snapshot S2C_ContainerOpened re-poussé reconciliera le panneau,
     /// et OnMoveItemResultReceived déclenchera UpdateUI() pour les mains.
     /// </summary>
     private void OnItemsSwapped(ItemSlot slotA, DraggableItem itemA, ItemSlot slotB, DraggableItem itemB)
     {
-        bool isHandPair = (slotA == leftHandSlot  && slotB == rightHandSlot)
-                       || (slotA == rightHandSlot && slotB == leftHandSlot);
-        if (isHandPair) {
-            PlayerController.Local.PlayerHands.Swap();
-            return;
-        }
-
         if (string.IsNullOrEmpty(slotA.PlaceId) || string.IsNullOrEmpty(slotB.PlaceId)) return;
         // Belt-and-suspenders : un swap A==B (même place + même slotIndex) ne peut
         // qu'échouer en backend (409 conflit). ItemSlot.OnDrop a déjà un garde
@@ -518,16 +518,15 @@ public class InventoryUI : MonoBehaviour
         // robuste face aux états intermédiaires (drag visuel d'un autre slot vers la
         // poche déjà appliqué mais snapshot pas encore reçu) — l'autorité est le snapshot
         // serveur, on libère toujours ce qui occupe la poche AVANT de re-peupler.
-        ReleasePocketSlot(leftPocketSlot);
-        ReleasePocketSlot(rightPocketSlot);
+        EnsurePocketSlots(msg.SlotCount > 0 ? msg.SlotCount : DefaultPocketSlotCount);
+        foreach (ItemSlot s in _pocketSlots) ReleasePocketSlot(s);
 
-        if (msg.Items == null) return;
+        if (msg.Items == null) { RefreshDetailCard(); return; }
         foreach (var entry in msg.Items) {
-            ItemSlot target = entry.SlotIndex == 0 ? leftPocketSlot
-                            : entry.SlotIndex == 1 ? rightPocketSlot
-                            : null;
+            ItemSlot target = entry.SlotIndex >= 0 && entry.SlotIndex < _pocketSlots.Count
+                            ? _pocketSlots[entry.SlotIndex] : null;
             if (target == null) {
-                Debug.LogWarning($"[InventoryUI] Pocket entry slotIndex={entry.SlotIndex} hors range (0-1) ou slot UI non câblé, ignoré.");
+                Debug.LogWarning($"[InventoryUI] Pocket entry slotIndex={entry.SlotIndex} hors range (0-{_pocketSlots.Count - 1}) ou slot UI non câblé, ignoré.");
                 continue;
             }
             var cfg = DatabaseManager.GetItemConfigById(entry.ConfigId);
@@ -542,6 +541,8 @@ public class InventoryUI : MonoBehaviour
             d.SetLoadedAmmo(entry.LoadedAmmo);           // arme : chargeur affiché dans la tooltip
             target.SetItem(d);
         }
+
+        RefreshDetailCard();
     }
 
     private void ReleasePocketSlot(ItemSlot slot)
@@ -567,32 +568,6 @@ public class InventoryUI : MonoBehaviour
         UpdateUI();
     }
 
-    public void DisplayLeftActionMenu()
-    {
-        CloseCurrentActionMenu();
-        var item = PlayerController.Local.PlayerHands.LeftHandItem;
-        if (item == null) return;
-        var menu = InventoryActionMenu.Shared;
-        if (menu == null) return;
-        var actions = item.GetActions().ToList();
-        Debug.Log($"[InventoryUI] LeftHand actions count={actions.Count} for config={item.Configuration?.Label}");
-        menu.Setup(actions);
-        currentActionMenu = menu;
-    }
-
-    public void DisplayRightActionMenu()
-    {
-        CloseCurrentActionMenu();
-        var item = PlayerController.Local.PlayerHands.RightHandItem;
-        if (item == null) return;
-        var menu = InventoryActionMenu.Shared;
-        if (menu == null) return;
-        var actions = item.GetActions().ToList();
-        Debug.Log($"[InventoryUI] RightHand actions count={actions.Count} for config={item.Configuration?.Label}");
-        menu.Setup(actions);
-        currentActionMenu = menu;
-    }
-
     public void CloseCurrentActionMenu(bool instantly = false)
     {
         if (!currentActionMenu) return;
@@ -603,87 +578,44 @@ public class InventoryUI : MonoBehaviour
 
     public void UpdateUI()
     {
-        // Release uniquement les slots mains/poches — pas pool.Dispose() global, qui
-        // libérerait aussi les draggables hébergés ailleurs (ex. ContainerPanelUI).
-        ReleaseSlot(leftHandSlot);
+        // Release uniquement les slots main/dos — pas pool.Dispose() global, qui libérerait
+        // aussi les draggables hébergés ailleurs (ex. ContainerPanelUI).
         ReleaseSlot(rightHandSlot);
-        ReleaseSlot(bothHandSlot);
+        ReleaseSlot(backpackSlot);
 
         if (PlayerController.Local == null) return;
 
-        // Pose les PlaceId sur les slots mains/poches dès qu'on connaît le character id.
-        // Permet à OnItemMoved de router un drag vers/depuis ces slots via C2S_MoveItem.
+        // Pose les PlaceId dès qu'on connaît le character id : permet à OnItemMoved
+        // de router un drag vers/depuis ces slots via C2S_MoveItem.
         string charId = PlayerController.Local.CharacterData?.Id;
         if (!string.IsNullOrEmpty(charId)) {
-            leftHandSlot.PlaceId   = $"hand_left:{charId}";
-            rightHandSlot.PlaceId  = $"hand_right:{charId}";
-            // bothHandSlot.PlaceId est ajusté plus bas en fonction de la main qui porte
-            // effectivement le TWO_HAND (gauche ou droite). Default droite (convention).
-            bothHandSlot.PlaceId   = $"hand_right:{charId}";
-            if (leftPocketSlot)  leftPocketSlot.PlaceId  = $"pocket:{charId}";
-            if (rightPocketSlot) rightPocketSlot.PlaceId = $"pocket:{charId}";
+            if (rightHandSlot) rightHandSlot.PlaceId = $"hand_right:{charId}";
+            if (backpackSlot)  backpackSlot.PlaceId  = $"backpack:{charId}";
+            foreach (ItemSlot s in _pocketSlots) if (s) s.PlaceId = $"pocket:{charId}";
         }
 
         var hands = PlayerController.Local.PlayerHands;
-        ItemBehaviour rightItem = hands.RightHandItem;
-        ItemBehaviour leftItem  = hands.LeftHandItem;
-        int leftEntityId  = hands.LeftEntityId;
-        int rightEntityId = hands.RightEntityId;
-
-        // Détection TWO_HAND sur l'une ou l'autre main : conceptuellement un TWO_HAND
-        // se loge sur la main droite (cf. ResolveHand côté serveur), mais on est
-        // défensif si un état serveur incohérent place un TWO_HAND à gauche → on
-        // active quand même bothHandSlot pour bloquer un second item en main.
-        bool rightIsTwoHand = rightItem != null && rightItem.Configuration.HandleType == ItemHandleType.TWO_HAND;
-        bool leftIsTwoHand  = leftItem  != null && leftItem.Configuration.HandleType  == ItemHandleType.TWO_HAND;
-        if (rightIsTwoHand || leftIsTwoHand)
+        ItemBehaviour heldItem = hands.RightHandItem;
+        if (heldItem != null && rightHandSlot != null)
         {
-            ItemBehaviour twoHand = rightIsTwoHand ? rightItem : leftItem;
-            int twoHandEntityId   = rightIsTwoHand ? rightEntityId : leftEntityId;
-
-            // bothHandSlot.PlaceId DOIT pointer sur la main qui porte réellement le TWO_HAND.
-            // Sinon un drag bothHandSlot→container enverrait FromPlaceId=hand_right alors que
-            // l'item est en main gauche → "Item pas dans cette main" côté serveur.
-            if (!string.IsNullOrEmpty(charId)) {
-                bothHandSlot.PlaceId = rightIsTwoHand ? $"hand_right:{charId}" : $"hand_left:{charId}";
-            }
-
-            leftHandSlot.gameObject.SetActive(false);
-            rightHandSlot.gameObject.SetActive(false);
-            bothHandSlot.gameObject.SetActive(true);
-
             DraggableItem draggable = _draggableItemPool.Get();
-            draggable.SetConfiguration(twoHand.Configuration);
-            draggable.SetEntityId(twoHandEntityId);
-            bothHandSlot.SetItem(draggable);
-            Debug.Log($"[InventoryUI] Refresh slot BothHands (two-hand item, hand={(rightIsTwoHand ? "Right" : "Left")})");
+            draggable.SetConfiguration(heldItem.Configuration);
+            draggable.SetEntityId(hands.RightEntityId);
+            draggable.SetDraggable(false);   // vue indicative : tooltip/sélection OK, pas de drag
+            rightHandSlot.SetItem(draggable);
         }
-        else
+
+        ItemBehaviour wornItem = hands.BackItem;
+        if (wornItem != null && backpackSlot != null)
         {
-            leftHandSlot.gameObject.SetActive(true);
-            rightHandSlot.gameObject.SetActive(true);
-            bothHandSlot.gameObject.SetActive(false);
-
-            if (leftItem != null)
-            {
-                DraggableItem draggable = _draggableItemPool.Get();
-                draggable.SetConfiguration(leftItem.Configuration);
-                draggable.SetEntityId(leftEntityId);
-                leftHandSlot.SetItem(draggable);
-                Debug.Log("[InventoryUI] Refresh slot LeftHand");
-            }
-
-            if (rightItem != null)
-            {
-                DraggableItem draggable = _draggableItemPool.Get();
-                draggable.SetConfiguration(rightItem.Configuration);
-                draggable.SetEntityId(rightEntityId);
-                rightHandSlot.SetItem(draggable);
-                Debug.Log("[InventoryUI] Refresh slot RightHand");
-            }
+            DraggableItem wornDraggable = _draggableItemPool.Get();
+            wornDraggable.SetConfiguration(wornItem.Configuration);
+            wornDraggable.SetEntityId(hands.BackEntityId);
+            backpackSlot.SetItem(wornDraggable);
         }
 
         CloseCurrentActionMenu(true);
+        RefreshDetailCard();
     }
 
     #region Pool Management

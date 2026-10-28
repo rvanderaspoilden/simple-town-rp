@@ -58,6 +58,13 @@ namespace Sim.Scriptables {
         [SerializeField]
         private bool rightClickOnly;
 
+        [Header("Action rapide (E appui court)")]
+        [SerializeField, Tooltip("Active une action rapide déclenchée par un appui court sur E (ex. OUVRIR une porte, UTILISER un distributeur). Le type ci-dessous doit figurer dans « Actions ». Un appui long ouvre le menu radial complet.")]
+        private bool hasQuickAction;
+
+        [SerializeField, Tooltip("Type de l'action rapide (doit correspondre à une action présente dans « Actions »).")]
+        private ActionTypeEnum quickAction;
+
         [SerializeField]
         private Action[] actions;
 
@@ -132,6 +139,10 @@ namespace Sim.Scriptables {
         public bool IsRightClickOnly() {
             return this.rightClickOnly;
         }
+
+        public bool HasQuickAction => hasQuickAction;
+
+        public ActionTypeEnum QuickAction => quickAction;
 
         public PropBehaviourBase GetPrefab() {
             return this.prefab;

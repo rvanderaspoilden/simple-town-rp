@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Sim;
+using Sim.Enums;
 using Sim.Interactables;
 using Sim.Scriptables;
 using UnityEngine;
@@ -27,6 +28,15 @@ public class ItemConfig : ScriptableObject {
 
     [SerializeField]
     private List<Action> equippedActions;
+
+    [Header("Action rapide (clic gauche, item tenu)")]
+    [Tooltip("Active une action rapide déclenchée au clic gauche quand l'item est tenu en main (ex. manger un aliment). Le type ci-dessous doit aussi figurer dans « Equipped Actions ».")]
+    [SerializeField]
+    private bool hasQuickAction;
+
+    [Tooltip("Type de l'action rapide (doit correspondre à une action présente dans « Equipped Actions »).")]
+    [SerializeField]
+    private ActionTypeEnum quickAction;
 
     [SerializeField]
     private ItemBehaviour prefab;
@@ -82,6 +92,10 @@ public class ItemConfig : ScriptableObject {
     public List<Action> UnEquippedActions => unEquippedActions;
 
     public List<Action> EquippedActions => equippedActions;
+
+    public bool HasQuickAction => hasQuickAction;
+
+    public ActionTypeEnum QuickAction => quickAction;
 
     public ItemBehaviour Prefab => prefab;
 

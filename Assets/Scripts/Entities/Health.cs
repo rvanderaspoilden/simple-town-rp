@@ -13,6 +13,9 @@ namespace Sim.Entities {
         [SerializeField]
         private float sleep;
 
+        [SerializeField]
+        private float pv = 100;
+
         public float Thirst {
             get => thirst;
             set => thirst = value;
@@ -26,6 +29,11 @@ namespace Sim.Entities {
         public float Sleep {
             get => sleep;
             set => sleep = value;
+        }
+
+        public float Pv {
+            get => pv;
+            set => pv = value;
         }
     }
 }

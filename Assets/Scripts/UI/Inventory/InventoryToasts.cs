@@ -15,7 +15,7 @@ public static class InventoryToasts
     public const string OtherHandBusy        = "L'autre main n'est pas libre";
     public const string AlreadyHoldingTwoHand = "Vous portez déjà un objet à deux mains";
     public const string SlotFull             = "Slot plein";
-    public const string AmmoNotHoldable      = "Les munitions se rangent en poche ou dans un sac, pas en main";
     public const string AmmoNoStorage        = "Aucune place pour les munitions (poche pleine, aucun sac en main)";
     public const string StackPickOneAtATime  = "Pile — prends 1 à la fois";
+    public const string NotWearable          = "Seul un sac se porte sur le dos";
 }

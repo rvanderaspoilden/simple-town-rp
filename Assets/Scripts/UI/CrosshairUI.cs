@@ -27,6 +27,10 @@ namespace Sim.UI {
         [SerializeField]
         private GameObject interactPrompt;
 
+        [Tooltip("Label of the action triggered by the interact key — shown next to the key frame (e.g. \"S'asseoir\", \"Ouvrir\", \"Manger\"). Hidden when no label is provided.")]
+        [SerializeField]
+        private TextMeshProUGUI interactLabelText;
+
         [Tooltip("Center red dot — shown while a character (player/NPC) is under the reticle AND the muzzle has a clear line of fire (driven by PlayerShooter).")]
         [SerializeField]
         private GameObject targetDot;
@@ -67,8 +71,10 @@ namespace Sim.UI {
             if (Instance == this) Instance = null;
         }
 
-        /// <summary>Reticle + target feedback: name label (optional) and, when in range, the prompt.</summary>
-        public void Show(string targetName, bool canInteract) {
+        /// <summary>Reticle + target feedback: name label (optional), and — when in range — the
+        /// interact key frame followed by the action's label (<paramref name="actionLabel"/>, e.g.
+        /// the aimed prop's priority action). A null/empty label falls back to the bare key prompt.</summary>
+        public void Show(string targetName, bool canInteract, string actionLabel = null) {
             this.SetRootVisible(true);
             if (this.reticleImage != null) this.reticleImage.color = canInteract ? this.activeColor : this.defaultColor;
             if (this.targetNameText != null) {
@@ -76,11 +82,17 @@ namespace Sim.UI {
                 this.targetNameText.gameObject.SetActive(!string.IsNullOrEmpty(targetName));
             }
             if (this.interactPrompt != null) this.interactPrompt.SetActive(canInteract);
+            if (this.interactLabelText != null) {
+                bool showLabel = canInteract && !string.IsNullOrEmpty(actionLabel);
+                this.interactLabelText.text = actionLabel ?? string.Empty;
+                if (this.interactLabelText.gameObject.activeSelf != showLabel)
+                    this.interactLabelText.gameObject.SetActive(showLabel);
+            }
         }
 
         /// <summary>Reticle only — TPS mode active but nothing aimed.</summary>
         public void ShowDefault() {
-            this.Show(null, false);
+            this.Show(null, false, null);
         }
 
         /// <summary>Everything off — not in TPS mode, or a UI freed the cursor.</summary>

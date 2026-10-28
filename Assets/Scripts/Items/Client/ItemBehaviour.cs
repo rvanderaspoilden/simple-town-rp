@@ -14,7 +14,7 @@ using Action = Sim.Interactables.Action;
 /// No NetworkIdentity, no SyncVar. State is driven by ItemNetworkMessages via ClientItemManager.
 /// </summary>
 [RequireComponent(typeof(ItemIdentity))]
-public class ItemBehaviour : MonoBehaviour, IInteractable
+public class ItemBehaviour : MonoBehaviour, IInteractable, IQuickActionProvider
 {
     private ItemIdentity _identity;
     private ItemConfig   _config;
@@ -103,21 +103,17 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
     {
         if (!_isHeld)
         {
-            // Client-side hint: PICK est interdit si les mains sont pleines, SAUF si le
-            // joueur tient un colis (l'item ramassé y est routé — capacité validée serveur).
+            // Client-side hint sur l'action PICK — le serveur route et revalide.
             if (PlayerController.Local != null)
             {
                 var hands = PlayerController.Local.PlayerHands;
-                bool canAcquire = hands.CanHandleItem(_config.HandleType) || hands.IsHoldingContainer();
-                // Munitions : jamais en main — ramassables si une poche est libre ou qu'un
-                // sac est tenu (le serveur route et revalide).
-                if (_config is AmmoConfig)
-                    canAcquire = ClientItemManager.LocalPocketHasFreeSlot() || hands.IsHoldingContainer();
-                // Règle d'armement : une seule arme à la fois (même à une main) — le serveur
-                // revalide (ResolveHand), ceci n'est que le hint visuel sur l'action PICK.
-                if (_config is WeaponConfig
-                    && (hands.RightHandItem is WeaponBehaviour || hands.LeftHandItem is WeaponBehaviour))
-                    canAcquire = false;
+                // Inventaire classique : un item pocketable est ramassable si une poche est
+                // libre ou qu'un sac est tenu ; un objet encombrant (non pocketable) exige
+                // la main libre.
+                bool canAcquire = _config.AllowedInPocket
+                    ? (ClientItemManager.LocalPocketHasFreeSlot() || hands.IsHoldingContainer()
+                       || hands.WornContainerItem != null)
+                    : (hands.CanHandleItem(_config.HandleType) || hands.IsHoldingContainer());
                 foreach (var a in _groundActions)
                     if (a.Type == ActionTypeEnum.PICK)
                         a.IsForbidden = !canAcquire;
@@ -144,6 +140,52 @@ public class ItemBehaviour : MonoBehaviour, IInteractable
     }
 
     public void StopInteraction() { }
+
+    /// <summary>
+    /// Ground quick action (short-E tap on an item lying in the world): PICK, universal to every
+    /// item — a tap picks it up, a long press opens the full radial. Held items aren't
+    /// hover-interactable (<see cref="IsInteractable"/>), so this only ever resolves on the ground.
+    /// Returns false when PICK is forbidden (hands full / not owner) so the tap falls back to the
+    /// radial, which shows the greyed-out reason.
+    /// </summary>
+    public virtual bool TryGetQuickAction(Action[] available, out Action action)
+    {
+        action = null;
+        if (_isHeld || available == null) return false;
+        foreach (var a in available)
+            if (a != null && a.Type == ActionTypeEnum.PICK && !a.IsForbidden) { action = a; return true; }
+        // Pas de PICK disponible : s'il ne reste qu'une seule action proposée, elle devient
+        // l'action rapide de facto (même règle que les props).
+        return QuickActionResolver.TryResolve(available, false, default, out action);
+    }
+
+    /// <summary>
+    /// Executes the item's configured quick action (left-click while held), e.g. EAT a food.
+    /// No-op unless the item is held by the local player, defines a quick action, and that
+    /// action is currently available (not forbidden). Returns true when an action fired.
+    /// </summary>
+    public bool TryExecuteQuickAction()
+    {
+        if (_config == null || !_config.HasQuickAction || !_isHeld) return false;
+        if (_holderNetId != NetworkClient.connection?.identity?.netId) return false;
+        foreach (var a in _heldActions)
+            if (a != null && a.Type == _config.QuickAction && !a.IsForbidden) { a.Execute(); return true; }
+        return false;
+    }
+
+    /// <summary>
+    /// Drops the item held by the local player (the "A" key in TPS). Runs the item's DROP action
+    /// so it takes the exact same server path as the inventory "Lâcher" button / radial. No-op
+    /// unless the item is held by the local player and exposes a DROP action that isn't forbidden.
+    /// </summary>
+    public bool TryDrop()
+    {
+        if (!_isHeld) return false;
+        if (_holderNetId != NetworkClient.connection?.identity?.netId) return false;
+        foreach (var a in _heldActions)
+            if (a != null && a.Type == ActionTypeEnum.DROP && !a.IsForbidden) { a.Execute(); return true; }
+        return false;
+    }
 
     // ── Properties ────────────────────────────────────────────────────────────
 

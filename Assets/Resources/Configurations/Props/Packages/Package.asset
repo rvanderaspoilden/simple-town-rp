@@ -29,6 +29,8 @@ MonoBehaviour:
   movable: 1
   rangeToInteract: 2
   rightClickOnly: 0
+  hasQuickAction: 1
+  quickAction: 8
   actions:
   - {fileID: 11400000, guid: f7c05acb8cfd0b94b963c0aa451d4bfe, type: 2}
   unbuiltActions: []
@@ -40,3 +42,7 @@ MonoBehaviour:
     slotCount: 0
     acceptedTypes: 
     acceptsProps: 0
+    openClip: {fileID: 0}
+    closeClip: {fileID: 0}
+    allowsNestedContainers: 0
+    wearable: 0

@@ -371,6 +371,11 @@ public class SimpleTownNetwork : NetworkManager
 
         StartCoroutine(this.RetrieveCityData());
 
+        // Persist the in-game clock periodically so a crash or a brutal Play Mode
+        // exit never loses more than SaveTimestampInterval seconds. The save on
+        // OnStopServer only catches the clean-shutdown case.
+        InvokeRepeating(nameof(SaveTimestampTick), SaveTimestampInterval, SaveTimestampInterval);
+
         // Phase 1: cache the UUID of the system "transit" place so the buy flow
         // can POST /props with placeId = TransitPlaceId. Idempotent — runs once
         // per server boot.
@@ -455,6 +460,7 @@ public class SimpleTownNetwork : NetworkManager
             bb.ServerShutdown();
         }
 
+        CancelInvoke(nameof(SaveTimestampTick));
         this.UpdateTimestamp();
         GameLogger.Network.Info("ServerStopped");
     }
@@ -525,14 +531,67 @@ public class SimpleTownNetwork : NetworkManager
         }
     }
 
+    /// <summary>Seconds between two periodic persistences of the in-game clock.</summary>
+    private const float SaveTimestampInterval = 30f;
+
+    private UnityWebRequest BuildTimestampRequest()
+    {
+        if (string.IsNullOrEmpty(this.cityData._id))
+            return null;
+
+        return ApiManager.Instance.UpdateCityTimestampRequest(new CityUpdateTimestampRequest()
+            { id = this.cityData._id, newTimestamp = (long)TimeManager.CurrentTime.TotalSeconds });
+    }
+
+    /// <summary>Periodic, non-blocking persistence of the clock (see InvokeRepeating).</summary>
+    private void SaveTimestampTick()
+    {
+        if (string.IsNullOrEmpty(this.cityData._id))
+            return;
+
+        StartCoroutine(UpdateTimestampCoroutine());
+    }
+
+    private IEnumerator UpdateTimestampCoroutine()
+    {
+        UnityWebRequest request = BuildTimestampRequest();
+        if (request == null) yield break;
+
+        long value = (long)TimeManager.CurrentTime.TotalSeconds;
+        Debug.Log($"[Server] Try to save timestamp {value}");
+
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+            Debug.LogError($"[Server] Save timestamp failed ({request.responseCode}): {request.error}");
+    }
+
+    /// <summary>
+    /// Blocking save used on OnStopServer. A fire-and-forget SendWebRequest() never
+    /// completes during the shutdown teardown, so we spin until the request is done.
+    /// Acceptable only here because the server is already tearing down.
+    /// </summary>
     private void UpdateTimestamp()
     {
-        UnityWebRequest request = ApiManager.Instance.UpdateCityTimestampRequest(new CityUpdateTimestampRequest()
-            { id = this.cityData._id, newTimestamp = (long)TimeManager.CurrentTime.TotalSeconds });
+        UnityWebRequest request = BuildTimestampRequest();
+        if (request == null)
+        {
+            Debug.LogWarning("[Server] Skip timestamp save: no city data loaded");
+            return;
+        }
 
-        Debug.Log($"[Server] Try to save timestamp {(long)TimeManager.CurrentTime.TotalSeconds}");
+        long value = (long)TimeManager.CurrentTime.TotalSeconds;
+        Debug.Log($"[Server] Try to save timestamp {value} (on stop)");
 
-        request.SendWebRequest();
+        var op = request.SendWebRequest();
+        while (!op.isDone) { /* block until the PUT completes before the process dies */ }
+
+        if (request.result != UnityWebRequest.Result.Success)
+            Debug.LogError($"[Server] Save timestamp on stop failed ({request.responseCode}): {request.error}");
+        else
+            Debug.Log("[Server] Timestamp saved on stop");
+
+        request.Dispose();
     }
 
     #region Custom Register Handler Callback

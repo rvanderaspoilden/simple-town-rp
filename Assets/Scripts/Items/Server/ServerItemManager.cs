@@ -126,10 +126,10 @@ public class ServerItemManager
         = new Dictionary<uint, ItemContainerSession>();
 
     // ── Pocket sessions (toujours ouvertes pour la durée de connexion) ────────
-    // Chaque joueur a UNE poche persistée à la place "pocket:{charId}", 2 slots
-    // MVP. La session est créée par EnsurePocketSession au connect et libérée
+    // Chaque joueur a UNE poche persistée à la place "pocket:{charId}",
+    // PocketCapacity slots. La session est créée par EnsurePocketSession au connect et libérée
     // à la déconnexion.
-    private const int PocketCapacity = 2;
+    private const int PocketCapacity = 8;
 
     private sealed class PocketSessionItem {
         public int    EntityId;
@@ -148,6 +148,13 @@ public class ServerItemManager
 
     private readonly Dictionary<uint, PocketSession> _pocketByPlayer
         = new Dictionary<uint, PocketSession>();
+
+    // ── Projection main (hotbar, modèle pointeur) ────────────────────────
+    // L'item équipé via la hotbar NE QUITTE PAS sa place poche : la main affiche une
+    // entité « projection » dont le bridge est PARTAGÉ avec la ligne DB de l'item
+    // (les PATCHes chargeur/carburant gardent une version OCC unique).
+    private readonly Dictionary<uint, (int worldEntityId, int pocketEntityId)> _handProjection
+        = new Dictionary<uint, (int, int)>();
 
     public ItemDbBridge GetBridge(int entityId) =>
         _bridges.TryGetValue(entityId, out var b) ? b : null;
@@ -173,7 +180,19 @@ public class ServerItemManager
     }
 
     public void UpdateBridgeVersion(int entityId, int version) {
-        if (_bridges.TryGetValue(entityId, out var b)) b.Version = version;
+        if (_bridges.TryGetValue(entityId, out var b)) {
+            b.Version = version;
+            // Modèle pointeur : l'item peut être simultanément en session poche (slot)
+            // et projeté en main — garde les versions OCC des sessions alignées.
+            SyncPocketSessionVersions(b.Uuid, version);
+        }
+    }
+
+    private void SyncPocketSessionVersions(string uuid, int version) {
+        if (string.IsNullOrEmpty(uuid)) return;
+        foreach (var s in _pocketByPlayer.Values)
+            foreach (var it in s.ItemsByEntityId.Values)
+                if (it.ItemUuid == uuid) it.Version = version;
     }
 
     public void UpdateBridgePlace(int entityId, string placeId, int version) {
@@ -188,12 +207,12 @@ public class ServerItemManager
     private struct PlayerHandState
     {
         public int RightEntityId; // -1 = empty
-        public int LeftEntityId;  // -1 = empty
+        public int LeftEntityId;  // -1 = empty (plus jamais assignée — présentation seulement)
+        public int BackEntityId;  // -1 = empty (sac à dos porté)
 
-        public static PlayerHandState Empty => new PlayerHandState { RightEntityId = -1, LeftEntityId = -1 };
+        public static PlayerHandState Empty => new PlayerHandState { RightEntityId = -1, LeftEntityId = -1, BackEntityId = -1 };
 
-        public bool IsHandFree(HandType hand) =>
-            hand == HandType.Right ? RightEntityId == -1 : LeftEntityId == -1;
+        public bool IsHandFree(HandType hand) => GetEntityId(hand) == -1;
 
         public HandType? GetFreeHand()
         {
@@ -203,18 +222,22 @@ public class ServerItemManager
         }
 
         public int GetEntityId(HandType hand) =>
-            hand == HandType.Right ? RightEntityId : LeftEntityId;
+            hand == HandType.Right ? RightEntityId
+          : hand == HandType.Back  ? BackEntityId
+          : LeftEntityId;
 
         public void Set(HandType hand, int entityId)
         {
-            if (hand == HandType.Right) RightEntityId = entityId;
-            else                         LeftEntityId  = entityId;
+            if      (hand == HandType.Right) RightEntityId = entityId;
+            else if (hand == HandType.Back)  BackEntityId  = entityId;
+            else                             LeftEntityId  = entityId;
         }
 
         public void Clear(HandType hand)
         {
-            if (hand == HandType.Right) RightEntityId = -1;
-            else                         LeftEntityId  = -1;
+            if      (hand == HandType.Right) RightEntityId = -1;
+            else if (hand == HandType.Back)  BackEntityId  = -1;
+            else                             LeftEntityId  = -1;
         }
     }
 
@@ -229,6 +252,7 @@ public class ServerItemManager
         _openContainerByPlayer.Clear();
         _openItemContainerByPlayer.Clear();
         _pocketByPlayer.Clear();
+        _handProjection.Clear();
         _weaponAmmoByKey.Clear();
         _ammoPersistPending.Clear();
         _nextEntityId = 1;
@@ -481,8 +505,20 @@ public class ServerItemManager
         // emballés) et de sa place — DELETE /items/:id (ItemService.delete → deleteOwnedContainer).
         PersistDropAsync(entityId);
 
-        if (entity.IsHeld)
+        if (entity.IsHeld) {
+            // Capturer le porteur AVANT ClearHolderHandState : celui-ci remet HolderNetId à 0,
+            // sinon la projection hotbar (lookup conn + OnProjectedWorldEntityGone) chercherait
+            // sur netId=0 et l'entrée poche + le snapshot ne seraient jamais retirés (item
+            // consommé qui reste visible dans la hotbar/inventaire).
+            uint holderNetId = entity.HolderNetId;
             ClearHolderHandState(entity);
+            // Projection hotbar consommée/détruite (ligne DB supprimée ci-dessus) :
+            // retire aussi l'entrée poche correspondante + re-push le snapshot.
+            NetworkConnectionToClient holderConn = null;
+            if (NetworkServer.spawned.TryGetValue(holderNetId, out var holderIdent) && holderIdent != null)
+                holderConn = holderIdent.connectionToClient;
+            OnProjectedWorldEntityGone(holderNetId, entityId, holderConn);
+        }
 
         _rooms[roomId].Remove(entityId);
 
@@ -536,25 +572,23 @@ public class ServerItemManager
             return;
         }
 
-        // Règle d'armement : une seule arme à la fois. Rejet EXPLICITE avant ResolveHand
-        // (message dédié, et évite qu'une arme parte dans le colis tenu via le fallback).
-        if (config is WeaponConfig && HoldsWeapon(playerNetId))
-        {
-            conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Vous tenez déjà une arme" });
-            return;
-        }
-
-        // Find a free hand
+        // Inventaire classique : tout item pocketable ramassé part en poche — la main
+        // ne porte que l'item sélectionné via la hotbar ou un objet encombrant (non
+        // pocketable). La main n'est donc résolue que pour les encombrants.
         var handState = GetOrCreateHandState(playerNetId);
 
-        HandType? assignedHand = ResolveHand(config, playerNetId);
+        HandType? assignedHand = (config != null && config.AllowedInPocket)
+            ? (HandType?)null
+            : ResolveHand(config, playerNetId);
         if (!assignedHand.HasValue)
         {
-            // Munitions (jamais équipables en main) : la poche d'abord, sinon le sac tenu
-            // via le fallback colis ci-dessous, sinon échec avec un message dédié.
-            if (config is AmmoConfig && TryGetFreePocketSlot(playerNetId, out PocketSession ammoPocket, out int ammoSlot)) {
+            // Main occupée (ou item jamais équipable, ex. munitions) : tout item
+            // pocketable part dans un slot de poche libre — comportement « inventaire
+            // classique ». Sinon le sac tenu via le fallback colis ci-dessous.
+            if (config != null && config.AllowedInPocket
+                && TryGetFreePocketSlot(playerNetId, out PocketSession fallbackPocket, out int fallbackSlot)) {
                 ApiManager.Instance?.StartCoroutine(
-                    PickupToPocketCoroutine(conn, roomId, msg.EntityId, entity, ammoPocket, ammoSlot));
+                    PickupToPocketCoroutine(conn, roomId, msg.EntityId, entity, fallbackPocket, fallbackSlot));
                 return;
             }
 
@@ -573,7 +607,8 @@ public class ServerItemManager
                 return;
             }
             conn.Send(new S2C_PickupResult { Success = false, EntityId = msg.EntityId,
-                ErrorMessage = config is AmmoConfig ? InventoryToasts.AmmoNoStorage : "Mains pleines" });
+                ErrorMessage = config is AmmoConfig ? InventoryToasts.AmmoNoStorage
+                             : (config != null && config.AllowedInPocket ? InventoryToasts.NoSpaceInInventory : "Mains pleines") });
             return;
         }
 
@@ -699,7 +734,8 @@ public class ServerItemManager
     private bool TryGetHeldPackage(uint netId, string roomId, out int pkgEntityId, out string pkgUuid, out ContainerConfig pkgCfg) {
         pkgEntityId = -1; pkgUuid = null; pkgCfg = null;
         if (!_playerHands.TryGetValue(netId, out var hands)) return false;
-        int[] held = { hands.RightEntityId, hands.LeftEntityId };
+        // Colis tenu en main prioritaire ; sinon le sac à dos porté (overflow de ramassage).
+        int[] held = { hands.RightEntityId, hands.LeftEntityId, hands.BackEntityId };
         foreach (int eid in held) {
             if (eid == -1) continue;
             if (!TryGetEntity(roomId, eid, out var e)) continue;
@@ -714,8 +750,9 @@ public class ServerItemManager
     }
 
     /// <summary>
-    /// Acquisition UNIVERSELLE d'un item dans l'inventaire du joueur : main libre en
-    /// priorité, sinon colis tenu (avec slot libre), sinon échec. Point unique pour TOUS
+    /// Acquisition UNIVERSELLE d'un item dans l'inventaire du joueur : poche en priorité
+    /// (item pocketable), main pour les objets encombrants, sinon colis tenu (avec slot
+    /// libre), sinon échec. Point unique pour TOUS
     /// les flux qui donnent un item au joueur (CLEAN, achats dispenser/shop, récompenses…)
     /// → plus besoin de re-vérifier les mains action par action. <paramref name="onSuccess"/>
     /// est appelé une fois l'item réellement placé (synchrone pour la main, après l'aller-retour
@@ -728,13 +765,13 @@ public class ServerItemManager
         string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
         if (roomId == null) { onFail?.Invoke("Pas de pièce"); return; }
 
-        if (ResolveHand(config, netId).HasValue) {
+        if ((config == null || !config.AllowedInPocket) && ResolveHand(config, netId).HasValue) {
             SpawnItemInHand(roomId, configId, conn, config, persistent);
             onSuccess?.Invoke();
             return;
         }
-        // Munitions (jamais équipables en main) : poche d'abord, puis le colis tenu ci-dessous.
-        if (config is AmmoConfig && TryGetFreePocketSlot(netId, out PocketSession ammoPocket, out int ammoSlot)) {
+        // Item pocketable : poche d'abord, puis le colis tenu ci-dessous.
+        if (config != null && config.AllowedInPocket && TryGetFreePocketSlot(netId, out PocketSession ammoPocket, out int ammoSlot)) {
             string ammoCharId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
             ApiManager.Instance?.StartCoroutine(
                 CreateItemInPocketCoroutine(conn, configId, ammoCharId, ammoPocket, ammoSlot, onSuccess, onFail));
@@ -746,17 +783,19 @@ public class ServerItemManager
                 CreateItemInPackageCoroutine(conn, netId, configId, charId, pkgUuid, pkgCfg, onSuccess, onFail));
             return;
         }
-        onFail?.Invoke("Mains pleines");
+        onFail?.Invoke(config != null && config.AllowedInPocket ? InventoryToasts.NoSpaceInInventory : "Mains pleines");
     }
 
-    /// <summary>Pratique : true si le joueur peut recevoir un item (main libre OU colis tenu).
-    /// La capacité réelle du colis n'est confirmée qu'à l'écriture (async).</summary>
+    /// <summary>Pratique : true si le joueur peut recevoir un item (poche libre pour un
+    /// pocketable, main libre pour un encombrant, OU colis tenu). La capacité réelle du
+    /// colis n'est confirmée qu'à l'écriture (async).</summary>
     public bool CanReceiveItem(NetworkConnectionToClient conn, ItemConfig config) {
         if (conn?.identity == null) return false;
         uint netId = conn.identity.netId;
         string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
         if (roomId == null) return false;
-        return ResolveHand(config, netId).HasValue
+        if (config != null && config.AllowedInPocket && TryGetFreePocketSlot(netId, out _, out _)) return true;
+        return ((config == null || !config.AllowedInPocket) && ResolveHand(config, netId).HasValue)
             || TryGetHeldPackage(netId, roomId, out _, out _, out _);
     }
 
@@ -884,6 +923,120 @@ public class ServerItemManager
         return null;
     }
 
+    // ── Équipement hotbar (modèle pointeur) ─────────────────────────────
+
+    /// <summary>
+    /// Pointe la main droite sur un slot de poche : déspawne la projection courante et
+    /// en spawne une pour l'item du slot (l'item ne bouge pas de sa place — AUCUNE
+    /// écriture DB). SlotIndex -1 ou slot vide = mains libres. Main occupée par un VRAI
+    /// portage (objet encombrant) → ignoré silencieusement (barre grisée côté client).
+    /// </summary>
+    public void HandleEquipPocketSlot(NetworkConnectionToClient conn, C2S_EquipPocketSlot msg)
+    {
+        if (conn?.identity == null) return;
+        uint netId    = conn.identity.netId;
+        string roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (roomId == null) return;
+
+        bool hadProjection = _handProjection.TryGetValue(netId, out var current);
+
+        int pocketEntityId = -1;
+        PocketSession session = null;
+        if (msg.SlotIndex >= 0 && _pocketByPlayer.TryGetValue(netId, out session))
+            session.SlotToEntityId.TryGetValue(msg.SlotIndex, out pocketEntityId);
+        if (pocketEntityId == 0) pocketEntityId = -1;
+
+        if (hadProjection && current.pocketEntityId == pocketEntityId) return;   // déjà à jour
+
+        ClearHandProjection(netId, roomId);
+        if (pocketEntityId < 0 || session == null) return;   // mains libres
+        if (!session.ItemsByEntityId.TryGetValue(pocketEntityId, out var pi)) return;
+
+        // Main occupée par un portage réel (encombrant) : on ne projette pas par-dessus.
+        var handState = GetOrCreateHandState(netId);
+        if (handState.RightEntityId != -1) return;
+
+        int worldEntityId = _nextEntityId++;
+        var entity = new ItemEntity {
+            EntityId      = worldEntityId,
+            RoomId        = roomId,
+            ItemConfigId  = pi.ConfigId,
+            Position      = conn.identity.transform.position,
+            Rotation      = Quaternion.identity,
+            HolderNetId   = netId,
+            HolderHand    = HandType.Right,
+            LocalPosition = Vector3.zero,
+            LocalRotation = Quaternion.identity,
+            Persistent    = true,
+        };
+        if (!_rooms.TryGetValue(roomId, out var roomItems)) {
+            roomItems = new Dictionary<int, ItemEntity>();
+            _rooms[roomId] = roomItems;
+        }
+        roomItems[worldEntityId] = entity;
+
+        handState.Set(HandType.Right, worldEntityId);
+        _playerHands[netId] = handState;
+
+        // Bridge PARTAGÉ avec l'item de poche (même instance) : chargeur d'arme,
+        // carburant… PATCHés via l'une ou l'autre entité sans divergence de version.
+        ItemDbBridge pocketBridge = GetBridge(pocketEntityId);
+        if (pocketBridge != null) _bridges[worldEntityId] = pocketBridge;
+
+        _handProjection[netId] = (worldEntityId, pocketEntityId);
+
+        BroadcastToRoom(roomId, new S2C_SpawnItem {
+            EntityId = worldEntityId, RoomId = roomId, ItemConfigId = pi.ConfigId,
+            Position = entity.Position, Rotation = entity.Rotation,
+            IsHeld = true, HolderNetId = netId, HolderHand = HandType.Right,
+            LocalPosition = Vector3.zero, LocalRotation = Quaternion.identity,
+        });
+        GameLogger.Network.Info("Item EquipProjection netId={NetId} slot={Slot} config={ConfigId} world={World} pocket={Pocket}",
+            netId, msg.SlotIndex, pi.ConfigId, worldEntityId, pocketEntityId);
+    }
+
+    /// <summary>Déspawne la projection main du joueur — l'item de poche, lui, ne bouge pas.</summary>
+    private void ClearHandProjection(uint netId, string roomId)
+    {
+        if (!_handProjection.TryGetValue(netId, out var proj)) return;
+        _handProjection.Remove(netId);
+        _bridges.Remove(proj.worldEntityId);   // bridge partagé : celui de la poche reste intact
+        if (_playerHands.TryGetValue(netId, out var hs) && hs.RightEntityId == proj.worldEntityId) {
+            hs.Clear(HandType.Right);
+            _playerHands[netId] = hs;
+        }
+        if (roomId != null && _rooms.TryGetValue(roomId, out var roomItems) && roomItems.Remove(proj.worldEntityId)) {
+            BroadcastToRoom(roomId, new S2C_DestroyItem { EntityId = proj.worldEntityId, RoomId = roomId });
+        }
+    }
+
+    /// <summary>L'entrée poche <paramref name="pocketEntityId"/> quitte la session (move,
+    /// swap, drop inventaire) : la projection qui la représentait est déspawnée.</summary>
+    private void OnPocketEntryRemoved(uint netId, int pocketEntityId)
+    {
+        if (!_handProjection.TryGetValue(netId, out var proj) || proj.pocketEntityId != pocketEntityId) return;
+        string roomId = null;
+        foreach (var kv in _rooms) if (kv.Value.ContainsKey(proj.worldEntityId)) { roomId = kv.Key; break; }
+        ClearHandProjection(netId, roomId);
+    }
+
+    /// <summary>L'entité MAIN <paramref name="worldEntityId"/> d'une projection vient d'être
+    /// consommée (DespawnItem — ligne DB supprimée) ou posée au monde (DetachAndPlace —
+    /// ligne PATCHée hors poche) : retire aussi l'entrée session poche + re-push le snapshot.</summary>
+    private void OnProjectedWorldEntityGone(uint netId, int worldEntityId, NetworkConnectionToClient conn)
+    {
+        if (!_handProjection.TryGetValue(netId, out var proj) || proj.worldEntityId != worldEntityId) return;
+        _handProjection.Remove(netId);
+        if (_pocketByPlayer.TryGetValue(netId, out var session)
+            && session.ItemsByEntityId.TryGetValue(proj.pocketEntityId, out var pi)) {
+            session.ItemsByEntityId.Remove(proj.pocketEntityId);
+            if (session.SlotToEntityId.TryGetValue(pi.SlotIndex, out int occ) && occ == proj.pocketEntityId)
+                session.SlotToEntityId.Remove(pi.SlotIndex);
+            _bridges.Remove(proj.pocketEntityId);
+            if (conn != null) SendPocketSnapshot(conn, session);
+        }
+    }
+
     public void HandleDrop(NetworkConnectionToClient conn, C2S_RequestDropItem msg)
     {
         if (conn.identity == null) return;
@@ -984,6 +1137,10 @@ public class ServerItemManager
         entity.Rotation = worldRot;
         ClearHolderHandState(entity);
 
+        // Projection hotbar posée au monde : l'item quitte la poche — retire l'entrée
+        // session + re-push le snapshot (la ligne DB est PATCHée/supprimée ci-dessous).
+        OnProjectedWorldEntityGone(playerNetId, entityId, conn);
+
         GameLogger.Network.Info("Item DetachPlace player={PlayerNetId} entity={EntityId} hand={Hand} room={RoomId}",
             playerNetId, entityId, hand, roomId);
 
@@ -1036,65 +1193,6 @@ public class ServerItemManager
         int entityId = SpawnItem(roomId, msg.ItemConfigId, msg.Position, Quaternion.identity);
         GameLogger.Network.Info("Item AdminSpawn entity={EntityId} configId={ItemConfigId} room={RoomId} conn={ConnId}",
             entityId, msg.ItemConfigId, roomId, conn.connectionId);
-    }
-
-    public void HandleSwap(NetworkConnectionToClient conn, C2S_RequestSwapHands msg)
-    {
-        if (conn.identity == null) return;
-        uint playerNetId = conn.identity.netId;
-        string roomId    = PlayerRoomTracker.Instance.GetRoom(conn);
-
-        if (roomId == null || !_playerHands.TryGetValue(playerNetId, out var handState)) return;
-
-        int rightId = handState.RightEntityId;
-        int leftId  = handState.LeftEntityId;
-
-        if (rightId == -1 && leftId == -1) return;
-
-        GameLogger.Network.Info("Item Swap player={PlayerNetId} right→left={R} left→right={L}",
-            playerNetId, rightId, leftId);
-
-        // Swap hand assignment in entities
-        if (rightId != -1 && TryGetEntity(roomId, rightId, out var rightEntity))
-            rightEntity.HolderHand = HandType.Left;
-        if (leftId  != -1 && TryGetEntity(roomId, leftId,  out var leftEntity))
-            leftEntity.HolderHand  = HandType.Right;
-
-        (handState.RightEntityId, handState.LeftEntityId) = (leftId, rightId);
-        _playerHands[playerNetId] = handState;
-
-        // Notify all clients in room
-        if (rightId != -1)
-        {
-            BroadcastToRoom(roomId, new S2C_ItemAttachedToHand
-            {
-                EntityId      = rightId,
-                PlayerNetId   = playerNetId,
-                HandType      = HandType.Left,
-                LocalPosition = Vector3.zero,
-                LocalRotation = Quaternion.identity
-            });
-        }
-        if (leftId != -1)
-        {
-            BroadcastToRoom(roomId, new S2C_ItemAttachedToHand
-            {
-                EntityId      = leftId,
-                PlayerNetId   = playerNetId,
-                HandType      = HandType.Right,
-                LocalPosition = Vector3.zero,
-                LocalRotation = Quaternion.identity
-            });
-        }
-
-        // DB: each held item changes hand_place. The right-hand item moves to
-        // the left hand_place and vice-versa. Fire-and-forget — out-of-order
-        // patches are safe because each PATCH carries an expectedVersion.
-        PlayerInventory inv = conn.identity.GetComponent<PlayerInventory>();
-        if (inv != null && inv.PlacesReady) {
-            if (rightId != -1) PersistMoveToHandAsync(rightId, inv.HandLeftPlaceId);
-            if (leftId  != -1) PersistMoveToHandAsync(leftId,  inv.HandRightPlaceId);
-        }
     }
 
     // ── Room events ───────────────────────────────────────────────────────────
@@ -1295,11 +1393,6 @@ public class ServerItemManager
         // main) bloque l'équipement de toute autre arme, quelle que soit la main libre.
         if (config is WeaponConfig && HoldsWeapon(netId)) return null;
 
-        // Munitions : JAMAIS équipables en main. Elles se rangent hors main — le ramassage
-        // et le spawn inventaire routent vers la poche puis le sac tenu (chokepoint unique :
-        // couvre pickup, achats, CanFitInHand...).
-        if (config is AmmoConfig) return null;
-
         if (config.HandleType == ItemHandleType.TWO_HAND)
             return (state.RightEntityId == -1 && state.LeftEntityId == -1) ? HandType.Right : (HandType?)null;
 
@@ -1322,12 +1415,12 @@ public class ServerItemManager
         return false;
     }
 
-    /// <summary>Tenir un item 2 mains bloque les DEUX mains, même s'il n'occupe qu'un slot
-    /// logique → aucun item 1 main ne peut être pris en main tant qu'on tient le 2 mains.</summary>
+    /// <summary>Modèle « un item actif » (phase 3) : seule la main droite est un slot
+    /// logique — la gauche n'est plus jamais assignée (les items hand_left résiduels
+    /// sont migrés en poche au connect via MigrateLeftHandToPocket).</summary>
     private HandType? FreeHandRespectingTwoHand(PlayerHandState state)
     {
-        if (EntityIsTwoHand(state.RightEntityId) || EntityIsTwoHand(state.LeftEntityId)) return null;
-        return state.GetFreeHand();
+        return state.RightEntityId == -1 ? HandType.Right : (HandType?)null;
     }
 
     private bool EntityIsTwoHand(int entityId)
@@ -1907,6 +2000,10 @@ public class ServerItemManager
         if (carried != null) _carriedEphemeral[playerNetId] = carried;
         else                 _carriedEphemeral.Remove(playerNetId);
 
+        // La projection hotbar ne survit pas au changement de room : le client re-pointe
+        // de lui-même (ReconcilePointer) une fois la nouvelle room snapshotée.
+        _handProjection.Remove(playerNetId);
+
         _playerHands.Remove(playerNetId);
     }
     
@@ -2092,8 +2189,11 @@ public class ServerItemManager
 
             // Restore persisted hand items from DB (only when the player's hand places exist).
             if (inv != null && inv.PlacesReady) {
-                yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandLeftPlaceId,  HandType.Left);
+                // Phase 3 : la main gauche n'est plus un slot logique. Les items encore
+                // persistés en hand_left (dual-carry d'avant migration) partent en poche.
+                yield return MigrateLeftHandToPocket(conn, playerNetId, inv);
                 yield return RestoreOneHand(conn, roomId, playerNetId, inv.HandRightPlaceId, HandType.Right);
+                yield return RestoreOneHand(conn, roomId, playerNetId, inv.BackpackPlaceId,  HandType.Back);
             }
 
             // Then re-spawn ephemeral items the player carried over from the previous room
@@ -2125,6 +2225,7 @@ public class ServerItemManager
 
         if (toDestroy.Count > 0) {
             _playerHands.Remove(playerNetId);
+            _handProjection.Remove(playerNetId);
             GameLogger.Network.Debug("Item RestoreDedupe player={PlayerNetId} room={RoomId} removed={Count}",
                 playerNetId, roomId, toDestroy.Count);
         }
@@ -2197,6 +2298,77 @@ public class ServerItemManager
 
             GameLogger.Network.Info("Item CarryEphemeral entity={EntityId} configId={ItemConfigId} player={PlayerNetId} hand={Hand} room={RoomId}",
                 entityId, c.ItemConfigId, playerNetId, hand, roomId);
+        }
+    }
+
+    /// <summary>
+    /// Migration « un item actif » : vide la place hand_left (dual-carry d'avant la
+    /// phase 3) vers des slots de poche libres, par PATCH DB direct. Lancée au connect
+    /// avant la restauration de la main droite ; si une session poche existe, l'entrée
+    /// migrée y est insérée et le snapshot re-poussé. Poche pleine → l'item reste en
+    /// hand_left (retenté au prochain connect ; la place n'est plus jamais assignée).
+    /// </summary>
+    private IEnumerator MigrateLeftHandToPocket(NetworkConnectionToClient conn, uint playerNetId, PlayerInventory inv) {
+        if (string.IsNullOrEmpty(inv.HandLeftPlaceId) || string.IsNullOrEmpty(inv.PocketPlaceId)) yield break;
+
+        UnityWebRequest leftReq = ApiManager.Instance.GetPlaceStateRequest(inv.HandLeftPlaceId);
+        yield return leftReq.SendWebRequest();
+        if (leftReq.responseCode != 200) yield break;
+
+        PlaceStateJson leftState;
+        try { leftState = JsonConvert.DeserializeObject<PlaceStateJson>(leftReq.downloadHandler.text); }
+        catch (System.Exception e) { Debug.LogWarning($"[ServerItemManager] MigrateLeftHand parse error: {e.Message}"); yield break; }
+        if (leftState?.items == null || leftState.items.Length == 0) yield break;
+
+        // Slots occupés lus depuis la DB : la session poche n'est pas forcément hydratée.
+        UnityWebRequest pocketReq = ApiManager.Instance.GetPlaceStateRequest(inv.PocketPlaceId);
+        yield return pocketReq.SendWebRequest();
+        if (pocketReq.responseCode != 200) yield break;
+
+        var occupied = new HashSet<int>();
+        try {
+            PlaceStateJson pocketState = JsonConvert.DeserializeObject<PlaceStateJson>(pocketReq.downloadHandler.text);
+            if (pocketState?.items != null)
+                foreach (ItemJson pocketIt in pocketState.items) occupied.Add(ReadSlotIndex(pocketIt.stateData));
+        } catch (System.Exception e) { Debug.LogWarning($"[ServerItemManager] MigrateLeftHand pocket parse error: {e.Message}"); yield break; }
+
+        foreach (ItemJson it in leftState.items) {
+            int freeSlot = -1;
+            for (int i = 0; i < PocketCapacity; i++) if (!occupied.Contains(i)) { freeSlot = i; break; }
+            if (freeSlot < 0) {
+                GameLogger.Network.Warning("Item MigrateLeftHand poche pleine — uuid={Uuid} laissé en hand_left", it.Id);
+                break;
+            }
+
+            var body = new UpdateItemBody {
+                expectedVersion = it.version,
+                placeId = inv.PocketPlaceId,
+                stateData = new Dictionary<string, object> { { "slotIndex", freeSlot } },
+            };
+            UnityWebRequest patch = ApiManager.Instance.UpdateItemRequest(it.Id, body);
+            yield return patch.SendWebRequest();
+            if (patch.responseCode < 200 || patch.responseCode >= 300) {
+                Debug.LogWarning($"[ServerItemManager] MigrateLeftHand PATCH failed code={patch.responseCode} uuid={it.Id}");
+                continue;
+            }
+            occupied.Add(freeSlot);
+            int newVersion = it.version + 1;
+            try { var updated = JsonConvert.DeserializeObject<ItemJson>(patch.downloadHandler.text); if (updated != null) newVersion = updated.version; } catch { }
+
+            // Session poche déjà hydratée (re-lookup à chaque itération : EnsurePocketSession
+            // peut aboutir pendant nos awaits) → reflète la migration en mémoire + snapshot.
+            if (_pocketByPlayer.TryGetValue(playerNetId, out PocketSession session)) {
+                int pocketEntityId = _nextEntityId++;
+                session.ItemsByEntityId[pocketEntityId] = new PocketSessionItem {
+                    EntityId = pocketEntityId, ConfigId = it.configId, SlotIndex = freeSlot,
+                    ItemUuid = it.Id, Version = newVersion, Quantity = 1,
+                };
+                session.SlotToEntityId[freeSlot] = pocketEntityId;
+                _bridges[pocketEntityId] = new ItemDbBridge { Uuid = it.Id, Version = newVersion, PlaceId = session.PlaceId };
+                SendPocketSnapshot(conn, session);
+            }
+
+            GameLogger.Network.Info("Item MigrateLeftHand uuid={Uuid} config={ConfigId} → pocket slot={Slot}", it.Id, it.configId, freeSlot);
         }
     }
 
@@ -2301,9 +2473,10 @@ public class ServerItemManager
     // Garde l'enum pour le typage de IPlaceContext.Kind (lecture côté code orchestrateur).
     // La classification placeId → PlaceKind et la résolution placeKey → UUID backend sont
     // désormais portées par ResolvePlace + les IPlaceContext concrets.
-    private enum PlaceKind { Unknown, HandLeft, HandRight, Container, Pocket, ItemContainer }
+    private enum PlaceKind { Unknown, HandLeft, HandRight, Container, Pocket, ItemContainer, Back }
 
-    private static bool IsHand(PlaceKind k) => k == PlaceKind.HandLeft || k == PlaceKind.HandRight;
+    // Back = « hand-like » : mono-slot, porté par une entité runtime attachée au joueur.
+    private static bool IsHand(PlaceKind k) => k == PlaceKind.HandLeft || k == PlaceKind.HandRight || k == PlaceKind.Back;
     private static bool IsContainerKind(PlaceKind k) => k == PlaceKind.Container || k == PlaceKind.ItemContainer;
 
     private static int ReadSlotIndex(Dictionary<string, object> stateData) {
@@ -2499,7 +2672,8 @@ public class ServerItemManager
         // restauration concurrente après reconnexion), ce qui évite un faux "Trop loin".
         bool held = entity.HolderNetId == netId
             || (_playerHands.TryGetValue(netId, out var hands)
-                && (hands.LeftEntityId == msg.EntityId || hands.RightEntityId == msg.EntityId));
+                && (hands.LeftEntityId == msg.EntityId || hands.RightEntityId == msg.EntityId
+                    || hands.BackEntityId == msg.EntityId));
         var itemCfg = DatabaseManager.GetItemConfigById(entity.ItemConfigId);
         float openRange = (itemCfg != null ? itemCfg.RangeToInteract : 1.5f) + 1.5f;
         if (!held && Vector3.Distance(conn.identity.transform.position, entity.Position) > openRange) {
@@ -2910,6 +3084,9 @@ public class ServerItemManager
             uuid = pi.ItemUuid; configId = pi.ConfigId; version = pi.Version; slotIndex = pi.SlotIndex;
             srcQty = 1; // invariant poche
             fromPocket = true;
+            // Item équipé (projection hotbar) : déséquipe d'abord — la main ne doit
+            // plus pointer sur un slot qui va se vider.
+            OnPocketEntryRemoved(netId, msg.EntityId);
         }
         else return; // introuvable
 
@@ -3414,8 +3591,7 @@ public class ServerItemManager
     }
 
     // ── Swap items (atomic two-PATCH) ────────────────────────────────────────
-    // Pour hand↔container et container↔container (même placeId).
-    // Le hand↔hand passe par C2S_RequestSwapHands (chemin existant).
+    // Pour hand↔container, hand↔pocket et container↔container (même placeId).
 
     public void HandleSwapItems(NetworkConnectionToClient conn, C2S_SwapItems msg) {
         if (conn?.identity == null) return;
@@ -3434,9 +3610,6 @@ public class ServerItemManager
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdA, ErrorMessage = "Place inconnue (swap)" });
             return;
         }
-
-        // Le hand↔hand est intercepté côté client (PlayerHands.Swap → C2S_RequestSwapHands)
-        // et n'arrive pas ici. On tolère néanmoins un éventuel reroute.
 
         if (!ctxA.TryResolveItem(msg.EntityIdA, msg.SlotIndexA, out var itemA, out var err)) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityIdA, ErrorMessage = err });
@@ -3824,6 +3997,7 @@ public class ServerItemManager
     private void CleanupPocketSession(uint netId) {
         if (!_pocketByPlayer.TryGetValue(netId, out var session)) return;
         _pocketByPlayer.Remove(netId);
+        _handProjection.Remove(netId);
         foreach (var it in session.ItemsByEntityId.Values) _bridges.Remove(it.EntityId);
         GameLogger.Network.Debug("PocketSessionClosed netId={NetId} place={Place}", netId, session.PlaceId);
     }
@@ -3877,7 +4051,9 @@ public class ServerItemManager
             _roomId = roomId; _backendPlaceId = backendPlaceId;
         }
 
-        public PlaceKind Kind         => _hand == HandType.Left ? PlaceKind.HandLeft : PlaceKind.HandRight;
+        public PlaceKind Kind         => _hand == HandType.Left ? PlaceKind.HandLeft
+                                       : _hand == HandType.Back ? PlaceKind.Back
+                                       : PlaceKind.HandRight;
         public string    PlaceId      => _backendPlaceId;
         public bool      HasSlotIndex => false;
 
@@ -3905,11 +4081,15 @@ public class ServerItemManager
 
         public bool ValidateAsTarget(int slotIndex, int configId, out string err) {
             err = null;
-            // Munitions : jamais en main — refuse tout move/swap dont la destination est
-            // une main (le ramassage les route déjà vers poche/sac).
-            if (DatabaseManager.GetItemConfigById(configId) is AmmoConfig) {
-                err = InventoryToasts.AmmoNotHoldable;
-                return false;
+            // Dos : seul un conteneur « wearable » (sac à dos) se porte. Les règles
+            // mains (munitions, deux-mains) ne s'appliquent pas à ce slot.
+            if (_hand == HandType.Back) {
+                var backCfg = DatabaseManager.GetItemConfigById(configId);
+                if (ItemContainerConfig.Of(backCfg)?.Wearable != true) {
+                    err = InventoryToasts.NotWearable;
+                    return false;
+                }
+                return true;
             }
             // Garde TWO_HAND : un item à deux mains nécessite que l'AUTRE main soit
             // libre ; et inversement, si l'autre main porte un TWO_HAND, cette main
@@ -4205,6 +4385,8 @@ public class ServerItemManager
         }
 
         public void TearDown(int entityId) {
+            // L'item était peut-être projeté en main (hotbar) : déséquipe d'abord.
+            _mgr.OnPocketEntryRemoved(_netId, entityId);
             if (!_mgr._pocketByPlayer.TryGetValue(_netId, out var s)) return;
             if (!s.ItemsByEntityId.TryGetValue(entityId, out var old)) return;
             s.ItemsByEntityId.Remove(entityId);
@@ -4245,6 +4427,10 @@ public class ServerItemManager
         if (placeId == $"hand_right:{charId}") {
             string backend = inv?.HandRightPlaceId ?? placeId;
             return new HandPlaceContext(this, conn, netId, HandType.Right, roomId, backend);
+        }
+        if (placeId == $"backpack:{charId}") {
+            string backend = inv?.BackpackPlaceId ?? placeId;
+            return new HandPlaceContext(this, conn, netId, HandType.Back, roomId, backend);
         }
         if (placeId == $"pocket:{charId}") {
             string backend = inv?.PocketPlaceId ?? placeId;

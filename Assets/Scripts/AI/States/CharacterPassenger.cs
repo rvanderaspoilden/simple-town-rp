@@ -1,6 +1,8 @@
 using DG.Tweening;
 using Sim;
+using Sim.Utils;
 using UnityEngine;
+using Key = UnityEngine.InputSystem.Key;
 
 namespace AI.States {
     /// <summary>
@@ -43,7 +45,7 @@ namespace AI.States {
         public void Tick() {
             // Sortie passager : touche X (le passager n'est pas owner du véhicule, donc
             // VehicleController.Update ne lit pas son input — on le fait ici). Verrouillé → toast.
-            if (Input.GetKeyDown(KeyCode.X) && this.vehicle != null) {
+            if (GameInput.Down(Key.X) && this.vehicle != null) {
                 this.vehicle.LocalRequestExit();
             }
         }

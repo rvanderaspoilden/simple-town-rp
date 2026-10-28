@@ -12,7 +12,7 @@ namespace Sim.Missions {
     /// MissionDefinition.BoardExpirationSeconds (tick côté serveur).
     /// </summary>
     public class MissionAutoPublisher : MonoBehaviour {
-        [Tooltip("Définitions de mission à publier (tirage uniforme à chaque arrivage).")]
+        [Tooltip("Définitions de mission à publier (tirage PONDÉRÉ par MissionDefinition.PublishWeight à chaque arrivage).")]
         [SerializeField] private List<MissionDefinition> jobDefinitions = new List<MissionDefinition>();
 
         [Tooltip("Intervalle minimum entre deux arrivages (secondes).")]
@@ -75,7 +75,7 @@ namespace Sim.Missions {
                 GameLogger.System.Warning("MissionAutoPublisher_NoDefinitions");
                 return;
             }
-            var def = jobDefinitions[Random.Range(0, jobDefinitions.Count)];
+            var def = PickWeighted();
             if (def == null) return;
 
             if (!TryBuildContext(def, out var ctx, out var pickup, out var delivery)) return;
@@ -85,6 +85,29 @@ namespace Sim.Missions {
                 GameLogger.System.Info("MissionAutoPublisher_Published {MissionId} {Category} {Pickup} {Delivery}",
                     def.MissionId, def.ProfessionId, pickup.TargetId, delivery.TargetId);
             }
+        }
+
+        /// <summary>
+        /// Tirage pondéré par <see cref="MissionDefinition.PublishWeight"/>. Les définitions
+        /// de poids &lt;= 0 (ou nulles) sont ignorées. Les missions d'entrée (prenables sans
+        /// compétence) portent un poids fort pour dominer le board d'un compte neuf.
+        /// </summary>
+        private MissionDefinition PickWeighted() {
+            int total = 0;
+            for (int i = 0; i < jobDefinitions.Count; i++) {
+                var d = jobDefinitions[i];
+                if (d != null && d.PublishWeight > 0) total += d.PublishWeight;
+            }
+            if (total <= 0) return null;
+
+            int roll = Random.Range(0, total); // [0, total)
+            for (int i = 0; i < jobDefinitions.Count; i++) {
+                var d = jobDefinitions[i];
+                if (d == null || d.PublishWeight <= 0) continue;
+                roll -= d.PublishWeight;
+                if (roll < 0) return d;
+            }
+            return null;
         }
 
         private static bool TryBuildContext(MissionDefinition def, out MissionContext ctx, out IMissionTarget pickup, out IMissionTarget delivery) {

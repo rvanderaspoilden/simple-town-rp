@@ -15,6 +15,11 @@ public class WeaponConfig : ItemConfig {
     [SerializeField]
     private float maxRange = 40f;
 
+    [Tooltip("Dégâts (PV) infligés au joueur touché par un tir. Le joueur meurt quand ses PV atteignent 0.")]
+    [Min(0f)]
+    [SerializeField]
+    private float damage = 25f;
+
     [Tooltip("Intensité du kick de recul par tir (1 = pleine impulsion). Baisser pour les automatiques, sinon le canon grimpe au plafond en rafale.")]
     [Range(0.05f, 1f)]
     [SerializeField]
@@ -67,6 +72,8 @@ public class WeaponConfig : ItemConfig {
     public bool Automatic => automatic;
 
     public float MaxRange => Mathf.Max(1f, maxRange);
+
+    public float Damage => Mathf.Max(0f, damage);
 
     public float RecoilKick => Mathf.Clamp(recoilKick, 0.05f, 1f);
 

@@ -32,11 +32,16 @@ namespace Sim.Scriptables {
                  "Défaut false (règle « videz-le d'abord »). Activé pour le coffre de véhicule.")]
         [SerializeField] private bool allowsNestedContainers = false;
 
+        [Tooltip("Conteneur portable sur le dos (sac à dos) : équipable dans la place backpack:{charId} ; " +
+                 "sa grille s'affiche avec l'inventaire tant qu'il est porté.")]
+        [SerializeField] private bool wearable = false;
+
         public int SlotCount => slotCount;
         public IReadOnlyList<ItemType> AcceptedTypes => acceptedTypes;
         public bool IsContainer => slotCount > 0;
         public bool AcceptsProps => acceptsProps;
         public bool AllowsNestedContainers => allowsNestedContainers;
+        public bool Wearable => wearable;
         public AudioClip OpenClip => openClip;
         public AudioClip CloseClip => closeClip;
 

@@ -12,7 +12,6 @@ public static class ItemSystemBootstrap
         NetworkServer.RegisterHandler<C2S_RequestDropItem>(ServerItemManager.Instance.HandleDrop);
         NetworkServer.RegisterHandler<C2S_PoseHeldItem>(ServerItemManager.Instance.HandlePoseHeldItem);
         NetworkServer.RegisterHandler<C2S_MoveWorldItem>(ServerItemManager.Instance.HandleMoveWorldItem);
-        NetworkServer.RegisterHandler<C2S_RequestSwapHands>(ServerItemManager.Instance.HandleSwap);
         NetworkServer.RegisterHandler<C2S_AdminSpawnItem>(ServerItemManager.Instance.HandleAdminSpawn);
 
         // Conteneurs de stockage (frigo, etc.)
@@ -25,6 +24,7 @@ public static class ItemSystemBootstrap
         NetworkServer.RegisterHandler<C2S_PackProp>(ServerItemManager.Instance.HandlePackProp);
         NetworkServer.RegisterHandler<C2S_UnpackProp>(ServerItemManager.Instance.HandleUnpackProp);
         NetworkServer.RegisterHandler<C2S_DropFromInventory>(ServerItemManager.Instance.HandleDropFromInventory);
+        NetworkServer.RegisterHandler<C2S_EquipPocketSlot>(ServerItemManager.Instance.HandleEquipPocketSlot);
 
         PlayerRoomTracker.OnPlayerEnterRoom += ServerItemManager.Instance.OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom += ServerItemManager.Instance.OnPlayerLeaveRoom;
@@ -42,7 +42,6 @@ public static class ItemSystemBootstrap
         NetworkServer.UnregisterHandler<C2S_RequestDropItem>();
         NetworkServer.UnregisterHandler<C2S_PoseHeldItem>();
         NetworkServer.UnregisterHandler<C2S_MoveWorldItem>();
-        NetworkServer.UnregisterHandler<C2S_RequestSwapHands>();
         NetworkServer.UnregisterHandler<C2S_AdminSpawnItem>();
         NetworkServer.UnregisterHandler<C2S_OpenContainer>();
         NetworkServer.UnregisterHandler<C2S_OpenItemContainer>();
@@ -53,6 +52,7 @@ public static class ItemSystemBootstrap
         NetworkServer.UnregisterHandler<C2S_PackProp>();
         NetworkServer.UnregisterHandler<C2S_UnpackProp>();
         NetworkServer.UnregisterHandler<C2S_DropFromInventory>();
+        NetworkServer.UnregisterHandler<C2S_EquipPocketSlot>();
 
         PlayerRoomTracker.OnPlayerEnterRoom -= ServerItemManager.Instance.OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom -= ServerItemManager.Instance.OnPlayerLeaveRoom;

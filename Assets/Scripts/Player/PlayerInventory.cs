@@ -7,7 +7,7 @@ using UnityEngine.Networking;
 
 /// <summary>
 /// Server-side inventory anchor for a character. Holds the place UUIDs of
-/// the character's pockets and two equipment slots (hand_left, hand_right).
+/// the character's pockets and equipment slots (hand_left, hand_right, backpack).
 /// Persistence lives in DB places — PlayerInventory just caches the UUIDs.
 ///
 /// Created idempotently on character connect via EnsurePlaces. The component
@@ -26,10 +26,14 @@ public class PlayerInventory : MonoBehaviour
     /// <summary>Right hand slot — type='equipment', capacity 1.</summary>
     public string HandRightPlaceId { get; private set; }
 
+    /// <summary>Back slot (sac à dos porté) — type='equipment', capacity 1.</summary>
+    public string BackpackPlaceId  { get; private set; }
+
     /// <summary>True iff all three place UUIDs have been resolved.</summary>
     public bool   PlacesReady => !string.IsNullOrEmpty(PocketPlaceId)
                               && !string.IsNullOrEmpty(HandLeftPlaceId)
-                              && !string.IsNullOrEmpty(HandRightPlaceId);
+                              && !string.IsNullOrEmpty(HandRightPlaceId)
+                              && !string.IsNullOrEmpty(BackpackPlaceId);
 
     /// <summary>Returns the DB place UUID corresponding to a hand slot, or null
     /// if EnsurePlaces hasn't completed yet.</summary>
@@ -51,6 +55,7 @@ public class PlayerInventory : MonoBehaviour
         yield return EnsureOne($"pocket:{characterId}",     "inventory",  characterId, id => PocketPlaceId    = id);
         yield return EnsureOne($"hand_left:{characterId}",  "equipment",  characterId, id => HandLeftPlaceId  = id);
         yield return EnsureOne($"hand_right:{characterId}", "equipment",  characterId, id => HandRightPlaceId = id);
+        yield return EnsureOne($"backpack:{characterId}",   "equipment",  characterId, id => BackpackPlaceId  = id);
     }
 
     private IEnumerator EnsureOne(string placeKey, string type, string characterId, System.Action<string> onResolved)

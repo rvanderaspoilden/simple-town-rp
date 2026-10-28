@@ -392,7 +392,10 @@ public class ContainerPanelUI : MonoBehaviour
     private static ItemBehaviour LocalHeldContainerItem()
     {
         PlayerController pc = PlayerController.Local;
-        return pc != null && pc.PlayerHands != null ? pc.PlayerHands.HeldContainerItem : null;
+        if (pc == null || pc.PlayerHands == null) return null;
+        // Colis tenu prioritaire ; sinon le sac à dos porté (grille affichée avec l'inventaire).
+        ItemBehaviour held = pc.PlayerHands.HeldContainerItem;
+        return held != null ? held : pc.PlayerHands.WornContainerItem;
     }
 
     private static bool IsInventoryOpen()

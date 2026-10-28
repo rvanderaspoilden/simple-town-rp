@@ -42,6 +42,10 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     // atomique, et le snap-back évite une divergence visuel/serveur.
     public bool CanSwap { get; set; } = false;
 
+    // Vue purement indicative (slot main) : les drops y sont inertes — le draggable
+    // snap-back — quel que soit l'état d'acceptation visuel.
+    public bool AcceptsDrops { get; set; } = true;
+
     [Header("Filtre item")]
     [SerializeField, Tooltip("Si vrai, ce slot rejette tout drop d'un item dont ItemConfig.AllowedInPocket=false. " +
         "À cocher sur les slots poche : bloque côté client move/swap d'un item non-pocketable (sinon le serveur refuse après round-trip + snap-back retardé).")]
@@ -80,6 +84,7 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     public static event ItemsSwapped OnItemSwap;
 
     public void OnDrop(PointerEventData eventData) {
+        if (!AcceptsDrops) return;
         if (eventData.pointerDrag == null) return;
 
         DraggableItem draggableItem = eventData.pointerDrag.GetComponent<DraggableItem>();
@@ -160,9 +165,9 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
             OnItemMove?.Invoke(originSlot, this);
             Sim.Audio.AudioManager.Instance.PlayUI(Sim.Audio.SfxId.ItemMove);
         } else if (MustSwapWith(draggableItem)) {
-            // CanSwap requis sur les deux slots. hand↔hand est traité localement
-            // (PlayerHands.Swap), hand↔container et container↔container passent par
-            // C2S_SwapItems côté listener. Les deux items tweenent en parallèle.
+            // CanSwap requis sur les deux slots. hand↔pocket, hand↔container et
+            // container↔container passent par C2S_SwapItems côté listener.
+            // Les deux items tweenent en parallèle.
             DraggableItem displaced = _item;
             originSlot.SetItem(displaced, animate: true);
             this.SetItem(draggableItem, animate: true);

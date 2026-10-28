@@ -111,7 +111,7 @@ MonoBehaviour:
   evaluationMethod: 0
   evaluationInterval: 3
   timeInterpolationGui: 0
-  cityName: TheBroz
+  cityName: Simple Town
   useElbloodyAccount: 0
   useSpectusAccount: 1
   characterData:
@@ -126,6 +126,7 @@ MonoBehaviour:
       thirst: 0
       hungry: 0
       sleep: 0
+      pv: 100
     style:
       hair:
         idx: 0
@@ -145,7 +146,7 @@ MonoBehaviour:
       skinColorPercent: 0
       gender: 0
     mood: 0
-    currentJob: -1
+    currentProfessionId: 
     jobs: []
   characterHomes: []
   cityData:

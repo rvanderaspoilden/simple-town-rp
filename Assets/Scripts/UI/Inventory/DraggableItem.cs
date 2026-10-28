@@ -126,6 +126,11 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     public bool IsDraggable => _draggable;
     public void SetDraggable(bool value) => _draggable = value;
 
+    // Vrai seulement si OnBeginDrag a réellement démarré un drag : Unity appelle
+    // OnDrag/OnEndDrag même quand OnBeginDrag a refusé (entrée verrouillée — slot
+    // main indicatif, meuble emballé) — sans ce flag l'item suivrait le curseur.
+    private bool _dragging;
+
     // Meuble emballé (entrée de colis) : id PropsConfig + variant pour démarrer le déballage.
     private int _propConfigId;
     private int _propPresetId;
@@ -149,9 +154,15 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         this._image.sprite = sprite;
     }
 
-    // ── Tooltip au survol (icône + nom + description + effets + conteneur) ─────
-    public void OnPointerEnter(PointerEventData eventData) {
-        Sprite icon = null; string label = null, desc = null, effects = null, container = null;
+    // ── Contenu descriptif (partagé tooltip survol + carte de détail) ──────────
+
+    /// <summary>Construit le contenu descriptif de l'item : icône, nom, description,
+    /// effets (carburant/arme/munitions/conso + pile) et résumé conteneur. Même
+    /// logique pour la tooltip au survol et la carte de détail de l'inventaire.</summary>
+    public void BuildDetailContent(out Sprite icon, out string label, out string desc,
+        out string effects, out string container) {
+        icon = null; label = null; desc = null; effects = null; container = null;
+
         if (_propConfigId > 0) {
             var p = Sim.DatabaseManager.GetPropsById(_propConfigId);
             if (p != null) { icon = p.Sprite; label = p.GetDisplayName(); desc = p.Description; container = FormatContainer(p.Container); }
@@ -168,6 +179,11 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
             string stackLine = $"<color=#8FE36B>Pile : {_quantity}</color>";
             effects = string.IsNullOrEmpty(effects) ? stackLine : stackLine + "\n" + effects;
         }
+    }
+
+    // ── Tooltip au survol (icône + nom + description + effets + conteneur) ─────
+    public void OnPointerEnter(PointerEventData eventData) {
+        BuildDetailContent(out Sprite icon, out string label, out string desc, out string effects, out string container);
         if (icon != null || !string.IsNullOrEmpty(label)) Sim.ItemTooltipUI.Show(icon, label, desc, effects, container);
     }
 
@@ -249,7 +265,8 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
 
     public void OnBeginDrag(PointerEventData eventData) {
         EnsureRefs();
-        if (!_draggable) return; // entrée verrouillée (ex. meuble emballé) : pas de drag
+        if (!_draggable) return; // entrée verrouillée (slot main, meuble emballé) : pas de drag
+        _dragging = true;
         Sim.ItemTooltipUI.Hide(); // pas de tooltip pendant un drag
         this._canvasGroup.alpha = .6f;
         this._canvasGroup.blocksRaycasts = false;
@@ -267,6 +284,7 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     }
 
     public void OnDrag(PointerEventData eventData) {
+        if (!_dragging) return;
         EnsureRefs();
         if (canvas == null) return;
         this._rectTransform.anchoredPosition += eventData.delta / canvas.scaleFactor;
@@ -289,6 +307,8 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     }
 
     public void OnEndDrag(PointerEventData eventData) {
+        if (!_dragging) return;
+        _dragging = false;
         EnsureRefs();
         this._canvasGroup.alpha = 1;
         this._canvasGroup.blocksRaycasts = true;
@@ -349,6 +369,7 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         if (_scaleTween != null) { StopCoroutine(_scaleTween); _scaleTween = null; }
         transform.localScale = Vector3.one;
         _draggable = true; // réinitialise pour la prochaine location depuis le pool
+        _dragging  = false;
         _propConfigId = 0;
         _propPresetId = 0;
         // Le pool peut réémettre un draggable déjà utilisé avec un Quantity hérité — reset à 1.

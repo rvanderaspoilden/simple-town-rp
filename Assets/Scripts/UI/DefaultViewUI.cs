@@ -14,8 +14,9 @@ namespace Sim {
     public class DefaultViewUI : MonoBehaviour {
 
         [Header("Settings")]
+        [Tooltip("Affiche le panneau de localisation (adresse) en haut à droite. Désactivé pour l'instant à la demande ; remettre à true pour le réafficher.")]
         [SerializeField]
-        private CharacterInfoPanelUI characterInfoPanelUI;
+        private bool showLocationPanel = false;
 
         [Tooltip("Root of the top-right location panel. Hidden when there is no location text to display.")]
         [SerializeField]
@@ -75,6 +76,12 @@ namespace Sim {
         }
 
         public void SetLocationText(string value) {
+            // Panneau de localisation masqué pour l'instant (adresse retirée du HUD).
+            if (!this.showLocationPanel) {
+                if (this.locationPanel != null) this.locationPanel.SetActive(false);
+                return;
+            }
+
             bool has = !string.IsNullOrWhiteSpace(value);
             string main = string.Empty;
             string sub  = string.Empty;

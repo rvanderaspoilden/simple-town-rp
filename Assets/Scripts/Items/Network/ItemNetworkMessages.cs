@@ -106,8 +106,13 @@ public struct S2C_DropResult : NetworkMessage
     public string ErrorMessage;
 }
 
-/// <summary>Client → server: swap left ↔ right hand items.</summary>
-public struct C2S_RequestSwapHands : NetworkMessage { }
+/// <summary>
+/// Client → server : pointe la main droite sur un slot de poche (modèle « pointeur » :
+/// l'item NE QUITTE PAS sa place — le serveur spawne/déspawne une entité « projection »
+/// attachée à la main, bridge partagé avec la ligne DB de l'item). -1 = mains libres.
+/// Aucune écriture DB → inoffensif quel que soit le rythme d'envoi (scroll rapide).
+/// </summary>
+public struct C2S_EquipPocketSlot : NetworkMessage { public int SlotIndex; }
 
 /// <summary>Admin/debug: client requests a server-side item spawn at a position.</summary>
 public struct C2S_AdminSpawnItem : NetworkMessage
@@ -269,7 +274,7 @@ public struct S2C_PocketSync : NetworkMessage
 /// <summary>
 /// Client → server : déplace un item d'une place à une autre.
 /// Place IDs canoniques :
-///   - main : "hand_left:{charId}" / "hand_right:{charId}"
+///   - main : "hand_right:{charId}" (slot unique — modèle « un item actif »)
 ///   - poche : "pocket:{charId}"
 ///   - conteneur : retourné par le S2C_ContainerOpened précédent
 /// </summary>
@@ -304,7 +309,7 @@ public struct C2S_SplitItem : NetworkMessage
 
 /// <summary>
 /// Client → server : échange atomique de deux items entre deux places (hand↔container,
-/// container↔container même placeId). Le hand↔hand passe par C2S_RequestSwapHands.
+/// hand↔pocket, container↔container même placeId).
 /// Chaque slot doit être référencé par son place (UUID pour conteneur, "hand_*:charId"
 /// pour mains) et son slotIndex (ignoré pour les mains, mono-slot).
 /// </summary>

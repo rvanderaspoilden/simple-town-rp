@@ -1563,11 +1563,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 5021239
   fpsCamera: {fileID: 3631374244889326648}
-  interactKey: 101
+  interactKey: 19
+  interactLongPressDuration: 0.35
+  dropHeldItemKey: 31
   crosshairMaxDistance: 30
   crosshairAimAssistRadius: 0.25
   crosshairPlayerRange: 4
-  freeCursorKey: 308
+  freeCursorKey: 53
 --- !u!114 &8619417789000670540
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1722,6 +1724,8 @@ MonoBehaviour:
   aimFov: 30
   aimZoomSpeed: 120
   aimSensitivityFactor: 0.6
+  scopeBlendSpeed: 5
+  scopeHideBodyThreshold: 0.6
 --- !u!1 &8776632124653166675
 GameObject:
   m_ObjectHideFlags: 0

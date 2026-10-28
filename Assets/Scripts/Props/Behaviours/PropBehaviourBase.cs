@@ -17,7 +17,7 @@ using Action = Sim.Interactables.Action;
 ///   - delegates type-specific actions to Execute()
 /// </summary>
 [RequireComponent(typeof(PropIdentity))]
-public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IInteractable
+public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IInteractable, IQuickActionProvider
 {
     [Header("Configuration")] [SerializeField]
     protected PropsConfig configuration;
@@ -226,6 +226,16 @@ public abstract class PropBehaviourBase : MonoBehaviour, IPropBehaviour, IIntera
 
     public virtual bool IsRightClickOnly() =>
         configuration != null && configuration.IsRightClickOnly();
+
+    /// <summary>Quick action (short E tap): the configured action type, resolved among the
+    /// currently available actions so permission/state gating stays authoritative.</summary>
+    public virtual bool TryGetQuickAction(Action[] available, out Action action)
+    {
+        // Type configuré prioritaire ; sinon, une action unique proposée = action rapide de facto.
+        bool hasConfigured = configuration != null && configuration.HasQuickAction;
+        return QuickActionResolver.TryResolve(available, hasConfigured,
+            hasConfigured ? configuration.QuickAction : default, out action);
+    }
 
     public virtual Action[] GetActions(bool withPriority = false)
     {

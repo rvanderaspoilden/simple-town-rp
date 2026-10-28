@@ -87,7 +87,7 @@ namespace Sim {
             // Raccourci global : I ouvre/ferme l'inventaire. Inhibé hors gameplay (pas de
             // joueur local = menu principal), en sub-game et pendant une saisie de texte.
             // La fermeture par Escape/marche reste gérée par InventoryUI.
-            if (Input.GetKeyDown(KeyCode.I)
+            if (Sim.Utils.GameInput.Down(UnityEngine.InputSystem.Key.I)
                 && PlayerController.Local != null
                 && !SubGameController.IsActive
                 && !Sim.Utils.CursorLock.IsTypingInInputField()) {

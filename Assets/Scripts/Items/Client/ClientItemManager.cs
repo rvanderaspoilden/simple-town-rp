@@ -328,7 +328,7 @@ public class ClientItemManager
         // each item declares its own resting pos/rot in the hand bone. Falls back to
         // the message values (legacy / non-configured items) when no override is provided.
         ItemConfig config = behaviour.Configuration;
-        if (config != null && config.HasGripOverride)
+        if (config != null && config.HasGripOverride && hand != HandType.Back)
         {
             Vector3    gripPos = config.GripPosition;
             Quaternion gripRot = Quaternion.Euler(config.GripEuler);
@@ -382,6 +382,11 @@ public class ClientItemManager
             if (hands.RightEntityId == entityId)
             {
                 hands.ClearHand(HandType.Right);
+                return;
+            }
+            if (hands.BackEntityId == entityId)
+            {
+                hands.ClearHand(HandType.Back);
                 return;
             }
         }

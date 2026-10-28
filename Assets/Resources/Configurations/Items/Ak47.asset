@@ -25,10 +25,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 93d0e41f8aabfb74e944e6dc12894a6d, type: 2}
   prefab: {fileID: 8625532038624629607, guid: e7d4264e107800f4b93194b78824cbcf, type: 3}
   toPersist: 1
-  allowedInPocket: 0
+  allowedInPocket: 1
   rangeToInteract: 1.5
   cursor: {fileID: 0}
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 969aa46811170ab4e89f4d64bc47f342, type: 3}
   poseShape: 0
   gripPosition: {x: 0.0055, y: -0.0119, z: -0.0003}
   gripEuler: {x: 0, y: 0, z: 294.307}
@@ -36,6 +36,7 @@ MonoBehaviour:
   fireInterval: 0.11
   automatic: 1
   maxRange: 60
+  damage: 20
   recoilKick: 0.3
   spreadAngle: 4
   ammoCategory: 1

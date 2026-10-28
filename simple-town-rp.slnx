@@ -1,6 +1,5 @@
 ﻿<Solution>
   <Project Path="Unity.AI.Sound.csproj" />
-  <Project Path="Unity.AI.Toolkit.Asset.csproj" />
   <Project Path="Unity.PlasticSCM.Editor.csproj" />
   <Project Path="Unity.AppUI.csproj" />
   <Project Path="Unity.ShaderGraph.Editor.csproj" />
@@ -11,6 +10,7 @@
   <Project Path="Unity.2D.Psdimporter.Editor.csproj" />
   <Project Path="Unity.MemoryProfiler.Editor.csproj" />
   <Project Path="Unity.InferenceEngine.Microsoft.Msagl.csproj" />
+  <Project Path="Unity.VisualScripting.Core.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Editor.csproj" />
   <Project Path="Unity.AI.Assistant.Runtime.csproj" />
   <Project Path="Unity.PerformanceTesting.Editor.csproj" />
@@ -21,6 +21,7 @@
   <Project Path="Unity.AI.Assistant.UI.Editor.csproj" />
   <Project Path="Mirror.Components.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Editor.csproj" />
+  <Project Path="Unity.VisualScripting.Flow.Editor.csproj" />
   <Project Path="DissonanceVoip.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Editor.csproj" />
   <Project Path="Unity.ProBuilder.Csg.csproj" />
@@ -38,19 +39,23 @@
   <Project Path="com.IvanMurzak.Unity.MCP.Runtime.csproj" />
   <Project Path="Unity.InferenceEngine.Tokenization.csproj" />
   <Project Path="Unity.AI.Assistant.Editor.csproj" />
+  <Project Path="Unity.VisualScripting.Core.csproj" />
   <Project Path="Unity.InferenceEngine.Editor.csproj" />
   <Project Path="UnityEditor.TestRunner.csproj" />
   <Project Path="Mirror.Examples.csproj" />
   <Project Path="Unity.AI.Pbr.csproj" />
   <Project Path="Unity.Cinemachine.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Runtime.csproj" />
+  <Project Path="Autodesk.Fbx.csproj" />
   <Project Path="Unity.Burst.CodeGen.csproj" />
   <Project Path="Unity.InputSystem.csproj" />
+  <Project Path="Unity.VisualScripting.Flow.csproj" />
   <Project Path="UnityEngine.TestRunner.csproj" />
   <Project Path="Unity.2D.Tilemap.Editor.csproj" />
   <Project Path="Unity.Splines.Editor.csproj" />
   <Project Path="AV.Inspector.Runtime.csproj" />
   <Project Path="Unity.PerformanceTesting.csproj" />
+  <Project Path="SidekickCharacters.Editor.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Cinemachine.Editor.csproj" />
   <Project Path="Unity.AI.ModelSelector.csproj" />
   <Project Path="Unity.AI.Animate.csproj" />
@@ -76,17 +81,20 @@
   <Project Path="SimpleWebTransport.csproj" />
   <Project Path="Unity.Animation.Rigging.Editor.csproj" />
   <Project Path="Unity.AI.Navigation.Updater.csproj" />
+  <Project Path="Unity.VisualScripting.State.Editor.csproj" />
   <Project Path="Unity.AI.Assistant.Integrations.Profiler.Editor.csproj" />
   <Project Path="Unity.AI.Search.Editor.csproj" />
   <Project Path="Unity.SysrootPackage.Editor.csproj" />
   <Project Path="Unity.AppUI.Redux.csproj" />
   <Project Path="Unity.AI.Assistant.Agent.Dynamic.Extension.Editor.csproj" />
+  <Project Path="Unity.Formats.Fbx.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.2D.Runtime.csproj" />
   <Project Path="Unity.Collections.csproj" />
   <Project Path="Unity.Burst.Editor.csproj" />
   <Project Path="glTFast.Newtonsoft.csproj" />
   <Project Path="Unity.TextMeshPro.Editor.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.2D.Editor.Overrides.csproj" />
+  <Project Path="Unity.VisualScripting.State.csproj" />
   <Project Path="Unity.AI.Generators.Redux.csproj" />
   <Project Path="Mirror.Authenticators.csproj" />
   <Project Path="Unity.AI.Toolkit.Accounts.csproj" />
@@ -102,6 +110,7 @@
   <Project Path="Unity.AppUI.MVVM.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Editor.Shared.csproj" />
   <Project Path="UnityEditor.UI.csproj" />
+  <Project Path="SidekickCharacters.csproj" />
   <Project Path="Unity.Multiplayer.Center.Common.csproj" />
   <Project Path="Unity.UnifiedRayTracing.Runtime.csproj" />
   <Project Path="glTFast.Documentation.Examples.csproj" />
@@ -112,6 +121,7 @@
   <Project Path="Unity.AI.Generators.Asset.csproj" />
   <Project Path="Boxophobic.Utils.Editor.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.ParticleSystem.Editor.csproj" />
+  <Project Path="Unity.AI.Toolkit.Asset.csproj" />
   <Project Path="Unity.Collections.CodeGen.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Terrain.Editor.csproj" />
   <Project Path="Unity.DedicatedServer.Editor.csproj" />
@@ -130,6 +140,8 @@
   <Project Path="com.IvanMurzak.Unity.MCP.Editor.Rql.Mathematics.csproj" />
   <Project Path="Unity.InputSystem.TestFramework.csproj" />
   <Project Path="Unity.AI.Generators.Tools.csproj" />
+  <Project Path="Gilzoide.SqliteNet.csproj" />
+  <Project Path="Unity.VisualScripting.Shared.Editor.csproj" />
   <Project Path="Unity.AI.Navigation.Editor.ConversionSystem.csproj" />
   <Project Path="Unity.ProBuilder.AssetIdRemapUtility.csproj" />
   <Project Path="Unity.AppUI.Redux.Editor.csproj" />
@@ -175,13 +187,16 @@
   <Project Path="Unity.AI.Tracing.csproj" />
   <Project Path="glTFast.dots.csproj" />
   <Project Path="Unity.AI.Toolkit.GenerationContextMenu.csproj" />
+  <Project Path="Unity.Formats.Fbx.Runtime.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Splines.Editor.csproj" />
   <Project Path="Unity.InternalAPIEditorBridge.ShaderGraph.Editor.csproj" />
   <Project Path="Unity.ProBuilder.Stl.csproj" />
   <Project Path="Unity.AppUI.InternalAPIBridge.csproj" />
   <Project Path="Unity.2D.PixelPerfect.csproj" />
+  <Project Path="Unity.VisualScripting.SettingsProvider.Editor.csproj" />
   <Project Path="Unity.AI.Toolkit.Async.csproj" />
   <Project Path="Unity.2D.PixelPerfect.Editor.csproj" />
+  <Project Path="Autodesk.Fbx.Editor.csproj" />
   <Project Path="Unity.PlasticSCM.Editor.Entities.csproj" />
   <Project Path="Unity.AI.Generators.Contexts.csproj" />
   <Project Path="Unity.AI.Generators.IO.Srp.csproj" />
@@ -194,6 +209,7 @@
   <Project Path="Unity.AI.Toolkit.GenerationObjectPicker.csproj" />
   <Project Path="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.csproj" />
   <Project Path="Unity.RenderPipelines.Core.ShaderLibrary.csproj" />
+  <Project Path="Autodesk.Fbx.BuildTestAssets.csproj" />
   <Project Path="Unity.AI.Toolkit.Compliance.csproj" />
   <Project Path="Unity.Sysroot.Linux_x86_64.csproj" />
   <Project Path="Unity.InternalAPIEngineBridge.001.csproj" />
@@ -204,6 +220,7 @@
   <Project Path="Unity.AI.MCP.Runtime.csproj" />
   <Project Path="Unity.ShaderGraph.Utilities.csproj" />
   <Project Path="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
+  <Project Path="Gilzoide.SqliteNet.Tests.Editor.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Editor.Rql.Physics.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Shaders.csproj" />
   <Project Path="Unity.InferenceEngine.MacBLAS.csproj" />

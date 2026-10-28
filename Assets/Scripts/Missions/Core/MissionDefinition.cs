@@ -62,6 +62,13 @@ namespace Sim.Missions {
         [Min(0)]
         [SerializeField] private int maxConcurrentGlobal = 0;
 
+        [Tooltip("Poids de tirage sur le board (MissionAutoPublisher, sélection pondérée). " +
+                 "1 = normal. Plus élevé = apparaît plus souvent. 0 = jamais tirée automatiquement. " +
+                 "Mettre un poids fort sur les missions d'ENTRÉE (prenables par un compte neuf) pour " +
+                 "qu'elles dominent le board tant que le joueur n'a pas débloqué les missions avancées.")]
+        [Min(0)]
+        [SerializeField] private int publishWeight = 1;
+
         public string MissionId => missionId;
         public string DisplayNameKey => displayNameKey;
         public Sprite Icon => icon;
@@ -79,5 +86,6 @@ namespace Sim.Missions {
         public float BoardExpirationSeconds => boardExpirationSeconds;
         public int MaxConcurrentPerPlayer => maxConcurrentPerPlayer;
         public int MaxConcurrentGlobal => maxConcurrentGlobal;
+        public int PublishWeight => publishWeight;
     }
 }

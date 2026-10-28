@@ -10,6 +10,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Serialization;
+using Key = UnityEngine.InputSystem.Key;
 
 namespace Sim {
     /// <summary>
@@ -34,8 +35,12 @@ namespace Sim {
         private GameObject fpsCamera;
 
         [Header("TPS (shoulder) mode")]
-        [Tooltip("Touche d'interaction au crosshair (ouvre le menu radial de la cible visée).")]
-        [SerializeField] private KeyCode interactKey = KeyCode.E;
+        [Tooltip("Touche d'interaction au crosshair (position physique, nouveau Input System). Appui court = action prioritaire de la cible ; appui long = menu radial complet.")]
+        [SerializeField] private Key interactKey = Key.E;
+        [Tooltip("Durée d'appui (s) sur la touche d'interaction au-delà de laquelle on ouvre le menu radial complet au lieu de déclencher l'action prioritaire.")]
+        [SerializeField] private float interactLongPressDuration = 0.35f;
+        [Tooltip("Touche pour lâcher immédiatement l'item tenu en main (action DROP de l'item). Position physique (nouveau Input System) : Key.Q = coin haut-gauche = touche étiquetée « A » sur clavier AZERTY — hors du cluster de déplacement sur tous les layouts.")]
+        [SerializeField] private Key dropHeldItemKey = Key.Q;
         [Tooltip("Portée (m) du raycast crosshair centre-écran (nommage/outline). Le gate réel d'interaction reste CanInteractWith : portée de la config du prop/item + ligne de vue.")]
         [SerializeField] private float crosshairMaxDistance = 30f;
         [Tooltip("Rayon (m) du SphereCast d'aim-assist quand le ray exact ne touche rien d'interactable. 0 = désactivé.")]
@@ -43,7 +48,7 @@ namespace Sim {
         [Tooltip("Portée (m, plan XZ) pour ouvrir le menu contextuel d'un joueur distant visé au crosshair.")]
         [SerializeField] private float crosshairPlayerRange = 4f;
         [Tooltip("Maintenir cette touche libère le curseur pour interagir avec l'UI (la caméra et le crosshair sont suspendus pendant l'appui).")]
-        [SerializeField] private KeyCode freeCursorKey = KeyCode.LeftAlt;
+        [SerializeField] private Key freeCursorKey = Key.LeftAlt;
 
         private BuildCamera buildCamera;
 
@@ -113,6 +118,8 @@ namespace Sim {
 
             if (this.currentMode == CameraModeEnum.TPS) {
                 this.ManageCrosshairInteraction();
+                this.ManageHeldItemQuickAction();
+                this.ManageHeldItemDrop();
             } else {
                 this.ClearHoverFeedback();
             }
@@ -137,7 +144,7 @@ namespace Sim {
                               && PlayerController.Local.PlayerState != PlayerState.DIED
                               && !PlayerController.Local.IsKnockedDown
                               && !SubGameController.IsActive
-                              && !Input.GetKey(this.freeCursorKey)
+                              && !GameInput.Held(this.freeCursorKey)
                               && !CursorLock.IsBlockingUiOpen();
 
             CursorLock.Apply(wantLocked);
@@ -172,6 +179,7 @@ namespace Sim {
         private void ManageCrosshairInteraction() {
             if (SubGameController.IsActive || Cursor.lockState != CursorLockMode.Locked) {
                 this.ClearHoverFeedback();
+                this.ResetInteractHold();
                 return;
             }
 
@@ -239,29 +247,141 @@ namespace Sim {
             if (CrosshairUI.Instance != null) {
                 // À la lunette (sniper), l'overlay porte son propre réticule plein écran.
                 if (ScopeOverlayUI.IsScopeVisible) CrosshairUI.Instance.Hide();
-                else if (interactable != null || remotePlayer != null) CrosshairUI.Instance.Show(hoverName, canInteract);
+                else if (interactable != null || remotePlayer != null) {
+                    string promptLabel = canInteract ? this.ResolvePromptLabel(interactable) : null;
+                    CrosshairUI.Instance.Show(hoverName, canInteract, promptLabel);
+                }
                 else CrosshairUI.Instance.ShowDefault();
             }
 
-            if (!canInteract || !Input.GetKeyDown(this.interactKey)) return;
+            // --- Touche d'interaction (E) -------------------------------------------
+            // Joueur distant & PNJ : comportement inchangé — l'appui ouvre directement le
+            // menu contextuel (pas d'action prioritaire configurable sur eux).
+            if (interactable is ClientNpcView || (interactable == null && remotePlayer != null)) {
+                this.ResetInteractHold();
+                if (!canInteract || !GameInput.Down(this.interactKey)) return;
 
-            // Un NPC visé est freezé immédiatement (le serveur stoppe son agent).
-            if (interactable is ClientNpcView npcView) {
-                NpcInteractionSession.Begin(npcView);
+                // Un NPC visé est freezé immédiatement (le serveur stoppe son agent).
+                if (interactable is ClientNpcView npcView) NpcInteractionSession.Begin(npcView);
+
+                if (interactable != null) {
+                    this.EnterInteractionPose(interactable.transform);
+                    HUDManager.Instance.ShowContextMenu(interactable.GetActions(), interactable.transform);
+                } else {
+                    this.EnterInteractionPose(remotePlayer.transform);
+                    HUDManager.Instance.ShowContextMenu(remotePlayer.GetContextActions(), remotePlayer.transform);
+                }
+                return;
             }
 
-            IState current = PlayerController.Local.CurrentState();
-            if (current.GetType() == typeof(CharacterMove) || current.GetType() == typeof(CharacterFreeMove)) {
-                PlayerController.Local.Idle();
+            if (interactable == null) { this.ResetInteractHold(); return; }
+
+            // Props / portes / distributeurs / véhicules / cibles de mission :
+            // appui COURT sur E = action prioritaire ; appui LONG = menu radial complet.
+            this.ManageInteractHold(interactable, canInteract);
+        }
+
+        // ── Appui court (action prioritaire) / long (menu radial) sur la touche E ──
+
+        private IInteractable _interactHoldTarget;
+        private float _interactKeyDownTime = -1f;
+        private bool _interactLongPressFired;
+
+        private void ManageInteractHold(IInteractable interactable, bool canInteract) {
+            if (!canInteract) { this.ResetInteractHold(); return; }
+
+            if (GameInput.Down(this.interactKey)) {
+                this._interactHoldTarget = interactable;
+                this._interactKeyDownTime = Time.time;
+                this._interactLongPressFired = false;
             }
 
-            if (interactable != null) {
-                PlayerController.Local.LookAt(interactable.transform);
+            bool sameTarget = this._interactHoldTarget != null
+                              && ReferenceEquals(this._interactHoldTarget, interactable);
+
+            // Maintien au-delà du seuil → menu radial complet (une seule fois).
+            if (sameTarget && !this._interactLongPressFired && GameInput.Held(this.interactKey)
+                && Time.time - this._interactKeyDownTime >= this.interactLongPressDuration) {
+                this._interactLongPressFired = true;
+                this.EnterInteractionPose(interactable.transform);
                 HUDManager.Instance.ShowContextMenu(interactable.GetActions(), interactable.transform);
-            } else if (remotePlayer != null) {
-                PlayerController.Local.LookAt(remotePlayer.transform);
-                HUDManager.Instance.ShowContextMenu(remotePlayer.GetContextActions(), remotePlayer.transform);
             }
+
+            // Relâché : appui court (avant seuil, même cible) = action prioritaire.
+            if (GameInput.Up(this.interactKey)) {
+                if (sameTarget && !this._interactLongPressFired) this.TriggerQuickAction(interactable);
+                this.ResetInteractHold();
+            }
+        }
+
+        private void TriggerQuickAction(IInteractable interactable) {
+            this.EnterInteractionPose(interactable.transform);
+
+            // Action prioritaire configurée (hors props « clic droit seulement ») → exécution directe.
+            if (!interactable.IsRightClickOnly()
+                && interactable is IQuickActionProvider provider
+                && provider.TryGetQuickAction(interactable.GetActions(true), out Action quick)) {
+                quick.Execute();
+                return;
+            }
+
+            // Repli : aucune action prioritaire définie → menu radial complet.
+            HUDManager.Instance.ShowContextMenu(interactable.GetActions(), interactable.transform);
+        }
+
+        /// <summary>Libellé affiché à côté du cadre de la touche d'interaction sous le réticule :
+        /// le label de l'action prioritaire de la cible (ex. « S'asseoir », « Ouvrir », « Manger »)
+        /// quand elle en définit une ; sinon le repli générique « Interagir » (l'appui court ouvre
+        /// alors le menu radial). PNJ/joueurs distants et props « clic droit seulement » → générique.</summary>
+        private string ResolvePromptLabel(IInteractable interactable) {
+            if (interactable != null
+                && !(interactable is ClientNpcView)
+                && !interactable.IsRightClickOnly()
+                && interactable is IQuickActionProvider provider
+                && provider.TryGetQuickAction(interactable.GetActions(true), out Action quick)
+                && quick != null && !string.IsNullOrEmpty(quick.Label)) {
+                return quick.Label;
+            }
+
+            return "Interagir";
+        }
+
+        private void EnterInteractionPose(Transform target) {
+            IState current = PlayerController.Local.CurrentState();
+            if (current.GetType() == typeof(CharacterMove) || current.GetType() == typeof(CharacterFreeMove))
+                PlayerController.Local.Idle();
+            if (target != null) PlayerController.Local.LookAt(target);
+        }
+
+        private void ResetInteractHold() {
+            this._interactHoldTarget = null;
+            this._interactKeyDownTime = -1f;
+            this._interactLongPressFired = false;
+        }
+
+        /// <summary>Clic gauche TPS avec un item en main : déclenche son action rapide
+        /// (ex. manger). Les armes n'en ont pas → le tir reste géré par PlayerShooter.</summary>
+        private void ManageHeldItemQuickAction() {
+            if (Cursor.lockState != CursorLockMode.Locked || SubGameController.IsActive) return;
+            if (PlayerController.Local == null || !Input.GetMouseButtonDown(0)) return;
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+
+            var hands = PlayerController.Local.PlayerHands;
+            ItemBehaviour held = hands != null ? hands.RightHandItem : null;
+            if (held != null) held.TryExecuteQuickAction();
+        }
+
+        /// <summary>Touche « lâcher » (A par défaut) en TPS : exécute l'action DROP de l'item tenu
+        /// (main droite, sinon gauche). Route par l'action de l'item → même chemin que le bouton
+        /// « Lâcher » de l'inventaire / le radial (respecte config + IsForbidden).</summary>
+        private void ManageHeldItemDrop() {
+            if (Cursor.lockState != CursorLockMode.Locked || SubGameController.IsActive) return;
+            if (PlayerController.Local == null || !GameInput.Down(this.dropHeldItemKey)) return;
+
+            var hands = PlayerController.Local.PlayerHands;
+            if (hands == null) return;
+            ItemBehaviour held = hands.RightHandItem != null ? hands.RightHandItem : hands.LeftHandItem;
+            if (held != null) held.TryDrop();
         }
 
         private HoverOutline _hoveredOutline;

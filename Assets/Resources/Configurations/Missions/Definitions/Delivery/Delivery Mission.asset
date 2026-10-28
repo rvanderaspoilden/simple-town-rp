@@ -16,7 +16,7 @@ MonoBehaviour:
   displayNameKey: Livraison
   icon: {fileID: 0}
   profession: {fileID: 11400000, guid: efb095852034208428d48efc10b4a944, type: 2}
-  requiredNode: {fileID: 11400000, guid: d50d22de322dee14594a08d8375fbe1b, type: 2}
+  requiredNode: {fileID: 11400000, guid: 68ef099a6cb5caf49822be48fb46e56a, type: 2}
   steps:
   - {fileID: 11400000, guid: c7a9c4c9ba4b3154fb3b73320270ac2f, type: 2}
   - {fileID: 11400000, guid: 5daeb3bbebf52184fbb1fa8c8e7656d2, type: 2}
@@ -32,3 +32,4 @@ MonoBehaviour:
   boardExpirationSeconds: 60
   maxConcurrentPerPlayer: 1
   maxConcurrentGlobal: 0
+  publishWeight: 5

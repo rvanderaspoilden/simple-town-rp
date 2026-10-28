@@ -24,8 +24,9 @@ MonoBehaviour:
   prefab: {fileID: 6195545988160666293, guid: 55f0aa1a8ca203a4399e3a340e7f7eb2, type: 3}
   toPersist: 0
   allowedInPocket: 0
+  rangeToInteract: 1.5
   cursor: {fileID: 0}
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 5e933adb3aab129429ac5e76403b336d, type: 3}
   poseShape: 0
   gripPosition: {x: -0.092, y: -0.082, z: 0.339}
   gripEuler: {x: 285.50284, y: 275.63922, z: 61.7659}

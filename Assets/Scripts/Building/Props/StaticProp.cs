@@ -13,7 +13,7 @@ namespace Sim.Building {
     /// Stateful behaviours (build/sell/move, lock state, occupancy, etc.) use PropBehaviourBase.
     /// </summary>
     [RequireComponent(typeof(PropsRenderer))]
-    public class StaticProp : MonoBehaviour, IInteractable {
+    public class StaticProp : MonoBehaviour, IInteractable, IQuickActionProvider {
         [Header("Props settings")]
         [SerializeField]
         protected PropsConfig configuration;
@@ -49,6 +49,13 @@ namespace Sim.Building {
 
         public bool IsRightClickOnly() =>
             this.configuration != null && this.configuration.IsRightClickOnly();
+
+        public virtual bool TryGetQuickAction(Action[] available, out Action action) {
+            // Type configuré prioritaire ; sinon, une action unique proposée = action rapide de facto.
+            bool hasConfigured = this.configuration != null && this.configuration.HasQuickAction;
+            return QuickActionResolver.TryResolve(available, hasConfigured,
+                hasConfigured ? this.configuration.QuickAction : default, out action);
+        }
 
         public virtual Action[] GetActions(bool withPriority = false) {
             if (this.actions == null) return System.Array.Empty<Action>();

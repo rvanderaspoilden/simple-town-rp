@@ -363,6 +363,10 @@ public class Roof : MonoBehaviour {
             m.SetTexture("_BaseMap", source.GetTexture("_MainTex"));
             m.SetTextureScale("_BaseMap", source.GetTextureScale("_MainTex"));
             m.SetTextureOffset("_BaseMap", source.GetTextureOffset("_MainTex"));
+        } else if (source.HasProperty("_Albedo_Map")) { // Synty/Generic_Basic (PolygonShops)
+            m.SetTexture("_BaseMap", source.GetTexture("_Albedo_Map"));
+            m.SetTextureScale("_BaseMap", source.GetTextureScale("_Albedo_Map"));
+            m.SetTextureOffset("_BaseMap", source.GetTextureOffset("_Albedo_Map"));
         }
 
         if (source.HasProperty("_BaseColor")) m.SetColor("_BaseColor", source.GetColor("_BaseColor"));

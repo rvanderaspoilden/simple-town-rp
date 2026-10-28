@@ -4,9 +4,11 @@ using Mirror;
 using Sim;
 using Sim.Audio;
 using Sim.Enums;
+using Sim.Utils;
 using UnityEngine;
 using UnityEngine.AI;
 using Action = Sim.Interactables.Action;
+using Key = UnityEngine.InputSystem.Key;
 
 /// <summary>
 /// Véhicule conduisible (POC). NetworkBehaviour autonome avec sa propre NetworkIdentity
@@ -1007,17 +1009,17 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         UpdateEngineAudio();          // tous clients (pitch moteur)
         if (!isOwned)  return;
 
-        if (Input.GetKeyDown(KeyCode.X)) {
+        if (GameInput.Down(Key.X)) {
             LocalRequestExit();
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.H)) CmdHorn();
-        if (Input.GetKeyDown(KeyCode.L)) CmdToggleLockAsDriver(); // clé : verrouiller/déverrouiller
-        if (Input.GetKeyDown(KeyCode.F)) _desiredFlags ^= LIGHT_HEAD; // phares on/off
+        if (GameInput.Down(Key.H)) CmdHorn();
+        if (GameInput.Down(Key.L)) CmdToggleLockAsDriver(); // clé : verrouiller/déverrouiller
+        if (GameInput.Down(Key.F)) _desiredFlags ^= LIGHT_HEAD; // phares on/off
 
         // Feux stop = frein tenu (réconcilie l'état voulu, edge-triggered) + boucle sonore de frein.
-        bool braking = Input.GetKey(KeyCode.Space);
+        bool braking = GameInput.Held(Key.Space);
         if (braking) _desiredFlags |= LIGHT_BRAKE; else _desiredFlags &= unchecked((byte)~LIGHT_BRAKE);
         if (_desiredFlags != lightFlags) CmdSetLights(_desiredFlags);
         SetBrakeSound(braking && CurrentSpeedMs > 1f);
@@ -1035,9 +1037,13 @@ public class VehicleController : NetworkBehaviour, IInteractable {
         _velocity = Vector3.ProjectOnPlane(_rb.linearVelocity, transform.up);
         _currentSpeed = Vector3.Dot(_rb.linearVelocity, transform.forward);
 
-        float throttle  = (IsKO || !HasFuel) ? 0f : Input.GetAxisRaw("Vertical");
-        float steerIn   = Input.GetAxisRaw("Horizontal");
-        bool  spaceHeld = Input.GetKey(KeyCode.Space);
+        // Axes composés sur positions physiques (nouveau Input System) : W/S + flèches pour
+        // l'accélérateur, A/D + flèches pour la direction — équivalent des anciens axes legacy
+        // "Vertical"/"Horizontal", mais indépendant du layout clavier (ZQSD natif sur AZERTY).
+        float throttle  = (IsKO || !HasFuel) ? 0f
+            : Mathf.Clamp(GameInput.Axis(Key.S, Key.W) + GameInput.Axis(Key.DownArrow, Key.UpArrow), -1f, 1f);
+        float steerIn   = Mathf.Clamp(GameInput.Axis(Key.A, Key.D) + GameInput.Axis(Key.LeftArrow, Key.RightArrow), -1f, 1f);
+        bool  spaceHeld = GameInput.Held(Key.Space);
         bool  handbrake = spaceHeld || IsKO;
 
         // Braquage lissé → roues avant (indices 0,1). Alimente aussi le visuel des roues.

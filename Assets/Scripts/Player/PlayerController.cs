@@ -19,6 +19,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Networking;
 using Action = Sim.Interactables.Action;
+using Key = UnityEngine.InputSystem.Key;
 using Random = UnityEngine.Random;
 
 namespace Sim {
@@ -71,12 +72,14 @@ namespace Sim {
         // Visée arme (PlayerShooter sur le même root) — ralentit la marche et coupe la course.
         private PlayerShooter playerShooter;
 
-        [Header("Keyboard movement (ZQSD)")]
-        [SerializeField] private KeyCode forwardKey = KeyCode.Z;
-        [SerializeField] private KeyCode backKey = KeyCode.S;
-        [SerializeField] private KeyCode leftKey = KeyCode.Q;
-        [SerializeField] private KeyCode rightKey = KeyCode.D;
-        [SerializeField] private KeyCode runKey = KeyCode.LeftShift;
+        // Nouveau Input System : Key = POSITION PHYSIQUE (W/A/S/D = ZQSD sur clavier AZERTY),
+        // indépendant du layout — contrairement au KeyCode legacy (mapping US-QWERTY des lettres).
+        [Header("Keyboard movement (physical WASD = ZQSD en AZERTY)")]
+        [SerializeField] private Key forwardKey = Key.W;
+        [SerializeField] private Key backKey = Key.S;
+        [SerializeField] private Key leftKey = Key.A;
+        [SerializeField] private Key rightKey = Key.D;
+        [SerializeField] private Key runKey = Key.LeftShift;
 
         [Header("TPS movement (Starter Assets feel)")]
         [Tooltip("Temps de lissage (s) de la rotation du corps vers la direction de déplacement en mode TPS (SmoothDampAngle, valeur Starter Assets).")]
@@ -101,7 +104,7 @@ namespace Sim {
 
         [Header("TPS jump (Starter Assets values)")]
         [Tooltip("Touche de saut en mode TPS.")]
-        [SerializeField] private KeyCode jumpKey = KeyCode.Space;
+        [SerializeField] private Key jumpKey = Key.Space;
         [Tooltip("Hauteur de saut (m) — Starter Assets : 1.2.")]
         [SerializeField] private float tpsJumpHeight = 1.2f;
         [Tooltip("Délai (s) avant de pouvoir resauter après un atterrissage — Starter Assets : 0.5.")]
@@ -410,10 +413,7 @@ namespace Sim {
             // spawn (débranche aussi l'agent NavMesh au profit du CharacterController).
             CameraManager.Instance.SetCurrentMode(CameraModeEnum.TPS);
             HUDManager.Instance.DisplayPanel(PanelTypeEnum.DEFAULT);
-            CharacterInfoPanelUI.Instance.Setup(this.characterData);
-            CharacterInfoPanelUI.Instance.Setup(this.characterHome);
-            CharacterInfoPanelUI.Instance.UpdateHealthUI(this.playerHealth.Health);
-            CharacterInfoPanelUI.Instance.UpdateMoney(this.playerBankAccount.Money);
+            PlayerStatsUI.Instance.UpdateStats(this.playerHealth.Health);
 
             // Hydrate the local relationship store so hover names are gated correctly.
             if (!string.IsNullOrEmpty(this.characterData?.Id)) {
@@ -644,6 +644,8 @@ namespace Sim {
 
         public PlayerHands PlayerHands => playerHands;
 
+        public PlayerBankAccount PlayerBankAccount => playerBankAccount;
+
         [Server]
         public void SetRawCharacterData(string data) {
             this.rawCharacterData = data;
@@ -743,9 +745,6 @@ namespace Sim {
 
         public void ParseCharacterHome(string old, string newValue) {
             this.characterHome = string.IsNullOrEmpty(newValue) ? null : JsonUtility.FromJson<Home>(newValue);
-            if (isLocalPlayer && CharacterInfoPanelUI.Instance != null) {
-                CharacterInfoPanelUI.Instance.Setup(this.characterHome);
-            }
         }
 
         private void Update() {
@@ -759,7 +758,7 @@ namespace Sim {
 
             // Voice push-to-talk indicator: the talking bubble follows the same "V" key
             // used by VoiceRoomAdapter to transmit voice.
-            bool talkKeyHeld = Input.GetKey(KeyCode.V);
+            bool talkKeyHeld = GameInput.Held(Key.V);
             if (!this.isTalking && talkKeyHeld) {
                 this.CmdSetTalk(true);
                 this.bubbleUI.SetVoiceBubbleVisibility(true);
@@ -770,7 +769,7 @@ namespace Sim {
 
             // T opens the text-chat panel — but not while the player is typing in a text
             // field (chat, shop search, price input…), otherwise typing "t" would open chat.
-            if (Input.GetKeyDown(KeyCode.T) && !IsTypingInInputField() && HUDManager.Instance != null) {
+            if (GameInput.Down(Key.T) && !IsTypingInInputField() && HUDManager.Instance != null) {
                 HUDManager.Instance.ShowChatInput();
             }
         }
@@ -1058,7 +1057,7 @@ namespace Sim {
             }
 
             this.stateMachine.SetState(moveState);
-            this.navMeshAgent.speed = (isRunning ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier();
+            this.navMeshAgent.speed = (isRunning ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier() * EnergyMoveSpeedMultiplier();
             this.navMeshAgent.SetDestination(targetPoint);
 
             HUDManager.Instance.CloseInventory();
@@ -1091,15 +1090,24 @@ namespace Sim {
             return Sim.Constellation.ConstellationPerks.MoveSpeedMultiplier(provider.State.IsUnlocked);
         }
 
+        // Fraction de la vitesse de déplacement restante quand l'énergie est à 0 : le
+        // joueur épuisé se traîne (−80 %). Lu sur le SyncVar de PlayerHealth, donc
+        // disponible côté owner qui pilote le mouvement.
+        private const float ExhaustedSpeedMultiplier = 0.2f;
+
+        private float EnergyMoveSpeedMultiplier() {
+            return this.playerHealth != null && this.playerHealth.IsExhausted ? ExhaustedSpeedMultiplier : 1f;
+        }
+
         // ── Déplacement clavier direct (ZQSD) — expérimental ─────────────────────────
 
         /// <summary>Lit l'axe directionnel ZQSD brut : x = D(droite) − Q(gauche), y = Z(avant) − S(arrière).</summary>
         public Vector2 ReadMoveAxis() {
             float x = 0f, y = 0f;
-            if (Input.GetKey(forwardKey)) y += 1f;
-            if (Input.GetKey(backKey)) y -= 1f;
-            if (Input.GetKey(rightKey)) x += 1f;
-            if (Input.GetKey(leftKey)) x -= 1f;
+            if (GameInput.Held(forwardKey)) y += 1f;
+            if (GameInput.Held(backKey)) y -= 1f;
+            if (GameInput.Held(rightKey)) x += 1f;
+            if (GameInput.Held(leftKey)) x -= 1f;
             return new Vector2(x, y);
         }
 
@@ -1229,7 +1237,7 @@ namespace Sim {
 
                 // Saut : seulement curseur verrouillé (pas de saut en tapant Espace dans une UI).
                 if (this.tpsJumpTimeoutDelta <= 0f
-                    && Input.GetKey(this.jumpKey)
+                    && GameInput.Held(this.jumpKey)
                     && Cursor.lockState == CursorLockMode.Locked
                     && !IsTypingInInputField()) {
                     // Vitesse verticale nécessaire pour atteindre la hauteur voulue : v = √(h × -2g).
@@ -1299,8 +1307,8 @@ namespace Sim {
 
             // Visée arme : course coupée et marche ralentie (précision + immersion).
             bool aimingWeapon = this.playerShooter != null && this.playerShooter.IsAiming;
-            bool running = !aimingWeapon && Input.GetKey(runKey);
-            float targetSpeed = (running ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier();
+            bool running = !aimingWeapon && GameInput.Held(runKey);
+            float targetSpeed = (running ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier() * EnergyMoveSpeedMultiplier();
             if (aimingWeapon) targetSpeed *= this.aimWalkFactor;
 
             // Feel Starter Assets : la vitesse accélère/décélère progressivement au lieu de

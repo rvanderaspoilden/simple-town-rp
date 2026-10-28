@@ -3,7 +3,9 @@ using Mirror;
 using Sim.Enums;
 using Sim.Logging;
 using Sim.UI;
+using Sim.Utils;
 using UnityEngine;
+using Key = UnityEngine.InputSystem.Key;
 
 namespace Sim {
     /// <summary>
@@ -83,7 +85,7 @@ namespace Sim {
 
         [Header("Munitions & rechargement")]
         [Tooltip("Touche de rechargement : consomme une boîte de munitions de la famille de l'arme (poche puis sac tenu) et remplit le chargeur après WeaponConfig.reloadDuration. Un clic de tir à vide recharge aussi.")]
-        [SerializeField] private KeyCode reloadKey = KeyCode.R;
+        [SerializeField] private Key reloadKey = Key.R;
 
         [Header("Recul")]
         [Tooltip("Angle (deg) du kick du canon vers le haut au tir.")]
@@ -209,7 +211,7 @@ namespace Sim {
             this.UpdateTargetLock(this.CanAim());
 
             // Rechargement manuel (R) — mêmes gardes que le tir (arme tenue, TPS, curseur verrouillé).
-            if (this.CanAim() && Input.GetKeyDown(this.reloadKey)) this.TryStartReload();
+            if (this.CanAim() && GameInput.Down(this.reloadKey)) this.TryStartReload();
 
             // Tir possible même SANS viser (hip fire) tant que l'état le permet : l'arme est
             // d'abord LEVÉE en posture de visée (fenêtre hipPostureUntil consommée par
@@ -705,6 +707,12 @@ namespace Sim {
                 end = origin + direction * best;
                 hitNormal = -direction;
                 surfaceHit = false; // pas de décal d'impact sur un personnage
+                // Dégâts PV : le joueur touché perd des points de vie (létal à 0). Les PNJ
+                // n'ont pas de système de PV en V1 — ils sont seulement renversés.
+                if (hitPlayer != null) {
+                    PlayerHealth hitHealth = hitPlayer.GetComponent<PlayerHealth>();
+                    if (hitHealth != null) hitHealth.ApplyWeaponDamage(cfg.Damage);
+                }
                 bool knocked = hitPlayer != null ? hitPlayer.ServerKnockDown() : hitNpc.ServerKnockDown();
                 GameLogger.Player.Info("CharacterShot {ShooterNetId} {Target} {Knocked}",
                     netId, hitPlayer != null ? "player:" + hitPlayer.netId : "npc:" + hitNpc.OccupantId, knocked);

@@ -78,10 +78,6 @@ public class PlayerBankAccount : NetworkBehaviour {
 
             OnLocalMoneyChanged?.Invoke(newAmount);
         }
-
-        if (!CharacterInfoPanelUI.Instance) return;
-
-        CharacterInfoPanelUI.Instance.UpdateMoney(this.money);
     }
 
     private IEnumerator PostLedgerCoroutine(PostLedgerBody body) {

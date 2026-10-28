@@ -29,6 +29,8 @@ MonoBehaviour:
   movable: 1
   rangeToInteract: 1
   rightClickOnly: 0
+  hasQuickAction: 1
+  quickAction: 15
   actions:
   - {fileID: 11400000, guid: b9dab5efe24ed7e478a5549ec5c52858, type: 2}
   unbuiltActions: []
@@ -40,6 +42,10 @@ MonoBehaviour:
     slotCount: 0
     acceptedTypes: 
     acceptsProps: 0
+    openClip: {fileID: 0}
+    closeClip: {fileID: 0}
+    allowsNestedContainers: 0
+    wearable: 0
   itemsToSell:
   - item: {fileID: 11400000, guid: efce2a51cd3b7d345a7d2eac4a233b08, type: 2}
     price: 4
