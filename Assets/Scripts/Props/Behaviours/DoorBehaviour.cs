@@ -28,6 +28,9 @@ public class DoorBehaviour : PropBehaviourBase {
     [Header("Door")]
     [SerializeField] private Transform       doorBody;
     [SerializeField] private Vector3         openedLocalRotation = new Vector3(0, -90, 0);
+    [Tooltip("Optional second leaf for double doors. Left null for single-leaf doors.")]
+    [SerializeField] private Transform       secondaryDoorBody;
+    [SerializeField] private Vector3         secondaryOpenedLocalRotation = new Vector3(0, 90, 0);
     [SerializeField] private NavMeshObstacle navMeshObstacle;
     [SerializeField] private TextMeshPro     numberTxt;
 
@@ -98,13 +101,16 @@ public class DoorBehaviour : PropBehaviourBase {
         if (_isOpen != state.IsOpen) {
             _isOpen = state.IsOpen;
             doorBody?.DOComplete();
+            secondaryDoorBody?.DOComplete();
 
             if (_isOpen) {
                 if (audioSource != null && openClip != null) audioSource.PlayOneShot(openClip);
                 doorBody?.DOLocalRotate(openedLocalRotation, .3f);
+                secondaryDoorBody?.DOLocalRotate(secondaryOpenedLocalRotation, .3f);
             } else {
                 if (audioSource != null && closeClip != null) audioSource.PlayOneShot(closeClip);
                 doorBody?.DOLocalRotate(Vector3.zero, .3f);
+                secondaryDoorBody?.DOLocalRotate(Vector3.zero, .3f);
             }
         }
 
