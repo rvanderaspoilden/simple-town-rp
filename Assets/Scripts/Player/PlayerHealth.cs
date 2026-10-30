@@ -22,8 +22,8 @@ public class PlayerHealth : NetworkBehaviour {
 
     // Hit points. Death is driven by this alone: starvation/dehydration (hunger or
     // thirst at 0) drains it over time, weapon hits subtract from it, and it slowly
-    // regenerates while the player is well-fed. Energy (tiredness) at 0 no longer
-    // kills — it only slows movement (see PlayerController.EnergyMoveSpeedMultiplier).
+    // regenerates while the player is well-fed. The "energy" HUD bar is now a local
+    // stamina gauge driven by PlayerController (running/jumping), unrelated to this.
     [SyncVar(hook = nameof(OnHealthChanged))]
     [SerializeField]
     private float pv;
@@ -42,10 +42,6 @@ public class PlayerHealth : NetworkBehaviour {
     private const float FedThreshold = 15f;
 
     private PlayerController _playerController;
-
-    /// <summary>Energy depleted: the player is exhausted and moves at a fraction of the
-    /// normal speed. Read on every client (SyncVar) so the owner can apply the penalty.</summary>
-    public bool IsExhausted => this.tiredness <= 0f;
 
     private void Awake() {
         this._playerController = GetComponent<PlayerController>();

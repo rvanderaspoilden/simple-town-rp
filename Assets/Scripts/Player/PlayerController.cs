@@ -112,6 +112,45 @@ namespace Sim {
         [Tooltip("Délai (s) en l'air avant de passer en chute libre (anim InAir) — évite le flicker dans les escaliers. Starter Assets : 0.15.")]
         [SerializeField] private float tpsFallTimeout = 0.15f;
 
+        [Header("TPS crouch")]
+        [Tooltip("Touche d'accroupissement (toggle) en mode TPS à pied. Espace relève aussi.")]
+        [SerializeField] private Key crouchKey = Key.C;
+        [Tooltip("Vitesse de déplacement accroupi (m/s) — doit matcher le threshold du blend tree Crouch.")]
+        [SerializeField] private float crouchSpeed = 1.5f;
+        [Tooltip("Hauteur du CharacterController accroupi (m) ; les valeurs debout sont lues au démarrage.")]
+        [SerializeField] private float crouchControllerHeight = 1.2f;
+
+        [Header("Stamina (endurance)")]
+        [Tooltip("Endurance maximale (0-100). La barre se remplit à l'arrêt, se vide en courant et à chaque saut.")]
+        [SerializeField] private float maxStamina = 100f;
+        [Tooltip("Endurance consommée par seconde pendant la course.")]
+        [SerializeField] private float staminaRunDrainPerSecond = 20f;
+        [Tooltip("Endurance consommée à chaque saut.")]
+        [SerializeField] private float staminaJumpCost = 15f;
+        [Tooltip("Endurance régénérée par seconde quand le joueur est immobile.")]
+        [SerializeField] private float staminaRegenPerSecond = 15f;
+        [Tooltip("Délai (s) sans dépense avant que la régénération ne reprenne.")]
+        [SerializeField] private float staminaRegenDelay = 1f;
+
+        // Endurance locale (owner uniquement) : ressource de mouvement transitoire, non
+        // persistée et non répliquée — la course et le saut sont déjà pilotés côté owner.
+        private float stamina;
+        private float staminaRegenCooldown;
+        // Positionné chaque frame par TickFreeMove pour que TickStamina sache si le joueur
+        // court activement (remis à false en tête d'Update).
+        private bool freeMoveRunningThisFrame;
+
+        /// <summary>Endurance restante ? La course n'est permise que tant qu'il reste de
+        /// l'endurance ; à 0 le joueur retombe en marche.</summary>
+        public bool CanRun => this.stamina > 0f;
+
+        /// <summary>Assez d'endurance pour sauter (le saut coûte un montant fixe).</summary>
+        public bool CanJump => this.stamina >= this.staminaJumpCost;
+
+        // Valeurs debout du CharacterController, capturées dans Awake pour restaurer au relevage.
+        private float standControllerHeight;
+        private Vector3 standControllerCenter;
+
         // Mode TPS : le joueur est piloté par ce CharacterController (physique, non relié
         // à la NavMesh) ; le NavMeshAgent ne sert plus qu'aux déplacements scriptés (bots).
         private CharacterController characterController;
@@ -167,6 +206,14 @@ namespace Sim {
         // RpcKnockdown. Recovery automatique côté serveur après KnockdownDuration.
         [SyncVar(hook = nameof(OnKnockdownChanged))]
         private bool isKnockedDown;
+
+        // Accroupi : posé par l'owner (toggle), répliqué pour les copies distantes et les
+        // late-joiners (le NetworkAnimator réplique aussi le bool Crouch, mais le hook
+        // pilote en plus la capsule et couvre le spawn tardif).
+        [SyncVar(hook = nameof(OnCrouchChanged))]
+        private bool isCrouching;
+
+        public bool IsCrouching => isCrouching;
 
         /// <summary>Le joueur est-il actuellement renversé ? Consommé par CameraManager pour
         /// neutraliser le click-to-move / l'interaction (comme IsDriving).</summary>
@@ -366,6 +413,11 @@ namespace Sim {
             this.ragdoll = GetComponent<RagdollController>();
             this.playerShooter = GetComponent<PlayerShooter>();
             this._navPathScratch = new NavMeshPath();
+
+            if (this.characterController != null) {
+                this.standControllerHeight = this.characterController.height;
+                this.standControllerCenter = this.characterController.center;
+            }
         }
 
         public override void OnStartClient() {
@@ -400,6 +452,8 @@ namespace Sim {
             ClientLogger.Player("LocalPlayerStart {NetId} {CharacterName}", netId, characterData?.Identity.FullName ?? "unknown");
             
             this.InitStateMachine();
+
+            this.stamina = this.maxStamina;
 
             if (this._playerState == PlayerState.DIED) {
                 this.stateMachine.SetState(dieState);
@@ -750,11 +804,19 @@ namespace Sim {
         private void Update() {
             if (!isLocalPlayer || this.stateMachine == null) return;
 
+            // Remis à false avant les ticks de mouvement : TickFreeMove le repositionne à
+            // true uniquement quand le joueur court réellement cette frame.
+            this.freeMoveRunningThisFrame = false;
+
             this.HandleKeyboardMovementEntry();
+
+            this.HandleCrouchToggle();
 
             this.stateMachine.Tick();
 
             this.TickTpsGravity();
+
+            this.TickStamina();
 
             // Voice push-to-talk indicator: the talking bubble follows the same "V" key
             // used by VoiceRoomAdapter to transmit voice.
@@ -1057,7 +1119,7 @@ namespace Sim {
             }
 
             this.stateMachine.SetState(moveState);
-            this.navMeshAgent.speed = (isRunning ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier() * EnergyMoveSpeedMultiplier();
+            this.navMeshAgent.speed = (isRunning ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier();
             this.navMeshAgent.SetDestination(targetPoint);
 
             HUDManager.Instance.CloseInventory();
@@ -1090,13 +1152,31 @@ namespace Sim {
             return Sim.Constellation.ConstellationPerks.MoveSpeedMultiplier(provider.State.IsUnlocked);
         }
 
-        // Fraction de la vitesse de déplacement restante quand l'énergie est à 0 : le
-        // joueur épuisé se traîne (−80 %). Lu sur le SyncVar de PlayerHealth, donc
-        // disponible côté owner qui pilote le mouvement.
-        private const float ExhaustedSpeedMultiplier = 0.2f;
+        /// <summary>Régénère / consomme l'endurance du joueur local et pousse la valeur à
+        /// la barre « énergie » de l'HUD. Appelée chaque frame après les ticks de mouvement :
+        /// course = drain, immobile = régénération (après un court délai), marche = statu quo.
+        /// Le coût du saut est prélevé directement dans TickTpsGravity.</summary>
+        private void TickStamina() {
+            float dt = Time.deltaTime;
+            bool moving = this.tpsCurrentSpeed > 0.1f;
 
-        private float EnergyMoveSpeedMultiplier() {
-            return this.playerHealth != null && this.playerHealth.IsExhausted ? ExhaustedSpeedMultiplier : 1f;
+            if (this.freeMoveRunningThisFrame && moving) {
+                // Seule la course vide l'endurance.
+                this.stamina = Mathf.Max(0f, this.stamina - this.staminaRunDrainPerSecond * dt);
+                this.staminaRegenCooldown = this.staminaRegenDelay;
+            } else {
+                // Immobile ou en marche : la barre se remplit (après le délai anti-régénération immédiate).
+                if (this.staminaRegenCooldown > 0f) {
+                    this.staminaRegenCooldown -= dt;
+                } else {
+                    this.stamina = Mathf.Min(this.maxStamina, this.stamina + this.staminaRegenPerSecond * dt);
+                }
+            }
+
+            if (PlayerStatsUI.Instance != null) {
+                float value = this.maxStamina > 0f ? this.stamina / this.maxStamina * CommonConstants.MAX_BAR_AMOUNT : 0f;
+                PlayerStatsUI.Instance.SetEnergy(value);
+            }
         }
 
         // ── Déplacement clavier direct (ZQSD) — expérimental ─────────────────────────
@@ -1149,6 +1229,52 @@ namespace Sim {
             // build chronométré, click-to-move…) : l'entrée en déplacement déclenche leurs OnExit
             // (StopInteraction, annulation du build, fermeture du radial via Idle.OnExit).
             this.stateMachine.SetState(freeMoveState);
+        }
+
+        // ── Accroupissement (TPS à pied uniquement) ──────────────────────────────────
+
+        /// <summary>Toggle crouch du joueur local : seulement en TPS à pied (CharacterController
+        /// actif), curseur verrouillé, hors frappe UI, knockdown, conduite et mort.</summary>
+        private void HandleCrouchToggle() {
+            if (!GameInput.Down(this.crouchKey)) return;
+            if (Cursor.lockState != CursorLockMode.Locked || IsTypingInInputField()) return;
+            if (this.isKnockedDown || this.IsDriving || this.IsPassenger) return;
+            if (this._playerState == PlayerState.DIED) return;
+            if (this.characterController == null || !this.characterController.enabled) return;
+
+            this.SetCrouch(!this.isCrouching);
+        }
+
+        /// <summary>Pose l'état accroupi côté owner : anim + capsule immédiates (prédiction),
+        /// puis réplication via le SyncVar. Les copies distantes passent par le hook.</summary>
+        private void SetCrouch(bool value) {
+            if (!isLocalPlayer || this.isCrouching == value) return;
+            this.animator.SetCrouch(value);
+            this.ApplyCrouchCapsule(value);
+            this.CmdSetCrouch(value);
+        }
+
+        [Command]
+        private void CmdSetCrouch(bool value) {
+            this.isCrouching = value;
+        }
+
+        private void OnCrouchChanged(bool _, bool newValue) {
+            // L'owner a déjà appliqué localement (prédiction) ; seules les copies
+            // distantes rejouent l'anim et la capsule ici.
+            if (isLocalPlayer) return;
+            this.animator.SetCrouch(newValue);
+            this.ApplyCrouchCapsule(newValue);
+        }
+
+        /// <summary>Abaisse/restaure le CharacterController en gardant les pieds au sol
+        /// (le centre descend de la moitié de la différence de hauteur).</summary>
+        private void ApplyCrouchCapsule(bool crouched) {
+            if (this.characterController == null || this.standControllerHeight <= 0f) return;
+            float height = crouched ? this.crouchControllerHeight : this.standControllerHeight;
+            this.characterController.height = height;
+            this.characterController.center = this.standControllerCenter
+                + Vector3.down * ((this.standControllerHeight - height) * 0.5f);
         }
 
         // ── Locomotion : NavMeshAgent (build/bots) ↔ CharacterController (TPS) ───────
@@ -1211,6 +1337,9 @@ namespace Sim {
                     this.animator.SetJump(false);
                     this.animator.SetFreeFall(false);
                 }
+                // Quitter le TPS à pied (sit, drive, build, téléport…) relève toujours :
+                // aucun de ces états ne se joue accroupi.
+                if (isLocalPlayer) this.SetCrouch(false);
             }
         }
 
@@ -1240,9 +1369,18 @@ namespace Sim {
                     && GameInput.Held(this.jumpKey)
                     && Cursor.lockState == CursorLockMode.Locked
                     && !IsTypingInInputField()) {
-                    // Vitesse verticale nécessaire pour atteindre la hauteur voulue : v = √(h × -2g).
-                    this.tpsVerticalVelocity = Mathf.Sqrt(this.tpsJumpHeight * -2f * this.tpsGravity);
-                    this.animator.SetJump(true);
+                    if (this.isCrouching) {
+                        // Accroupi : Espace relève au lieu de sauter.
+                        this.SetCrouch(false);
+                    } else if (this.CanJump) {
+                        // Vitesse verticale nécessaire pour atteindre la hauteur voulue : v = √(h × -2g).
+                        this.tpsVerticalVelocity = Mathf.Sqrt(this.tpsJumpHeight * -2f * this.tpsGravity);
+                        this.animator.SetJump(true);
+                        // Le saut consomme de l'endurance et repousse la régénération.
+                        this.stamina = Mathf.Max(0f, this.stamina - this.staminaJumpCost);
+                        this.staminaRegenCooldown = this.staminaRegenDelay;
+                    }
+                    // Endurance insuffisante : le saut ne se déclenche pas.
                 }
 
                 if (this.tpsJumpTimeoutDelta >= 0f) {
@@ -1306,10 +1444,14 @@ namespace Sim {
             }
 
             // Visée arme : course coupée et marche ralentie (précision + immersion).
+            // Accroupi : vitesse dédiée, course coupée.
             bool aimingWeapon = this.playerShooter != null && this.playerShooter.IsAiming;
-            bool running = !aimingWeapon && GameInput.Held(runKey);
-            float targetSpeed = (running ? runSpeed : walkSpeed) * MoveSpeedPerkMultiplier() * EnergyMoveSpeedMultiplier();
-            if (aimingWeapon) targetSpeed *= this.aimWalkFactor;
+            // La course exige de l'endurance : épuisé, le joueur retombe automatiquement en marche.
+            bool running = !aimingWeapon && !this.isCrouching && GameInput.Held(runKey) && this.CanRun;
+            this.freeMoveRunningThisFrame = running;
+            float baseSpeed = this.isCrouching ? this.crouchSpeed : (running ? runSpeed : walkSpeed);
+            float targetSpeed = baseSpeed * MoveSpeedPerkMultiplier();
+            if (aimingWeapon && !this.isCrouching) targetSpeed *= this.aimWalkFactor;
 
             // Feel Starter Assets : la vitesse accélère/décélère progressivement au lieu de
             // sauter instantanément entre marche et course (bande de snap 0.1 comme chez eux).

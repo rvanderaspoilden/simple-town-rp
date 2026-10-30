@@ -26,6 +26,7 @@ namespace Sim {
         private int groundedHash;
         private int jumpHash;
         private int freeFallHash;
+        private int crouchHash;
         private int moodHash;
         private int actionHash;
         private int rightHandPoseHash;
@@ -40,6 +41,7 @@ namespace Sim {
             this.groundedHash = Animator.StringToHash("Grounded");
             this.jumpHash = Animator.StringToHash("Jump");
             this.freeFallHash = Animator.StringToHash("FreeFall");
+            this.crouchHash = Animator.StringToHash("Crouch");
             this.moodHash = Animator.StringToHash("MoodType");
             this.actionHash = Animator.StringToHash("Action");
             this.rightHandPoseHash = Animator.StringToHash("RightHandPose");
@@ -63,6 +65,11 @@ namespace Sim {
 
         public void SetFreeFall(bool value) {
             this.animator.SetBool(freeFallHash, value);
+        }
+
+        /// <summary>Accroupi (état Crouch du Base Layer, locomotion Goblin Synty).</summary>
+        public void SetCrouch(bool value) {
+            this.animator.SetBool(crouchHash, value);
         }
 
         public void SetMood(float value) {

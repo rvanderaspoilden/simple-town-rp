@@ -54,7 +54,23 @@ namespace Sim.UI {
             this.SetBar(this.healthSlider, this._healthSequence, health.Pv);
             this.SetBar(this.hungrySlider, this._hungrySequence, health.Hungry);
             this.SetBar(this.thirstSlider, this._thirstSequence, health.Thirst);
-            this.SetBar(this.energySlider, this._energySequence, health.Sleep);
+            // L'énergie n'est plus pilotée par la santé : c'est désormais une barre
+            // d'endurance locale mise à jour par PlayerController (voir SetEnergy).
+        }
+
+        /// <summary>Met à jour la barre d'endurance (0-100). Pilotée chaque frame par
+        /// PlayerController (owner local), donc sans tween — la valeur arrive déjà lissée —
+        /// pour éviter d'empiler des tweens DOTween à chaque frame.</summary>
+        public void SetEnergy(float value) {
+            if (this.energySlider == null) return;
+
+            this.energySlider.value = value / CommonConstants.MAX_BAR_AMOUNT;
+
+            if (value <= this.alertThreshold) {
+                this._energySequence.Play();
+            } else {
+                this._energySequence.Pause();
+            }
         }
 
         private void SetBar(Slider slider, Sequence alertSequence, float value) {
