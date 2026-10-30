@@ -41,12 +41,16 @@ namespace Sim {
         [SerializeField] private float interactLongPressDuration = 0.35f;
         [Tooltip("Touche pour lâcher immédiatement l'item tenu en main (action DROP de l'item). Position physique (nouveau Input System) : Key.Q = coin haut-gauche = touche étiquetée « A » sur clavier AZERTY — hors du cluster de déplacement sur tous les layouts.")]
         [SerializeField] private Key dropHeldItemKey = Key.Q;
-        [Tooltip("Portée (m) du raycast crosshair centre-écran (nommage/outline). Le gate réel d'interaction reste CanInteractWith : portée de la config du prop/item + ligne de vue.")]
+        [Tooltip("Portée (m) du raycast crosshair centre-écran (nommage sous le réticule). L'outline et l'interaction sont gatés ensemble par CanInteractWith : portée de la config du prop/item + ligne de vue.")]
         [SerializeField] private float crosshairMaxDistance = 30f;
         [Tooltip("Rayon (m) du SphereCast d'aim-assist quand le ray exact ne touche rien d'interactable. 0 = désactivé.")]
         [SerializeField] private float crosshairAimAssistRadius = 0.25f;
         [Tooltip("Portée (m, plan XZ) pour ouvrir le menu contextuel d'un joueur distant visé au crosshair.")]
         [SerializeField] private float crosshairPlayerRange = 4f;
+        [Tooltip("Rayon (m) de détection de proximité : un prop/item physiquement devant le joueur est actionnable même sans visée précise (portée config + ligne de vue toujours respectées). 0 = désactivé.")]
+        [SerializeField] private float proximityInteractRadius = 2.5f;
+        [Tooltip("Demi-angle (°) du cône « devant le joueur » pour la détection de proximité (ignoré pour une cible quasiment sous le joueur).")]
+        [SerializeField] private float proximityInteractMaxAngle = 75f;
         [Tooltip("Maintenir cette touche libère le curseur pour interagir avec l'UI (la caméra et le crosshair sont suspendus pendant l'appui).")]
         [SerializeField] private Key freeCursorKey = Key.LeftAlt;
 
@@ -219,21 +223,39 @@ namespace Sim {
             string hoverName = null;
             bool canInteract = false;
 
+            // Une interaction est déjà en cours (state INTERACTING) : on n'en propose pas
+            // une nouvelle — pas de prompt « Interagir », pas d'outline, E inactif (prompt,
+            // outline et interaction restent liés). La cible reste seulement nommée.
+            bool alreadyInteracting = PlayerController.Local.PlayerState == PlayerState.INTERACTING;
+
             if (interactable != null) {
-                GameObject host = interactable.transform.gameObject;
-                outlineTarget = host.GetComponent<HoverOutline>();
-                if (outlineTarget == null) outlineTarget = host.AddComponent<HoverOutline>();
                 hoverName = this.ResolveHoverName(targetCollider);
-                // Viser cible, mais la distance d'interaction reste la portée définie dans la
-                // config du prop/item (PropsConfig.rangeToInteract / ItemConfig.rangeToInteract)
+                // La distance d'interaction reste la portée définie dans la config du
+                // prop/item (PropsConfig.rangeToInteract / ItemConfig.rangeToInteract)
                 // via CanInteractWith (portée + ligne de vue), revalidée serveur.
-                canInteract = PlayerController.Local.CanInteractWith(interactable, targetPoint);
+                canInteract = !alreadyInteracting && this.CanReach(interactable, targetCollider, targetPoint);
             } else if (remotePlayer != null) {
-                GameObject host = remotePlayer.gameObject;
+                hoverName = this.ResolveHoverName(targetCollider);
+                canInteract = !alreadyInteracting && WithinPlanarRange(PlayerController.Local.transform.position, remotePlayer.transform.position, this.crosshairPlayerRange);
+            }
+
+            // Pas de cible actionnable à la visée → repli proximité : un prop/item
+            // physiquement devant le joueur reste actionnable sans visée précise.
+            if (!canInteract && !alreadyInteracting
+                && this.TryFindProximityInteractable(out IInteractable proximity, out Collider proximityCollider)) {
+                interactable = proximity;
+                remotePlayer = null;
+                targetCollider = proximityCollider;
+                hoverName = this.ResolveHoverName(proximityCollider);
+                canInteract = true;
+            }
+
+            // Outline et interaction sont liés : la silhouette n'apparaît que si la
+            // cible est réellement actionnable — hors portée, elle est seulement nommée.
+            if (canInteract) {
+                GameObject host = interactable != null ? interactable.transform.gameObject : remotePlayer.gameObject;
                 outlineTarget = host.GetComponent<HoverOutline>();
                 if (outlineTarget == null) outlineTarget = host.AddComponent<HoverOutline>();
-                hoverName = this.ResolveHoverName(targetCollider);
-                canInteract = WithinPlanarRange(PlayerController.Local.transform.position, remotePlayer.transform.position, this.crosshairPlayerRange);
             }
 
             if (outlineTarget != this._hoveredOutline) {
@@ -409,6 +431,63 @@ namespace Sim {
 
         private static bool WithinPlanarRange(Vector3 a, Vector3 b, float range) {
             return Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z)) <= range;
+        }
+
+        /// <summary>Cible visée actionnable ? Deux sondes passées à CanInteractWith (portée
+        /// config + ligne de vue, revalidé serveur) : le point visé exact, puis le point du
+        /// collider le plus proche du joueur — un grand prop adjacent reste ainsi actionnable
+        /// même quand le point visé est sur sa face lointaine (portée mesurée au plus près).</summary>
+        private bool CanReach(IInteractable target, Collider col, Vector3 aimedPoint) {
+            if (PlayerController.Local.CanInteractWith(target, aimedPoint)) return true;
+            if (col == null) return false;
+            Vector3 closest = col.ClosestPointOnBounds(PlayerController.Local.transform.position);
+            return PlayerController.Local.CanInteractWith(target, closest);
+        }
+
+        // Buffer réutilisé par la détection de proximité (pas d'alloc par frame).
+        private static readonly Collider[] ProximityBuffer = new Collider[32];
+
+        /// <summary>Repli de proximité : meilleur interactable (prop/item — jamais un joueur ou
+        /// un PNJ, qui restent ciblés à la visée) physiquement devant le joueur local. Chaque
+        /// candidat est validé par CanInteractWith depuis son point de collider le plus proche
+        /// (portée de SA config + ligne de vue) ; le plus proche en distance planaire gagne.</summary>
+        private bool TryFindProximityInteractable(out IInteractable best, out Collider bestCollider) {
+            best = null;
+            bestCollider = null;
+            if (this.proximityInteractRadius <= 0f || PlayerController.Local == null) return false;
+
+            Vector3 playerPos = PlayerController.Local.transform.position;
+            Vector3 forward = Vector3.ProjectOnPlane(PlayerController.Local.transform.forward, Vector3.up).normalized;
+
+            int count = Physics.OverlapSphereNonAlloc(playerPos + Vector3.up * 0.9f, this.proximityInteractRadius,
+                ProximityBuffer, this.InteractionMask, QueryTriggerInteraction.Ignore);
+
+            float bestDist = float.MaxValue;
+            for (int i = 0; i < count; i++) {
+                Collider col = ProximityBuffer[i];
+                if (col == null || col.transform.IsChildOf(PlayerController.Local.transform)) continue;
+
+                IInteractable candidate = col.GetComponentInParent<IInteractable>();
+                if (!candidate.IsAlive() || !candidate.IsInteractable()) continue;
+                if (candidate is ClientNpcView || col.GetComponentInParent<PlayerController>() != null) continue;
+
+                Vector3 closest = col.ClosestPointOnBounds(playerPos);
+                Vector3 planar = Vector3.ProjectOnPlane(closest - playerPos, Vector3.up);
+                float dist = planar.magnitude;
+
+                // « Devant le joueur » : dans le cône avant — sauf cible quasiment sous
+                // le joueur (item au sol à ses pieds), où la direction n'a plus de sens.
+                if (dist > 0.5f && Vector3.Angle(forward, planar) > this.proximityInteractMaxAngle) continue;
+
+                if (dist >= bestDist) continue;
+                if (!PlayerController.Local.CanInteractWith(candidate, closest)) continue;
+
+                best = candidate;
+                bestCollider = col;
+                bestDist = dist;
+            }
+
+            return best != null;
         }
 
         /// <summary>

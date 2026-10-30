@@ -63,7 +63,14 @@ public class OutlineRendererFeature : ScriptableRendererFeature {
     }
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) {
-        if (_maskMaterial == null || _edgeMaterial == null) return;
+        // Shader.Find peut échouer lors du premier Create() (appelé pendant le chargement
+        // du pipeline, avant que la base de shaders soit prête — typiquement à l'entrée en
+        // play mode). Sans retry, les matériaux resteraient null pour toute la session et
+        // la passe ne serait jamais enregistrée : outline silencieusement absent en jeu.
+        if (_maskMaterial == null || _edgeMaterial == null) {
+            Create(); // retente Shader.Find et reconstruit la passe avec les matériaux
+            if (_maskMaterial == null || _edgeMaterial == null) return;
+        }
         var camType = renderingData.cameraData.cameraType;
         if (camType != CameraType.Game && camType != CameraType.SceneView) return;
         renderer.EnqueuePass(_pass);

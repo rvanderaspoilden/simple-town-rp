@@ -12,7 +12,6 @@ namespace AI.States {
 
         public CharacterInteract(PlayerController player) {
             this.player = player;
-            this.player.PlayerState = PlayerState.INTERACTING;
         }
 
         public IInteractable Interactable {
@@ -26,6 +25,11 @@ namespace AI.States {
         }
 
         public void OnEnter() {
+            // Posé à CHAQUE entrée (pas dans le constructeur, qui ne tourne qu'à l'init du
+            // state machine) : CameraManager s'appuie dessus pour couper prompt/outline/E
+            // pendant l'interaction.
+            this.player.PlayerState = PlayerState.INTERACTING;
+
             if (interactable.IsAlive()) {
                 this.player.LookAt(interactable.transform);
             }
