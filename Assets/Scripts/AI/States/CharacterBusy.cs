@@ -1,0 +1,54 @@
+using System;
+using Sim;
+using UnityEngine;
+
+namespace AI.States {
+    /// <summary>
+    /// État « occupé » générique : le joueur est engagé dans une action qui ouvre une UI
+    /// bloquante (distributeur ATM, fouille d'un cadavre / sac de butin…). Tant qu'il y est,
+    /// <see cref="PlayerState.BUSY"/> est posé — les systèmes d'input (hotbar, tir, mêlée)
+    /// s'en servent pour se neutraliser le temps de l'action.
+    ///
+    /// La SORTIE est pilotée par un prédicat <c>stillBusy</c> : dès qu'il devient faux (l'UI
+    /// s'est refermée par Échap, bouton, éloignement, inventaire fermé…), l'état se termine
+    /// tout seul (retour Idle) au Tick suivant. Aucun appel explicite de fin n'est donc requis
+    /// côté UI, ce qui couvre tous les chemins de fermeture.
+    ///
+    /// Pose faite à chaque entrée (pas dans le constructeur, qui ne tourne qu'à l'init de la
+    /// state machine) via <see cref="PlayerController.BeginBusy"/>.
+    /// </summary>
+    public class CharacterBusy : IState {
+        private readonly PlayerController player;
+
+        private Func<bool> stillBusy;
+        private Transform lookAt;
+
+        public CharacterBusy(PlayerController player) {
+            this.player = player;
+        }
+
+        /// <summary>Arme l'état avant la transition : prédicat de maintien + cible optionnelle
+        /// vers laquelle orienter le joueur (ex. l'ATM, le cadavre).</summary>
+        public void Configure(Func<bool> stillBusy, Transform lookAt) {
+            this.stillBusy = stillBusy;
+            this.lookAt = lookAt;
+        }
+
+        public void OnEnter() {
+            this.player.PlayerState = PlayerState.BUSY;
+            if (this.lookAt != null) this.player.LookAt(this.lookAt);
+        }
+
+        public void Tick() {
+            // L'UI déclencheuse s'est refermée (ou n'a jamais pris) → on quitte l'état occupé.
+            if (this.stillBusy == null || !this.stillBusy()) {
+                this.player.Idle();
+            }
+        }
+
+        public void OnExit() {
+            this.stillBusy = null;
+            this.lookAt = null;
+        }
+    }
+}

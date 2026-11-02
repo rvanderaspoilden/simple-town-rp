@@ -15,7 +15,10 @@ namespace Sim.NPC {
         EndDialogue = 1,
         /// <summary>Ferme le dialogue et ouvre la boutique du marchand (RequestMerchantCatalog).
         /// N'a de sens que si le NpcConfig porteur a un <c>merchant</c>.</summary>
-        OpenShop = 2
+        OpenShop = 2,
+        /// <summary>Ferme le dialogue et ouvre la boutique véhicules (RequestVehicleCatalog).
+        /// N'a de sens que si le NpcConfig porteur est un <see cref="VehicleVendorNpcConfig"/>.</summary>
+        OpenVehicleShop = 3
     }
 
     /// <summary>Une réponse proposée au joueur sur un nœud de dialogue.</summary>

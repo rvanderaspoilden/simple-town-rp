@@ -161,6 +161,21 @@ public class ContainerPanelUI : MonoBehaviour
     /// quick-moves doivent attendre.</summary>
     public bool IsOpen => !_loading && !string.IsNullOrEmpty(_currentPlaceId);
 
+    /// <summary>Grille effectivement affichée à l'écran (racine active dans la hiérarchie) —
+    /// vrai dès l'ouverture optimiste, contrairement à <see cref="IsOpen"/> qui attend le
+    /// snapshot serveur. Consommé par <see cref="IsPropLootOpen"/>.</summary>
+    private bool IsShowing => root != null && root.activeInHierarchy;
+
+    /// <summary>True tant que le joueur fouille via le canal Prop (cadavre PNJ, sac de butin,
+    /// coffre…) : grille Prop affichée ET inventaire ouvert. Source de vérité unique pour le
+    /// prédicat de maintien de l'état <c>CharacterBusy</c> (fouille) — couvre tous les chemins
+    /// de fermeture (Échap, bouton, inventaire refermé).</summary>
+    public static bool IsPropLootOpen() {
+        if (Prop == null || !Prop.IsShowing) return false;
+        var hud = HUDManager.Instance;
+        return hud != null && hud.InventoryUI != null && hud.InventoryUI.gameObject.activeSelf;
+    }
+
     /// <summary>UUID backend de la place conteneur en cours. Utilisé pour router un quick-move.</summary>
     public string PlaceId => _currentPlaceId;
 
@@ -419,6 +434,17 @@ public class ContainerPanelUI : MonoBehaviour
         OpenOptimisticCore(slotCount, colis.Configuration.Label, forceInventory: false);
         if (NetworkClient.isConnected)
             NetworkClient.Send(new C2S_OpenItemContainer { EntityId = colis.Identity.EntityId });
+    }
+
+    /// <summary>Ouverture optimiste GÉNÉRIQUE du canal Prop pour un conteneur SANS prop
+    /// (ex. fouille de cadavre) : affiche la grille en attente du S2C_ContainerOpened —
+    /// même flux que le coffre de véhicule. Un S2C_ContainerOpenFailed (PropId = 0)
+    /// referme + toast.</summary>
+    public void OpenOptimistic(int slotCount, string name)
+    {
+        _isItemContainer = false;
+        _currentPropId   = 0;
+        OpenOptimisticCore(slotCount, name);
     }
 
     private void OpenOptimisticCore(int slotCount, string name, bool forceInventory = true)

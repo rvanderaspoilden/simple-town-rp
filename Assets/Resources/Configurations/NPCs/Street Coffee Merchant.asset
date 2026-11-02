@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00684c8feb8d4684b9be41556b79abdc, type: 3}
+  m_Name: Street Coffee Merchant
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.NPC.MerchantNpcConfig
+  id: street_coffee
+  serverPrefab: {fileID: 9127969945890360167, guid: 1b319b6614ae1994aa1d0cb61d45c2dd,
+    type: 3}
+  clientPrefab: {fileID: 8664680214882990904, guid: 42ad9c80648ff644585819d8ea413669,
+    type: 3}
+  dialogue:
+    rootNodeId: root
+    nodes:
+    - id: root
+      npcText: "Un petit caf\xE9 pour la route ? C'est moi qui ai le meilleur de
+        la place !"
+      options:
+      - text: Volontiers, montre-moi.
+        action: 2
+        nextNodeId: 
+      - text: Tu vends quoi ?
+        action: 0
+        nextNodeId: wares
+      - text: Non merci.
+        action: 1
+        nextNodeId: 
+    - id: wares
+      npcText: "Caf\xE9 chaud et douceurs \xE0 grignoter, parfait pour une pause
+        rapide."
+      options:
+      - text: "Allez, un petit caf\xE9."
+        action: 2
+        nextNodeId: 
+      - text: "Plus tard peut-\xEAtre."
+        action: 1
+        nextNodeId: 
+  icon: {fileID: 21300000, guid: dea0ad64d6308a64e85b62b89dc41e72, type: 3}
+  merchantLabel: "Caf\xE9 ambulant"
+  catalog:
+  - item: {fileID: 11400000, guid: b4dac730e0aa86a409c51f34088b7977, type: 2}
+    price: 10
+  - item: {fileID: 11400000, guid: c0f0392c60aa5dc458d9c473cbe40020, type: 2}
+    price: 12
+  - item: {fileID: 11400000, guid: 40e698c1d4f94fd45a4ede4000adeb01, type: 2}
+    price: 8
+  - item: {fileID: 11400000, guid: 1bb297d5bbc15d941adcb5378f072802, type: 2}
+    price: 12
+  pauseProbability: 0.25
+  minTendSeconds: 20
+  maxTendSeconds: 40
+  minPauseSeconds: 4
+  maxPauseSeconds: 8
+  pauseWanderRadius: 2.5

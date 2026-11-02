@@ -160,20 +160,32 @@ public class PlayerHealth : NetworkBehaviour {
     }
 
     /// <summary>Applies weapon damage to the player's PV (server-authoritative). Ignored
-    /// when already dead. Persists the new value and triggers death at 0.</summary>
+    /// when already dead. Persists the new value and triggers death at 0 (ragdoll + corps
+    /// fouillable, cf. PlayerController.Kill). Coup NON létal → petit choc procédural
+    /// répliqué (RpcFlinch). Renvoie vrai si CE coup a tué le joueur — l'attaquant colore
+    /// son feedback « coup fatal ».</summary>
     [Server]
-    public void ApplyWeaponDamage(float amount) {
-        if (amount <= 0) return;
-        if (this._playerController.PlayerState == PlayerState.DIED) return;
+    public bool ApplyWeaponDamage(float amount) {
+        if (amount <= 0) return false;
+        if (this._playerController.PlayerState == PlayerState.DIED) return false;
 
         // Combat is authoritative in-memory and must not wait on the REST round-trip:
         // apply the PV immediately (so death is instant for a lethal hit, and the HUD
         // SyncVar updates at once), then persist in the background.
         this.pv = this.GetAppliedValue(this.pv, -amount, VITAL_NECESSITY_MIN_VALUE, VITAL_NECESSITY_MAX_VALUE);
 
+        bool died = this.pv <= VITAL_NECESSITY_MIN_VALUE;
         this.CheckDeath();
+        if (!died) this.RpcFlinch();
 
         StartCoroutine(this.PersistHealth(Health));
+        return died;
+    }
+
+    /// <summary>Choc procédural du buste sur toutes les copies (coup d'arme NON létal).</summary>
+    [ClientRpc]
+    private void RpcFlinch() {
+        CharacterFlinch.PlayOn(gameObject);
     }
 
     /// <summary>Persists the current health to the backend WITHOUT writing the values back

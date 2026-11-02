@@ -23,6 +23,8 @@ public static class LedgerLabels {
             case LedgerReason.RentReceived:      return "Loyer reçu";
             case LedgerReason.RentEvicted:       return "Pénalité d'expulsion";
             case LedgerReason.VehicleRepair:     return "Réparation véhicule";
+            case LedgerReason.AtmWithdraw:       return "Retrait distributeur";
+            case LedgerReason.AtmDeposit:        return "Dépôt distributeur";
             // Backend-only reasons (no client-side PostLedger sends these).
             case "initial_grant":                return "Allocation initiale";
             case "opening_balance":              return "Solde d'ouverture";

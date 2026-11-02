@@ -1567,8 +1567,8 @@ MonoBehaviour:
   interactLongPressDuration: 0.35
   dropHeldItemKey: 31
   crosshairMaxDistance: 30
-  crosshairAimAssistRadius: 0.25
-  crosshairPlayerRange: 4
+  crosshairMagnetismRadius: 0.5
+  crosshairPlayerRange: 2
   freeCursorKey: 53
 --- !u!114 &8619417789000670540
 MonoBehaviour:

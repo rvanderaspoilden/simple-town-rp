@@ -124,7 +124,7 @@ namespace Sim.UI {
             switch (reason) {
                 case 1:  return "Cet objet n'est plus disponible.";
                 case 2:  return "Fonds insuffisants.";
-                case 3:  return "Tu ne peux pas porter ça maintenant.";
+                case 3:  return InventoryToasts.NoSpaceInInventory + ".";
                 case 4:  return "Le marchand n'est plus disponible.";
                 default: return "Achat impossible.";
             }

@@ -40,6 +40,11 @@ public class HotbarUI : MonoBehaviour
 
     private int _selectedIndex = -1;   // sélection locale ; -1 = mains libres
 
+    /// <summary>Slot de poche pointé par la barre locale (-1 = mains libres). La main
+    /// n'affiche qu'une PROJECTION de ce slot : les consommateurs qui totalisent main +
+    /// poche (ATM…) s'en servent pour ne pas compter l'item projeté deux fois.</summary>
+    public static int SelectedSlotIndex { get; private set; } = -1;
+
     // Envoi du pointeur : debouncé pour qu'un scroll rapide ne pointe que la sélection
     // finale (pas un spawn/despawn de projection par cran traversé).
     private const float EquipDebounce = 0.12f;
@@ -56,6 +61,7 @@ public class HotbarUI : MonoBehaviour
 
     private void OnEnable()
     {
+        SelectedSlotIndex = _selectedIndex; // resync du statique après reload de scène
         ClientItemManager.PocketSync     += OnPocketSync;
         ClientItemManager.MoveItemResult += OnMoveItemResult;
         PlayerHands.OnHandChanged        += OnHandsChanged;
@@ -81,6 +87,8 @@ public class HotbarUI : MonoBehaviour
         // (ex. le joueur ouvre le chat juste après un scroll).
         if (_equipDirty && Time.unscaledTime >= _equipSendAt) SendEquip();
 
+        UpdateBarVisibility();
+
         if (!InputAllowed()) return;
 
         // Key.Digit1..Digit9 sont contigus dans l'enum du nouveau Input System (rangée physique
@@ -105,6 +113,7 @@ public class HotbarUI : MonoBehaviour
         PlayerController local = PlayerController.Local;
         if (local == null) return false;
         if (local.IsDriving || local.IsPassenger || local.IsKnockedDown) return false;
+        if (local.PlayerState == PlayerState.BUSY) return false;   // ATM / fouille : barre gelée
         if (SubGameController.IsActive) return false;
         if (_buildMode != BuildModeEnum.NONE) return false;   // la molette appartient à la BuildCamera
         if (Sim.Utils.CursorLock.IsTypingInInputField()) return false;
@@ -129,6 +138,7 @@ public class HotbarUI : MonoBehaviour
     {
         if (index < 0 || index >= _slots.Count || index == _selectedIndex) return;
         _selectedIndex = index;
+        SelectedSlotIndex = index;
         Refresh();
         QueueEquip();
     }
@@ -286,6 +296,30 @@ public class HotbarUI : MonoBehaviour
             _slots[i].SetSelected(i == _selectedIndex);
         }
 
-        if (barGroup) barGroup.alpha = IsCarryingBulky() ? 0.35f : 1f;
+        UpdateBarVisibility();
+    }
+
+    /// <summary>Visibilité de la barre (CanvasGroup) : TOTALEMENT masquée et inerte en
+    /// conduite/passager et sur l'ATM (l'input est de toute façon gelé, cf. InputAllowed) ;
+    /// sinon simplement dimée quand le joueur porte un objet encombrant. Appelée chaque frame
+    /// (Update) ET à chaque Refresh pour réagir aux transitions sans attendre un event poche.</summary>
+    private void UpdateBarVisibility()
+    {
+        if (barGroup == null) return;
+
+        PlayerController local = PlayerController.Local;
+        bool hidden = local != null
+                      && (local.IsDriving || local.IsPassenger
+                          || (Sim.UI.AtmUI.Instance != null && Sim.UI.AtmUI.Instance.IsOpen));
+        if (hidden) {
+            barGroup.alpha = 0f;
+            barGroup.blocksRaycasts = false;
+            barGroup.interactable = false;
+            return;
+        }
+
+        barGroup.alpha = IsCarryingBulky() ? 0.35f : 1f;
+        barGroup.blocksRaycasts = true;
+        barGroup.interactable = true;
     }
 }

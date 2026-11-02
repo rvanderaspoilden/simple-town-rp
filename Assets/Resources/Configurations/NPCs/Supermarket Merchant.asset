@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00684c8feb8d4684b9be41556b79abdc, type: 3}
+  m_Name: Supermarket Merchant
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.NPC.MerchantNpcConfig
+  id: supermarket
+  serverPrefab: {fileID: 9127969945890360167, guid: 1b319b6614ae1994aa1d0cb61d45c2dd,
+    type: 3}
+  clientPrefab: {fileID: 8664680214882990904, guid: 42ad9c80648ff644585819d8ea413669,
+    type: 3}
+  dialogue:
+    rootNodeId: root
+    nodes:
+    - id: root
+      npcText: Bonjour ! Besoin de faire quelques courses ?
+      options:
+      - text: Montre-moi tes rayons.
+        action: 2
+        nextNodeId: 
+      - text: Qu'est-ce qu'on trouve ici ?
+        action: 0
+        nextNodeId: wares
+      - text: Je ne fais que passer.
+        action: 1
+        nextNodeId: 
+    - id: wares
+      npcText: "Fruits frais, boissons et de quoi manger sur le pouce. Tout est de
+        premi\xE8re fra\xEEcheur !"
+      options:
+      - text: Parfait, je regarde.
+        action: 2
+        nextNodeId: 
+      - text: Merci, une autre fois.
+        action: 1
+        nextNodeId: 
+  icon: {fileID: 21300000, guid: dea0ad64d6308a64e85b62b89dc41e72, type: 3}
+  merchantLabel: "Supermarch\xE9"
+  catalog:
+  - item: {fileID: 11400000, guid: ba083cd38569ee445b363072beece715, type: 2}
+    price: 8
+  - item: {fileID: 11400000, guid: 6b8eb6afa767402439f23ab12ba961c0, type: 2}
+    price: 6
+  - item: {fileID: 11400000, guid: d9175c446c6405f4c8507565fe2600e0, type: 2}
+    price: 8
+  - item: {fileID: 11400000, guid: 058f4285d3ce9c04cb74a5cf42c4340f, type: 2}
+    price: 10
+  - item: {fileID: 11400000, guid: 110ee4c72d07695468f2cd6311dbe20b, type: 2}
+    price: 22
+  - item: {fileID: 11400000, guid: a94665d75aceebf4cafa02e1980dcfde, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: d68f74c7796726f41ba67a5d641257d8, type: 2}
+    price: 26
+  - item: {fileID: 11400000, guid: f9b8937ca5c79fe43ba770acba05d41a, type: 2}
+    price: 15
+  - item: {fileID: 11400000, guid: 5166b62c42baa694c8c8eff4e0e60aab, type: 2}
+    price: 10
+  - item: {fileID: 11400000, guid: 2b6f56311abcbdf46955b18d7fabb744, type: 2}
+    price: 12
+  pauseProbability: 0.25
+  minTendSeconds: 20
+  maxTendSeconds: 40
+  minPauseSeconds: 4
+  maxPauseSeconds: 8
+  pauseWanderRadius: 2.5

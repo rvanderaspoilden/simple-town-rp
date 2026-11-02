@@ -26,6 +26,7 @@ namespace Sim.Utils {
             if (ChatInputUI.Instance != null && ChatInputUI.Instance.IsOpen) return true;
             if (DialogueUI.Instance != null && DialogueUI.Instance.gameObject.activeSelf) return true;
             if (MerchantShopUI.Instance != null && MerchantShopUI.Instance.gameObject.activeSelf) return true;
+            if (AtmUI.Instance != null && AtmUI.Instance.IsOpen) return true;
 
             return IsTypingInInputField();
         }

@@ -28,6 +28,8 @@ namespace Sim.Entities.Persistence {
         public const string VehicleRepair     = "vehicle_repair";
         public const string LandPurchase      = "land_purchase";
         public const string LandSale          = "land_sale";
+        public const string AtmWithdraw       = "atm_withdraw";
+        public const string AtmDeposit        = "atm_deposit";
     }
 
     public static class LedgerCounterparty {

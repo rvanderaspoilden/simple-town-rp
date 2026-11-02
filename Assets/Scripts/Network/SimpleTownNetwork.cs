@@ -108,6 +108,12 @@ public class SimpleTownNetwork : NetworkManager
         }
 
         Application.targetFrameRate = 144;
+
+        // Sac de butin (LootBag) : prefab réseau spawné à la mort d'un joueur. Enregistré en
+        // runtime (des deux côtés — ce code tourne sur l'hôte ET les clients) pour éviter
+        // d'avoir à l'ajouter manuellement dans la liste sérialisée du NetworkManager.
+        GameObject lootBag = Resources.Load<GameObject>("Prefabs/LootBag");
+        if (lootBag != null && !this.spawnPrefabs.Contains(lootBag)) this.spawnPrefabs.Add(lootBag);
     }
 
     /// <summary>
@@ -357,6 +363,7 @@ public class SimpleTownNetwork : NetworkManager
         Sim.RentSystemBootstrap.OnServerStart();
         Sim.AcquaintanceSystemBootstrap.OnServerStart();
         Sim.GiveMoneySystemBootstrap.OnServerStart();
+        Sim.AtmSystemBootstrap.OnServerStart();
         Sim.SmsSystemBootstrap.OnServerStart();
         Sim.CallSystemBootstrap.OnServerStart();
         Sim.VehicleSystemBootstrap.OnServerStart();
@@ -447,6 +454,7 @@ public class SimpleTownNetwork : NetworkManager
         Sim.VehicleSystemBootstrap.OnServerStop();
         Sim.CallSystemBootstrap.OnServerStop();
         Sim.SmsSystemBootstrap.OnServerStop();
+        Sim.AtmSystemBootstrap.OnServerStop();
         Sim.GiveMoneySystemBootstrap.OnServerStop();
         Sim.AcquaintanceSystemBootstrap.OnServerStop();
         Sim.RentSystemBootstrap.OnServerStop();

@@ -23,6 +23,11 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     // draggable représente l'arme actuellement tenue (slots mains, pas de snapshot).
     private int _loadedAmmo = -1;
     public void SetLoadedAmmo(int loaded) => _loadedAmmo = loaded;
+
+    // Liasse : montant publié par le snapshot poche (S2C_PocketItem.CashAmount). 0 = inconnu
+    // ici — la tooltip retombe alors sur l'entité monde (liasse tenue ou au sol).
+    private int _cashAmount;
+    public void SetCashAmount(int amount) => _cashAmount = amount;
     /// <summary>Taille de pile (≥1). 1 = item simple, pas de badge. >1 = badge "xN" visible
     /// + règles stack (split-1 vers main/poche, refus swap pile↔main).</summary>
     public int Quantity => _quantity;
@@ -169,6 +174,7 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         } else if (_itemConfig != null) {
             icon = _itemConfig.Icon; label = _itemConfig.Label; desc = _itemConfig.Description;
             if (_itemConfig.ID == FuelCanister.ConfigId) effects = FormatCanisterFuel(_entityId, _itemConfig);
+            else if (_itemConfig.ID == CashItem.ConfigId) effects = FormatCashAmount(_entityId);
             else if (_itemConfig is WeaponConfig weaponCfg) effects = FormatWeaponAmmo(weaponCfg);
             else if (_itemConfig is AmmoConfig ammoCfg) effects = FormatAmmoBox(ammoCfg);
             else effects = FormatEffects(_itemConfig as ConsumableConfig);
@@ -211,6 +217,18 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         float pct = capacity > 0f ? Mathf.Clamp01(fuel / capacity) : 0f;
         string color = pct <= 0.001f ? "#E8836B" : (pct < 0.34f ? "#E8C36B" : "#8FE36B");
         return $"<color={color}>Réservoir : {fuel:0} / {capacity:0} L</color>";
+    }
+
+    /// <summary>Montant d'une liasse de billets pour la tooltip. En poche il vient du
+    /// snapshot (_cashAmount) ; sinon de l'entité monde — liasse TENUE ou au sol — répliquée
+    /// via S2C_ItemCash. Inconnu → pas de ligne plutôt que « 0 € ».</summary>
+    private string FormatCashAmount(int entityId) {
+        int amount = _cashAmount;
+        if (amount <= 0 && ClientItemManager.Instance != null
+            && ClientItemManager.Instance.GetItem(entityId) is CashItemBehaviour cash)
+            amount = cash.Amount;
+        if (amount <= 0) return null;
+        return $"<color=#8FE36B>Valeur : {MoneyFormat.FormatBalance(amount)}</color>";
     }
 
     /// <summary>Détails d'une arme pour la tooltip : famille de munitions compatible + état
@@ -375,6 +393,7 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         // Le pool peut réémettre un draggable déjà utilisé avec un Quantity hérité — reset à 1.
         SetQuantity(1);
         _loadedAmmo = -1; // idem pour le chargeur publié par un snapshot précédent
+        _cashAmount = 0;  // idem pour le montant de liasse
         Sim.ItemTooltipUI.Hide(); // au cas où ce draggable était survolé au moment du release
     }
 

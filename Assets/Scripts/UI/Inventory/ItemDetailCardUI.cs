@@ -83,7 +83,7 @@ public class ItemDetailCardUI : MonoBehaviour
         if (item.IsPackedProp) return "MEUBLE";
         ItemConfig cfg = item.ItemConfig;
         if (cfg == null) return string.Empty;
-        if (cfg is WeaponConfig) return "ARME";
+        if (cfg is WeaponConfig || cfg is MeleeWeaponConfig) return "ARME";
         if (cfg is AmmoConfig)   return "MUNITIONS";
         var cc = ItemContainerConfig.Of(cfg);
         if (cc != null && cc.IsContainer) return cc.Wearable ? "SAC" : "CONTENEUR";
@@ -143,6 +143,11 @@ public class ItemDetailCardUI : MonoBehaviour
             // Pas de « Tenir en main » : le slot actif de la hotbar est la seule
             // autorité sur l'item porté.
             AddAction("Lâcher", () => { if (NetworkClient.isConnected) NetworkClient.Send(new C2S_DropFromInventory { EntityId = entityId }); });
+            // Liasse : fusionner TOUTES les liasses du joueur dans celle-ci (les montants
+            // s'additionnent, les autres items cash disparaissent). Visible seulement s'il
+            // y a au moins une autre liasse à absorber.
+            if (item.ItemConfig != null && item.ItemConfig.ID == CashItem.ConfigId && CountLocalCashBundles() >= 2)
+                AddAction("Tout fusionner", () => { if (NetworkClient.isConnected) NetworkClient.Send(new C2S_MergeAllCash { TargetEntityId = entityId }); });
         }
         else if (src.StartsWith("hand_right:")) {
             // Vue main indicative — seule exception : porter un sac (c'est de
@@ -167,6 +172,30 @@ public class ItemDetailCardUI : MonoBehaviour
                     WorldToastManager.ShowError(InventoryToasts.NoSpaceInInventory);
             });
         }
+    }
+
+    /// <summary>Nombre de liasses distinctes SUR le joueur : lignes cash de la poche +
+    /// liasse tenue si ce n'est pas la projection hotbar d'un slot déjà compté — même
+    /// déduplication que le serveur (MergeAllCash / TakeCashAmount).</summary>
+    private static int CountLocalCashBundles()
+    {
+        int count = 0;
+        bool selectedSlotIsCash = false;
+        if (ClientItemManager.LastPocketSnapshot.HasValue) {
+            S2C_PocketSync snapshot = ClientItemManager.LastPocketSnapshot.Value;
+            if (snapshot.Items != null) {
+                foreach (S2C_PocketItem it in snapshot.Items) {
+                    if (it.ConfigId != CashItem.ConfigId) continue;
+                    count++;
+                    if (it.SlotIndex == HotbarUI.SelectedSlotIndex) selectedSlotIsCash = true;
+                }
+            }
+        }
+        var hands = PlayerController.Local != null ? PlayerController.Local.PlayerHands : null;
+        if (hands != null && !selectedSlotIsCash
+            && (hands.RightHandItem is CashItemBehaviour || hands.LeftHandItem is CashItemBehaviour))
+            count++;
+        return count;
     }
 
     private void AddAction(string label, System.Action onClick)

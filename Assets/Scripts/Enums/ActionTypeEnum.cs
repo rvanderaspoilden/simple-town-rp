@@ -39,7 +39,8 @@
         SPLIT,
         PLACE,
         TALK,
-        RELOAD
+        RELOAD,
+        SEARCH
     }
 
 }

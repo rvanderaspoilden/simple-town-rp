@@ -2981,6 +2981,7 @@ GameObject:
   - component: {fileID: 6998264269804404997}
   - component: {fileID: 5634414089450650303}
   - component: {fileID: 3053615750361081765}
+  - component: {fileID: 4976372624137853276}
   m_Layer: 8
   m_Name: Character
   m_TagString: Player
@@ -3074,6 +3075,14 @@ MonoBehaviour:
   tpsJumpHeight: 1.2
   tpsJumpTimeout: 0.5
   tpsFallTimeout: 0.15
+  crouchKey: 17
+  crouchSpeed: 1.5
+  crouchControllerHeight: 1.2
+  maxStamina: 100
+  staminaRunDrainPerSecond: 4
+  staminaJumpCost: 15
+  staminaRegenPerSecond: 15
+  staminaRegenDelay: 1
   navMeshAgent: {fileID: 0}
   state: 0
   showRadialMenuWithPriority: 0
@@ -3206,7 +3215,10 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage: "\nBinding warning: Some generic clip(s) animate transforms that
+    are already bound by a Humanoid avatar. These transforms can only be changed
+    by Humanoid clips.\n\tTransform 'Eyebrows'\n\tTransform 'Eyes'\n\tTransform 'Eyebrows'\n\tTransform
+    'Eyes'\n\tTransform 'Eyebrows'\n\tTransform 'Eyes'\n\tFrom animation clip 'A_POLY_GBL_Crouch_FwdStrafe_F_Neut'"
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -3604,6 +3616,26 @@ MonoBehaviour:
   recoilAngle: 14
   recoilBack: 0.05
   recoilRecoverSpeed: 7
+--- !u!114 &4976372624137853276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6953365128800779919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b20130baab69d541b0fc54dfe8a4756, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.PlayerMelee
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  raiseAngle: 140
+  followThroughAngle: 25
+  elbowBendAngle: 35
+  spineTwistAngle: 14
+  bodyTurnSpeed: 12
 --- !u!1 &6998074687642345812
 GameObject:
   m_ObjectHideFlags: 0

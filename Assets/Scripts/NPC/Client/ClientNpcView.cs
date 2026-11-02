@@ -42,6 +42,13 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     [Tooltip("Si assigné, le label sera mis à jour avec le nom complet du NPC.")]
     [SerializeField] private Text nameLabel;
 
+    [Header("Icône de type (optionnel)")]
+    [Tooltip("Canvas monde autoré dans le prefab (inactif par défaut). Activé à l'Init si la " +
+             "NpcConfig porte une icône ; billboard face caméra en LateUpdate.")]
+    [SerializeField] private GameObject iconRoot;
+    [Tooltip("Image du canvas icône, alimentée par NpcConfig.Icon.")]
+    [SerializeField] private Image iconImage;
+
     private struct Snapshot {
         public float      ServerTime;
         public Vector3    Position;
@@ -65,9 +72,10 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     private RagdollController    _ragdoll;
     private bool                 _knockedDown;
 
-    // Action TALK instanciée depuis Resources à l'Awake — même pattern que
+    // Actions TALK/SEARCH instanciées depuis Resources à l'Awake — même pattern que
     // PlayerController.SetupActions. Chaque vue a sa propre copie (pas de partage d'event delegates).
     private Action _talkAction;
+    private Action _searchAction;
 
     // Config du NPC, rechargée depuis Resources via DatabaseManager.GetNpcConfigById(ConfigId) à l'Init.
     // Fallback sur DatabaseManager.DefaultNpcConfig pour les passants sans config. Porte la nature
@@ -88,20 +96,25 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     /// <summary>Libellé marchand (null si non-marchand). Dérivé de la config rechargée par id.</summary>
     public string    MerchantLabel => (_config as MerchantNpcConfig)?.MerchantLabel;
 
+    /// <summary>Le NPC est-il MORT (état Dead du serveur) ? Le cadavre ragdoll devient
+    /// « fouillable » : l'interaction propose SEARCH au lieu de TALK.</summary>
+    public bool IsDead => _currentState == NpcStateType.Dead;
+
     // ── IInteractable ─────────────────────────────────────────────────────────
 
-    /// <summary>Portée d'interaction NPC (mètres).</summary>
-    public float GetRange() => 3f;
+    /// <summary>Portée d'interaction NPC (mètres) — règle projet : 2 m pour PNJ et joueurs.</summary>
+    public float GetRange() => 2f;
 
-    public bool IsInteractable() => _talkAction != null;
+    public bool IsInteractable() => IsDead ? _searchAction != null : _talkAction != null;
 
     public bool IsRightClickOnly() => false;
 
     public void StopInteraction() { }
 
     public Action[] GetActions(bool withPriority = false) {
-        // TALK est la seule action proposée sur un NPC (clic gauche TALK, clic droit radial avec
-        // la même unique entrée). Le shop marchand s'ouvre via une réponse de dialogue.
+        // Vivant : TALK est la seule action (le shop marchand s'ouvre via une réponse de
+        // dialogue). Mort : SEARCH (« Fouiller ») est la seule action du cadavre.
+        if (IsDead) return _searchAction != null ? new[] { _searchAction } : Array.Empty<Action>();
         if (_talkAction == null) return Array.Empty<Action>();
         return new[] { _talkAction };
     }
@@ -131,6 +144,15 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         else {
             Debug.LogWarning("[ClientNpcView] TALK action asset not found at Resources/Configurations/Actions/TALK");
         }
+
+        Action searchTemplate = Resources.Load<Action>("Configurations/Actions/SEARCH");
+        if (searchTemplate != null) {
+            _searchAction = UnityEngine.Object.Instantiate(searchTemplate);
+            _searchAction.OnExecute += OnSearchExecuted;
+        }
+        else {
+            Debug.LogWarning("[ClientNpcView] SEARCH action asset not found at Resources/Configurations/Actions/SEARCH");
+        }
     }
 
     private void OnDestroy() {
@@ -145,6 +167,12 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
             _talkAction.OnExecute -= OnTalkExecuted;
             UnityEngine.Object.Destroy(_talkAction);
             _talkAction = null;
+        }
+
+        if (_searchAction != null) {
+            _searchAction.OnExecute -= OnSearchExecuted;
+            UnityEngine.Object.Destroy(_searchAction);
+            _searchAction = null;
         }
     }
 
@@ -183,6 +211,8 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
             nameLabel.text = FullName;
         }
 
+        RefreshIcon();
+
         _prev = _next = new Snapshot {
             ServerTime = Time.time,
             Position   = transform.position,
@@ -196,9 +226,17 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         EnterKnockdownVisual();
     }
 
+    /// <summary>Reçu via S2C_NpcHitReact (one-shot) : coup NON létal encaissé — petit choc
+    /// procédural du buste (CharacterFlinch), le NPC reste debout.</summary>
+    public void PlayHitReact() {
+        if (_knockedDown) return; // au sol : la physique ragdoll suffit
+        CharacterFlinch.PlayOn(gameObject);
+    }
+
     private void EnterKnockdownVisual() {
         _knockedDown = true;
         if (_ragdoll != null) _ragdoll.EnableRagdoll();
+        RefreshIcon(); // le corps s'effondre ailleurs que le transform racine → icône masquée
     }
 
     private void ExitKnockdownVisual(Vector3 position, Quaternion rotation) {
@@ -210,16 +248,31 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         _prev = _next = new Snapshot { ServerTime = Time.time, Position = position, Rotation = rotation };
         _hasPrev = _hasNext = true;
         _appliedState = (NpcStateType)255; // force la ré-application de l'état animator
+        RefreshIcon();
+    }
+
+    /// <summary>
+    /// Icône de type (marchand, concessionnaire…) : visible seulement si la config en porte une
+    /// et que le NPC est debout. Le canvas est AUTORÉ dans le prefab client (inactif par défaut).
+    /// </summary>
+    private void RefreshIcon() {
+        if (iconRoot == null) return;
+        Sprite icon = _config != null ? _config.Icon : null;
+        if (iconImage != null) iconImage.sprite = icon;
+        iconRoot.SetActive(icon != null && iconImage != null && !_knockedDown);
     }
 
     public void PushSnapshot(Vector3 position, Quaternion rotation,
                              Vector3 velocity, NpcStateType state) {
         if (state != _currentState) {
             ClientLogger.Network("NpcStateReceived {NpcId} {From} {To}", NpcId, _currentState, state);
-            bool wasKnocked = _currentState == NpcStateType.KnockedDown;
+            // KnockedDown (renversement véhicule, relève) et Dead (cadavre jusqu'au despawn)
+            // partagent le même visuel ragdoll « au sol ».
+            bool wasDown = _currentState == NpcStateType.KnockedDown || _currentState == NpcStateType.Dead;
+            bool isDown  = state == NpcStateType.KnockedDown || state == NpcStateType.Dead;
             _currentState = state;
-            if (state == NpcStateType.KnockedDown) EnterKnockdownVisual();
-            else if (wasKnocked)                   ExitKnockdownVisual(position, rotation);
+            if (isDown && !wasDown)      EnterKnockdownVisual();
+            else if (wasDown && !isDown) ExitKnockdownVisual(position, rotation);
         }
 
         if (_knockedDown) {
@@ -310,6 +363,15 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         }
     }
 
+    private void LateUpdate() {
+        // Billboard de l'icône face caméra (même pattern que les world toasts / billboards de prix).
+        if (iconRoot == null || !iconRoot.activeSelf) return;
+        Camera cam = CameraManager.Instance != null ? CameraManager.Instance.Camera : Camera.main;
+        if (cam == null) return;
+        iconRoot.transform.rotation =
+            Quaternion.LookRotation(iconRoot.transform.position - cam.transform.position, Vector3.up);
+    }
+
     // ── Interaction handlers ──────────────────────────────────────────────────
 
     private void OnTalkExecuted(Action action) {
@@ -328,5 +390,19 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         // Tourne le joueur vers le NPC, puis ouvre la modale de dialogue.
         PlayerController.Local?.Look(transform);
         DialogueUI.Instance?.Show(NpcId, FullName, dialogue);
+    }
+
+    /// <summary>Action SEARCH (« Fouiller ») sur le cadavre : ouvre optimistement la grille
+    /// de butin (panneau conteneur, canal Prop — même flux que le coffre de véhicule) et
+    /// demande la fouille au serveur, qui valide (mort, portée), génère le loot de la
+    /// NpcConfig À LA PREMIÈRE fouille puis répond S2C_ContainerOpened avec le restant.</summary>
+    private void OnSearchExecuted(Action action) {
+        if (!IsDead || !Mirror.NetworkClient.isConnected) return;
+        ClientLogger.Network("[NPCInteraction] SEARCH corpse requested {NpcId} {FullName}", NpcId, FullName);
+        // Occupe le joueur (BUSY) AVANT d'ouvrir la grille : la sortie d'Idle referme
+        // l'inventaire, donc l'ordre compte. L'état se termine seul à la fermeture de la grille.
+        PlayerController.Local?.BeginBusy(ContainerPanelUI.IsPropLootOpen, transform);
+        ContainerPanelUI.Prop?.OpenOptimistic(ServerItemManager.CorpseLootSlots, $"Fouille — {FullName}");
+        Mirror.NetworkClient.Send(new C2S_SearchNpcCorpse { NpcId = NpcId });
     }
 }

@@ -26,6 +26,13 @@ public struct S2C_ItemFuel : NetworkMessage
     public float Fuel;
 }
 
+/// <summary>Server → clients in room : montant d'une liasse de billets (tooltip + ATM).</summary>
+public struct S2C_ItemCash : NetworkMessage
+{
+    public int EntityId;
+    public int Amount;
+}
+
 /// <summary>Server → all clients in room: item removed from world.</summary>
 public struct S2C_DestroyItem : NetworkMessage
 {
@@ -243,6 +250,17 @@ public struct C2S_DropFromInventory : NetworkMessage
     public int EntityId;
 }
 
+/// <summary>
+/// Client → server : fusionner TOUTES les liasses du joueur (poche + main, projection
+/// hotbar dédupliquée) en UNE seule — la cible <see cref="TargetEntityId"/> (entité de
+/// session poche ou entité monde tenue ; repli serveur : la plus grosse). Les montants
+/// s'additionnent dans la cible, les autres liasses sont supprimées.
+/// </summary>
+public struct C2S_MergeAllCash : NetworkMessage
+{
+    public int TargetEntityId;
+}
+
 // ── Poches (toujours ouvertes pour le joueur local) ───────────────────────────
 // Modèle identique à un conteneur 2 slots, persisté en DB à la place
 // "pocket:{charId}". Une PocketSession serveur est créée à la connexion (après
@@ -258,6 +276,7 @@ public struct S2C_PocketItem
     public int SlotIndex;
     public int Quantity;
     public int LoadedAmmo;   // arme : balles dans le chargeur (tooltip). -1 = pas une arme.
+    public int CashAmount;   // liasse : montant (tooltip + dépôt ATM). 0 = pas une liasse.
 }
 
 /// <summary>
@@ -321,4 +340,25 @@ public struct C2S_SwapItems : NetworkMessage
     public int    EntityIdB;
     public string PlaceIdB;
     public int    SlotIndexB;
+}
+
+/// <summary>
+/// Client → server : fouille le cadavre d'un NPC mort (état Dead). Le serveur valide
+/// (NPC mort, portée, pas déjà fouillé) puis transfère le loot de sa NpcConfig au
+/// fouilleur (SpawnItemIntoInventory / SpawnCashInPocket) — une seule fouille par corps.
+/// </summary>
+public struct C2S_SearchNpcCorpse : NetworkMessage
+{
+    public int NpcId;
+}
+
+/// <summary>
+/// Client → server : fouille un SAC DE BUTIN (LootBag) laissé par un joueur mort. Le
+/// serveur valide (sac existant, portée) puis ouvre sa grille de butin (place
+/// "container:{lootKey}") dans le panneau conteneur standard. Le sac persiste 10 min ou
+/// jusqu'à ce qu'il soit vidé, indépendamment du respawn de la victime.
+/// </summary>
+public struct C2S_SearchLootBag : NetworkMessage
+{
+    public uint BagNetId;
 }

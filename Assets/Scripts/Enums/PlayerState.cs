@@ -5,5 +5,9 @@ public enum PlayerState : byte {
     SLEEPING,
     LOOKING,
     SITTING,
-    MOVING
+    MOVING,
+
+    // Engagé dans une action à UI bloquante (ATM, fouille de cadavre / sac de butin).
+    // Posé par l'état CharacterBusy ; neutralise hotbar / tir / mêlée le temps de l'action.
+    BUSY
 }

@@ -30,6 +30,7 @@ public class ClientItemManager
         NetworkClient.RegisterHandler<S2C_ItemDetachedFromHand>(OnItemDetachedFromHand);
         NetworkClient.RegisterHandler<S2C_DropResult>(OnDropResult);
         NetworkClient.RegisterHandler<S2C_ItemFuel>(OnItemFuel);
+        NetworkClient.RegisterHandler<S2C_ItemCash>(OnItemCash);
 
         NetworkClient.RegisterHandler<S2C_ContainerOpened>(OnContainerOpened);
         NetworkClient.RegisterHandler<S2C_ContainerOpenFailed>(OnContainerOpenFailed);
@@ -48,6 +49,7 @@ public class ClientItemManager
         NetworkClient.UnregisterHandler<S2C_ItemDetachedFromHand>();
         NetworkClient.UnregisterHandler<S2C_DropResult>();
         NetworkClient.UnregisterHandler<S2C_ItemFuel>();
+        NetworkClient.UnregisterHandler<S2C_ItemCash>();
         NetworkClient.UnregisterHandler<S2C_ContainerOpened>();
         NetworkClient.UnregisterHandler<S2C_ContainerOpenFailed>();
         NetworkClient.UnregisterHandler<S2C_ItemContainerOpened>();
@@ -124,6 +126,7 @@ public class ClientItemManager
                 Object.Destroy(behaviour.gameObject);
         }
         _items.Clear();
+        _pendingCashAmounts.Clear();
         LastPocketSnapshot = null;
         _instance = null;
     }
@@ -180,6 +183,12 @@ public class ClientItemManager
         behaviour.Initialize(config);
         _items[msg.EntityId] = behaviour;
 
+        // Montant de liasse reçu pendant que le spawn était en cours → application différée.
+        if (_pendingCashAmounts.TryGetValue(msg.EntityId, out int pendingCash)) {
+            _pendingCashAmounts.Remove(msg.EntityId);
+            if (behaviour is CashItemBehaviour cash) cash.SetAmount(pendingCash);
+        }
+
         // If the item is already held (late-join snapshot), attach immediately
         if (msg.IsHeld)
         {
@@ -192,6 +201,8 @@ public class ClientItemManager
     private void OnDestroyItem(S2C_DestroyItem msg)
     {
         Debug.Log($"[Item] Received destroy entity={msg.EntityId} room={msg.RoomId}");
+
+        _pendingCashAmounts.Remove(msg.EntityId);
 
         if (!_items.TryGetValue(msg.EntityId, out var behaviour)) return;
 
@@ -240,6 +251,18 @@ public class ClientItemManager
     {
         if (_items.TryGetValue(msg.EntityId, out var behaviour) && behaviour is FuelCanisterBehaviour fc)
             fc.SetFuel(msg.Fuel);
+    }
+
+    // Montant d'une liasse arrivé AVANT son S2C_SpawnItem (le spawn client est asynchrone) :
+    // bufferisé par entityId et appliqué à l'enregistrement du behaviour.
+    private readonly Dictionary<int, int> _pendingCashAmounts = new Dictionary<int, int>();
+
+    private void OnItemCash(S2C_ItemCash msg)
+    {
+        if (_items.TryGetValue(msg.EntityId, out var behaviour) && behaviour is CashItemBehaviour cash)
+            cash.SetAmount(msg.Amount);
+        else
+            _pendingCashAmounts[msg.EntityId] = msg.Amount;
     }
 
     private void OnItemDetachedFromHand(S2C_ItemDetachedFromHand msg)

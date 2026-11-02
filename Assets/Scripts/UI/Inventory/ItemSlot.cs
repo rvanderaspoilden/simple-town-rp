@@ -70,6 +70,16 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
         return _item.Quantity < _item.ItemConfig.MaxStackSize;
     }
 
+    /// <summary>Liasse déposée sur une liasse : FUSION des montants (jamais une pile — le
+    /// cash est maxStackSize=1 et serait sinon routé en swap/snap-back). Routé comme un
+    /// MOVE : le serveur détecte le cash dans HandleMoveItem et additionne les montants
+    /// dans la cible (MergeCashIntoTargetCoroutine), la source est supprimée.</summary>
+    private bool CanMergeCash(DraggableItem incoming) {
+        if (_item == null || incoming == null || _item == incoming) return false;
+        if (_item.ItemConfig == null || _item.ItemConfig != incoming.ItemConfig) return false;
+        return _item.ItemConfig.ID == CashItem.ConfigId;
+    }
+
     public delegate void ItemMoved(ItemSlot origin, ItemSlot target);
     public delegate void ItemsSwapped(ItemSlot slotA, DraggableItem itemA, ItemSlot slotB, DraggableItem itemB);
 
@@ -153,7 +163,7 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
         if (draggableItem == _item) {
             // Même slot → re-ancre animé (drag annulé sur soi-même).
             this.SetItem(draggableItem, animate: true);
-        } else if (CanMergeStack(draggableItem)) {
+        } else if (CanMergeStack(draggableItem) || CanMergeCash(draggableItem)) {
             // Slot occupé par une pile de même config empilable → route comme un MOVE
             // (PAS un swap, quel que soit le CanSwap des deux slots) : le serveur détecte le
             // merge dans HandleMoveItem et dispatch MergeIntoTargetCoroutine. Le draggable

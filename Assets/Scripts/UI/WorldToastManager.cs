@@ -33,6 +33,16 @@ public class WorldToastManager : MonoBehaviour
     /// <summary>Default mint-green accent for the subtitle line.</summary>
     public static readonly Color DefaultAccent = new Color(0.56f, 0.92f, 0.70f, 1f);
 
+    /// <summary>
+    /// Détournement des toasts LOCAUX (ancre = joueur local) : une UI plein écran dont la
+    /// caméra ne cadre plus le joueur (ex. l'écran ATM diégétique — un toast au-dessus de sa
+    /// tête serait hors champ) s'enregistre ici pour afficher le message ELLE-MÊME. Retourne
+    /// true si le message est pris en charge : le toast monde n'est pas créé, mais le son du
+    /// template (erreur) joue quand même. S'enregistrer à l'ouverture, se retirer à la
+    /// fermeture — les appelants (ShowError/ShowSuccess) n'ont rien à savoir.
+    /// </summary>
+    public static System.Func<string, string, ToastKind, bool> LocalToastInterceptor;
+
     private const float BaseHeight   = 2.0f;   // world meters above the player pivot
     private const float StackSpacing = 0.45f;  // gap between concurrent toasts
 
@@ -83,6 +93,11 @@ public class WorldToastManager : MonoBehaviour
 
     private static void ShowKind(uint anchorNetId, string title, string subtitle, float delay, Color accent, ToastKind kind)
     {
+        if (anchorNetId == 0 && LocalToastInterceptor != null && LocalToastInterceptor(title, subtitle, kind)) {
+            PlayKindSound(kind);
+            return;
+        }
+
         Ensure();
         string key = MakeDedupKey(anchorNetId, title, subtitle, kind);
         // Tant qu'une entrée existe pour cette clé (toast vivant ou en attente d'un délai), on

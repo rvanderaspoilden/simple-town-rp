@@ -1,27 +1,38 @@
+using System.Collections.Generic;
 using System.Linq;
 using Mirror;
 using Sim.Entities.Persistence;
+using Sim.NPC;
 using UnityEngine;
 
 namespace Sim {
     /// <summary>
-    /// Logique serveur du système véhicule pour les objets de scène NON-réseau (concession +
-    /// porte de garage). Ceux-ci n'ont pas de NetworkIdentity : ils envoient des messages C2S,
-    /// gérés ici (pattern AcquaintanceSystemBootstrap / SmsSystemBootstrap).
+    /// Logique serveur du système véhicule (concessionnaire NPC + porte de garage). Ces objets
+    /// n'ont pas de NetworkIdentity : ils envoient des messages C2S, gérés ici (pattern
+    /// AcquaintanceSystemBootstrap / SmsSystemBootstrap).
     ///
-    /// • Achat : débite l'acheteur (prix issu de la config) puis crée un véhicule possédé rangé
-    ///   dans son garage virtuel (place dédiée).
+    /// • Catalogue : renvoie les véhicules en vente du NPC vendeur (VehicleVendorNpcConfig).
+    /// • Achat : valide vendeur + catalogue + fonds, débite l'acheteur (prix issu de la config)
+    ///   puis crée un véhicule possédé rangé dans son garage virtuel (place dédiée).
     /// • Sortir : valide la propriété (REST) et spawne le véhicule conduisible à la porte.
     /// • Ranger : détruit le véhicule possédé du joueur le plus proche de la porte.
     /// </summary>
     public static class VehicleSystemBootstrap {
+        // Codes de refus (cf. S2C_VehicleBuyResult.reasonCode — alignés sur le marchand).
+        private const byte ReasonOk          = 0;
+        private const byte ReasonUnavailable = 1;
+        private const byte ReasonFunds       = 2;
+        private const byte ReasonNoVendor    = 4;
+
         public static void OnServerStart() {
+            NetworkServer.RegisterHandler<C2S_RequestVehicleCatalog>(OnCatalogRequest);
             NetworkServer.RegisterHandler<C2S_BuyVehicle>(OnBuy);
             NetworkServer.RegisterHandler<C2S_TakeOutVehicle>(OnTakeOut);
             NetworkServer.RegisterHandler<C2S_StoreVehicle>(OnStore);
         }
 
         public static void OnServerStop() {
+            NetworkServer.UnregisterHandler<C2S_RequestVehicleCatalog>();
             NetworkServer.UnregisterHandler<C2S_BuyVehicle>();
             NetworkServer.UnregisterHandler<C2S_TakeOutVehicle>();
             NetworkServer.UnregisterHandler<C2S_StoreVehicle>();
@@ -37,7 +48,30 @@ namespace Sim {
             }
         }
 
-        // ── Achat (concession) ──────────────────────────────────────────────────────
+        // ── Catalogue (concessionnaire NPC) ─────────────────────────────────────────
+        private static void OnCatalogRequest(NetworkConnectionToClient conn, C2S_RequestVehicleCatalog msg) {
+            if (conn?.identity == null) return;
+            if (!TryResolveVendor(conn, msg.npcId, out VehicleVendorNpcConfig vendor)) return;
+
+            IReadOnlyList<VehicleConfig> catalog = vendor.VehicleCatalog;
+            var entries = new List<VehicleCatalogEntry>(catalog.Count);
+            foreach (VehicleConfig v in catalog) {
+                if (v == null) continue;
+                entries.Add(new VehicleCatalogEntry {
+                    configId = v.id,
+                    price    = v.price,
+                    label    = v.modelName
+                });
+            }
+
+            conn.Send(new S2C_VehicleCatalog {
+                npcId       = msg.npcId,
+                vendorLabel = vendor.MerchantLabel,
+                entries     = entries.ToArray()
+            });
+        }
+
+        // ── Achat (concessionnaire NPC) ─────────────────────────────────────────────
         private static void OnBuy(NetworkConnectionToClient conn, C2S_BuyVehicle msg) {
             if (conn?.identity == null || string.IsNullOrEmpty(msg.configId)) return;
             PlayerController pc = conn.identity.GetComponent<PlayerController>();
@@ -45,26 +79,67 @@ namespace Sim {
             string charId = pc?.CharacterData?.Id;
             if (bank == null || string.IsNullOrEmpty(charId)) return;
 
-            VehicleConfig config = DatabaseManager.GetVehicleConfigById(msg.configId);
-            if (config == null) return;
+            if (!TryResolveVendor(conn, msg.npcId, out VehicleVendorNpcConfig vendor)) {
+                ReplyBuy(conn, msg, false, ReasonNoVendor);
+                return;
+            }
+
+            // Autorité : le véhicule doit être au catalogue DU vendeur (prix lu dans la config).
+            if (!vendor.TryGetVehicle(msg.configId, out VehicleConfig config) || config.prefab == null) {
+                ReplyBuy(conn, msg, false, ReasonUnavailable);
+                return;
+            }
+
             int price = config.price;
-            if (bank.Money < price) return; // garde serveur (le client a déjà affiché le toast)
+            if (bank.Money < price) {
+                ReplyBuy(conn, msg, false, ReasonFunds);
+                return;
+            }
 
             // On stocke l'ID de config dans `model_id` → permet de retrouver le prefab à la sortie.
             string vehId = config.id;
             bank.PostLedger(-price, LedgerReason.ShopPurchase, LedgerCounterparty.System, "CONCESSION");
 
+            // Succès annoncé dès le débit (validation synchrone terminée, pattern marchand) ;
+            // la création REST du véhicule garé suit en fire-and-forget.
+            ReplyBuy(conn, msg, true, ReasonOk);
+
             var placeBody = new CreatePlaceBody { placeKey = $"garage:{charId}", type = "garage", ownerId = charId };
             ApiManager.Instance.StartCoroutine(
                 ApiManager.Instance.CreatePlaceCoroutine(placeBody, placeId => {
-                    if (string.IsNullOrEmpty(placeId)) return;
+                    if (string.IsNullOrEmpty(placeId)) {
+                        Debug.LogError($"[VehicleSystemBootstrap] Garage place creation failed for char={charId} (vehicle {vehId} paid but not created)");
+                        return;
+                    }
                     ApiManager.Instance.StartCoroutine(
                         ApiManager.Instance.CreateGaragedVehicleCoroutine(charId, vehId, placeId, v => {
-                            if (v != null && conn != null)
-                                conn.Send(new ToastNotificationMessage {
-                                    text = $"{config.modelName} acheté !", appId = PhoneAppIds.Bank, worldToast = false });
+                            if (v == null)
+                                Debug.LogError($"[VehicleSystemBootstrap] Garaged vehicle creation failed for char={charId} model={vehId}");
                         }));
                 }));
+        }
+
+        /// <summary>
+        /// Résout un NPC concessionnaire valide pour ce joueur : existe (poolé/actif), porte une
+        /// VehicleVendorNpcConfig, et le joueur est dans la même room (pattern NpcMerchantService).
+        /// </summary>
+        private static bool TryResolveVendor(NetworkConnectionToClient conn, int npcId,
+                                             out VehicleVendorNpcConfig vendor) {
+            vendor = null;
+            if (!NpcAIController.TryGet(npcId, out NpcAIController npc) || npc == null) return false;
+            vendor = npc.Merchant as VehicleVendorNpcConfig;
+            if (vendor == null) return false;
+            return PlayerRoomTracker.Instance.GetRoom(conn) == npc.RoomId;
+        }
+
+        private static void ReplyBuy(NetworkConnectionToClient conn, C2S_BuyVehicle msg,
+                                     bool success, byte reason) {
+            conn.Send(new S2C_VehicleBuyResult {
+                npcId      = msg.npcId,
+                configId   = msg.configId,
+                success    = success,
+                reasonCode = reason
+            });
         }
 
         // ── Sortir du garage ────────────────────────────────────────────────────────

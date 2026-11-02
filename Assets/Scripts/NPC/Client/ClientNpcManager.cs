@@ -28,6 +28,13 @@ public class ClientNpcManager : MonoBehaviour {
     /// affiche le toast et rafraîchit l'affordabilité.</summary>
     public static event System.Action<int, int, bool, byte> OnMerchantBuyResult;
 
+    /// <summary>Réponse du serveur à une demande de catalogue véhicules : (npcId, libellé vendeur,
+    /// entrées). La modale <c>VehicleShopUI</c> s'abonne et s'ouvre à réception.</summary>
+    public static event System.Action<int, string, VehicleCatalogEntry[]> OnVehicleCatalogReceived;
+
+    /// <summary>Résultat d'un achat de véhicule : (npcId, configId, success, reasonCode).</summary>
+    public static event System.Action<int, string, bool, byte> OnVehicleBuyResult;
+
     /// <summary>Réponse serveur à <see cref="C2S_NpcRequestInteraction"/> (Accepted, Reason).
     /// La session client (<c>NpcInteractionSession</c>) s'abonne pour gérer succès/refus et
     /// la fermeture forcée d'une session déjà ouverte (ex : knockdown du NPC).</summary>
@@ -51,8 +58,11 @@ public class ClientNpcManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_UpdateNpcTransform>     (OnUpdateTransform);
         NetworkClient.RegisterHandler<S2C_DestroyNpc>             (OnDestroyNpc);
         NetworkClient.RegisterHandler<S2C_NpcKnockdown>           (OnNpcKnockdown);
+        NetworkClient.RegisterHandler<S2C_NpcHitReact>            (OnNpcHitReact);
         NetworkClient.RegisterHandler<S2C_MerchantCatalog>        (OnMerchantCatalog);
         NetworkClient.RegisterHandler<S2C_MerchantBuyResult>      (OnMerchantBuyResultMsg);
+        NetworkClient.RegisterHandler<S2C_VehicleCatalog>         (OnVehicleCatalog);
+        NetworkClient.RegisterHandler<S2C_VehicleBuyResult>       (OnVehicleBuyResultMsg);
         NetworkClient.RegisterHandler<S2C_NpcInteractionResponse> (OnNpcInteractionResponseMsg);
         ClientLogger.NetworkDebug("ClientNpcHandlersRegistered");
     }
@@ -62,8 +72,11 @@ public class ClientNpcManager : MonoBehaviour {
         NetworkClient.UnregisterHandler<S2C_UpdateNpcTransform>();
         NetworkClient.UnregisterHandler<S2C_DestroyNpc>();
         NetworkClient.UnregisterHandler<S2C_NpcKnockdown>();
+        NetworkClient.UnregisterHandler<S2C_NpcHitReact>();
         NetworkClient.UnregisterHandler<S2C_MerchantCatalog>();
         NetworkClient.UnregisterHandler<S2C_MerchantBuyResult>();
+        NetworkClient.UnregisterHandler<S2C_VehicleCatalog>();
+        NetworkClient.UnregisterHandler<S2C_VehicleBuyResult>();
         NetworkClient.UnregisterHandler<S2C_NpcInteractionResponse>();
         ClientLogger.NetworkDebug("ClientNpcHandlersUnregistered");
     }
@@ -80,6 +93,20 @@ public class ClientNpcManager : MonoBehaviour {
     public void RequestBuy(int npcId, int itemConfigId) {
         if (!NetworkClient.isConnected) return;
         NetworkClient.Send(new C2S_MerchantBuy { NpcId = npcId, ItemConfigId = itemConfigId });
+    }
+
+    // ── Concessionnaire : requêtes C2S + relais des réponses S2C ─────────────────
+
+    /// <summary>Demande le catalogue d'un vendeur de véhicules (à l'ouverture de la boutique).</summary>
+    public void RequestVehicleCatalog(int npcId) {
+        if (!NetworkClient.isConnected) return;
+        NetworkClient.Send(new C2S_RequestVehicleCatalog { npcId = npcId });
+    }
+
+    /// <summary>Demande l'achat d'un véhicule au vendeur.</summary>
+    public void RequestBuyVehicle(int npcId, string configId) {
+        if (!NetworkClient.isConnected) return;
+        NetworkClient.Send(new C2S_BuyVehicle { npcId = npcId, configId = configId });
     }
 
     // ── Interaction (freeze overlay) ───────────────────────────────────────────
@@ -106,6 +133,14 @@ public class ClientNpcManager : MonoBehaviour {
 
     private void OnMerchantBuyResultMsg(S2C_MerchantBuyResult msg) {
         OnMerchantBuyResult?.Invoke(msg.NpcId, msg.ItemConfigId, msg.Success, msg.ReasonCode);
+    }
+
+    private void OnVehicleCatalog(S2C_VehicleCatalog msg) {
+        OnVehicleCatalogReceived?.Invoke(msg.npcId, msg.vendorLabel, msg.entries);
+    }
+
+    private void OnVehicleBuyResultMsg(S2C_VehicleBuyResult msg) {
+        OnVehicleBuyResult?.Invoke(msg.npcId, msg.configId, msg.success, msg.reasonCode);
     }
 
     public void ClearAll() {
@@ -154,6 +189,12 @@ public class ClientNpcManager : MonoBehaviour {
     private void OnNpcKnockdown(S2C_NpcKnockdown msg) {
         if (_views.TryGetValue(msg.NpcId, out var view) && view != null) {
             view.ApplyKnockdown();
+        }
+    }
+
+    private void OnNpcHitReact(S2C_NpcHitReact msg) {
+        if (_views.TryGetValue(msg.NpcId, out var view) && view != null) {
+            view.PlayHitReact();
         }
     }
 

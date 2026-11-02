@@ -47,6 +47,63 @@ namespace Sim.UI {
         [SerializeField]
         private Color ammoEmptyColor = new Color(1f, 0.35f, 0.3f, 0.95f);
 
+        [Header("Weapon reticle (ranged weapon held)")]
+        [Tooltip("Weapon reticle block (brackets + center dot) — shown INSTEAD of the default reticle while a ranged weapon is held (driven by PlayerShooter).")]
+        [SerializeField]
+        private GameObject weaponReticleRoot;
+
+        [Tooltip("Left bracket — pushed away from center by the spread bloom.")]
+        [SerializeField]
+        private RectTransform weaponBracketLeft;
+
+        [Tooltip("Right bracket (mirrored sprite) — pushed away from center by the spread bloom.")]
+        [SerializeField]
+        private RectTransform weaponBracketRight;
+
+        [Tooltip("Every image of the weapon reticle — tinted together (interact color + shot flash).")]
+        [SerializeField]
+        private Image[] weaponReticleImages;
+
+        [Tooltip("Half-gap (px) between center and each bracket in hip fire.")]
+        [SerializeField]
+        private float bracketSpacing = 16f;
+
+        [Tooltip("Half-gap (px) while aiming — tighter, mirrors the reduced spread.")]
+        [SerializeField]
+        private float bracketAimSpacing = 10f;
+
+        [Tooltip("Lerp speed between hip and aim spacing.")]
+        [SerializeField]
+        private float spacingLerpSpeed = 14f;
+
+        [Tooltip("Extra gap (px) kicked per shot, scaled by the weapon's recoil kick.")]
+        [SerializeField]
+        private float shotBloom = 9f;
+
+        [Tooltip("Max accumulated bloom (px) — full-auto bursts cap here.")]
+        [SerializeField]
+        private float maxBloom = 22f;
+
+        [Tooltip("Bloom recovery speed (px/s).")]
+        [SerializeField]
+        private float bloomRecoverSpeed = 55f;
+
+        [Tooltip("Reticle tint flashed at each shot, fading back to the normal tint.")]
+        [SerializeField]
+        private Color shotFlashColor = new Color(1f, 0.75f, 0.25f, 1f);
+
+        [Tooltip("Shot flash fade-out speed (1/s).")]
+        [SerializeField]
+        private float flashDecaySpeed = 7f;
+
+        // Weapon-reticle runtime state (owner-driven by PlayerShooter).
+        private bool weaponMode;
+        private bool weaponAiming;
+        private float currentSpacing;
+        private float bloom;
+        private float shotFlash;
+        private Color reticleTint;
+
         private string lastAmmoText;
 
         [SerializeField]
@@ -64,7 +121,25 @@ namespace Sim.UI {
             }
 
             Instance = this;
+            this.reticleTint = this.defaultColor;
+            this.currentSpacing = this.bracketSpacing;
             this.Hide();
+        }
+
+        private void Update() {
+            if (!this.weaponMode || this.weaponReticleRoot == null || !this.weaponReticleRoot.activeInHierarchy) return;
+
+            // Écart des crochets : resserré en visée, élargi d'un bloom à chaque tir.
+            float targetSpacing = this.weaponAiming ? this.bracketAimSpacing : this.bracketSpacing;
+            this.currentSpacing = Mathf.Lerp(this.currentSpacing, targetSpacing, Time.deltaTime * this.spacingLerpSpeed);
+            this.bloom = Mathf.MoveTowards(this.bloom, 0f, Time.deltaTime * this.bloomRecoverSpeed);
+            float gap = this.currentSpacing + this.bloom;
+            if (this.weaponBracketLeft != null) this.weaponBracketLeft.anchoredPosition = new Vector2(-gap, 0f);
+            if (this.weaponBracketRight != null) this.weaponBracketRight.anchoredPosition = new Vector2(gap, 0f);
+
+            // Flash du tir fondu vers la teinte courante (couleur d'interaction).
+            if (this.shotFlash > 0f) this.shotFlash = Mathf.MoveTowards(this.shotFlash, 0f, Time.deltaTime * this.flashDecaySpeed);
+            this.ApplyWeaponTint();
         }
 
         private void OnDestroy() {
@@ -76,7 +151,9 @@ namespace Sim.UI {
         /// the aimed prop's priority action). A null/empty label falls back to the bare key prompt.</summary>
         public void Show(string targetName, bool canInteract, string actionLabel = null) {
             this.SetRootVisible(true);
-            if (this.reticleImage != null) this.reticleImage.color = canInteract ? this.activeColor : this.defaultColor;
+            this.reticleTint = canInteract ? this.activeColor : this.defaultColor;
+            if (this.reticleImage != null) this.reticleImage.color = this.reticleTint;
+            if (this.weaponMode) this.ApplyWeaponTint();
             if (this.targetNameText != null) {
                 this.targetNameText.text = targetName ?? string.Empty;
                 this.targetNameText.gameObject.SetActive(!string.IsNullOrEmpty(targetName));
@@ -104,6 +181,47 @@ namespace Sim.UI {
         /// local PlayerShooter; the dot lives under the root so Hide() masks it too.</summary>
         public void SetTargetLock(bool locked) {
             if (this.targetDot != null && this.targetDot.activeSelf != locked) this.targetDot.SetActive(locked);
+        }
+
+        /// <summary>Bascule réticule par défaut ↔ réticule d'arme (crochets + point) — poussé
+        /// chaque frame par le PlayerShooter local : arme à distance en main = réticule d'arme,
+        /// resserré pendant la visée (la dispersion y est réduite).</summary>
+        public void SetWeaponState(bool weaponHeld, bool aiming) {
+            this.weaponAiming = aiming;
+            if (this.weaponMode == weaponHeld) return;
+            this.weaponMode = weaponHeld;
+            if (this.reticleImage != null && this.reticleImage.gameObject.activeSelf == weaponHeld)
+                this.reticleImage.gameObject.SetActive(!weaponHeld);
+            if (this.weaponReticleRoot != null && this.weaponReticleRoot.activeSelf != weaponHeld)
+                this.weaponReticleRoot.SetActive(weaponHeld);
+            if (weaponHeld) {
+                // Entrée propre : pas de bloom/flash hérités du port d'arme précédent.
+                this.bloom = 0f;
+                this.shotFlash = 0f;
+                this.currentSpacing = this.bracketSpacing;
+                this.ApplyWeaponTint();
+            }
+        }
+
+        /// <summary>Feedback de tir sur le réticule d'arme : les crochets s'écartent (bloom,
+        /// proportionnel au kick de recul de l'arme) et flashent, puis reviennent. Appelé par
+        /// le PlayerShooter local au départ de chaque coup.</summary>
+        public void NotifyShot(float recoilKick) {
+            if (!this.weaponMode) return;
+            this.bloom = Mathf.Min(this.maxBloom, this.bloom + this.shotBloom * Mathf.Max(0.2f, recoilKick));
+            this.shotFlash = 1f;
+        }
+
+        /// <summary>Teinte courante (interaction) mélangée au flash de tir, appliquée à toutes
+        /// les images du réticule d'arme.</summary>
+        private void ApplyWeaponTint() {
+            if (this.weaponReticleImages == null) return;
+            Color color = this.shotFlash > 0f
+                ? Color.Lerp(this.reticleTint, this.shotFlashColor, this.shotFlash)
+                : this.reticleTint;
+            foreach (Image image in this.weaponReticleImages) {
+                if (image != null) image.color = color;
+            }
         }
 
         /// <summary>Compteur de munitions « chargées/chargeur | réserve » (ou « Recharge… »)

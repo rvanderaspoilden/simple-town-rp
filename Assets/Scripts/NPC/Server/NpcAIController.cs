@@ -91,6 +91,17 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private float _knockdownUntil = -1f;
     private const float KnockdownDuration = 3f;
 
+    // Points de vie (dégâts d'armes : balles, mêlée, poings). Initialisés depuis la config au
+    // spawn ; à 0 le NPC meurt — ragdoll au sol puis despawn (le point respawne après cooldown).
+    private float _health;
+    private bool  _dead;
+    // Clé du butin du cadavre : null tant que personne n'a fouillé ; générée à la PREMIÈRE
+    // fouille (le loot est tiré une seule fois et vit dans la place "container:{clé}" —
+    // les fouilles suivantes rouvrent le restant). Nettoyée au despawn.
+    private string _corpseLootKey;
+    private const float DefaultMaxHealth   = 100f; // NPC sans config
+    private const float DeathDespawnDelay  = 30f;  // s au sol avant le retour au pool (fenêtre de fouille)
+
     // Freeze d'interaction (overlay transverse, pas un état de la state machine).
     // Le compteur d'owners est la List.Count : tant qu'au moins un joueur tient le lock, on
     // skip _stateMachine.Tick() et on rotate vers l'owner le plus proche. Le service serveur
@@ -137,6 +148,30 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
     /// <summary>True tant qu'au moins un joueur tient le lock d'interaction sur ce NPC.</summary>
     public bool IsInteractionLocked => _interactionOwners.Count > 0;
+
+    /// <summary>PV restants (serveur). Purement informatif — les dégâts passent par
+    /// <see cref="ServerApplyDamage"/>.</summary>
+    public float Health => _health;
+
+    /// <summary>Mort (PV à 0), au sol en attente de despawn. Les systèmes de coup
+    /// (PlayerShooter/PlayerMelee) excluent les cadavres de leurs cibles.</summary>
+    public bool IsDead => _dead;
+
+    /// <summary>Démarre (ou reprend) la fouille du cadavre. Faux si le NPC n'est pas mort.
+    /// <paramref name="firstSearch"/> est vrai à la toute première fouille : l'appelant
+    /// (ServerItemManager.HandleSearchNpcCorpse) tire alors le loot de la config et le crée
+    /// dans la place "container:{lootKey}" ; ensuite il ne fait que rouvrir le restant.</summary>
+    public bool TryBeginSearch(out string lootKey, out bool firstSearch) {
+        lootKey = null;
+        firstSearch = false;
+        if (!_dead) return false;
+        if (string.IsNullOrEmpty(_corpseLootKey)) {
+            _corpseLootKey = System.Guid.NewGuid().ToString("N");
+            firstSearch = true;
+        }
+        lootKey = _corpseLootKey;
+        return true;
+    }
 
     /// <summary>
     /// Pose un lock d'interaction pour cet owner (Transform du joueur). Idempotent : si déjà
@@ -285,6 +320,9 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
         _byId[_npcId] = this;
         _knockdownUntil = -1f;
+        _health = _config != null ? _config.MaxHealth : DefaultMaxHealth;
+        _dead = false;
+        _corpseLootKey = null;
 
         Sim.Missions.MissionTargetHooks.RegisterNpc(this, _npcId);
 
@@ -303,6 +341,11 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         if (!NetworkServer.active || _npcId <= 0) return;
 
         _byId.Remove(_npcId);
+
+        // Butin de cadavre non ramassé : purge les lignes DB restantes de la place de loot
+        // (le corps disparaît, son butin aussi).
+        if (!string.IsNullOrEmpty(_corpseLootKey))
+            ServerItemManager.Instance?.CleanupCorpseLoot(_corpseLootKey);
 
         // Libère tout siège tenu par ce NPC.
         SeatService.ReleaseAllSeats(this, roomId);
@@ -351,7 +394,7 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     /// suivent pas — les joints sont étirés chaque frame → corrections violentes → squelette en folie.
     /// L'agent est réactivé automatiquement à la fin du knockdown (cf. Update).</summary>
     public bool ServerKnockDown() {
-        if (!NetworkServer.active || _npcId <= 0) return false;
+        if (!NetworkServer.active || _npcId <= 0 || _dead) return false;
         if (_knockdownUntil > 0f && Time.time < _knockdownUntil) return false; // déjà au sol
         _knockdownUntil = Time.time + KnockdownDuration;
         // Force la fin de toutes les interactions en cours : les owners ferment leurs modales
@@ -364,6 +407,37 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         return true;
     }
 
+    /// <summary>Applique des dégâts d'arme (serveur) : balles, mêlée, poings. Coup NON létal
+    /// = petit choc procédural diffusé aux clients (HitReact), le NPC reste debout. À 0 PV il
+    /// meurt : ragdoll (état Dead diffusé) SANS relève — il reste au sol
+    /// <see cref="DeathDespawnDelay"/> secondes (fenêtre de fouille, cf. TryConsumeSearch)
+    /// puis despawn via NpcSpawnManager (son point respawne après le cooldown normal).
+    /// Renvoie vrai si CE coup l'a tué — l'appelant colore son feedback « coup fatal ».</summary>
+    public bool ServerApplyDamage(float damage) {
+        if (!NetworkServer.active || _npcId <= 0 || _dead) return false;
+        _health = Mathf.Max(0f, _health - Mathf.Max(0f, damage));
+        if (_health > 0f) {
+            NpcServerManager.Instance.HitReact(_npcId);
+            return false;
+        }
+        ServerDie();
+        return true;
+    }
+
+    /// <summary>Mort du NPC : mêmes étapes que ServerKnockDown (fin des interactions, agent
+    /// coupé, ragdoll broadcast) avec le timer de knockdown calé sur l'instant de despawn —
+    /// la « relève » du Update devient le retour au pool (cf. fin du bloc knockdown).</summary>
+    private void ServerDie() {
+        _dead = true;
+        _knockdownUntil = Time.time + DeathDespawnDelay;
+        NpcInteractionService.Instance?.ReleaseAllForNpc(_npcId, NpcInteractionReason.KnockedDown);
+        ServerForceReleaseAllInteractions();
+        StopAgent();
+        SetAgentEnabled(false);
+        NpcServerManager.Instance.Knockdown(_npcId);
+        GameLogger.Player.Info("NpcDied {NpcId} {FullName}", _npcId, _identity.FullName);
+    }
+
     // Mémo du state envoyé pour détecter les transitions et déclencher
     // un broadcast immédiat (cf. NpcServerManager.NotifyStateChanged).
     private NpcStateType _lastNotifiedState = (NpcStateType)255;
@@ -374,13 +448,15 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         // Suspend all AI work if the room is inactive (no players present).
         if (!RoomActivityController.Instance.IsRoomActive(roomId)) return;
 
-        // Renversé : IA en pause, on diffuse l'état KnockedDown (position figée) jusqu'à la relève.
+        // Au sol : IA en pause, on diffuse l'état figé jusqu'à la relève (KnockedDown,
+        // renversement véhicule) ou jusqu'au despawn (Dead — la vue client devient fouillable).
         if (_knockdownUntil > 0f && Time.time < _knockdownUntil) {
+            NpcStateType downState = _dead ? NpcStateType.Dead : NpcStateType.KnockedDown;
             NpcServerManager.Instance.PushTransform(
-                _npcId, transform.position, transform.rotation, Vector3.zero, NpcStateType.KnockedDown);
-            if (_lastNotifiedState != NpcStateType.KnockedDown) {
-                NpcServerManager.Instance.NotifyStateChanged(_npcId, NpcStateType.KnockedDown);
-                _lastNotifiedState = NpcStateType.KnockedDown;
+                _npcId, transform.position, transform.rotation, Vector3.zero, downState);
+            if (_lastNotifiedState != downState) {
+                NpcServerManager.Instance.NotifyStateChanged(_npcId, downState);
+                _lastNotifiedState = downState;
             }
             return;
         }
@@ -389,6 +465,12 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         // désactivé par ServerKnockDown. Le test `_knockdownUntil > 0` agit comme un edge-trigger ;
         // on remet à -1 pour ne pas ré-enabler à chaque frame.
         if (_knockdownUntil > 0f) {
+            // Mort : pas de relève — retour au pool (OnDisable désenregistre et broadcast
+            // S2C_DestroyNpc ; le point de spawn respawne après son cooldown).
+            if (_dead) {
+                NpcSpawnManager.Instance.RequestDespawn(this);
+                return;
+            }
             _knockdownUntil = -1f;
             SetAgentEnabled(true);
         }

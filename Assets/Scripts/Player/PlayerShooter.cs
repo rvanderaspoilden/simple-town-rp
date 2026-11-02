@@ -277,6 +277,8 @@ namespace Sim {
                 float spread = scoped ? 0f
                     : (cfg != null ? cfg.SpreadAngle : 4f) * (this.localAiming ? this.aimSpreadFactor : 1f);
                 this.CmdFire(muzzle, ApplySpread(dir, spread));
+                // Feedback immédiat du réticule (bloom + flash) — sans attendre le serveur.
+                if (CrosshairUI.Instance != null) CrosshairUI.Instance.NotifyShot(cfg != null ? cfg.RecoilKick : 1f);
                 if (!this.localAiming) this.hipPostureUntil = Time.time + this.hipFirePostureDuration;
             }
         }
@@ -300,7 +302,8 @@ namespace Sim {
             if (this.player.IsKnockedDown || this.player.IsDriving || this.player.IsPassenger) return false;
 
             PlayerState state = this.player.PlayerState;
-            if (state == PlayerState.DIED || state == PlayerState.SITTING || state == PlayerState.SLEEPING) return false;
+            if (state == PlayerState.DIED || state == PlayerState.SITTING || state == PlayerState.SLEEPING
+                || state == PlayerState.BUSY) return false;
 
             if (CameraManager.Instance == null || CameraManager.Instance.GetMode() != CameraModeEnum.TPS) return false;
             return Cursor.lockState == CursorLockMode.Locked;
@@ -438,9 +441,12 @@ namespace Sim {
         }
 
         /// <summary>Pousse l'état du chargeur aux deux réticules (crosshair TPS et overlay
-        /// lunette — un seul est visible). Sans arme en main, le compteur disparaît.</summary>
+        /// lunette — un seul est visible), ainsi que le MODE du réticule : arme à distance en
+        /// main = réticule d'arme (crochets), sinon réticule par défaut. Sans arme en main,
+        /// le compteur disparaît.</summary>
         private void UpdateAmmoHud(WeaponBehaviour weapon) {
             WeaponConfig cfg = weapon != null ? weapon.WeaponConfiguration : null;
+            if (CrosshairUI.Instance != null) CrosshairUI.Instance.SetWeaponState(cfg != null, this.localAiming);
             if (cfg == null) {
                 if (CrosshairUI.Instance != null) CrosshairUI.Instance.ClearAmmo();
                 if (ScopeOverlayUI.Instance != null) ScopeOverlayUI.Instance.ClearAmmo();
@@ -690,12 +696,14 @@ namespace Sim {
             foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values) {
                 PlayerController pc = conn?.identity != null ? conn.identity.GetComponent<PlayerController>() : null;
                 if (pc == null || pc == this.player) continue;
+                if (pc.IsDead) continue; // cadavre (fouillable) : pas une cible
                 if (RayHitsCapsule(origin, direction, best, pc.transform.position, out float d) && d < best) {
                     best = d;
                     hitPlayer = pc;
                 }
             }
             foreach (NpcAIController npc in NpcAIController.AllActive) {
+                if (npc.IsDead) continue; // cadavre au sol en attente de despawn : pas une cible
                 if (RayHitsCapsule(origin, direction, best, npc.transform.position, out float d) && d < best) {
                     best = d;
                     hitNpc = npc;
@@ -707,18 +715,32 @@ namespace Sim {
                 end = origin + direction * best;
                 hitNormal = -direction;
                 surfaceHit = false; // pas de décal d'impact sur un personnage
-                // Dégâts PV : le joueur touché perd des points de vie (létal à 0). Les PNJ
-                // n'ont pas de système de PV en V1 — ils sont seulement renversés.
+                // Dégâts PV : joueur comme PNJ perdent des points de vie. Coup NON létal =
+                // petit choc procédural (flinch), la cible reste debout ; coup FATAL =
+                // ragdoll de mort + cadavre fouillable. Plus aucun knockdown à l'impact.
+                bool killed;
                 if (hitPlayer != null) {
                     PlayerHealth hitHealth = hitPlayer.GetComponent<PlayerHealth>();
-                    if (hitHealth != null) hitHealth.ApplyWeaponDamage(cfg.Damage);
+                    killed = hitHealth != null && hitHealth.ApplyWeaponDamage(cfg.Damage);
+                } else {
+                    killed = hitNpc.ServerApplyDamage(cfg.Damage);
                 }
-                bool knocked = hitPlayer != null ? hitPlayer.ServerKnockDown() : hitNpc.ServerKnockDown();
-                GameLogger.Player.Info("CharacterShot {ShooterNetId} {Target} {Knocked}",
-                    netId, hitPlayer != null ? "player:" + hitPlayer.netId : "npc:" + hitNpc.OccupantId, knocked);
+                GameLogger.Player.Info("CharacterShot {ShooterNetId} {Target} {Killed}",
+                    netId, hitPlayer != null ? "player:" + hitPlayer.netId : "npc:" + hitNpc.OccupantId, killed);
+                this.TargetDamageDealt(end, cfg.Damage, killed);
             }
 
             this.RpcFired(end, hitNormal, surfaceHit);
+        }
+
+        /// <summary>Confirmation de coup pour le TIREUR seul : chiffre de dégâts flottant au
+        /// point d'impact + hitmarker sur le réticule (orange = coup fatal). Vérité serveur
+        /// (envoyé au moment où les dégâts sont réellement appliqués) — même feedback que la
+        /// mêlée/les poings.</summary>
+        [TargetRpc]
+        private void TargetDamageDealt(Vector3 hitPoint, float damage, bool killed) {
+            DamageNumber.Spawn(hitPoint, damage, killed);
+            if (HitmarkerUI.Instance != null) HitmarkerUI.Instance.Notify(killed);
         }
 
         [ClientRpc]

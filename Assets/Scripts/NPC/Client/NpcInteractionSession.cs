@@ -89,6 +89,9 @@ public static class NpcInteractionSession {
         if (MerchantShopUI.Instance != null && MerchantShopUI.Instance.gameObject.activeSelf) {
             MerchantShopUI.Instance.Hide();
         }
+        if (VehicleShopUI.Instance != null && VehicleShopUI.Instance.gameObject.activeSelf) {
+            VehicleShopUI.Instance.Hide();
+        }
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────────

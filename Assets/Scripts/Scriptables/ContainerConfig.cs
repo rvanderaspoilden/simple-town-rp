@@ -48,5 +48,11 @@ namespace Sim.Scriptables {
         /// <summary>True si le conteneur accepte ce type (liste vide = accepte tout).</summary>
         public bool Accepts(ItemType type)
             => acceptedTypes == null || acceptedTypes.Count == 0 || acceptedTypes.Contains(type);
+
+        /// <summary>Config runtime d'un conteneur éphémère SANS asset (ex. grille de fouille
+        /// d'un cadavre) : <paramref name="slots"/> slots, tous types acceptés, pas de props
+        /// ni d'imbrication. Construite côté serveur, jamais sérialisée.</summary>
+        public static ContainerConfig CreateRuntime(int slots)
+            => new ContainerConfig { slotCount = Mathf.Max(1, slots) };
     }
 }

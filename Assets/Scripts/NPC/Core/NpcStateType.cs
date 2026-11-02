@@ -22,5 +22,8 @@ public enum NpcStateType : byte {
     BackToHome          = 4,
     KnockedDown         = 5,
     Merchant            = 6,
-    Interacting         = 7
+    Interacting         = 7,
+    /// <summary>PV à 0 : cadavre ragdoll au sol en attente de despawn. Même visuel client
+    /// que KnockedDown, mais la vue devient « fouillable » (action SEARCH → loot).</summary>
+    Dead                = 8
 }

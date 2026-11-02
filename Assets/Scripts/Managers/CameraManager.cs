@@ -43,14 +43,10 @@ namespace Sim {
         [SerializeField] private Key dropHeldItemKey = Key.Q;
         [Tooltip("Portée (m) du raycast crosshair centre-écran (nommage sous le réticule). L'outline et l'interaction sont gatés ensemble par CanInteractWith : portée de la config du prop/item + ligne de vue.")]
         [SerializeField] private float crosshairMaxDistance = 30f;
-        [Tooltip("Rayon (m) du SphereCast d'aim-assist quand le ray exact ne touche rien d'interactable. 0 = désactivé.")]
-        [SerializeField] private float crosshairAimAssistRadius = 0.25f;
-        [Tooltip("Portée (m, plan XZ) pour ouvrir le menu contextuel d'un joueur distant visé au crosshair.")]
-        [SerializeField] private float crosshairPlayerRange = 4f;
-        [Tooltip("Rayon (m) de détection de proximité : un prop/item physiquement devant le joueur est actionnable même sans visée précise (portée config + ligne de vue toujours respectées). 0 = désactivé.")]
-        [SerializeField] private float proximityInteractRadius = 2.5f;
-        [Tooltip("Demi-angle (°) du cône « devant le joueur » pour la détection de proximité (ignoré pour une cible quasiment sous le joueur).")]
-        [SerializeField] private float proximityInteractMaxAngle = 75f;
+        [Tooltip("Rayon (m) du magnétisme de visée : quand le ray exact ne touche rien d'actionnable, un SphereCast balaie ce rayon autour du centre de l'écran et retient le candidat (item/prop/PNJ/joueur) le plus proche angulairement du réticule. Aide à viser les petits items. 0 = désactivé.")]
+        [SerializeField] private float crosshairMagnetismRadius = 0.5f;
+        [Tooltip("Portée (m, plan XZ) pour ouvrir le menu contextuel d'un joueur distant visé au crosshair. Règle projet : 2 m pour PNJ et joueurs.")]
+        [SerializeField] private float crosshairPlayerRange = 2f;
         [Tooltip("Maintenir cette touche libère le curseur pour interagir avec l'UI (la caméra et le crosshair sont suspendus pendant l'appui).")]
         [SerializeField] private Key freeCursorKey = Key.LeftAlt;
 
@@ -175,10 +171,13 @@ namespace Sim {
         }
 
         /// <summary>
-        /// Résout la cible au centre de l'écran (ray exact puis SphereCast d'aim-assist),
+        /// Résout la cible au centre de l'écran (ray exact puis magnétisme de visée),
         /// surligne + nourrit le CrosshairUI, et ouvre le menu radial existant sur la touche
-        /// d'interaction. Pas d'approche automatique : hors portée, la cible est nommée mais
-        /// pas actionnable.
+        /// d'interaction. RÈGLE UNIQUE : outline + prompt + E sont gatés ensemble par la
+        /// portée de la cible — config du prop/item (rangeToInteract), 2 m pour PNJ et
+        /// joueurs distants — ET par la visée : seule une cible vers laquelle le centre de
+        /// la caméra est orienté est actionnable (pas de repli de proximité). Hors portée,
+        /// la cible est seulement nommée.
         /// </summary>
         private void ManageCrosshairInteraction() {
             if (SubGameController.IsActive || Cursor.lockState != CursorLockMode.Locked) {
@@ -206,16 +205,21 @@ namespace Sim {
                 }
             }
 
-            // Aim-assist : si le ray exact ne vise rien d'utile, un SphereCast fin attrape
-            // l'interactable presque centré.
-            if (interactable == null && remotePlayer == null && this.crosshairAimAssistRadius > 0f
-                && Physics.SphereCast(ray, this.crosshairAimAssistRadius, out RaycastHit assistHit, this.crosshairMaxDistance, this.InteractionMask, QueryTriggerInteraction.Ignore)) {
-                IInteractable assist = assistHit.collider.GetComponentInParent<IInteractable>();
-                PlayerController assistPc = assistHit.collider.GetComponentInParent<PlayerController>();
-                if ((assistPc == null || !assistPc.isLocalPlayer) && assist.IsAlive() && assist.IsInteractable()) {
-                    interactable = assist;
-                    targetCollider = assistHit.collider;
-                    targetPoint = assistHit.collider.bounds.center;
+            // Magnétisme : si le ray exact ne vise rien d'utile, on « aimante » le candidat
+            // actionnable le plus proche angulairement du centre de l'écran (petits items,
+            // props fins, PNJ, joueurs), ligne de vue caméra vérifiée.
+            if (interactable == null && remotePlayer == null
+                && this.TryMagnetismHit(ray, out RaycastHit magnetHit)) {
+                IInteractable magnet = magnetHit.collider.GetComponentInParent<IInteractable>();
+                PlayerController magnetPc = magnetHit.collider.GetComponentInParent<PlayerController>();
+                if (magnet.IsAlive() && magnet.IsInteractable()) {
+                    interactable = magnet;
+                    targetCollider = magnetHit.collider;
+                    targetPoint = magnetHit.point;
+                } else if (magnetPc != null && !magnetPc.isLocalPlayer) {
+                    remotePlayer = magnetPc;
+                    targetCollider = magnetHit.collider;
+                    targetPoint = magnetHit.point;
                 }
             }
 
@@ -230,24 +234,13 @@ namespace Sim {
 
             if (interactable != null) {
                 hoverName = this.ResolveHoverName(targetCollider);
-                // La distance d'interaction reste la portée définie dans la config du
-                // prop/item (PropsConfig.rangeToInteract / ItemConfig.rangeToInteract)
+                // La distance d'interaction est la portée définie par la cible : config du
+                // prop/item (rangeToInteract), 2 m pour un PNJ (ClientNpcView.GetRange) —
                 // via CanInteractWith (portée + ligne de vue), revalidée serveur.
                 canInteract = !alreadyInteracting && this.CanReach(interactable, targetCollider, targetPoint);
             } else if (remotePlayer != null) {
                 hoverName = this.ResolveHoverName(targetCollider);
                 canInteract = !alreadyInteracting && WithinPlanarRange(PlayerController.Local.transform.position, remotePlayer.transform.position, this.crosshairPlayerRange);
-            }
-
-            // Pas de cible actionnable à la visée → repli proximité : un prop/item
-            // physiquement devant le joueur reste actionnable sans visée précise.
-            if (!canInteract && !alreadyInteracting
-                && this.TryFindProximityInteractable(out IInteractable proximity, out Collider proximityCollider)) {
-                interactable = proximity;
-                remotePlayer = null;
-                targetCollider = proximityCollider;
-                hoverName = this.ResolveHoverName(proximityCollider);
-                canInteract = true;
             }
 
             // Outline et interaction sont liés : la silhouette n'apparaît que si la
@@ -270,7 +263,7 @@ namespace Sim {
                 // À la lunette (sniper), l'overlay porte son propre réticule plein écran.
                 if (ScopeOverlayUI.IsScopeVisible) CrosshairUI.Instance.Hide();
                 else if (interactable != null || remotePlayer != null) {
-                    string promptLabel = canInteract ? this.ResolvePromptLabel(interactable) : null;
+                    string promptLabel = canInteract ? this.ResolvePromptLabel(interactable, remotePlayer) : null;
                     CrosshairUI.Instance.Show(hoverName, canInteract, promptLabel);
                 }
                 else CrosshairUI.Instance.ShowDefault();
@@ -283,8 +276,9 @@ namespace Sim {
                 this.ResetInteractHold();
                 if (!canInteract || !GameInput.Down(this.interactKey)) return;
 
-                // Un NPC visé est freezé immédiatement (le serveur stoppe son agent).
-                if (interactable is ClientNpcView npcView) NpcInteractionSession.Begin(npcView);
+                // Un NPC visé est freezé immédiatement (le serveur stoppe son agent) — sauf
+                // un cadavre : pas de session d'interaction, sa seule action est « Fouiller ».
+                if (interactable is ClientNpcView npcView && !npcView.IsDead) NpcInteractionSession.Begin(npcView);
 
                 if (interactable != null) {
                     this.EnterInteractionPose(interactable.transform);
@@ -353,12 +347,18 @@ namespace Sim {
 
         /// <summary>Libellé affiché à côté du cadre de la touche d'interaction sous le réticule :
         /// le label de l'action prioritaire de la cible (ex. « S'asseoir », « Ouvrir », « Manger »)
-        /// quand elle en définit une ; sinon le repli générique « Interagir » (l'appui court ouvre
-        /// alors le menu radial). PNJ/joueurs distants et props « clic droit seulement » → générique.</summary>
-        private string ResolvePromptLabel(IInteractable interactable) {
-            if (interactable != null
-                && !(interactable is ClientNpcView)
-                && !interactable.IsRightClickOnly()
+        /// quand elle en définit une ; « Parler » pour un PNJ ou un joueur distant vivants,
+        /// « Fouiller » pour leur cadavre ; sinon le repli générique « Interagir » (l'appui
+        /// court ouvre alors le menu radial). Props « clic droit seulement » → générique.</summary>
+        private string ResolvePromptLabel(IInteractable interactable, PlayerController remotePlayer = null) {
+            // PNJ : parler de son vivant, fouiller son cadavre.
+            if (interactable is ClientNpcView npcView) return npcView.IsDead ? "Fouiller" : "Parler";
+            // Sac de butin : « Fouiller ».
+            if (interactable is LootBag) return "Fouiller";
+            // Joueur distant (seule branche qui appelle avec interactable null).
+            if (interactable == null) return "Parler";
+
+            if (!interactable.IsRightClickOnly()
                 && interactable is IQuickActionProvider provider
                 && provider.TryGetQuickAction(interactable.GetActions(true), out Action quick)
                 && quick != null && !string.IsNullOrEmpty(quick.Label)) {
@@ -409,11 +409,16 @@ namespace Sim {
         private HoverOutline _hoveredOutline;
         private int _outlineLayerBit = -1;
         private int _missionLayerBit = -1;
+        private int _ragdollLayerBit = -1;
 
         /// <summary>
         /// Interaction raycast mask, plus the "Outline" and "MissionHighlight" layer bits.
         /// While a prop is highlighted, its renderers sit on those layers, so we must
         /// keep them hittable or the interaction would flicker.
+        /// "Ragdoll" is also included: NPC/player bone colliders live on that layer and are
+        /// the only colliders that follow the animated pose — the root capsule stays upright
+        /// and misses a sitting/leaning character, which made NPC hover detection erratic
+        /// while weapon aim (DefaultRaycastLayers) worked fine.
         /// </summary>
         private LayerMask InteractionMask {
             get {
@@ -425,7 +430,11 @@ namespace Sim {
                     int l = LayerMask.NameToLayer("MissionHighlight");
                     _missionLayerBit = l >= 0 ? (1 << l) : 0;
                 }
-                return this.interactionLayerMask | _outlineLayerBit | _missionLayerBit;
+                if (_ragdollLayerBit < 0) {
+                    int l = LayerMask.NameToLayer("Ragdoll");
+                    _ragdollLayerBit = l >= 0 ? (1 << l) : 0;
+                }
+                return this.interactionLayerMask | _outlineLayerBit | _missionLayerBit | _ragdollLayerBit;
             }
         }
 
@@ -444,50 +453,78 @@ namespace Sim {
             return PlayerController.Local.CanInteractWith(target, closest);
         }
 
-        // Buffer réutilisé par la détection de proximité (pas d'alloc par frame).
-        private static readonly Collider[] ProximityBuffer = new Collider[32];
+        /// <summary>Magnétisme du crosshair : balaie une sphère le long du ray de visée et
+        /// retient le candidat actionnable (interactable vivant, PNJ ou joueur distant) dont le
+        /// point de contact est le plus proche angulairement du centre de l'écran. Le SphereCastAll
+        /// ne s'arrêtant pas au premier obstacle, chaque candidat est validé par une ligne de vue
+        /// caméra (un mur entre le réticule et l'objet l'élimine).</summary>
+        private bool TryMagnetismHit(Ray ray, out RaycastHit best) {
+            best = default;
+            if (this.crosshairMagnetismRadius <= 0f) return false;
 
-        /// <summary>Repli de proximité : meilleur interactable (prop/item — jamais un joueur ou
-        /// un PNJ, qui restent ciblés à la visée) physiquement devant le joueur local. Chaque
-        /// candidat est validé par CanInteractWith depuis son point de collider le plus proche
-        /// (portée de SA config + ligne de vue) ; le plus proche en distance planaire gagne.</summary>
-        private bool TryFindProximityInteractable(out IInteractable best, out Collider bestCollider) {
-            best = null;
-            bestCollider = null;
-            if (this.proximityInteractRadius <= 0f || PlayerController.Local == null) return false;
+            RaycastHit[] hits = Physics.SphereCastAll(ray, this.crosshairMagnetismRadius,
+                this.crosshairMaxDistance, this.InteractionMask, QueryTriggerInteraction.Ignore);
 
-            Vector3 playerPos = PlayerController.Local.transform.position;
-            Vector3 forward = Vector3.ProjectOnPlane(PlayerController.Local.transform.forward, Vector3.up).normalized;
+            float bestAngle = float.MaxValue;
+            foreach (RaycastHit h in hits) {
+                // Un SphereCast qui démarre en intersection renvoie distance 0 et un point
+                // de contact invalide — inutilisable pour le scoring angulaire.
+                if (h.distance <= 0f) continue;
 
-            int count = Physics.OverlapSphereNonAlloc(playerPos + Vector3.up * 0.9f, this.proximityInteractRadius,
-                ProximityBuffer, this.InteractionMask, QueryTriggerInteraction.Ignore);
+                PlayerController pc = h.collider.GetComponentInParent<PlayerController>();
+                if (pc != null && pc.isLocalPlayer) continue;
 
-            float bestDist = float.MaxValue;
-            for (int i = 0; i < count; i++) {
-                Collider col = ProximityBuffer[i];
-                if (col == null || col.transform.IsChildOf(PlayerController.Local.transform)) continue;
+                bool candidate = pc != null;
+                if (!candidate) {
+                    IInteractable it = h.collider.GetComponentInParent<IInteractable>();
+                    candidate = it.IsAlive() && it.IsInteractable();
+                }
+                if (!candidate) continue;
 
-                IInteractable candidate = col.GetComponentInParent<IInteractable>();
-                if (!candidate.IsAlive() || !candidate.IsInteractable()) continue;
-                if (candidate is ClientNpcView || col.GetComponentInParent<PlayerController>() != null) continue;
+                float angle = Vector3.Angle(ray.direction, h.point - ray.origin);
+                if (angle >= bestAngle) continue;
+                if (!CameraSeesCandidate(ray.origin, h)) continue;
 
-                Vector3 closest = col.ClosestPointOnBounds(playerPos);
-                Vector3 planar = Vector3.ProjectOnPlane(closest - playerPos, Vector3.up);
-                float dist = planar.magnitude;
-
-                // « Devant le joueur » : dans le cône avant — sauf cible quasiment sous
-                // le joueur (item au sol à ses pieds), où la direction n'a plus de sens.
-                if (dist > 0.5f && Vector3.Angle(forward, planar) > this.proximityInteractMaxAngle) continue;
-
-                if (dist >= bestDist) continue;
-                if (!PlayerController.Local.CanInteractWith(candidate, closest)) continue;
-
-                best = candidate;
-                bestCollider = col;
-                bestDist = dist;
+                bestAngle = angle;
+                best = h;
             }
 
-            return best != null;
+            return bestAngle < float.MaxValue;
+        }
+
+        /// <summary>Ligne de vue caméra → point de contact d'un candidat du magnétisme : le
+        /// candidat doit être la première chose touchée (joueur local ignoré) sur TOUTES les
+        /// couches de décor — pas seulement le mask d'interaction, sinon un mur hors mask ne
+        /// bloquerait jamais.</summary>
+        private static bool CameraSeesCandidate(Vector3 origin, RaycastHit candidate) {
+            Vector3 dir = candidate.point - origin;
+            float dist = dir.magnitude;
+            if (dist <= 0.01f) return true;
+
+            RaycastHit[] hits = Physics.RaycastAll(origin, dir / dist, dist + 0.05f,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            foreach (RaycastHit h in hits) {
+                PlayerController pc = h.collider.GetComponentInParent<PlayerController>();
+                if (pc != null && pc.isLocalPlayer) continue;
+                return SameInteractionHost(h.collider, candidate.collider);
+            }
+
+            return true;
+        }
+
+        /// <summary>Deux colliders appartiennent-ils à la même cible d'interaction (même
+        /// IInteractable parent, ou même PlayerController) ? Permet au check de ligne de vue
+        /// d'accepter un collider frère de celui retenu par le magnétisme.</summary>
+        private static bool SameInteractionHost(Collider a, Collider b) {
+            if (a == b) return true;
+
+            IInteractable ia = a.GetComponentInParent<IInteractable>();
+            if (ia.IsAlive() && ReferenceEquals(ia, b.GetComponentInParent<IInteractable>())) return true;
+
+            PlayerController pa = a.GetComponentInParent<PlayerController>();
+            return pa != null && pa == b.GetComponentInParent<PlayerController>();
         }
 
         /// <summary>

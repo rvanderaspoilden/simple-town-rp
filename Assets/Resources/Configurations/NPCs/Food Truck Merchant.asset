@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00684c8feb8d4684b9be41556b79abdc, type: 3}
+  m_Name: Food Truck Merchant
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.NPC.MerchantNpcConfig
+  id: food_truck
+  serverPrefab: {fileID: 9127969945890360167, guid: 1b319b6614ae1994aa1d0cb61d45c2dd,
+    type: 3}
+  clientPrefab: {fileID: 8664680214882990904, guid: 42ad9c80648ff644585819d8ea413669,
+    type: 3}
+  dialogue:
+    rootNodeId: root
+    nodes:
+    - id: root
+      npcText: "H\xE9, par ici ! La meilleure street food de la ville, c'est moi.
+        Tu as faim ?"
+      options:
+      - text: Fais voir le menu.
+        action: 2
+        nextNodeId: 
+      - text: Qu'est-ce que tu cuisines ?
+        action: 0
+        nextNodeId: wares
+      - text: Pas maintenant.
+        action: 1
+        nextNodeId: 
+    - id: wares
+      npcText: "Burgers, hot-dogs, tacos, brochettes\u2026 tout est fait minute,
+        \xE0 emporter !"
+      options:
+      - text: Je commande.
+        action: 2
+        nextNodeId: 
+      - text: Une prochaine fois.
+        action: 1
+        nextNodeId: 
+  icon: {fileID: 21300000, guid: dea0ad64d6308a64e85b62b89dc41e72, type: 3}
+  merchantLabel: Food truck
+  catalog:
+  - item: {fileID: 11400000, guid: 70001605968937c4b8c3cfc200290038, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 153b267c4b23f1f4b88eb0701fe9dfb7, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 02dbc17a1a8a97048ad7a16a154b6d79, type: 2}
+    price: 28
+  - item: {fileID: 11400000, guid: 82a422991f6ed8440b0988f90e7be64c, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 526859c3ff053d64bab00d0e461eb7e9, type: 2}
+    price: 18
+  - item: {fileID: 11400000, guid: 2b6f56311abcbdf46955b18d7fabb744, type: 2}
+    price: 15
+  pauseProbability: 0.25
+  minTendSeconds: 20
+  maxTendSeconds: 40
+  minPauseSeconds: 4
+  maxPauseSeconds: 8
+  pauseWanderRadius: 2.5

@@ -177,6 +177,15 @@ public class ServerItemManager
             _weaponAmmoByKey.Remove("e:" + entityId);
             _weaponAmmoByKey[uuid] = loadedAmmo;
         }
+
+        // Montant de liasse suivi sous la clé éphémère "e:{entityId}" : migre vers l'uuid et
+        // persiste MAINTENANT — contrairement au chargeur, le montant ne change plus jamais,
+        // donc aucun « prochain Set » ne rattraperait une écriture manquée à la création.
+        if (!string.IsNullOrEmpty(uuid) && _cashAmountByKey.TryGetValue("e:" + entityId, out int cashAmount)) {
+            _cashAmountByKey.Remove("e:" + entityId);
+            _cashAmountByKey[uuid] = cashAmount;
+            QueueCashPersist(entityId);
+        }
     }
 
     public void UpdateBridgeVersion(int entityId, int version) {
@@ -255,6 +264,8 @@ public class ServerItemManager
         _handProjection.Clear();
         _weaponAmmoByKey.Clear();
         _ammoPersistPending.Clear();
+        _cashAmountByKey.Clear();
+        _cashPersistPending.Clear();
         _nextEntityId = 1;
         GameLogger.Network.Info("ServerItemManagerReset");
     }
@@ -484,7 +495,7 @@ public class ServerItemManager
 
             Vector3    wpos = it.position.ToVector3();
             Quaternion wrot = Quaternion.Euler(it.rotation != null ? it.rotation.ToVector3() : Vector3.zero);
-            SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData); // arme au sol : réhydrate son chargeur
+            SeedItemStateFromDb(it.configId, it.Id, it.stateData); // arme au sol : réhydrate son chargeur
             SpawnPersistentWorldFromDb(roomId, it.configId, wpos, wrot, it.Id, it.version, placeId);
             count++;
         }
@@ -991,6 +1002,10 @@ public class ServerItemManager
             IsHeld = true, HolderNetId = netId, HolderHand = HandType.Right,
             LocalPosition = Vector3.zero, LocalRotation = Quaternion.identity,
         });
+        // Liasse projetée en main : pousse son montant (tooltip + bouton Déposer de l'ATM).
+        // Le bridge partagé avec l'item de poche résout le montant par uuid.
+        if (pi.ConfigId == CashItem.ConfigId)
+            BroadcastToRoom(roomId, new S2C_ItemCash { EntityId = worldEntityId, Amount = GetCashAmount(worldEntityId) });
         GameLogger.Network.Info("Item EquipProjection netId={NetId} slot={Slot} config={ConfigId} world={World} pocket={Pocket}",
             netId, msg.SlotIndex, pi.ConfigId, worldEntityId, pocketEntityId);
     }
@@ -1195,6 +1210,343 @@ public class ServerItemManager
             entityId, msg.ItemConfigId, roomId, conn.connectionId);
     }
 
+    // ── Fouille de cadavres (loot) ────────────────────────────────────────────
+
+    // Portée de fouille : règle 2 m des personnages + marge (le ragdoll s'étale).
+    private const float CorpseSearchRange = 3f;
+
+    /// <summary>Taille de la grille de butin d'un cadavre de NPC (slots). Partagé avec
+    /// l'ouverture optimiste client (ClientNpcView.OnSearchExecuted).</summary>
+    public const int CorpseLootSlots = 6;
+
+    // Place backend de chaque butin de cadavre, par clé de loot (NpcAIController) :
+    // renseignée à la première fouille, consommée par CleanupCorpseLoot au despawn.
+    private readonly Dictionary<string, string> _corpseLootPlaceIds = new Dictionary<string, string>();
+
+    /// <summary>Fouille le cadavre d'un NPC mort : ouvre sa grille de butin dans le panneau
+    /// conteneur standard (canal Prop, même flux que le coffre de véhicule — place
+    /// "container:{lootKey}"). Le loot (cash + entrées de la NpcConfig) est tiré et créé en
+    /// DB à la PREMIÈRE fouille ; les suivantes rouvrent le restant. Le client a déjà ouvert
+    /// la grille optimistement : tout refus répond S2C_ContainerOpenFailed (PropId 0).</summary>
+    public void HandleSearchNpcCorpse(NetworkConnectionToClient conn, C2S_SearchNpcCorpse msg)
+    {
+        if (conn?.identity == null) return;
+
+        if (!NpcAIController.TryGet(msg.NpcId, out NpcAIController npc) || npc == null
+            || !npc.TryBeginSearch(out string lootKey, out bool firstSearch)) {
+            conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Il n'y a rien à fouiller ici" });
+            return;
+        }
+        if (!WithinSearchRange(conn.identity.transform.position, npc.transform.position)) {
+            conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Trop loin" });
+            return;
+        }
+        string charId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+        if (string.IsNullOrEmpty(charId)) {
+            conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Sans caractère" });
+            return;
+        }
+
+        ClosePropSession(conn.identity.netId); // un seul conteneur « prop » ouvert à la fois
+        ApiManager.Instance?.StartCoroutine(
+            OpenCorpseLootCoroutine(conn, conn.identity.netId, npc, lootKey, firstSearch, charId));
+    }
+
+    /// <summary>Première fouille : POST de la place "container:{lootKey}" puis création des
+    /// lignes de butin (liasse de cash avec stateData.cashAmount + items de la table de loot,
+    /// slots séquentiels). Dans tous les cas, enchaîne sur le flux d'ouverture standard
+    /// (OpenContainerCoroutine, idempotent sur la place) qui pousse S2C_ContainerOpened.</summary>
+    private IEnumerator OpenCorpseLootCoroutine(NetworkConnectionToClient conn, uint netId,
+        NpcAIController npc, string lootKey, bool firstSearch, string charId)
+    {
+        if (firstSearch) {
+            // 1. Place du butin.
+            var createPlace = new CreatePlaceBody {
+                placeKey = $"container:{lootKey}",
+                type = "container",
+                ownerId = charId,
+                properties = new Dictionary<string, object> { { "slotCount", CorpseLootSlots } },
+            };
+            UnityWebRequest placeReq = ApiManager.Instance.CreatePlaceRequest(createPlace);
+            yield return placeReq.SendWebRequest();
+            if (placeReq.responseCode < 200 || placeReq.responseCode >= 300) {
+                conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Erreur place" });
+                yield break;
+            }
+            string placeId = null;
+            try { var p = JsonConvert.DeserializeObject<PlaceJson>(placeReq.downloadHandler.text); placeId = p?.Id; } catch { }
+            if (string.IsNullOrEmpty(placeId)) {
+                conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Place sans id" });
+                yield break;
+            }
+            _corpseLootPlaceIds[lootKey] = placeId;
+
+            // 2. Tirage du loot (une seule fois par corps) : liasse + entrées de la config.
+            Sim.NPC.NpcConfig cfg = npc != null ? npc.Config : null;
+            int slot = 0;
+            int cash = cfg != null && cfg.LootCashMax > 0 ? Random.Range(cfg.LootCashMin, cfg.LootCashMax + 1) : 0;
+            if (cash > 0 && slot < CorpseLootSlots) {
+                var cashBody = new CreateItemBody {
+                    placeId = placeId, configId = CashItem.ConfigId, quantity = 1,
+                    stateData = new Dictionary<string, object> {
+                        { "slotIndex", slot++ },
+                        { StateKeyCashAmount, cash },
+                    },
+                };
+                yield return ApiManager.Instance.CreateItemRequest(cashBody).SendWebRequest();
+            }
+            if (cfg != null) {
+                foreach (Sim.NPC.NpcLootEntry entry in cfg.Loot) {
+                    if (slot >= CorpseLootSlots) break;
+                    if (entry == null || entry.item == null || Random.value > entry.chance) continue;
+                    var itemBody = new CreateItemBody {
+                        placeId = placeId, configId = entry.item.ID,
+                        quantity = Mathf.Max(1, entry.quantity),
+                        stateData = new Dictionary<string, object> { { "slotIndex", slot++ } },
+                    };
+                    yield return ApiManager.Instance.CreateItemRequest(itemBody).SendWebRequest();
+                }
+            }
+            GameLogger.Player.Info("NpcCorpseLootGenerated {LooterNetId} {NpcId} {Cash} {Slots}",
+                netId, npc != null ? npc.NpcId : -1, cash, slot);
+        }
+
+        // 3. Ouverture standard (place idempotente, state fetch, session, S2C_ContainerOpened).
+        yield return OpenContainerCoroutine(conn, netId, 0, lootKey, charId,
+            ContainerConfig.CreateRuntime(CorpseLootSlots), broadcastVisual: false);
+    }
+
+    /// <summary>Purge le butin restant d'un cadavre au despawn du NPC : supprime chaque
+    /// ligne encore dans la place de loot (les items déjà ramassés ont changé de place et ne
+    /// sont PAS touchés). Appelé par NpcAIController.OnDisable.</summary>
+    public void CleanupCorpseLoot(string lootKey)
+    {
+        if (string.IsNullOrEmpty(lootKey) || !_corpseLootPlaceIds.TryGetValue(lootKey, out string placeId)) return;
+        _corpseLootPlaceIds.Remove(lootKey);
+        ApiManager.Instance?.StartCoroutine(CleanupCorpseLootCoroutine(placeId));
+    }
+
+    private IEnumerator CleanupCorpseLootCoroutine(string placeId)
+    {
+        UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
+        yield return stateReq.SendWebRequest();
+        if (stateReq.responseCode != 200) yield break;
+        PlaceStateJson state = null;
+        try { state = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text); } catch { }
+        if (state?.items == null) yield break;
+        foreach (var it in state.items) {
+            if (string.IsNullOrEmpty(it.Id)) continue;
+            yield return ApiManager.Instance.DeleteItemRequest(it.Id).SendWebRequest();
+        }
+        GameLogger.Network.Info("NpcCorpseLootCleaned placeId={PlaceId} items={Count}", placeId, state.items.Length);
+    }
+
+    /// <summary>Taille de la grille de butin d'un cadavre de JOUEUR (poche 8 + main + dos).
+    /// Partagé avec l'ouverture optimiste client (LootBag).</summary>
+    public const int PlayerCorpseLootSlots = 10;
+
+    // Durée de vie max d'un sac de butin (s) avant disparition automatique.
+    private const float LootBagLifetimeSeconds = 600f; // 10 min
+
+    // Sacs de butin actifs, par clé de loot (= place "container:{clé}"). Le GameObject est un
+    // objet réseau Mirror (prefab LootBag) spawné à la mort d'un joueur.
+    private readonly Dictionary<string, GameObject> _lootBags = new Dictionary<string, GameObject>();
+    private GameObject _lootBagPrefab;
+
+    /// <summary>Laisse tomber un SAC DE BUTIN à l'endroit où le joueur vient de mourir :
+    /// déplace TOUT ce qu'il possède (mains, dos + sac et contenu, poche) dans une place de
+    /// butin "container:{clé}" (identité/UUID conservés), puis spawne un LootBag réseau qui
+    /// vit indépendamment de la victime (elle respawn) — fouillable par quiconque pendant
+    /// <see cref="LootBagLifetimeSeconds"/> ou jusqu'à ce qu'il soit vidé. Appelé par
+    /// PlayerController.Kill côté serveur.</summary>
+    public void DropPlayerLootBag(Sim.PlayerController victim)
+    {
+        if (victim == null) return;
+        NetworkConnectionToClient victimConn = victim.connectionToClient;
+        string victimCharId = victim.CharacterData?.Id;
+
+        // Détache SYNCHRONEMENT les possessions de la victime et récupère les lignes à ranger
+        // dans le sac. Rien à lâcher → pas de sac (« tant qu'il a du loot »).
+        var belongings = CollectAndClearVictimBelongings(victim, victimConn);
+        if (belongings.Count == 0) return;
+
+        ApiManager.Instance?.StartCoroutine(DropLootBagCoroutine(
+            belongings, victim.transform.position, victim.transform.rotation,
+            victimCharId, "Sac de butin"));
+    }
+
+    private IEnumerator DropLootBagCoroutine(List<(string uuid, int version, int configId)> toPlace,
+        Vector3 pos, Quaternion rot, string ownerCharId, string label)
+    {
+        string lootKey = System.Guid.NewGuid().ToString("N");
+
+        // 1. Place de butin.
+        var createPlace = new CreatePlaceBody {
+            placeKey = $"container:{lootKey}",
+            type = "container",
+            ownerId = ownerCharId,
+            properties = new Dictionary<string, object> { { "slotCount", PlayerCorpseLootSlots } },
+        };
+        UnityWebRequest placeReq = ApiManager.Instance.CreatePlaceRequest(createPlace);
+        yield return placeReq.SendWebRequest();
+        if (placeReq.responseCode < 200 || placeReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] LootBag place create failed code={placeReq.responseCode}");
+            yield break;
+        }
+        string placeId = null;
+        try { var p = JsonConvert.DeserializeObject<PlaceJson>(placeReq.downloadHandler.text); placeId = p?.Id; } catch { }
+        if (string.IsNullOrEmpty(placeId)) yield break;
+        _corpseLootPlaceIds[lootKey] = placeId;
+
+        // 2. Déplace chaque possession dans la place (PATCH, identité conservée) ou crée une
+        //    ligne neuve pour un item de main éphémère (sans UUID).
+        int slot = 0;
+        foreach ((string uuid, int version, int configId) in toPlace) {
+            if (slot >= PlayerCorpseLootSlots) break;
+            if (!string.IsNullOrEmpty(uuid)) {
+                var body = new UpdateItemBody {
+                    expectedVersion = Mathf.Max(1, version),
+                    placeId = placeId,
+                    stateData = new Dictionary<string, object> { { "slotIndex", slot } },
+                };
+                yield return ApiManager.Instance.UpdateItemRequest(uuid, body).SendWebRequest();
+            } else {
+                var body = new CreateItemBody {
+                    placeId = placeId, configId = configId, quantity = 1,
+                    stateData = new Dictionary<string, object> { { "slotIndex", slot } },
+                };
+                yield return ApiManager.Instance.CreateItemRequest(body).SendWebRequest();
+            }
+            slot++;
+        }
+
+        // 3. Spawne le sac réseau au point de mort.
+        if (_lootBagPrefab == null) _lootBagPrefab = Resources.Load<GameObject>("Prefabs/LootBag");
+        if (_lootBagPrefab == null) {
+            Debug.LogWarning("[ServerItemManager] LootBag prefab introuvable (Resources/Prefabs/LootBag)");
+            yield break;
+        }
+        GameObject bag = UnityEngine.Object.Instantiate(_lootBagPrefab, pos, rot);
+        LootBag bagComp = bag.GetComponent<LootBag>();
+        if (bagComp != null) { bagComp.lootKey = lootKey; bagComp.label = label; }
+        NetworkServer.Spawn(bag);
+        _lootBags[lootKey] = bag;
+
+        GameLogger.Player.Info("LootBagDropped lootKey={LootKey} items={Count} placeId={PlaceId}",
+            lootKey, slot, placeId);
+
+        // 4. Disparition automatique après la durée de vie max (le vidage anticipé est géré
+        //    par ClosePropSession → TryDespawnEmptyLootBag).
+        yield return new WaitForSeconds(LootBagLifetimeSeconds);
+        DespawnLootBag(lootKey);
+    }
+
+    /// <summary>Ouvre la grille de butin d'un SAC (LootBag) : résout le sac par netId, vérifie
+    /// la portée, puis ouvre sa place "container:{lootKey}" dans le panneau conteneur standard
+    /// (le client a déjà ouvert optimistement). Fouillable par n'importe quel joueur.</summary>
+    public void HandleSearchLootBag(NetworkConnectionToClient conn, C2S_SearchLootBag msg)
+    {
+        if (conn?.identity == null) return;
+
+        if (!NetworkServer.spawned.TryGetValue(msg.BagNetId, out NetworkIdentity bagIdentity)
+            || bagIdentity == null || !bagIdentity.TryGetComponent(out LootBag bag)
+            || string.IsNullOrEmpty(bag.lootKey)) {
+            conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Sac introuvable" });
+            return;
+        }
+        if (!WithinSearchRange(conn.identity.transform.position, bag.transform.position)) {
+            conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Trop loin" });
+            return;
+        }
+        string looterCharId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+        if (string.IsNullOrEmpty(looterCharId)) {
+            conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Sans caractère" });
+            return;
+        }
+
+        ClosePropSession(conn.identity.netId);
+        ApiManager.Instance?.StartCoroutine(OpenContainerCoroutine(conn, conn.identity.netId, 0,
+            bag.lootKey, looterCharId, ContainerConfig.CreateRuntime(PlayerCorpseLootSlots),
+            broadcastVisual: false));
+    }
+
+    /// <summary>Détruit un sac de butin (expiration 10 min OU vidé) et purge le restant de sa
+    /// place de loot.</summary>
+    private void DespawnLootBag(string lootKey)
+    {
+        if (string.IsNullOrEmpty(lootKey)) return;
+        if (_lootBags.TryGetValue(lootKey, out GameObject bag)) {
+            _lootBags.Remove(lootKey);
+            if (bag != null) NetworkServer.Destroy(bag);
+        }
+        CleanupCorpseLoot(lootKey); // DELETE les lignes restantes + oublie la place
+        GameLogger.Player.Info("LootBagDespawned lootKey={LootKey}", lootKey);
+    }
+
+    /// <summary>Si <paramref name="placeId"/> est la place d'un sac de butin désormais VIDE,
+    /// fait disparaître le sac immédiatement (appelé à la fermeture d'une session conteneur).</summary>
+    private void TryDespawnEmptyLootBag(string placeId)
+    {
+        if (string.IsNullOrEmpty(placeId)) return;
+        string lootKey = null;
+        foreach (var kv in _corpseLootPlaceIds) if (kv.Value == placeId) { lootKey = kv.Key; break; }
+        if (lootKey != null && _lootBags.ContainsKey(lootKey)) DespawnLootBag(lootKey);
+    }
+
+    /// <summary>Détache (runtime) tout ce que porte la victime et renvoie la liste des lignes
+    /// à ranger dans la grille de butin : UUID (PATCH de place) quand l'item est persisté,
+    /// sinon configId (POST d'une nouvelle ligne pour un item de main éphémère). Vide les
+    /// mains, la poche et la projection hotbar, et re-pousse un snapshot poche vide.</summary>
+    private List<(string uuid, int version, int configId)> CollectAndClearVictimBelongings(
+        Sim.PlayerController victim, NetworkConnectionToClient victimConn)
+    {
+        var result = new List<(string, int, int)>();
+        string roomId = PlayerRoomTracker.Instance.GetRoom(victimConn);
+
+        // Projection hotbar : l'entité de main partage la ligne DB de l'entrée poche. On
+        // retire l'entité de main (visuel) ; la ligne DB sera traitée via la poche ci-dessous.
+        if (_handProjection.TryGetValue(victim.netId, out var proj)) {
+            if (roomId != null && TryGetEntity(roomId, proj.worldEntityId, out var pe)) {
+                ClearHolderHandState(pe);
+                _rooms[roomId].Remove(proj.worldEntityId);
+                BroadcastToRoom(roomId, new S2C_DestroyItem { EntityId = proj.worldEntityId, RoomId = roomId });
+            }
+            _handProjection.Remove(victim.netId);
+        }
+
+        // Items RÉELLEMENT en main / sur le dos (hors projection déjà retirée).
+        var handState = GetOrCreateHandState(victim.netId);
+        foreach (HandType hand in new[] { HandType.Right, HandType.Left, HandType.Back }) {
+            int entityId = handState.GetEntityId(hand);
+            if (entityId == -1 || roomId == null || !TryGetEntity(roomId, entityId, out var entity)) continue;
+            ItemDbBridge bridge = GetBridge(entityId);
+            result.Add((bridge?.Uuid, bridge?.Version ?? 0, entity.ItemConfigId));
+            ClearHolderHandState(entity);
+            _rooms[roomId].Remove(entityId);
+            _bridges.Remove(entityId);
+            BroadcastToRoom(roomId, new S2C_DestroyItem { EntityId = entityId, RoomId = roomId });
+        }
+
+        // Poche : chaque entrée (UUID persistant) part dans la grille.
+        if (_pocketByPlayer.TryGetValue(victim.netId, out PocketSession pocket)) {
+            foreach (PocketSessionItem pi in pocket.ItemsByEntityId.Values)
+                result.Add((pi.ItemUuid, pi.Version, pi.ConfigId));
+            foreach (int entityId in new List<int>(pocket.ItemsByEntityId.Keys)) _bridges.Remove(entityId);
+            pocket.ItemsByEntityId.Clear();
+            pocket.SlotToEntityId.Clear();
+            SendPocketSnapshot(victimConn, pocket); // poche vidée côté victime
+        }
+
+        return result;
+    }
+
+    private static bool WithinSearchRange(Vector3 a, Vector3 b)
+    {
+        Vector3 d = b - a;
+        d.y = 0f;
+        return d.sqrMagnitude <= CorpseSearchRange * CorpseSearchRange;
+    }
+
     // ── Room events ───────────────────────────────────────────────────────────
 
     public void OnPlayerEnterRoom(NetworkConnectionToClient conn, string roomId)
@@ -1339,6 +1691,9 @@ public class ServerItemManager
             // Bidon : pousse le niveau de carburant au client qui rejoint (tooltip).
             if (entity is FuelCanisterEntity fce)
                 conn.Send(new S2C_ItemFuel { EntityId = entity.EntityId, Fuel = fce.Fuel });
+            // Liasse : pousse son montant au client qui rejoint (tooltip + ATM).
+            if (entity.ItemConfigId == CashItem.ConfigId)
+                conn.Send(new S2C_ItemCash { EntityId = entity.EntityId, Amount = GetCashAmount(entity.EntityId) });
         }
     }
 
@@ -1389,9 +1744,9 @@ public class ServerItemManager
         var state = GetOrCreateHandState(netId);
         if (config == null) return FreeHandRespectingTwoHand(state);
 
-        // Règle d'armement : UNE seule arme à la fois — une arme déjà en main (même à une
-        // main) bloque l'équipement de toute autre arme, quelle que soit la main libre.
-        if (config is WeaponConfig && HoldsWeapon(netId)) return null;
+        // Règle d'armement : UNE seule arme à la fois (à feu OU de mêlée) — une arme déjà
+        // en main bloque l'équipement de toute autre arme, quelle que soit la main libre.
+        if (IsWeaponConfig(config) && HoldsWeapon(netId)) return null;
 
         if (config.HandleType == ItemHandleType.TWO_HAND)
             return (state.RightEntityId == -1 && state.LeftEntityId == -1) ? HandType.Right : (HandType?)null;
@@ -1399,19 +1754,22 @@ public class ServerItemManager
         return FreeHandRespectingTwoHand(state);
     }
 
-    /// <summary>Le joueur tient-il déjà une arme (WeaponConfig) dans l'une de ses mains ?</summary>
+    /// <summary>Le joueur tient-il déjà une arme (à feu ou de mêlée) dans l'une de ses mains ?</summary>
     private bool HoldsWeapon(uint netId)
     {
         var state = GetOrCreateHandState(netId);
         return EntityIsWeapon(state.RightEntityId) || EntityIsWeapon(state.LeftEntityId);
     }
 
+    private static bool IsWeaponConfig(ItemConfig config)
+        => config is WeaponConfig || config is MeleeWeaponConfig;
+
     private bool EntityIsWeapon(int entityId)
     {
         if (entityId == -1) return false;
         foreach (var room in _rooms.Values)
             if (room.TryGetValue(entityId, out var e))
-                return DatabaseManager.GetItemConfigById(e.ItemConfigId) is WeaponConfig;
+                return IsWeaponConfig(DatabaseManager.GetItemConfigById(e.ItemConfigId));
         return false;
     }
 
@@ -1467,6 +1825,34 @@ public class ServerItemManager
             if (DatabaseManager.GetItemConfigById(entity.ItemConfigId) is WeaponConfig weapon) {
                 weaponEntityId = entity.EntityId;
                 config = weapon;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>Les DEUX mains du joueur sont-elles vides ? Le sac porté sur le dos ne
+    /// compte pas. Consommé par PlayerMelee.CmdPunch : le coup de poing n'est permis que
+    /// mains nues.</summary>
+    public bool PlayerHandsAreEmpty(uint playerNetId)
+    {
+        var state = GetOrCreateHandState(playerNetId);
+        return state.RightEntityId == -1 && state.LeftEntityId == -1;
+    }
+
+    /// <summary>Comme <see cref="TryGetHeldWeapon"/> mais pour une arme de MÊLÉE
+    /// (MeleeWeaponConfig). Consommé par PlayerMelee.CmdAttack pour valider un coup côté
+    /// serveur — un client ne peut pas frapper sans arme réellement en main.</summary>
+    public bool TryGetHeldMeleeWeapon(uint playerNetId, string roomId, out int weaponEntityId, out MeleeWeaponConfig config)
+    {
+        weaponEntityId = -1;
+        config = null;
+        if (roomId == null || !_rooms.TryGetValue(roomId, out var roomItems)) return false;
+        foreach (var entity in roomItems.Values) {
+            if (entity.HolderNetId != playerNetId) continue;
+            if (DatabaseManager.GetItemConfigById(entity.ItemConfigId) is MeleeWeaponConfig melee) {
+                weaponEntityId = entity.EntityId;
+                config = melee;
                 return true;
             }
         }
@@ -1705,6 +2091,384 @@ public class ServerItemManager
         }
     }
 
+    // ── Montant des liasses de billets (cash ATM) ───────────────────────────────
+    // Même machinerie que le chargeur d'arme : montant keyed "e:{entityId}" avant bridge DB
+    // puis uuid (migré par AssociateUuid), persisté en stateData.cashAmount (débouncé),
+    // réhydraté par SeedCashAmountFromDb partout où des items sont relus depuis le backend.
+    // Le montant est fixé au retrait puis DÉCRÉMENTÉ par les dépôts partiels (TakeCashAmount
+    // « fait la monnaie » dans les liasses du joueur) — jamais modifié autrement.
+
+    private const string StateKeyCashAmount = "cashAmount";
+
+    private readonly Dictionary<string, int> _cashAmountByKey = new Dictionary<string, int>();
+    private readonly HashSet<string> _cashPersistPending = new HashSet<string>();
+
+    /// <summary>Fixe le montant d'une liasse — entité MONDE (retrait ATM, décrément d'une
+    /// liasse tenue lors d'un dépôt partiel) : mémoire serveur + persistance stateData +
+    /// réplication S2C_ItemCash aux clients de la room.</summary>
+    public void SetCashAmount(string roomId, int entityId, int amount) {
+        ItemDbBridge bridge = GetBridge(entityId);
+        string key = bridge != null && !string.IsNullOrEmpty(bridge.Uuid) ? bridge.Uuid : "e:" + entityId;
+        _cashAmountByKey[key] = amount;
+        QueueCashPersist(entityId);
+        BroadcastToRoom(roomId, new S2C_ItemCash { EntityId = entityId, Amount = amount });
+    }
+
+    /// <summary>Montant de la liasse <paramref name="entityId"/> (0 si inconnue).</summary>
+    public int GetCashAmount(int entityId) {
+        ItemDbBridge bridge = GetBridge(entityId);
+        if (bridge != null && !string.IsNullOrEmpty(bridge.Uuid)
+            && _cashAmountByKey.TryGetValue(bridge.Uuid, out int byUuid)) return byUuid;
+        return _cashAmountByKey.TryGetValue("e:" + entityId, out int byEntity) ? byEntity : 0;
+    }
+
+    /// <summary>Retrait ATM : crée une liasse du montant donné directement dans la POCHE du
+    /// joueur — règle projet : un item donné au joueur passe par l'inventaire, jamais par
+    /// les mains. Le montant part dans le POST backend (stateData.cashAmount — pas de
+    /// persistance différée à risquer) puis est mémorisé par uuid avant le re-snapshot poche
+    /// (tooltip + total « Sur vous » de l'ATM à jour immédiatement).
+    /// <paramref name="onFail"/> reçoit un message de toast (poche pleine, erreur backend).</summary>
+    public void SpawnCashInPocket(NetworkConnectionToClient conn, int amount,
+        System.Action onSuccess, System.Action<string> onFail) {
+        if (conn?.identity == null || amount <= 0) { onFail?.Invoke("Service indisponible"); return; }
+
+        // Anti-doublon : s'il y a DÉJÀ une liasse en poche, le retrait s'y ADDITIONNE au
+        // lieu de créer un second item cash (une seule liasse par joueur en pratique).
+        if (_pocketByPlayer.TryGetValue(conn.identity.netId, out PocketSession existing)) {
+            foreach (PocketSessionItem pi in existing.ItemsByEntityId.Values) {
+                if (pi.ConfigId != CashItem.ConfigId || string.IsNullOrEmpty(pi.ItemUuid)) continue;
+                _cashAmountByKey.TryGetValue(pi.ItemUuid, out int current);
+                _cashAmountByKey[pi.ItemUuid] = current + amount;
+                QueueCashPersist(pi.EntityId);
+                SendPocketSnapshot(conn, existing);
+                GameLogger.Network.Info("CashMergeOnWithdraw netId={NetId} amount={Amount} uuid={Uuid} total={Total}",
+                    conn.identity.netId, amount, pi.ItemUuid, current + amount);
+                onSuccess?.Invoke();
+                return;
+            }
+        }
+
+        if (!TryGetFreePocketSlot(conn.identity.netId, out PocketSession pocket, out int slot)) {
+            onFail?.Invoke(InventoryToasts.NoSpaceInInventory);
+            return;
+        }
+        string charId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+        ApiManager.Instance?.StartCoroutine(
+            SpawnCashInPocketCoroutine(conn, charId, pocket, slot, amount, onSuccess, onFail));
+    }
+
+    // Variante cash de CreateItemInPocketCoroutine : stateData.cashAmount écrit à la création
+    // et montant publié dans le snapshot (SnapshotCashAmount lit _cashAmountByKey[uuid]).
+    private IEnumerator SpawnCashInPocketCoroutine(NetworkConnectionToClient conn, string charId,
+        PocketSession pocket, int slotIndex, int amount, System.Action onSuccess, System.Action<string> onFail) {
+        var body = new CreateItemBody {
+            placeId = pocket.PlaceId, configId = CashItem.ConfigId, quantity = 1, ownedBy = charId,
+            stateData = new Dictionary<string, object> {
+                { "slotIndex", slotIndex },
+                { StateKeyCashAmount, amount },
+            },
+        };
+        UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300) { onFail?.Invoke("Service indisponible"); yield break; }
+        string itemUuid = null;
+        int version = 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) { itemUuid = it.Id; version = it.version; } } catch { }
+
+        int entityId = _nextEntityId++;
+        pocket.ItemsByEntityId[entityId] = new PocketSessionItem {
+            EntityId = entityId, ConfigId = CashItem.ConfigId, SlotIndex = slotIndex,
+            ItemUuid = itemUuid, Version = version, Quantity = 1,
+        };
+        pocket.SlotToEntityId[slotIndex] = entityId;
+        if (!string.IsNullOrEmpty(itemUuid)) {
+            _bridges[entityId] = new ItemDbBridge { Uuid = itemUuid, Version = version, PlaceId = pocket.PlaceId };
+            _cashAmountByKey[itemUuid] = amount;
+        }
+        SendPocketSnapshot(conn, pocket);
+        GameLogger.Network.Info("CashSpawnInPocket netId={NetId} amount={Amount} slot={Slot} uuid={Uuid}",
+            conn.identity != null ? conn.identity.netId : 0, amount, slotIndex, itemUuid);
+        onSuccess?.Invoke();
+    }
+
+    /// <summary>La liasse tenue en main par le joueur (vraie prise OU projection hotbar),
+    /// avec sa room et son montant. Faux si aucune liasse en main.</summary>
+    public bool TryGetHeldCash(NetworkConnectionToClient conn, out string roomId, out int entityId, out int amount) {
+        roomId = null; entityId = -1; amount = 0;
+        if (conn?.identity == null) return false;
+        roomId = PlayerRoomTracker.Instance.GetRoom(conn);
+        if (roomId == null || !_playerHands.TryGetValue(conn.identity.netId, out var hands)) return false;
+
+        int[] held = { hands.RightEntityId, hands.LeftEntityId };
+        foreach (int eid in held) {
+            if (eid == -1 || !TryGetEntity(roomId, eid, out var e)) continue;
+            if (e.ItemConfigId != CashItem.ConfigId) continue;
+            entityId = eid;
+            amount = GetCashAmount(eid);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>Dépôt ATM : retire la liasse tenue (entité monde + ligne DB — projection
+    /// hotbar incluse, <see cref="DespawnItem"/> purge aussi l'entrée poche) et renvoie son
+    /// montant. Faux si aucune liasse en main ou montant inconnu (0).</summary>
+    private bool TakeHeldCash(NetworkConnectionToClient conn, out int amount) {
+        if (!TryGetHeldCash(conn, out string roomId, out int entityId, out amount) || amount <= 0) return false;
+        ItemDbBridge bridge = GetBridge(entityId);
+        if (bridge != null && !string.IsNullOrEmpty(bridge.Uuid)) _cashAmountByKey.Remove(bridge.Uuid);
+        _cashAmountByKey.Remove("e:" + entityId);
+        DespawnItem(roomId, entityId);
+        return true;
+    }
+
+    /// <summary>Une liasse mobilisable pour un dépôt ATM : soit l'entité monde TENUE (vraie
+    /// prise ou projection hotbar), soit une ligne de la session poche.</summary>
+    private sealed class CashSource {
+        public bool   Held;
+        public int    EntityId;   // entité monde (main) ou entité de session poche
+        public string RoomId;     // main uniquement
+        public PocketSessionItem Pocket;
+        public string Uuid;
+        public int    Amount;
+    }
+
+    /// <summary>Dépôt ATM : assemble <paramref name="amount"/> depuis les liasses SUR le
+    /// joueur (main + poche, la projection hotbar dédupliquée par uuid). Façon caissier :
+    /// liasse au montant exact d'abord, sinon consommation des plus grosses liasses
+    /// inférieures au restant (supprimées), et au plus UNE liasse décrémentée à la fin —
+    /// le dépôt ne fragmente jamais plus d'une liasse. <paramref name="done"/>(couvert,
+    /// montant réellement pris) — pris &lt; demandé seulement sur erreur backend partielle
+    /// (le reste est laissé au joueur).</summary>
+    public void TakeCashAmount(NetworkConnectionToClient conn, int amount, System.Action<bool, int> done) {
+        if (amount <= 0 || conn?.identity == null || ApiManager.Instance == null) { done(false, 0); return; }
+        ApiManager.Instance.StartCoroutine(TakeCashAmountCoroutine(conn, amount, done));
+    }
+
+    private IEnumerator TakeCashAmountCoroutine(NetworkConnectionToClient conn, int amount, System.Action<bool, int> done) {
+        uint netId = conn.identity.netId;
+
+        // Inventaire cash : main d'abord, puis poche — la liasse projetée en main par la
+        // hotbar EST une ligne de poche (bridge partagé) : dédupliquée par uuid.
+        var sources = new List<CashSource>();
+        string heldUuid = null;
+        if (TryGetHeldCash(conn, out string heldRoomId, out int heldEntityId, out int heldAmount) && heldAmount > 0) {
+            heldUuid = GetBridge(heldEntityId)?.Uuid;
+            sources.Add(new CashSource { Held = true, EntityId = heldEntityId, RoomId = heldRoomId, Amount = heldAmount, Uuid = heldUuid });
+        }
+        if (_pocketByPlayer.TryGetValue(netId, out var pocket)) {
+            foreach (var it in pocket.ItemsByEntityId.Values) {
+                if (it.ConfigId != CashItem.ConfigId) continue;
+                if (!string.IsNullOrEmpty(heldUuid) && it.ItemUuid == heldUuid) continue;
+                if (!_cashAmountByKey.TryGetValue(it.ItemUuid, out int a) || a <= 0) continue;
+                sources.Add(new CashSource { EntityId = it.EntityId, Pocket = it, Uuid = it.ItemUuid, Amount = a });
+            }
+        }
+
+        int total = 0;
+        foreach (var s in sources) total += s.Amount;
+        if (total < amount) { done(false, 0); yield break; }
+
+        int remaining = amount;
+        bool touchedPocket = false;
+        while (remaining > 0 && sources.Count > 0) {
+            // Choix caissier : montant exact > la plus grosse liasse < restant (supprimée
+            // entière) > la plus petite liasse > restant (décrémentée, fin du dépôt).
+            CashSource pick = null;
+            foreach (var s in sources) if (s.Amount == remaining) { pick = s; break; }
+            if (pick == null)
+                foreach (var s in sources)
+                    if (s.Amount < remaining && (pick == null || s.Amount > pick.Amount)) pick = s;
+            if (pick == null)
+                foreach (var s in sources)
+                    if (pick == null || s.Amount < pick.Amount) pick = s;
+
+            sources.Remove(pick);
+
+            if (pick.Amount > remaining) {
+                // Décrément : main = SetCashAmount (persist + S2C_ItemCash) ; poche = mémoire
+                // + persist débouncé (le snapshot poche renvoyé en fin de flux porte le montant).
+                if (pick.Held) {
+                    SetCashAmount(pick.RoomId, pick.EntityId, pick.Amount - remaining);
+                } else {
+                    _cashAmountByKey[pick.Uuid] = pick.Amount - remaining;
+                    QueueCashPersist(pick.EntityId);
+                }
+                // La liasse tenue peut être une projection hotbar (= ligne de poche) :
+                // on rafraîchit la poche dans tous les cas, superflu sans effet sinon.
+                touchedPocket = true;
+                remaining = 0;
+            } else if (pick.Held) {
+                if (TakeHeldCash(conn, out int takenHeld)) {
+                    remaining -= takenHeld;
+                    touchedPocket = true; // projection : DespawnItem purge aussi l'entrée poche
+                }
+            } else {
+                UnityWebRequest del = ApiManager.Instance.DeleteItemRequest(pick.Uuid);
+                yield return del.SendWebRequest();
+                if (del.responseCode < 200 || del.responseCode >= 300) {
+                    // Ligne morte/désynchronisée : la liasse reste au joueur, on continue
+                    // avec les autres (le crédit final = ce qui a réellement été pris).
+                    Debug.LogWarning($"[ServerItemManager] TakeCashAmount DELETE failed code={del.responseCode} uuid={pick.Uuid}");
+                    continue;
+                }
+                if (_pocketByPlayer.TryGetValue(netId, out var p)) {
+                    p.ItemsByEntityId.Remove(pick.EntityId);
+                    p.SlotToEntityId.Remove(pick.Pocket.SlotIndex);
+                }
+                _bridges.Remove(pick.EntityId);
+                _cashAmountByKey.Remove(pick.Uuid);
+                remaining -= pick.Amount;
+                touchedPocket = true;
+            }
+        }
+
+        if (touchedPocket && _pocketByPlayer.TryGetValue(netId, out var refreshed))
+            SendPocketSnapshot(conn, refreshed);
+
+        done(remaining == 0, amount - remaining);
+    }
+
+    /// <summary>Action « Tout fusionner » de la liasse : fusionne TOUTES les liasses du
+    /// joueur (main + poche, projection hotbar dédupliquée par uuid) en UNE seule — la
+    /// cible désignée par le client (<see cref="C2S_MergeAllCash.TargetEntityId"/>), repli
+    /// sur la plus grosse. Les montants ne sont crédités qu'une fois chaque suppression
+    /// backend confirmée (pattern TakeCashAmount) — pas de duplication possible ; une
+    /// liasse dont le DELETE échoue reste simplement au joueur.</summary>
+    public void HandleMergeAllCash(NetworkConnectionToClient conn, C2S_MergeAllCash msg) {
+        if (conn?.identity == null || ApiManager.Instance == null) return;
+        ApiManager.Instance.StartCoroutine(MergeAllCashCoroutine(conn, msg.TargetEntityId));
+    }
+
+    private IEnumerator MergeAllCashCoroutine(NetworkConnectionToClient conn, int targetEntityId) {
+        uint netId = conn.identity.netId;
+
+        // Même collecte que TakeCashAmount : main d'abord puis poche, dédup projection.
+        var sources = new List<CashSource>();
+        string heldUuid = null;
+        if (TryGetHeldCash(conn, out string heldRoomId, out int heldEntityId, out int heldAmount) && heldAmount > 0) {
+            heldUuid = GetBridge(heldEntityId)?.Uuid;
+            sources.Add(new CashSource { Held = true, EntityId = heldEntityId, RoomId = heldRoomId, Amount = heldAmount, Uuid = heldUuid });
+        }
+        if (_pocketByPlayer.TryGetValue(netId, out var pocket)) {
+            foreach (var it in pocket.ItemsByEntityId.Values) {
+                if (it.ConfigId != CashItem.ConfigId) continue;
+                if (!string.IsNullOrEmpty(heldUuid) && it.ItemUuid == heldUuid) continue;
+                if (!_cashAmountByKey.TryGetValue(it.ItemUuid, out int a) || a <= 0) continue;
+                sources.Add(new CashSource { EntityId = it.EntityId, Pocket = it, Uuid = it.ItemUuid, Amount = a });
+            }
+        }
+        if (sources.Count < 2) {
+            conn.Send(new ToastNotificationMessage {
+                text = "Rien à fusionner", worldToast = true, kindByte = (byte)ToastKind.Error,
+            });
+            yield break;
+        }
+
+        CashSource target = null;
+        foreach (var s in sources) if (s.EntityId == targetEntityId) { target = s; break; }
+        if (target == null)
+            foreach (var s in sources) if (target == null || s.Amount > target.Amount) target = s;
+
+        int merged = 0;
+        foreach (var src in sources) {
+            if (src == target) continue;
+            if (src.Held) {
+                if (TakeHeldCash(conn, out int takenHeld)) merged += takenHeld;
+                continue;
+            }
+            UnityWebRequest del = ApiManager.Instance.DeleteItemRequest(src.Uuid);
+            yield return del.SendWebRequest();
+            if (del.responseCode < 200 || del.responseCode >= 300) {
+                Debug.LogWarning($"[ServerItemManager] MergeAllCash DELETE failed code={del.responseCode} uuid={src.Uuid} — liasse laissée au joueur");
+                continue;
+            }
+            if (_pocketByPlayer.TryGetValue(netId, out var p)) {
+                p.ItemsByEntityId.Remove(src.EntityId);
+                p.SlotToEntityId.Remove(src.Pocket.SlotIndex);
+            }
+            _bridges.Remove(src.EntityId);
+            _cashAmountByKey.Remove(src.Uuid);
+            merged += src.Amount;
+        }
+
+        if (merged > 0) {
+            if (target.Held) {
+                // Main (vraie prise ou projection hotbar) : persist + S2C_ItemCash.
+                SetCashAmount(target.RoomId, target.EntityId, target.Amount + merged);
+            } else {
+                _cashAmountByKey[target.Uuid] = target.Amount + merged;
+                QueueCashPersist(target.EntityId);
+            }
+        }
+        if (_pocketByPlayer.TryGetValue(netId, out var refreshedPocket))
+            SendPocketSnapshot(conn, refreshedPocket);
+        GameLogger.Network.Info("CashMergeAll netId={NetId} merged={Merged} total={Total} tgtUuid={Uuid}",
+            netId, merged, target.Amount + merged, target.Uuid);
+    }
+
+    /// <summary>Montant de liasse à publier dans un snapshot de poche (tooltip client +
+    /// gating du dépôt ATM) : 0 si l'item n'est pas une liasse ou montant inconnu.</summary>
+    private static int SnapshotCashAmount(int configId, string uuid) {
+        if (configId != CashItem.ConfigId) return 0;
+        var mgr = Instance;
+        return mgr != null && !string.IsNullOrEmpty(uuid)
+            && mgr._cashAmountByKey.TryGetValue(uuid, out int amount) ? amount : 0;
+    }
+
+    private void QueueCashPersist(int cashEntityId) {
+        ItemDbBridge bridge = GetBridge(cashEntityId);
+        // Pas encore de ligne DB (persist pickup asynchrone) : AssociateUuid re-déclenchera
+        // cette écriture à la création du bridge.
+        if (bridge == null || string.IsNullOrEmpty(bridge.Uuid) || ApiManager.Instance == null) return;
+        if (!_cashPersistPending.Add(bridge.Uuid)) return; // écriture déjà programmée
+        ApiManager.Instance.StartCoroutine(PersistCashAmountCoroutine(bridge.Uuid));
+    }
+
+    private IEnumerator PersistCashAmountCoroutine(string uuid) {
+        yield return new WaitForSeconds(AmmoPersistDebounce);
+        _cashPersistPending.Remove(uuid);
+        if (!_cashAmountByKey.TryGetValue(uuid, out int amount)) yield break;
+
+        // Bridge re-résolu PAR UUID au moment de l'écriture (même garde que le chargeur).
+        if (!TryGetBridgeByUuid(uuid, out int entityId, out ItemDbBridge bridge)) yield break;
+
+        var state = new Dictionary<string, object> { { StateKeyCashAmount, amount } };
+        if (TryGetSlotIndexByUuid(uuid, out int slotIndex)) state["slotIndex"] = slotIndex;
+
+        var body = new UpdateItemBody { expectedVersion = bridge.Version, stateData = state };
+        UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(uuid, body);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] PersistCashAmount failed code={req.responseCode} uuid={uuid}");
+            yield break;
+        }
+        try {
+            var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
+            if (it != null) UpdateBridgeVersion(entityId, it.version);
+        } catch { }
+    }
+
+    /// <summary>Réhydrate le montant d'une liasse depuis sa ligne DB (stateData.cashAmount).
+    /// No-op si la session serveur la connaît déjà (la mémoire fait foi).</summary>
+    public void SeedCashAmountFromDb(int configId, string uuid, Dictionary<string, object> stateData) {
+        if (configId != CashItem.ConfigId || string.IsNullOrEmpty(uuid) || stateData == null) return;
+        if (_cashAmountByKey.ContainsKey(uuid)) return;
+        if (!stateData.TryGetValue(StateKeyCashAmount, out object raw) || raw == null) return;
+        try {
+            _cashAmountByKey[uuid] = Mathf.Max(0, System.Convert.ToInt32(raw));
+        } catch (System.Exception e) {
+            Debug.LogWarning($"[ServerItemManager] SeedCashAmountFromDb parse uuid={uuid}: {e.Message}");
+        }
+    }
+
+    /// <summary>Réhydratation groupée de l'état applicatif d'un item relu depuis le backend
+    /// (chargeur d'arme + montant de liasse) — point d'appel unique des restores.</summary>
+    private void SeedItemStateFromDb(int configId, string uuid, Dictionary<string, object> stateData) {
+        SeedWeaponAmmoFromDb(configId, uuid, stateData);
+        SeedCashAmountFromDb(configId, uuid, stateData);
+    }
+
     /// <summary>stateData d'un PATCH de déplacement d'inventaire. Le backend REMPLACE le
     /// dict : une destination à slotIndex doit donc réinjecter les clés applicatives qui
     /// survivent au move — le chargeur d'une arme suivie. Une destination SANS slotIndex
@@ -1716,6 +2480,11 @@ public class ServerItemManager
             && DatabaseManager.GetItemConfigById(configId) is WeaponConfig
             && _weaponAmmoByKey.TryGetValue(uuid, out int loaded)) {
             state[StateKeyLoadedAmmo] = loaded;
+        }
+        // Liasse de billets : réinjecte son montant (le PATCH remplace stateData intégralement).
+        if (configId == CashItem.ConfigId && !string.IsNullOrEmpty(uuid)
+            && _cashAmountByKey.TryGetValue(uuid, out int cashAmount)) {
+            state[StateKeyCashAmount] = cashAmount;
         }
         return state;
     }
@@ -2413,7 +3182,7 @@ public class ServerItemManager
             }
 
             // Arme restaurée en main : réhydrate son chargeur depuis stateData.loadedAmmo.
-            SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData);
+            SeedItemStateFromDb(it.configId, it.Id, it.stateData);
 
             // Re-create the runtime entity attached to the player in the current room.
             int entityId = _nextEntityId++;
@@ -2462,6 +3231,14 @@ public class ServerItemManager
             // observateurs (le garde anti-doublon de OnSpawnItem gère l'éventuel double envoi).
             if (conn != null && conn.isReady) conn.Send(spawnMsg);
             BroadcastToRoom(liveRoom, spawnMsg);
+
+            // Liasse restaurée en main : pousse son montant (même double envoi que le spawn —
+            // le montant vient d'être réhydraté par SeedItemStateFromDb, résolu par uuid).
+            if (it.configId == CashItem.ConfigId) {
+                var cashMsg = new S2C_ItemCash { EntityId = entityId, Amount = GetCashAmount(entityId) };
+                if (conn != null && conn.isReady) conn.Send(cashMsg);
+                BroadcastToRoom(liveRoom, cashMsg);
+            }
 
             GameLogger.Network.Info("Item Restore entity={EntityId} configId={ItemConfigId} player={PlayerNetId} hand={Hand} room={Room}",
                 entityId, it.configId, playerNetId, hand, liveRoom);
@@ -2612,7 +3389,7 @@ public class ServerItemManager
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId = _nextEntityId++;
                 int qty = Mathf.Max(1, it.quantity);
-                SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData); // arme stockée : réhydrate son chargeur
+                SeedItemStateFromDb(it.configId, it.Id, it.stateData); // arme stockée : réhydrate son chargeur
                 session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
                     ItemUuid = it.Id, Version = it.version, Quantity = qty,
@@ -2750,7 +3527,7 @@ public class ServerItemManager
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId = _nextEntityId++;
                 int qty = Mathf.Max(1, it.quantity);
-                SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData); // arme stockée : réhydrate son chargeur
+                SeedItemStateFromDb(it.configId, it.Id, it.stateData); // arme stockée : réhydrate son chargeur
                 session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
                     ItemUuid = it.Id, Version = it.version, Quantity = qty,
@@ -3234,6 +4011,10 @@ public class ServerItemManager
         // plus valides après close ; un re-open re-allouera des nouveaux ids).
         foreach (var it in session.ItemsByEntityId.Values) _bridges.Remove(it.EntityId);
 
+        // Sac de butin vidé pendant cette session → disparition immédiate (sinon il attend
+        // son expiration 10 min). No-op pour un conteneur normal (prop/coffre).
+        if (session.ItemsByEntityId.Count == 0) TryDespawnEmptyLootBag(session.PlaceId);
+
         // Coffre de véhicule : pas de prop à animer → le VehicleController joue le son de fermeture.
         if (session.IsVehicleTrunk) OnVehicleTrunkStateChanged?.Invoke(session.PropUuid, false);
 
@@ -3304,6 +4085,28 @@ public class ServerItemManager
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Un colis ne peut pas se contenir lui-même" });
             PushSnapshotsFor(conn, fromCtx, toCtx);
             return;
+        }
+
+        // ── Fusion de liasses (cash) : déposer une liasse sur une autre ADDITIONNE les
+        // montants — jamais de pile, une seule liasse subsiste (la cible). Résolu AVANT la
+        // détection de merge de pile : le cash est maxStackSize=1 et serait refusé en aval.
+        if (itemCtx.ConfigId == CashItem.ConfigId) {
+            int cashTgtEntityId = -1; string cashTgtUuid = null;
+            bool cashTarget = false;
+            if (toCtx is PocketPlaceContext ppcCash)
+                cashTarget = ppcCash.TryResolveSameConfig(msg.ToSlotIndex, itemCtx.ConfigId, out cashTgtEntityId, out cashTgtUuid);
+            else if (toCtx is ContainerPlaceContext cpcCash)
+                cashTarget = cpcCash.TryResolveStackMerge(msg.ToSlotIndex, itemCtx.ConfigId,
+                    out cashTgtEntityId, out cashTgtUuid, out _, out _, out _);
+            else if (toCtx is ItemContainerPlaceContext icpcCash)
+                cashTarget = icpcCash.TryResolveStackMerge(msg.ToSlotIndex, itemCtx.ConfigId,
+                    out cashTgtEntityId, out cashTgtUuid, out _, out _, out _);
+            if (cashTarget && cashTgtEntityId != msg.EntityId
+                && !string.IsNullOrEmpty(itemCtx.ItemUuid) && !string.IsNullOrEmpty(cashTgtUuid)) {
+                ApiManager.Instance?.StartCoroutine(MergeCashIntoTargetCoroutine(conn, msg, itemCtx,
+                    fromCtx, toCtx, cashTgtEntityId, cashTgtUuid));
+                return;
+            }
         }
 
         // ── Détection d'un merge de pile sur la cible ─────────────────────────
@@ -3577,6 +4380,39 @@ public class ServerItemManager
         conn.Send(new S2C_MoveItemResult { Success = true, EntityId = msg.EntityId });
         PushSnapshotsFor(conn, fromCtx, toCtx);
         PropagateContainerUpdateToOtherSubscribers(conn.identity.netId, fromCtx, toCtx);
+    }
+
+    // ── Fusion de liasses (cash) ─────────────────────────────────────────────
+    // Déposer une liasse sur une autre ne fait pas de pile : les MONTANTS s'additionnent
+    // dans la liasse CIBLE et la source est supprimée. DELETE de la source d'abord : en
+    // cas d'échec backend rien n'a bougé, et le montant cible n'est crédité qu'une fois
+    // la source réellement détruite — pas de duplication d'argent possible.
+    private IEnumerator MergeCashIntoTargetCoroutine(NetworkConnectionToClient conn, C2S_MoveItem msg,
+        ItemCtx itemCtx, IPlaceContext fromCtx, IPlaceContext toCtx, int tgtEntityId, string tgtUuid)
+    {
+        int srcAmount = GetCashAmount(msg.EntityId);
+        int tgtAmount = _cashAmountByKey.TryGetValue(tgtUuid, out int ta) ? ta : 0;
+
+        UnityWebRequest delReq = ApiManager.Instance.DeleteItemRequest(itemCtx.ItemUuid);
+        yield return delReq.SendWebRequest();
+        if (delReq.responseCode < 200 || delReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] MergeCash DELETE src failed code={delReq.responseCode} uuid={itemCtx.ItemUuid}");
+            conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = "Échec de la fusion" });
+            PushSnapshotsFor(conn, fromCtx, toCtx);
+            yield break;
+        }
+
+        _cashAmountByKey.Remove(itemCtx.ItemUuid);
+        _cashAmountByKey.Remove("e:" + msg.EntityId);
+        fromCtx.TearDown(msg.EntityId); // main : despawn monde ; poche : déséquipe + purge session
+        _cashAmountByKey[tgtUuid] = tgtAmount + srcAmount;
+        QueueCashPersist(tgtEntityId);
+
+        conn.Send(new S2C_MoveItemResult { Success = true, EntityId = msg.EntityId });
+        PushSnapshotsFor(conn, fromCtx, toCtx);
+        PropagateContainerUpdateToOtherSubscribers(conn.identity.netId, fromCtx, toCtx);
+        GameLogger.Network.Info("CashMerge netId={NetId} srcUuid={Src} tgtUuid={Tgt} total={Total}",
+            conn.identity.netId, itemCtx.ItemUuid, tgtUuid, tgtAmount + srcAmount);
     }
 
     private IEnumerator RollbackTargetQuantity(string tgtUuid, int tgtCurrentVersion, int tgtOriginalQty) {
@@ -3958,7 +4794,7 @@ public class ServerItemManager
                 int dbQty = Mathf.Max(1, it.quantity);
                 if (dbQty > 1)
                     Debug.LogWarning($"[ServerItemManager] Pocket item id={it.Id} cfg={it.configId} a quantity={dbQty}>1 en DB — clamp à 1 (invariant poche = 1/slot).");
-                SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData); // arme en poche : réhydrate son chargeur
+                SeedItemStateFromDb(it.configId, it.Id, it.stateData); // arme en poche : réhydrate son chargeur
                 session.ItemsByEntityId[entityId] = new PocketSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
                     ItemUuid = it.Id, Version = it.version, Quantity = 1,
@@ -3985,6 +4821,7 @@ public class ServerItemManager
                 EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
                 Quantity = Mathf.Max(1, it.Quantity),
                 LoadedAmmo = SnapshotLoadedAmmo(it.ConfigId, it.ItemUuid),
+                CashAmount = SnapshotCashAmount(it.ConfigId, it.ItemUuid),
             });
         }
         conn.Send(new S2C_PocketSync {
@@ -4384,6 +5221,19 @@ public class ServerItemManager
             return occ == entityId;
         }
 
+        /// <summary>Occupant du slot s'il est de la MÊME config que l'item entrant (fusion de
+        /// liasses). Équivalent poche du TryResolveStackMerge des conteneurs, sans notion de
+        /// quantité (poche = 1 item/slot).</summary>
+        public bool TryResolveSameConfig(int slotIndex, int incomingConfigId, out int entityId, out string uuid) {
+            entityId = -1; uuid = null;
+            if (!_mgr._pocketByPlayer.TryGetValue(_netId, out var s)) return false;
+            if (!s.SlotToEntityId.TryGetValue(slotIndex, out int occ)) return false;
+            if (!s.ItemsByEntityId.TryGetValue(occ, out var pi) || pi.ConfigId != incomingConfigId) return false;
+            entityId = occ;
+            uuid = pi.ItemUuid;
+            return true;
+        }
+
         public void TearDown(int entityId) {
             // L'item était peut-être projeté en main (hotbar) : déséquipe d'abord.
             _mgr.OnPocketEntryRemoved(_netId, entityId);
@@ -4533,7 +5383,7 @@ public class ServerItemManager
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId = _nextEntityId++;
                 int qty = Mathf.Max(1, it.quantity);
-                SeedWeaponAmmoFromDb(it.configId, it.Id, it.stateData); // arme stockée : réhydrate son chargeur
+                SeedItemStateFromDb(it.configId, it.Id, it.stateData); // arme stockée : réhydrate son chargeur
                 session.ItemsByEntityId[entityId] = new ContainerSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
                     ItemUuid = it.Id, Version = it.version, Quantity = qty,

@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 652af3c46abec8a4e923dab36645d175, type: 3}
+  m_Name: Vehicle Vendor
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.NPC.VehicleVendorNpcConfig
+  id: vehicle-vendor
+  serverPrefab: {fileID: 9127969945890360167, guid: 1b319b6614ae1994aa1d0cb61d45c2dd,
+    type: 3}
+  clientPrefab: {fileID: 8664680214882990904, guid: 42ad9c80648ff644585819d8ea413669,
+    type: 3}
+  dialogue:
+    rootNodeId: root
+    nodes:
+    - id: root
+      npcText: "Bienvenue \xE0 la concession ! Je suis {name}. Un v\xE9hicule t'int\xE9resse
+        ?"
+      options:
+      - text: "Montre-moi les v\xE9hicules."
+        action: 3
+        nextNodeId: 
+      - text: "Comment \xE7a marche ?"
+        action: 0
+        nextNodeId: info
+      - text: Juste de passage, merci.
+        action: 1
+        nextNodeId: 
+    - id: info
+      npcText: "Tu choisis, tu paies, et le v\xE9hicule est livr\xE9 directement
+        dans ton garage. Passe \xE0 une porte de garage pour le sortir !"
+      options:
+      - text: D'accord, montre-moi.
+        action: 3
+        nextNodeId: 
+      - text: Une autre fois.
+        action: 1
+        nextNodeId: 
+  icon: {fileID: 21300000, guid: 73b06da295851fe4cb8197bfe5daa54b, type: 3}
+  merchantLabel: Concessionnaire
+  catalog: []
+  pauseProbability: 0.15
+  minTendSeconds: 30
+  maxTendSeconds: 60
+  minPauseSeconds: 4
+  maxPauseSeconds: 8
+  pauseWanderRadius: 3
+  vehicleCatalog:
+  - {fileID: 11400000, guid: e46a2b20efabe0a458df90323f221d8a, type: 2}

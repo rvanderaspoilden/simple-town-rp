@@ -39,6 +39,25 @@ namespace Sim.NPC {
         [Tooltip("Dialogue inline du NPC. Vide → fallback sur le dialogue du NpcConfig « default ».")]
         [SerializeField] private DialogueConfig dialogue = new DialogueConfig();
 
+        [Tooltip("Icône optionnelle affichée au-dessus du NPC (billboard monde). Sert à signaler " +
+                 "le type de marchand (étal, concessionnaire…). Vide → rien d'affiché.")]
+        [SerializeField] private Sprite icon;
+
+        [Tooltip("Points de vie du NPC (dégâts d'armes : balles, mêlée, poings). À 0 il meurt : " +
+                 "ragdoll au sol quelques secondes puis despawn — son point de spawn respawne " +
+                 "après le cooldown normal.")]
+        [SerializeField] private float maxHealth = 100f;
+
+        [Header("Loot (fouille du cadavre)")]
+        [Tooltip("Fourchette de cash lâchée à la fouille du cadavre (liasse en poche du " +
+                 "fouilleur). 0-0 = pas de cash. Une seule fouille par corps.")]
+        [SerializeField] private int lootCashMin = 5;
+        [SerializeField] private int lootCashMax = 20;
+
+        [Tooltip("Items lâchés à la fouille : chaque entrée est tirée indépendamment (chance " +
+                 "0..1) et donnée au fouilleur via l'inventaire (poche d'abord).")]
+        [SerializeField] private NpcLootEntry[] loot;
+
         public string     Id           => id;
         public GameObject ServerPrefab => serverPrefab;
         public GameObject ClientPrefab => clientPrefab;
@@ -48,5 +67,32 @@ namespace Sim.NPC {
 
         /// <summary>Dialogue inline, ou null s'il est vide (le client fera alors le fallback défaut).</summary>
         public DialogueConfig Dialogue => (dialogue != null && dialogue.HasContent) ? dialogue : null;
+
+        /// <summary>Icône au-dessus du NPC (type de marchand), ou null si aucune.</summary>
+        public Sprite Icon => icon;
+
+        /// <summary>Points de vie au spawn (consommés par NpcAIController.ServerApplyDamage).</summary>
+        public float MaxHealth => Mathf.Max(1f, maxHealth);
+
+        /// <summary>Cash minimum/maximum lâché à la fouille (0/0 = aucun).</summary>
+        public int LootCashMin => Mathf.Max(0, Mathf.Min(lootCashMin, lootCashMax));
+        public int LootCashMax => Mathf.Max(0, Mathf.Max(lootCashMin, lootCashMax));
+
+        /// <summary>Entrées de loot item (jamais null).</summary>
+        public NpcLootEntry[] Loot => loot ?? System.Array.Empty<NpcLootEntry>();
+    }
+
+    /// <summary>Une entrée de loot de cadavre NPC : un item tiré à la fouille avec sa
+    /// probabilité. Donné au fouilleur via SpawnItemIntoInventory (poche d'abord).</summary>
+    [System.Serializable]
+    public class NpcLootEntry {
+        [Tooltip("Config de l'item lâché.")]
+        public ItemConfig item;
+
+        [Tooltip("Nombre d'exemplaires donnés quand l'entrée sort.")]
+        [Min(1)] public int quantity = 1;
+
+        [Tooltip("Probabilité (0..1) que cette entrée sorte à la fouille.")]
+        [Range(0f, 1f)] public float chance = 1f;
     }
 }

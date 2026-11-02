@@ -11,11 +11,12 @@ using UnityEngine;
 /// Deux points d'entrée C2S :
 ///   • <see cref="HandleCatalogRequest"/> — à l'ouverture de la boutique, renvoie le catalogue.
 ///   • <see cref="HandleBuy"/> — achat d'un item ; revalide tout côté serveur (autorité), débite
-///     via le ledger, remet l'item en main, puis renvoie un résultat.
+///     via le ledger, range l'item dans l'inventaire (slot de poche en priorité — il n'apparaît
+///     en main que si son slot est celui sélectionné dans la hotbar), puis renvoie un résultat.
 ///
-/// Validation calquée sur le distributeur (PropInteractionRouter.HandleDispenser) : prechecks
-/// fonds + mission-item + capacité en main AVANT le débit → grant synchrone, jamais d'échec
-/// post-débit. Aucun toast émis ici : le client affiche le feedback (évite les doublons).
+/// Prechecks fonds + place dans l'inventaire AVANT le débit ; l'acquisition passe par
+/// ServerItemManager.SpawnItemIntoInventory (async pour la poche/colis) et un échec post-débit
+/// est remboursé. Aucun toast émis ici : le client affiche le feedback (évite les doublons).
 /// </summary>
 public class NpcMerchantService {
     private static NpcMerchantService _instance;
@@ -28,7 +29,7 @@ public class NpcMerchantService {
     private const byte ReasonOk          = 0;
     private const byte ReasonUnavailable = 1; // hors catalogue / mal configuré
     private const byte ReasonFunds       = 2;
-    private const byte ReasonHandsFull   = 3; // mains pleines ou item de mission en main
+    private const byte ReasonHandsFull   = 3; // pas de place dans l'inventaire (ou encombrant : mains pleines/mission)
     private const byte ReasonNoMerchant  = 4; // pas un marchand / absent / hors-room
 
     // ── Catalogue ───────────────────────────────────────────────────────────────
@@ -88,22 +89,34 @@ public class NpcMerchantService {
                 return;
             }
 
-            // Mission-item en main OU pas de place : on refuse AVANT tout débit.
+            // Pas de place (slot de poche pour un pocketable, main pour un encombrant,
+            // colis tenu en secours) : on refuse AVANT tout débit. Inventaire classique :
+            // l'achat va dans un slot — l'item n'apparaît en main que si son slot est
+            // celui sélectionné dans la hotbar (re-pointage client via PocketSync).
             uint netId = conn.identity.netId;
-            if (ServerItemManager.Instance.IsHoldingMissionItem(netId)
-                || !ServerItemManager.Instance.CanFitInHand(netId, cfg)) {
+            if (!ServerItemManager.Instance.CanReceiveItem(conn, cfg)) {
+                Reply(conn, msg, false, ReasonHandsFull);
+                return;
+            }
+            // Seul un encombrant va en main : jamais par-dessus un item de mission.
+            if (!cfg.AllowedInPocket && ServerItemManager.Instance.IsHoldingMissionItem(netId)) {
                 Reply(conn, msg, false, ReasonHandsFull);
                 return;
             }
 
-            // Débit (ledger) → remise immédiate en main (synchrone, atomique côté flux).
+            // Débit (ledger) → acquisition via le point unique d'inventaire (poche en
+            // priorité). L'écriture poche/colis est async (backend) : un échec post-débit
+            // rembourse au lieu de laisser un achat payé sans item.
             bank.PostLedger(-price, LedgerReason.ShopPurchase, LedgerCounterparty.System,
                 MerchantCounterparty, configId: cfg.ID);
 
-            string roomId = PlayerRoomTracker.Instance.GetRoom(conn) ?? "city";
-            ServerItemManager.Instance.SpawnItemInHand(roomId, cfg.ID, conn, cfg);
-
-            Reply(conn, msg, true, ReasonOk);
+            ServerItemManager.Instance.SpawnItemIntoInventory(conn, cfg.ID, cfg, persistent: true,
+                onSuccess: () => Reply(conn, msg, true, ReasonOk),
+                onFail: _ => {
+                    bank.PostLedger(price, LedgerReason.ShopPurchase, LedgerCounterparty.System,
+                        MerchantCounterparty, configId: cfg.ID);
+                    Reply(conn, msg, false, ReasonUnavailable);
+                });
         }
         catch (System.Exception ex) {
             Debug.LogError($"[NpcMerchantService] ERROR during buy npc={msg.NpcId} item={msg.ItemConfigId}: {ex}");

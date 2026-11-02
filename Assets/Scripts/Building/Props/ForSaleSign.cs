@@ -10,7 +10,7 @@ using Action = Sim.Interactables.Action;
 
 /// <summary>
 /// "For Sale" sign at the entrance of a land parcel — a NON-NETWORK scene object (no
-/// NetworkIdentity), same pattern as <see cref="VehicleShop"/>. Shows a proximity billboard and a
+/// NetworkIdentity), scene-object interactable pattern. Shows a proximity billboard and a
 /// single "Consulter" action that opens <see cref="Sim.UI.LandParcelInfoUI"/> in every state:
 /// available (Acheter / Louer), owned (Vendre, owner-only) or rented (Résilier le bail,
 /// tenant-only). The buy/rent/sell/terminate decisions all flow from that modal and are

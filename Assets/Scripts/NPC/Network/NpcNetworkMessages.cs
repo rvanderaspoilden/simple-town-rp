@@ -62,3 +62,13 @@ public struct S2C_NpcKnockdown : NetworkMessage {
     public int    NpcId;
     public string RoomId;
 }
+
+/// <summary>
+/// One-shot : le NPC encaisse un coup NON létal (balle, mêlée, poing) — chaque client joue
+/// une petite animation de choc procédurale (CharacterFlinch) sur sa vue. Aucun état
+/// persistant : le NPC reste debout et son IA continue.
+/// </summary>
+public struct S2C_NpcHitReact : NetworkMessage {
+    public int    NpcId;
+    public string RoomId;
+}

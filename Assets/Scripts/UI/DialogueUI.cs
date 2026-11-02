@@ -108,6 +108,13 @@ namespace Sim.UI {
                     ClientNpcManager.Instance?.RequestMerchantCatalog(npcId);
                     break;
 
+                case DialogueAction.OpenVehicleShop:
+                    int vendorNpcId = this._npcId;
+                    this._suppressEndOnHide = true; // la session passe au shop, pas de release.
+                    this.Hide();
+                    ClientNpcManager.Instance?.RequestVehicleCatalog(vendorNpcId);
+                    break;
+
                 case DialogueAction.EndDialogue:
                 default:
                     this.Hide();

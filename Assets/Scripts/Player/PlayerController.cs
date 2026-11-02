@@ -124,7 +124,7 @@ namespace Sim {
         [Tooltip("Endurance maximale (0-100). La barre se remplit à l'arrêt, se vide en courant et à chaque saut.")]
         [SerializeField] private float maxStamina = 100f;
         [Tooltip("Endurance consommée par seconde pendant la course.")]
-        [SerializeField] private float staminaRunDrainPerSecond = 20f;
+        [SerializeField] private float staminaRunDrainPerSecond = 4f;
         [Tooltip("Endurance consommée à chaque saut.")]
         [SerializeField] private float staminaJumpCost = 15f;
         [Tooltip("Endurance régénérée par seconde quand le joueur est immobile.")]
@@ -219,7 +219,22 @@ namespace Sim {
         /// neutraliser le click-to-move / l'interaction (comme IsDriving).</summary>
         public bool IsKnockedDown => isKnockedDown;
 
+        // Mort (PV à 0) : répliqué pour le ragdoll de mort sur toutes les copies (hook). Le
+        // butin ne reste PAS sur le corps du joueur — il est lâché dans un SAC DE BUTIN
+        // persistant (LootBag) décorrélé, qui survit au respawn. SEUL état logique de la
+        // mort : dieState (posé par Die/TargetKill) — le hook ne fait que le visuel ragdoll.
+        [SyncVar(hook = nameof(OnDeadChanged))]
+        private bool isDead;
+
+        /// <summary>Ce joueur est-il mort (ragdoll au sol avant réveil) ? Vrai sur toutes les
+        /// copies — exclut la cible des armes.</summary>
+        public bool IsDead => isDead;
+
         private const float KnockdownDuration = 3f;
+
+        // Fenêtre (s) du ragdoll de mort avant le réveil automatique (Revive : PV reset,
+        // -50 BC, téléport domicile). Court : le butin vit désormais dans un sac persistant.
+        private const float DeathReviveDelay = 5f;
 
         // Hidden on every client while the player teleports, so remote clients don't see
         // the NetworkTransform interpolate the position jump (the player slides). Toggled
@@ -372,6 +387,8 @@ namespace Sim {
         private CharacterLookAt lookAtState;
 
         private CharacterInteract characterInteractState;
+
+        private CharacterBusy busyState;
 
         private CharacterDie dieState;
 
@@ -917,6 +934,7 @@ namespace Sim {
             this.freeMoveState = new CharacterFreeMove(this);
             this.lookAtState = new CharacterLookAt(this);
             this.characterInteractState = new CharacterInteract(this);
+            this.busyState = new CharacterBusy(this);
             this.dieState = new CharacterDie(this);
             this.knockdownState = new CharacterKnockdown(this);
 
@@ -971,6 +989,10 @@ namespace Sim {
         /// base actions (e.g. LOOK / "Regarder").
         /// </summary>
         public Action[] GetContextActions() {
+            // Mort : aucune interaction sur le corps lui-même (il disparaît au réveil) — le
+            // butin est dans un SAC persistant au sol, fouillable séparément.
+            if (this.isDead) return System.Array.Empty<Action>();
+
             List<Action> list = new List<Action>(this.actions);
 
             RelationshipState state = ClientRelationshipManager.Instance.GetState(this.characterData?.Id);
@@ -1210,6 +1232,10 @@ namespace Sim {
             // Modale marchande ouverte : elle bloque aussi les interactions — on ne
             // s'échappe pas du shop en marchant.
             if (Sim.UI.MerchantShopUI.Instance != null && Sim.UI.MerchantShopUI.Instance.gameObject.activeSelf) return;
+
+            // Écran ATM ouvert : le joueur reste planté devant le distributeur — la session
+            // se quitte par Quitter/Échap (ou l'éloignement forcé type téléport, géré par AtmUI).
+            if (Sim.UI.AtmUI.Instance != null && Sim.UI.AtmUI.Instance.IsOpen) return;
 
             // Dialogue NPC ouvert : bouger le quitte proprement (Hide libère la session NPC).
             if (Sim.UI.DialogueUI.Instance != null && Sim.UI.DialogueUI.Instance.gameObject.activeSelf) {
@@ -1503,6 +1529,17 @@ namespace Sim {
             this.stateMachine.SetState(this.characterInteractState);
         }
 
+        /// <summary>Entre dans l'état « occupé » (<see cref="PlayerState.BUSY"/>) le temps d'une
+        /// action à UI bloquante (ATM, fouille). <paramref name="stillBusy"/> maintient l'état :
+        /// dès qu'il devient faux (UI refermée), l'état se termine seul au Tick suivant (retour
+        /// Idle). <paramref name="lookAt"/> oriente le joueur vers la cible (facultatif). À
+        /// appeler AVANT d'ouvrir l'UI concernée (la sortie d'Idle referme l'inventaire).</summary>
+        public void BeginBusy(Func<bool> stillBusy, Transform lookAt = null) {
+            if (this.stateMachine == null || this.busyState == null) return;
+            this.busyState.Configure(stillBusy, lookAt);
+            this.stateMachine.SetState(this.busyState);
+        }
+
         public void Sit(ISeatBehavior props, Transform seatTransform) {
             this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
         }
@@ -1606,6 +1643,30 @@ namespace Sim {
             }
         }
 
+        /// <summary>Réplique le ragdoll de MORT sur tous les clients. Purement visuel : l'état
+        /// logique est dieState (Die côté serveur, TargetKill chez l'owner) — contrairement au
+        /// knockdown, ce hook ne pose AUCUN état dans la state machine. À la relève (Revive),
+        /// l'owner est redressé sur la position des hanches (le téléport domicile éventuel
+        /// écrase ensuite la position ; un sans-abri se relève sur place).</summary>
+        private void OnDeadChanged(bool _, bool now) {
+            if (now) {
+                if (this.ragdoll != null) this.ragdoll.EnableRagdoll();
+                // Owner : caméra sur les hanches via GetCameraFollowTarget ; le verrouillage
+                // des entrées vient de l'état DIED (dieState), pas d'ici.
+            } else {
+                if (isLocalPlayer) {
+                    Vector3 stand = this.ragdoll != null ? this.ragdoll.HipsPosition : transform.position;
+                    if (UnityEngine.AI.NavMesh.SamplePosition(stand, out var hit, 3f, UnityEngine.AI.NavMesh.AllAreas))
+                        stand = hit.position;
+                    if (this.ragdoll != null) this.ragdoll.DisableRagdoll();
+                    transform.position = stand;
+                    // Le retour à Idle vient de TargetRevive (Invoke Idle), pas d'ici.
+                } else if (this.ragdoll != null) {
+                    this.ragdoll.DisableRagdoll();
+                }
+            }
+        }
+
         [Server]
         public void Kill() {
             GameLogger.Player.Warning("PlayerKilled {PlayerNetId}", netId);
@@ -1613,12 +1674,25 @@ namespace Sim {
             // (via MissionItemCleanup) and clears the owner's mission UI (via OnMissionFinished).
             Sim.Missions.MissionServerManager.Instance.AbandonAllForOwner(this.netId);
             this.Die();
+            // Lâche TOUT le butin du joueur dans un sac persistant au point de mort (déplace
+            // mains/dos/poche dans la place du sac) AVANT le ragdoll — le sac vit 10 min
+            // indépendamment du respawn.
+            ServerItemManager.Instance?.DropPlayerLootBag(this);
+            // Ragdoll de mort répliqué par le hook d'isDead (effondrement + caméra owner sur
+            // les hanches). Un knockdown véhicule en cours est annulé proprement : l'état
+            // logique de la mort est dieState seul.
+            CancelInvoke(nameof(ServerRecoverKnockdown));
+            this.isKnockedDown = false;
+            this.isDead = true;
             this.TargetKill(this.netIdentity.connectionToClient);
-            Invoke(nameof(Revive), 4f);
+            Invoke(nameof(Revive), DeathReviveDelay);
         }
 
         [Server]
         public void Revive() {
+            this.isDead = false; // relève du ragdoll de mort sur toutes les copies (hook)
+            // NB : on NE purge PAS le sac de butin — il persiste au point de mort (10 min)
+            // pour que le joueur puisse revenir récupérer ses affaires.
             this.playerHealth.ResetAll();
             this.playerBankAccount.PostLedger(-50, LedgerReason.DeathPenalty, LedgerCounterparty.System, LedgerCounterparty.Bank);
 
@@ -1666,9 +1740,10 @@ namespace Sim {
         }
 
         /// <summary>Point d'ancrage de la caméra TPS : la tête en temps normal, les hanches du
-        /// ragdoll pendant un renversement (la racine ne suit pas le corps qui s'effondre).</summary>
+        /// ragdoll pendant un renversement OU la mort (la racine ne suit pas le corps qui
+        /// s'effondre).</summary>
         public Transform GetCameraFollowTarget() {
-            if (this.isKnockedDown && this.ragdoll != null && this.ragdoll.Hips != null) return this.ragdoll.Hips;
+            if ((this.isKnockedDown || this.isDead) && this.ragdoll != null && this.ragdoll.Hips != null) return this.ragdoll.Hips;
             return this.headTargetForCamera;
         }
         

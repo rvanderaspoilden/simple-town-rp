@@ -169,6 +169,16 @@ public class NpcServerManager {
         });
     }
 
+    /// <summary>Diffuse un coup NON létal encaissé par le NPC à sa room — chaque client joue
+    /// le petit choc procédural (CharacterFlinch) sur sa vue. One-shot, aucun état.</summary>
+    public void HitReact(int npcId) {
+        if (!_npcs.TryGetValue(npcId, out var s)) return;
+        BroadcastToRoom(s.RoomId, new S2C_NpcHitReact {
+            NpcId   = npcId,
+            RoomId  = s.RoomId
+        });
+    }
+
     public void Unregister(int npcId) {
         if (!_npcs.TryGetValue(npcId, out var s)) return;
         _npcs.Remove(npcId);
