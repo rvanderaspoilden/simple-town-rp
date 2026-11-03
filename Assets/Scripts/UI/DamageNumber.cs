@@ -16,9 +16,10 @@ using UnityEngine;
 /// </summary>
 public class DamageNumber : MonoBehaviour
 {
-    private static readonly Color NormalColor = new Color(1f, 1f, 1f, 1f);
-    private static readonly Color KnockColor  = new Color(1f, 0.62f, 0.25f, 1f);
-    private static readonly Color ShadowColor = new Color(0f, 0f, 0f, 0.6f);
+    private static readonly Color NormalColor   = new Color(1f, 1f, 1f, 1f);
+    private static readonly Color KnockColor    = new Color(1f, 0.62f, 0.25f, 1f);
+    private static readonly Color HeadshotColor = new Color(1f, 0.15f, 0.12f, 1f);
+    private static readonly Color ShadowColor   = new Color(0f, 0f, 0f, 0.6f);
 
     private const float WorldScale = 0.006f;
     private const float Lifetime   = 0.7f;   // s, apparition → disparition complète
@@ -28,13 +29,13 @@ public class DamageNumber : MonoBehaviour
     private CanvasGroup   _group;
 
     /// <summary>Fait apparaître un chiffre de dégâts au point d'impact (coordonnées monde).</summary>
-    public static void Spawn(Vector3 worldPoint, float damage, bool knocked)
+    public static void Spawn(Vector3 worldPoint, float damage, bool knocked, bool headshot = false)
     {
         var go = new GameObject("DamageNumber");
-        go.AddComponent<DamageNumber>().Build(worldPoint, damage, knocked);
+        go.AddComponent<DamageNumber>().Build(worldPoint, damage, knocked, headshot);
     }
 
-    private void Build(Vector3 worldPoint, float damage, bool knocked)
+    private void Build(Vector3 worldPoint, float damage, bool knocked, bool headshot)
     {
         var canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
@@ -52,9 +53,13 @@ public class DamageNumber : MonoBehaviour
         _root.localScale = Vector3.one * WorldScale * 0.6f;
 
         string text = "−" + Mathf.Max(1, Mathf.RoundToInt(damage));
+        // Headshot : préfixe « ! » pour signaler le tir à la tête.
+        if (headshot) text = "!" + text;
         // 30 pt pour les petits coups (poing), jusqu'à ~44 pt vers 50 dégâts (sniper).
         float fontSize = 30f + 14f * Mathf.Clamp01((damage - 5f) / 45f);
-        Color color = knocked ? KnockColor : NormalColor;
+        // Headshot = rouge vif (prime sur le KO) + plus gros pour qu'il se remarque.
+        if (headshot) fontSize += 10f;
+        Color color = headshot ? HeadshotColor : (knocked ? KnockColor : NormalColor);
 
         // Ombre portée (duplicata noir décalé) : lisible sur fond clair comme sombre.
         MakeLabel("Shadow", text, fontSize, ShadowColor, new Vector2(2.5f, -2.5f));

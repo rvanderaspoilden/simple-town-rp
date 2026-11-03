@@ -12,6 +12,7 @@ namespace Sim.UI {
     /// prefab HUD Manager), volontairement indépendant du Crosshair : celui-ci est masqué
     /// hors TPS et sous la lunette sniper (ScopeOverlayUI), or le hitmarker doit rester
     /// visible scopé. Alpha 0 au repos — invisible tant que rien n'est touché.
+    /// Blanc = touché, orange = KO, rouge (+ pop plus fort) = headshot.
     /// </summary>
     public class HitmarkerUI : MonoBehaviour {
         [Tooltip("Groupe des traits — alpha piloté par Notify (0 au repos).")]
@@ -30,9 +31,21 @@ namespace Sim.UI {
         [SerializeField]
         private Color knockColor = new Color(1f, 0.62f, 0.25f, 1f);
 
+        [Tooltip("Teinte d'un headshot (tir à la tête) — rouge vif, bien distinct du coup normal.")]
+        [SerializeField]
+        private Color headshotColor = new Color(1f, 0.15f, 0.12f, 1f);
+
         [Tooltip("Durée d'affichage (s) après un coup confirmé.")]
         [SerializeField]
         private float duration = 0.25f;
+
+        [Tooltip("Pop d'échelle appliqué au flash — un headshot pop plus fort qu'un coup normal.")]
+        [SerializeField]
+        private float hitPopScale = 1.35f;
+
+        [Tooltip("Pop d'échelle d'un headshot — plus marqué pour que le coup à la tête se sente.")]
+        [SerializeField]
+        private float headshotPopScale = 1.9f;
 
         public static HitmarkerUI Instance;
 
@@ -52,17 +65,18 @@ namespace Sim.UI {
             if (Instance == this) Instance = null;
         }
 
-        /// <summary>Flash du hitmarker : teinte selon le résultat, pop d'échelle puis fondu.</summary>
-        public void Notify(bool knocked) {
+        /// <summary>Flash du hitmarker : teinte selon le résultat, pop d'échelle puis fondu.
+        /// Un headshot prime sur le KO : rouge vif + pop plus fort.</summary>
+        public void Notify(bool knocked, bool headshot = false) {
             if (this.group == null) return;
-            Color color = knocked ? this.knockColor : this.hitColor;
+            Color color = headshot ? this.headshotColor : (knocked ? this.knockColor : this.hitColor);
             if (this.strokes != null) {
                 foreach (Image stroke in this.strokes) {
                     if (stroke != null) stroke.color = color;
                 }
             }
             this.group.alpha = 1f;
-            this.group.transform.localScale = Vector3.one * 1.35f;
+            this.group.transform.localScale = Vector3.one * (headshot ? this.headshotPopScale : this.hitPopScale);
             this.visibleUntil = Time.time + this.duration;
         }
 

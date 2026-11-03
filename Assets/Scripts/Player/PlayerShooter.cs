@@ -111,6 +111,10 @@ namespace Sim {
         private const float CharacterCapsuleHeight = 1.8f;
         private const float CharacterCapsuleRadius = 0.45f;
 
+        // Hauteur (m, depuis les pieds) au-delà de laquelle un impact compte comme headshot.
+        // Capsule de 1.8 m : ~0.3 m du sommet = zone tête.
+        private const float HeadshotHeight = 1.5f;
+
         private PlayerController player;
         private PlayerHands hands;
         private Animator animator;
@@ -693,21 +697,24 @@ namespace Sim {
             PlayerController hitPlayer = null;
             NpcAIController hitNpc = null;
             float best = decorDist;
+            bool headshot = false;
             foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values) {
                 PlayerController pc = conn?.identity != null ? conn.identity.GetComponent<PlayerController>() : null;
                 if (pc == null || pc == this.player) continue;
                 if (pc.IsDead) continue; // cadavre (fouillable) : pas une cible
-                if (RayHitsCapsule(origin, direction, best, pc.transform.position, out float d) && d < best) {
+                if (RayHitsCapsule(origin, direction, best, pc.transform.position, out float d, out float h) && d < best) {
                     best = d;
                     hitPlayer = pc;
+                    headshot = h >= HeadshotHeight;
                 }
             }
             foreach (NpcAIController npc in NpcAIController.AllActive) {
                 if (npc.IsDead) continue; // cadavre au sol en attente de despawn : pas une cible
-                if (RayHitsCapsule(origin, direction, best, npc.transform.position, out float d) && d < best) {
+                if (RayHitsCapsule(origin, direction, best, npc.transform.position, out float d, out float h) && d < best) {
                     best = d;
                     hitNpc = npc;
                     hitPlayer = null;
+                    headshot = h >= HeadshotHeight;
                 }
             }
 
@@ -718,18 +725,20 @@ namespace Sim {
                 // Dégâts PV : joueur comme PNJ perdent des points de vie. Coup NON létal =
                 // petit choc procédural (flinch), la cible reste debout ; coup FATAL =
                 // ragdoll de mort + cadavre fouillable. Plus aucun knockdown à l'impact.
+                // Headshot = dégâts tête de l'arme (bien plus élevés, kill garanti pour un sniper).
+                float damageDealt = headshot ? cfg.HeadshotDamage : cfg.Damage;
                 bool killed;
                 if (hitPlayer != null) {
                     PlayerHealth hitHealth = hitPlayer.GetComponent<PlayerHealth>();
                     // Position du TIREUR transmise : la victime affiche la direction du coup.
-                    killed = hitHealth != null && hitHealth.ApplyWeaponDamage(cfg.Damage, this.transform.position);
+                    killed = hitHealth != null && hitHealth.ApplyWeaponDamage(damageDealt, this.transform.position);
                 } else {
                     // L'attaquant est transmis : un PNJ HOSTILE touché riposte (aggro).
-                    killed = hitNpc.ServerApplyDamage(cfg.Damage, this.player);
+                    killed = hitNpc.ServerApplyDamage(damageDealt, this.player);
                 }
-                GameLogger.Player.Info("CharacterShot {ShooterNetId} {Target} {Killed}",
-                    netId, hitPlayer != null ? "player:" + hitPlayer.netId : "npc:" + hitNpc.OccupantId, killed);
-                this.TargetDamageDealt(end, cfg.Damage, killed);
+                GameLogger.Player.Info("CharacterShot {ShooterNetId} {Target} {Killed} {Headshot}",
+                    netId, hitPlayer != null ? "player:" + hitPlayer.netId : "npc:" + hitNpc.OccupantId, killed, headshot);
+                this.TargetDamageDealt(end, damageDealt, killed, headshot);
             }
 
             this.RpcFired(end, hitNormal, surfaceHit);
@@ -740,9 +749,9 @@ namespace Sim {
         /// (envoyé au moment où les dégâts sont réellement appliqués) — même feedback que la
         /// mêlée/les poings.</summary>
         [TargetRpc]
-        private void TargetDamageDealt(Vector3 hitPoint, float damage, bool killed) {
-            DamageNumber.Spawn(hitPoint, damage, killed);
-            if (HitmarkerUI.Instance != null) HitmarkerUI.Instance.Notify(killed);
+        private void TargetDamageDealt(Vector3 hitPoint, float damage, bool killed, bool headshot) {
+            DamageNumber.Spawn(hitPoint, damage, killed, headshot);
+            if (HitmarkerUI.Instance != null) HitmarkerUI.Instance.Notify(killed, headshot);
         }
 
         [ClientRpc]
@@ -965,7 +974,8 @@ namespace Sim {
         /// du rayon de l'axe de la capsule, avec l'abscisse du point d'approche dans dist.
         /// Paire de points la plus proche entre le rayon (origin + t·dir, t ∈ [0, maxDist],
         /// dir normalisé) et l'axe (p0 + s·seg, s ∈ [0, 1]) — formule standard (Ericson).</summary>
-        private static bool RayHitsCapsule(Vector3 origin, Vector3 dir, float maxDist, Vector3 basePos, out float dist) {
+        private static bool RayHitsCapsule(Vector3 origin, Vector3 dir, float maxDist, Vector3 basePos,
+            out float dist, out float hitHeight) {
             Vector3 p0 = basePos + Vector3.up * CharacterCapsuleRadius;
             Vector3 seg = Vector3.up * Mathf.Max(0.01f, CharacterCapsuleHeight - 2f * CharacterCapsuleRadius);
 
@@ -984,6 +994,9 @@ namespace Sim {
             Vector3 onRay = origin + dir * t;
             Vector3 onAxis = p0 + seg * s;
             dist = t;
+            // Hauteur de l'impact (point du rayon le plus proche de l'axe) au-dessus des pieds :
+            // sert à distinguer un tir à la tête d'un tir au corps.
+            hitHeight = onRay.y - basePos.y;
             return (onRay - onAxis).sqrMagnitude <= CharacterCapsuleRadius * CharacterCapsuleRadius;
         }
 

@@ -36,7 +36,8 @@ MonoBehaviour:
   fireInterval: 1.5
   automatic: 0
   maxRange: 200
-  damage: 100
+  damage: 70
+  headshotDamage: 1000
   recoilKick: 1
   spreadAngle: 2
   ammoCategory: 2

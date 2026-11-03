@@ -15,10 +15,15 @@ public class WeaponConfig : ItemConfig {
     [SerializeField]
     private float maxRange = 40f;
 
-    [Tooltip("Dégâts (PV) infligés au joueur touché par un tir. Le joueur meurt quand ses PV atteignent 0.")]
+    [Tooltip("Dégâts (PV) infligés au joueur touché au CORPS par un tir. Le joueur meurt quand ses PV atteignent 0.")]
     [Min(0f)]
     [SerializeField]
     private float damage = 25f;
+
+    [Tooltip("Dégâts (PV) infligés quand la balle touche la TÊTE (headshot) — bien plus élevés que le corps. Mettre une valeur ≥ PV max (ex. 1000) pour un kill garanti, typique d'un sniper.")]
+    [Min(0f)]
+    [SerializeField]
+    private float headshotDamage = 100f;
 
     [Tooltip("Intensité du kick de recul par tir (1 = pleine impulsion). Baisser pour les automatiques, sinon le canon grimpe au plafond en rafale.")]
     [Range(0.05f, 1f)]
@@ -74,6 +79,9 @@ public class WeaponConfig : ItemConfig {
     public float MaxRange => Mathf.Max(1f, maxRange);
 
     public float Damage => Mathf.Max(0f, damage);
+
+    /// <summary>Dégâts d'un tir à la tête. Toujours au moins égaux aux dégâts corps.</summary>
+    public float HeadshotDamage => Mathf.Max(this.Damage, headshotDamage);
 
     public float RecoilKick => Mathf.Clamp(recoilKick, 0.05f, 1f);
 
