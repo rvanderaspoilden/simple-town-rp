@@ -33,5 +33,24 @@ public class NpcSpawnPoint : MonoBehaviour {
         Gizmos.color = IsOccupied ? new Color(1f, 0.5f, 0.2f, 0.7f) : new Color(0.3f, 1f, 0.3f, 0.7f);
         Gizmos.DrawSphere(transform.position, 0.5f);
         Gizmos.DrawRay(transform.position, transform.forward * 1.2f);
+
+        // Point hostile : sphère rouge par-dessus pour le repérer d'un coup d'œil en scène.
+        if (npcConfig != null && npcConfig.IsHostile) {
+            Gizmos.color = new Color(1f, 0.1f, 0.1f, 0.9f);
+            Gizmos.DrawSphere(transform.position + Vector3.up * 0.8f, 0.25f);
+        }
+    }
+
+    /// <summary>Rayons d'aggro du point hostile (sélection) : zone défendue (rouge),
+    /// détection (orange), patrouille (jaune).</summary>
+    private void OnDrawGizmosSelected() {
+        if (!(npcConfig is HostileNpcConfig hostile)) return;
+        Vector3 p = transform.position;
+        Gizmos.color = new Color(1f, 0.15f, 0.15f, 0.8f);
+        Gizmos.DrawWireSphere(p, hostile.ZoneRadius);
+        Gizmos.color = new Color(1f, 0.6f, 0.1f, 0.8f);
+        Gizmos.DrawWireSphere(p, hostile.AggroRadius);
+        Gizmos.color = new Color(1f, 0.95f, 0.3f, 0.8f);
+        Gizmos.DrawWireSphere(p, hostile.PatrolRadius);
     }
 }

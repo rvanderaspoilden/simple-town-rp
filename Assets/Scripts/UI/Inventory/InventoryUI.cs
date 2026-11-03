@@ -362,12 +362,17 @@ public class InventoryUI : MonoBehaviour
 
         // Item pocketable → premier slot de poche libre (sinon false → toast
         // « Pas de place dans l'inventaire » plutôt qu'un MoveItem refusé serveur).
+        // Source AUTORITAIRE : dernier snapshot poche (ClientItemManager) — l'inventaire
+        // peut être FERMÉ (grille de loot seule), ses slots UI sont alors figés.
         bool allowedInPocket = cfg != null && cfg.AllowedInPocket;
         if (allowedInPocket) {
-            foreach (ItemSlot s in _pocketSlots) {
-                if (s != null && s.gameObject.activeSelf && s.Item == null) {
-                    placeKey = $"pocket:{charId}"; slotIndex = s.SlotIndex; return true;
-                }
+            if (!ClientItemManager.LastPocketSnapshot.HasValue) return false;
+            S2C_PocketSync snap = ClientItemManager.LastPocketSnapshot.Value;
+            var occupied = new HashSet<int>();
+            if (snap.Items != null) foreach (var it in snap.Items) occupied.Add(it.SlotIndex);
+            for (int i = 0; i < snap.SlotCount; i++) {
+                if (occupied.Contains(i)) continue;
+                placeKey = $"pocket:{charId}"; slotIndex = i; return true;
             }
             return false;
         }

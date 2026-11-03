@@ -270,9 +270,12 @@ namespace Sim {
             }
 
             // --- Touche d'interaction (E) -------------------------------------------
-            // Joueur distant & PNJ : comportement inchangé — l'appui ouvre directement le
-            // menu contextuel (pas d'action prioritaire configurable sur eux).
-            if (interactable is ClientNpcView || (interactable == null && remotePlayer != null)) {
+            // Joueur distant & PNJ VIVANT : l'appui ouvre directement le menu contextuel
+            // (pas d'action prioritaire configurable sur eux). Le CADAVRE d'un PNJ, lui,
+            // suit le flux générique court/long plus bas : E court = Fouiller direct
+            // (quick action de ClientNpcView), E long = radial — comme le sac de butin.
+            bool npcCorpse = interactable is ClientNpcView corpseView && corpseView.IsDead;
+            if (!npcCorpse && (interactable is ClientNpcView || (interactable == null && remotePlayer != null))) {
                 this.ResetInteractHold();
                 if (!canInteract || !GameInput.Down(this.interactKey)) return;
 

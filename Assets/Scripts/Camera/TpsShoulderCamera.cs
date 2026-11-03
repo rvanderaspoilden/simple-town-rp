@@ -50,6 +50,19 @@ namespace Sim {
         [SerializeField]
         private float aimSensitivityFactor = 0.6f;
 
+        [Header("Vue de mort (surplomb du cadavre)")]
+        [Tooltip("Distance (m) caméra → cadavre en vue de mort (le rig ThirdPersonFollow recule d'autant le long du regard plongeant).")]
+        [SerializeField]
+        private float deathCameraDistance = 8f;
+
+        [Tooltip("Pitch (deg) de la vue de mort — 85 ≈ plongée quasi verticale sur le corps.")]
+        [SerializeField]
+        private float deathPitch = 85f;
+
+        [Tooltip("Vitesse du fondu d'entrée/sortie de la vue de mort (0→1 par s).")]
+        [SerializeField]
+        private float deathBlendSpeed = 1.5f;
+
         [Header("Visée lunette (arme WeaponConfig.scopedAim)")]
         [Tooltip("Vitesse du fondu TPS ↔ œil (0→1 par s) : la caméra glisse de l'épaule jusqu'à l'œil en entrant à la lunette. FOV et sensibilité de lunette viennent de la WeaponConfig (scopeFov / scopeSensitivityFactor).")]
         [SerializeField]
@@ -77,6 +90,8 @@ namespace Sim {
         // respiration/idle se transmet à la vue — insupportable à 8° de FOV.
         private float scopeEyeHeight = -1f;
         private bool scopeEntered;
+        // Vue de mort : 0 = épaule normale, 1 = surplomb du cadavre.
+        private float deathBlend;
         private bool bodyHidden;
         private readonly List<KeyValuePair<Renderer, ShadowCastingMode>> hiddenRenderers = new();
 
@@ -130,8 +145,36 @@ namespace Sim {
 
             // Le fondu de lunette AVANT SnapPivot : l'ancrage œil du pivot dépend du blend courant.
             this.TickScope(scopedCfg != null);
+            this.TickDeathView();
             this.SnapPivot();
             this.TickAimZoom(aiming, scopedCfg);
+        }
+
+        /// <summary>Vue de MORT : tant que le joueur local est mort (HUD de mort ouvert, curseur
+        /// libre → mouse-look suspendu), le pitch est piloté vers la plongée et le
+        /// ThirdPersonFollow recule à deathCameraDistance — la caméra finit au-dessus du
+        /// cadavre (le pivot suit déjà les hanches du ragdoll via GetCameraFollowTarget).
+        /// À la relève, retour en fondu vers la pose d'épaule.</summary>
+        private void TickDeathView() {
+            bool dead = PlayerController.Local != null && PlayerController.Local.IsDead;
+            if (!dead && this.deathBlend <= 0f) return;
+
+            this.deathBlend = Mathf.MoveTowards(this.deathBlend, dead ? 1f : 0f,
+                Time.deltaTime * this.deathBlendSpeed);
+
+            if (dead) {
+                this.pitch = Mathf.MoveTowards(this.pitch, this.deathPitch, Time.deltaTime * 120f);
+            } else {
+                // Sortie : redescend le pitch dans la plage jouable avant que le mouse-look
+                // (clamp topClamp) ne le fasse sauter d'un coup.
+                this.pitch = Mathf.MoveTowards(this.pitch, Mathf.Min(this.pitch, this.topClamp),
+                    Time.deltaTime * 120f);
+            }
+
+            this.EnsureFollowCaptured();
+            if (this.follow == null) return;
+            this.follow.CameraDistance = Mathf.Lerp(this.defaultCameraDistance,
+                this.deathCameraDistance, this.deathBlend);
         }
 
         /// <summary>Zoom immersif de visée : le FOV de la virtual camera fond vers aimFov
@@ -192,15 +235,8 @@ namespace Sim {
         /// <summary>Applique le fondu de lunette courant sur le ThirdPersonFollow (les valeurs
         /// d'épaule d'origine de la vcam sont capturées au premier appel).</summary>
         private void ApplyScopeRig() {
-            if (this.follow == null) {
-                this.follow = this.virtualCamera != null
-                    ? this.virtualCamera.GetComponent<CinemachineThirdPersonFollow>() : null;
-                if (this.follow == null) return;
-                this.defaultCameraDistance = this.follow.CameraDistance;
-                this.defaultShoulderOffset = this.follow.ShoulderOffset;
-                this.defaultVerticalArmLength = this.follow.VerticalArmLength;
-                this.defaultDamping = this.follow.Damping;
-            }
+            this.EnsureFollowCaptured();
+            if (this.follow == null) return;
 
             this.follow.CameraDistance = Mathf.Lerp(this.defaultCameraDistance, 0f, this.scopeBlend);
             this.follow.ShoulderOffset = Vector3.Lerp(this.defaultShoulderOffset, Vector3.zero, this.scopeBlend);
@@ -208,6 +244,19 @@ namespace Sim {
             // Damping coupé à la lunette : le moindre retard de suivi se lit comme un bougé
             // parasite au zoom fort — la caméra ne doit répondre qu'à la souris.
             this.follow.Damping = Vector3.Lerp(this.defaultDamping, Vector3.zero, this.scopeBlend);
+        }
+
+        /// <summary>Résout le ThirdPersonFollow de la vcam et capture sa pose d'épaule
+        /// d'origine (une fois). Partagé par le fondu de lunette et la vue de mort.</summary>
+        private void EnsureFollowCaptured() {
+            if (this.follow != null) return;
+            this.follow = this.virtualCamera != null
+                ? this.virtualCamera.GetComponent<CinemachineThirdPersonFollow>() : null;
+            if (this.follow == null) return;
+            this.defaultCameraDistance = this.follow.CameraDistance;
+            this.defaultShoulderOffset = this.follow.ShoulderOffset;
+            this.defaultVerticalArmLength = this.follow.VerticalArmLength;
+            this.defaultDamping = this.follow.Damping;
         }
 
         /// <summary>Masque/révèle le joueur local (corps + items tenus) pour la vue lunette :

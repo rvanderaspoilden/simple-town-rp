@@ -73,6 +73,13 @@ public class NpcInteractionService {
             return;
         }
 
+        // NPC hostile : pas de TALK (il attaque à vue) — et surtout pas de freeze
+        // d'interaction, qui mettrait son IA de combat en pause (exploit).
+        if (npc.Config != null && npc.Config.IsHostile) {
+            Reply(conn, msg.NpcId, false, NpcInteractionReason.Hostile);
+            return;
+        }
+
         Transform playerT = conn.identity.transform;
         Vector3   delta   = playerT.position - npc.transform.position;
         delta.y = 0f;

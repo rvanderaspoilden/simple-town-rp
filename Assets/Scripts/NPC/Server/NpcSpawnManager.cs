@@ -19,8 +19,14 @@ public class NpcSpawnManager {
     public static  NpcSpawnManager Instance => _instance ??= new NpcSpawnManager();
 
     // ── Config ────────────────────────────────────────────────────────────────
-    public int    MaxActiveNpcs       = 10;
+    // NB : cap PARTAGÉ passants + marchands + hostiles. La City compte ~13 points de spawn
+    // (+ le camp hostile de test) : le cap doit rester ≥ au nombre de points pour que les
+    // gardes de camp spawment toujours.
+    public int    MaxActiveNpcs       = 16;
     public float  RespawnDelaySeconds = 20f;
+    /// <summary>Cooldown du point de spawn quand le NPC est MORT (tué) — plus long que le
+    /// turnover normal des passants : un garde de camp abattu ne revient pas tout de suite.</summary>
+    public float  DeathRespawnDelaySeconds = 300f;
     public string RoomId              = "city";
 
     /// <summary>Database de noms (chargée par le bootstrap).</summary>
@@ -113,6 +119,10 @@ public class NpcSpawnManager {
 
         NpcIdentity identity = GenerateUniqueIdentity();
 
+        // Les hostiles spawnent en colère : le mood est l'un des signaux visibles côté client
+        // (en plus de l'icône d'aggro et du nom teinté rouge).
+        if (cfg != null && cfg.IsHostile) identity.Mood = Sim.Enums.MoodEnum.ANGRY;
+
         // NpcPool.Get() appelle ConfigureForSpawn + ResetForPool + SetActive(true) → OnEnable.
         NpcAIController ai = NpcPool.Instance.Get(
             prefab, point, identity, RoomId, cfg,
@@ -160,7 +170,8 @@ public class NpcSpawnManager {
         _activeNpcs.Remove(npc);
         if (npc.Home != null) {
             npc.Home.IsOccupied = false;
-            _cooldowns[npc.Home] = RespawnDelaySeconds;
+            // Mort (tué) → respawn long ; despawn normal (retour maison) → turnover court.
+            _cooldowns[npc.Home] = npc.IsDead ? DeathRespawnDelaySeconds : RespawnDelaySeconds;
         }
         if (!string.IsNullOrEmpty(npc.Identity.FullName))
             _activeFullNames.Remove(npc.Identity.FullName);

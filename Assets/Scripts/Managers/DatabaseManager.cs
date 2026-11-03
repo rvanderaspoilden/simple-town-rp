@@ -167,6 +167,15 @@ namespace Sim {
                 if (!NetworkManager.singleton.spawnPrefabs.Contains(vehicle.gameObject))
                     NetworkManager.singleton.spawnPrefabs.Add(vehicle.gameObject);
             }
+
+            // Sac de butin (mort d'un joueur) : spawné par NetworkServer.Spawn — SANS cet
+            // enregistrement, les CLIENTS ne peuvent pas l'instancier (assetId inconnu) et
+            // le sac n'apparaît que sur l'hôte.
+            GameObject lootBag = Resources.Load<GameObject>("Prefabs/LootBag");
+            if (lootBag != null && !NetworkManager.singleton.spawnPrefabs.Contains(lootBag))
+                NetworkManager.singleton.spawnPrefabs.Add(lootBag);
+            else if (lootBag == null)
+                Debug.LogWarning("[DatabaseManager] LootBag prefab introuvable (Resources/Prefabs/LootBag)");
         }
 
         // ── Lookups ──────────────────────────────────────────────────────────────

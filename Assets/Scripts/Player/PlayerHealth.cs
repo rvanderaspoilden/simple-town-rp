@@ -165,7 +165,17 @@ public class PlayerHealth : NetworkBehaviour {
     /// répliqué (RpcFlinch). Renvoie vrai si CE coup a tué le joueur — l'attaquant colore
     /// son feedback « coup fatal ».</summary>
     [Server]
-    public bool ApplyWeaponDamage(float amount) {
+    public bool ApplyWeaponDamage(float amount) => this.ApplyWeaponDamage(amount, Vector3.zero, false);
+
+    /// <summary>Variante BALLE : la position de l'attaquant est transmise à la victime pour
+    /// l'indicateur directionnel de son HUD (DamageFeedbackUI). La mêlée et les poings
+    /// passent par la surcharge simple (vignette seule, l'attaquant est au contact).</summary>
+    [Server]
+    public bool ApplyWeaponDamage(float amount, Vector3 attackerPosition) =>
+        this.ApplyWeaponDamage(amount, attackerPosition, true);
+
+    [Server]
+    private bool ApplyWeaponDamage(float amount, Vector3 attackerPosition, bool hasDirection) {
         if (amount <= 0) return false;
         if (this._playerController.PlayerState == PlayerState.DIED) return false;
 
@@ -178,6 +188,10 @@ public class PlayerHealth : NetworkBehaviour {
         this.CheckDeath();
         if (!died) this.RpcFlinch();
 
+        // Feedback VICTIME (owner seul) : vignette rouge, + direction de l'attaquant
+        // pour une balle. Envoyé aussi sur le coup fatal (le HUD de mort prend ensuite).
+        if (this.connectionToClient != null) this.TargetDamageTaken(attackerPosition, hasDirection);
+
         StartCoroutine(this.PersistHealth(Health));
         return died;
     }
@@ -186,6 +200,15 @@ public class PlayerHealth : NetworkBehaviour {
     [ClientRpc]
     private void RpcFlinch() {
         CharacterFlinch.PlayOn(gameObject);
+    }
+
+    /// <summary>Feedback de dégâts sur l'écran de la VICTIME : vignette rouge (tous coups)
+    /// + chevron directionnel vers l'attaquant (balles uniquement).</summary>
+    [TargetRpc]
+    private void TargetDamageTaken(Vector3 attackerPosition, bool hasDirection) {
+        if (Sim.UI.DamageFeedbackUI.Instance == null) return;
+        if (hasDirection) Sim.UI.DamageFeedbackUI.Instance.ShowHitFrom(attackerPosition);
+        else Sim.UI.DamageFeedbackUI.Instance.ShowHit();
     }
 
     /// <summary>Persists the current health to the backend WITHOUT writing the values back

@@ -234,7 +234,9 @@ namespace Sim {
 
         // Fenêtre (s) du ragdoll de mort avant le réveil automatique (Revive : PV reset,
         // -50 BC, téléport domicile). Court : le butin vit désormais dans un sac persistant.
-        private const float DeathReviveDelay = 5f;
+        // Délai (s) avant le respawn AUTOMATIQUE après la mort. Le joueur peut réapparaître
+        // avant via le bouton du HUD de mort (CmdRequestRespawn).
+        private const float DeathReviveDelay = 180f;
 
         // Hidden on every client while the player teleports, so remote clients don't see
         // the NetworkTransform interpolate the position jump (the player slides). Toggled
@@ -1534,9 +1536,12 @@ namespace Sim {
         /// dès qu'il devient faux (UI refermée), l'état se termine seul au Tick suivant (retour
         /// Idle). <paramref name="lookAt"/> oriente le joueur vers la cible (facultatif). À
         /// appeler AVANT d'ouvrir l'UI concernée (la sortie d'Idle referme l'inventaire).</summary>
-        public void BeginBusy(Func<bool> stillBusy, Transform lookAt = null) {
+        /// <param name="cancelOnMove">Une touche de déplacement ANNULE l'action (fouille…) :
+        /// <paramref name="onCancelled"/> referme l'UI déclencheuse, puis retour Idle.</param>
+        public void BeginBusy(Func<bool> stillBusy, Transform lookAt = null,
+                              bool cancelOnMove = false, System.Action onCancelled = null) {
             if (this.stateMachine == null || this.busyState == null) return;
-            this.busyState.Configure(stillBusy, lookAt);
+            this.busyState.Configure(stillBusy, lookAt, cancelOnMove, onCancelled);
             this.stateMachine.SetState(this.busyState);
         }
 
@@ -1688,8 +1693,25 @@ namespace Sim {
             Invoke(nameof(Revive), DeathReviveDelay);
         }
 
+        /// <summary>Respawn immédiat demandé par l'owner (bouton du HUD de mort). Idempotent :
+        /// le garde isDead de Revive absorbe un double appel (bouton + auto-respawn).</summary>
+        [Command]
+        public void CmdRequestRespawn() {
+            if (!this.isDead) return;
+            CancelInvoke(nameof(Revive)); // annule le respawn auto programmé par Kill
+            this.Revive();
+        }
+
+        /// <summary>Côté owner : demande de respawn immédiat (consommé par DeathScreenUI).</summary>
+        [Client]
+        public void RequestRespawn() {
+            if (isLocalPlayer) this.CmdRequestRespawn();
+        }
+
         [Server]
         public void Revive() {
+            if (!this.isDead) return; // déjà relevé (bouton + Invoke auto : un seul passe)
+            CancelInvoke(nameof(Revive));
             this.isDead = false; // relève du ragdoll de mort sur toutes les copies (hook)
             // NB : on NE purge PAS le sac de butin — il persiste au point de mort (10 min)
             // pour que le joueur puisse revenir récupérer ses affaires.
@@ -1716,6 +1738,7 @@ namespace Sim {
         [TargetRpc]
         public void TargetRevive(NetworkConnection conn) {
             ClientLogger.Player("PlayerRevivedClient {PlayerNetId}", netId);
+            Sim.UI.DeathScreenUI.Instance?.Hide();
             Invoke(nameof(Idle), 1f);
             NotificationManager.Instance.AddNotification("20 BC vous ont été volé lors de votre évanouissement. Les voleurs sont partout, faites attention à votre argent.", PhoneAppIds.Bank);
             ClientLogger.UI("ReviveNotificationShown");
@@ -1725,6 +1748,9 @@ namespace Sim {
         public void TargetKill(NetworkConnection conn) {
             ClientLogger.Player("PlayerDiedClient {PlayerNetId}", netId);
             this.Die();
+            // HUD de mort : compte à rebours du respawn auto + bouton de respawn immédiat.
+            // La caméra passe en surplomb du cadavre (TpsShoulderCamera, vue de mort).
+            Sim.UI.DeathScreenUI.Instance?.Show(DeathReviveDelay);
         }
 
         public IState CurrentState() {

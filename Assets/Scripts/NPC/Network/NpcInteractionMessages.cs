@@ -23,7 +23,10 @@ public enum NpcInteractionReason : byte {
     NoNpc        = 1,
     OutOfRange   = 2,
     KnockedDown  = 3,
-    RoomMismatch = 4
+    RoomMismatch = 4,
+    /// <summary>NPC hostile : il attaque à vue, aucune interaction TALK possible (le client
+    /// masque déjà l'action — ceinture-bretelles serveur).</summary>
+    Hostile      = 5
 }
 
 /// <summary>

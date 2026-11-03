@@ -52,6 +52,13 @@ public class ContainerPanelUI : MonoBehaviour
     [Header("Optional UI")]
     [SerializeField] private UnityEngine.UI.Button closeButton;
     [SerializeField] private TMPro.TMP_Text titleText;
+    [Tooltip("Bouton « Tout prendre » (canal Prop — loot/meubles) : vide la grille vers " +
+             "l'inventaire. Piles fusionnées dans le colis/sac affiché d'abord, puis slots " +
+             "libres (poche/main/sac), dans l'ordre de la grille, jusqu'à saturation.")]
+    [SerializeField] private UnityEngine.UI.Button takeAllButton;
+    [Tooltip("Raccourci clavier « Tout prendre » (position physique, indépendante AZERTY/QWERTY) " +
+             "— actif tant que la grille du canal Prop est ouverte.")]
+    [SerializeField] private UnityEngine.InputSystem.Key takeAllKey = UnityEngine.InputSystem.Key.F;
 
     [Header("Dynamic sizing")]
     [Tooltip("RectTransform du panneau visible (typiquement le 'Root') redimensionné en fonction du nombre de slots.")]
@@ -72,6 +79,7 @@ public class ContainerPanelUI : MonoBehaviour
     private bool   _subscribed;
     private bool   _loading;
     private bool   _heldDriven;          // l'item-conteneur affiché est piloté par « tenu en main »
+    private bool   _lootAutoClose;       // grille de LOOT (cadavre/sac) : se ferme seule une fois vide
     private int    _autoOpenedEntityId = -1; // colis pour lequel l'auto-open a déjà été déclenché
     private int    _openRetries;         // tentatives d'auto-open en attendant l'UUID (spawn async)
     private const int MaxOpenRetries = 8;
@@ -97,6 +105,12 @@ public class ContainerPanelUI : MonoBehaviour
 
         if (slotTemplate != null) slotTemplate.gameObject.SetActive(false);
         if (closeButton  != null) closeButton.onClick.AddListener(Close);
+        if (takeAllButton != null) {
+            // Réservé au canal Prop (grille de loot/meuble). Sur le canal Item (son propre
+            // colis/sac), « tout prendre » n'a pas de sens — bouton masqué.
+            if (IsItemChannel) takeAllButton.gameObject.SetActive(false);
+            else takeAllButton.onClick.AddListener(OnTakeAllClicked);
+        }
 
         // CanvasGroup ciblé sur la GRILLE seulement (pas la racine) : on bloque les
         // drops sur les slots pendant l'attente du snapshot, sans empêcher le close
@@ -130,6 +144,7 @@ public class ContainerPanelUI : MonoBehaviour
             ClientItemManager.ContainerOpened     += OnContainerOpened;
             ClientItemManager.ContainerOpenFailed += OnContainerOpenFailed;
             StorageContainerBehaviour.OnOpenRequested += OnOptimisticOpenRequested;
+            ClientItemManager.MoveItemResult      += OnMoveItemResultForTakeAll;
         }
         // Le menu contextuel (clic droit) sert les deux canaux : SPLIT s'applique à toute
         // pile (qty>1) du conteneur ouvert, peu importe son type (prop ou item-container).
@@ -150,6 +165,7 @@ public class ContainerPanelUI : MonoBehaviour
             ClientItemManager.ContainerOpened     -= OnContainerOpened;
             ClientItemManager.ContainerOpenFailed -= OnContainerOpenFailed;
             StorageContainerBehaviour.OnOpenRequested -= OnOptimisticOpenRequested;
+            ClientItemManager.MoveItemResult      -= OnMoveItemResultForTakeAll;
         }
         DraggableItem.OnRightClick            -= OnEntryRightClicked;
         DraggableItem.OnDoubleClick           -= OnItemDoubleClicked;
@@ -171,7 +187,13 @@ public class ContainerPanelUI : MonoBehaviour
     /// prédicat de maintien de l'état <c>CharacterBusy</c> (fouille) — couvre tous les chemins
     /// de fermeture (Échap, bouton, inventaire refermé).</summary>
     public static bool IsPropLootOpen() {
-        if (Prop == null || !Prop.IsShowing) return false;
+        if (Prop == null) return false;
+        // Fouille DIFFÉRÉE en cours (grille pas encore affichée, cf. OpenSearchDelayed) :
+        // le joueur est déjà en train de fouiller — l'état BUSY doit tenir.
+        if (Prop._deferredWaiting || Prop._hasHeldSnapshot) return true;
+        if (!Prop.IsShowing) return false;
+        // Grille de LOOT : elle s'affiche SEULE (sans inventaire) — sa visibilité suffit.
+        if (Prop._lootAutoClose) return true;
         var hud = HUDManager.Instance;
         return hud != null && hud.InventoryUI != null && hud.InventoryUI.gameObject.activeSelf;
     }
@@ -321,6 +343,155 @@ public class ContainerPanelUI : MonoBehaviour
         if (HUDManager.Instance != null) HUDManager.Instance.CloseInventory();
     }
 
+    // ── « Tout prendre » (canal Prop : loot de cadavre, sac de butin, meubles) ───────────
+    //
+    // Vide la grille vers l'inventaire du joueur, séquentiellement (le serveur est
+    // single-writer sur les moves ; chaque étape attend son résultat avant la suivante) :
+    //   1. pile FUSIONNABLE dans le colis/sac affiché (canal Item) — « stack d'abord » ;
+    //   2. pile entière vers un slot libre du colis/sac (évite de l'émietter en poche) ;
+    //   3. poche/main — même politique que le double-clic (split-1 automatique des piles,
+    //      rebouclé jusqu'à épuisement de la pile ou des slots) ;
+    //   4. slot libre du colis/sac pour les items unitaires restants.
+    // Un item sans destination (ou refusé serveur) est SKIPPÉ — on prend le max dans
+    // l'ordre de la grille, et on toast « Pas de place » s'il en reste à la fin.
+
+    private Coroutine _takeAllRoutine;
+    private bool _takeAllMoveFailed;
+    private int  _takeAllMoveEntity;
+    private const float TakeAllStepTimeout = 2.5f;
+
+    private void OnMoveItemResultForTakeAll(S2C_MoveItemResult msg)
+    {
+        if (_takeAllRoutine == null || msg.Success) return;
+        _takeAllMoveFailed = true;
+        _takeAllMoveEntity = msg.EntityId;
+    }
+
+    private void OnTakeAllClicked()
+    {
+        if (!IsOpen || _takeAllRoutine != null) return;
+        _takeAllRoutine = StartCoroutine(TakeAllCoroutine());
+    }
+
+    private void StopTakeAll()
+    {
+        if (_takeAllRoutine != null) {
+            StopCoroutine(_takeAllRoutine);
+            _takeAllRoutine = null;
+        }
+        if (takeAllButton != null) takeAllButton.interactable = true;
+    }
+
+    private System.Collections.IEnumerator TakeAllCoroutine()
+    {
+        if (takeAllButton != null) takeAllButton.interactable = false;
+        var skipped = new System.Collections.Generic.HashSet<int>();
+
+        while (IsOpen) {
+            // Premier item prenable dans l'ordre de la grille (meubles emballés exclus).
+            DraggableItem pick = null;
+            foreach (var slot in _slots) {
+                if (slot == null || !slot.gameObject.activeSelf) continue;
+                var d = slot.Item;
+                if (d == null || !d.IsDraggable || d.EntityId <= 0) continue;
+                if (skipped.Contains(d.EntityId)) continue;
+                pick = d;
+                break;
+            }
+            if (pick == null) break;
+
+            if (!TryFindTakeAllTarget(pick, out string toPlace, out int toSlot)) {
+                skipped.Add(pick.EntityId);
+                continue;
+            }
+
+            int eid = pick.EntityId;
+            int qtyBefore = pick.Quantity;
+            _takeAllMoveFailed = false;
+            _takeAllMoveEntity = 0;
+            if (!Mirror.NetworkClient.isConnected) break;
+            Mirror.NetworkClient.Send(new C2S_MoveItem {
+                EntityId    = eid,
+                FromPlaceId = _currentPlaceId,
+                ToPlaceId   = toPlace,
+                ToSlotIndex = toSlot,
+            });
+
+            // Attend la retombée : refus serveur, ou grille rafraîchie pour cette entité
+            // (disparue, ou pile réduite par un split-1 vers poche/main).
+            float deadline = Time.time + TakeAllStepTimeout;
+            while (Time.time < deadline) {
+                if (_takeAllMoveFailed && _takeAllMoveEntity == eid) break;
+                if (!GridStillHas(eid, qtyBefore)) break;
+                yield return null;
+            }
+            if ((_takeAllMoveFailed && _takeAllMoveEntity == eid) || GridStillHas(eid, qtyBefore)) {
+                skipped.Add(eid); // refusé ou timeout : on n'insiste pas, item suivant
+            }
+        }
+
+        // Reste-t-il des items prenables ? (skippés faute de place / refus)
+        bool remaining = false;
+        foreach (var slot in _slots) {
+            var d = slot != null && slot.gameObject.activeSelf ? slot.Item : null;
+            if (d != null && d.IsDraggable) { remaining = true; break; }
+        }
+        if (remaining && IsOpen) WorldToastManager.ShowError(InventoryToasts.NoSpaceInInventory);
+
+        _takeAllRoutine = null;
+        if (takeAllButton != null) takeAllButton.interactable = true;
+    }
+
+    /// <summary>L'entité est-elle toujours dans la grille avec la MÊME quantité ? Sert de
+    /// signal de progression (snapshot appliqué) pendant « Tout prendre ».</summary>
+    private bool GridStillHas(int entityId, int quantity)
+    {
+        foreach (var slot in _slots) {
+            if (slot == null || !slot.gameObject.activeSelf) continue;
+            var d = slot.Item;
+            if (d != null && d.EntityId == entityId) return d.Quantity == quantity;
+        }
+        return false;
+    }
+
+    /// <summary>Destination d'un item de « Tout prendre » : pile fusionnable du colis/sac
+    /// affiché, pile entière vers son slot libre, sinon poche/main (politique du double-clic),
+    /// sinon slot libre du colis/sac. Faux si rien ne peut l'accueillir.</summary>
+    private bool TryFindTakeAllTarget(DraggableItem item, out string toPlace, out int toSlot)
+    {
+        toPlace = null;
+        toSlot = 0;
+        ItemConfig cfg = item != null ? item.ItemConfig : null;
+        if (cfg == null) return false;
+
+        ContainerPanelUI pack = Item; // colis tenu ou sac à dos porté (canal Item)
+        bool packReady = pack != null && pack.IsOpen && !string.IsNullOrEmpty(pack.PlaceId);
+
+        // 1. Fusion dans une pile existante du colis/sac.
+        if (packReady) {
+            int merge = pack.FindMergeableSlotFor(cfg);
+            if (merge >= 0) { toPlace = pack.PlaceId; toSlot = merge; return true; }
+        }
+
+        // 2. Pile (qty>1) : slot libre du colis/sac — la pile part ENTIÈRE au lieu d'être
+        //    émiettée en poche par splits-1 successifs.
+        if (packReady && item.Quantity > 1) {
+            int free = pack.FindFirstFreeSlot();
+            if (free >= 0) { toPlace = pack.PlaceId; toSlot = free; return true; }
+        }
+
+        // 3. Poche (pocketable) ou main (encombrant) — même politique que le double-clic.
+        var inv = HUDManager.Instance != null ? HUDManager.Instance.InventoryUI : null;
+        if (inv != null && inv.TryFindQuickMoveTargetForItem(item, out toPlace, out toSlot)) return true;
+
+        // 4. Slot libre du colis/sac pour un item unitaire.
+        if (packReady) {
+            int free = pack.FindFirstFreeSlot();
+            if (free >= 0) { toPlace = pack.PlaceId; toSlot = free; return true; }
+        }
+        return false;
+    }
+
     private void OnItemDoubleClicked(DraggableItem item)
     {
         if (!IsOpen || item == null || item.ItemSlot == null) return;
@@ -352,6 +523,7 @@ public class ContainerPanelUI : MonoBehaviour
     {
         _isItemContainer = false;
         _currentPropId   = propId;
+        _lootAutoClose   = false; // meuble de rangement : reste ouvert même vide
         OpenOptimisticCore(slotCount, propName);
     }
 
@@ -444,7 +616,80 @@ public class ContainerPanelUI : MonoBehaviour
     {
         _isItemContainer = false;
         _currentPropId   = 0;
+        // Grille de LOOT (cadavre / sac de butin) : se referme toute seule une fois vidée.
+        // Le coffre de véhicule (PropId 0 lui aussi) n'emprunte PAS cette ouverture : son
+        // snapshot arrive directement — le flag reste faux pour lui.
+        _lootAutoClose   = true;
         OpenOptimisticCore(slotCount, name);
+    }
+
+    // ── Fouille différée (cadavre PNJ / sac de butin) ─────────────────────────────────
+    //
+    // La grille ne s'affiche PAS au clic : le C2S de fouille part tout de suite (l'aller-
+    // retour backend tourne PENDANT le délai), le joueur joue le geste de fouille
+    // (anim SEARCHING), et la grille n'apparaît qu'après SearchOpenDelay — snapshot déjà
+    // reçu la plupart du temps → les items sont dans la grille dès son affichage.
+    // Snapshot plus LENT que le délai : on attend le snapshot (pas de grille vide).
+
+    private const float DefaultSearchOpenDelay = 0.3f;
+    private const float SearchOpenTimeout = 5f; // snapshot jamais arrivé → abandon propre
+
+    private float _deferredShowAt = -1f;
+    private bool  _deferredWaiting;
+    private bool  _hasHeldSnapshot;
+    private S2C_ContainerOpened _heldSnapshot;
+    private bool  _searchGestureOn;
+
+    /// <summary>Ouvre une FOUILLE différée : rien ne s'affiche avant <paramref name="searchDelay"/>
+    /// (durée du geste de fouille — configurable par la cible : NpcConfig.SearchDuration pour
+    /// un cadavre, plus tard un coffre…), et la grille apparaît directement remplie (le
+    /// snapshot est retenu jusqu'à l'échéance). L'appelant envoie son C2S juste après.</summary>
+    public void OpenSearchDelayed(int slotCount, string name, float searchDelay = DefaultSearchOpenDelay)
+    {
+        _isItemContainer = false;
+        _currentPropId   = 0;
+        _lootAutoClose   = true;
+        _currentPropName = name;
+        _currentPlaceId  = null;
+        _loading         = true;
+        _deferredShowAt  = Time.time + Mathf.Max(0f, searchDelay);
+        _deferredWaiting = true;
+        _hasHeldSnapshot = false;
+        SetSearchGesture(true);
+    }
+
+    private void Update()
+    {
+        // Raccourci « Tout prendre » (même gate que le bouton : canal Prop, grille prête).
+        if (!IsItemChannel && IsOpen && takeAllButton != null
+            && takeAllButton.gameObject.activeInHierarchy && takeAllButton.interactable
+            && Sim.Utils.GameInput.Down(takeAllKey) && !Sim.Utils.CursorLock.IsTypingInInputField()) {
+            OnTakeAllClicked();
+        }
+
+        if (_hasHeldSnapshot && Time.time >= _deferredShowAt) {
+            // Échéance du geste : applique le snapshot retenu (grille déjà remplie).
+            _hasHeldSnapshot = false;
+            _deferredWaiting = false;
+            OnContainerOpened(_heldSnapshot);
+            return;
+        }
+        // Filet : le serveur n'a jamais répondu (ni snapshot ni refus) → abandon propre.
+        if (_deferredWaiting && Time.time > _deferredShowAt + SearchOpenTimeout) {
+            WorldToastManager.ShowError("Fouille impossible");
+            Close();
+        }
+    }
+
+    /// <summary>Anim de fouille du joueur local (SEARCHING, loop du controller) pendant la
+    /// fenêtre différée. Coupée dès que la grille s'affiche, sur refus ou à la fermeture.</summary>
+    private void SetSearchGesture(bool on)
+    {
+        if (on == _searchGestureOn) return;
+        _searchGestureOn = on;
+        var pc = PlayerController.Local;
+        var anim = pc != null ? pc.GetComponent<PlayerAnimator>() : null;
+        if (anim != null) anim.SetAction(on ? CharacterAnimatorAction.SEARCHING : CharacterAnimatorAction.NONE);
     }
 
     private void OpenOptimisticCore(int slotCount, string name, bool forceInventory = true)
@@ -479,6 +724,22 @@ public class ContainerPanelUI : MonoBehaviour
 
     private void OnContainerOpened(S2C_ContainerOpened msg)
     {
+        // Fouille différée : le snapshot arrivé AVANT l'échéance du geste est retenu — la
+        // grille s'affichera remplie à l'échéance (Update). Après l'échéance : flux normal.
+        if (_deferredWaiting) {
+            if (Time.time < _deferredShowAt) {
+                _heldSnapshot = msg;
+                _hasHeldSnapshot = true;
+                return;
+            }
+            _deferredWaiting = false;
+        }
+
+        // Ouverture DIRECTE d'un autre conteneur (ex. coffre de véhicule, sans passage par
+        // OpenOptimistic) pendant qu'une grille de loot était affichée : le flag de
+        // fermeture auto ne doit pas s'appliquer au nouveau contenu.
+        if (!_loading && msg.PlaceId != _currentPlaceId) _lootAutoClose = false;
+
         _isItemContainer = false;
         _currentPropId   = msg.PropId;
         ApplySnapshotCore(msg.PlaceId, msg.SlotCount, msg.Items);
@@ -499,14 +760,17 @@ public class ContainerPanelUI : MonoBehaviour
         // se ré-affichera à la prochaine ouverture d'inventaire (RefreshHeldContainer).
         if (_isItemContainer && _heldDriven && !IsInventoryOpen()) { Close(); return; }
 
+        SetSearchGesture(false); // fin du geste de fouille (la grille s'affiche)
         _currentPlaceId = placeId;
 
         // Show AVANT de spawner : sinon les nouveaux DraggableItem sont instanciés
         // dans une hiérarchie inactive et leur Awake ne tourne pas → _image null
         // → NRE dès SetConfiguration. Show(true) active root + slots.
         // Idempotent quand on vient d'OpenOptimistic (déjà Show(true) + ShowInventory).
+        // Grille de LOOT (fouille) : elle s'affiche SEULE — on n'ouvre PAS l'inventaire
+        // (double-clic et « Tout prendre » routent vers la poche sans qu'elle soit visible).
         Show(true);
-        if (HUDManager.Instance != null) HUDManager.Instance.ShowInventory();
+        if (!_lootAutoClose && HUDManager.Instance != null) HUDManager.Instance.ShowInventory();
 
         EnsureSlotPool(slotCount);
         ConfigureSlots(placeId, slotCount);
@@ -518,6 +782,12 @@ public class ContainerPanelUI : MonoBehaviour
         // Snapshot reçu → panneau pleinement interactif.
         _loading = false;
         SetSlotsInteractive(true);
+
+        // Grille de LOOT vidée (dernier item pris — à la main ou via « Tout prendre ») :
+        // fermeture automatique, il n'y a plus rien à y faire.
+        if (_lootAutoClose && !_isItemContainer && (items == null || items.Length == 0)) {
+            Close();
+        }
     }
 
     private void OnContainerOpenFailed(S2C_ContainerOpenFailed msg)
@@ -710,6 +980,7 @@ public class ContainerPanelUI : MonoBehaviour
             d.SetEntityId(entry.EntityId);
             d.SetQuantity(entry.Quantity); // badge "xN" si >1 (meubles emballés Quantity=1 → pas de badge)
             d.SetLoadedAmmo(entry.LoadedAmmo); // arme : chargeur affiché dans la tooltip
+            d.SetCashAmount(entry.CashAmount); // liasse : montant affiché dans la tooltip
             _slots[entry.SlotIndex].SetItem(d);
             _spawnedItems.Add(d);
         }
@@ -717,6 +988,11 @@ public class ContainerPanelUI : MonoBehaviour
 
     public void Close()
     {
+        StopTakeAll();
+        SetSearchGesture(false);
+        _deferredWaiting = false;
+        _hasHeldSnapshot = false;
+        _deferredShowAt  = -1f;
         // Ne ferme QUE ce panneau (son canal). Les deux conteneurs (meuble + colis)
         // peuvent être ouverts en même temps → on ne replie plus tout l'inventaire ici.
         if (NetworkClient.isConnected && _currentPlaceId != null)
@@ -732,6 +1008,7 @@ public class ContainerPanelUI : MonoBehaviour
         _currentPropId      = 0;
         _currentPropName    = null;
         _loading            = false;
+        _lootAutoClose      = false;
         _autoOpenedEntityId = -1;   // permet de ré-afficher le colis si re-tenu / inventaire ré-ouvert
         SetSlotsInteractive(true);
     }

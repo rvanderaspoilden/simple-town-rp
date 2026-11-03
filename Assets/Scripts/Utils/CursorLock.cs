@@ -27,6 +27,11 @@ namespace Sim.Utils {
             if (DialogueUI.Instance != null && DialogueUI.Instance.gameObject.activeSelf) return true;
             if (MerchantShopUI.Instance != null && MerchantShopUI.Instance.gameObject.activeSelf) return true;
             if (AtmUI.Instance != null && AtmUI.Instance.IsOpen) return true;
+            // HUD de mort : le curseur doit rester libre pour le bouton « Réapparaître ».
+            if (DeathScreenUI.Instance != null && DeathScreenUI.Instance.IsOpen) return true;
+            // Grille de FOUILLE (loot de cadavre/sac) : elle s'affiche SEULE depuis que
+            // l'inventaire ne s'ouvre plus avec — le curseur doit quand même être libéré.
+            if (ContainerPanelUI.IsPropLootOpen()) return true;
 
             return IsTypingInInputField();
         }

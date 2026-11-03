@@ -383,7 +383,8 @@ namespace Sim {
                 PlayerHealth hitHealth = hitPlayer.GetComponent<PlayerHealth>();
                 killed = hitHealth != null && hitHealth.ApplyWeaponDamage(damage);
             } else {
-                killed = hitNpc.ServerApplyDamage(damage);
+                // L'attaquant est transmis : un PNJ HOSTILE touché riposte (aggro).
+                killed = hitNpc.ServerApplyDamage(damage, this.player);
             }
             GameLogger.Player.Info("MeleeHit {AttackerNetId} {Target} {Killed}",
                 netId, hitPlayer != null ? "player:" + hitPlayer.netId : "npc:" + hitNpc.OccupantId, killed);

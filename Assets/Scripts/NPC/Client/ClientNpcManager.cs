@@ -59,6 +59,7 @@ public class ClientNpcManager : MonoBehaviour {
         NetworkClient.RegisterHandler<S2C_DestroyNpc>             (OnDestroyNpc);
         NetworkClient.RegisterHandler<S2C_NpcKnockdown>           (OnNpcKnockdown);
         NetworkClient.RegisterHandler<S2C_NpcHitReact>            (OnNpcHitReact);
+        NetworkClient.RegisterHandler<S2C_NpcAttack>              (OnNpcAttack);
         NetworkClient.RegisterHandler<S2C_MerchantCatalog>        (OnMerchantCatalog);
         NetworkClient.RegisterHandler<S2C_MerchantBuyResult>      (OnMerchantBuyResultMsg);
         NetworkClient.RegisterHandler<S2C_VehicleCatalog>         (OnVehicleCatalog);
@@ -73,6 +74,7 @@ public class ClientNpcManager : MonoBehaviour {
         NetworkClient.UnregisterHandler<S2C_DestroyNpc>();
         NetworkClient.UnregisterHandler<S2C_NpcKnockdown>();
         NetworkClient.UnregisterHandler<S2C_NpcHitReact>();
+        NetworkClient.UnregisterHandler<S2C_NpcAttack>();
         NetworkClient.UnregisterHandler<S2C_MerchantCatalog>();
         NetworkClient.UnregisterHandler<S2C_MerchantBuyResult>();
         NetworkClient.UnregisterHandler<S2C_VehicleCatalog>();
@@ -195,6 +197,12 @@ public class ClientNpcManager : MonoBehaviour {
     private void OnNpcHitReact(S2C_NpcHitReact msg) {
         if (_views.TryGetValue(msg.NpcId, out var view) && view != null) {
             view.PlayHitReact();
+        }
+    }
+
+    private void OnNpcAttack(S2C_NpcAttack msg) {
+        if (_views.TryGetValue(msg.NpcId, out var view) && view != null) {
+            view.PlayAttack((NpcAttackKind)msg.Kind, msg.Point);
         }
     }
 

@@ -25,5 +25,16 @@ public enum NpcStateType : byte {
     Interacting         = 7,
     /// <summary>PV à 0 : cadavre ragdoll au sol en attente de despawn. Même visuel client
     /// que KnockedDown, mais la vue devient « fouillable » (action SEARCH → loot).</summary>
-    Dead                = 8
+    Dead                = 8,
+
+    // ── États HOSTILES (NPC agressifs, cf. HostileNpcConfig) ──────────────────
+    /// <summary>Patrouille autour du home (hostile sans cible). Côté client : anim pilotée
+    /// par la vélocité, comme Idle/Walking.</summary>
+    Patrolling          = 9,
+    /// <summary>Poursuite d'un joueur (course). Côté client : anim vélocité (Run) + icône
+    /// d'aggro teintée rouge.</summary>
+    Chasing             = 10,
+    /// <summary>À portée d'attaque : immobile face à la cible, coups diffusés en one-shots
+    /// (S2C_NpcAttack). Côté client : pose de visée tenue si arme à feu.</summary>
+    Attacking           = 11
 }

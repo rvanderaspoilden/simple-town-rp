@@ -1295,6 +1295,21 @@ public class ServerItemManager
                 };
                 yield return ApiManager.Instance.CreateItemRequest(cashBody).SendWebRequest();
             }
+            // NPC hostile : son ARME tombe toujours dans le butin (c'est elle qu'on vient
+            // chercher en prenant d'assaut un camp). Une arme à feu tombe avec un chargeur
+            // PARTIEL aléatoire (stateData.loadedAmmo, réhydraté au ramassage).
+            if (cfg is Sim.NPC.HostileNpcConfig hostileCfg && hostileCfg.Weapon != null
+                && slot < CorpseLootSlots) {
+                var weaponState = new Dictionary<string, object> { { "slotIndex", slot++ } };
+                if (hostileCfg.RangedWeapon != null) {
+                    weaponState[StateKeyLoadedAmmo] = Random.Range(0, hostileCfg.RangedWeapon.MagazineSize + 1);
+                }
+                var weaponBody = new CreateItemBody {
+                    placeId = placeId, configId = hostileCfg.Weapon.ID, quantity = 1,
+                    stateData = weaponState,
+                };
+                yield return ApiManager.Instance.CreateItemRequest(weaponBody).SendWebRequest();
+            }
             if (cfg != null) {
                 foreach (Sim.NPC.NpcLootEntry entry in cfg.Loot) {
                     if (slot >= CorpseLootSlots) break;
@@ -1370,16 +1385,32 @@ public class ServerItemManager
         var belongings = CollectAndClearVictimBelongings(victim, victimConn);
         if (belongings.Count == 0) return;
 
-        ApiManager.Instance?.StartCoroutine(DropLootBagCoroutine(
-            belongings, victim.transform.position, victim.transform.rotation,
-            victimCharId, "Sac de butin"));
+        // Le sac apparaît IMMÉDIATEMENT au point de mort (en même temps que le ragdoll),
+        // pour tous les clients. La place backend et les lignes d'items sont remplies
+        // derrière (coroutine) — une fouille dans l'intervalle (sub-seconde) échoue
+        // proprement et se retente au clic suivant.
+        string lootKey = System.Guid.NewGuid().ToString("N");
+        if (_lootBagPrefab == null) _lootBagPrefab = Resources.Load<GameObject>("Prefabs/LootBag");
+        if (_lootBagPrefab == null) {
+            Debug.LogWarning("[ServerItemManager] LootBag prefab introuvable (Resources/Prefabs/LootBag)");
+            return;
+        }
+        GameObject bag = UnityEngine.Object.Instantiate(
+            _lootBagPrefab, victim.transform.position, victim.transform.rotation);
+        LootBag bagComp = bag.GetComponent<LootBag>();
+        if (bagComp != null) { bagComp.lootKey = lootKey; bagComp.label = "Sac de butin"; }
+        NetworkServer.Spawn(bag);
+        _lootBags[lootKey] = bag;
+
+        ApiManager.Instance?.StartCoroutine(FillLootBagCoroutine(belongings, lootKey, victimCharId));
     }
 
-    private IEnumerator DropLootBagCoroutine(List<(string uuid, int version, int configId)> toPlace,
-        Vector3 pos, Quaternion rot, string ownerCharId, string label)
+    /// <summary>Remplit la place backend du sac de butin DÉJÀ spawné (cf. DropPlayerLootBag :
+    /// le sac réseau apparaît instantanément à la mort, les écritures DB suivent ici), puis
+    /// programme sa disparition en fin de vie. Échec de création de place → sac despawné.</summary>
+    private IEnumerator FillLootBagCoroutine(List<(string uuid, int version, int configId)> toPlace,
+        string lootKey, string ownerCharId)
     {
-        string lootKey = System.Guid.NewGuid().ToString("N");
-
         // 1. Place de butin.
         var createPlace = new CreatePlaceBody {
             placeKey = $"container:{lootKey}",
@@ -1389,13 +1420,15 @@ public class ServerItemManager
         };
         UnityWebRequest placeReq = ApiManager.Instance.CreatePlaceRequest(createPlace);
         yield return placeReq.SendWebRequest();
-        if (placeReq.responseCode < 200 || placeReq.responseCode >= 300) {
-            Debug.LogWarning($"[ServerItemManager] LootBag place create failed code={placeReq.responseCode}");
+        string placeId = null;
+        if (placeReq.responseCode >= 200 && placeReq.responseCode < 300) {
+            try { var p = JsonConvert.DeserializeObject<PlaceJson>(placeReq.downloadHandler.text); placeId = p?.Id; } catch { }
+        }
+        if (string.IsNullOrEmpty(placeId)) {
+            Debug.LogWarning($"[ServerItemManager] LootBag place create failed code={placeReq.responseCode} — sac retiré");
+            DespawnLootBag(lootKey);
             yield break;
         }
-        string placeId = null;
-        try { var p = JsonConvert.DeserializeObject<PlaceJson>(placeReq.downloadHandler.text); placeId = p?.Id; } catch { }
-        if (string.IsNullOrEmpty(placeId)) yield break;
         _corpseLootPlaceIds[lootKey] = placeId;
 
         // 2. Déplace chaque possession dans la place (PATCH, identité conservée) ou crée une
@@ -1420,19 +1453,8 @@ public class ServerItemManager
             slot++;
         }
 
-        // 3. Spawne le sac réseau au point de mort.
-        if (_lootBagPrefab == null) _lootBagPrefab = Resources.Load<GameObject>("Prefabs/LootBag");
-        if (_lootBagPrefab == null) {
-            Debug.LogWarning("[ServerItemManager] LootBag prefab introuvable (Resources/Prefabs/LootBag)");
-            yield break;
-        }
-        GameObject bag = UnityEngine.Object.Instantiate(_lootBagPrefab, pos, rot);
-        LootBag bagComp = bag.GetComponent<LootBag>();
-        if (bagComp != null) { bagComp.lootKey = lootKey; bagComp.label = label; }
-        NetworkServer.Spawn(bag);
-        _lootBags[lootKey] = bag;
-
-        GameLogger.Player.Info("LootBagDropped lootKey={LootKey} items={Count} placeId={PlaceId}",
+        // 3. Sac déjà spawné à la mort (DropPlayerLootBag) — ici on ne fait que tracer.
+        GameLogger.Player.Info("LootBagFilled lootKey={LootKey} items={Count} placeId={PlaceId}",
             lootKey, slot, placeId);
 
         // 4. Disparition automatique après la durée de vie max (le vidage anticipé est géré
@@ -1490,7 +1512,12 @@ public class ServerItemManager
         if (string.IsNullOrEmpty(placeId)) return;
         string lootKey = null;
         foreach (var kv in _corpseLootPlaceIds) if (kv.Value == placeId) { lootKey = kv.Key; break; }
-        if (lootKey != null && _lootBags.ContainsKey(lootKey)) DespawnLootBag(lootKey);
+        if (lootKey == null) return;
+        // Sac de butin de joueur vidé → despawn du sac ; sinon la clé est celle d'un
+        // CADAVRE de PNJ fouillé à blanc → despawn anticipé du corps (sans attendre la
+        // fenêtre de fouille complète).
+        if (_lootBags.ContainsKey(lootKey)) DespawnLootBag(lootKey);
+        else NpcAIController.TryDespawnEmptyCorpse(lootKey);
     }
 
     /// <summary>Détache (runtime) tout ce que porte la victime et renvoie la liste des lignes
@@ -2340,7 +2367,10 @@ public class ServerItemManager
         ApiManager.Instance.StartCoroutine(MergeAllCashCoroutine(conn, msg.TargetEntityId));
     }
 
-    private IEnumerator MergeAllCashCoroutine(NetworkConnectionToClient conn, int targetEntityId) {
+    /// <param name="silent">Fusion AUTOMATIQUE (ramassage de loot) : pas de toast « Rien à
+    /// fusionner » quand le joueur ne portait qu'une seule liasse.</param>
+    private IEnumerator MergeAllCashCoroutine(NetworkConnectionToClient conn, int targetEntityId,
+        bool silent = false) {
         uint netId = conn.identity.netId;
 
         // Même collecte que TakeCashAmount : main d'abord puis poche, dédup projection.
@@ -2359,9 +2389,11 @@ public class ServerItemManager
             }
         }
         if (sources.Count < 2) {
-            conn.Send(new ToastNotificationMessage {
-                text = "Rien à fusionner", worldToast = true, kindByte = (byte)ToastKind.Error,
-            });
+            if (!silent) {
+                conn.Send(new ToastNotificationMessage {
+                    text = "Rien à fusionner", worldToast = true, kindByte = (byte)ToastKind.Error,
+                });
+            }
             yield break;
         }
 
@@ -3398,6 +3430,7 @@ public class ServerItemManager
                 snapshot.Add(new S2C_ContainerItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex, Quantity = qty,
                     LoadedAmmo = SnapshotLoadedAmmo(it.configId, it.Id),
+                    CashAmount = SnapshotCashAmount(it.configId, it.Id),
                 });
                 _bridges[entityId] = new ItemDbBridge {
                     Uuid = it.Id, Version = it.version, PlaceId = placeId,
@@ -3536,6 +3569,7 @@ public class ServerItemManager
                 snapshot.Add(new S2C_ContainerItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex, Quantity = qty,
                     LoadedAmmo = SnapshotLoadedAmmo(it.configId, it.Id),
+                    CashAmount = SnapshotCashAmount(it.configId, it.Id),
                 });
                 _bridges[entityId] = new ItemDbBridge {
                     Uuid = it.Id, Version = it.version, PlaceId = placeId,
@@ -4219,6 +4253,16 @@ public class ServerItemManager
         conn.Send(new S2C_MoveItemResult { Success = true, EntityId = msg.EntityId });
         PushSnapshotsFor(conn, fromCtx, toCtx);
         PropagateContainerUpdateToOtherSubscribers(conn.identity.netId, fromCtx, toCtx);
+
+        // Liasse ramassée depuis un CONTENEUR (loot de cadavre, sac, coffre…) vers la
+        // poche/main : fusion AUTOMATIQUE avec les liasses déjà portées — le joueur ne se
+        // retrouve pas avec deux liasses à fusionner à la main. Cible = la plus grosse
+        // (règle de MergeAllCash), silencieux s'il n'y avait rien à fusionner.
+        if (itemCtx.ConfigId == CashItem.ConfigId
+            && IsContainerKind(fromCtx.Kind)
+            && (toCtx.Kind == PlaceKind.Pocket || IsHand(toCtx.Kind))) {
+            yield return MergeAllCashCoroutine(conn, 0, silent: true);
+        }
     }
 
     // ── Split 1 : extraction d'une unité d'une pile vers une main / poche ────
@@ -4718,6 +4762,7 @@ public class ServerItemManager
                 EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
                 Quantity = Mathf.Max(1, it.Quantity),
                 LoadedAmmo = it.IsProp ? -1 : SnapshotLoadedAmmo(it.ConfigId, it.ItemUuid),
+                CashAmount = it.IsProp ? 0 : SnapshotCashAmount(it.ConfigId, it.ItemUuid),
             });
         }
         conn.Send(new S2C_ContainerOpened {
@@ -4739,6 +4784,7 @@ public class ServerItemManager
                 PropConfigId = it.IsProp ? it.PropConfigId : 0,
                 PropPresetId = it.IsProp ? it.PropPresetId : 0,
                 LoadedAmmo = it.IsProp ? -1 : SnapshotLoadedAmmo(it.ConfigId, it.ItemUuid),
+                CashAmount = it.IsProp ? 0 : SnapshotCashAmount(it.ConfigId, it.ItemUuid),
             });
         }
         conn.Send(new S2C_ItemContainerOpened {

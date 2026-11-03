@@ -169,6 +169,19 @@ public class NpcServerManager {
         });
     }
 
+    /// <summary>Diffuse une attaque de NPC HOSTILE à sa room (one-shot) : swing/poing/tir —
+    /// chaque client joue l'anim procédurale et les effets de l'arme sur sa vue. Le sens de
+    /// <paramref name="point"/> dépend du kind (fin de tracer, point d'impact…).</summary>
+    public void Attack(int npcId, NpcAttackKind kind, Vector3 point) {
+        if (!_npcs.TryGetValue(npcId, out var s)) return;
+        BroadcastToRoom(s.RoomId, new S2C_NpcAttack {
+            NpcId  = npcId,
+            RoomId = s.RoomId,
+            Kind   = (byte)kind,
+            Point  = point
+        });
+    }
+
     /// <summary>Diffuse un coup NON létal encaissé par le NPC à sa room — chaque client joue
     /// le petit choc procédural (CharacterFlinch) sur sa vue. One-shot, aucun état.</summary>
     public void HitReact(int npcId) {

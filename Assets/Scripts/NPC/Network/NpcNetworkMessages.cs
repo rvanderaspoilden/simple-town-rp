@@ -72,3 +72,29 @@ public struct S2C_NpcHitReact : NetworkMessage {
     public int    NpcId;
     public string RoomId;
 }
+
+/// <summary>Type d'attaque d'un NPC hostile, transporté en byte par <see cref="S2C_NpcAttack"/>.</summary>
+public enum NpcAttackKind : byte {
+    /// <summary>Départ d'un swing d'arme de mêlée (anim + whoosh). Point inutilisé.</summary>
+    MeleeSwing  = 0,
+    /// <summary>Coup de poing droit. Point inutilisé.</summary>
+    PunchRight  = 1,
+    /// <summary>Coup de poing gauche. Point inutilisé.</summary>
+    PunchLeft   = 2,
+    /// <summary>Coup de feu : Point = fin du tracer (impact ou portée max).</summary>
+    RangedFire  = 3,
+    /// <summary>Impact de mêlée qui PORTE : Point = poitrine de la cible (son d'impact).</summary>
+    MeleeImpact = 4
+}
+
+/// <summary>
+/// One-shot : un NPC HOSTILE attaque — chaque client joue sur sa vue l'anim procédurale
+/// (NpcAttackAnimator) et les effets de l'arme tenue (tracer/flash/sons). Aucun état
+/// persistant : l'état Attacking transite via S2C_UpdateNpcTransform.State.
+/// </summary>
+public struct S2C_NpcAttack : NetworkMessage {
+    public int     NpcId;
+    public string  RoomId;
+    public byte    Kind;   // NpcAttackKind
+    public Vector3 Point;  // sens dépendant du Kind (cf. NpcAttackKind)
+}

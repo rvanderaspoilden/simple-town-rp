@@ -721,9 +721,11 @@ namespace Sim {
                 bool killed;
                 if (hitPlayer != null) {
                     PlayerHealth hitHealth = hitPlayer.GetComponent<PlayerHealth>();
-                    killed = hitHealth != null && hitHealth.ApplyWeaponDamage(cfg.Damage);
+                    // Position du TIREUR transmise : la victime affiche la direction du coup.
+                    killed = hitHealth != null && hitHealth.ApplyWeaponDamage(cfg.Damage, this.transform.position);
                 } else {
-                    killed = hitNpc.ServerApplyDamage(cfg.Damage);
+                    // L'attaquant est transmis : un PNJ HOSTILE touché riposte (aggro).
+                    killed = hitNpc.ServerApplyDamage(cfg.Damage, this.player);
                 }
                 GameLogger.Player.Info("CharacterShot {ShooterNetId} {Target} {Killed}",
                     netId, hitPlayer != null ? "player:" + hitPlayer.netId : "npc:" + hitNpc.OccupantId, killed);

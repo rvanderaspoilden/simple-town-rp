@@ -49,6 +49,11 @@ namespace Sim.NPC {
         [SerializeField] private float maxHealth = 100f;
 
         [Header("Loot (fouille du cadavre)")]
+        [Tooltip("Durée (s) du geste de fouille avant l'ouverture de la grille de butin — le " +
+                 "temps que « ça prend » de fouiller CE NPC (même mécanique configurable que " +
+                 "les futurs coffres).")]
+        [SerializeField] private float searchDuration = 0.5f;
+
         [Tooltip("Fourchette de cash lâchée à la fouille du cadavre (liasse en poche du " +
                  "fouilleur). 0-0 = pas de cash. Une seule fouille par corps.")]
         [SerializeField] private int lootCashMin = 5;
@@ -65,6 +70,11 @@ namespace Sim.NPC {
         /// <summary>True si ce NPC est un marchand. Surchargé par <see cref="MerchantNpcConfig"/>.</summary>
         public virtual bool IsMerchant => false;
 
+        /// <summary>True si ce NPC est HOSTILE (attaque les joueurs dans sa zone). Surchargé par
+        /// <see cref="HostileNpcConfig"/> — pilote la state machine serveur (Patrol/Chase/Attack)
+        /// et l'indicateur d'aggro côté client.</summary>
+        public virtual bool IsHostile => false;
+
         /// <summary>Dialogue inline, ou null s'il est vide (le client fera alors le fallback défaut).</summary>
         public DialogueConfig Dialogue => (dialogue != null && dialogue.HasContent) ? dialogue : null;
 
@@ -73,6 +83,9 @@ namespace Sim.NPC {
 
         /// <summary>Points de vie au spawn (consommés par NpcAIController.ServerApplyDamage).</summary>
         public float MaxHealth => Mathf.Max(1f, maxHealth);
+
+        /// <summary>Durée (s) du geste de fouille du cadavre (ouverture différée de la grille).</summary>
+        public float SearchDuration => Mathf.Max(0f, searchDuration);
 
         /// <summary>Cash minimum/maximum lâché à la fouille (0/0 = aucun).</summary>
         public int LootCashMin => Mathf.Max(0, Mathf.Min(lootCashMin, lootCashMax));

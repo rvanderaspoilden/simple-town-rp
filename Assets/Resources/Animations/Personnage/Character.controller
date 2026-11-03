@@ -1087,7 +1087,7 @@ BlendTree:
   m_Name: Crouch
   m_Childs:
   - serializedVersion: 2
-    m_Motion: {fileID: 7230954658899027823, guid: 2c1fd991341d25840b347789ff01e766,
+    m_Motion: {fileID: 3094330708855449807, guid: aa30e50360fde394fb96e9e6c0ba8e18,
       type: 3}
     m_Threshold: 0
     m_Position: {x: 0, y: 0}
@@ -1096,11 +1096,11 @@ BlendTree:
     m_DirectBlendParameter: Blend
     m_Mirror: 0
   - serializedVersion: 2
-    m_Motion: {fileID: 6760792605141038880, guid: 2e01c489012f2cf42840b67a959e91a3,
+    m_Motion: {fileID: 3094330708855449807, guid: 8bb16e2bf48f0ba498b4ee70d2518ae0,
       type: 3}
     m_Threshold: 1.5
     m_Position: {x: 0, y: 0}
-    m_TimeScale: 1
+    m_TimeScale: 0.79
     m_CycleOffset: 0
     m_DirectBlendParameter: Blend
     m_Mirror: 0

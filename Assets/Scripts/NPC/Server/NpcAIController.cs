@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using AI;
 using Mirror;
+using Sim;
 using Sim.Logging;
 using Sim.NPC;
 using UnityEngine;
@@ -78,6 +79,12 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private NpcMerchantState          _merchantState;
     private NpcMerchantPauseState     _merchantPause;
 
+    // Sous-graphe hostile (instancié seulement si la config est une HostileNpcConfig).
+    private NpcPatrolState            _patrolState;
+    private NpcChaseState             _chaseState;
+    private NpcAttackState            _attackState;
+    private NpcReturnHomeState        _returnHomeState;
+
     // Config NPC re-dérivée à CHAQUE ConfigureForSpawn depuis le home. Ne JAMAIS l'effacer dans
     // ResetForPool : sinon un GO recyclé spawnerait avec la mauvaise config (marchand sur un point
     // non-marchand, ou l'inverse).
@@ -100,7 +107,10 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     // les fouilles suivantes rouvrent le restant). Nettoyée au despawn.
     private string _corpseLootKey;
     private const float DefaultMaxHealth   = 100f; // NPC sans config
-    private const float DeathDespawnDelay  = 30f;  // s au sol avant le retour au pool (fenêtre de fouille)
+    // Durée (s) du cadavre au sol avant le retour au pool (fenêtre de fouille). Un cadavre
+    // fouillé et VIDÉ despawn plus tôt (cf. TryDespawnEmptyCorpse, appelé par
+    // ServerItemManager à la fermeture d'une grille de loot vide).
+    private const float DeathDespawnDelay  = 180f;
 
     // Freeze d'interaction (overlay transverse, pas un état de la state machine).
     // Le compteur d'owners est la List.Count : tant qu'au moins un joueur tient le lock, on
@@ -145,6 +155,8 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     public string            ConfigId   => _config != null ? _config.Id : null;
     public MerchantNpcConfig Merchant   => _config as MerchantNpcConfig;
     public bool              IsMerchant => _config != null && _config.IsMerchant;
+    public HostileNpcConfig  HostileConfig => _config as HostileNpcConfig;
+    public bool              IsHostile  => _config != null && _config.IsHostile;
 
     /// <summary>True tant qu'au moins un joueur tient le lock d'interaction sur ce NPC.</summary>
     public bool IsInteractionLocked => _interactionOwners.Count > 0;
@@ -156,6 +168,23 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     /// <summary>Mort (PV à 0), au sol en attente de despawn. Les systèmes de coup
     /// (PlayerShooter/PlayerMelee) excluent les cadavres de leurs cibles.</summary>
     public bool IsDead => _dead;
+
+    /// <summary>Despawn anticipé d'un cadavre dont le butin a été entièrement pris : retrouve
+    /// le NPC mort par sa clé de loot et le retourne au pool sans attendre DeathDespawnDelay.
+    /// Appelé par ServerItemManager quand une grille de loot se ferme VIDE. Renvoie vrai si
+    /// un cadavre correspondait (faux = la clé est celle d'un sac de joueur ou d'un corps
+    /// déjà despawné).</summary>
+    public static bool TryDespawnEmptyCorpse(string lootKey) {
+        if (string.IsNullOrEmpty(lootKey)) return false;
+        NpcAIController corpse = null;
+        foreach (NpcAIController npc in _byId.Values) {
+            if (npc._dead && npc._corpseLootKey == lootKey) { corpse = npc; break; }
+        }
+        if (corpse == null) return false;
+        GameLogger.Player.Info("NpcCorpseLootedOut {NpcId}", corpse._npcId);
+        NpcSpawnManager.Instance.RequestDespawn(corpse);
+        return true;
+    }
 
     /// <summary>Démarre (ou reprend) la fouille du cadavre. Faux si le NPC n'est pas mort.
     /// <paramref name="firstSearch"/> est vrai à la toute première fouille : l'appelant
@@ -222,6 +251,125 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         if (_agent != null) _agent.enabled = value;
     }
 
+    /// <summary>Change la vitesse de l'agent (poursuite). À reposer via
+    /// <see cref="ResetAgentSpeed"/> en sortie d'état — la marche (≤ 1.5) garde l'anim Walk.</summary>
+    public void SetAgentSpeed(float speed) {
+        if (_agent != null) _agent.speed = speed;
+    }
+
+    /// <summary>Restaure la vitesse de marche par défaut (walkSpeed).</summary>
+    public void ResetAgentSpeed() => SetAgentSpeed(walkSpeed);
+
+    /// <summary>Rotation horizontale vers un point (deg/s). Utilisé par l'état Attacking
+    /// pour garder le NPC face à sa cible pendant les coups.</summary>
+    public void FaceTowards(Vector3 worldPoint, float degreesPerSecond) {
+        Vector3 dir = worldPoint - transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.01f) return;
+        Quaternion target = Quaternion.LookRotation(dir.normalized, Vector3.up);
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation, target, degreesPerSecond * Time.deltaTime);
+    }
+
+    // ── Aggression (NPC hostiles, cf. HostileNpcConfig) ───────────────────────────
+
+    // Cible courante du NPC hostile (null = aucune). Provoked = la cible a frappé le NPC
+    // (acquise hors détection, tolérance de zone élargie, cf. NpcCombat.TargetValid).
+    private PlayerController _hostileTarget;
+    private bool  _hostileProvoked;
+    private float _nextTargetScan;
+    private bool  _punchLeft;
+    private const float TargetScanInterval = 0.25f;
+
+    /// <summary>Cible courante du NPC hostile (serveur), null sinon.</summary>
+    public PlayerController HostileTarget => _hostileTarget;
+    public bool HasHostileTarget => _hostileTarget != null;
+
+    /// <summary>Alternance des poings (mains nues) : chaque appel inverse le côté.</summary>
+    public bool NextPunchLeft() {
+        _punchLeft = !_punchLeft;
+        return _punchLeft;
+    }
+
+    /// <summary>Soigne intégralement (retour au camp). Sans effet sur un mort.</summary>
+    public void ServerHealFull() {
+        if (_dead) return;
+        _health = _config != null ? _config.MaxHealth : DefaultMaxHealth;
+    }
+
+    /// <summary>La cible est-elle à portée d'attaque (distance horizontale ≤ portée résolue
+    /// × facteur, hauteur comparable, et ligne de vue dégagée pour une arme à feu) ?
+    /// <paramref name="rangeFactor"/> > 1 sert d'hystérésis à la transition Attack → Chase.</summary>
+    public bool TargetInAttackReach(float rangeFactor = 1f) {
+        HostileNpcConfig cfg = HostileConfig;
+        PlayerController target = _hostileTarget;
+        if (cfg == null || target == null) return false;
+
+        Vector3 to = target.transform.position - transform.position;
+        float heightDelta = Mathf.Abs(to.y);
+        to.y = 0f;
+        float range = cfg.ResolvedAttackRange * rangeFactor;
+        if (to.sqrMagnitude > range * range || heightDelta > 2f) return false;
+
+        if (cfg.IsRanged) {
+            return NpcCombat.HasLineOfSight(transform.position, target.transform.position);
+        }
+        return true;
+    }
+
+    /// <summary>Tick de la cible hostile (appelé depuis Update AVANT la state machine) :
+    /// invalide la cible courante si besoin (morte, sortie de zone, room), puis scanne
+    /// périodiquement un nouveau joueur à aggro quand il n'y en a pas.</summary>
+    private void ServerTickHostileTarget() {
+        HostileNpcConfig cfg = HostileConfig;
+        if (cfg == null) return;
+
+        if (_hostileTarget != null
+            && !NpcCombat.TargetValid(this, cfg, _hostileTarget, _hostileProvoked)) {
+            _hostileTarget = null;
+            _hostileProvoked = false;
+        }
+
+        if (_hostileTarget != null || Time.time < _nextTargetScan) return;
+        _nextTargetScan = Time.time + TargetScanInterval;
+
+        PlayerController found = NpcCombat.FindTarget(this, cfg);
+        if (found == null) return;
+        _hostileTarget = found;
+        _hostileProvoked = false;
+        GameLogger.Player.Info("NpcAggro {NpcId} {TargetNetId}", _npcId, found.netId);
+        AlertAllies(found);
+    }
+
+    /// <summary>Provoque ce NPC : il prend l'attaquant pour cible même hors rayon de
+    /// détection (riposte à un coup reçu), si la cible est plausible (vivante, même room,
+    /// zone élargie). Alerte les hostiles voisins au premier déclenchement.</summary>
+    public void ServerProvoke(PlayerController attacker, bool alertAllies = true) {
+        HostileNpcConfig cfg = HostileConfig;
+        if (cfg == null || _dead || attacker == null) return;
+        if (_hostileTarget != null) return; // déjà en combat
+        if (!NpcCombat.TargetValid(this, cfg, attacker, provoked: true)) return;
+
+        _hostileTarget = attacker;
+        _hostileProvoked = true;
+        GameLogger.Player.Info("NpcProvoked {NpcId} {TargetNetId}", _npcId, attacker.netId);
+        if (alertAllies) AlertAllies(attacker);
+    }
+
+    /// <summary>Défense de camp : propage la cible aux hostiles voisins (même room, rayon
+    /// d'alerte de la config). Pas de re-propagation en chaîne (alertAllies: false).</summary>
+    private void AlertAllies(PlayerController target) {
+        HostileNpcConfig cfg = HostileConfig;
+        if (cfg == null || cfg.AllyAlertRadius <= 0f) return;
+        float radiusSqr = cfg.AllyAlertRadius * cfg.AllyAlertRadius;
+        foreach (NpcAIController other in _byId.Values) {
+            if (other == this || !other.IsHostile || other._dead) continue;
+            if (other.roomId != roomId) continue;
+            if ((other.transform.position - transform.position).sqrMagnitude > radiusSqr) continue;
+            other.ServerProvoke(target, alertAllies: false);
+        }
+    }
+
     /// <summary>Oriente le NPC face à l'orientation autorée de son stand (home).</summary>
     public void FaceHome() {
         if (_home != null) transform.rotation = _home.Rotation;
@@ -262,6 +410,14 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         _sitState            = null;
         _merchantState       = null;
         _merchantPause       = null;
+        _patrolState         = null;
+        _chaseState          = null;
+        _attackState         = null;
+        _returnHomeState     = null;
+        _hostileTarget       = null;
+        _hostileProvoked     = false;
+        _nextTargetScan      = 0f;
+        _punchLeft           = false;
         _interactionOwners.Clear();
         // NB : on n'efface PAS _config ici (re-affecté dans ConfigureForSpawn, appelé AVANT).
         GameLogger.Network.Debug("[NPCPool] ResetForPool complete {ConfigId} {FullName}",
@@ -281,7 +437,9 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     }
 
     public bool HasReachedDestination() {
-        if (_agent == null) return true;
+        // Agent coupé (knockdown, assis, mort) ou hors NavMesh : lire remainingDistance
+        // jetterait — on répond « arrivé » pour que l'état appelant avance sans spammer.
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh) return true;
         return !_agent.pathPending
                && _agent.remainingDistance <= arriveDistance
                && (!_agent.hasPath || _agent.velocity.sqrMagnitude < 0.01f);
@@ -327,6 +485,12 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
         Sim.Missions.MissionTargetHooks.RegisterNpc(this, _npcId);
 
         _visitTarget = Random.Range(minVisitsBeforeReturn, maxVisitsBeforeReturn + 1);
+        // Un GO recyclé a pu être relâché agent COUPÉ (mort : ServerDie désactive l'agent et
+        // le despawn n'y retouche pas) ou en pleine poursuite (vitesse de course). Sans ce
+        // reset, la vie suivante tickait ses états avec un agent désactivé → spam d'erreurs
+        // « GetRemainingDistance can only be called on an active agent » (NpcSitState & co).
+        SetAgentEnabled(true);
+        ResetAgentSpeed();
         BuildStateMachine();
 
         GameLogger.Network.Debug("[NPCPool] Reusing NPC from pool {NpcId} {FullName}",
@@ -413,11 +577,16 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     /// <see cref="DeathDespawnDelay"/> secondes (fenêtre de fouille, cf. TryConsumeSearch)
     /// puis despawn via NpcSpawnManager (son point respawne après le cooldown normal).
     /// Renvoie vrai si CE coup l'a tué — l'appelant colore son feedback « coup fatal ».</summary>
-    public bool ServerApplyDamage(float damage) {
+    public bool ServerApplyDamage(float damage) => ServerApplyDamage(damage, null);
+
+    /// <summary>Variante avec ATTAQUANT : un NPC hostile qui encaisse un coup non létal
+    /// riposte (ServerProvoke — cible prise même hors rayon de détection, alliés alertés).</summary>
+    public bool ServerApplyDamage(float damage, PlayerController attacker) {
         if (!NetworkServer.active || _npcId <= 0 || _dead) return false;
         _health = Mathf.Max(0f, _health - Mathf.Max(0f, damage));
         if (_health > 0f) {
             NpcServerManager.Instance.HitReact(_npcId);
+            if (attacker != null && IsHostile) ServerProvoke(attacker);
             return false;
         }
         ServerDie();
@@ -482,6 +651,10 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
             TickInteractionOverlay();
             return;
         }
+
+        // NPC hostile : maintenance de la cible (invalidation + acquisition) AVANT le tick,
+        // pour que les prédicats de transition lisent un état frais.
+        if (IsHostile) ServerTickHostileTarget();
 
         _stateMachine.Tick();
 
@@ -562,6 +735,10 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     // ── State machine wiring ──────────────────────────────────────────────────
 
     private void BuildStateMachine() {
+        if (IsHostile) {
+            BuildHostileStateMachine();
+            return;
+        }
         if (IsMerchant) {
             BuildMerchantStateMachine();
             return;
@@ -602,6 +779,40 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
             () => _merchantPause.HasFinished);
 
         _stateMachine.SetState(_merchantState);
+    }
+
+    /// <summary>
+    /// Sous-graphe HOSTILE : Patrol ↔ Chase ↔ Attack, Return au camp sur cible perdue.
+    ///
+    ///   Patrol ──cible──▶ Chase ──à portée──▶ Attack
+    ///     ▲                 │ ◀──hors portée (hystérésis ×1.25)──┘
+    ///     │                 └──cible perdue──▶ Return ◀──cible perdue── Attack
+    ///     └───────────arrivé au camp (soin complet)── Return ──ré-aggro──▶ Chase
+    ///
+    /// Comme le marchand, aucun despawn par compteur de visites : le NPC tient sa zone tant
+    /// que la room est active (il ne despawn qu'à la mort, via le path Dead du Update).
+    /// </summary>
+    private void BuildHostileStateMachine() {
+        _stateMachine    = new StateMachine();
+        _patrolState     = new NpcPatrolState(this);
+        _chaseState      = new NpcChaseState(this);
+        _attackState     = new NpcAttackState(this);
+        _returnHomeState = new NpcReturnHomeState(this);
+
+        _stateMachine.AddTransition(_patrolState, _chaseState, () => HasHostileTarget);
+
+        _stateMachine.AddTransition(_chaseState, _returnHomeState, () => !HasHostileTarget);
+        _stateMachine.AddTransition(_chaseState, _attackState,
+            () => HasHostileTarget && TargetInAttackReach());
+
+        _stateMachine.AddTransition(_attackState, _returnHomeState, () => !HasHostileTarget);
+        _stateMachine.AddTransition(_attackState, _chaseState,
+            () => HasHostileTarget && !TargetInAttackReach(1.25f));
+
+        _stateMachine.AddTransition(_returnHomeState, _chaseState, () => HasHostileTarget);
+        _stateMachine.AddTransition(_returnHomeState, _patrolState, () => _returnHomeState.HasArrived);
+
+        _stateMachine.SetState(_patrolState);
     }
 
     private bool DecideSit() => Random.value < sitProbability;

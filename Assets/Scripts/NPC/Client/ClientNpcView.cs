@@ -22,7 +22,7 @@ using Action = Sim.Interactables.Action;
 ///   - Aucun rigidbody / physique.
 ///   - Aucune logique IA.
 /// </summary>
-public class ClientNpcView : MonoBehaviour, IInteractable {
+public class ClientNpcView : MonoBehaviour, IInteractable, IQuickActionProvider {
     [Header("Interpolation")]
     [Tooltip("Délai (s) appliqué au rendu pour absorber le jitter réseau. Doit couvrir 4-6 " +
              "snapshots à la cadence d'envoi (sendRate=30 Hz → 33 ms par snapshot → 0.18 à 0.25). " +
@@ -68,9 +68,19 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     private NpcStateType _appliedState = (NpcStateType)255;
 
     private PlayerAnimator      _animator;
+    private Animator            _unityAnimator;
     private CharacterStyleSetup _styleSetup;
     private RagdollController    _ragdoll;
     private bool                 _knockedDown;
+
+    // NPC hostile : anim d'attaque procédurale + arme visuelle en main droite (prefab de
+    // l'item de la HostileNpcConfig, purement cosmétique — la logique vit côté serveur).
+    private NpcAttackAnimator _attackAnimator;
+    private ItemBehaviour     _weaponVisual;
+
+    private static readonly Color HostileNameColor   = new Color(1f, 0.42f, 0.36f);
+    private static readonly Color HostileIconIdle    = new Color(1f, 0.55f, 0.25f);
+    private static readonly Color HostileIconAggro   = new Color(1f, 0.15f, 0.1f);
 
     // Actions TALK/SEARCH instanciées depuis Resources à l'Awake — même pattern que
     // PlayerController.SetupActions. Chaque vue a sa propre copie (pas de partage d'event delegates).
@@ -93,6 +103,7 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     /// <summary>Config résolue du NPC (jamais null après Init si un NpcConfig « default » existe).</summary>
     public NpcConfig Config        => _config;
     public bool      IsMerchant    => _config != null && _config.IsMerchant;
+    public bool      IsHostile     => _config != null && _config.IsHostile;
     /// <summary>Libellé marchand (null si non-marchand). Dérivé de la config rechargée par id.</summary>
     public string    MerchantLabel => (_config as MerchantNpcConfig)?.MerchantLabel;
 
@@ -105,16 +116,29 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     /// <summary>Portée d'interaction NPC (mètres) — règle projet : 2 m pour PNJ et joueurs.</summary>
     public float GetRange() => 2f;
 
-    public bool IsInteractable() => IsDead ? _searchAction != null : _talkAction != null;
+    public bool IsInteractable() {
+        if (IsDead) return _searchAction != null;
+        // Hostile vivant : aucune interaction (il attaque à vue) — le serveur refuse aussi.
+        if (IsHostile) return false;
+        return _talkAction != null;
+    }
 
     public bool IsRightClickOnly() => false;
 
     public void StopInteraction() { }
 
+    /// <summary>E court sur un CADAVRE = fouille directe (SEARCH), sans passer par le menu
+    /// radial. Vivant : pas d'action rapide (TALK garde son flux normal).</summary>
+    public bool TryGetQuickAction(Action[] available, out Action action) {
+        action = IsDead ? _searchAction : null;
+        return action != null;
+    }
+
     public Action[] GetActions(bool withPriority = false) {
         // Vivant : TALK est la seule action (le shop marchand s'ouvre via une réponse de
         // dialogue). Mort : SEARCH (« Fouiller ») est la seule action du cadavre.
         if (IsDead) return _searchAction != null ? new[] { _searchAction } : Array.Empty<Action>();
+        if (IsHostile) return Array.Empty<Action>(); // hostile vivant : pas de TALK
         if (_talkAction == null) return Array.Empty<Action>();
         return new[] { _talkAction };
     }
@@ -122,9 +146,10 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
     // ── Unity lifecycle ───────────────────────────────────────────────────────
 
     private void Awake() {
-        _animator   = GetComponent<PlayerAnimator>();
-        _styleSetup = GetComponent<CharacterStyleSetup>();
-        _ragdoll    = GetComponent<RagdollController>();
+        _animator      = GetComponent<PlayerAnimator>();
+        _unityAnimator = GetComponent<Animator>();
+        _styleSetup    = GetComponent<CharacterStyleSetup>();
+        _ragdoll       = GetComponent<RagdollController>();
 
         // Le NavMeshAgent vit côté serveur (NpcAIController). Sur le client il est un vestige
         // du prefab et DOIT être désactivé : sinon, quand la NavMeshObstacle du véhicule
@@ -212,6 +237,7 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         }
 
         RefreshIcon();
+        SetupHostileVisuals();
 
         _prev = _next = new Snapshot {
             ServerTime = Time.time,
@@ -260,6 +286,103 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         Sprite icon = _config != null ? _config.Icon : null;
         if (iconImage != null) iconImage.sprite = icon;
         iconRoot.SetActive(icon != null && iconImage != null && !_knockedDown);
+        UpdateHostileIndicator();
+    }
+
+    // ── NPC hostile : indicateur, arme visuelle, animations d'attaque ──────────
+
+    /// <summary>Signale l'hostilité du NPC : nom teinté rouge, icône de config (autorée dans
+    /// le prefab, cf. iconRoot) teintée orange — rouge vif pendant la poursuite/l'attaque —
+    /// et composant d'anim d'attaque procédurale. Appelé à l'Init.</summary>
+    private void SetupHostileVisuals() {
+        if (!(_config is HostileNpcConfig hostile)) return;
+
+        if (nameLabel != null) nameLabel.color = HostileNameColor;
+
+        _attackAnimator = GetComponent<NpcAttackAnimator>();
+        if (_attackAnimator == null) _attackAnimator = gameObject.AddComponent<NpcAttackAnimator>();
+
+        AttachWeaponVisual(hostile.Weapon);
+        UpdateHostileIndicator();
+    }
+
+    /// <summary>Teinte l'icône au-dessus de la tête selon l'état d'aggro, et tient la pose
+    /// de visée (arme à feu) pendant l'état Attacking. Appelé aux changements d'état.</summary>
+    private void UpdateHostileIndicator() {
+        if (!IsHostile) return;
+
+        bool aggro = _currentState == NpcStateType.Chasing || _currentState == NpcStateType.Attacking;
+        if (iconImage != null) iconImage.color = aggro ? HostileIconAggro : HostileIconIdle;
+
+        if (_attackAnimator != null) {
+            bool aimHold = _currentState == NpcStateType.Attacking
+                           && _config is HostileNpcConfig hostile && hostile.IsRanged
+                           && !_knockedDown;
+            _attackAnimator.SetAimHold(aimHold);
+        }
+    }
+
+    /// <summary>Instancie le prefab de l'arme de la config en MAIN DROITE (ancre « Handle
+    /// Position » sous l'os de main, comme les items des joueurs), avec le grip de l'ItemConfig.
+    /// Purement visuel : colliders coupés, item marqué tenu (jamais survolable).</summary>
+    private void AttachWeaponVisual(ItemConfig weaponConfig) {
+        if (weaponConfig == null || weaponConfig.Prefab == null || _unityAnimator == null) return;
+
+        Transform hand = _unityAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+        if (hand == null) return;
+        Transform anchor = FindDeepChild(hand, "Handle Position");
+        if (anchor == null) anchor = hand;
+
+        ItemBehaviour item = Instantiate(weaponConfig.Prefab, anchor);
+        item.name = $"NPC Weapon ({weaponConfig.name})";
+        item.Initialize(weaponConfig);
+        item.transform.localPosition = weaponConfig.HasGripOverride ? weaponConfig.GripPosition : Vector3.zero;
+        item.transform.localRotation = weaponConfig.HasGripOverride
+            ? Quaternion.Euler(weaponConfig.GripEuler) : Quaternion.identity;
+        item.OnAttachedToHand(0, HandType.Right);
+
+        foreach (Collider c in item.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+        _weaponVisual = item;
+    }
+
+    private static Transform FindDeepChild(Transform parent, string childName) {
+        for (int i = 0; i < parent.childCount; i++) {
+            Transform child = parent.GetChild(i);
+            if (child.name == childName) return child;
+            Transform found = FindDeepChild(child, childName);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    /// <summary>Reçu via S2C_NpcAttack (one-shot) : joue l'anim d'attaque procédurale et les
+    /// effets de l'arme tenue (whoosh, tracer/flash/son, son d'impact) sur cette vue.</summary>
+    public void PlayAttack(NpcAttackKind kind, Vector3 point) {
+        if (_knockedDown) return;
+
+        switch (kind) {
+            case NpcAttackKind.MeleeSwing:
+                _attackAnimator?.PlaySwing();
+                (_weaponVisual as MeleeWeaponBehaviour)?.PlaySwingEffects();
+                break;
+
+            case NpcAttackKind.PunchRight:
+                _attackAnimator?.PlayPunch(false);
+                break;
+
+            case NpcAttackKind.PunchLeft:
+                _attackAnimator?.PlayPunch(true);
+                break;
+
+            case NpcAttackKind.RangedFire:
+                _attackAnimator?.PlayFire();
+                (_weaponVisual as WeaponBehaviour)?.PlayFireEffects(point);
+                break;
+
+            case NpcAttackKind.MeleeImpact:
+                (_weaponVisual as MeleeWeaponBehaviour)?.PlayHitEffects(point);
+                break;
+        }
     }
 
     public void PushSnapshot(Vector3 position, Quaternion rotation,
@@ -273,6 +396,7 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
             _currentState = state;
             if (isDown && !wasDown)      EnterKnockdownVisual();
             else if (wasDown && !isDown) ExitKnockdownVisual(position, rotation);
+            UpdateHostileIndicator();
         }
 
         if (_knockedDown) {
@@ -401,8 +525,15 @@ public class ClientNpcView : MonoBehaviour, IInteractable {
         ClientLogger.Network("[NPCInteraction] SEARCH corpse requested {NpcId} {FullName}", NpcId, FullName);
         // Occupe le joueur (BUSY) AVANT d'ouvrir la grille : la sortie d'Idle referme
         // l'inventaire, donc l'ordre compte. L'état se termine seul à la fermeture de la grille.
-        PlayerController.Local?.BeginBusy(ContainerPanelUI.IsPropLootOpen, transform);
-        ContainerPanelUI.Prop?.OpenOptimistic(ServerItemManager.CorpseLootSlots, $"Fouille — {FullName}");
+        // Fouille DIFFÉRÉE : le C2S part tout de suite (l'aller-retour backend tourne pendant
+        // le geste de fouille), la grille ne s'affiche qu'à l'échéance — items déjà dedans.
+        // BUSY annulable par le MOUVEMENT : bouger pendant la fouille (geste ou grille
+        // ouverte) referme la modale et rend la main.
+        PlayerController.Local?.BeginBusy(ContainerPanelUI.IsPropLootOpen, transform,
+            cancelOnMove: true, onCancelled: () => ContainerPanelUI.Prop?.Close());
+        // Durée du geste configurée par la NpcConfig du cadavre (SearchDuration).
+        ContainerPanelUI.Prop?.OpenSearchDelayed(ServerItemManager.CorpseLootSlots,
+            $"Fouille — {FullName}", _config != null ? _config.SearchDuration : 0.5f);
         Mirror.NetworkClient.Send(new C2S_SearchNpcCorpse { NpcId = NpcId });
     }
 }

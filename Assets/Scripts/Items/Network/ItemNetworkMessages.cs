@@ -145,6 +145,7 @@ public struct S2C_ContainerItem
     public int PropConfigId; // >0 = meuble emballé (icône PropsConfig.Sprite, non-draggable) ; 0 = item normal
     public int PropPresetId; // variant du meuble emballé (pour la preview au déballage)
     public int LoadedAmmo;   // arme : balles dans le chargeur (tooltip). -1 = pas une arme.
+    public int CashAmount;   // liasse : montant (tooltip). 0 = pas une liasse / inconnu.
 }
 
 /// <summary>Client → server : le joueur ouvre un conteneur (prop avec PropsConfig.Container.IsContainer).</summary>

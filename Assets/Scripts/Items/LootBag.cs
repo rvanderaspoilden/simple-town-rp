@@ -67,8 +67,13 @@ public class LootBag : NetworkBehaviour, IInteractable, IQuickActionProvider {
         ClientLogger.Network("[LootBag] SEARCH requested bag={BagNetId}", netId);
         // Occupe le joueur (BUSY) AVANT d'ouvrir la grille : la sortie d'Idle referme
         // l'inventaire, donc l'ordre compte. L'état se termine seul à la fermeture de la grille.
-        PlayerController.Local?.BeginBusy(ContainerPanelUI.IsPropLootOpen, transform);
-        ContainerPanelUI.Prop?.OpenOptimistic(ServerItemManager.PlayerCorpseLootSlots,
+        // Fouille DIFFÉRÉE : le C2S part tout de suite (l'aller-retour backend tourne pendant
+        // le geste de fouille), la grille ne s'affiche qu'à l'échéance — items déjà dedans.
+        // BUSY annulable par le MOUVEMENT : bouger pendant la fouille (geste ou grille
+        // ouverte) referme la modale et rend la main.
+        PlayerController.Local?.BeginBusy(ContainerPanelUI.IsPropLootOpen, transform,
+            cancelOnMove: true, onCancelled: () => ContainerPanelUI.Prop?.Close());
+        ContainerPanelUI.Prop?.OpenSearchDelayed(ServerItemManager.PlayerCorpseLootSlots,
             string.IsNullOrEmpty(label) ? "Sac de butin" : label);
         NetworkClient.Send(new C2S_SearchLootBag { BagNetId = netId });
     }

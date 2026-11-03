@@ -22,16 +22,25 @@ namespace AI.States {
 
         private Func<bool> stillBusy;
         private Transform lookAt;
+        private bool cancelOnMove;
+        private Action onCancelled;
 
         public CharacterBusy(PlayerController player) {
             this.player = player;
         }
 
         /// <summary>Arme l'état avant la transition : prédicat de maintien + cible optionnelle
-        /// vers laquelle orienter le joueur (ex. l'ATM, le cadavre).</summary>
-        public void Configure(Func<bool> stillBusy, Transform lookAt) {
+        /// vers laquelle orienter le joueur (ex. l'ATM, le cadavre).
+        /// <paramref name="cancelOnMove"/> : une touche de DÉPLACEMENT annule l'action —
+        /// <paramref name="onCancelled"/> referme alors l'UI déclencheuse (ex. grille de
+        /// fouille) avant le retour à Idle. Par défaut (faux), le mouvement reste ignoré
+        /// tant que l'UI est ouverte (comportement ATM historique).</summary>
+        public void Configure(Func<bool> stillBusy, Transform lookAt,
+                              bool cancelOnMove = false, Action onCancelled = null) {
             this.stillBusy = stillBusy;
             this.lookAt = lookAt;
+            this.cancelOnMove = cancelOnMove;
+            this.onCancelled = onCancelled;
         }
 
         public void OnEnter() {
@@ -40,6 +49,14 @@ namespace AI.States {
         }
 
         public void Tick() {
+            // Annulation par le MOUVEMENT (fouille…) : on referme l'UI déclencheuse et on
+            // rend la main — le joueur « s'arrache » de l'action en bougeant.
+            if (this.cancelOnMove && this.player.ReadMoveAxis().sqrMagnitude > 0.01f) {
+                this.onCancelled?.Invoke();
+                this.player.Idle();
+                return;
+            }
+
             // L'UI déclencheuse s'est refermée (ou n'a jamais pris) → on quitte l'état occupé.
             if (this.stillBusy == null || !this.stillBusy()) {
                 this.player.Idle();
@@ -49,6 +66,8 @@ namespace AI.States {
         public void OnExit() {
             this.stillBusy = null;
             this.lookAt = null;
+            this.cancelOnMove = false;
+            this.onCancelled = null;
         }
     }
 }
