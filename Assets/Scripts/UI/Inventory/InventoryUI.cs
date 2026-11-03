@@ -229,10 +229,8 @@ public class InventoryUI : MonoBehaviour
 
     private void Update()
     {
-        if (SubGameController.IsActive) return;
-
-        if (Input.GetKeyDown(KeyCode.Escape))
-            HUDManager.Instance.CloseInventory();
+        // La fermeture par Échap est gérée globalement par HUDManager (pump universel) ;
+        // l'inventaire se toggle par ailleurs avec la touche I (HUDManager).
 
         // Inventaire classique (migration hotbar) : on ne ferme PLUS l'inventaire quand le
         // joueur bouge. En TPS, tpsCurrentSpeed est une vitesse amortie — l'ancienne règle

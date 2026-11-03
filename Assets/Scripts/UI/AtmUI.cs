@@ -250,7 +250,8 @@ namespace Sim.UI {
         }
 
         private void Update() {
-            if (Input.GetKeyDown(KeyCode.Escape)) { this.Back(); return; }
+            // La fermeture/retour par Échap est gérée globalement par HUDManager (pump
+            // universel), qui appelle this.Back().
 
             // Session rompue si le joueur n'est plus devant l'ATM (téléport, poussée…) :
             // fermeture sèche, pas d'animation d'éjection pour un joueur déjà parti.
@@ -269,7 +270,7 @@ namespace Sim.UI {
 
         /// <summary>Bouton bas d'écran / Échap : remonte d'un écran — opération → choix,
         /// choix → éjection de la carte, carte/lecture → fermeture sèche.</summary>
-        private void Back() {
+        public void Back() {
             switch (this._step) {
                 case Step.Withdraw:
                 case Step.Deposit:

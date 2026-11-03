@@ -104,10 +104,7 @@ namespace Sim.Constellation {
         }
 
         private void Update() {
-            if (Input.GetKeyDown(KeyCode.Escape)) {
-                Close();
-                return;
-            }
+            // La fermeture par Échap est gérée globalement par HUDManager (pump universel).
 
             if (enableDebugKeys && !IsSearchFocused()) {
                 // Touches 1 / 3 / 4 = crédits de branche (Créatif / Sportif / Sociable).

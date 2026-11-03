@@ -59,7 +59,6 @@ namespace Sim.UI {
         }
 
         private void Update() {
-            if (this.gameObject.activeSelf && Input.GetKeyDown(KeyCode.Escape)) this.Hide();
         }
     }
 }

@@ -77,9 +77,6 @@ namespace Sim.UI {
             this.Hide();
         }
 
-        private void Update() {
-            if (!this.IsOpen) return;
-            if (Input.GetKeyDown(KeyCode.Escape)) this.Hide();
-        }
+        // La fermeture par Échap est gérée globalement par HUDManager (pump universel).
     }
 }

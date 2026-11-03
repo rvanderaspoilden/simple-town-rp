@@ -84,15 +84,73 @@ namespace Sim {
         }
 
         private void Update() {
+            if (SubGameController.IsActive) return;
+
+            // Escape = FERMETURE UNIVERSELLE : ferme le dernier overlay/dialog/modale ouvert
+            // (un seul par appui, par ordre de priorité). Point d'entrée UNIQUE — les overlays
+            // ne lisent plus Escape eux-mêmes (sinon double-fermeture). Non inhibé par la
+            // saisie de texte : Escape doit pouvoir fermer le chat/les champs eux-mêmes.
+            if (Sim.Utils.GameInput.Down(UnityEngine.InputSystem.Key.Escape)) {
+                if (this.CloseTopOverlay()) return;
+            }
+
             // Raccourci global : I ouvre/ferme l'inventaire. Inhibé hors gameplay (pas de
             // joueur local = menu principal), en sub-game et pendant une saisie de texte.
-            // La fermeture par Escape/marche reste gérée par InventoryUI.
             if (Sim.Utils.GameInput.Down(UnityEngine.InputSystem.Key.I)
                 && PlayerController.Local != null
-                && !SubGameController.IsActive
                 && !Sim.Utils.CursorLock.IsTypingInInputField()) {
                 this.ToggleInventory();
             }
+        }
+
+        /// <summary>Ferme le PREMIER overlay ouvert par ordre de priorité descendante (popup de
+        /// saisie/confirmation &gt; chat &gt; modales plein écran &gt; constellation &gt; téléphone
+        /// &gt; menu radial &gt; grille conteneur &gt; inventaire). Un seul par appui d'Escape.
+        /// Source de vérité unique de la fermeture par Escape — aucun overlay ne lit Escape
+        /// de son côté. Renvoie vrai si quelque chose a été fermé.</summary>
+        private bool CloseTopOverlay() {
+            // 1. Petites popups de saisie / confirmation (empilées au-dessus des modales).
+            if (Close(SplitDialogUI.Instance, SplitDialogUI.Instance != null && SplitDialogUI.Instance.gameObject.activeSelf, () => SplitDialogUI.Instance.Hide())) return true;
+            if (Close(ConfirmDialogUI.Instance, ConfirmDialogUI.Instance != null && ConfirmDialogUI.Instance.gameObject.activeSelf, () => ConfirmDialogUI.Instance.Hide())) return true;
+            if (Close(DestroyConfirmUI.Instance, DestroyConfirmUI.Instance != null && DestroyConfirmUI.Instance.gameObject.activeSelf, () => DestroyConfirmUI.Instance.Hide())) return true;
+            if (Close(BuyConfirmUI.Instance, BuyConfirmUI.Instance != null && BuyConfirmUI.Instance.gameObject.activeSelf, () => BuyConfirmUI.Instance.Hide())) return true;
+            if (Close(GiveMoneyInputUI.Instance, GiveMoneyInputUI.Instance != null && GiveMoneyInputUI.Instance.gameObject.activeSelf, () => GiveMoneyInputUI.Instance.Hide())) return true;
+            if (Close(SalePriceInputUI.Instance, SalePriceInputUI.Instance != null && SalePriceInputUI.Instance.gameObject.activeSelf, () => SalePriceInputUI.Instance.Hide())) return true;
+
+            // 2. Saisie de chat.
+            if (ChatInputUI.Instance != null && ChatInputUI.Instance.IsOpen) { ChatInputUI.Instance.Hide(); return true; }
+
+            // 3. Modales plein écran.
+            if (Close(DialogueUI.Instance, DialogueUI.Instance != null && DialogueUI.Instance.gameObject.activeSelf, () => DialogueUI.Instance.Hide())) return true;
+            if (Close(MerchantShopUI.Instance, MerchantShopUI.Instance != null && MerchantShopUI.Instance.gameObject.activeSelf, () => MerchantShopUI.Instance.Hide())) return true;
+            if (Close(VehicleShopUI.Instance, VehicleShopUI.Instance != null && VehicleShopUI.Instance.gameObject.activeSelf, () => VehicleShopUI.Instance.Hide())) return true;
+            if (Close(LandParcelInfoUI.Instance, LandParcelInfoUI.Instance != null && LandParcelInfoUI.Instance.gameObject.activeSelf, () => LandParcelInfoUI.Instance.Hide())) return true;
+            if (AtmUI.Instance != null && AtmUI.Instance.IsOpen) { AtmUI.Instance.Back(); return true; }
+            if (this.vehicleGarageUI != null && this.vehicleGarageUI.gameObject.activeSelf) { this.vehicleGarageUI.Hide(); return true; }
+
+            // 4. Constellation (carte de progression plein écran).
+            if (this.constellationUI != null && this.constellationUI.IsOpen) { this.constellationUI.Close(); return true; }
+
+            // 5. Téléphone.
+            if (PhoneControllerUI.Instance != null && PhoneControllerUI.Instance.IsOpened) { PhoneControllerUI.Instance.ClosePhone(); return true; }
+
+            // 6. Menu radial contextuel.
+            if (this.IsContextMenuOpen) { this.CloseContextMenu(); return true; }
+
+            // 7. Grille de conteneur / loot (colis tenu puis meuble/cadavre).
+            if (ContainerPanelUI.Item != null && ContainerPanelUI.Item.IsDisplayed) { ContainerPanelUI.Item.Close(); return true; }
+            if (ContainerPanelUI.Prop != null && ContainerPanelUI.Prop.IsDisplayed) { ContainerPanelUI.Prop.Close(); return true; }
+
+            // 8. Inventaire.
+            if (this.inventoryUI != null && this.inventoryUI.gameObject.activeSelf) { this.CloseInventory(); return true; }
+
+            return false;
+        }
+
+        private static bool Close(Object inst, bool isOpen, System.Action close) {
+            if (inst == null || !isOpen) return false;
+            close();
+            return true;
         }
 
         public void ShowVehicleHud(VehicleController vehicle, bool asDriver) {

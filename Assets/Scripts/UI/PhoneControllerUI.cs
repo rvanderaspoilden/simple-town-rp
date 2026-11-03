@@ -67,20 +67,23 @@ namespace Sim {
             }
         }
 
+        [Header("Input")]
+        [Tooltip("Touche d'ouverture/fermeture du téléphone (position physique, indépendante " +
+                 "AZERTY/QWERTY). La FERMETURE par Échap est gérée globalement par HUDManager.")]
+        [SerializeField]
+        private UnityEngine.InputSystem.Key phoneKey = UnityEngine.InputSystem.Key.T;
+
         private void Update() {
             if (SubGameController.IsActive) return;
 
             this.Swipe();
 
-            if (Input.GetKeyDown(KeyCode.Escape)) {
-                // Laisser le tchat consommer Escape en priorité.
-                if (Sim.UI.ChatInputUI.Instance != null && Sim.UI.ChatInputUI.Instance.IsOpen) return;
-
-                if (this.phoneOpened) {
-                    this.ClosePhone();
-                } else {
-                    this.OpenPhone();
-                }
+            // Ouverture/fermeture par la touche dédiée (plus Échap : Échap ferme désormais
+            // via le pump universel de HUDManager). Inhibée pendant une saisie de texte.
+            if (Sim.Utils.GameInput.Down(this.phoneKey)
+                && !Sim.Utils.CursorLock.IsTypingInInputField()) {
+                if (this.phoneOpened) this.ClosePhone();
+                else this.OpenPhone();
             }
         }
 

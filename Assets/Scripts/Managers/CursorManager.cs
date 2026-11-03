@@ -98,8 +98,16 @@ namespace Sim {
         }
 
         private void LoadingStateChanged(bool isActive) {
-            Cursor.lockState = isActive ? CursorLockMode.Locked : CursorLockMode.None;
-            Cursor.visible = !isActive;
+            if (isActive) {
+                // Pendant le chargement : curseur verrouillé/masqué (l'écran couvre la vue).
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+            // Fin de chargement (lancement du jeu, téléport) : on NE force PLUS le curseur
+            // visible. L'état gameplay (CameraManager.ApplyTpsCursorLock) reprend la main dès
+            // la frame suivante — en TPS il reste donc masqué/verrouillé. On invalide le cache
+            // de CursorLock pour qu'il réécrive, car ce writer direct l'a désynchronisé.
+            Sim.Utils.CursorLock.Invalidate();
         }
     }
 }

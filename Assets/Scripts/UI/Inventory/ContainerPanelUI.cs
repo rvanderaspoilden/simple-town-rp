@@ -182,6 +182,10 @@ public class ContainerPanelUI : MonoBehaviour
     /// snapshot serveur. Consommé par <see cref="IsPropLootOpen"/>.</summary>
     private bool IsShowing => root != null && root.activeInHierarchy;
 
+    /// <summary>Grille effectivement affichée à l'écran — exposée pour le pump Escape de
+    /// HUDManager (fermeture universelle).</summary>
+    public bool IsDisplayed => IsShowing;
+
     /// <summary>True tant que le joueur fouille via le canal Prop (cadavre PNJ, sac de butin,
     /// coffre…) : grille Prop affichée ET inventaire ouvert. Source de vérité unique pour le
     /// prédicat de maintien de l'état <c>CharacterBusy</c> (fouille) — couvre tous les chemins
