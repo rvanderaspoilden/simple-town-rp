@@ -11,7 +11,14 @@ namespace Sim.UI {
     /// Ouverte par <see cref="HUDManager.ShowGarage"/> depuis <c>GarageDoor</c> ; chaque ligne
     /// dispo rappelle <c>onPick(vehicleId)</c> puis ferme.
     /// </summary>
-    public class VehicleGarageUI : MonoBehaviour {
+    public class VehicleGarageUI : MonoBehaviour, IHudOverlay {
+        public OverlayLayer Layer => OverlayLayer.Fullscreen;
+        public bool HidesGameHud => false;
+        public bool ShowsHotbar  => false;
+        public void CloseOverlay() => Hide();
+        private void OnEnable()  => HudOverlayManager.Instance?.OnOpened(this);
+        private void OnDisable() => HudOverlayManager.Instance?.OnClosed(this);
+
         [Tooltip("Conteneur (VerticalLayoutGroup) où les lignes sont instanciées.")]
         [SerializeField] private Transform listContainer;
         [Tooltip("Ligne modèle (désactivée) : Button + label TMP.")]

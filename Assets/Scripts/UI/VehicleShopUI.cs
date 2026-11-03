@@ -14,7 +14,14 @@ namespace Sim.UI {
     /// affiche le toast (succès silencieux / erreur sonore) et rafraîchit l'affordabilité — la modale
     /// reste ouverte. Le véhicule acheté arrive au garage (place dédiée), à sortir via une GarageDoor.
     /// </summary>
-    public class VehicleShopUI : MonoBehaviour {
+    public class VehicleShopUI : MonoBehaviour, IHudOverlay {
+        public OverlayLayer Layer => OverlayLayer.Fullscreen;
+        public bool HidesGameHud => false;
+        public bool ShowsHotbar  => false;
+        public void CloseOverlay() => Hide();
+        private void OnEnable()  => HudOverlayManager.Instance?.OnOpened(this);
+        private void OnDisable() => HudOverlayManager.Instance?.OnClosed(this);
+
         [Header("Refs")]
         [SerializeField] private TMP_Text       titleLabel;
         [SerializeField] private TMP_Text       statusLabel;   // ligne de feedback optionnelle

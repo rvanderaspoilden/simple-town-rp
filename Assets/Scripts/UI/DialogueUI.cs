@@ -14,7 +14,14 @@ namespace Sim.UI {
     /// Même pattern que <see cref="MerchantShopUI"/> : singleton, panneau autoré ACTIF dans le prefab
     /// HUD puis caché en fin d'Awake, template de bouton de réponse désactivé cloné par nœud.
     /// </summary>
-    public class DialogueUI : MonoBehaviour {
+    public class DialogueUI : MonoBehaviour, IHudOverlay {
+        public OverlayLayer Layer => OverlayLayer.Fullscreen;
+        public bool HidesGameHud => false;
+        public bool ShowsHotbar  => false;
+        public void CloseOverlay() => Hide();
+        private void OnEnable()  => HudOverlayManager.Instance?.OnOpened(this);
+        private void OnDisable() => HudOverlayManager.Instance?.OnClosed(this);
+
         [Header("Refs")]
         [SerializeField] private TMP_Text             titleLabel;     // nom du NPC
         [SerializeField] private TMP_Text             npcText;        // réplique du NPC

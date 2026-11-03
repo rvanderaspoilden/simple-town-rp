@@ -18,16 +18,16 @@ namespace Sim {
         [SerializeField]
         private DefaultViewUI defaultViewUI;
 
-        [Header("Inventory overlay")]
+        [Header("Overlays")]
         [Tooltip("La barre d'accès rapide (Hotbar). Reparentée dans l'overlay inventaire quand il s'ouvre, remise à sa place à la fermeture.")]
         [SerializeField]
         private RectTransform hotbar;
-        [Tooltip("Emplacement hôte de la Hotbar pendant que l'inventaire est ouvert (enfant plein écran du panneau inventaire, au-dessus du fond assombri).")]
+        [Tooltip("Emplacement hôte de la Hotbar pendant que l'inventaire est ouvert (enfant plein écran du panneau inventaire).")]
         [SerializeField]
         private RectTransform inventoryHotbarSlot;
-        [Tooltip("Éléments HUD de jeu (réticule, hitmarker, feedback dégâts, horloge…) masqués pendant que l'inventaire est ouvert — ceux dessinés AU-DESSUS du groupe inventaire, non couverts par le fond assombri.")]
+        [Tooltip("Éléments HUD de jeu (vitals, minimap, réticule, horloge, notifications…) masqués tant qu'un overlay plein écran est ouvert. NE PAS mettre Default View en entier (il héberge les modales) — seulement les éléments gameplay.")]
         [SerializeField]
-        private GameObject[] hideDuringInventory;
+        private GameObject[] gameHudElements;
 
         [SerializeField]
         private HelpPanel helpPanel;
@@ -64,6 +64,9 @@ namespace Sim {
 
         private PanelTypeEnum currentPanelType;
 
+        /// <summary>Gestion centralisée des overlays (exclusivité plein écran + masquage HUD de jeu + hotbar).</summary>
+        public Sim.UI.HudOverlayManager Overlays { get; private set; }
+
         private void Awake() {
             if (Instance != null && Instance != this) {
                 Destroy(this.gameObject);
@@ -81,6 +84,10 @@ namespace Sim {
                     }
                 }
             }
+
+            // Système d'overlays : exclusivité plein écran + masquage uniforme du HUD de jeu
+            // + placement de la hotbar. Les overlays le notifient à l'ouverture/fermeture.
+            this.Overlays = new Sim.UI.HudOverlayManager(this.gameHudElements, this.hotbar, this.inventoryHotbarSlot);
 
             DontDestroyOnLoad(this.gameObject);
         }
@@ -236,18 +243,13 @@ namespace Sim {
 
         public void ShowInventory() {
             this.inventoryUI.gameObject.SetActive(true);
-            this.SetInventoryOverlay(true);
         }
 
         public void ToggleInventory() {
             bool willOpen = !this.inventoryUI.gameObject.activeSelf;
-            if (willOpen) {
-                this.inventoryUI.gameObject.SetActive(true);
-                this.SetInventoryOverlay(true);
-            } else {
-                this.SetInventoryOverlay(false);
-                this.inventoryUI.gameObject.SetActive(false);
-            }
+            // L'overlay (exclusivité + masquage HUD + hotbar) est géré par le HudOverlayManager
+            // via les notifications OnEnable/OnDisable de l'InventoryUI (IHudOverlay).
+            this.inventoryUI.gameObject.SetActive(willOpen);
             Sim.Audio.AudioManager.Instance.PlayUI(
                 willOpen ? Sim.Audio.SfxId.InventoryOpen : Sim.Audio.SfxId.InventoryClose);
         }
@@ -255,44 +257,7 @@ namespace Sim {
         public InventoryUI InventoryUI => inventoryUI;
 
         public void CloseInventory() {
-            this.SetInventoryOverlay(false);
             this.inventoryUI.gameObject.SetActive(false);
-        }
-
-        // Hotbar reparenting + hidden-element bookkeeping for the fullscreen inventory overlay.
-        private Transform _hotbarParent;
-        private int _hotbarIndex = -1;
-        private readonly System.Collections.Generic.List<GameObject> _reShowAfterInventory =
-            new System.Collections.Generic.List<GameObject>();
-
-        /// <summary>
-        /// Bascule l'inventaire en overlay plein écran : reparent la Hotbar au-dessus du fond
-        /// assombri (pour qu'elle reste visible) et masque les éléments HUD de jeu qui sont
-        /// dessinés au-dessus du groupe inventaire. Le fond assombri (enfant du panneau) couvre
-        /// le reste (Default View + monde 3D).
-        /// </summary>
-        private void SetInventoryOverlay(bool open) {
-            if (open) {
-                if (this.hotbar != null && this.inventoryHotbarSlot != null && this._hotbarIndex < 0) {
-                    this._hotbarParent = this.hotbar.parent;
-                    this._hotbarIndex = this.hotbar.GetSiblingIndex();
-                    this.hotbar.SetParent(this.inventoryHotbarSlot, false);
-                    this.hotbar.SetAsLastSibling();
-                }
-                this._reShowAfterInventory.Clear();
-                if (this.hideDuringInventory != null)
-                    foreach (var go in this.hideDuringInventory)
-                        if (go != null && go.activeSelf) { go.SetActive(false); this._reShowAfterInventory.Add(go); }
-            } else {
-                if (this.hotbar != null && this._hotbarParent != null && this._hotbarIndex >= 0) {
-                    this.hotbar.SetParent(this._hotbarParent, false);
-                    this.hotbar.SetSiblingIndex(this._hotbarIndex);
-                    this._hotbarParent = null;
-                    this._hotbarIndex = -1;
-                }
-                foreach (var go in this._reShowAfterInventory) if (go != null) go.SetActive(true);
-                this._reShowAfterInventory.Clear();
-            }
         }
 
         public SalePriceInputUI SalePriceInputUI => salePriceInputUI;

@@ -4,8 +4,14 @@ using Mirror;
 using Sim;
 using UnityEngine;
 
-public class InventoryUI : MonoBehaviour
+public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
 {
+    // ── IHudOverlay : overlay plein écran, masque le HUD de jeu, affiche la hotbar ──
+    public Sim.UI.OverlayLayer Layer => Sim.UI.OverlayLayer.Fullscreen;
+    public bool HidesGameHud => true;
+    public bool ShowsHotbar  => true;
+    public void CloseOverlay() => gameObject.SetActive(false);
+
     [Header("Identité (nom + argent)")]
     [SerializeField, Tooltip("Nom du personnage, affiché en tête de l'inventaire (ex-Character Information).")]
     private TMPro.TextMeshProUGUI nameText;
@@ -145,6 +151,8 @@ public class InventoryUI : MonoBehaviour
 
     private void OnEnable()
     {
+        // Overlay : notifie le manager (exclusivité plein écran + masquage HUD + hotbar).
+        Sim.UI.HudOverlayManager.Instance?.OnOpened(this);
         // Sélection par défaut à l'ouverture : premier item de l'inventaire
         // (RefreshDetailCard choisit après le refresh des slots).
         if (detailCard) detailCard.Clear();
@@ -182,6 +190,8 @@ public class InventoryUI : MonoBehaviour
 
     private void OnDisable()
     {
+        // Overlay : notifie la fermeture (restaure HUD de jeu + hotbar).
+        Sim.UI.HudOverlayManager.Instance?.OnClosed(this);
         // Release par slot — NE PAS pool.Dispose() car le pool est aussi consommé par
         // ContainerPanelUI, et un Dispose() global libérerait ses draggables aussi.
         ReleaseSlot(backpackSlot);

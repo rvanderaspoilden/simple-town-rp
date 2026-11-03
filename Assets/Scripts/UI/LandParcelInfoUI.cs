@@ -18,7 +18,14 @@ namespace Sim.UI {
     ///                 after confirm).
     /// All decisions are revalidated/executed server-side by LandSystemBootstrap.
     /// </summary>
-    public class LandParcelInfoUI : MonoBehaviour {
+    public class LandParcelInfoUI : MonoBehaviour, IHudOverlay {
+        public OverlayLayer Layer => OverlayLayer.Fullscreen;
+        public bool HidesGameHud => false;
+        public bool ShowsHotbar  => false;
+        public void CloseOverlay() => Hide();
+        private void OnEnable()  => HudOverlayManager.Instance?.OnOpened(this);
+        private void OnDisable() => HudOverlayManager.Instance?.OnClosed(this);
+
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text ownerText;     // occupancy line (owner / tenant / availability)
         [SerializeField] private TMP_Text dateText;      // price+rent (available) / date (owned/rented)

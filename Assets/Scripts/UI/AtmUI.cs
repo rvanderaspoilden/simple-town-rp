@@ -32,7 +32,14 @@ namespace Sim.UI {
     /// l'exécution est serveur (C2S_AtmWithdraw / C2S_AtmDeposit) ; le solde affiché suit
     /// PlayerBankAccount.OnLocalMoneyChanged (SyncVar) et se met à jour tout seul.
     /// </summary>
-    public class AtmUI : MonoBehaviour {
+    public class AtmUI : MonoBehaviour, IHudOverlay {
+        public OverlayLayer Layer => OverlayLayer.Fullscreen;
+        public bool HidesGameHud => false;
+        public bool ShowsHotbar  => false;
+        public void CloseOverlay() => Close();
+        private void OnEnable()  => HudOverlayManager.Instance?.OnOpened(this);
+        private void OnDisable() => HudOverlayManager.Instance?.OnClosed(this);
+
         private const string PrefabResourcePath = "Prefabs/UI/AtmScreenUI";
         private const float  CardReadDuration   = 1.1f;
 

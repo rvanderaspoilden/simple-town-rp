@@ -8,7 +8,13 @@ namespace Sim.Constellation {
     // overlay assombri / carte / panneau détail / en-tête / recherche / carte de
     // déblocage). Non bloquant pour le jeu (multijoueur) ; l'overlay plein écran capte
     // les clics, ce qui neutralise naturellement le clic-pour-bouger.
-    public class ConstellationUI : MonoBehaviour {
+    public class ConstellationUI : MonoBehaviour, Sim.UI.IHudOverlay {
+        // ── IHudOverlay : overlay plein écran exclusif ──
+        public Sim.UI.OverlayLayer Layer => Sim.UI.OverlayLayer.Fullscreen;
+        public bool HidesGameHud => false;
+        public bool ShowsHotbar  => false;
+        public void CloseOverlay() => Close();
+
         [Header("Refs prefab")]
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private ConstellationMapView mapView;
@@ -44,6 +50,7 @@ namespace Sim.Constellation {
         }
 
         private void OnEnable() {
+            Sim.UI.HudOverlayManager.Instance?.OnOpened(this);
             // The provider is owned by the local player's PlayerConstellation
             // component — pulled lazily here so the modal can be opened any
             // time after the player spawns (it can't exist before).
@@ -95,6 +102,7 @@ namespace Sim.Constellation {
         }
 
         private void OnDisable() {
+            Sim.UI.HudOverlayManager.Instance?.OnClosed(this);
             if (_provider != null) {
                 _provider.OnNodeUnlocked -= OnNodeUnlocked;
                 _provider.OnStateChanged -= OnStateChanged;

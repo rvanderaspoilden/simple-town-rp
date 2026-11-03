@@ -12476,7 +12476,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8821720437718400696
 RectTransform:
   m_ObjectHideFlags: 0
@@ -25574,7 +25574,7 @@ MonoBehaviour:
   defaultViewUI: {fileID: 1433740828}
   hotbar: {fileID: 8395378635450680315}
   inventoryHotbarSlot: {fileID: 5644515526159912904}
-  hideDuringInventory:
+  gameHudElements:
   - {fileID: 1433740825}
   - {fileID: 761192850609954661}
   - {fileID: 7829210459657709168}
@@ -80009,6 +80009,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Constellation UI
+      objectReference: {fileID: 0}
+    - target: {fileID: 8069482649416441519, guid: 374629c092bf1b44e8a7935244ce37d5,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8210523015285041544, guid: 374629c092bf1b44e8a7935244ce37d5,
         type: 3}
