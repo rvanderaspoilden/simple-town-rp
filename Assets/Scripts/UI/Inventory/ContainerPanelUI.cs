@@ -150,6 +150,7 @@ public class ContainerPanelUI : MonoBehaviour
         // pile (qty>1) du conteneur ouvert, peu importe son type (prop ou item-container).
         DraggableItem.OnRightClick            += OnEntryRightClicked;
         DraggableItem.OnDoubleClick           += OnItemDoubleClicked;
+        ItemDetailCardUI.OnSelectionChanged   += OnSelectionChanged;
         _subscribed = true;
     }
 
@@ -169,6 +170,7 @@ public class ContainerPanelUI : MonoBehaviour
         }
         DraggableItem.OnRightClick            -= OnEntryRightClicked;
         DraggableItem.OnDoubleClick           -= OnItemDoubleClicked;
+        ItemDetailCardUI.OnSelectionChanged   -= OnSelectionChanged;
         _subscribed = false;
     }
 
@@ -979,7 +981,10 @@ public class ContainerPanelUI : MonoBehaviour
                     continue;
                 }
                 d.SetConfiguration(cfg);
-                d.SetDraggable(true);
+                // Items d'un conteneur (sac à dos, colis, meuble) : non-draggables.
+                // L'interaction passe par la sélection (carte de détail) + l'action
+                // « Prendre » ou le double-clic (quick-move vers l'inventaire).
+                d.SetDraggable(false);
             }
             d.SetEntityId(entry.EntityId);
             d.SetQuantity(entry.Quantity); // badge "xN" si >1 (meubles emballés Quantity=1 → pas de badge)
@@ -988,6 +993,16 @@ public class ContainerPanelUI : MonoBehaviour
             _slots[entry.SlotIndex].SetItem(d);
             _spawnedItems.Add(d);
         }
+        // Slots reconstruits → re-pose l'outline de sélection (carte de détail).
+        RefreshSelection(ItemDetailCardUI.CurrentSelection);
+    }
+
+    /// <summary>Outline de sélection sur le slot du conteneur contenant l'item sélectionné.</summary>
+    private void OnSelectionChanged(int entityId) => RefreshSelection(entityId);
+
+    private void RefreshSelection(int entityId) {
+        foreach (ItemSlot s in _slots)
+            if (s != null) s.SetSelected(s.Item != null && s.Item.EntityId == entityId);
     }
 
     public void Close()
@@ -1029,5 +1044,13 @@ public class ContainerPanelUI : MonoBehaviour
     private void Show(bool visible)
     {
         if (root != null) root.SetActive(visible);
+        // Si le panneau est intégré dans un VerticalLayoutGroup (encart « SAC À DOS »
+        // dans l'inventaire), on le retire de la mise en page quand il est masqué pour
+        // que la section suivante (POCHES) remonte — « pas de sac → pas d'encart ».
+        // Inoffensif pour le panneau flottant (canal Prop) qui n'a pas de LayoutElement.
+        if (panelRect != null) {
+            var le = panelRect.GetComponent<UnityEngine.UI.LayoutElement>();
+            if (le != null) le.ignoreLayout = !visible;
+        }
     }
 }

@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using Mirror;
 using Sim;
 using Sim.Scriptables;
+using Sim.Utils;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -22,6 +24,11 @@ public class ItemDetailCardUI : MonoBehaviour
     [SerializeField] private TMP_Text typeChipText;
     [SerializeField] private TMP_Text descriptionText;
     [SerializeField] private TMP_Text effectsText;
+    [Header("Attributs (lignes de stats)")]
+    [SerializeField] private GameObject statsSection;
+    [SerializeField] private Transform  statsContainer;
+    [SerializeField] private GameObject statRowTemplate;
+    [SerializeField] private Sprite statIconDefault, statIconAmmo, statIconFood, statIconDrink, statIconMoney, statIconHealth;
     [SerializeField] private GameObject contentSection;
     [SerializeField] private Transform  slotsGrid;
     [SerializeField] private Image      slotCellTemplate;
@@ -34,6 +41,9 @@ public class ItemDetailCardUI : MonoBehaviour
 
     private readonly List<Image>  _cells   = new List<Image>();
     private readonly List<Button> _buttons = new List<Button>();
+    private readonly List<GameObject> _statRows = new List<GameObject>();
+    // Actions associées à un raccourci clavier (affiché en pastille + déclenché dans Update).
+    private readonly List<(Key key, System.Action act)> _keyActions = new List<(Key, System.Action)>();
 
     private int _entityId = -1;
 
@@ -41,9 +51,18 @@ public class ItemDetailCardUI : MonoBehaviour
     /// de re-résoudre la sélection après un refresh (snapshot, move, équipement).</summary>
     public int SelectedEntityId => _entityId;
 
+    /// <summary>Émis quand l'item sélectionné change (-1 = plus de sélection). Les
+    /// conteneurs de slots (inventaire, conteneur ouvert) s'y abonnent pour afficher
+    /// l'outline autour du slot sélectionné.</summary>
+    public static event System.Action<int> OnSelectionChanged;
+
+    /// <summary>Dernier item sélectionné (-1 = aucun). Lu par les conteneurs pour re-poser
+    /// l'outline après un re-peuplement de slots (hors event).</summary>
+    public static int CurrentSelection { get; private set; } = -1;
+
     public void Clear()
     {
-        _entityId = -1;
+        if (_entityId != -1) { _entityId = -1; CurrentSelection = -1; OnSelectionChanged?.Invoke(-1); }
         gameObject.SetActive(false);
     }
 
@@ -54,8 +73,11 @@ public class ItemDetailCardUI : MonoBehaviour
             out string effects, out string container);
         if (icon == null && string.IsNullOrEmpty(label)) { Clear(); return; }
 
+        bool selectionChanged = _entityId != item.EntityId;
         _entityId = item.EntityId;
+        CurrentSelection = _entityId;
         gameObject.SetActive(true);
+        if (selectionChanged) OnSelectionChanged?.Invoke(_entityId);
 
         if (iconImage) { iconImage.sprite = icon; iconImage.enabled = icon != null; }
         if (nameText)  nameText.text = label ?? string.Empty;
@@ -66,11 +88,11 @@ public class ItemDetailCardUI : MonoBehaviour
             descriptionText.gameObject.SetActive(hasDesc);
             if (hasDesc) descriptionText.text = desc;
         }
-        if (effectsText) {
-            bool hasFx = !string.IsNullOrEmpty(effects);
-            effectsText.gameObject.SetActive(hasFx);
-            if (hasFx) effectsText.text = effects;
-        }
+        // L'ancien bloc d'effets (un seul TMP multi-lignes) est remplacé par des lignes
+        // de stats séparées (icône + label + valeur). On garde le TMP masqué pour
+        // compat prefab.
+        if (effectsText) effectsText.gameObject.SetActive(false);
+        BuildStatRows(effects);
 
         BuildContentCells(item);
         BuildActions(item);
@@ -93,6 +115,65 @@ public class ItemDetailCardUI : MonoBehaviour
             case ItemType.WASTE:      return "DÉCHET";
             default:                  return "DIVERS";
         }
+    }
+
+    // ── Attributs (lignes de stats) ───────────────────────────────────────────
+
+    /// <summary>Transforme la chaîne d'effets multi-lignes en lignes de stats séparées
+    /// (icône + label à gauche + valeur colorée à droite), comme la maquette.</summary>
+    private void BuildStatRows(string effects)
+    {
+        foreach (GameObject r in _statRows) if (r) Destroy(r);
+        _statRows.Clear();
+        bool has = !string.IsNullOrEmpty(effects);
+        if (statsSection != null) statsSection.SetActive(has);
+        if (!has || statRowTemplate == null || statsContainer == null) return;
+
+        foreach (string raw in effects.Replace("\r", "").Split('\n')) {
+            string line = raw.Trim();
+            if (line.Length == 0) continue;
+            ParseStatLine(line, out string hex, out string label, out string value);
+            // Valeur "métrique" (courte, type 10/30, +5, 67%) → label gauche / valeur droite.
+            // Valeur descriptive (longue, ex. "moyennes (fusil d'assaut)") → tout dans le label.
+            bool metric = value.Length > 0 && value.Length <= 10 && value.IndexOf('(') < 0;
+            if (!metric) { label = string.IsNullOrEmpty(value) ? label : label + " : " + value; value = string.Empty; }
+            GameObject row = Instantiate(statRowTemplate, statsContainer);
+            row.SetActive(true);
+            Transform iconTr = row.transform.Find("Icon");
+            if (iconTr != null) { Image img = iconTr.GetComponent<Image>(); if (img != null) { img.sprite = PickIcon(label); img.enabled = img.sprite != null; } }
+            Transform labelTr = row.transform.Find("Label");
+            if (labelTr != null) { TMP_Text t = labelTr.GetComponent<TMP_Text>(); if (t != null) t.text = label; }
+            Transform valueTr = row.transform.Find("Value");
+            if (valueTr != null) { TMP_Text t = valueTr.GetComponent<TMP_Text>(); if (t != null) t.text = string.IsNullOrEmpty(hex) ? value : $"<color={hex}>{value}</color>"; }
+            _statRows.Add(row);
+        }
+    }
+
+    /// <summary>Décompose une ligne "[&lt;color=#x&gt;]Label( : | espace)valeur[&lt;/color&gt;]".</summary>
+    private static void ParseStatLine(string line, out string hex, out string label, out string value)
+    {
+        hex = null; label = line; value = string.Empty;
+        if (line.StartsWith("<color=")) {
+            int gt = line.IndexOf('>');
+            int close = line.LastIndexOf("</color>");
+            if (gt > 0 && close > gt) { hex = line.Substring(7, gt - 7); line = line.Substring(gt + 1, close - gt - 1); }
+        }
+        int sep = line.IndexOf(" : ");
+        if (sep >= 0) { label = line.Substring(0, sep).Trim(); value = line.Substring(sep + 3).Trim(); return; }
+        int sp = line.LastIndexOf(' ');
+        if (sp > 0) { label = line.Substring(0, sp).Trim(); value = line.Substring(sp + 1).Trim(); }
+        else label = line.Trim();
+    }
+
+    private Sprite PickIcon(string label)
+    {
+        string l = label != null ? label.ToLowerInvariant() : string.Empty;
+        if (l.Contains("chargeur") || l.Contains("muni"))                             return statIconAmmo   != null ? statIconAmmo   : statIconDefault;
+        if (l.Contains("faim"))                                                        return statIconFood   != null ? statIconFood   : statIconDefault;
+        if (l.Contains("soif"))                                                        return statIconDrink  != null ? statIconDrink  : statIconDefault;
+        if (l.Contains("valeur") || l.Contains("réserv"))                              return statIconMoney  != null ? statIconMoney  : statIconDefault;
+        if (l.Contains("vie") || l.Contains("soin") || l.Contains("pv") || l.Contains("santé")) return statIconHealth != null ? statIconHealth : statIconDefault;
+        return statIconDefault;
     }
 
     // ── Grille de capacité (items-conteneurs) ─────────────────────────────────
@@ -127,10 +208,21 @@ public class ItemDetailCardUI : MonoBehaviour
 
     // ── Actions contextuelles ─────────────────────────────────────────────────
 
+    /// <summary>Déclenche l'action liée à une touche quand la carte est visible
+    /// (hors saisie de texte). Les raccourcis sont posés par <see cref="BuildActions"/>.</summary>
+    private void Update()
+    {
+        if (_keyActions.Count == 0 || !gameObject.activeInHierarchy) return;
+        if (CursorLock.IsTypingInInputField()) return;
+        for (int i = 0; i < _keyActions.Count; i++)
+            if (GameInput.Down(_keyActions[i].key)) { _keyActions[i].act?.Invoke(); break; }
+    }
+
     private void BuildActions(DraggableItem item)
     {
         foreach (Button b in _buttons) if (b) Destroy(b.gameObject);
         _buttons.Clear();
+        _keyActions.Clear();
         if (actionsContainer == null || actionButtonTemplate == null) return;
 
         string charId = PlayerController.Local?.CharacterData?.Id;
@@ -142,7 +234,7 @@ public class ItemDetailCardUI : MonoBehaviour
         if (src.StartsWith("pocket:")) {
             // Pas de « Tenir en main » : le slot actif de la hotbar est la seule
             // autorité sur l'item porté.
-            AddAction("Lâcher", () => { if (NetworkClient.isConnected) NetworkClient.Send(new C2S_DropFromInventory { EntityId = entityId }); });
+            AddAction("Lâcher", () => { if (NetworkClient.isConnected) NetworkClient.Send(new C2S_DropFromInventory { EntityId = entityId }); }, Key.G);
             // Liasse : fusionner TOUTES les liasses du joueur dans celle-ci (les montants
             // s'additionnent, les autres items cash disparaissent). Visible seulement s'il
             // y a au moins une autre liasse à absorber.
@@ -198,14 +290,39 @@ public class ItemDetailCardUI : MonoBehaviour
         return count;
     }
 
-    private void AddAction(string label, System.Action onClick)
+    private void AddAction(string label, System.Action onClick, Key key = Key.None)
     {
         Button b = Instantiate(actionButtonTemplate, actionsContainer);
         b.gameObject.SetActive(true);
-        TMP_Text txt = b.GetComponentInChildren<TMP_Text>(true);
+        // Libellé (cible explicite pour ne pas confondre avec le TMP de la pastille).
+        Transform labelTr = b.transform.Find("Label");
+        TMP_Text txt = labelTr != null ? labelTr.GetComponent<TMP_Text>() : b.GetComponentInChildren<TMP_Text>(true);
         if (txt) txt.text = label;
+        // Pastille de touche : affichée seulement si l'action a un raccourci.
+        Transform chip = b.transform.Find("Key Chip");
+        if (chip != null) {
+            bool hasKey = key != Key.None;
+            chip.gameObject.SetActive(hasKey);
+            if (hasKey) {
+                TMP_Text ktxt = chip.GetComponentInChildren<TMP_Text>(true);
+                if (ktxt) ktxt.text = KeyLabel(key);
+            }
+        }
         b.onClick.AddListener(() => onClick?.Invoke());
+        if (key != Key.None) _keyActions.Add((key, onClick));
         _buttons.Add(b);
+    }
+
+    /// <summary>Libellé court d'une touche pour la pastille (ex. Alt, Maj, Espace).</summary>
+    private static string KeyLabel(Key key)
+    {
+        switch (key) {
+            case Key.LeftAlt: case Key.RightAlt:     return "Alt";
+            case Key.LeftShift: case Key.RightShift: return "Maj";
+            case Key.LeftCtrl: case Key.RightCtrl:   return "Ctrl";
+            case Key.Space:                          return "Espace";
+            default:                                 return key.ToString();
+        }
     }
 
     private static void SendMove(int entityId, string from, string to, int toSlot)

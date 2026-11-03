@@ -39,7 +39,7 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         if (quantityBadge == null) return;
         bool show = _quantity > 1;
         quantityBadge.gameObject.SetActive(show);
-        if (show) quantityBadge.text = "x" + _quantity;
+        if (show) quantityBadge.text = _quantity.ToString();
     }
 
     // ── Animation parameters (tunable per-prefab) ─────────────────────────────

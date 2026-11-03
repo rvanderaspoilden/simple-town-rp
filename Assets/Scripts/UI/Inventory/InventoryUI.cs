@@ -13,8 +13,6 @@ public class InventoryUI : MonoBehaviour
     private TMPro.TextMeshProUGUI moneyText;
 
     [Header("Settings")]
-    [SerializeField, Tooltip("Slot unique « en main » (item actif, 1H ou 2H).")]
-    private ItemSlot rightHandSlot;
     [SerializeField, Tooltip("Slot équipement « sac à dos » (conteneur wearable porté).")]
     private ItemSlot backpackSlot;
     [SerializeField, Tooltip("Carte de détail de l'item sélectionné (panneau de droite).")]
@@ -46,10 +44,9 @@ public class InventoryUI : MonoBehaviour
     {
         EnsurePool();
 
-        // Vue main purement indicative : ni drag, ni drop, ni swap — le slot actif de
-        // la hotbar est la seule autorité sur l'item porté. Les poches gardent le swap
-        // visuel (pocket↔pocket, pocket↔container).
-        if (rightHandSlot) rightHandSlot.AcceptsDrops = false;
+        // Les mains ne sont plus affichées dans l'inventaire : la hotbar est la seule
+        // autorité sur l'item porté. Les poches gardent le swap visuel (pocket↔pocket,
+        // pocket↔container) et le sac à dos s'affiche en encart (ContainerPanelUI).
         EnsurePocketSlots(DefaultPocketSlotCount);
     }
 
@@ -113,6 +110,20 @@ public class InventoryUI : MonoBehaviour
         if (current == null) current = FindFirstInventoryItem();
         if (current != null) detailCard.Show(current);
         else detailCard.Clear();
+        // Les slots viennent peut-être d'être reconstruits (snapshot) → re-pose l'outline
+        // de sélection même si l'entityId sélectionné n'a pas changé (pas d'event émis).
+        RefreshSelection(detailCard.SelectedEntityId);
+    }
+
+    /// <summary>Outline de sélection : seul le slot contenant l'item sélectionné (carte
+    /// de détail) est souligné. -1 = plus de sélection.</summary>
+    private void OnSelectionChanged(int entityId) => RefreshSelection(entityId);
+
+    private void RefreshSelection(int entityId) {
+        foreach (ItemSlot s in _pocketSlots)
+            if (s != null) s.SetSelected(s.Item != null && s.Item.EntityId == entityId);
+        if (backpackSlot != null)
+            backpackSlot.SetSelected(backpackSlot.Item != null && backpackSlot.Item.EntityId == entityId);
     }
 
     private DraggableItem FindDraggableByEntity(int entityId)
@@ -120,7 +131,6 @@ public class InventoryUI : MonoBehaviour
         if (entityId <= 0) return null;
         foreach (ItemSlot s in _pocketSlots)
             if (s != null && s.Item != null && s.Item.EntityId == entityId) return s.Item;
-        if (rightHandSlot != null && rightHandSlot.Item != null && rightHandSlot.Item.EntityId == entityId) return rightHandSlot.Item;
         if (backpackSlot  != null && backpackSlot.Item  != null && backpackSlot.Item.EntityId  == entityId) return backpackSlot.Item;
         return null;
     }
@@ -129,7 +139,6 @@ public class InventoryUI : MonoBehaviour
     {
         foreach (ItemSlot s in _pocketSlots)
             if (s != null && s.gameObject.activeSelf && s.Item != null) return s.Item;
-        if (rightHandSlot != null && rightHandSlot.Item != null) return rightHandSlot.Item;
         if (backpackSlot  != null && backpackSlot.Item  != null) return backpackSlot.Item;
         return null;
     }
@@ -160,6 +169,7 @@ public class InventoryUI : MonoBehaviour
         PlayerHands.OnHandChanged   += OnPlayerHandChanged;
         ClientItemManager.MoveItemResult += OnMoveItemResultReceived;
         ClientItemManager.PocketSync     += OnPocketSyncReceived;
+        ItemDetailCardUI.OnSelectionChanged += OnSelectionChanged;
 
         // Replay du dernier snapshot poche : la session est ouverte serveur-side au
         // connect ; les opens/closes de la HUD ne re-déclenchent pas de S2C_PocketSync.
@@ -174,7 +184,6 @@ public class InventoryUI : MonoBehaviour
     {
         // Release par slot — NE PAS pool.Dispose() car le pool est aussi consommé par
         // ContainerPanelUI, et un Dispose() global libérerait ses draggables aussi.
-        ReleaseSlot(rightHandSlot);
         ReleaseSlot(backpackSlot);
 
         PlayerBankAccount.OnLocalMoneyChanged -= OnLocalMoneyChanged;
@@ -190,6 +199,7 @@ public class InventoryUI : MonoBehaviour
         PlayerHands.OnHandChanged   -= OnPlayerHandChanged;
         ClientItemManager.MoveItemResult -= OnMoveItemResultReceived;
         ClientItemManager.PocketSync     -= OnPocketSyncReceived;
+        ItemDetailCardUI.OnSelectionChanged -= OnSelectionChanged;
 
         // Ferme les deux conteneurs avec l'inventaire (meuble + colis), comme un
         // clic « X » ou Escape. Le colis ré-apparaîtra à la prochaine ouverture
@@ -292,7 +302,6 @@ public class InventoryUI : MonoBehaviour
 
         bool allowedInPocket = dragged.ItemConfig.AllowedInPocket;
 
-        if (rightHandSlot) rightHandSlot.SetDropAcceptance(false);
         bool isWearable = Sim.Scriptables.ItemContainerConfig.Of(dragged.ItemConfig)?.Wearable == true;
         if (backpackSlot) backpackSlot.SetDropAcceptance(isWearable);
         foreach (ItemSlot s in _pocketSlots) if (s) s.SetDropAcceptance(allowedInPocket);
@@ -303,7 +312,6 @@ public class InventoryUI : MonoBehaviour
     }
 
     private void ResetDropAcceptance(DraggableItem dragged = null) {
-        if (rightHandSlot) rightHandSlot.SetDropAcceptance(true);
         if (backpackSlot)  backpackSlot.SetDropAcceptance(true);
         foreach (ItemSlot s in _pocketSlots) if (s) s.SetDropAcceptance(true);
     }
@@ -582,9 +590,8 @@ public class InventoryUI : MonoBehaviour
 
     public void UpdateUI()
     {
-        // Release uniquement les slots main/dos — pas pool.Dispose() global, qui libérerait
+        // Release uniquement le slot dos — pas pool.Dispose() global, qui libérerait
         // aussi les draggables hébergés ailleurs (ex. ContainerPanelUI).
-        ReleaseSlot(rightHandSlot);
         ReleaseSlot(backpackSlot);
 
         if (PlayerController.Local == null) return;
@@ -593,22 +600,11 @@ public class InventoryUI : MonoBehaviour
         // de router un drag vers/depuis ces slots via C2S_MoveItem.
         string charId = PlayerController.Local.CharacterData?.Id;
         if (!string.IsNullOrEmpty(charId)) {
-            if (rightHandSlot) rightHandSlot.PlaceId = $"hand_right:{charId}";
             if (backpackSlot)  backpackSlot.PlaceId  = $"backpack:{charId}";
             foreach (ItemSlot s in _pocketSlots) if (s) s.PlaceId = $"pocket:{charId}";
         }
 
         var hands = PlayerController.Local.PlayerHands;
-        ItemBehaviour heldItem = hands.RightHandItem;
-        if (heldItem != null && rightHandSlot != null)
-        {
-            DraggableItem draggable = _draggableItemPool.Get();
-            draggable.SetConfiguration(heldItem.Configuration);
-            draggable.SetEntityId(hands.RightEntityId);
-            draggable.SetDraggable(false);   // vue indicative : tooltip/sélection OK, pas de drag
-            rightHandSlot.SetItem(draggable);
-        }
-
         ItemBehaviour wornItem = hands.BackItem;
         if (wornItem != null && backpackSlot != null)
         {

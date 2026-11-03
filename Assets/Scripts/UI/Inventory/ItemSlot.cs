@@ -14,6 +14,10 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     [SerializeField, Tooltip("Durée du fade in/out (secondes).")]
     private float highlightFadeDuration = 0.1f;
 
+    [Header("Sélection")]
+    [SerializeField, Tooltip("Outline affiché autour du slot quand son item est sélectionné (carte de détail). Toggle on/off.")]
+    private Outline selectionOutline;
+
     private Coroutine _fadeTween;
 
     // CanvasGroup auto-injecté pour basculer l'acceptation de drop pendant un drag.
@@ -227,7 +231,7 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
             });
         } else {
             item.transform.parent = this.transform;
-            item.SetPadding(10, 10, 10, 10);
+            item.SetPadding(14, 14, 14, 14);
             item.SetAnchoredPosition(Vector2.zero);
         }
     }
@@ -250,7 +254,7 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
             return;
         }
         item.transform.SetParent(this.transform, worldPositionStays: false);
-        item.SetPadding(10, 10, 10, 10);
+        item.SetPadding(14, 14, 14, 14);
         item.SetAnchoredPosition(Vector2.zero);
     }
 
@@ -335,20 +339,23 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
             c.a = 0f;
             dropHighlight.color = c;
         }
+        if (selectionOutline != null) selectionOutline.enabled = false;
+    }
+
+    /// <summary>Affiche/masque l'outline de sélection autour du slot (item sélectionné
+    /// dans la carte de détail).</summary>
+    public void SetSelected(bool selected) {
+        if (selectionOutline != null) selectionOutline.enabled = selected;
     }
 
     public void OnPointerEnter(PointerEventData eventData) {
-        if (eventData.pointerDrag == null) return;
-        // Seuls les drags d'un DraggableItem déclenchent le highlight (ignore les
-        // pointerDrag d'autres systèmes UI éventuels).
-        if (eventData.pointerDrag.GetComponent<DraggableItem>() == null) return;
+        // Survol permanent : la cellule s'éclaire au passage du pointeur (comme la
+        // maquette). Pendant un drag d'un DraggableItem, c'est aussi le feedback de
+        // cible de dépôt. Dans les deux cas on monte le highlight.
         FadeHighlight(highlightAlpha);
     }
 
     public void OnPointerExit(PointerEventData eventData) {
-        // Pendant un drag, on hide quand le pointeur sort. Hors drag, no-op (l'alpha
-        // est déjà 0).
-        if (eventData.pointerDrag == null) return;
         FadeHighlight(0f);
     }
 
