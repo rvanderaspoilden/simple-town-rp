@@ -155,9 +155,10 @@ namespace Sim {
             // 6. Menu radial contextuel.
             if (this.IsContextMenuOpen) { this.CloseContextMenu(); return true; }
 
-            // 7. Grille de conteneur / loot (colis tenu puis meuble/cadavre).
+            // 7. Grille de conteneur / loot (colis tenu, puis overlay Récupération).
             if (ContainerPanelUI.Item != null && ContainerPanelUI.Item.IsDisplayed) { ContainerPanelUI.Item.Close(); return true; }
             if (ContainerPanelUI.Prop != null && ContainerPanelUI.Prop.IsDisplayed) { ContainerPanelUI.Prop.Close(); return true; }
+            if (LootPanelUI.Instance != null && LootPanelUI.Instance.IsDisplayed) { LootPanelUI.Instance.Close(); return true; }
 
             // 8. Inventaire.
             if (this.inventoryUI != null && this.inventoryUI.gameObject.activeSelf) { this.CloseInventory(); return true; }

@@ -28,6 +28,10 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
     private ItemSlot pocketSlotTemplate;
     [SerializeField, Tooltip("Parent (GridLayoutGroup) recevant les slots de poche clonés.")]
     private Transform pocketGrid;
+    [SerializeField, Tooltip("Tri alphabétique de la poche (C2S_SortContainer).")]
+    private UnityEngine.UI.Button sortPocketButton;
+    [SerializeField, Tooltip("Optimisation de la poche — fusion des liasses (C2S_OptimizeContainer).")]
+    private UnityEngine.UI.Button optimizePocketButton;
 
     // Slots poche clonés depuis le template — indexés par SlotIndex.
     private readonly List<ItemSlot> _pocketSlots = new List<ItemSlot>();
@@ -54,6 +58,21 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
         // autorité sur l'item porté. Les poches gardent le swap visuel (pocket↔pocket,
         // pocket↔container) et le sac à dos s'affiche en encart (ContainerPanelUI).
         EnsurePocketSlots(DefaultPocketSlotCount);
+
+        if (sortPocketButton != null)     sortPocketButton.onClick.AddListener(() => SendPocketMaintenance(sort: true));
+        if (optimizePocketButton != null) optimizePocketButton.onClick.AddListener(() => SendPocketMaintenance(sort: false));
+    }
+
+    /// <summary>Tri alphabétique / optimisation (fusion des liasses) de la poche —
+    /// serveur-autoritaire, le S2C_PocketSync re-poussé rafraîchit la grille.</summary>
+    private static void SendPocketMaintenance(bool sort)
+    {
+        if (!NetworkClient.isConnected) return;
+        string charId = PlayerController.Local != null ? PlayerController.Local.CharacterData?.Id : null;
+        if (string.IsNullOrEmpty(charId)) return;
+        string placeId = $"pocket:{charId}";
+        if (sort) NetworkClient.Send(new C2S_SortContainer     { PlaceId = placeId });
+        else      NetworkClient.Send(new C2S_OptimizeContainer { PlaceId = placeId });
     }
 
     /// <summary>

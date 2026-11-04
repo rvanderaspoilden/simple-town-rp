@@ -64,6 +64,12 @@ namespace AI.States {
         }
 
         public void OnExit() {
+            // Sortie d'état par UN AUTRE chemin que le prédicat (un état tiers prend la main :
+            // knockdown, assise, conduite…) : l'UI déclencheuse est peut-être encore ouverte —
+            // on la referme via onCancelled. No-op sur les chemins normaux : prédicat déjà
+            // faux (UI refermée d'elle-même) ou annulation par mouvement (onCancelled déjà
+            // invoqué dans Tick, et la fermeture synchrone a rendu le prédicat faux).
+            if (this.stillBusy != null && this.stillBusy()) this.onCancelled?.Invoke();
             this.stillBusy = null;
             this.lookAt = null;
             this.cancelOnMove = false;

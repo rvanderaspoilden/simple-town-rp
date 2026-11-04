@@ -1071,6 +1071,10 @@ namespace Sim {
         public UnityWebRequest UpsertItemRequest(UpsertItemBody body) =>
             BuildJsonRequest($"{this.uri}/items/upsert", "POST", body);
 
+        /// <summary>GET /items/:id — re-read one row (OCC version resync after a 409).</summary>
+        public UnityWebRequest GetItemRequest(string itemId) =>
+            BuildJsonRequest($"{this.uri}/items/{itemId}", "GET", null);
+
         /// <summary>PATCH /items/:id — partial update with optimistic locking.</summary>
         public UnityWebRequest UpdateItemRequest(string itemId, UpdateItemBody body) =>
             BuildJsonRequest($"{this.uri}/items/{itemId}", "PATCH", body);

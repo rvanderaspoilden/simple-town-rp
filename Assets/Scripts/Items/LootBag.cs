@@ -71,9 +71,9 @@ public class LootBag : NetworkBehaviour, IInteractable, IQuickActionProvider {
         // le geste de fouille), la grille ne s'affiche qu'à l'échéance — items déjà dedans.
         // BUSY annulable par le MOUVEMENT : bouger pendant la fouille (geste ou grille
         // ouverte) referme la modale et rend la main.
-        PlayerController.Local?.BeginBusy(ContainerPanelUI.IsPropLootOpen, transform,
-            cancelOnMove: true, onCancelled: () => ContainerPanelUI.Prop?.Close());
-        ContainerPanelUI.Prop?.OpenSearchDelayed(ServerItemManager.PlayerCorpseLootSlots,
+        PlayerController.Local?.BeginBusy(LootPanelUI.IsLootOpen, transform,
+            cancelOnMove: true, onCancelled: () => LootPanelUI.Instance?.Close());
+        LootPanelUI.Instance?.OpenSearchDelayed(ServerItemManager.PlayerCorpseLootSlots,
             string.IsNullOrEmpty(label) ? "Sac de butin" : label);
         NetworkClient.Send(new C2S_SearchLootBag { BagNetId = netId });
     }

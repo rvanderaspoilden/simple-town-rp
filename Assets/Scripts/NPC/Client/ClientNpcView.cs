@@ -529,11 +529,12 @@ public class ClientNpcView : MonoBehaviour, IInteractable, IQuickActionProvider 
         // le geste de fouille), la grille ne s'affiche qu'à l'échéance — items déjà dedans.
         // BUSY annulable par le MOUVEMENT : bouger pendant la fouille (geste ou grille
         // ouverte) referme la modale et rend la main.
-        PlayerController.Local?.BeginBusy(ContainerPanelUI.IsPropLootOpen, transform,
-            cancelOnMove: true, onCancelled: () => ContainerPanelUI.Prop?.Close());
+        PlayerController.Local?.BeginBusy(LootPanelUI.IsLootOpen, transform,
+            cancelOnMove: true, onCancelled: () => LootPanelUI.Instance?.Close());
         // Durée du geste configurée par la NpcConfig du cadavre (SearchDuration).
-        ContainerPanelUI.Prop?.OpenSearchDelayed(ServerItemManager.CorpseLootSlots,
-            $"Fouille — {FullName}", _config != null ? _config.SearchDuration : 0.5f);
+        // Titre volontairement COURT (la rangée de titre porte aussi compteur + boutons).
+        LootPanelUI.Instance?.OpenSearchDelayed(ServerItemManager.CorpseLootSlots,
+            "Cadavre", _config != null ? _config.SearchDuration : 0.5f);
         Mirror.NetworkClient.Send(new C2S_SearchNpcCorpse { NpcId = NpcId });
     }
 }

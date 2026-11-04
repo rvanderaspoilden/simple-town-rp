@@ -363,3 +363,28 @@ public struct C2S_SearchLootBag : NetworkMessage
 {
     public uint BagNetId;
 }
+
+// ── Maintenance d'une grille (tri / optimisation) ──────────────────────────────
+
+/// <summary>
+/// Client → server : trie ALPHABÉTIQUEMENT la grille désignée par <see cref="PlaceId"/>
+/// (placeKey "pocket:{charId}", ou UUID de la place du conteneur/colis OUVERT par ce
+/// joueur). Le serveur réassigne les slotIndex (0..n, libres d'abord — compacte les
+/// trous), PATCHe chaque ligne déplacée puis re-pousse le snapshot. Les meubles emballés
+/// (IsProp) gardent leur slot.
+/// </summary>
+public struct C2S_SortContainer : NetworkMessage
+{
+    public string PlaceId;
+}
+
+/// <summary>
+/// Client → server : OPTIMISE la grille — fusionne les piles de même config au maximum
+/// (MaxStackSize), supprime les lignes vidées. Poche (invariant 1/slot, pas de pile) :
+/// fusionne les liasses de billets portées (équivalent « Tout fusionner »). Snapshot
+/// re-poussé à la fin.
+/// </summary>
+public struct C2S_OptimizeContainer : NetworkMessage
+{
+    public string PlaceId;
+}

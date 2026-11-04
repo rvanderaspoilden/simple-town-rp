@@ -74,6 +74,7 @@ public static class DevQuickPlay
 
         Scene scene = SceneManager.GetActiveScene();
         if (scene.name == "Launcher" || scene.name == "Main Menu") return; // flux normal
+        if (scene.name == "LootOverlayTest") return;                        // harnais de test UI (hors ligne)
         if (NetworkServer.active || NetworkClient.active) return;           // déjà lancé
 
         ManagerEnsurer.EnsureCoreManagers();

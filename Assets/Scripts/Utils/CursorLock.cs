@@ -32,6 +32,8 @@ namespace Sim.Utils {
             // Grille de FOUILLE (loot de cadavre/sac) : elle s'affiche SEULE depuis que
             // l'inventaire ne s'ouvre plus avec — le curseur doit quand même être libéré.
             if (ContainerPanelUI.IsPropLootOpen()) return true;
+            // Overlay « Récupération » (conteneur + inventaire dupliqué) : curseur libre.
+            if (LootPanelUI.IsLootOpen()) return true;
 
             return IsTypingInInputField();
         }

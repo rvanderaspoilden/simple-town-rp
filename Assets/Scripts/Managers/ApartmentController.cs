@@ -619,6 +619,9 @@ namespace Sim {
                     Vector3    wpos = it.position.ToVector3();
                     Quaternion wrot = Quaternion.Euler(it.rotation != null ? it.rotation.ToVector3() : Vector3.zero);
 
+                    // Réhydrate chargeur/montant AVANT le spawn : sans ce seed, le prochain
+                    // PATCH de placement (MoveStateData lit la mémoire) effaçait ces clés.
+                    ServerItemManager.Instance.SeedItemStateFromDb(it.configId, it.Id, it.stateData);
                     ServerItemManager.Instance.SpawnPersistentWorldFromDb(
                         this.RoomId, it.configId, wpos, wrot, it.Id, it.version, state.place.Id);
                 }

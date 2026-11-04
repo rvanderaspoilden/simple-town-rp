@@ -145,11 +145,20 @@ public class SimpleTownNetwork : NetworkManager
 
     #region Start & Stop
 
+    // Vrai pendant la fermeture de l'application (ou l'arrêt du play mode éditeur) :
+    // OnServerDisconnect saute alors tout le bookkeeping gameplay (singletons déjà
+    // détruits → NRE) et ne fait QUE le teardown Mirror. Sans ça, une exception dans
+    // notre override ABORTE StopHost → KcpTransport.ServerStop ne tourne jamais → la
+    // socket UDP 7777 reste bloquée dans le process éditeur ("Une seule utilisation de
+    // chaque adresse de socket…" au StartHost suivant, jusqu'au restart de l'éditeur).
+    private bool _isQuitting;
+
     /// <summary>
     /// called when quitting the application by closing the window / pressing stop in the editor
     /// </summary>
     public override void OnApplicationQuit()
     {
+        _isQuitting = true;
         base.OnApplicationQuit();
     }
 
@@ -206,6 +215,27 @@ public class SimpleTownNetwork : NetworkManager
     /// <param name="conn">Connection from client.</param>
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
+        // Fermeture d'application : les managers/singletons gameplay sont en cours de
+        // destruction — tout le bookkeeping ci-dessous est inutile ET dangereux (NRE qui
+        // aborterait le StopHost de Mirror → fuite de la socket KCP). Teardown pur.
+        if (_isQuitting) {
+            base.OnServerDisconnect(conn);
+            return;
+        }
+
+        try {
+            HandleServerDisconnectBookkeeping(conn);
+        } catch (System.Exception e) {
+            // Jamais laisser une exception de bookkeeping interrompre la chaîne de
+            // déconnexion Mirror (base.OnServerDisconnect DOIT tourner).
+            Debug.LogError($"[SimpleTownNetwork] OnServerDisconnect bookkeeping failed: {e}");
+        }
+
+        base.OnServerDisconnect(conn);
+    }
+
+    private void HandleServerDisconnectBookkeeping(NetworkConnectionToClient conn)
+    {
         GameLogger.Network.Info("ServerDisconnect {ConnectionId} {Address} {IdentityNetId}",
             conn.connectionId, conn.address, conn.identity?.netId ?? 0);
 
@@ -244,8 +274,6 @@ public class SimpleTownNetwork : NetworkManager
                 if (vc != null) vc.ServerHandleOwnerDisconnect();
             }
         }
-
-        base.OnServerDisconnect(conn);
     }
 
     private IEnumerator UpdateOnlineStateCoroutine(string characterId, bool online) {

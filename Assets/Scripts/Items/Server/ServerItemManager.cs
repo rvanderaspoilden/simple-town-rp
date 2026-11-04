@@ -191,24 +191,62 @@ public class ServerItemManager
     public void UpdateBridgeVersion(int entityId, int version) {
         if (_bridges.TryGetValue(entityId, out var b)) {
             b.Version = version;
-            // Modèle pointeur : l'item peut être simultanément en session poche (slot)
-            // et projeté en main — garde les versions OCC des sessions alignées.
-            SyncPocketSessionVersions(b.Uuid, version);
+            SyncVersionsByUuid(b.Uuid, version);
         }
     }
 
-    private void SyncPocketSessionVersions(string uuid, int version) {
+    /// <summary>Une ligne DB n'a qu'UNE version OCC : aligne tout ce qui la référence —
+    /// chaque bridge portant cet uuid (projection main + poche partagent normalement la
+    /// même instance, mais un doublon d'instance ne doit jamais diverger) et les entrées
+    /// de session (poche, conteneur ouvert, colis ouvert) qui gardent leur propre copie.</summary>
+    private void SyncVersionsByUuid(string uuid, int version) {
         if (string.IsNullOrEmpty(uuid)) return;
+        foreach (var other in _bridges.Values)
+            if (other.Uuid == uuid) other.Version = version;
         foreach (var s in _pocketByPlayer.Values)
             foreach (var it in s.ItemsByEntityId.Values)
                 if (it.ItemUuid == uuid) it.Version = version;
+        foreach (var s in _openContainerByPlayer.Values)
+            foreach (var it in s.ItemsByEntityId.Values)
+                if (!it.IsProp && it.ItemUuid == uuid) it.Version = version;
+        foreach (var s in _openItemContainerByPlayer.Values)
+            foreach (var it in s.ItemsByEntityId.Values)
+                if (!it.IsProp && it.ItemUuid == uuid) it.Version = version;
     }
 
     public void UpdateBridgePlace(int entityId, string placeId, int version) {
         if (_bridges.TryGetValue(entityId, out var b)) {
             b.PlaceId = placeId;
             b.Version = version;
+            SyncVersionsByUuid(b.Uuid, version);
         }
+    }
+
+    /// <summary>PATCH /items/:uuid avec UNE reprise sur 409. La version OCC d'un bridge
+    /// peut être en retard d'une écriture serveur asynchrone (chargeur, liasse) : on relit
+    /// la ligne, on réaligne <c>body.expectedVersion</c> + tous les bridges/sessions, puis
+    /// on rejoue. Le serveur Unity est l'unique écrivain : rejouer un PATCH de placement
+    /// après resync ne peut écraser aucune écriture tierce. <paramref name="done"/> reçoit
+    /// la requête finale (première tentative si pas de 409 ou relecture impossible).</summary>
+    private IEnumerator PatchItemWithResync(string uuid, UpdateItemBody body, System.Action<UnityWebRequest> done) {
+        UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(uuid, body);
+        yield return req.SendWebRequest();
+        if (req.responseCode != 409) { done(req); yield break; }
+
+        UnityWebRequest get = ApiManager.Instance.GetItemRequest(uuid);
+        yield return get.SendWebRequest();
+        ItemJson fresh = null;
+        if (get.responseCode >= 200 && get.responseCode < 300) {
+            try { fresh = JsonConvert.DeserializeObject<ItemJson>(get.downloadHandler.text); } catch { }
+        }
+        if (fresh == null) { done(req); yield break; }
+
+        Debug.LogWarning($"[ServerItemManager] PATCH 409 uuid={uuid} expected={body.expectedVersion} db={fresh.version} — resync + retry");
+        SyncVersionsByUuid(uuid, fresh.version);
+        body.expectedVersion = fresh.version;
+        UnityWebRequest retry = ApiManager.Instance.UpdateItemRequest(uuid, body);
+        yield return retry.SendWebRequest();
+        done(retry);
     }
 
     public void ClearBridge(int entityId) => _bridges.Remove(entityId);
@@ -1440,7 +1478,9 @@ public class ServerItemManager
                 var body = new UpdateItemBody {
                     expectedVersion = Mathf.Max(1, version),
                     placeId = placeId,
-                    stateData = new Dictionary<string, object> { { "slotIndex", slot } },
+                    // Le PATCH remplace stateData intégralement : réinjecte chargeur/montant,
+                    // sinon chaque MORT effaçait l'état des armes et des liasses en DB.
+                    stateData = MoveStateData(configId, uuid, true, slot),
                 };
                 yield return ApiManager.Instance.UpdateItemRequest(uuid, body).SendWebRequest();
             } else {
@@ -2017,17 +2057,18 @@ public class ServerItemManager
             var body = new UpdateItemBody {
                 expectedVersion = bridge.Version,
                 placeId = pocket.PlaceId,
-                stateData = new Dictionary<string, object> { { "slotIndex", slotIndex } },
+                // Le PATCH remplace stateData intégralement : réinjecte chargeur/montant suivis.
+                stateData = MoveStateData(entity.ItemConfigId, bridge.Uuid, true, slotIndex),
             };
-            UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(bridge.Uuid, body);
-            yield return req.SendWebRequest();
+            UnityWebRequest req = null;
+            yield return PatchItemWithResync(bridge.Uuid, body, r => req = r);
             if (req.responseCode < 200 || req.responseCode >= 300) {
                 Debug.LogWarning($"[ServerItemManager] PickupToPocket PATCH failed code={req.responseCode} uuid={bridge.Uuid}");
                 conn.Send(new S2C_PickupResult { Success = false, EntityId = entityId, ErrorMessage = "Objet introuvable" });
                 yield break;
             }
             itemUuid = bridge.Uuid;
-            version = bridge.Version + 1;
+            version = body.expectedVersion + 1;
             try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) version = it.version; } catch { }
         } else {
             string charId = conn.identity != null ? conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id : null;
@@ -2496,7 +2537,7 @@ public class ServerItemManager
 
     /// <summary>Réhydratation groupée de l'état applicatif d'un item relu depuis le backend
     /// (chargeur d'arme + montant de liasse) — point d'appel unique des restores.</summary>
-    private void SeedItemStateFromDb(int configId, string uuid, Dictionary<string, object> stateData) {
+    public void SeedItemStateFromDb(int configId, string uuid, Dictionary<string, object> stateData) {
         SeedWeaponAmmoFromDb(configId, uuid, stateData);
         SeedCashAmountFromDb(configId, uuid, stateData);
     }
@@ -2507,7 +2548,17 @@ public class ServerItemManager
     /// (main) renvoie null : champ omis du PATCH, stateData DB préservé tel quel.</summary>
     private Dictionary<string, object> MoveStateData(int configId, string uuid, bool hasSlotIndex, int slotIndex) {
         if (!hasSlotIndex) return null;
-        var state = new Dictionary<string, object> { { "slotIndex", slotIndex } };
+        var state = WorldStateData(configId, uuid);
+        state["slotIndex"] = slotIndex;
+        return state;
+    }
+
+    /// <summary>stateData d'un PATCH qui sort l'item de toute grille (drop au sol, sac de
+    /// butin…) : PAS de slotIndex, mais les clés applicatives qui doivent SURVIVRE au
+    /// remplacement intégral du dict côté backend — chargeur d'une arme suivie, montant
+    /// d'une liasse. Dict vide si rien à préserver (libère quand même le slotIndex).</summary>
+    private Dictionary<string, object> WorldStateData(int configId, string uuid) {
+        var state = new Dictionary<string, object>();
         if (!string.IsNullOrEmpty(uuid)
             && DatabaseManager.GetItemConfigById(configId) is WeaponConfig
             && _weaponAmmoByKey.TryGetValue(uuid, out int loaded)) {
@@ -2908,8 +2959,8 @@ public class ServerItemManager
             expectedVersion = bridge.Version,
             placeId         = newPlaceId,
         };
-        UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(bridge.Uuid, body);
-        yield return req.SendWebRequest();
+        UnityWebRequest req = null;
+        yield return PatchItemWithResync(bridge.Uuid, body, r => req = r);
 
         if (req.responseCode < 200 || req.responseCode >= 300) {
             Debug.LogWarning($"[ServerItemManager] Move item {bridge.Uuid} → {newPlaceId} failed code={req.responseCode} body={req.downloadHandler?.text}");
@@ -2941,8 +2992,8 @@ public class ServerItemManager
             position = new Vector3Body(position),
             rotation = new Vector3Body(rotation.eulerAngles),
         };
-        UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(bridge.Uuid, body);
-        yield return req.SendWebRequest();
+        UnityWebRequest req = null;
+        yield return PatchItemWithResync(bridge.Uuid, body, r => req = r);
         if (req.responseCode < 200 || req.responseCode >= 300) {
             Debug.LogWarning($"[ServerItemManager] Move item to world {bridge.Uuid} failed code={req.responseCode} body={req.downloadHandler?.text}");
             yield break;
@@ -4005,12 +4056,16 @@ public class ServerItemManager
     private IEnumerator DropFromInventoryCoroutine(int worldEntity, string uuid, int version,
         string worldPlaceId, Vector3 dropPos, bool toPersist) {
         if (toPersist) {
+            ItemEntity worldItem = null;
+            foreach (var room in _rooms.Values) if (room.TryGetValue(worldEntity, out worldItem)) break;
+            int cfgId = worldItem != null ? worldItem.ItemConfigId : 0;
             var body = new UpdateItemBody {
                 expectedVersion = version,
                 placeId  = worldPlaceId,
                 position = new Vector3Body(dropPos),
                 rotation = new Vector3Body(Vector3.zero),
-                stateData = new Dictionary<string, object>(), // libère le slotIndex
+                // Libère le slotIndex mais PRÉSERVE chargeur/montant (remplacement intégral).
+                stateData = WorldStateData(cfgId, uuid),
             };
             UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(uuid, body);
             yield return req.SendWebRequest();
@@ -4798,15 +4853,33 @@ public class ServerItemManager
 
     // ── Pocket sessions ─────────────────────────────────────────────────────
 
+    // Garde de ré-entrance. Au connect, deux C2S_EnterRoom rapprochés (hall puis
+    // appartement) déclenchaient deux hydratations PARALLÈLES pour le même joueur : les
+    // deux passaient le CleanupPocketSession AVANT que l'une n'ait posé sa session, puis
+    // la seconde remplaçait la première en laissant ses bridges ORPHELINS dans _bridges
+    // (même uuid, instance différente). TryGetBridgeByUuid (persistance chargeur/liasse)
+    // tombait sur l'orphelin : la version DB avançait sur lui seul, la session vivante
+    // restait en retard → 409 au drop, puis à chaque ramassage de l'item posé.
+    private readonly HashSet<uint> _pocketHydrating = new HashSet<uint>();
+
     /// <summary>
     /// À appeler après <see cref="PlayerInventory.EnsurePlaces"/> côté serveur :
     /// lit la place poche en DB, alloue des entityId éphémères pour ses items,
     /// envoie le snapshot S2C_PocketSync au client. Idempotent — appel répété
-    /// recharge l'état.
+    /// recharge l'état ; un appel pendant qu'une hydratation est en vol est ignoré.
     /// </summary>
     public IEnumerator EnsurePocketSession(NetworkConnectionToClient conn) {
         if (conn?.identity == null) yield break;
         uint netId = conn.identity.netId;
+        if (!_pocketHydrating.Add(netId)) {
+            GameLogger.Network.Debug("PocketSession hydration already in flight netId={NetId}", netId);
+            yield break; // l'hydratation en cours poussera le snapshot à cette même conn
+        }
+        try { yield return HydratePocketSession(conn, netId); }
+        finally { _pocketHydrating.Remove(netId); }
+    }
+
+    private IEnumerator HydratePocketSession(NetworkConnectionToClient conn, uint netId) {
         var inv = conn.identity.GetComponent<PlayerInventory>();
         if (inv == null || string.IsNullOrEmpty(inv.PocketPlaceId)) {
             Debug.LogWarning("[ServerItemManager] EnsurePocketSession skipped — PlayerInventory ou PocketPlaceId manquant");
@@ -4853,6 +4926,9 @@ public class ServerItemManager
                 Debug.Log($"[ServerItemManager] Pocket item loaded id={it.Id} cfg={it.configId} slot={slotIndex} entityId={entityId}");
             }
         }
+        // Une session a pu naître pendant l'aller-retour (Install « à la volée ») : on la
+        // libère AVANT de poser la nôtre pour ne jamais laisser de bridge orphelin.
+        CleanupPocketSession(netId);
         _pocketByPlayer[netId] = session;
 
         SendPocketSnapshot(conn, session);
@@ -4883,6 +4959,290 @@ public class ServerItemManager
         _handProjection.Remove(netId);
         foreach (var it in session.ItemsByEntityId.Values) _bridges.Remove(it.EntityId);
         GameLogger.Network.Debug("PocketSessionClosed netId={NetId} place={Place}", netId, session.PlaceId);
+    }
+
+    // ── Maintenance de grille : tri alphabétique + optimisation (merge de piles) ──
+    // Opérations serveur-autoritaires sur une SESSION ouverte (poche / conteneur prop /
+    // colis), PATCHes séquentiels avec reprise OCC (PatchItemWithResync), snapshot
+    // re-poussé à la fin. Une seule maintenance en vol par joueur.
+
+    private readonly HashSet<uint> _gridMaintenanceBusy = new HashSet<uint>();
+
+    private enum GridKind { None, Pocket, PropContainer, ItemContainer }
+
+    /// <summary>Résout la grille visée par <paramref name="placeId"/> pour CE joueur :
+    /// "pocket:{charId}" (ou l'UUID de sa place poche) → session poche ; sinon l'UUID doit
+    /// correspondre au conteneur prop OU au colis qu'il a OUVERT (sessions par joueur →
+    /// aucune grille d'autrui n'est atteignable).</summary>
+    private GridKind ResolveGridSession(NetworkConnectionToClient conn, string placeId,
+        out uint netId, out PocketSession pocket, out ContainerSession propS, out ItemContainerSession itemS)
+    {
+        pocket = null; propS = null; itemS = null; netId = 0;
+        if (conn?.identity == null || string.IsNullOrEmpty(placeId)) return GridKind.None;
+        netId = conn.identity.netId;
+
+        var inv = conn.identity.GetComponent<PlayerInventory>();
+        string charId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+        bool isPocket = (!string.IsNullOrEmpty(charId) && placeId == $"pocket:{charId}")
+                     || (inv != null && !string.IsNullOrEmpty(inv.PocketPlaceId) && placeId == inv.PocketPlaceId);
+        if (isPocket) {
+            return _pocketByPlayer.TryGetValue(netId, out pocket) ? GridKind.Pocket : GridKind.None;
+        }
+        if (_openContainerByPlayer.TryGetValue(netId, out propS) && propS.PlaceId == placeId)
+            return GridKind.PropContainer;
+        propS = null;
+        if (_openItemContainerByPlayer.TryGetValue(netId, out itemS) && itemS.PlaceId == placeId)
+            return GridKind.ItemContainer;
+        itemS = null;
+        return GridKind.None;
+    }
+
+    public void HandleSortContainer(NetworkConnectionToClient conn, C2S_SortContainer msg)
+    {
+        GridKind kind = ResolveGridSession(conn, msg.PlaceId, out uint netId, out var pocket, out var propS, out var itemS);
+        if (kind == GridKind.None || !_gridMaintenanceBusy.Add(netId)) return;
+        ApiManager.Instance?.StartCoroutine(SortGridCoroutine(conn, netId, kind, pocket, propS, itemS));
+    }
+
+    public void HandleOptimizeContainer(NetworkConnectionToClient conn, C2S_OptimizeContainer msg)
+    {
+        GridKind kind = ResolveGridSession(conn, msg.PlaceId, out uint netId, out var pocket, out var propS, out var itemS);
+        if (kind == GridKind.None || !_gridMaintenanceBusy.Add(netId)) return;
+        ApiManager.Instance?.StartCoroutine(OptimizeGridCoroutine(conn, netId, kind, pocket, propS, itemS));
+    }
+
+    /// <summary>Vue mutable commune sur une entrée de session (poche ou conteneur).</summary>
+    private sealed class GridEntry {
+        public int    EntityId;
+        public int    ConfigId;
+        public int    SlotIndex;
+        public int    Quantity;
+        public string Uuid;
+        public int    Version;
+        public bool   IsProp;
+        public PocketSessionItem    P;  // l'une des deux sources, selon la session
+        public ContainerSessionItem C;
+
+        public void SetSlot(int slot)            { SlotIndex = slot; if (P != null) P.SlotIndex = slot; if (C != null) C.SlotIndex = slot; }
+        public void SetQty(int qty, int version) { Quantity = qty; Version = version;
+            if (P != null) { P.Quantity = qty; P.Version = version; }
+            if (C != null) { C.Quantity = qty; C.Version = version; } }
+        public void SetVersion(int version)      { Version = version; if (P != null) P.Version = version; if (C != null) C.Version = version; }
+    }
+
+    private static List<GridEntry> CollectEntries(GridKind kind, PocketSession pocket,
+        ContainerSession propS, ItemContainerSession itemS)
+    {
+        var list = new List<GridEntry>();
+        if (kind == GridKind.Pocket) {
+            foreach (var it in pocket.ItemsByEntityId.Values)
+                list.Add(new GridEntry { EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
+                    Quantity = Mathf.Max(1, it.Quantity), Uuid = it.ItemUuid, Version = it.Version, P = it });
+        } else {
+            var src = kind == GridKind.PropContainer ? propS.ItemsByEntityId : itemS.ItemsByEntityId;
+            foreach (var it in src.Values)
+                list.Add(new GridEntry { EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
+                    Quantity = Mathf.Max(1, it.Quantity), Uuid = it.ItemUuid, Version = it.Version,
+                    IsProp = it.IsProp, C = it });
+        }
+        return list;
+    }
+
+    private void RebuildSlotMap(GridKind kind, PocketSession pocket, ContainerSession propS, ItemContainerSession itemS)
+    {
+        if (kind == GridKind.Pocket) {
+            pocket.SlotToEntityId.Clear();
+            foreach (var it in pocket.ItemsByEntityId.Values) pocket.SlotToEntityId[it.SlotIndex] = it.EntityId;
+        } else if (kind == GridKind.PropContainer) {
+            propS.SlotToEntityId.Clear();
+            foreach (var it in propS.ItemsByEntityId.Values) propS.SlotToEntityId[it.SlotIndex] = it.EntityId;
+        } else {
+            itemS.SlotToEntityId.Clear();
+            foreach (var it in itemS.ItemsByEntityId.Values) itemS.SlotToEntityId[it.SlotIndex] = it.EntityId;
+        }
+    }
+
+    /// <summary>Re-pousse le snapshot de la grille à l'opérateur — et, pour un conteneur
+    /// PROP, aux autres joueurs qui ont une session ouverte sur la même place.</summary>
+    private void PushGridSnapshot(NetworkConnectionToClient conn, GridKind kind,
+        PocketSession pocket, ContainerSession propS, ItemContainerSession itemS)
+    {
+        switch (kind) {
+            case GridKind.Pocket:        SendPocketSnapshot(conn, pocket); break;
+            case GridKind.ItemContainer: SendItemContainerSnapshot(conn, itemS); break;
+            case GridKind.PropContainer:
+                SendContainerSnapshot(conn, propS);
+                foreach (var kv in _openContainerByPlayer) {
+                    if (kv.Value == propS || kv.Value.PlaceId != propS.PlaceId) continue;
+                    if (NetworkServer.spawned.TryGetValue(kv.Key, out var ident) && ident != null
+                        && ident.connectionToClient != null) {
+                        // Les sessions tierces gardent leurs propres entityId/versions : on
+                        // les re-hydrate depuis la DB plutôt que pousser NOTRE session.
+                        ApiManager.Instance?.StartCoroutine(RefreshContainerSessionAndPushSnapshot(
+                            ident.connectionToClient, kv.Value));
+                    }
+                }
+                break;
+        }
+    }
+
+    private static string SortLabelOf(GridEntry e)
+    {
+        ItemConfig cfg = DatabaseManager.GetItemConfigById(e.ConfigId);
+        return cfg != null && !string.IsNullOrEmpty(cfg.Label) ? cfg.Label : "￿";
+    }
+
+    private IEnumerator SortGridCoroutine(NetworkConnectionToClient conn, uint netId, GridKind kind,
+        PocketSession pocket, ContainerSession propS, ItemContainerSession itemS)
+    {
+        try {
+            List<GridEntry> entries = CollectEntries(kind, pocket, propS, itemS);
+
+            // Slots disponibles pour les ITEMS : toute la capacité, moins les slots des
+            // meubles emballés (IsProp — leur ligne vit dans la table props, on n'y touche pas).
+            int capacity = kind switch {
+                GridKind.Pocket        => PocketCapacity,
+                GridKind.PropContainer => propS.Config != null ? propS.Config.SlotCount : 0,
+                _                      => itemS.Config != null ? itemS.Config.SlotCount : 0,
+            };
+            foreach (var e in entries) capacity = Mathf.Max(capacity, e.SlotIndex + 1);
+
+            var taken = new HashSet<int>();
+            foreach (var e in entries) if (e.IsProp) taken.Add(e.SlotIndex);
+            var freeSlots = new List<int>();
+            for (int i = 0; i < capacity; i++) if (!taken.Contains(i)) freeSlots.Add(i);
+
+            List<GridEntry> items = entries.FindAll(e => !e.IsProp);
+            items.Sort((a, b) => {
+                int c = string.Compare(SortLabelOf(a), SortLabelOf(b), System.StringComparison.OrdinalIgnoreCase);
+                return c != 0 ? c : a.SlotIndex.CompareTo(b.SlotIndex);
+            });
+
+            for (int i = 0; i < items.Count && i < freeSlots.Count; i++) {
+                GridEntry e = items[i];
+                int newSlot = freeSlots[i];
+                if (e.SlotIndex == newSlot) continue;
+
+                var body = new UpdateItemBody {
+                    expectedVersion = e.Version,
+                    stateData       = MoveStateData(e.ConfigId, e.Uuid, true, newSlot),
+                };
+                UnityWebRequest req = null;
+                yield return PatchItemWithResync(e.Uuid, body, r => req = r);
+                if (req.responseCode < 200 || req.responseCode >= 300) {
+                    Debug.LogWarning($"[ServerItemManager] Sort PATCH failed code={req.responseCode} uuid={e.Uuid} — tri interrompu");
+                    break;
+                }
+                int newVersion = body.expectedVersion + 1;
+                try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) newVersion = it.version; } catch { }
+                e.SetSlot(newSlot);
+                e.SetVersion(newVersion);
+                UpdateBridgeVersion(e.EntityId, newVersion);
+            }
+
+            RebuildSlotMap(kind, pocket, propS, itemS);
+            PushGridSnapshot(conn, kind, pocket, propS, itemS);
+            GameLogger.Network.Info("GridSort netId={NetId} kind={Kind} items={Count}", netId, kind, items.Count);
+        } finally {
+            _gridMaintenanceBusy.Remove(netId);
+        }
+    }
+
+    private IEnumerator OptimizeGridCoroutine(NetworkConnectionToClient conn, uint netId, GridKind kind,
+        PocketSession pocket, ContainerSession propS, ItemContainerSession itemS)
+    {
+        try {
+            // Poche : invariant 1 item/slot, pas de pile → l'optimisation fusionne les
+            // LIASSES portées (même sémantique que « Tout fusionner » de la carte de détail).
+            if (kind == GridKind.Pocket) {
+                yield return MergeAllCashCoroutine(conn, 0, silent: true);
+                SendPocketSnapshot(conn, pocket);
+                yield break;
+            }
+
+            List<GridEntry> entries = CollectEntries(kind, pocket, propS, itemS);
+            var groups = new Dictionary<int, List<GridEntry>>();
+            foreach (var e in entries) {
+                if (e.IsProp) continue;
+                ItemConfig cfg = DatabaseManager.GetItemConfigById(e.ConfigId);
+                if (cfg == null || !cfg.IsStackable || cfg.MaxStackSize <= 1) continue;
+                if (!groups.TryGetValue(e.ConfigId, out var l)) groups[e.ConfigId] = l = new List<GridEntry>();
+                l.Add(e);
+            }
+
+            foreach (var kv in groups) {
+                List<GridEntry> list = kv.Value;
+                if (list.Count < 2) continue;
+                list.Sort((a, b) => a.SlotIndex.CompareTo(b.SlotIndex));
+                int max = DatabaseManager.GetItemConfigById(kv.Key).MaxStackSize;
+
+                int t = 0;
+                for (int s = 1; s < list.Count; s++) {
+                    GridEntry src = list[s];
+                    while (src.Quantity > 0 && t < s) {
+                        GridEntry tgt = list[t];
+                        int space = max - tgt.Quantity;
+                        if (space <= 0) { t++; continue; }
+                        int k = Mathf.Min(space, src.Quantity);
+
+                        // 1. Cible += k.
+                        var tgtBody = new UpdateItemBody { expectedVersion = tgt.Version, quantity = tgt.Quantity + k };
+                        UnityWebRequest tgtReq = null;
+                        yield return PatchItemWithResync(tgt.Uuid, tgtBody, r => tgtReq = r);
+                        if (tgtReq.responseCode < 200 || tgtReq.responseCode >= 300) {
+                            Debug.LogWarning($"[ServerItemManager] Optimize PATCH cible failed code={tgtReq.responseCode} uuid={tgt.Uuid} — groupe abandonné");
+                            break;
+                        }
+                        int tv = tgtBody.expectedVersion + 1;
+                        try { var it = JsonConvert.DeserializeObject<ItemJson>(tgtReq.downloadHandler.text); if (it != null) tv = it.version; } catch { }
+                        tgt.SetQty(tgt.Quantity + k, tv);
+                        UpdateBridgeVersion(tgt.EntityId, tv);
+
+                        // 2. Source -= k (DELETE si vidée).
+                        int remaining = src.Quantity - k;
+                        if (remaining <= 0) {
+                            UnityWebRequest del = ApiManager.Instance.DeleteItemRequest(src.Uuid);
+                            yield return del.SendWebRequest();
+                            if (del.responseCode < 200 || del.responseCode >= 300) {
+                                Debug.LogWarning($"[ServerItemManager] Optimize DELETE source failed code={del.responseCode} uuid={src.Uuid}");
+                                // La cible a déjà absorbé k : on fige la source en mémoire à 0
+                                // pour ne pas doubler — le snapshot DB fera foi au prochain open.
+                            }
+                            src.SetQty(0, src.Version);
+                            RemoveContainerEntry(kind, propS, itemS, src);
+                        } else {
+                            var srcBody = new UpdateItemBody { expectedVersion = src.Version, quantity = remaining };
+                            UnityWebRequest srcReq = null;
+                            yield return PatchItemWithResync(src.Uuid, srcBody, r => srcReq = r);
+                            if (srcReq.responseCode < 200 || srcReq.responseCode >= 300) {
+                                Debug.LogWarning($"[ServerItemManager] Optimize PATCH source failed code={srcReq.responseCode} uuid={src.Uuid}");
+                                break;
+                            }
+                            int sv = srcBody.expectedVersion + 1;
+                            try { var it = JsonConvert.DeserializeObject<ItemJson>(srcReq.downloadHandler.text); if (it != null) sv = it.version; } catch { }
+                            src.SetQty(remaining, sv);
+                            UpdateBridgeVersion(src.EntityId, sv);
+                        }
+                    }
+                }
+            }
+
+            RebuildSlotMap(kind, pocket, propS, itemS);
+            PushGridSnapshot(conn, kind, pocket, propS, itemS);
+            GameLogger.Network.Info("GridOptimize netId={NetId} kind={Kind}", netId, kind);
+        } finally {
+            _gridMaintenanceBusy.Remove(netId);
+        }
+    }
+
+    /// <summary>Retire une entrée de session conteneur (ligne DB déjà supprimée).</summary>
+    private void RemoveContainerEntry(GridKind kind, ContainerSession propS, ItemContainerSession itemS, GridEntry e)
+    {
+        var map = kind == GridKind.PropContainer ? propS.ItemsByEntityId : itemS.ItemsByEntityId;
+        var slots = kind == GridKind.PropContainer ? propS.SlotToEntityId : itemS.SlotToEntityId;
+        map.Remove(e.EntityId);
+        if (slots.TryGetValue(e.SlotIndex, out int occ) && occ == e.EntityId) slots.Remove(e.SlotIndex);
+        ClearBridge(e.EntityId);
     }
 
     // ── Strategy pattern : IPlaceContext + concrete contexts ─────────────────

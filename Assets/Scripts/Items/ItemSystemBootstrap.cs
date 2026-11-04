@@ -28,6 +28,8 @@ public static class ItemSystemBootstrap
         NetworkServer.RegisterHandler<C2S_MergeAllCash>(ServerItemManager.Instance.HandleMergeAllCash);
         NetworkServer.RegisterHandler<C2S_SearchNpcCorpse>(ServerItemManager.Instance.HandleSearchNpcCorpse);
         NetworkServer.RegisterHandler<C2S_SearchLootBag>(ServerItemManager.Instance.HandleSearchLootBag);
+        NetworkServer.RegisterHandler<C2S_SortContainer>(ServerItemManager.Instance.HandleSortContainer);
+        NetworkServer.RegisterHandler<C2S_OptimizeContainer>(ServerItemManager.Instance.HandleOptimizeContainer);
 
         PlayerRoomTracker.OnPlayerEnterRoom += ServerItemManager.Instance.OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom += ServerItemManager.Instance.OnPlayerLeaveRoom;
@@ -57,6 +59,8 @@ public static class ItemSystemBootstrap
         NetworkServer.UnregisterHandler<C2S_DropFromInventory>();
         NetworkServer.UnregisterHandler<C2S_EquipPocketSlot>();
         NetworkServer.UnregisterHandler<C2S_MergeAllCash>();
+        NetworkServer.UnregisterHandler<C2S_SortContainer>();
+        NetworkServer.UnregisterHandler<C2S_OptimizeContainer>();
 
         PlayerRoomTracker.OnPlayerEnterRoom -= ServerItemManager.Instance.OnPlayerEnterRoom;
         PlayerRoomTracker.OnPlayerLeaveRoom -= ServerItemManager.Instance.OnPlayerLeaveRoom;

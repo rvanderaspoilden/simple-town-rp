@@ -52,6 +52,10 @@ public class ContainerPanelUI : MonoBehaviour
     [Header("Optional UI")]
     [SerializeField] private UnityEngine.UI.Button closeButton;
     [SerializeField] private TMPro.TMP_Text titleText;
+    [SerializeField, Tooltip("Tri alphabétique de la grille affichée (C2S_SortContainer).")]
+    private UnityEngine.UI.Button sortButton;
+    [SerializeField, Tooltip("Optimisation de la grille affichée — merge des piles (C2S_OptimizeContainer).")]
+    private UnityEngine.UI.Button optimizeButton;
     [Tooltip("Bouton « Tout prendre » (canal Prop — loot/meubles) : vide la grille vers " +
              "l'inventaire. Piles fusionnées dans le colis/sac affiché d'abord, puis slots " +
              "libres (poche/main/sac), dans l'ordre de la grille, jusqu'à saturation.")]
@@ -105,6 +109,8 @@ public class ContainerPanelUI : MonoBehaviour
 
         if (slotTemplate != null) slotTemplate.gameObject.SetActive(false);
         if (closeButton  != null) closeButton.onClick.AddListener(Close);
+        if (sortButton     != null) sortButton.onClick.AddListener(() => SendMaintenance(sort: true));
+        if (optimizeButton != null) optimizeButton.onClick.AddListener(() => SendMaintenance(sort: false));
         if (takeAllButton != null) {
             // Réservé au canal Prop (grille de loot/meuble). Sur le canal Item (son propre
             // colis/sac), « tout prendre » n'a pas de sens — bouton masqué.
@@ -206,6 +212,15 @@ public class ContainerPanelUI : MonoBehaviour
 
     /// <summary>UUID backend de la place conteneur en cours. Utilisé pour router un quick-move.</summary>
     public string PlaceId => _currentPlaceId;
+
+    /// <summary>Tri alphabétique / optimisation (merge des piles) de la grille affichée —
+    /// serveur-autoritaire, le snapshot re-poussé rafraîchit l'UI.</summary>
+    private void SendMaintenance(bool sort)
+    {
+        if (!IsOpen || !Mirror.NetworkClient.isConnected) return;
+        if (sort) Mirror.NetworkClient.Send(new C2S_SortContainer     { PlaceId = _currentPlaceId });
+        else      Mirror.NetworkClient.Send(new C2S_OptimizeContainer { PlaceId = _currentPlaceId });
+    }
 
     /// <summary>True quand le conteneur ouvert est un item-conteneur (« package »), prêt.</summary>
     public bool IsItemContainerOpen => IsOpen && _isItemContainer;
@@ -399,7 +414,10 @@ public class ContainerPanelUI : MonoBehaviour
             foreach (var slot in _slots) {
                 if (slot == null || !slot.gameObject.activeSelf) continue;
                 var d = slot.Item;
-                if (d == null || !d.IsDraggable || d.EntityId <= 0) continue;
+                // IsDraggable ne gate PAS la prise : depuis le rework inventaire, TOUS les
+                // items de conteneur sont non-draggables (interaction = carte de détail /
+                // double-clic). Seuls les meubles emballés sont exclus (déballage build-mode).
+                if (d == null || d.IsPackedProp || d.EntityId <= 0) continue;
                 if (skipped.Contains(d.EntityId)) continue;
                 pick = d;
                 break;
@@ -440,7 +458,7 @@ public class ContainerPanelUI : MonoBehaviour
         bool remaining = false;
         foreach (var slot in _slots) {
             var d = slot != null && slot.gameObject.activeSelf ? slot.Item : null;
-            if (d != null && d.IsDraggable) { remaining = true; break; }
+            if (d != null && !d.IsPackedProp) { remaining = true; break; }
         }
         if (remaining && IsOpen) WorldToastManager.ShowError(InventoryToasts.NoSpaceInInventory);
 
@@ -502,7 +520,7 @@ public class ContainerPanelUI : MonoBehaviour
     {
         if (!IsOpen || item == null || item.ItemSlot == null) return;
         if (!OwnsSlot(item.ItemSlot)) return;
-        if (!item.IsDraggable) return; // meuble emballé : pas de quick-move (déballage = futur)
+        if (item.IsPackedProp) return; // meuble emballé : pas de quick-move (déballage = clic droit)
 
         var inv = HUDManager.Instance?.InventoryUI;
         if (inv == null) return;
