@@ -23,6 +23,9 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     // draggable représente l'arme actuellement tenue (slots mains, pas de snapshot).
     private int _loadedAmmo = -1;
     public void SetLoadedAmmo(int loaded) => _loadedAmmo = loaded;
+    /// <summary>Chargeur publié par le snapshot (-1 = inconnu). Lu par la carte de détail
+    /// pour gater Recharger/Vider sur une arme NON tenue.</summary>
+    public int LoadedAmmo => _loadedAmmo;
 
     // Liasse : montant publié par le snapshot poche (S2C_PocketItem.CashAmount). 0 = inconnu
     // ici — la tooltip retombe alors sur l'entité monde (liasse tenue ou au sol).
@@ -255,10 +258,10 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         return $"Munitions : {AmmoConfig.CategoryLabel(cfg.AmmoCategory)}\n{magazine}";
     }
 
-    /// <summary>Détails d'une boîte de munitions pour la tooltip : famille servie + règle de
-    /// rechargement (une boîte remplit un chargeur).</summary>
+    /// <summary>Détails d'une pile de balles pour la tooltip : famille servie + règle de
+    /// rechargement (le chargeur prélève les balles nécessaires).</summary>
     private static string FormatAmmoBox(AmmoConfig cfg) {
-        return $"Munitions : {AmmoConfig.CategoryLabel(cfg.AmmoCategory)}\n<color=#8FE36B>1 boîte = 1 chargeur plein</color>";
+        return $"Munitions : {AmmoConfig.CategoryLabel(cfg.AmmoCategory)}\n<color=#8FE36B>Le rechargement prélève les balles nécessaires</color>";
     }
 
     /// <summary>Met en forme les effets d'un consommable (faim/soif/fatigue) pour la tooltip.</summary>

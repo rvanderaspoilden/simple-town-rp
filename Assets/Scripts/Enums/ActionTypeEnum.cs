@@ -40,7 +40,8 @@
         PLACE,
         TALK,
         RELOAD,
-        SEARCH
+        SEARCH,
+        UNLOAD
     }
 
 }

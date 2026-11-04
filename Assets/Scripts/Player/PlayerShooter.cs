@@ -24,9 +24,10 @@ namespace Sim {
     /// Réseau :
     /// - la posture de visée est répliquée via SyncVars (aiming + pitch) — le yaw du corps
     ///   passe déjà par le NetworkTransform ;
-    /// - CmdFire(origine, direction) → le serveur valide (arme en main via ServerItemManager,
-    ///   cadence, origine plausible), raycast, RENVERSE le joueur touché (knockdown ragdoll,
-    ///   pas de dégâts létaux en V1) puis RpcFired(point d'impact) ;
+    /// - CmdFire(origine, direction) → le serveur valide AVANT de consommer la balle (arme
+    ///   en main via ServerItemManager, cadence en seau à jetons, rechargement) — une origine
+    ///   implausible (lag de position en mouvement) est RÉ-ANCRÉE sur le corps serveur plutôt
+    ///   que rejetée —, raycast, applique les dégâts puis RpcFired(point d'impact) ;
     /// - RpcFired joue sur chaque client les effets (tracer/flash/son/recul) via
     ///   <see cref="WeaponBehaviour.PlayFireEffects"/> + impulsion de recul sur l'IK du bras.
     ///
@@ -84,7 +85,7 @@ namespace Sim {
         [SerializeField] private float hipFirePostureDuration = 0.7f;
 
         [Header("Munitions & rechargement")]
-        [Tooltip("Touche de rechargement : consomme une boîte de munitions de la famille de l'arme (poche puis sac tenu) et remplit le chargeur après WeaponConfig.reloadDuration. Un clic de tir à vide recharge aussi.")]
+        [Tooltip("Touche de rechargement : consomme les balles manquantes de la famille de l'arme (piles de poche puis sac tenu) et remplit le chargeur après WeaponConfig.reloadDuration. Un clic de tir à vide recharge aussi.")]
         [SerializeField] private Key reloadKey = Key.R;
 
         [Header("Recul")]
@@ -146,8 +147,8 @@ namespace Sim {
         private float localReloadingUntil;
         private WeaponBehaviour ammoQueriedWeapon;
 
-        // Réserve (owner) : balles supplémentaires portées (boîtes compatibles poche + sac
-        // tenu, × un chargeur par boîte), poussée par TargetAmmoReserve. -1 = inconnue.
+        // Réserve (owner) : balles supplémentaires portées (piles compatibles poche + sac
+        // tenu, en unités), poussée par TargetAmmoReserve. -1 = inconnue.
         private int localAmmoReserve = -1;
 
         // Serveur
@@ -413,7 +414,7 @@ namespace Sim {
         public int LocalLoadedAmmo => this.localLoadedAmmo;
 
         /// <summary>Vrai si l'option « Recharger » doit être proposée pour cette arme tenue :
-        /// chargeur pas plein, pas de rechargement en cours, et une boîte compatible en stock
+        /// chargeur pas plein, pas de rechargement en cours, et des balles compatibles en stock
         /// (réserve encore inconnue = proposé, le serveur tranchera).</summary>
         public bool CanOfferReload(WeaponBehaviour weapon) {
             if (!isLocalPlayer || weapon == null || weapon != this.HeldWeapon) return false;
@@ -430,9 +431,10 @@ namespace Sim {
             if (isLocalPlayer) this.TryStartReload();
         }
 
-        /// <summary>Demande un rechargement au serveur : consomme une boîte de munitions de la
-        /// famille de l'arme (poche puis sac tenu), chargeur rempli après ReloadDuration. Le
-        /// blocage local du tir est optimiste — annulé par TargetReloadResult en cas d'échec.</summary>
+        /// <summary>Demande un rechargement au serveur : consomme les balles manquantes de la
+        /// famille de l'arme (piles de poche puis sac tenu), chargeur rempli après
+        /// ReloadDuration. Le blocage local du tir est optimiste — annulé par
+        /// TargetReloadResult en cas d'échec.</summary>
         private void TryStartReload() {
             WeaponBehaviour weapon = this.HeldWeapon;
             WeaponConfig cfg = weapon != null ? weapon.WeaponConfiguration : null;
@@ -564,6 +566,14 @@ namespace Sim {
 
         [Command]
         private void CmdReload() {
+            this.ServerStartHeldReload();
+        }
+
+        /// <summary>Corps serveur du rechargement de l'arme TENUE (flux animé : timer +
+        /// resync TargetAmmo). Partagé entre CmdReload (touche R / carte d'inventaire) et
+        /// CmdReloadItem quand l'entityId visé s'avère être l'arme en main.</summary>
+        private void ServerStartHeldReload() {
+            if (this.serverUnloading || this.serverColdOp) return;
             if (this.serverReloadConsuming || NetworkTime.time < this.serverReloadingUntil) return;
 
             string roomId = PlayerRoomTracker.Instance != null
@@ -574,33 +584,36 @@ namespace Sim {
                 this.TargetReloadResult(false, null);
                 return;
             }
-            if (ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg) >= cfg.MagazineSize) {
+            int needed = cfg.MagazineSize - ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg);
+            if (needed <= 0) {
                 this.TargetReloadResult(false, null); // déjà plein — silencieux, juste déverrouiller le client
                 return;
             }
 
-            // Tir bloqué pendant TOUT le rechargement, consommation DB comprise ; la boîte
-            // est consommée d'abord (pas d'annulation), le chargeur se remplit à l'échéance.
+            // Tir bloqué pendant TOUT le rechargement, consommation DB comprise ; les balles
+            // manquantes sont consommées d'abord (pas d'annulation, rechargement PARTIEL si
+            // la réserve ne couvre pas tout), le chargeur se remplit à l'échéance.
             this.serverReloadConsuming = true;
             this.serverReloadingUntil = NetworkTime.time + cfg.ReloadDuration;
             double reloadEnd = this.serverReloadingUntil;
-            ServerItemManager.Instance.ConsumeAmmoItem(connectionToClient, cfg.AmmoCategory, (ok, error) => {
+            ServerItemManager.Instance.ConsumeAmmoRounds(connectionToClient, cfg.AmmoCategory, needed, (consumed, error) => {
                 if (this == null) return; // joueur déconnecté pendant l'aller-retour backend
                 this.serverReloadConsuming = false;
-                this.serverNextReserveSync = 0; // réserve possiblement changée (boîte consommée ou stock désynchronisé)
-                if (!ok) {
+                this.serverNextReserveSync = 0; // réserve changée (balles consommées ou stock désynchronisé)
+                if (consumed <= 0) {
                     this.serverReloadingUntil = 0;
                     this.TargetReloadResult(false, error);
                     return;
                 }
-                this.StartCoroutine(this.ServerFinishReload(reloadEnd, cfg.AmmoCategory));
+                this.StartCoroutine(this.ServerFinishReload(reloadEnd, cfg.AmmoCategory, consumed));
             });
         }
 
-        /// <summary>Fin de rechargement serveur : à l'échéance, remplit le chargeur de l'arme
-        /// ENCORE tenue si elle consomme la même famille de munitions (arme lâchée/changée
-        /// entre-temps → la boîte consommée est perdue, cas limite accepté).</summary>
-        private IEnumerator ServerFinishReload(double reloadEnd, AmmoCategory category) {
+        /// <summary>Fin de rechargement serveur : à l'échéance, verse les balles consommées
+        /// dans le chargeur de l'arme ENCORE tenue si elle consomme la même famille de
+        /// munitions (arme lâchée/changée entre-temps → les balles consommées sont perdues,
+        /// cas limite accepté).</summary>
+        private IEnumerator ServerFinishReload(double reloadEnd, AmmoCategory category, int rounds) {
             while (NetworkTime.time < reloadEnd) yield return null;
 
             string roomId = PlayerRoomTracker.Instance != null
@@ -609,28 +622,221 @@ namespace Sim {
             if (ServerItemManager.Instance != null
                 && ServerItemManager.Instance.TryGetHeldWeapon(netId, roomId, out int weaponEntityId, out WeaponConfig cfg)
                 && cfg.AmmoCategory == category) {
-                ServerItemManager.Instance.SetWeaponLoadedAmmo(weaponEntityId, cfg.MagazineSize);
-                this.TargetAmmo(cfg.MagazineSize);
-                GameLogger.Player.Info("WeaponReloaded {PlayerNetId} {Category} {Magazine}", netId, category, cfg.MagazineSize);
+                int loaded = Mathf.Min(cfg.MagazineSize,
+                    ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg) + rounds);
+                ServerItemManager.Instance.SetWeaponLoadedAmmo(weaponEntityId, loaded);
+                this.TargetAmmo(loaded);
+                GameLogger.Player.Info("WeaponReloaded {PlayerNetId} {Category} {Loaded}", netId, category, loaded);
             }
+            // La ligne de l'arme porte LoadedAmmo dans les snapshots : re-pousse pour que
+            // la carte d'inventaire (si ouverte) reflète le chargeur rempli.
+            if (ServerItemManager.Instance != null)
+                ServerItemManager.Instance.ResyncInventoryViews(connectionToClient);
             this.TargetReloadResult(true, null);
+        }
+
+        // ── Vidage du chargeur (action « Vider le chargeur ») ─────────────────────
+
+        // Vidage en vol : le chargeur est posé à 0 AVANT le rangement async des balles
+        // (tir naturellement bloqué par chargeur vide) ; le reliquat non rangé est reversé
+        // dans le chargeur à la fin. Le flag bloque un reload concurrent.
+        private bool serverUnloading;
+
+        /// <summary>Vrai si l'option « Vider le chargeur » doit être proposée pour cette arme
+        /// tenue : chargeur non vide (inconnu = proposé, le serveur tranchera) et pas de
+        /// rechargement en cours.</summary>
+        public bool CanOfferUnload(WeaponBehaviour weapon) {
+            if (!isLocalPlayer || weapon == null || weapon != this.HeldWeapon) return false;
+            if (weapon.WeaponConfiguration == null) return false;
+            if (Time.time < this.localReloadingUntil) return false;
+            return this.localLoadedAmmo != 0;
+        }
+
+        /// <summary>Vidage du chargeur demandé depuis l'UI (action « Vider le chargeur » du
+        /// menu de l'arme) : les balles rejoignent l'inventaire (piles de poche, puis sac tenu).</summary>
+        public void RequestUnload() {
+            if (isLocalPlayer) this.CmdUnload();
+        }
+
+        [Command]
+        private void CmdUnload() {
+            this.ServerStartHeldUnload();
+        }
+
+        /// <summary>Corps serveur du vidage de l'arme TENUE (resync TargetAmmo). Partagé
+        /// entre CmdUnload (carte d'inventaire) et CmdUnloadItem quand l'entityId visé
+        /// s'avère être l'arme en main.</summary>
+        private void ServerStartHeldUnload() {
+            if (this.serverUnloading || this.serverColdOp) return;
+            if (this.serverReloadConsuming || NetworkTime.time < this.serverReloadingUntil) return;
+
+            string roomId = PlayerRoomTracker.Instance != null
+                ? PlayerRoomTracker.Instance.GetRoom(connectionToClient)
+                : null;
+            if (ServerItemManager.Instance == null
+                || !ServerItemManager.Instance.TryGetHeldWeapon(netId, roomId, out int weaponEntityId, out WeaponConfig cfg)) return;
+
+            int loaded = ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg);
+            if (loaded <= 0) {
+                this.TargetAmmo(0);
+                return;
+            }
+
+            // Chargeur vidé IMMÉDIATEMENT (aucun tir possible pendant le rangement async),
+            // puis les balles sont rangées ; ce qui n'a pas trouvé de place revient au chargeur.
+            ServerItemManager.Instance.SetWeaponLoadedAmmo(weaponEntityId, 0);
+            this.TargetAmmo(0);
+            this.serverUnloading = true;
+            ServerItemManager.Instance.StashAmmoRounds(connectionToClient, cfg.AmmoCategory, loaded, stashed => {
+                if (this == null) return; // joueur déconnecté pendant l'aller-retour backend
+                this.serverUnloading = false;
+                this.serverNextReserveSync = 0; // réserve changée (balles rangées)
+                int back = loaded - stashed;
+                if (back > 0) {
+                    int current = ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg);
+                    int restored = Mathf.Min(cfg.MagazineSize, current + back);
+                    ServerItemManager.Instance.SetWeaponLoadedAmmo(weaponEntityId, restored);
+                    this.TargetAmmo(restored);
+                }
+                ServerItemManager.Instance.ResyncInventoryViews(connectionToClient);
+                if (stashed <= 0) this.TargetUnloadResult("Aucune place pour les balles");
+                else GameLogger.Player.Info("WeaponUnloaded {PlayerNetId} {Category} {Rounds}", netId, cfg.AmmoCategory, stashed);
+            });
+        }
+
+        // ── Opérations « à froid » (carte d'inventaire — pure logistique) ──────────
+        // Recharge/vidage data-only d'une arme identifiée par entityId, SANS animation ni
+        // timer, où que soit l'arme : poche, main, conteneur ouvert (meuble, sac, colis).
+        // L'état du chargeur vit sur l'ITEM serveur, le résultat revient par les snapshots
+        // (LoadedAmmo) + TargetAmmo si l'arme est tenue. Le flux ANIMÉ ne subsiste que sur
+        // la touche R en jeu (inventaire fermé). Le flag sérialise avec les flux tenus
+        // (mêmes piles de munitions touchées).
+        private bool serverColdOp;
+
+        /// <summary>Recharge logistique demandée depuis la carte d'inventaire (entityId de
+        /// la ligne d'arme — poche, main ou conteneur ouvert).</summary>
+        public void RequestReloadItem(int entityId) {
+            if (isLocalPlayer) this.CmdReloadItem(entityId);
+        }
+
+        /// <summary>Vidage logistique demandé depuis la carte d'inventaire (entityId de
+        /// la ligne d'arme — poche, main ou conteneur ouvert).</summary>
+        public void RequestUnloadItem(int entityId) {
+            if (isLocalPlayer) this.CmdUnloadItem(entityId);
+        }
+
+        [Command]
+        private void CmdReloadItem(int entityId) {
+            if (this.serverUnloading || this.serverColdOp) return;
+            if (this.serverReloadConsuming || NetworkTime.time < this.serverReloadingUntil) return;
+
+            string roomId = PlayerRoomTracker.Instance != null
+                ? PlayerRoomTracker.Instance.GetRoom(connectionToClient)
+                : null;
+            if (ServerItemManager.Instance == null
+                || !ServerItemManager.Instance.TryGetAccessibleWeapon(netId, roomId, entityId, out WeaponConfig cfg)) return;
+
+            int needed = cfg.MagazineSize - ServerItemManager.Instance.GetWeaponLoadedAmmo(entityId, cfg);
+            if (needed <= 0) return; // déjà plein
+
+            this.serverColdOp = true;
+            ServerItemManager.Instance.ConsumeAmmoRounds(connectionToClient, cfg.AmmoCategory, needed, (consumed, error) => {
+                if (this == null) return; // joueur déconnecté pendant l'aller-retour backend
+                this.serverColdOp = false;
+                this.serverNextReserveSync = 0; // réserve changée (balles consommées)
+                if (consumed <= 0) {
+                    this.TargetUnloadResult(error);
+                    return;
+                }
+                int loaded = Mathf.Min(cfg.MagazineSize,
+                    ServerItemManager.Instance.GetWeaponLoadedAmmo(entityId, cfg) + consumed);
+                ServerItemManager.Instance.SetWeaponLoadedAmmo(entityId, loaded);
+                this.ResyncIfNowHeld(entityId, loaded);
+                ServerItemManager.Instance.ResyncInventoryViews(connectionToClient);
+                GameLogger.Player.Info("WeaponColdReloaded {PlayerNetId} {Category} {Loaded}", netId, cfg.AmmoCategory, loaded);
+            });
+        }
+
+        /// <summary>Si l'arme visée par une opération « à froid » est (ou devient, pendant
+        /// l'aller-retour backend) l'arme TENUE, resynchronise le compteur owner
+        /// (TargetAmmo) pour que le HUD et le blocage de tir local suivent le chargeur.</summary>
+        private void ResyncIfNowHeld(int entityId, int loaded) {
+            string roomId = PlayerRoomTracker.Instance != null
+                ? PlayerRoomTracker.Instance.GetRoom(connectionToClient)
+                : null;
+            if (ServerItemManager.Instance.TryGetHeldWeapon(netId, roomId, out int heldEntityId, out _)
+                && ServerItemManager.Instance.IsSameDbItem(heldEntityId, entityId))
+                this.TargetAmmo(loaded);
+        }
+
+        [Command]
+        private void CmdUnloadItem(int entityId) {
+            if (this.serverUnloading || this.serverColdOp) return;
+            if (this.serverReloadConsuming || NetworkTime.time < this.serverReloadingUntil) return;
+
+            string roomId = PlayerRoomTracker.Instance != null
+                ? PlayerRoomTracker.Instance.GetRoom(connectionToClient)
+                : null;
+            if (ServerItemManager.Instance == null
+                || !ServerItemManager.Instance.TryGetAccessibleWeapon(netId, roomId, entityId, out WeaponConfig cfg)) return;
+
+            int loaded = ServerItemManager.Instance.GetWeaponLoadedAmmo(entityId, cfg);
+            if (loaded <= 0) return;
+
+            // Même protocole que le flux tenu : chargeur vidé AVANT le rangement async,
+            // le reliquat non rangé revient au chargeur à la fin. Arme tenue → le tir est
+            // bloqué immédiatement des deux côtés (chargeur à 0 + TargetAmmo).
+            ServerItemManager.Instance.SetWeaponLoadedAmmo(entityId, 0);
+            this.ResyncIfNowHeld(entityId, 0);
+            this.serverColdOp = true;
+            ServerItemManager.Instance.StashAmmoRounds(connectionToClient, cfg.AmmoCategory, loaded, stashed => {
+                if (this == null) return; // joueur déconnecté pendant l'aller-retour backend
+                this.serverColdOp = false;
+                this.serverNextReserveSync = 0; // réserve changée (balles rangées)
+                int back = loaded - stashed;
+                if (back > 0) {
+                    int current = ServerItemManager.Instance.GetWeaponLoadedAmmo(entityId, cfg);
+                    ServerItemManager.Instance.SetWeaponLoadedAmmo(entityId, Mathf.Min(cfg.MagazineSize, current + back));
+                }
+                this.ResyncIfNowHeld(entityId, ServerItemManager.Instance.GetWeaponLoadedAmmo(entityId, cfg));
+                ServerItemManager.Instance.ResyncInventoryViews(connectionToClient);
+                if (stashed <= 0) this.TargetUnloadResult("Aucune place pour les balles");
+                else GameLogger.Player.Info("WeaponColdUnloaded {PlayerNetId} {Category} {Rounds}", netId, cfg.AmmoCategory, stashed);
+            });
+        }
+
+        [TargetRpc]
+        private void TargetUnloadResult(string error) {
+            if (!string.IsNullOrEmpty(error)) WorldToastManager.ShowError(error);
         }
 
         [TargetRpc]
         private void TargetAmmo(int loaded) {
             this.localLoadedAmmo = loaded;
+            RefreshInventoryCard();
         }
 
         [TargetRpc]
         private void TargetAmmoReserve(int rounds) {
             this.localAmmoReserve = rounds;
+            RefreshInventoryCard();
         }
 
         [TargetRpc]
         private void TargetReloadResult(bool success, string error) {
-            if (success) return;
-            this.localReloadingUntil = 0f; // déverrouille le tir local
-            if (!string.IsNullOrEmpty(error)) WorldToastManager.ShowError(error);
+            if (!success) {
+                this.localReloadingUntil = 0f; // déverrouille le tir local
+                if (!string.IsNullOrEmpty(error)) WorldToastManager.ShowError(error);
+            }
+            RefreshInventoryCard();
+        }
+
+        /// <summary>Chargeur ou réserve resynchronisés par le serveur : la carte de détail
+        /// de l'inventaire (si ouvert) re-filtre ses boutons Recharger / Vider le chargeur
+        /// — sans ça un bouton périmé survit à la fin d'un rechargement.</summary>
+        private static void RefreshInventoryCard() {
+            var inv = HUDManager.Instance != null ? HUDManager.Instance.InventoryUI : null;
+            if (inv != null && inv.gameObject.activeInHierarchy) inv.RefreshDetailCard();
         }
 
         [Command]
@@ -644,12 +850,41 @@ namespace Sim {
                 return;
             }
 
-            // Rechargement en cours : aucun tir.
-            if (this.serverReloadConsuming || NetworkTime.time < this.serverReloadingUntil) return;
+            // Toute validation AVANT la consommation : un tir refusé ne brûle JAMAIS de
+            // balle, et l'owner est resynchronisé (TargetAmmo) pour annuler le décompte
+            // optimiste qu'il a déjà fait — sinon le HUD « consomme » des balles sans tir.
 
-            // Cadence revalidée serveur (petite tolérance réseau).
-            if (NetworkTime.time < this.serverNextFireTime) return;
-            this.serverNextFireTime = NetworkTime.time + cfg.FireInterval * 0.9f;
+            // Rechargement en cours : aucun tir.
+            if (this.serverReloadConsuming || NetworkTime.time < this.serverReloadingUntil) {
+                this.TargetAmmo(ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg));
+                return;
+            }
+
+            // Cadence revalidée serveur, en « seau à jetons » : les Commands arrivent par
+            // PAQUETS (batching Mirror, host à bas FPS qui traite plusieurs commandes dans
+            // la même frame) — un contrôle sec tir-à-tir rejette des tirs légitimes. On
+            // tolère jusqu'à deux cadences d'avance ; la MOYENNE reste bornée par l'arme.
+            double now = NetworkTime.time;
+            if (this.serverNextFireTime < now) this.serverNextFireTime = now;
+            if (this.serverNextFireTime - now > cfg.FireInterval * 2f) {
+                this.TargetAmmo(ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg));
+                return;
+            }
+            this.serverNextFireTime += cfg.FireInterval * 0.9f;
+
+            if (direction.sqrMagnitude < 0.5f) return;
+            direction.Normalize();
+
+            // Origine plausible : la bouche du canon doit rester proche du corps du tireur
+            // CÔTÉ SERVEUR. En mouvement, la position serveur retarde sur le client
+            // (interpolation NetworkTransform, host à bas FPS) et peut dépasser la tolérance :
+            // plutôt que REJETER le tir, on RÉ-ANCRE l'origine à hauteur d'épaule sur la
+            // position serveur — le coup part toujours, et tricher sur l'origine ne
+            // téléporte pas le tir (les effets clients partent du canon local de toute façon).
+            if ((origin - this.transform.position).sqrMagnitude > MaxOriginDistance * MaxOriginDistance) {
+                GameLogger.Player.Info("FireOriginReanchored {PlayerNetId}", netId);
+                origin = this.transform.position + Vector3.up * 1.4f;
+            }
 
             // Chargeur : une balle par tir, vide = refus (le client gate déjà — resync au cas où).
             int loadedAmmo = ServerItemManager.Instance.GetWeaponLoadedAmmo(weaponEntityId, cfg);
@@ -659,14 +894,6 @@ namespace Sim {
             }
             ServerItemManager.Instance.SetWeaponLoadedAmmo(weaponEntityId, loadedAmmo - 1);
             this.TargetAmmo(loadedAmmo - 1);
-
-            // Origine plausible : la bouche du canon doit rester proche du corps du tireur.
-            if ((origin - this.transform.position).sqrMagnitude > MaxOriginDistance * MaxOriginDistance) {
-                GameLogger.Player.Warning("FireRejected_Origin {PlayerNetId}", netId);
-                return;
-            }
-            if (direction.sqrMagnitude < 0.5f) return;
-            direction.Normalize();
 
             Vector3 end = origin + direction * cfg.MaxRange;
             Vector3 hitNormal = -direction;

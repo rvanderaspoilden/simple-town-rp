@@ -135,7 +135,7 @@ public class ServerItemManager
         public int    EntityId;
         public int    ConfigId;
         public int    SlotIndex;
-        public int    Quantity = 1;   // invariant: 1 (poche = 1 item/slot, jamais de stack). Kept pour symétrie.
+        public int    Quantity = 1;   // ≥1 : un slot de poche porte UNE ligne, mais une ligne peut être une PILE (munitions…).
         public string ItemUuid;
         public int    Version;
     }
@@ -631,6 +631,15 @@ public class ServerItemManager
             : ResolveHand(config, playerNetId);
         if (!assignedHand.HasValue)
         {
+            // Item empilable (munitions…) : fusion d'abord dans une pile de poche existante
+            // de même config avec de la place — sinon le flux slot-libre classique.
+            if (config != null && config.AllowedInPocket && config.MaxStackSize > 1
+                && TryGetPocketStackTarget(playerNetId, config.ID, config.MaxStackSize, out PocketSession stackPocket, out _)) {
+                ApiManager.Instance?.StartCoroutine(
+                    PickupStackToPocketCoroutine(conn, roomId, msg.EntityId, entity, config, stackPocket));
+                return;
+            }
+
             // Main occupée (ou item jamais équipable, ex. munitions) : tout item
             // pocketable part dans un slot de poche libre — comportement « inventaire
             // classique ». Sinon le sac tenu via le fallback colis ci-dessous.
@@ -1232,10 +1241,20 @@ public class ServerItemManager
             return;
         }
 
+        // Munitions : spawn admin directement en inventaire par pile de 30 balles
+        // (fusion dans les piles existantes) — un item-monde d'UNE balle serait inutilisable.
+        ItemConfig cfg = DatabaseManager.GetItemConfigById(msg.ItemConfigId);
+        if (cfg is AmmoConfig ammoCfg) {
+            StashAmmoRounds(conn, ammoCfg.AmmoCategory, 30, added => {
+                GameLogger.Network.Info("Ammo AdminSpawn configId={ItemConfigId} rounds={Rounds} conn={ConnId}",
+                    msg.ItemConfigId, added, conn.connectionId);
+            });
+            return;
+        }
+
         // Un item-conteneur (« package ») doit être PERSISTÉ (UUID DB) pour porter sa
         // place "item_container:{uuid}" → on le spawn directement en main (DB-backed),
         // pas en item monde éphémère.
-        ItemConfig cfg = DatabaseManager.GetItemConfigById(msg.ItemConfigId);
         if (ItemContainerConfig.Of(cfg)?.IsContainer == true) {
             int handEntity = SpawnItemInHand(roomId, msg.ItemConfigId, conn, cfg, persistent: true);
             GameLogger.Network.Info("Package AdminSpawn entity={EntityId} configId={ItemConfigId} room={RoomId} conn={ConnId}",
@@ -1898,6 +1917,60 @@ public class ServerItemManager
         return false;
     }
 
+    /// <summary>Arme à feu ACCESSIBLE par CE joueur, identifiée par entityId : ligne de
+    /// poche, item qu'il tient en main (projection hotbar ou encombrant), ou ligne d'un
+    /// conteneur qu'il a OUVERT (meuble/coffre ou sac/colis). Consommé par les opérations
+    /// « à froid » recharger/vider de la carte d'inventaire — l'accès en lecture/écriture
+    /// du chargeur suit exactement ce que le joueur pourrait déjà prendre en main.</summary>
+    public bool TryGetAccessibleWeapon(uint playerNetId, string roomId, int entityId, out WeaponConfig config)
+    {
+        config = null;
+        if (_pocketByPlayer.TryGetValue(playerNetId, out var pocket)
+            && pocket.ItemsByEntityId.TryGetValue(entityId, out var pi)) {
+            config = DatabaseManager.GetItemConfigById(pi.ConfigId) as WeaponConfig;
+            return config != null;
+        }
+        if (roomId != null && TryGetEntity(roomId, entityId, out var entity) && entity.HolderNetId == playerNetId) {
+            config = DatabaseManager.GetItemConfigById(entity.ItemConfigId) as WeaponConfig;
+            return config != null;
+        }
+        if (_openContainerByPlayer.TryGetValue(playerNetId, out var cs)
+            && cs.ItemsByEntityId.TryGetValue(entityId, out var ci) && !ci.IsProp) {
+            config = DatabaseManager.GetItemConfigById(ci.ConfigId) as WeaponConfig;
+            return config != null;
+        }
+        if (_openItemContainerByPlayer.TryGetValue(playerNetId, out var ics)
+            && ics.ItemsByEntityId.TryGetValue(entityId, out var ii) && !ii.IsProp) {
+            config = DatabaseManager.GetItemConfigById(ii.ConfigId) as WeaponConfig;
+            return config != null;
+        }
+        return false;
+    }
+
+    /// <summary>Vrai si les deux entityIds adressent la même ligne DB (même uuid de
+    /// bridge) — ex. la projection main de l'arme tenue vs sa ligne de poche. Garde des
+    /// opérations « à froid » : une arme TENUE doit passer par le flux animé.</summary>
+    public bool IsSameDbItem(int entityIdA, int entityIdB)
+    {
+        if (entityIdA == entityIdB) return true;
+        var a = GetBridge(entityIdA);
+        var b = GetBridge(entityIdB);
+        return a != null && b != null && !string.IsNullOrEmpty(a.Uuid) && a.Uuid == b.Uuid;
+    }
+
+    /// <summary>Re-pousse TOUTES les vues d'inventaire du joueur (poche + conteneur
+    /// meuble ouvert + sac/colis ouvert) — à appeler après un changement d'état qui n'est
+    /// porté QUE par les snapshots (ex. LoadedAmmo d'une arme après un rechargement/vidage
+    /// « à froid »), pour que la carte de détail client se rafraîchisse où que soit l'arme.</summary>
+    public void ResyncInventoryViews(NetworkConnectionToClient conn)
+    {
+        if (conn?.identity == null) return;
+        uint netId = conn.identity.netId;
+        if (_pocketByPlayer.TryGetValue(netId, out var pocket)) SendPocketSnapshot(conn, pocket);
+        if (_openContainerByPlayer.TryGetValue(netId, out var cs)) SendContainerSnapshot(conn, cs);
+        if (_openItemContainerByPlayer.TryGetValue(netId, out var ics)) SendItemContainerSnapshot(conn, ics);
+    }
+
     /// <summary>Les DEUX mains du joueur sont-elles vides ? Le sac porté sur le dos ne
     /// compte pas. Consommé par PlayerMelee.CmdPunch : le coup de poing n'est permis que
     /// mains nues.</summary>
@@ -2041,6 +2114,86 @@ public class ServerItemManager
         return false;
     }
 
+    /// <summary>Première pile de poche de la config donnée avec de la place restante
+    /// (qty &lt; max) et une ligne DB (fusion possible). Consommé par le ramassage empilable.</summary>
+    private bool TryGetPocketStackTarget(uint netId, int configId, int maxStack,
+        out PocketSession session, out PocketSessionItem pile) {
+        pile = null;
+        if (!_pocketByPlayer.TryGetValue(netId, out session)) return false;
+        foreach (var it in session.ItemsByEntityId.Values) {
+            if (it.ConfigId != configId || string.IsNullOrEmpty(it.ItemUuid)) continue;
+            if (Mathf.Max(1, it.Quantity) >= maxStack) continue;
+            pile = it;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>Ramassage d'un item-monde EMPILABLE avec fusion dans une pile de poche
+    /// existante : la quantité du monde (ligne DB, 1 si éphémère) est ABSORBÉE par la pile
+    /// (PATCH qty+n) et la ligne monde supprimée. Si la pile ne peut pas tout absorber, on
+    /// retombe sur le flux slot-libre classique (la pile reste intacte), sinon échec toast.</summary>
+    private IEnumerator PickupStackToPocketCoroutine(NetworkConnectionToClient conn, string roomId,
+        int entityId, ItemEntity entity, ItemConfig config, PocketSession pocket) {
+        uint netId = conn.identity != null ? conn.identity.netId : 0;
+        ItemDbBridge bridge = GetBridge(entityId);
+
+        // Quantité portée par l'item monde : lue en DB s'il est bridgé, 1 sinon.
+        int worldQty = 1;
+        if (bridge != null && !string.IsNullOrEmpty(bridge.Uuid)) {
+            UnityWebRequest getReq = ApiManager.Instance.GetItemRequest(bridge.Uuid);
+            yield return getReq.SendWebRequest();
+            if (getReq.responseCode == 200) {
+                try { var it = JsonConvert.DeserializeObject<ItemJson>(getReq.downloadHandler.text); if (it != null) worldQty = Mathf.Max(1, it.quantity); } catch { }
+            }
+        }
+
+        // La pile a pu bouger pendant l'aller-retour : re-résolution fraîche.
+        int max = Mathf.Max(1, config.MaxStackSize);
+        if (!TryGetPocketStackTarget(netId, config.ID, max, out _, out PocketSessionItem pile)
+            || Mathf.Max(1, pile.Quantity) + worldQty > max) {
+            // Fusion impossible (pile pleine / disparue / déborderait) : flux classique.
+            if (TryGetFreePocketSlot(netId, out PocketSession freePocket, out int freeSlot)) {
+                yield return PickupToPocketCoroutine(conn, roomId, entityId, entity, freePocket, freeSlot);
+            } else {
+                conn.Send(new S2C_PickupResult { Success = false, EntityId = entityId,
+                    ErrorMessage = config is AmmoConfig ? InventoryToasts.AmmoNoStorage : InventoryToasts.NoSpaceInInventory });
+            }
+            yield break;
+        }
+
+        // 1. PATCH pile += worldQty.
+        int pileQty = Mathf.Max(1, pile.Quantity);
+        var body = new UpdateItemBody { expectedVersion = pile.Version, quantity = pileQty + worldQty };
+        UnityWebRequest req = null;
+        yield return PatchItemWithResync(pile.ItemUuid, body, r => req = r);
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            conn.Send(new S2C_PickupResult { Success = false, EntityId = entityId, ErrorMessage = "Objet introuvable" });
+            yield break;
+        }
+        int v = body.expectedVersion + 1;
+        try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) v = it.version; } catch { }
+        pile.Quantity = pileQty + worldQty;
+        pile.Version = v;
+        if (_bridges.TryGetValue(pile.EntityId, out var pileBr)) pileBr.Version = v;
+
+        // 2. La ligne monde est absorbée → DELETE (bridgé) puis retrait de l'entité.
+        if (bridge != null && !string.IsNullOrEmpty(bridge.Uuid)) {
+            UnityWebRequest del = ApiManager.Instance.DeleteItemRequest(bridge.Uuid);
+            yield return del.SendWebRequest();
+            if (del.responseCode < 200 || del.responseCode >= 300)
+                Debug.LogWarning($"[ServerItemManager] PickupStack DELETE monde failed code={del.responseCode} uuid={bridge.Uuid}");
+        }
+        if (_rooms.TryGetValue(roomId, out var roomItems) && roomItems.Remove(entityId))
+            BroadcastToRoom(roomId, new S2C_DestroyItem { EntityId = entityId, RoomId = roomId });
+        _bridges.Remove(entityId);
+
+        SendPocketSnapshot(conn, pocket);
+        conn.Send(new S2C_PickupResult { Success = true, EntityId = entityId });
+        GameLogger.Network.Info("Item PickupStackToPocket netId={NetId} config={ConfigId} qty={Qty} pileUuid={Uuid}",
+            netId, config.ID, worldQty, pile.ItemUuid);
+    }
+
     /// <summary>Ramassage d'un item-monde DIRECTEMENT vers une poche — pour les items jamais
     /// équipables en main (munitions). Item bridgé → PATCH de sa ligne vers la place poche
     /// (uuid conservé) ; éphémère → nouvelle ligne. L'entité monde est retirée de la room en
@@ -2051,6 +2204,7 @@ public class ServerItemManager
         int entityId, ItemEntity entity, PocketSession pocket, int slotIndex) {
         string itemUuid = null;
         int version = 0;
+        int quantity = 1;
         ItemDbBridge bridge = GetBridge(entityId);
 
         if (bridge != null && !string.IsNullOrEmpty(bridge.Uuid)) {
@@ -2069,7 +2223,11 @@ public class ServerItemManager
             }
             itemUuid = bridge.Uuid;
             version = body.expectedVersion + 1;
-            try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) version = it.version; } catch { }
+            // Une pile lâchée au sol garde sa quantité en DB : on la reprend telle quelle.
+            try {
+                var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
+                if (it != null) { version = it.version; quantity = Mathf.Max(1, it.quantity); }
+            } catch { }
         } else {
             string charId = conn.identity != null ? conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id : null;
             var body = new CreateItemBody {
@@ -2093,7 +2251,7 @@ public class ServerItemManager
         int pocketEntityId = _nextEntityId++;
         pocket.ItemsByEntityId[pocketEntityId] = new PocketSessionItem {
             EntityId = pocketEntityId, ConfigId = entity.ItemConfigId, SlotIndex = slotIndex,
-            ItemUuid = itemUuid, Version = version, Quantity = 1,
+            ItemUuid = itemUuid, Version = version, Quantity = quantity,
         };
         pocket.SlotToEntityId[slotIndex] = pocketEntityId;
         if (!string.IsNullOrEmpty(itemUuid))
@@ -2573,133 +2731,137 @@ public class ServerItemManager
     }
 
     /// <summary>
-    /// Consomme UNE boîte de munitions de la famille <paramref name="category"/> dans
-    /// l'inventaire du joueur : sa POCHE d'abord (session déjà en mémoire), puis un
-    /// SAC/COLIS tenu en main (contenu lu en DB — stacks décrémentés). Asynchrone
-    /// (aller-retour backend) ; <paramref name="done"/>(succès, motif d'échec FR).
+    /// Consomme jusqu'à <paramref name="needed"/> BALLES de la famille <paramref name="category"/>
+    /// dans l'inventaire du joueur : sa POCHE d'abord (session en mémoire, piles décrémentées),
+    /// puis un SAC/COLIS tenu en main (session ouverte sinon lecture DB). Asynchrone
+    /// (aller-retour backend) ; <paramref name="done"/>(balles consommées, motif d'échec FR si 0).
     /// Le chargeur lui-même appartient à l'appelant (PlayerShooter) — ici on ne
-    /// détruit que l'item consommé et on re-pousse les snapshots d'UI concernés.
+    /// décrémente que les piles consommées et on re-pousse les snapshots d'UI concernés.
     /// </summary>
-    public void ConsumeAmmoItem(NetworkConnectionToClient conn, AmmoCategory category, System.Action<bool, string> done) {
-        if (conn?.identity == null || ApiManager.Instance == null) { done(false, "Pas de joueur"); return; }
-        ApiManager.Instance.StartCoroutine(ConsumeAmmoCoroutine(conn, category, done));
+    public void ConsumeAmmoRounds(NetworkConnectionToClient conn, AmmoCategory category, int needed,
+        System.Action<int, string> done) {
+        if (conn?.identity == null || ApiManager.Instance == null || needed <= 0) { done(0, "Pas de joueur"); return; }
+        ApiManager.Instance.StartCoroutine(ConsumeAmmoRoundsCoroutine(conn, category, needed, done));
     }
 
-    private IEnumerator ConsumeAmmoCoroutine(NetworkConnectionToClient conn, AmmoCategory category, System.Action<bool, string> done) {
+    private IEnumerator ConsumeAmmoRoundsCoroutine(NetworkConnectionToClient conn, AmmoCategory category,
+        int needed, System.Action<int, string> done) {
         uint netId = conn.identity.netId;
+        int consumed = 0;
 
-        // 1) POCHE : jamais de stack (invariant 1 item/slot) → DELETE sec.
+        // 1) POCHE : piles décrémentées (PATCH qty-take, pile vidée → DELETE).
         if (_pocketByPlayer.TryGetValue(netId, out var pocket)) {
-            PocketSessionItem found = null;
+            var pocketRows = new List<PocketSessionItem>();
             foreach (var it in pocket.ItemsByEntityId.Values) {
-                if (DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ammo && ammo.AmmoCategory == category) {
-                    found = it;
-                    break;
+                if (string.IsNullOrEmpty(it.ItemUuid)) continue;
+                if (DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ammo && ammo.AmmoCategory == category)
+                    pocketRows.Add(it);
+            }
+            bool pocketTouched = false;
+            foreach (var row in pocketRows) {
+                if (consumed >= needed) break;
+                int qty = Mathf.Max(1, row.Quantity);
+                int take = Mathf.Min(needed - consumed, qty);
+                bool rowOk = false; int newVersion = row.Version;
+                yield return ConsumeAmmoRow(row.ItemUuid, row.Version, qty, take, (ok, v) => { rowOk = ok; newVersion = v; });
+                // Ligne morte/désynchronisée (404/409) : on tente la suivante / le sac tenu.
+                if (!rowOk) continue;
+                consumed += take;
+                pocketTouched = true;
+                if (take >= qty) {
+                    pocket.ItemsByEntityId.Remove(row.EntityId);
+                    pocket.SlotToEntityId.Remove(row.SlotIndex);
+                    _bridges.Remove(row.EntityId);
+                } else {
+                    row.Quantity = qty - take;
+                    row.Version = newVersion;
+                    if (_bridges.TryGetValue(row.EntityId, out var br)) br.Version = newVersion;
                 }
             }
-            if (found != null) {
-                UnityWebRequest del = ApiManager.Instance.DeleteItemRequest(found.ItemUuid);
-                yield return del.SendWebRequest();
-                if (del.responseCode >= 200 && del.responseCode < 300) {
-                    pocket.ItemsByEntityId.Remove(found.EntityId);
-                    pocket.SlotToEntityId.Remove(found.SlotIndex);
-                    _bridges.Remove(found.EntityId);
-                    SendPocketSnapshot(conn, pocket);
-                    GameLogger.Network.Info("AmmoConsumed netId={NetId} category={Category} source=pocket uuid={Uuid}",
-                        netId, category, found.ItemUuid);
-                    done(true, null);
-                    yield break;
-                }
-                // Ligne morte/désynchronisée (404/409) : on tente encore le sac tenu.
-                Debug.LogWarning($"[ServerItemManager] ConsumeAmmo pocket DELETE failed code={del.responseCode} uuid={found.ItemUuid}");
-            }
+            if (pocketTouched) SendPocketSnapshot(conn, pocket);
         }
 
         // 2) SAC/COLIS TENU EN MAIN.
         string roomId = PlayerRoomTracker.Instance != null ? PlayerRoomTracker.Instance.GetRoom(conn) : null;
-        if (roomId != null && TryGetHeldPackage(netId, roomId, out _, out string pkgUuid, out _)) {
+        if (consumed < needed && roomId != null && TryGetHeldPackage(netId, roomId, out _, out string pkgUuid, out _)) {
             // 2a) Sa session est OUVERTE (UI affichée) : versions OCC déjà en mémoire.
             if (_openItemContainerByPlayer.TryGetValue(netId, out var ics) && ics.PackageItemUuid == pkgUuid) {
-                ContainerSessionItem entry = null;
+                var bagRows = new List<ContainerSessionItem>();
                 foreach (var it in ics.ItemsByEntityId.Values) {
-                    if (!it.IsProp && DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ammo
-                        && ammo.AmmoCategory == category) {
-                        entry = it;
-                        break;
+                    if (it.IsProp || string.IsNullOrEmpty(it.ItemUuid)) continue;
+                    if (DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ammo
+                        && ammo.AmmoCategory == category) bagRows.Add(it);
+                }
+                bool bagTouched = false;
+                foreach (var entry in bagRows) {
+                    if (consumed >= needed) break;
+                    int qty = Mathf.Max(1, entry.Quantity);
+                    int take = Mathf.Min(needed - consumed, qty);
+                    bool rowOk = false; int newVersion = entry.Version;
+                    yield return ConsumeAmmoRow(entry.ItemUuid, entry.Version, qty, take, (ok, v) => { rowOk = ok; newVersion = v; });
+                    if (!rowOk) continue;
+                    consumed += take;
+                    bagTouched = true;
+                    if (take >= qty) {
+                        ics.ItemsByEntityId.Remove(entry.EntityId);
+                        ics.SlotToEntityId.Remove(entry.SlotIndex);
+                        _bridges.Remove(entry.EntityId);
+                    } else {
+                        entry.Quantity = qty - take;
+                        entry.Version = newVersion;
+                        if (_bridges.TryGetValue(entry.EntityId, out var br)) br.Version = newVersion;
                     }
                 }
-                if (entry == null) { done(false, "Aucune munition compatible sur vous"); yield break; }
-
-                int qty = Mathf.Max(1, entry.Quantity);
-                bool rowOk = false; int newVersion = entry.Version;
-                yield return ConsumeAmmoRow(entry.ItemUuid, entry.Version, qty, (ok, v) => { rowOk = ok; newVersion = v; });
-                if (!rowOk) { done(false, "Munitions introuvables (réessayez)"); yield break; }
-
-                if (qty > 1) {
-                    entry.Quantity = qty - 1;
-                    entry.Version = newVersion;
-                    if (_bridges.TryGetValue(entry.EntityId, out var br)) br.Version = newVersion;
-                } else {
-                    ics.ItemsByEntityId.Remove(entry.EntityId);
-                    ics.SlotToEntityId.Remove(entry.SlotIndex);
-                    _bridges.Remove(entry.EntityId);
+                if (bagTouched) SendItemContainerSnapshot(conn, ics);
+            } else {
+                // 2b) Sac fermé : contenu lu en DB (place item_container:{uuid}, créée au besoin).
+                var createBody = new CreatePlaceBody { placeKey = "item_container:" + pkgUuid, type = "container", ownerId = pkgUuid };
+                UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
+                yield return createReq.SendWebRequest();
+                string placeId = null;
+                if (createReq.responseCode >= 200 && createReq.responseCode < 300) {
+                    try { placeId = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text)?.Id; } catch { }
                 }
-                SendItemContainerSnapshot(conn, ics);
-                GameLogger.Network.Info("AmmoConsumed netId={NetId} category={Category} source=openBag uuid={Uuid}",
-                    netId, category, entry.ItemUuid);
-                done(true, null);
-                yield break;
-            }
-
-            // 2b) Sac fermé : contenu lu en DB (place item_container:{uuid}, créée au besoin).
-            var createBody = new CreatePlaceBody { placeKey = "item_container:" + pkgUuid, type = "container", ownerId = pkgUuid };
-            UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
-            yield return createReq.SendWebRequest();
-            string placeId = null;
-            if (createReq.responseCode >= 200 && createReq.responseCode < 300) {
-                try { placeId = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text)?.Id; } catch { }
-            }
-            if (!string.IsNullOrEmpty(placeId)) {
-                UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
-                yield return stateReq.SendWebRequest();
-                ItemJson row = null;
-                if (stateReq.responseCode == 200) {
-                    try {
-                        var state = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
-                        if (state?.items != null) {
-                            foreach (var it in state.items) {
-                                if (DatabaseManager.GetItemConfigById(it.configId) is AmmoConfig ammo
-                                    && ammo.AmmoCategory == category) {
-                                    row = it;
-                                    break;
+                if (!string.IsNullOrEmpty(placeId)) {
+                    UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
+                    yield return stateReq.SendWebRequest();
+                    var rows = new List<ItemJson>();
+                    if (stateReq.responseCode == 200) {
+                        try {
+                            var state = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
+                            if (state?.items != null) {
+                                foreach (var it in state.items) {
+                                    if (DatabaseManager.GetItemConfigById(it.configId) is AmmoConfig ammo
+                                        && ammo.AmmoCategory == category) rows.Add(it);
                                 }
                             }
+                        } catch (System.Exception e) {
+                            Debug.LogWarning($"[ServerItemManager] ConsumeAmmo bag state parse: {e.Message}");
                         }
-                    } catch (System.Exception e) {
-                        Debug.LogWarning($"[ServerItemManager] ConsumeAmmo bag state parse: {e.Message}");
                     }
-                }
-                if (row != null) {
-                    bool rowOk = false;
-                    yield return ConsumeAmmoRow(row.Id, row.version, Mathf.Max(1, row.quantity), (ok, _) => rowOk = ok);
-                    if (rowOk) {
-                        GameLogger.Network.Info("AmmoConsumed netId={NetId} category={Category} source=bag uuid={Uuid}",
-                            netId, category, row.Id);
-                        done(true, null);
-                        yield break;
+                    foreach (var row in rows) {
+                        if (consumed >= needed) break;
+                        int qty = Mathf.Max(1, row.quantity);
+                        int take = Mathf.Min(needed - consumed, qty);
+                        bool rowOk = false;
+                        yield return ConsumeAmmoRow(row.Id, row.version, qty, take, (ok, _) => rowOk = ok);
+                        if (rowOk) consumed += take;
                     }
                 }
             }
         }
 
-        done(false, "Aucune munition compatible sur vous");
+        if (consumed > 0)
+            GameLogger.Network.Info("AmmoConsumed netId={NetId} category={Category} rounds={Rounds} needed={Needed}",
+                netId, category, consumed, needed);
+        done(consumed, consumed > 0 ? null : "Aucune munition compatible sur vous");
     }
 
-    /// <summary>Compte les BALLES de réserve du joueur pour l'arme donnée : boîtes de
-    /// munitions compatibles dans la poche + le sac/colis tenu (exactement ce que le
-    /// rechargement peut consommer), une boîte valant un chargeur plein (magazineSize).
-    /// Async (un sac fermé se lit en DB) ; <paramref name="done"/>(balles). Affichage HUD
-    /// uniquement — la consommation réelle revalide tout au moment du reload.</summary>
+    /// <summary>Compte les BALLES de réserve du joueur pour l'arme donnée : piles de balles
+    /// compatibles dans la poche + le sac/colis tenu (exactement ce que le rechargement
+    /// peut consommer), en unités. Async (un sac fermé se lit en DB) ;
+    /// <paramref name="done"/>(balles). Affichage HUD uniquement — la consommation réelle
+    /// revalide tout au moment du reload.</summary>
     public void CountAmmoReserve(NetworkConnectionToClient conn, WeaponConfig weapon, System.Action<int> done) {
         if (conn?.identity == null || ApiManager.Instance == null || weapon == null) { done(0); return; }
         ApiManager.Instance.StartCoroutine(CountAmmoReserveCoroutine(conn, weapon, done));
@@ -2707,13 +2869,13 @@ public class ServerItemManager
 
     private IEnumerator CountAmmoReserveCoroutine(NetworkConnectionToClient conn, WeaponConfig weapon, System.Action<int> done) {
         uint netId = conn.identity.netId;
-        int boxes = 0;
+        int rounds = 0;
 
         // Poche (session en mémoire).
         if (_pocketByPlayer.TryGetValue(netId, out var pocket)) {
             foreach (var it in pocket.ItemsByEntityId.Values) {
                 if (DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ammo
-                    && ammo.AmmoCategory == weapon.AmmoCategory) boxes += Mathf.Max(1, it.Quantity);
+                    && ammo.AmmoCategory == weapon.AmmoCategory) rounds += Mathf.Max(1, it.Quantity);
             }
         }
 
@@ -2723,7 +2885,7 @@ public class ServerItemManager
             if (_openItemContainerByPlayer.TryGetValue(netId, out var ics) && ics.PackageItemUuid == pkgUuid) {
                 foreach (var it in ics.ItemsByEntityId.Values) {
                     if (!it.IsProp && DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ammo
-                        && ammo.AmmoCategory == weapon.AmmoCategory) boxes += Mathf.Max(1, it.Quantity);
+                        && ammo.AmmoCategory == weapon.AmmoCategory) rounds += Mathf.Max(1, it.Quantity);
                 }
             } else {
                 var createBody = new CreatePlaceBody { placeKey = "item_container:" + pkgUuid, type = "container", ownerId = pkgUuid };
@@ -2742,7 +2904,7 @@ public class ServerItemManager
                             if (state?.items != null) {
                                 foreach (var it in state.items) {
                                     if (DatabaseManager.GetItemConfigById(it.configId) is AmmoConfig ammo
-                                        && ammo.AmmoCategory == weapon.AmmoCategory) boxes += Mathf.Max(1, it.quantity);
+                                        && ammo.AmmoCategory == weapon.AmmoCategory) rounds += Mathf.Max(1, it.quantity);
                                 }
                             }
                         } catch { }
@@ -2751,14 +2913,15 @@ public class ServerItemManager
             }
         }
 
-        done(boxes * weapon.MagazineSize);
+        done(rounds);
     }
 
-    /// <summary>Retire UNE unité de la ligne d'item munitions : stack → PATCH quantity-1
-    /// (OCC), dernière unité → DELETE. <paramref name="cb"/>(ok, nouvelle version OCC).</summary>
-    private IEnumerator ConsumeAmmoRow(string uuid, int version, int quantity, System.Action<bool, int> cb) {
-        if (quantity > 1) {
-            var body = new UpdateItemBody { expectedVersion = version, quantity = quantity - 1 };
+    /// <summary>Retire <paramref name="take"/> unités de la ligne d'item munitions : pile
+    /// entamée → PATCH quantity-take (OCC), pile vidée → DELETE.
+    /// <paramref name="cb"/>(ok, nouvelle version OCC).</summary>
+    private IEnumerator ConsumeAmmoRow(string uuid, int version, int quantity, int take, System.Action<bool, int> cb) {
+        if (quantity > take) {
+            var body = new UpdateItemBody { expectedVersion = version, quantity = quantity - take };
             UnityWebRequest patch = ApiManager.Instance.UpdateItemRequest(uuid, body);
             yield return patch.SendWebRequest();
             if (patch.responseCode < 200 || patch.responseCode >= 300) {
@@ -2776,6 +2939,200 @@ public class ServerItemManager
             if (!ok) Debug.LogWarning($"[ServerItemManager] ConsumeAmmoRow DELETE failed code={del.responseCode} uuid={uuid}");
             cb(ok, version);
         }
+    }
+
+    /// <summary>
+    /// Range <paramref name="count"/> BALLES de la famille <paramref name="category"/> dans
+    /// l'inventaire du joueur (vidage de chargeur, spawn admin) : fusion dans les piles de
+    /// poche existantes, puis nouveaux slots de poche libres, puis le sac/colis tenu
+    /// (session ouverte sinon lecture DB). Asynchrone ; <paramref name="done"/>(balles
+    /// rangées) — partiel si tout est plein, 0 = rien n'a pu être rangé.
+    /// </summary>
+    public void StashAmmoRounds(NetworkConnectionToClient conn, AmmoCategory category, int count, System.Action<int> done) {
+        AmmoConfig cfg = FindAmmoConfig(category);
+        if (conn?.identity == null || ApiManager.Instance == null || cfg == null || count <= 0) { done(0); return; }
+        ApiManager.Instance.StartCoroutine(StashAmmoRoundsCoroutine(conn, cfg, count, done));
+    }
+
+    /// <summary>Config de l'item « balles » servant la famille donnée (106/107/108), null si absente.</summary>
+    private static AmmoConfig FindAmmoConfig(AmmoCategory category) {
+        foreach (var cfg in DatabaseManager.ItemConfigs)
+            if (cfg is AmmoConfig ammo && ammo.AmmoCategory == category) return ammo;
+        return null;
+    }
+
+    private IEnumerator StashAmmoRoundsCoroutine(NetworkConnectionToClient conn, AmmoConfig cfg, int count,
+        System.Action<int> done) {
+        uint netId = conn.identity.netId;
+        string charId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+        int remaining = count;
+        int max = Mathf.Max(1, cfg.MaxStackSize);
+
+        // 1) POCHE — fusion dans les piles entamées, puis nouveaux slots libres.
+        if (_pocketByPlayer.TryGetValue(netId, out var pocket)) {
+            bool touched = false;
+            var piles = new List<PocketSessionItem>();
+            foreach (var it in pocket.ItemsByEntityId.Values)
+                if (it.ConfigId == cfg.ID && Mathf.Max(1, it.Quantity) < max && !string.IsNullOrEmpty(it.ItemUuid))
+                    piles.Add(it);
+            foreach (var pile in piles) {
+                if (remaining <= 0) break;
+                int qty = Mathf.Max(1, pile.Quantity);
+                int add = Mathf.Min(remaining, max - qty);
+                var body = new UpdateItemBody { expectedVersion = pile.Version, quantity = qty + add };
+                UnityWebRequest req = null;
+                yield return PatchItemWithResync(pile.ItemUuid, body, r => req = r);
+                if (req.responseCode < 200 || req.responseCode >= 300) continue;
+                int v = body.expectedVersion + 1;
+                try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) v = it.version; } catch { }
+                pile.Quantity = qty + add;
+                pile.Version = v;
+                if (_bridges.TryGetValue(pile.EntityId, out var br)) br.Version = v;
+                remaining -= add;
+                touched = true;
+            }
+            while (remaining > 0 && TryGetFreePocketSlot(netId, out _, out int slot)) {
+                int add = Mathf.Min(remaining, max);
+                var body = new CreateItemBody {
+                    placeId = pocket.PlaceId, configId = cfg.ID, quantity = add, ownedBy = charId,
+                    stateData = new Dictionary<string, object> { { "slotIndex", slot } },
+                };
+                UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+                yield return req.SendWebRequest();
+                if (req.responseCode < 200 || req.responseCode >= 300) break;
+                string uuid = null; int v = 1;
+                try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) { uuid = it.Id; v = it.version; } } catch { }
+                int entityId = _nextEntityId++;
+                pocket.ItemsByEntityId[entityId] = new PocketSessionItem {
+                    EntityId = entityId, ConfigId = cfg.ID, SlotIndex = slot,
+                    ItemUuid = uuid, Version = v, Quantity = add,
+                };
+                pocket.SlotToEntityId[slot] = entityId;
+                if (!string.IsNullOrEmpty(uuid))
+                    _bridges[entityId] = new ItemDbBridge { Uuid = uuid, Version = v, PlaceId = pocket.PlaceId };
+                remaining -= add;
+                touched = true;
+            }
+            if (touched) SendPocketSnapshot(conn, pocket);
+        }
+
+        // 2) SAC/COLIS TENU — session ouverte (mémoire) sinon lecture DB.
+        string roomId = PlayerRoomTracker.Instance != null ? PlayerRoomTracker.Instance.GetRoom(conn) : null;
+        if (remaining > 0 && roomId != null
+            && TryGetHeldPackage(netId, roomId, out _, out string pkgUuid, out ContainerConfig pkgCfg)
+            && pkgCfg.Accepts(cfg.Type)) {
+            if (_openItemContainerByPlayer.TryGetValue(netId, out var ics) && ics.PackageItemUuid == pkgUuid) {
+                bool touched = false;
+                var piles = new List<ContainerSessionItem>();
+                foreach (var it in ics.ItemsByEntityId.Values)
+                    if (!it.IsProp && it.ConfigId == cfg.ID && Mathf.Max(1, it.Quantity) < max
+                        && !string.IsNullOrEmpty(it.ItemUuid)) piles.Add(it);
+                foreach (var pile in piles) {
+                    if (remaining <= 0) break;
+                    int qty = Mathf.Max(1, pile.Quantity);
+                    int add = Mathf.Min(remaining, max - qty);
+                    var body = new UpdateItemBody { expectedVersion = pile.Version, quantity = qty + add };
+                    UnityWebRequest req = null;
+                    yield return PatchItemWithResync(pile.ItemUuid, body, r => req = r);
+                    if (req.responseCode < 200 || req.responseCode >= 300) continue;
+                    int v = body.expectedVersion + 1;
+                    try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) v = it.version; } catch { }
+                    pile.Quantity = qty + add;
+                    pile.Version = v;
+                    if (_bridges.TryGetValue(pile.EntityId, out var br)) br.Version = v;
+                    remaining -= add;
+                    touched = true;
+                }
+                while (remaining > 0) {
+                    int free = -1;
+                    for (int i = 0; i < ics.Config.SlotCount; i++)
+                        if (!ics.SlotToEntityId.ContainsKey(i)) { free = i; break; }
+                    if (free < 0) break;
+                    int add = Mathf.Min(remaining, max);
+                    var body = new CreateItemBody {
+                        placeId = ics.PlaceId, configId = cfg.ID, quantity = add, ownedBy = charId,
+                        stateData = new Dictionary<string, object> { { "slotIndex", free } },
+                    };
+                    UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+                    yield return req.SendWebRequest();
+                    if (req.responseCode < 200 || req.responseCode >= 300) break;
+                    string uuid = null; int v = 1;
+                    try { var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); if (it != null) { uuid = it.Id; v = it.version; } } catch { }
+                    int sid = _nextEntityId++;
+                    ics.ItemsByEntityId[sid] = new ContainerSessionItem {
+                        EntityId = sid, ConfigId = cfg.ID, SlotIndex = free, ItemUuid = uuid, Version = v, Quantity = add,
+                    };
+                    ics.SlotToEntityId[free] = sid;
+                    if (!string.IsNullOrEmpty(uuid))
+                        _bridges[sid] = new ItemDbBridge { Uuid = uuid, Version = v, PlaceId = ics.PlaceId };
+                    remaining -= add;
+                    touched = true;
+                }
+                if (touched) SendItemContainerSnapshot(conn, ics);
+            } else {
+                // Sac fermé : place + contenu lus en DB (créée au besoin, même flux que la consommation).
+                var createBody = new CreatePlaceBody {
+                    placeKey = "item_container:" + pkgUuid, type = "container", ownerId = pkgUuid,
+                    properties = new Dictionary<string, object> {
+                        { "slotCount",     pkgCfg.SlotCount },
+                        { "acceptedTypes", pkgCfg.AcceptedTypes.Select(t => (int)t).ToArray() },
+                    },
+                };
+                UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
+                yield return createReq.SendWebRequest();
+                string placeId = null;
+                if (createReq.responseCode >= 200 && createReq.responseCode < 300) {
+                    try { placeId = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text)?.Id; } catch { }
+                }
+                if (!string.IsNullOrEmpty(placeId)) {
+                    UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(placeId);
+                    yield return stateReq.SendWebRequest();
+                    var occupied = new HashSet<int>();
+                    var piles = new List<ItemJson>();
+                    if (stateReq.responseCode == 200) {
+                        try {
+                            var state = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
+                            if (state?.items != null) {
+                                foreach (var it in state.items) {
+                                    occupied.Add(ReadSlotIndex(it.stateData));
+                                    if (it.configId == cfg.ID && Mathf.Max(1, it.quantity) < max) piles.Add(it);
+                                }
+                            }
+                            if (state?.props != null) foreach (var p in state.props) occupied.Add(ReadSlotIndex(p.stateData));
+                        } catch (System.Exception e) {
+                            Debug.LogWarning($"[ServerItemManager] StashAmmo bag state parse: {e.Message}");
+                        }
+                        foreach (var pile in piles) {
+                            if (remaining <= 0) break;
+                            int qty = Mathf.Max(1, pile.quantity);
+                            int add = Mathf.Min(remaining, max - qty);
+                            var body = new UpdateItemBody { expectedVersion = pile.version, quantity = qty + add };
+                            UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(pile.Id, body);
+                            yield return req.SendWebRequest();
+                            if (req.responseCode < 200 || req.responseCode >= 300) continue;
+                            remaining -= add;
+                        }
+                        for (int i = 0; remaining > 0 && i < pkgCfg.SlotCount; i++) {
+                            if (occupied.Contains(i)) continue;
+                            int add = Mathf.Min(remaining, max);
+                            var body = new CreateItemBody {
+                                placeId = placeId, configId = cfg.ID, quantity = add, ownedBy = charId,
+                                stateData = new Dictionary<string, object> { { "slotIndex", i } },
+                            };
+                            UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+                            yield return req.SendWebRequest();
+                            if (req.responseCode < 200 || req.responseCode >= 300) break;
+                            remaining -= add;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (count - remaining > 0)
+            GameLogger.Network.Info("AmmoStashed netId={NetId} config={ConfigId} rounds={Rounds} asked={Asked}",
+                netId, cfg.ID, count - remaining, count);
+        done(count - remaining);
     }
 
     /// <summary>
@@ -4211,6 +4568,10 @@ public class ServerItemManager
         } else if (toCtx is ItemContainerPlaceContext icpc) {
             mergeable = icpc.TryResolveStackMerge(msg.ToSlotIndex, itemCtx.ConfigId,
                 out mergeTargetEntityId, out mergeTargetUuid, out mergeTargetVersion, out mergeTargetQty, out mergeMaxStack);
+        } else if (toCtx is PocketPlaceContext ppc) {
+            // La poche accepte les piles (munitions…) : une ligne par slot, quantité libre.
+            mergeable = ppc.TryResolveStackMerge(msg.ToSlotIndex, itemCtx.ConfigId,
+                out mergeTargetEntityId, out mergeTargetUuid, out mergeTargetVersion, out mergeTargetQty, out mergeMaxStack);
         }
         // Un item ne se merge pas avec lui-même (déposer le draggable sur son propre slot).
         if (mergeable && mergeTargetEntityId == msg.EntityId) mergeable = false;
@@ -4228,15 +4589,15 @@ public class ServerItemManager
 
         // Dispatch stratégie :
         //   - mergeable → MergeIntoTargetCoroutine (PATCH target += k ; PATCH source -=k OU DELETE+TearDown)
-        //   - source pile (qty>1) + cible Hand/Pocket → SplitOneToTargetCoroutine (POST qty=1 ; PATCH source -=1)
+        //   - source pile (qty>1) + cible MAIN → SplitOneToTargetCoroutine (POST qty=1 ; PATCH source -=1)
+        //     (la poche accepte les piles : une pile déposée sur un slot de poche LIBRE y va entière)
         //   - sinon → MoveItemCoroutine (PlainMove, préserve quantity)
         if (mergeable) {
             ApiManager.Instance?.StartCoroutine(MergeIntoTargetCoroutine(conn, msg, itemCtx, fromCtx, toCtx,
                 mergeTargetEntityId, mergeTargetUuid, mergeTargetVersion, mergeTargetQty, mergeMaxStack));
             return;
         }
-        bool toIsHandOrPocket = IsHand(toCtx.Kind) || toCtx.Kind == PlaceKind.Pocket;
-        if (itemCtx.Quantity > 1 && toIsHandOrPocket) {
+        if (itemCtx.Quantity > 1 && IsHand(toCtx.Kind)) {
             ApiManager.Instance?.StartCoroutine(SplitOneToTargetCoroutine(conn, msg, itemCtx, fromCtx, toCtx, charId));
             return;
         }
@@ -4385,6 +4746,8 @@ public class ServerItemManager
             fromCpc.UpdateQuantity(msg.EntityId, itemCtx.Quantity - 1, srcNewVersion);
         else if (fromCtx is ItemContainerPlaceContext fromIcpc)
             fromIcpc.UpdateQuantity(msg.EntityId, itemCtx.Quantity - 1, srcNewVersion);
+        else if (fromCtx is PocketPlaceContext fromPpc)
+            fromPpc.UpdateQuantity(msg.EntityId, itemCtx.Quantity - 1, srcNewVersion);
 
         int newEntityId = _nextEntityId++;
         var newCtx = new ItemCtx {
@@ -4405,8 +4768,9 @@ public class ServerItemManager
         ItemCtx itemCtx, IPlaceContext fromCtx, IPlaceContext toCtx,
         int tgtEntityId, string tgtUuid, int tgtVersion, int tgtQty, int maxStack)
     {
-        bool srcIsContainer = IsContainerKind(fromCtx.Kind);
-        int srcQty = srcIsContainer ? Mathf.Max(1, itemCtx.Quantity) : 1;
+        // Les mains portent toujours 1 unité ; conteneurs ET poche portent des piles.
+        bool srcCarriesQty = IsContainerKind(fromCtx.Kind) || fromCtx.Kind == PlaceKind.Pocket;
+        int srcQty = srcCarriesQty ? Mathf.Max(1, itemCtx.Quantity) : 1;
         int k = Mathf.Min(srcQty, maxStack - tgtQty);
         if (k <= 0) {
             conn.Send(new S2C_MoveItemResult { Success = false, EntityId = msg.EntityId, ErrorMessage = InventoryToasts.SlotFull });
@@ -4465,6 +4829,8 @@ public class ServerItemManager
                     fromCpc.UpdateQuantity(msg.EntityId, srcQty - k, srcNewVersion);
                 else if (fromCtx is ItemContainerPlaceContext fromIcpc)
                     fromIcpc.UpdateQuantity(msg.EntityId, srcQty - k, srcNewVersion);
+                else if (fromCtx is PocketPlaceContext fromPpc)
+                    fromPpc.UpdateQuantity(msg.EntityId, srcQty - k, srcNewVersion);
             }
         }
         // 3. Si la source est épuisée (ou main éphémère), tear-down de la source.
@@ -4475,6 +4841,8 @@ public class ServerItemManager
             toCpc.UpdateQuantity(tgtEntityId, tgtQty + k, tgtNewVersion);
         else if (toCtx is ItemContainerPlaceContext toIcpc)
             toIcpc.UpdateQuantity(tgtEntityId, tgtQty + k, tgtNewVersion);
+        else if (toCtx is PocketPlaceContext toPpc)
+            toPpc.UpdateQuantity(tgtEntityId, tgtQty + k, tgtNewVersion);
 
         conn.Send(new S2C_MoveItemResult { Success = true, EntityId = msg.EntityId });
         PushSnapshotsFor(conn, fromCtx, toCtx);
@@ -4909,14 +5277,10 @@ public class ServerItemManager
             foreach (var it in state.items) {
                 int slotIndex = ReadSlotIndex(it.stateData);
                 int entityId  = _nextEntityId++;
-                // Invariant : la poche ne stocke jamais de stack. Clamp défensif + log si drift.
-                int dbQty = Mathf.Max(1, it.quantity);
-                if (dbQty > 1)
-                    Debug.LogWarning($"[ServerItemManager] Pocket item id={it.Id} cfg={it.configId} a quantity={dbQty}>1 en DB — clamp à 1 (invariant poche = 1/slot).");
                 SeedItemStateFromDb(it.configId, it.Id, it.stateData); // arme en poche : réhydrate son chargeur
                 session.ItemsByEntityId[entityId] = new PocketSessionItem {
                     EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
-                    ItemUuid = it.Id, Version = it.version, Quantity = 1,
+                    ItemUuid = it.Id, Version = it.version, Quantity = Mathf.Max(1, it.quantity),
                 };
                 if (!session.SlotToEntityId.ContainsKey(slotIndex))
                     session.SlotToEntityId[slotIndex] = entityId;
@@ -5152,12 +5516,11 @@ public class ServerItemManager
         PocketSession pocket, ContainerSession propS, ItemContainerSession itemS)
     {
         try {
-            // Poche : invariant 1 item/slot, pas de pile → l'optimisation fusionne les
-            // LIASSES portées (même sémantique que « Tout fusionner » de la carte de détail).
+            // Poche : fusionne d'abord les LIASSES portées (sémantique « Tout fusionner » de
+            // la carte de détail — le cash additionne des MONTANTS, pas des quantités), puis
+            // les piles classiques (munitions…) via le flux générique ci-dessous.
             if (kind == GridKind.Pocket) {
                 yield return MergeAllCashCoroutine(conn, 0, silent: true);
-                SendPocketSnapshot(conn, pocket);
-                yield break;
             }
 
             List<GridEntry> entries = CollectEntries(kind, pocket, propS, itemS);
@@ -5209,7 +5572,7 @@ public class ServerItemManager
                                 // pour ne pas doubler — le snapshot DB fera foi au prochain open.
                             }
                             src.SetQty(0, src.Version);
-                            RemoveContainerEntry(kind, propS, itemS, src);
+                            RemoveGridEntry(netId, kind, pocket, propS, itemS, src);
                         } else {
                             var srcBody = new UpdateItemBody { expectedVersion = src.Version, quantity = remaining };
                             UnityWebRequest srcReq = null;
@@ -5235,9 +5598,19 @@ public class ServerItemManager
         }
     }
 
-    /// <summary>Retire une entrée de session conteneur (ligne DB déjà supprimée).</summary>
-    private void RemoveContainerEntry(GridKind kind, ContainerSession propS, ItemContainerSession itemS, GridEntry e)
+    /// <summary>Retire une entrée de session de grille (ligne DB déjà supprimée) — poche
+    /// comprise (déséquipe d'abord une éventuelle projection main/hotbar).</summary>
+    private void RemoveGridEntry(uint netId, GridKind kind, PocketSession pocket,
+        ContainerSession propS, ItemContainerSession itemS, GridEntry e)
     {
+        if (kind == GridKind.Pocket) {
+            OnPocketEntryRemoved(netId, e.EntityId);
+            pocket.ItemsByEntityId.Remove(e.EntityId);
+            if (pocket.SlotToEntityId.TryGetValue(e.SlotIndex, out int pocc) && pocc == e.EntityId)
+                pocket.SlotToEntityId.Remove(e.SlotIndex);
+            ClearBridge(e.EntityId);
+            return;
+        }
         var map = kind == GridKind.PropContainer ? propS.ItemsByEntityId : itemS.ItemsByEntityId;
         var slots = kind == GridKind.PropContainer ? propS.SlotToEntityId : itemS.SlotToEntityId;
         map.Remove(e.EntityId);
@@ -5604,8 +5977,8 @@ public class ServerItemManager
             if (declaredSlot >= 0 && pi.SlotIndex != declaredSlot) {
                 err = "Slot poche incohérent"; return false;
             }
-            // Invariant : la poche stocke toujours 1 item par slot — pas de stack.
-            ctx = new ItemCtx { ConfigId = pi.ConfigId, ItemUuid = pi.ItemUuid, Version = pi.Version, Quantity = 1 };
+            // Un slot de poche porte UNE ligne, mais la ligne peut être une pile (munitions).
+            ctx = new ItemCtx { ConfigId = pi.ConfigId, ItemUuid = pi.ItemUuid, Version = pi.Version, Quantity = Mathf.Max(1, pi.Quantity) };
             return true;
         }
 
@@ -5629,7 +6002,7 @@ public class ServerItemManager
 
         /// <summary>Occupant du slot s'il est de la MÊME config que l'item entrant (fusion de
         /// liasses). Équivalent poche du TryResolveStackMerge des conteneurs, sans notion de
-        /// quantité (poche = 1 item/slot).</summary>
+        /// quantité (le cash est maxStackSize=1, sa fusion additionne les MONTANTS).</summary>
         public bool TryResolveSameConfig(int slotIndex, int incomingConfigId, out int entityId, out string uuid) {
             entityId = -1; uuid = null;
             if (!_mgr._pocketByPlayer.TryGetValue(_netId, out var s)) return false;
@@ -5638,6 +6011,32 @@ public class ServerItemManager
             entityId = occ;
             uuid = pi.ItemUuid;
             return true;
+        }
+
+        /// <summary>Identique à <see cref="ContainerPlaceContext.TryResolveStackMerge"/> : le
+        /// slot cible est-il occupé par une PILE de même config (munitions…) ?</summary>
+        public bool TryResolveStackMerge(int slotIndex, int incomingConfigId,
+            out int targetEntityId, out string targetUuid, out int targetVersion,
+            out int targetQty, out int maxStackSize) {
+            targetEntityId = -1; targetUuid = null; targetVersion = 0; targetQty = 0; maxStackSize = 1;
+            if (!_mgr._pocketByPlayer.TryGetValue(_netId, out var s)) return false;
+            if (!s.SlotToEntityId.TryGetValue(slotIndex, out int occ)) return false;
+            if (!s.ItemsByEntityId.TryGetValue(occ, out var pi) || pi.ConfigId != incomingConfigId) return false;
+            var cfg = DatabaseManager.GetItemConfigById(pi.ConfigId);
+            int max = cfg != null ? cfg.MaxStackSize : 1;
+            if (max <= 1) return false;
+            targetEntityId = occ; targetUuid = pi.ItemUuid; targetVersion = pi.Version;
+            targetQty = Mathf.Max(1, pi.Quantity); maxStackSize = max; return true;
+        }
+
+        /// <summary>Met à jour la quantité (et version OCC) d'une pile de poche en place —
+        /// même contrat que <see cref="ContainerPlaceContext.UpdateQuantity"/>.</summary>
+        public void UpdateQuantity(int entityId, int newQuantity, int newVersion) {
+            if (!_mgr._pocketByPlayer.TryGetValue(_netId, out var s)) return;
+            if (!s.ItemsByEntityId.TryGetValue(entityId, out var pi)) return;
+            pi.Quantity = Mathf.Max(1, newQuantity);
+            pi.Version = newVersion;
+            if (_mgr._bridges.TryGetValue(entityId, out var br)) br.Version = newVersion;
         }
 
         public void TearDown(int entityId) {
@@ -5658,7 +6057,7 @@ public class ServerItemManager
             }
             s.ItemsByEntityId[entityId] = new PocketSessionItem {
                 EntityId = entityId, ConfigId = ctx.ConfigId, SlotIndex = slotIndex,
-                ItemUuid = ctx.ItemUuid, Version = newVersion, Quantity = 1,
+                ItemUuid = ctx.ItemUuid, Version = newVersion, Quantity = Mathf.Max(1, ctx.Quantity),
             };
             s.SlotToEntityId[slotIndex] = entityId;
             _mgr._bridges[entityId] = new ItemDbBridge { Uuid = ctx.ItemUuid, Version = newVersion, PlaceId = _backendPlaceId };

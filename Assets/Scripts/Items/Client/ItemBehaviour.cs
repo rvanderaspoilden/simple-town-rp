@@ -124,14 +124,19 @@ public class ItemBehaviour : MonoBehaviour, IInteractable, IQuickActionProvider
         if (_holderNetId == NetworkClient.connection?.identity?.netId)
         {
             // Arme : « Recharger » n'est proposé que si un rechargement est possible
-            // (chargeur pas plein, pas en cours, une boîte compatible en stock) — l'option
-            // disparaît du menu plutôt que d'être grisée. Revalidé serveur au CmdReload.
+            // (chargeur pas plein, pas en cours, des balles compatibles en stock) et
+            // « Vider le chargeur » que si le chargeur n'est pas vide — l'option disparaît
+            // du menu plutôt que d'être grisée. Revalidé serveur au CmdReload/CmdUnload.
             if (_config is WeaponConfig && this is WeaponBehaviour weapon)
             {
                 var shooter = PlayerController.Local != null
                     ? PlayerController.Local.GetComponent<Sim.PlayerShooter>() : null;
-                if (shooter == null || !shooter.CanOfferReload(weapon))
-                    return _heldActions.Where(a => a.Type != ActionTypeEnum.RELOAD).ToArray();
+                bool offerReload = shooter != null && shooter.CanOfferReload(weapon);
+                bool offerUnload = shooter != null && shooter.CanOfferUnload(weapon);
+                if (!offerReload || !offerUnload)
+                    return _heldActions.Where(a =>
+                        (offerReload || a.Type != ActionTypeEnum.RELOAD)
+                        && (offerUnload || a.Type != ActionTypeEnum.UNLOAD)).ToArray();
             }
             return _heldActions;
         }

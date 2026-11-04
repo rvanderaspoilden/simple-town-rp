@@ -127,8 +127,10 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
 
     /// <summary>Re-résout la sélection de la carte après un refresh : garde l'item
     /// sélectionné s'il est toujours dans nos slots, sinon retombe sur le premier
-    /// item de l'inventaire (poche → main → sac), sinon masque la carte.</summary>
-    private void RefreshDetailCard()
+    /// item de l'inventaire (poche → main → sac), sinon masque la carte.
+    /// Public : aussi appelé par PlayerShooter quand le chargeur/la réserve de l'arme
+    /// resynchronisent (les boutons Recharger/Vider dépendent de cet état).</summary>
+    public void RefreshDetailCard()
     {
         if (detailCard == null || !gameObject.activeInHierarchy) return;
         DraggableItem current = FindDraggableByEntity(detailCard.SelectedEntityId);
@@ -577,7 +579,7 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
             DraggableItem d = _draggableItemPool.Get();
             d.SetConfiguration(cfg);
             d.SetEntityId(entry.EntityId);
-            d.SetQuantity(Mathf.Max(1, entry.Quantity)); // poche = 1 item/slot, kept pour symétrie wire
+            d.SetQuantity(Mathf.Max(1, entry.Quantity)); // badge "xN" : la poche porte des piles (munitions…)
             d.SetLoadedAmmo(entry.LoadedAmmo);           // arme : chargeur affiché dans la tooltip
             d.SetCashAmount(entry.CashAmount);           // liasse : montant affiché dans la tooltip
             target.SetItem(d);

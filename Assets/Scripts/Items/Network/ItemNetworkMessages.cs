@@ -268,8 +268,8 @@ public struct C2S_MergeAllCash : NetworkMessage
 // EnsurePlaces) et tient les entityId éphémères des items en poche le temps
 // de la session réseau.
 
-/// <summary>Une entrée d'item dans la poche (slot 0 = gauche, slot 1 = droite). Quantity toujours 1
-/// en pratique (poche = 1 item par slot, pas de stacking), kept pour symétrie avec S2C_ContainerItem.</summary>
+/// <summary>Une entrée d'item dans la poche. Un slot porte UNE ligne, mais la ligne peut
+/// être une PILE (munitions… — Quantity ≥ 1), comme S2C_ContainerItem.</summary>
 public struct S2C_PocketItem
 {
     public int EntityId;
@@ -380,9 +380,9 @@ public struct C2S_SortContainer : NetworkMessage
 
 /// <summary>
 /// Client → server : OPTIMISE la grille — fusionne les piles de même config au maximum
-/// (MaxStackSize), supprime les lignes vidées. Poche (invariant 1/slot, pas de pile) :
-/// fusionne les liasses de billets portées (équivalent « Tout fusionner »). Snapshot
-/// re-poussé à la fin.
+/// (MaxStackSize), supprime les lignes vidées. Poche : fusionne d'abord les liasses de
+/// billets portées (équivalent « Tout fusionner » — le cash additionne des MONTANTS),
+/// puis les piles classiques (munitions…). Snapshot re-poussé à la fin.
 /// </summary>
 public struct C2S_OptimizeContainer : NetworkMessage
 {

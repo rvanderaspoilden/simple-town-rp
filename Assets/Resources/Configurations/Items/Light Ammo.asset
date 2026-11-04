@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Light Ammo
   m_EditorClassIdentifier: Assembly-CSharp::AmmoConfig
   id: 106
-  label: "Munitions l\xE9g\xE8res"
-  description: "Bo\xEEte de munitions pour arme de poing (Glock). R pour recharger
-    : la bo\xEEte remplit un chargeur."
+  label: "Balles l\xE9g\xE8res"
+  description: "Balles pour arme de poing (Glock). R pour recharger : le chargeur
+    pr\xE9l\xE8ve les balles n\xE9cessaires. Se stockent par piles de 99."
   type: 3
   handleType: 0
   unEquippedActions:
@@ -31,5 +31,5 @@ MonoBehaviour:
   poseShape: 0
   gripPosition: {x: 0, y: 0, z: 0}
   gripEuler: {x: 0, y: 0, z: 0}
-  maxStackSize: 10
+  maxStackSize: 99
   ammoCategory: 0

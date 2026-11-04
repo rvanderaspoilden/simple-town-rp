@@ -232,6 +232,8 @@ public class ItemDetailCardUI : MonoBehaviour
         var inv = HUDManager.Instance != null ? HUDManager.Instance.InventoryUI : null;
 
         if (src.StartsWith("pocket:")) {
+            // Arme (tenue OU rangée) : Recharger / Vider le chargeur.
+            AddWeaponActions(item, src);
             // Pas de « Tenir en main » : le slot actif de la hotbar est la seule
             // autorité sur l'item porté.
             AddAction("Lâcher", () => { if (NetworkClient.isConnected) NetworkClient.Send(new C2S_DropFromInventory { EntityId = entityId }); }, Key.G);
@@ -242,6 +244,8 @@ public class ItemDetailCardUI : MonoBehaviour
                 AddAction("Tout fusionner", () => { if (NetworkClient.isConnected) NetworkClient.Send(new C2S_MergeAllCash { TargetEntityId = entityId }); });
         }
         else if (src.StartsWith("hand_right:")) {
+            // Arme encombrante tenue en main : mêmes actions que le slot hotbar actif.
+            AddWeaponActions(item, src);
             // Vue main indicative — seule exception : porter un sac (c'est de
             // l'équipement, pas un choix d'item actif). Lâcher un objet encombrant
             // passe par les actions monde.
@@ -254,8 +258,10 @@ public class ItemDetailCardUI : MonoBehaviour
                 AddAction("Retirer", () => SendMove(entityId, src, $"hand_right:{charId}", 0));
         }
         else if (inv != null) {
-            // Item d'un conteneur ouvert (colis, sac, meuble) : « Prendre » vers
-            // l'inventaire — même cible que le quick-move double-clic.
+            // Item d'un conteneur ouvert (colis, sac, meuble) : arme → Recharger/Vider
+            // (logistique, opère sur place), puis « Prendre » vers l'inventaire — même
+            // cible que le quick-move double-clic.
+            AddWeaponActions(item, src);
             var draggable = item;
             AddAction("Prendre", () => {
                 if (inv.TryFindQuickMoveTargetForItem(draggable, out string placeKey, out int slotIndex))
@@ -264,6 +270,67 @@ public class ItemDetailCardUI : MonoBehaviour
                     WorldToastManager.ShowError(InventoryToasts.NoSpaceInInventory);
             });
         }
+    }
+
+    /// <summary>Actions d'arme à feu de la carte de détail — PURE LOGISTIQUE, sans
+    /// animation ni timer, où que soit l'arme (poche, main, conteneur/sac/colis ouvert) :
+    /// « Recharger » (chargeur pas plein + des balles sur le joueur — poches, sac à dos
+    /// porté ou colis tenu) et « Vider le chargeur » (chargeur non vide → les balles
+    /// retournent en piles dans l'inventaire). Toujours les opérations « à froid »
+    /// RequestReloadItem/RequestUnloadItem ; le flux ANIMÉ ne subsiste que sur la touche
+    /// R en jeu, inventaire fermé.</summary>
+    private void AddWeaponActions(DraggableItem item, string src)
+    {
+        WeaponConfig cfg = item.ItemConfig as WeaponConfig;
+        if (cfg == null) return;
+        PlayerShooter shooter = PlayerController.Local != null
+            ? PlayerController.Local.GetComponent<PlayerShooter>() : null;
+        if (shooter == null) return;
+
+        // Chargeur : l'arme TENUE (slot hotbar actif ou main) est suivie en live par le
+        // PlayerShooter — le snapshot ne se re-pousse pas à chaque tir ; les autres lisent
+        // le LoadedAmmo publié par leur snapshot. -1 = inconnu → proposé, le serveur tranche.
+        WeaponBehaviour held = shooter.HeldWeapon;
+        bool isHeld = held != null && held.Configuration == item.ItemConfig
+            && (src.StartsWith("hand_")
+                || (src.StartsWith("pocket:") && item.ItemSlot != null
+                    && item.ItemSlot.SlotIndex == HotbarUI.SelectedSlotIndex));
+        int loaded = isHeld ? shooter.LocalLoadedAmmo : item.LoadedAmmo;
+        int entityId = item.EntityId;
+
+        if ((loaded < 0 || loaded < cfg.MagazineSize) && MayHaveRounds(cfg.AmmoCategory))
+            AddAction("Recharger", () => shooter.RequestReloadItem(entityId), Key.R);
+        if (loaded != 0)
+            AddAction("Vider le chargeur", () => shooter.RequestUnloadItem(entityId));
+    }
+
+    /// <summary>Le joueur peut-il avoir des balles de cette famille SUR LUI (périmètre
+    /// consommé par le rechargement : poches, puis sac à dos porté ou colis tenu) ?
+    /// Les piles de poche sont visibles dans le snapshot ; le contenu d'un sac/colis
+    /// fermé ne l'est pas → sa seule présence rend la réponse optimiste, le serveur
+    /// tranche (toast « Aucune munition compatible sur vous » si vide).</summary>
+    private static bool MayHaveRounds(AmmoCategory category)
+    {
+        if (ClientItemManager.LastPocketSnapshot.HasValue) {
+            S2C_PocketSync snapshot = ClientItemManager.LastPocketSnapshot.Value;
+            if (snapshot.Items != null) {
+                foreach (S2C_PocketItem it in snapshot.Items)
+                    if (DatabaseManager.GetItemConfigById(it.ConfigId) is AmmoConfig ac && ac.AmmoCategory == category)
+                        return true;
+            }
+        }
+        var hands = PlayerController.Local != null ? PlayerController.Local.PlayerHands : null;
+        if (hands == null) return false;
+        return IsContainerItem(hands.BackItem) || IsContainerItem(hands.RightHandItem) || IsContainerItem(hands.LeftHandItem);
+    }
+
+    /// <summary>Vrai si l'item tenu/porté est un conteneur (sac, colis) susceptible de
+    /// cacher des balles.</summary>
+    private static bool IsContainerItem(ItemBehaviour item)
+    {
+        if (item == null || item.Configuration == null) return false;
+        ContainerConfig cc = ItemContainerConfig.Of(item.Configuration);
+        return cc != null && cc.IsContainer;
     }
 
     /// <summary>Nombre de liasses distinctes SUR le joueur : lignes cash de la poche +

@@ -1,15 +1,17 @@
 using UnityEngine;
 
 /// <summary>
-/// Item « boîte de munitions » : consommée EN ENTIER par un rechargement (touche R ou tir
-/// à vide) pour remplir le chargeur d'une arme de la MÊME famille (WeaponConfig.AmmoCategory).
-/// Le serveur la cherche dans la poche du joueur, puis dans un sac/colis tenu en main.
-/// Item standard par ailleurs : ramassable, stockable, empilable en conteneur.
+/// Item « balles » : pile de munitions À L'UNITÉ (maxStackSize 99). Un rechargement
+/// (touche R ou tir à vide) consomme les balles MANQUANTES du chargeur d'une arme de la
+/// MÊME famille (WeaponConfig.AmmoCategory) ; « Vider le chargeur » fait le chemin inverse.
+/// Le serveur les cherche dans la poche du joueur, puis dans un sac/colis tenu en main.
+/// Item standard par ailleurs : ramassable, stockable, empilable (poche comprise). L'icône
+/// d'inventaire est une balle, le modèle 3D au sol/en main reste la caisse de munitions.
 /// </summary>
 [CreateAssetMenu(fileName = "New Ammo", menuName = "Configurations/Item/Ammo")]
 public class AmmoConfig : ItemConfig {
     [Header("Munitions")]
-    [Tooltip("Famille d'armes servie par cette boîte : LIGHT = armes de poing, MEDIUM = fusils d'assaut, HEAVY = sniper.")]
+    [Tooltip("Famille d'armes servie par ces balles : LIGHT = armes de poing, MEDIUM = fusils d'assaut, HEAVY = sniper.")]
     [SerializeField]
     private AmmoCategory ammoCategory;
 

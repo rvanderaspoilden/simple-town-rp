@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Heavy Ammo
   m_EditorClassIdentifier: Assembly-CSharp::AmmoConfig
   id: 108
-  label: Munitions lourdes
-  description: "Bo\xEEte de munitions pour fusil de pr\xE9cision (Sniper). R pour
-    recharger : la bo\xEEte remplit un chargeur."
+  label: Balles lourdes
+  description: "Balles pour fusil de pr\xE9cision (Sniper). R pour recharger : le
+    chargeur pr\xE9l\xE8ve les balles n\xE9cessaires. Se stockent par piles de 99."
   type: 3
   handleType: 0
   unEquippedActions:
@@ -31,5 +31,5 @@ MonoBehaviour:
   poseShape: 0
   gripPosition: {x: 0, y: 0, z: 0}
   gripEuler: {x: 0, y: 0, z: 0}
-  maxStackSize: 10
+  maxStackSize: 99
   ammoCategory: 2

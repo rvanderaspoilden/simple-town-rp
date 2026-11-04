@@ -44,13 +44,17 @@ public class WeaponBehaviour : ItemBehaviour {
         }
     }
 
-    /// <summary>Action « Recharger » du menu d'inventaire (clic droit sur l'arme en main) —
-    /// route vers le PlayerShooter local, mêmes gardes et flux serveur que la touche R.</summary>
+    /// <summary>Actions « Recharger » / « Vider le chargeur » du menu d'inventaire (clic
+    /// droit sur l'arme en main) — routées vers le PlayerShooter local (mêmes gardes et
+    /// flux serveur que la touche R pour le rechargement).</summary>
     protected override void HandleSpecialAction(Sim.Interactables.Action action) {
-        if (action.Type != Sim.Enums.ActionTypeEnum.RELOAD) return;
+        if (action.Type != Sim.Enums.ActionTypeEnum.RELOAD
+            && action.Type != Sim.Enums.ActionTypeEnum.UNLOAD) return;
         if (Sim.PlayerController.Local == null) return;
         Sim.PlayerShooter shooter = Sim.PlayerController.Local.GetComponent<Sim.PlayerShooter>();
-        if (shooter != null) shooter.RequestReload();
+        if (shooter == null) return;
+        if (action.Type == Sim.Enums.ActionTypeEnum.RELOAD) shooter.RequestReload();
+        else shooter.RequestUnload();
     }
 
     public override void OnDetachedFromHand() {
