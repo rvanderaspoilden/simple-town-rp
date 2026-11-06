@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95757b2c60e587640be5bd18e358fdec, type: 3}
+  m_Name: male_hat_04
+  m_EditorClassIdentifier: Assembly-CSharp::ClothingConfig
+  id: 204
+  label: Casque de pompier
+  description: "V\xEAtement homme (chapeau)."
+  type: 4
+  handleType: 1
+  unEquippedActions:
+  - {fileID: 11400000, guid: fa73a1da35281ac4794f59016aab77cd, type: 2}
+  equippedActions:
+  - {fileID: 11400000, guid: 875ebf10bf5a7c24084772ff5e3be913, type: 2}
+  hasQuickAction: 0
+  quickAction: 0
+  prefab: {fileID: 601502803645633004, guid: 1fee0ff5f2bd11842bfd7166bf65d42f, type: 3}
+  toPersist: 1
+  allowedInPocket: 1
+  rangeToInteract: 1.5
+  cursor: {fileID: 0}
+  icon: {fileID: 21300000, guid: a5c4c02650019f7488c156077a46b596, type: 3}
+  poseShape: 2
+  gripPosition: {x: 0.072, y: 0.16, z: -0.057}
+  gripEuler: {x: 343.4, y: 346.5, z: 235.5}
+  maxStackSize: 1
+  elementType: 1
+  elementIndex: 4
+  gender: 0

@@ -77,6 +77,7 @@ namespace Sim {
                 case ItemType.CONSUMABLE: return "consommables";
                 case ItemType.PACKAGE:    return "colis";
                 case ItemType.WASTE:      return "déchets";
+                case ItemType.CLOTHING:   return "vêtements";
                 default:                  return t.ToString().ToLower();
             }
         }

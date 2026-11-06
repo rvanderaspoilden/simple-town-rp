@@ -38,6 +38,7 @@ public class ClientItemManager
         NetworkClient.RegisterHandler<S2C_ItemContainerOpenFailed>(OnItemContainerOpenFailed);
         NetworkClient.RegisterHandler<S2C_MoveItemResult>(OnMoveItemResult);
         NetworkClient.RegisterHandler<S2C_PocketSync>(OnPocketSync);
+        NetworkClient.RegisterHandler<S2C_WearablesSync>(OnWearablesSync);
     }
 
     public void UnregisterHandlers()
@@ -56,6 +57,7 @@ public class ClientItemManager
         NetworkClient.UnregisterHandler<S2C_ItemContainerOpenFailed>();
         NetworkClient.UnregisterHandler<S2C_MoveItemResult>();
         NetworkClient.UnregisterHandler<S2C_PocketSync>();
+        NetworkClient.UnregisterHandler<S2C_WearablesSync>();
     }
 
     // ── Container events (consumed par ContainerPanelUI) ──────────────────────
@@ -66,12 +68,17 @@ public class ClientItemManager
     public static event System.Action<S2C_ItemContainerOpenFailed> ItemContainerOpenFailed;
     public static event System.Action<S2C_MoveItemResult> MoveItemResult;
     public static event System.Action<S2C_PocketSync> PocketSync;
+    public static event System.Action<S2C_WearablesSync> WearablesSync;
 
     /// <summary>
     /// Cache du dernier snapshot poche reçu. Permet à InventoryUI de re-peupler
     /// les slots poche à chaque OnEnable sans demander au serveur un re-sync.
     /// </summary>
     public static S2C_PocketSync? LastPocketSnapshot { get; private set; }
+
+    /// <summary>Cache du dernier snapshot wearables (vêtements portés) — même rôle que
+    /// LastPocketSnapshot pour les slots vêtements de l'inventaire.</summary>
+    public static S2C_WearablesSync? LastWearablesSnapshot { get; private set; }
 
     /// <summary>Hint client : la poche locale a-t-elle un slot libre ? Basé sur le dernier
     /// snapshot (vrai si encore inconnu — le serveur revalide). Consommé par l'action PICK
@@ -116,6 +123,12 @@ public class ClientItemManager
         Debug.Log($"[Pocket] Sync placeId={msg.PlaceId} slots={msg.SlotCount} items={msg.Items?.Length}");
         LastPocketSnapshot = msg;
         PocketSync?.Invoke(msg);
+    }
+
+    private void OnWearablesSync(S2C_WearablesSync msg) {
+        Debug.Log($"[Wearables] Sync placeId={msg.PlaceId} slots={msg.SlotCount} items={msg.Items?.Length}");
+        LastWearablesSnapshot = msg;
+        WearablesSync?.Invoke(msg);
     }
 
     public void Reset()
@@ -368,6 +381,16 @@ public class ClientItemManager
 
             behaviour.transform.localPosition = gripPos;
             behaviour.transform.localRotation = gripRot;
+        }
+        else if (hand == HandType.Back && config is Sim.Scriptables.BackpackConfig)
+        {
+            // Sac à dos : le visuel porté est l'élément APS2 Item1, activé comme un vêtement
+            // (PlayerHands.NotifyChanged → CharacterAppearance.SetWornBackpack). Le prefab monde
+            // générique reste donc invisible sur le dos ; le detach ré-affiche les renderers
+            // (ItemBehaviour.OnDetachedFromHand).
+            behaviour.transform.localPosition = localPos;
+            behaviour.transform.localRotation = localRot;
+            behaviour.SetRenderersVisible(false);
         }
         else
         {

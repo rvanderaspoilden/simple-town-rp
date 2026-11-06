@@ -89,34 +89,25 @@ public class NpcMerchantService {
                 return;
             }
 
-            // Pas de place (slot de poche pour un pocketable, main pour un encombrant,
-            // colis tenu en secours) : on refuse AVANT tout débit. Inventaire classique :
-            // l'achat va dans un slot — l'item n'apparaît en main que si son slot est
-            // celui sélectionné dans la hotbar (re-pointage client via PocketSync).
-            uint netId = conn.identity.netId;
-            if (!ServerItemManager.Instance.CanReceiveItem(conn, cfg)) {
-                Reply(conn, msg, false, ReasonHandsFull);
-                return;
-            }
-            // Seul un encombrant va en main : jamais par-dessus un item de mission.
-            if (!cfg.AllowedInPocket && ServerItemManager.Instance.IsHoldingMissionItem(netId)) {
-                Reply(conn, msg, false, ReasonHandsFull);
-                return;
-            }
-
             // Débit (ledger) → acquisition via le point unique d'inventaire (poche en
-            // priorité). L'écriture poche/colis est async (backend) : un échec post-débit
-            // rembourse au lieu de laisser un achat payé sans item.
+            // priorité). RÈGLE PROJET : inventaire plein → l'achat part dans la BOÎTE DE
+            // LIVRAISON du joueur (plus de refus « pas de place ») ; remboursement seulement
+            // si le dépôt en boîte échoue aussi (backend).
             bank.PostLedger(-price, LedgerReason.ShopPurchase, LedgerCounterparty.System,
                 MerchantCounterparty, configId: cfg.ID);
 
             ServerItemManager.Instance.SpawnItemIntoInventory(conn, cfg.ID, cfg, persistent: true,
                 onSuccess: () => Reply(conn, msg, true, ReasonOk),
-                onFail: _ => {
-                    bank.PostLedger(price, LedgerReason.ShopPurchase, LedgerCounterparty.System,
-                        MerchantCounterparty, configId: cfg.ID);
-                    Reply(conn, msg, false, ReasonUnavailable);
-                });
+                onFail: _ => Sim.ApiManager.Instance.StartCoroutine(
+                    ServerItemManager.Instance.DepositPurchaseInDeliveryBox(conn, cfg, deposited => {
+                        if (deposited) {
+                            Reply(conn, msg, true, ReasonOk);
+                        } else {
+                            bank.PostLedger(price, LedgerReason.ShopPurchase, LedgerCounterparty.System,
+                                MerchantCounterparty, configId: cfg.ID);
+                            Reply(conn, msg, false, ReasonUnavailable);
+                        }
+                    })));
         }
         catch (System.Exception ex) {
             Debug.LogError($"[NpcMerchantService] ERROR during buy npc={msg.NpcId} item={msg.ItemConfigId}: {ex}");

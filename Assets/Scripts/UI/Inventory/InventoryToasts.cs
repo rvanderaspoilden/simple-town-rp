@@ -18,4 +18,7 @@ public static class InventoryToasts
     public const string AmmoNoStorage        = "Aucune place pour les munitions (poche pleine, aucun sac en main)";
     public const string StackPickOneAtATime  = "Pile — prends 1 à la fois";
     public const string NotWearable          = "Seul un sac se porte sur le dos";
+    public const string NotClothing          = "Ce n'est pas un vêtement";
+    public const string WrongClothingSlot    = "Mauvais emplacement pour ce vêtement";
+    public const string ClothingWrongGender  = "Ce vêtement n'est pas adapté à votre personnage";
 }

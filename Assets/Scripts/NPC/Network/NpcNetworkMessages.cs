@@ -15,7 +15,7 @@ public struct S2C_SpawnNpc : NetworkMessage {
     public Quaternion Rotation;
 
     /// <summary>
-    /// JSON du <see cref="Style"/> (cf. CharacterStyleSetup.ApplyStyle).
+    /// JSON du <see cref="Style"/> (cf. Sim.CharacterAppearance.ApplyStyle).
     /// Vide ou null = pas de style (le client laisse l'apparence par défaut du prefab).
     /// On reste sur le même mécanisme JsonUtility que rawCharacterData côté joueur.
     /// </summary>

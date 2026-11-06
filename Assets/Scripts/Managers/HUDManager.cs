@@ -113,10 +113,13 @@ namespace Sim {
             }
 
             // Raccourci global : I ouvre/ferme l'inventaire. Inhibé hors gameplay (pas de
-            // joueur local = menu principal), en sub-game et pendant une saisie de texte.
+            // joueur local = menu principal), en sub-game, pendant une saisie de texte et en
+            // CABINE D'ESSAYAGE (état verrouillé : l'exclusivité plein écran fermerait la
+            // cabine — on n'en sort que par Acheter/Annuler ou la mort).
             if (Sim.Utils.GameInput.Down(UnityEngine.InputSystem.Key.I)
                 && PlayerController.Local != null
-                && !Sim.Utils.CursorLock.IsTypingInInputField()) {
+                && !Sim.Utils.CursorLock.IsTypingInInputField()
+                && !(FittingRoomUI.Instance != null && FittingRoomUI.Instance.IsOpen)) {
                 this.ToggleInventory();
             }
         }
@@ -144,6 +147,7 @@ namespace Sim {
             if (Close(VehicleShopUI.Instance, VehicleShopUI.Instance != null && VehicleShopUI.Instance.gameObject.activeSelf, () => VehicleShopUI.Instance.Hide())) return true;
             if (Close(LandParcelInfoUI.Instance, LandParcelInfoUI.Instance != null && LandParcelInfoUI.Instance.gameObject.activeSelf, () => LandParcelInfoUI.Instance.Hide())) return true;
             if (AtmUI.Instance != null && AtmUI.Instance.IsOpen) { AtmUI.Instance.Back(); return true; }
+            if (FittingRoomUI.Instance != null && FittingRoomUI.Instance.IsOpen) { FittingRoomUI.Instance.Hide(); return true; }
             if (this.vehicleGarageUI != null && this.vehicleGarageUI.gameObject.activeSelf) { this.vehicleGarageUI.Hide(); return true; }
 
             // 4. Constellation (carte de progression plein écran).

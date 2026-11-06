@@ -69,7 +69,7 @@ public class ClientNpcView : MonoBehaviour, IInteractable, IQuickActionProvider 
 
     private PlayerAnimator      _animator;
     private Animator            _unityAnimator;
-    private CharacterStyleSetup _styleSetup;
+    private CharacterAppearance _appearance;
     private RagdollController    _ragdoll;
     private bool                 _knockedDown;
 
@@ -148,7 +148,7 @@ public class ClientNpcView : MonoBehaviour, IInteractable, IQuickActionProvider 
     private void Awake() {
         _animator      = GetComponent<PlayerAnimator>();
         _unityAnimator = GetComponent<Animator>();
-        _styleSetup    = GetComponent<CharacterStyleSetup>();
+        _appearance    = GetComponent<CharacterAppearance>();
         _ragdoll       = GetComponent<RagdollController>();
 
         // Le NavMeshAgent vit côté serveur (NpcAIController). Sur le client il est un vestige
@@ -218,10 +218,10 @@ public class ClientNpcView : MonoBehaviour, IInteractable, IQuickActionProvider 
         _config   = DatabaseManager.GetNpcConfigById(_configId);
         if (_config == null) _config = DatabaseManager.DefaultNpcConfig;
 
-        if (_styleSetup != null && !string.IsNullOrEmpty(styleJson)) {
+        if (_appearance != null && !string.IsNullOrEmpty(styleJson)) {
             try {
                 Style style = JsonUtility.FromJson<Style>(styleJson);
-                _styleSetup.ApplyStyle(style);
+                _appearance.ApplyStyle(style);
             }
             catch (Exception e) {
                 Debug.LogWarning($"[ClientNpcView] Failed to apply style for npc#{npcId}: {e.Message}");

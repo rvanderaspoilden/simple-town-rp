@@ -36,7 +36,7 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
     private string roomId = "city";
 
     [Header("Style")]
-    [Tooltip("Si vrai, randomise le style via CharacterStyleSetup.Randomize() au spawn.")]
+    [Tooltip("Si vrai, randomise le style via CharacterAppearance.Randomize() (APS2) au spawn.")]
     [SerializeField]
     private bool randomizeStyleOnSpawn = true;
 
@@ -67,7 +67,7 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
     // ── Runtime ───────────────────────────────────────────────────────────────
     private NavMeshAgent        _agent;
-    private CharacterStyleSetup _styleSetup;
+    private CharacterAppearance _appearance;
     private StateMachine        _stateMachine;
 
     private NpcIdleState              _idleState;
@@ -449,7 +449,7 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
     private void Awake() {
         _agent      = GetComponent<NavMeshAgent>();
-        _styleSetup = GetComponent<CharacterStyleSetup>();
+        _appearance = GetComponent<CharacterAppearance>();
 
         // Plafonne la vitesse pour rester dans l'animation Walk (cf. blend tree "Velocity").
         if (_agent != null) _agent.speed = walkSpeed;
@@ -467,9 +467,10 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
         // Style local + sérialisation pour les clients.
         string styleJson = string.Empty;
-        if (_styleSetup != null) {
-            if (randomizeStyleOnSpawn) _styleSetup.Randomize();
-            styleJson = JsonUtility.ToJson(_styleSetup.GetStyle());
+        if (_appearance != null) {
+            if (randomizeStyleOnSpawn) _appearance.Randomize();
+            styleJson = JsonUtility.ToJson(_appearance.GetStyle());
+            HideServerRig();
         }
 
         _npcId = NpcServerManager.Instance.Register(
@@ -495,6 +496,24 @@ public class NpcAIController : MonoBehaviour, ICharacterEntity
 
         GameLogger.Network.Debug("[NPCPool] Reusing NPC from pool {NpcId} {FullName}",
             _npcId, _identity.FullName);
+    }
+
+    /// <summary>
+    /// Rend le GO serveur invisible : il est PURE LOGIQUE, la représentation visuelle vit dans
+    /// les vues client (ClientNpcView). Le rig APS2 doit exister ici (Randomize/GetStyle passent
+    /// par CharacterCustomization) mais ne doit jamais être rendu — sur un host, chaque NPC
+    /// apparaîtrait en double (vue client animée + GO serveur statique superposé).
+    /// Appelé à CHAQUE OnEnable, APRÈS Randomize : un switch de gender y reconstruit le rig
+    /// (renderers neufs, actifs par défaut). CullCompletely laisse Unity couper l'évaluation de
+    /// l'Animator d'un rig invisible (l'IA serveur n'a besoin que du transform racine).
+    /// </summary>
+    private void HideServerRig() {
+        foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) {
+            r.enabled = false;
+        }
+
+        Animator animator = GetComponent<Animator>();
+        if (animator != null) animator.cullingMode = AnimatorCullingMode.CullCompletely;
     }
 
     /// <summary>

@@ -29,11 +29,15 @@ public class PlayerInventory : MonoBehaviour
     /// <summary>Back slot (sac à dos porté) — type='equipment', capacity 1.</summary>
     public string BackpackPlaceId  { get; private set; }
 
-    /// <summary>True iff all three place UUIDs have been resolved.</summary>
+    /// <summary>Vêtements portés — type='equipment', 5 slots (ClothingConfig.WearSlotFor).</summary>
+    public string WearablesPlaceId { get; private set; }
+
+    /// <summary>True iff all place UUIDs have been resolved.</summary>
     public bool   PlacesReady => !string.IsNullOrEmpty(PocketPlaceId)
                               && !string.IsNullOrEmpty(HandLeftPlaceId)
                               && !string.IsNullOrEmpty(HandRightPlaceId)
-                              && !string.IsNullOrEmpty(BackpackPlaceId);
+                              && !string.IsNullOrEmpty(BackpackPlaceId)
+                              && !string.IsNullOrEmpty(WearablesPlaceId);
 
     /// <summary>Returns the DB place UUID corresponding to a hand slot, or null
     /// if EnsurePlaces hasn't completed yet.</summary>
@@ -56,6 +60,7 @@ public class PlayerInventory : MonoBehaviour
         yield return EnsureOne($"hand_left:{characterId}",  "equipment",  characterId, id => HandLeftPlaceId  = id);
         yield return EnsureOne($"hand_right:{characterId}", "equipment",  characterId, id => HandRightPlaceId = id);
         yield return EnsureOne($"backpack:{characterId}",   "equipment",  characterId, id => BackpackPlaceId  = id);
+        yield return EnsureOne($"wearables:{characterId}",  "equipment",  characterId, id => WearablesPlaceId = id);
     }
 
     private IEnumerator EnsureOne(string placeKey, string type, string characterId, System.Action<string> onResolved)

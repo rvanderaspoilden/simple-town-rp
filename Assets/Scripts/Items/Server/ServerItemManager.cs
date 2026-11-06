@@ -149,6 +149,20 @@ public class ServerItemManager
     private readonly Dictionary<uint, PocketSession> _pocketByPlayer
         = new Dictionary<uint, PocketSession>();
 
+    // ── Wearables sessions (vêtements portés, place "wearables:{charId}") ─────
+    // Même modèle que la poche (session résidente, une ligne par slot), mais 5 slots
+    // FIXES mappés sur les catégories APS2 (ClothingConfig.WearSlotFor) et validation
+    // stricte à l'install (ClothingConfig du bon slot + genre supporté). Chaque mutation
+    // recalcule la SyncVar PlayerController.equippedClothing (le LOOK répliqué à tous).
+    // La place n'est PAS balayée à la mort : on garde ses vêtements (seul le dos part
+    // au butin, cf. CollectAndClearVictimBelongings).
+    private const int WearablesCapacity = ClothingConfig.WearSlotCount;
+
+    private readonly Dictionary<uint, PocketSession> _wearablesByPlayer
+        = new Dictionary<uint, PocketSession>();
+
+    private readonly HashSet<uint> _wearablesHydrating = new HashSet<uint>();
+
     // ── Projection main (hotbar, modèle pointeur) ────────────────────────
     // L'item équipé via la hotbar NE QUITTE PAS sa place poche : la main affiche une
     // entité « projection » dont le bridge est PARTAGÉ avec la ligne DB de l'item
@@ -204,6 +218,9 @@ public class ServerItemManager
         foreach (var other in _bridges.Values)
             if (other.Uuid == uuid) other.Version = version;
         foreach (var s in _pocketByPlayer.Values)
+            foreach (var it in s.ItemsByEntityId.Values)
+                if (it.ItemUuid == uuid) it.Version = version;
+        foreach (var s in _wearablesByPlayer.Values)
             foreach (var it in s.ItemsByEntityId.Values)
                 if (it.ItemUuid == uuid) it.Version = version;
         foreach (var s in _openContainerByPlayer.Values)
@@ -299,6 +316,7 @@ public class ServerItemManager
         _openContainerByPlayer.Clear();
         _openItemContainerByPlayer.Clear();
         _pocketByPlayer.Clear();
+        _wearablesByPlayer.Clear();
         _handProjection.Clear();
         _weaponAmmoByKey.Clear();
         _ammoPersistPending.Clear();
@@ -1668,6 +1686,20 @@ public class ServerItemManager
         } else if (ApiManager.Instance != null) {
             ApiManager.Instance.StartCoroutine(EnsurePocketSession(conn));
         }
+
+        // Vêtements portés : même cycle que la poche (session résidente). L'hydratation
+        // recalcule aussi la SyncVar equippedClothing (le look) et migre, au premier join,
+        // la garde-robe legacy du style vers des items.
+        if (_wearablesByPlayer.TryGetValue(conn.identity.netId, out var wearSession)) {
+            if (wearSession.ItemsByEntityId.Count == 0 && ApiManager.Instance != null) {
+                ApiManager.Instance.StartCoroutine(EnsureWearablesSession(conn));
+            } else {
+                SendWearablesSnapshot(conn, wearSession);
+                RecomputeWornClothing(conn, wearSession);
+            }
+        } else if (ApiManager.Instance != null) {
+            ApiManager.Instance.StartCoroutine(EnsureWearablesSession(conn));
+        }
     }
 
     public void OnPlayerLeaveRoom(NetworkConnectionToClient conn, string roomId)
@@ -1711,6 +1743,7 @@ public class ServerItemManager
         CloseAllSessions(netId);
         // Idem pour la session poche : libère les entityId+bridges alloués au connect.
         CleanupPocketSession(netId);
+        CleanupWearablesSession(netId);
 
         // Filet de sécurité : despawn TOUT item WORLD encore en scène dont le verrou
         // propriétaire correspond à ce joueur (AuthorizedNetId == netId). Cas typique :
@@ -2091,6 +2124,9 @@ public class ServerItemManager
     /// Faux = l'item est en main ou au sol (pas de slotIndex).</summary>
     private bool TryGetSlotIndexByUuid(string uuid, out int slotIndex) {
         foreach (var s in _pocketByPlayer.Values)
+            foreach (var it in s.ItemsByEntityId.Values)
+                if (it.ItemUuid == uuid) { slotIndex = it.SlotIndex; return true; }
+        foreach (var s in _wearablesByPlayer.Values)
             foreach (var it in s.ItemsByEntityId.Values)
                 if (it.ItemUuid == uuid) { slotIndex = it.SlotIndex; return true; }
         foreach (var s in _openContainerByPlayer.Values)
@@ -3690,7 +3726,7 @@ public class ServerItemManager
     // Garde l'enum pour le typage de IPlaceContext.Kind (lecture côté code orchestrateur).
     // La classification placeId → PlaceKind et la résolution placeKey → UUID backend sont
     // désormais portées par ResolvePlace + les IPlaceContext concrets.
-    private enum PlaceKind { Unknown, HandLeft, HandRight, Container, Pocket, ItemContainer, Back }
+    private enum PlaceKind { Unknown, HandLeft, HandRight, Container, Pocket, ItemContainer, Back, Wearables }
 
     // Back = « hand-like » : mono-slot, porté par une entité runtime attachée au joueur.
     private static bool IsHand(PlaceKind k) => k == PlaceKind.HandLeft || k == PlaceKind.HandRight || k == PlaceKind.Back;
@@ -5325,6 +5361,463 @@ public class ServerItemManager
         GameLogger.Network.Debug("PocketSessionClosed netId={NetId} place={Place}", netId, session.PlaceId);
     }
 
+    // ── Session wearables (vêtements portés) ──────────────────────────────────
+    // Cycle calqué sur la poche : hydratation au room-enter, cleanup au disconnect.
+    // En plus : recalcul de la SyncVar equippedClothing (look répliqué à tous) et
+    // migration one-shot de la garde-robe legacy du style vers des items.
+
+    /// <summary>Hydrate la session wearables (idempotent, hydratation unique en vol).</summary>
+    public IEnumerator EnsureWearablesSession(NetworkConnectionToClient conn) {
+        if (conn?.identity == null) yield break;
+        uint netId = conn.identity.netId;
+        if (!_wearablesHydrating.Add(netId)) yield break;
+        try { yield return HydrateWearablesSession(conn, netId); }
+        finally { _wearablesHydrating.Remove(netId); }
+    }
+
+    private IEnumerator HydrateWearablesSession(NetworkConnectionToClient conn, uint netId) {
+        var inv = conn.identity.GetComponent<PlayerInventory>();
+        if (inv == null || string.IsNullOrEmpty(inv.WearablesPlaceId)) {
+            Debug.LogWarning("[ServerItemManager] EnsureWearablesSession skipped — PlayerInventory ou WearablesPlaceId manquant");
+            yield break;
+        }
+
+        CleanupWearablesSession(netId);
+
+        UnityWebRequest req = ApiManager.Instance.GetPlaceStateRequest(inv.WearablesPlaceId);
+        yield return req.SendWebRequest();
+        if (req.responseCode != 200) {
+            Debug.LogWarning($"[ServerItemManager] EnsureWearablesSession GET failed code={req.responseCode}");
+            yield break;
+        }
+
+        PlaceStateJson state = null;
+        try { state = JsonConvert.DeserializeObject<PlaceStateJson>(req.downloadHandler.text); }
+        catch (System.Exception e) { Debug.LogWarning($"[ServerItemManager] WearablesState parse: {e.Message}"); yield break; }
+
+        var session = new PocketSession { PlaceId = inv.WearablesPlaceId };
+        if (state?.items != null) {
+            foreach (var it in state.items) {
+                int slotIndex = ReadSlotIndex(it.stateData);
+                int entityId  = _nextEntityId++;
+                SeedItemStateFromDb(it.configId, it.Id, it.stateData); // futures caractéristiques (couleur…)
+                session.ItemsByEntityId[entityId] = new PocketSessionItem {
+                    EntityId = entityId, ConfigId = it.configId, SlotIndex = slotIndex,
+                    ItemUuid = it.Id, Version = it.version, Quantity = 1,
+                };
+                if (!session.SlotToEntityId.ContainsKey(slotIndex))
+                    session.SlotToEntityId[slotIndex] = entityId;
+                _bridges[entityId] = new ItemDbBridge {
+                    Uuid = it.Id, Version = it.version, PlaceId = inv.WearablesPlaceId,
+                };
+            }
+        }
+        CleanupWearablesSession(netId);
+        _wearablesByPlayer[netId] = session;
+
+        // Migration legacy one-shot : place vide + style portant encore des vêtements →
+        // on les convertit en items équipés puis on nettoie le style (en DB — c'est le
+        // marqueur anti-rejeu : un joueur volontairement nu a un style déjà propre).
+        if (session.ItemsByEntityId.Count == 0) {
+            yield return MigrateStyleWardrobeIntoItems(conn, session);
+        }
+
+        SendWearablesSnapshot(conn, session);
+        RecomputeWornClothing(conn, session);
+        GameLogger.Network.Info("WearablesSessionOpened netId={NetId} place={Place} items={Count}",
+            netId, session.PlaceId, session.ItemsByEntityId.Count);
+    }
+
+    private static void SendWearablesSnapshot(NetworkConnectionToClient conn, PocketSession session) {
+        var items = new List<S2C_PocketItem>(session.ItemsByEntityId.Count);
+        foreach (var it in session.ItemsByEntityId.Values) {
+            items.Add(new S2C_PocketItem {
+                EntityId = it.EntityId, ConfigId = it.ConfigId, SlotIndex = it.SlotIndex,
+                Quantity = 1, LoadedAmmo = -1, CashAmount = 0,
+            });
+        }
+        conn.Send(new S2C_WearablesSync {
+            PlaceId   = session.PlaceId,
+            SlotCount = WearablesCapacity,
+            Items     = items.ToArray(),
+        });
+    }
+
+    /// <summary>Recalcule la SyncVar <c>equippedClothing</c> du porteur depuis la session :
+    /// csv de 5 ItemConfig ids (slots wearables), champs vides = catégorie nue. Jamais
+    /// chaîne vide — "" est le sentinel « pas encore calculé » côté client.</summary>
+    private static void RecomputeWornClothing(NetworkConnectionToClient conn, PocketSession session) {
+        var player = conn?.identity?.GetComponent<Sim.PlayerController>();
+        if (player == null) return;
+        var ids = new string[WearablesCapacity];
+        foreach (var it in session.ItemsByEntityId.Values) {
+            if (it.SlotIndex >= 0 && it.SlotIndex < WearablesCapacity) ids[it.SlotIndex] = it.ConfigId.ToString();
+        }
+        player.ServerSetEquippedClothing(string.Join(",", ids));
+    }
+
+    private void CleanupWearablesSession(uint netId) {
+        if (!_wearablesByPlayer.TryGetValue(netId, out var session)) return;
+        _wearablesByPlayer.Remove(netId);
+        foreach (var it in session.ItemsByEntityId.Values) _bridges.Remove(it.EntityId);
+        GameLogger.Network.Debug("WearablesSessionClosed netId={NetId} place={Place}", netId, session.PlaceId);
+    }
+
+    // ── Boîte de livraison (items) ────────────────────────────────────────────────
+    //
+    // RÈGLE PROJET : quand l'inventaire est plein et qu'un item ACHETÉ doit y atterrir,
+    // l'item part dans la boîte de livraison du joueur — place "container:deliverybox:{charId}",
+    // récupérable sur la DeliveryBox de son appartement (action « Récupérer », grille conteneur
+    // standard — mêmes moves/take-all que la fouille).
+
+    public const int DeliveryBoxSlots = 24;
+
+    /// <summary>Clé de place (suffixe « propUuid » du pattern container:) de la boîte d'un perso.</summary>
+    private static string DeliveryBoxKey(string charId) => $"deliverybox:{charId}";
+
+    /// <summary>Ouvre la grille des colis de la boîte de livraison du JOUEUR DEMANDEUR (toujours
+    /// la sienne — pas de résolution de prop, c'est son propre stockage).</summary>
+    public void HandleOpenDeliveryBoxItems(NetworkConnectionToClient conn, C2S_OpenDeliveryBoxItems msg) {
+        if (conn?.identity == null) return;
+        string charId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+        if (string.IsNullOrEmpty(charId)) {
+            conn.Send(new S2C_ContainerOpenFailed { PropId = 0, ErrorMessage = "Sans caractère" });
+            return;
+        }
+        ClosePropSession(conn.identity.netId);
+        ApiManager.Instance?.StartCoroutine(OpenContainerCoroutine(conn, conn.identity.netId, 0,
+            DeliveryBoxKey(charId), charId, ContainerConfig.CreateRuntime(DeliveryBoxSlots),
+            broadcastVisual: false));
+    }
+
+    /// <summary>
+    /// Dépose un item ACHETÉ dans la boîte de livraison du joueur (inventaire plein). Crée la
+    /// place au besoin (idempotent), choisit le premier slot libre et POST la ligne. Toast de
+    /// confirmation au dépôt — l'appelant rembourse si <paramref name="done"/> renvoie faux.
+    /// </summary>
+    public IEnumerator DepositPurchaseInDeliveryBox(NetworkConnectionToClient conn, ItemConfig config,
+        System.Action<bool> done) {
+        string charId = conn?.identity != null
+            ? conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id : null;
+        if (string.IsNullOrEmpty(charId) || config == null) { done?.Invoke(false); yield break; }
+
+        string placeId = null;
+        var occupied = new HashSet<int>();
+        yield return ResolveDeliveryBoxPlace(charId, (id, slots) => { placeId = id; occupied = slots; });
+        if (string.IsNullOrEmpty(placeId)) { done?.Invoke(false); yield break; }
+
+        int slot = 0;
+        while (occupied.Contains(slot)) slot++;
+
+        var body = new CreateItemBody {
+            placeId   = placeId,
+            configId  = config.ID,
+            quantity  = 1,
+            stateData = new Dictionary<string, object> { { "slotIndex", slot } },
+            ownedBy   = charId,
+        };
+        UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] DeliveryBox deposit failed cfg={config.ID} code={req.responseCode}");
+            done?.Invoke(false);
+            yield break;
+        }
+
+        if (conn != null && conn.identity != null) {
+            conn.Send(new ToastNotificationMessage {
+                text = $"{config.Label} déposé dans votre boîte de livraison",
+                worldToast = true,
+                kindByte = (byte)ToastKind.Success,
+            });
+        }
+        GameLogger.Network.Info("DeliveryBoxDeposit charId={CharId} cfg={ConfigId} slot={Slot}", charId, config.ID, slot);
+        done?.Invoke(true);
+    }
+
+    /// <summary>Place backend de la boîte (POST idempotent, même pattern qu'OpenContainerCoroutine
+    /// — clé container:deliverybox:{charId}) + slots occupés actuels.</summary>
+    private IEnumerator ResolveDeliveryBoxPlace(string charId, System.Action<string, HashSet<int>> done) {
+        var createBody = new CreatePlaceBody {
+            placeKey = $"container:{DeliveryBoxKey(charId)}",
+            type = "container",
+            ownerId = charId,
+            properties = new Dictionary<string, object> { { "slotCount", DeliveryBoxSlots } },
+        };
+        UnityWebRequest createReq = ApiManager.Instance.CreatePlaceRequest(createBody);
+        yield return createReq.SendWebRequest();
+        if (createReq.responseCode < 200 || createReq.responseCode >= 300) { done(null, null); yield break; }
+
+        PlaceJson place = null;
+        try { place = JsonConvert.DeserializeObject<PlaceJson>(createReq.downloadHandler.text); } catch { }
+        if (string.IsNullOrEmpty(place?.Id)) { done(null, null); yield break; }
+
+        var occupied = new HashSet<int>();
+        UnityWebRequest stateReq = ApiManager.Instance.GetPlaceStateRequest(place.Id);
+        yield return stateReq.SendWebRequest();
+        if (stateReq.responseCode == 200) {
+            try {
+                var state = JsonConvert.DeserializeObject<PlaceStateJson>(stateReq.downloadHandler.text);
+                if (state?.items != null) foreach (var it in state.items) occupied.Add(ReadSlotIndex(it.stateData));
+                if (state?.props != null) foreach (var p in state.props) occupied.Add(ReadSlotIndex(p.stateData));
+            } catch { }
+        }
+        done(place.Id, occupied);
+    }
+
+    /// <summary>
+    /// Achat en cabine : le slot wearables visé est OCCUPÉ → l'ancien vêtement est déplacé vers
+    /// la poche (premier slot libre) sinon vers la boîte de livraison, puis le nouveau est créé
+    /// équipé (<see cref="GrantClothingIntoWearables"/>). done(false) = rien n'a été créé
+    /// (l'appelant retombe sur l'acquisition classique / rembourse).
+    /// </summary>
+    public IEnumerator ReplaceWornClothing(NetworkConnectionToClient conn, ClothingConfig clothing,
+        System.Action<bool> done) {
+        uint netId = conn?.identity != null ? conn.identity.netId : 0;
+        int slot = clothing != null ? clothing.WearSlotIndex : -1;
+        if (conn?.identity == null || clothing == null
+            || !_wearablesByPlayer.TryGetValue(netId, out var wearSession)) {
+            done?.Invoke(false);
+            yield break;
+        }
+
+        // Slot déjà libre (course) : création directe.
+        if (!wearSession.SlotToEntityId.TryGetValue(slot, out int oldEntityId)
+            || !wearSession.ItemsByEntityId.TryGetValue(oldEntityId, out PocketSessionItem old)) {
+            yield return GrantClothingIntoWearables(conn, clothing, done);
+            yield break;
+        }
+
+        // 1. Sortir l'ancien : poche d'abord, sinon boîte de livraison (RÈGLE inventaire plein).
+        bool moved = false;
+        if (TryGetFreePocketSlot(netId, out PocketSession pocket, out int pocketSlot)) {
+            var body = new UpdateItemBody {
+                expectedVersion = old.Version,
+                placeId         = pocket.PlaceId,
+                stateData       = MoveStateData(old.ConfigId, old.ItemUuid, true, pocketSlot),
+            };
+            UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(old.ItemUuid, body);
+            yield return req.SendWebRequest();
+            if (req.responseCode >= 200 && req.responseCode < 300) {
+                moved = true;
+                wearSession.ItemsByEntityId.Remove(oldEntityId);
+                wearSession.SlotToEntityId.Remove(slot);
+                pocket.ItemsByEntityId[oldEntityId] = new PocketSessionItem {
+                    EntityId = oldEntityId, ConfigId = old.ConfigId, SlotIndex = pocketSlot,
+                    ItemUuid = old.ItemUuid, Version = old.Version + 1, Quantity = 1,
+                };
+                pocket.SlotToEntityId[pocketSlot] = oldEntityId;
+                _bridges[oldEntityId] = new ItemDbBridge {
+                    Uuid = old.ItemUuid, Version = old.Version + 1, PlaceId = pocket.PlaceId,
+                };
+                SendPocketSnapshot(conn, pocket);
+            } else {
+                Debug.LogWarning($"[ServerItemManager] ReplaceWorn PATCH→pocket failed uuid={old.ItemUuid} code={req.responseCode}");
+            }
+        } else {
+            string charId = conn.identity.GetComponent<Sim.PlayerController>()?.CharacterData?.Id;
+            string boxPlaceId = null;
+            var occupied = new HashSet<int>();
+            yield return ResolveDeliveryBoxPlace(charId, (id, slots) => { boxPlaceId = id; occupied = slots; });
+            if (!string.IsNullOrEmpty(boxPlaceId)) {
+                int boxSlot = 0;
+                while (occupied.Contains(boxSlot)) boxSlot++;
+                var body = new UpdateItemBody {
+                    expectedVersion = old.Version,
+                    placeId         = boxPlaceId,
+                    stateData       = MoveStateData(old.ConfigId, old.ItemUuid, true, boxSlot),
+                };
+                UnityWebRequest req = ApiManager.Instance.UpdateItemRequest(old.ItemUuid, body);
+                yield return req.SendWebRequest();
+                if (req.responseCode >= 200 && req.responseCode < 300) {
+                    moved = true;
+                    wearSession.ItemsByEntityId.Remove(oldEntityId);
+                    wearSession.SlotToEntityId.Remove(slot);
+                    _bridges.Remove(oldEntityId);
+                    var oldCfg = DatabaseManager.GetItemConfigById(old.ConfigId);
+                    conn.Send(new ToastNotificationMessage {
+                        text = $"{(oldCfg != null ? oldCfg.Label : "Vêtement")} déposé dans votre boîte de livraison",
+                        worldToast = true,
+                        kindByte = (byte)ToastKind.Success,
+                    });
+                } else {
+                    Debug.LogWarning($"[ServerItemManager] ReplaceWorn PATCH→deliverybox failed uuid={old.ItemUuid} code={req.responseCode}");
+                }
+            }
+        }
+
+        if (!moved) { done?.Invoke(false); yield break; }
+
+        // 2. Le slot est libre : création du nouveau (snapshot + recompute inclus).
+        yield return GrantClothingIntoWearables(conn, clothing, done);
+    }
+
+    /// <summary>Le slot wearables est-il libre pour ce joueur ? Faux si la session n'est pas
+    /// (encore) hydratée — l'appelant retombe alors sur l'acquisition poche classique.
+    /// Consommé par l'achat en cabine d'essayage (ClothingShopSystemBootstrap).</summary>
+    public bool IsWearableSlotFree(uint netId, int slotIndex) {
+        if (slotIndex < 0 || slotIndex >= WearablesCapacity) return false;
+        return _wearablesByPlayer.TryGetValue(netId, out var session)
+            && !session.SlotToEntityId.ContainsKey(slotIndex);
+    }
+
+    /// <summary>Nombre de slots de poche libres (0 si la session poche n'est pas ouverte).
+    /// Pré-check de capacité des achats multi-items (cabine d'essayage).</summary>
+    public int CountFreePocketSlots(uint netId) {
+        if (!_pocketByPlayer.TryGetValue(netId, out var session)) return 0;
+        int free = 0;
+        for (int i = 0; i < PocketCapacity; i++) {
+            if (!session.SlotToEntityId.ContainsKey(i)) free++;
+        }
+        return free;
+    }
+
+    /// <summary>
+    /// Crée un vêtement ACHETÉ directement ÉQUIPÉ (place wearables, slot de sa catégorie) —
+    /// même mécanique que la migration : POST backend, session + bridges, puis snapshot +
+    /// recompute du look répliqué. L'appelant a vérifié que le slot est libre
+    /// (<see cref="IsWearableSlotFree"/>) ; un slot pris entre-temps échoue proprement (done false).
+    /// </summary>
+    public IEnumerator GrantClothingIntoWearables(NetworkConnectionToClient conn, ClothingConfig clothing,
+        System.Action<bool> done) {
+        var player = conn?.identity?.GetComponent<Sim.PlayerController>();
+        string charId = player?.CharacterData?.Id;
+        int slot = clothing != null ? clothing.WearSlotIndex : -1;
+        if (player == null || string.IsNullOrEmpty(charId) || clothing == null
+            || !_wearablesByPlayer.TryGetValue(conn.identity.netId, out var session)
+            || session.SlotToEntityId.ContainsKey(slot)) {
+            done?.Invoke(false);
+            yield break;
+        }
+
+        var body = new CreateItemBody {
+            placeId   = session.PlaceId,
+            configId  = clothing.ID,
+            quantity  = 1,
+            stateData = new Dictionary<string, object> { { "slotIndex", slot } },
+            ownedBy   = charId,
+        };
+        UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+        yield return req.SendWebRequest();
+        if (req.responseCode < 200 || req.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] GrantClothing POST failed cfg={clothing.ID} code={req.responseCode}");
+            done?.Invoke(false);
+            yield break;
+        }
+
+        ItemJson it = null;
+        try { it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text); } catch { }
+        if (it == null) { done?.Invoke(false); yield break; }
+
+        int entityId = _nextEntityId++;
+        session.ItemsByEntityId[entityId] = new PocketSessionItem {
+            EntityId = entityId, ConfigId = clothing.ID, SlotIndex = slot,
+            ItemUuid = it.Id, Version = it.version, Quantity = 1,
+        };
+        session.SlotToEntityId[slot] = entityId;
+        _bridges[entityId] = new ItemDbBridge { Uuid = it.Id, Version = it.version, PlaceId = session.PlaceId };
+
+        SendWearablesSnapshot(conn, session);
+        RecomputeWornClothing(conn, session);
+        done?.Invoke(true);
+    }
+
+    private static ClothingConfig FindClothingConfigByElement(AdvancedPeopleSystem.CharacterElementType type, int index, Gender gender) {
+        foreach (var cfg in DatabaseManager.ItemConfigs)
+            if (cfg is ClothingConfig clothing && clothing.ElementType == type && clothing.ElementIndex == index
+                && clothing.Gender == gender)
+                return clothing;
+        return null;
+    }
+
+    /// <summary>
+    /// Migration legacy : la garde-robe encore stockée dans <c>Style.advanced</c> (persos créés
+    /// avant les items vêtements) devient des rows items dans la place wearables, puis les 5
+    /// catégories vestimentaires sont retirées du style et le style nettoyé est persisté
+    /// (PUT /characters/:id/update-style). Les éléments sans ClothingConfig correspondant sont
+    /// simplement retirés du style (le look est désormais 100 % item-driven).
+    /// </summary>
+    private IEnumerator MigrateStyleWardrobeIntoItems(NetworkConnectionToClient conn, PocketSession session) {
+        var player = conn?.identity?.GetComponent<Sim.PlayerController>();
+        string charId = player?.CharacterData?.Id;
+        if (player == null || string.IsNullOrEmpty(charId)) yield break;
+
+        Style style = player.CharacterData.Style;
+        if (string.IsNullOrEmpty(style.advanced)) yield break;
+
+        AdvancedPeopleSystem.CharacterCustomizationSetup setup = null;
+        try {
+            setup = AdvancedPeopleSystem.CharacterCustomizationSetup.Deserialize(
+                style.advanced, AdvancedPeopleSystem.CharacterCustomizationSetup.CharacterFileSaveFormat.Json);
+        } catch (System.Exception e) {
+            Debug.LogWarning($"[ServerItemManager] WearablesMigration : setup illisible ({e.Message})");
+        }
+        if (setup == null) yield break;
+
+        bool dirty = false;
+        for (int slot = 0; slot < WearablesCapacity; slot++) {
+            var type = ClothingConfig.ElementTypeForSlot(slot);
+            int index = setup.selectedElements.GetSelectedIndex(type);
+            if (index < 0) continue;
+            dirty = true;
+
+            ClothingConfig clothing = FindClothingConfigByElement(type, index, style.gender);
+            if (clothing != null) {
+                var body = new CreateItemBody {
+                    placeId   = session.PlaceId,
+                    configId  = clothing.ID,
+                    quantity  = 1,
+                    stateData = new Dictionary<string, object> { { "slotIndex", slot } },
+                    ownedBy   = charId,
+                };
+                UnityWebRequest req = ApiManager.Instance.CreateItemRequest(body);
+                yield return req.SendWebRequest();
+                if (req.responseCode >= 200 && req.responseCode < 300) {
+                    try {
+                        var it = JsonConvert.DeserializeObject<ItemJson>(req.downloadHandler.text);
+                        if (it != null) {
+                            int entityId = _nextEntityId++;
+                            session.ItemsByEntityId[entityId] = new PocketSessionItem {
+                                EntityId = entityId, ConfigId = clothing.ID, SlotIndex = slot,
+                                ItemUuid = it.Id, Version = it.version, Quantity = 1,
+                            };
+                            session.SlotToEntityId[slot] = entityId;
+                            _bridges[entityId] = new ItemDbBridge { Uuid = it.Id, Version = it.version, PlaceId = session.PlaceId };
+                        }
+                    } catch { /* tolerate */ }
+                } else {
+                    Debug.LogWarning($"[ServerItemManager] WearablesMigration POST failed cfg={clothing.ID} code={req.responseCode}");
+                }
+            }
+
+            SetWardrobeIndex(setup.selectedElements, type, -1);
+        }
+        if (!dirty) yield break;
+
+        // Persiste le style nettoyé — c'est le marqueur de migration. On met aussi à jour la
+        // copie serveur en mémoire (les futurs SetRawCharacterData sérialisent ce même objet)
+        // SANS re-répliquer tout le CharacterData ici (le look passe par equippedClothing).
+        style.advanced = JsonUtility.ToJson(setup);
+        player.CharacterData.Style = style;
+        UnityWebRequest styleReq = ApiManager.Instance.UpdateCharacterStyleRequest(charId, style);
+        yield return styleReq.SendWebRequest();
+        if (styleReq.responseCode < 200 || styleReq.responseCode >= 300) {
+            Debug.LogWarning($"[ServerItemManager] WearablesMigration update-style failed code={styleReq.responseCode}");
+        }
+        GameLogger.Network.Info("WearablesMigrated charId={CharId} items={Count}", charId, session.ItemsByEntityId.Count);
+    }
+
+    private static void SetWardrobeIndex(AdvancedPeopleSystem.CharacterSelectedElements elements,
+        AdvancedPeopleSystem.CharacterElementType type, int index) {
+        switch (type) {
+            case AdvancedPeopleSystem.CharacterElementType.Hat: elements.Hat = index; break;
+            case AdvancedPeopleSystem.CharacterElementType.Accessory: elements.Accessory = index; break;
+            case AdvancedPeopleSystem.CharacterElementType.Shirt: elements.Shirt = index; break;
+            case AdvancedPeopleSystem.CharacterElementType.Pants: elements.Pants = index; break;
+            case AdvancedPeopleSystem.CharacterElementType.Shoes: elements.Shoes = index; break;
+        }
+    }
+
     // ── Maintenance de grille : tri alphabétique + optimisation (merge de piles) ──
     // Opérations serveur-autoritaires sur une SESSION ouverte (poche / conteneur prop /
     // colis), PATCHes séquentiels avec reprise OCC (PatchItemWithResync), snapshot
@@ -6065,6 +6558,86 @@ public class ServerItemManager
     }
 
     /// <summary>
+    /// Place des vêtements PORTÉS ("wearables:{charId}") : 5 slots fixes, un par catégorie
+    /// APS2 (ClothingConfig.WearSlotFor). Même session résidente que la poche, mais la cible
+    /// n'accepte qu'un ClothingConfig du slot exact, supporté par le genre du porteur. Les
+    /// mutations déclenchent RecomputeWornClothing via PushSnapshotsFor (le look répliqué).
+    /// </summary>
+    private sealed class WearablesPlaceContext : IPlaceContext {
+        private readonly ServerItemManager _mgr;
+        private readonly NetworkConnectionToClient _conn;
+        private readonly uint   _netId;
+        private readonly string _backendPlaceId;
+
+        public WearablesPlaceContext(ServerItemManager mgr, NetworkConnectionToClient conn, uint netId, string backendPlaceId) {
+            _mgr = mgr; _conn = conn; _netId = netId; _backendPlaceId = backendPlaceId;
+        }
+
+        public PlaceKind Kind         => PlaceKind.Wearables;
+        public string    PlaceId      => _backendPlaceId;
+        public bool      HasSlotIndex => true;
+
+        public bool TryResolveItem(int entityId, int declaredSlot, out ItemCtx ctx, out string err) {
+            ctx = default; err = null;
+            if (!_mgr._wearablesByPlayer.TryGetValue(_netId, out var s) || !s.ItemsByEntityId.TryGetValue(entityId, out var pi)) {
+                err = "Vêtement introuvable"; return false;
+            }
+            if (declaredSlot >= 0 && pi.SlotIndex != declaredSlot) {
+                err = "Slot vêtement incohérent"; return false;
+            }
+            ctx = new ItemCtx { ConfigId = pi.ConfigId, ItemUuid = pi.ItemUuid, Version = pi.Version, Quantity = 1 };
+            return true;
+        }
+
+        public bool ValidateAsTarget(int slotIndex, int configId, out string err) {
+            err = null;
+            if (slotIndex < 0 || slotIndex >= WearablesCapacity) {
+                err = "Slot vêtement hors limites"; return false;
+            }
+            if (!(DatabaseManager.GetItemConfigById(configId) is ClothingConfig clothing)) {
+                err = InventoryToasts.NotClothing; return false;
+            }
+            if (clothing.WearSlotIndex != slotIndex) {
+                err = InventoryToasts.WrongClothingSlot; return false;
+            }
+            var player = _conn?.identity?.GetComponent<Sim.PlayerController>();
+            Gender gender = player?.CharacterData?.Style.gender ?? Gender.MALE;
+            if (!clothing.SupportsGender(gender)) {
+                err = InventoryToasts.ClothingWrongGender; return false;
+            }
+            return true;
+        }
+
+        public bool IsSlotAvailableFor(int slotIndex, int entityId) {
+            if (!_mgr._wearablesByPlayer.TryGetValue(_netId, out var s)) return true;
+            if (!s.SlotToEntityId.TryGetValue(slotIndex, out var occ)) return true;
+            return occ == entityId;
+        }
+
+        public void TearDown(int entityId) {
+            if (!_mgr._wearablesByPlayer.TryGetValue(_netId, out var s)) return;
+            if (!s.ItemsByEntityId.TryGetValue(entityId, out var old)) return;
+            s.ItemsByEntityId.Remove(entityId);
+            if (s.SlotToEntityId.TryGetValue(old.SlotIndex, out var occ) && occ == entityId)
+                s.SlotToEntityId.Remove(old.SlotIndex);
+        }
+
+        public void Install(int entityId, ItemCtx ctx, int slotIndex, int newVersion) {
+            if (!_mgr._wearablesByPlayer.TryGetValue(_netId, out var s)) {
+                // Move avant EnsureWearablesSession : session à la volée (même garde que la poche).
+                s = new PocketSession { PlaceId = _backendPlaceId };
+                _mgr._wearablesByPlayer[_netId] = s;
+            }
+            s.ItemsByEntityId[entityId] = new PocketSessionItem {
+                EntityId = entityId, ConfigId = ctx.ConfigId, SlotIndex = slotIndex,
+                ItemUuid = ctx.ItemUuid, Version = newVersion, Quantity = 1,
+            };
+            s.SlotToEntityId[slotIndex] = entityId;
+            _mgr._bridges[entityId] = new ItemDbBridge { Uuid = ctx.ItemUuid, Version = newVersion, PlaceId = _backendPlaceId };
+        }
+    }
+
+    /// <summary>
     /// Factory : convertit un placeId wire (placeKey "hand_left:…/pocket:…" ou UUID conteneur)
     /// en l'IPlaceContext approprié, en résolvant le backend UUID via PlayerInventory.
     /// Retourne null si le placeId n'est reconnu pour ce joueur (Unknown place).
@@ -6090,6 +6663,10 @@ public class ServerItemManager
         if (placeId == $"pocket:{charId}") {
             string backend = inv?.PocketPlaceId ?? placeId;
             return new PocketPlaceContext(this, netId, backend);
+        }
+        if (placeId == $"wearables:{charId}") {
+            string backend = inv?.WearablesPlaceId ?? placeId;
+            return new WearablesPlaceContext(this, conn, netId, backend);
         }
         if (_openContainerByPlayer.TryGetValue(netId, out var openContainer) && placeId == openContainer.PlaceId) {
             return new ContainerPlaceContext(this, openContainer);
@@ -6118,6 +6695,11 @@ public class ServerItemManager
         if ((from.Kind == PlaceKind.ItemContainer || to.Kind == PlaceKind.ItemContainer)
             && _openItemContainerByPlayer.TryGetValue(netId, out var itemContainer)) {
             SendItemContainerSnapshot(conn, itemContainer);
+        }
+        if ((from.Kind == PlaceKind.Wearables || to.Kind == PlaceKind.Wearables)
+            && _wearablesByPlayer.TryGetValue(netId, out var wearables)) {
+            SendWearablesSnapshot(conn, wearables);
+            RecomputeWornClothing(conn, wearables); // le look suit chaque équip/retrait
         }
     }
 

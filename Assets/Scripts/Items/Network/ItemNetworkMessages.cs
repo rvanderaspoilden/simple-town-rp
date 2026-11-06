@@ -291,6 +291,24 @@ public struct S2C_PocketSync : NetworkMessage
     public S2C_PocketItem[] Items;
 }
 
+// ── Vêtements portés (place "wearables:{charId}") ─────────────────────────────
+// Modèle identique à la poche : session serveur résidente, 5 slots fixes (un par
+// catégorie APS2 : 0=chapeau, 1=accessoire, 2=haut, 3=pantalon, 4=chaussures —
+// cf. ClothingConfig.WearSlotFor). Le LOOK est répliqué séparément à tous les
+// clients via la SyncVar PlayerController.equippedClothing ; ce snapshot ne sert
+// qu'à l'UI d'inventaire du porteur.
+
+/// <summary>
+/// Server → porteur : snapshot complet des vêtements portés. Émis à la connexion
+/// puis après chaque move qui touche la place wearables.
+/// </summary>
+public struct S2C_WearablesSync : NetworkMessage
+{
+    public string PlaceId;          // UUID backend de la place wearables
+    public int    SlotCount;        // ClothingConfig.WearSlotCount (5)
+    public S2C_PocketItem[] Items;  // mêmes entrées que la poche (slotIndex = catégorie)
+}
+
 /// <summary>
 /// Client → server : déplace un item d'une place à une autre.
 /// Place IDs canoniques :
@@ -362,6 +380,13 @@ public struct C2S_SearchNpcCorpse : NetworkMessage
 public struct C2S_SearchLootBag : NetworkMessage
 {
     public uint BagNetId;
+}
+
+/// <summary>Ouvre la grille des colis de SA boîte de livraison (place
+/// container:deliverybox:{charId}) — action « Récupérer » de la DeliveryBox. Même flux que la
+/// fouille de sac de butin (grille conteneur canal Prop).</summary>
+public struct C2S_OpenDeliveryBoxItems : NetworkMessage
+{
 }
 
 // ── Maintenance d'une grille (tri / optimisation) ──────────────────────────────

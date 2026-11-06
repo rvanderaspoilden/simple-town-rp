@@ -128,6 +128,12 @@ public class ContainerPanelUI : MonoBehaviour
 
         Subscribe();
         Show(false);
+
+        // Le panneau Item vit SOUS le Player Inventory Panel (inactif jusqu'à la 1re ouverture) :
+        // à cette 1re activation, InventoryUI.OnEnable (parent) tourne AVANT cet Awake —
+        // son RefreshHeldContainer est tombé sur Item=null. On ré-évalue donc ici, sinon la
+        // grille du sac à dos porté (restauré à la reconnexion) manque à la première ouverture.
+        if (IsItemChannel) OnLocalHandsChanged();
     }
 
     private void OnDestroy()

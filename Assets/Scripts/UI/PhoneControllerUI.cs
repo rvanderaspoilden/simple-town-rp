@@ -79,9 +79,11 @@ namespace Sim {
             this.Swipe();
 
             // Ouverture/fermeture par la touche dédiée (plus Échap : Échap ferme désormais
-            // via le pump universel de HUDManager). Inhibée pendant une saisie de texte.
+            // via le pump universel de HUDManager). Inhibée pendant une saisie de texte et
+            // en cabine d'essayage (état verrouillé).
             if (Sim.Utils.GameInput.Down(this.phoneKey)
-                && !Sim.Utils.CursorLock.IsTypingInInputField()) {
+                && !Sim.Utils.CursorLock.IsTypingInInputField()
+                && !(Sim.UI.FittingRoomUI.Instance != null && Sim.UI.FittingRoomUI.Instance.IsOpen)) {
                 if (this.phoneOpened) this.ClosePhone();
                 else this.OpenPhone();
             }

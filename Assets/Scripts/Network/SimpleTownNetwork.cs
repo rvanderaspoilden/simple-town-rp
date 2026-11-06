@@ -392,6 +392,7 @@ public class SimpleTownNetwork : NetworkManager
         Sim.AcquaintanceSystemBootstrap.OnServerStart();
         Sim.GiveMoneySystemBootstrap.OnServerStart();
         Sim.AtmSystemBootstrap.OnServerStart();
+        Sim.ClothingShopSystemBootstrap.OnServerStart();
         Sim.SmsSystemBootstrap.OnServerStart();
         Sim.CallSystemBootstrap.OnServerStart();
         Sim.VehicleSystemBootstrap.OnServerStart();
@@ -457,6 +458,7 @@ public class SimpleTownNetwork : NetworkManager
         Sim.SmsSystemBootstrap.OnClientStart();
         Sim.CallSystemBootstrap.OnClientStart();
         Sim.LandSystemBootstrap.OnClientStart();
+        Sim.ClothingShopSystemBootstrap.OnClientStart();
         ClientLogger.Network("ClientStarted {Active}", NetworkClient.active);
     }
 
@@ -483,6 +485,7 @@ public class SimpleTownNetwork : NetworkManager
         Sim.CallSystemBootstrap.OnServerStop();
         Sim.SmsSystemBootstrap.OnServerStop();
         Sim.AtmSystemBootstrap.OnServerStop();
+        Sim.ClothingShopSystemBootstrap.OnServerStop();
         Sim.GiveMoneySystemBootstrap.OnServerStop();
         Sim.AcquaintanceSystemBootstrap.OnServerStop();
         Sim.RentSystemBootstrap.OnServerStop();
@@ -518,6 +521,7 @@ public class SimpleTownNetwork : NetworkManager
         NetworkClient.UnregisterHandler<S2C_HallDespawn>();
         NetworkClient.UnregisterHandler<S2C_ApartmentSpawn>();
 
+        Sim.ClothingShopSystemBootstrap.OnClientStop();
         Sim.LandSystemBootstrap.OnClientStop();
         Sim.CallSystemBootstrap.OnClientStop();
         Sim.SmsSystemBootstrap.OnClientStop();

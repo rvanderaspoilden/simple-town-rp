@@ -39,6 +39,10 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
     // Slots affichés avant le premier S2C_PocketSync (le snapshot serveur fait autorité ensuite).
     private const int DefaultPocketSlotCount = 8;
 
+    [Header("Vêtements portés (place wearables)")]
+    [SerializeField, Tooltip("Slots vêtements du panneau équipement — ordre FIXE : chapeau, accessoire, haut, pantalon, chaussures (= slots de la place wearables, cf. ClothingConfig.WearSlotFor). Câblés par Tools ▸ The BROZ ▸ Build Wearable Slots.")]
+    private List<ItemSlot> wearableSlots = new List<ItemSlot>();
+
     [SerializeField] private Transform     poolContainer;
     [SerializeField] private DraggableItem draggableItemPrefab;
 
@@ -58,6 +62,7 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
         // autorité sur l'item porté. Les poches gardent le swap visuel (pocket↔pocket,
         // pocket↔container) et le sac à dos s'affiche en encart (ContainerPanelUI).
         EnsurePocketSlots(DefaultPocketSlotCount);
+        EnsureWearableSlots();
 
         if (sortPocketButton != null)     sortPocketButton.onClick.AddListener(() => SendPocketMaintenance(sort: true));
         if (optimizePocketButton != null) optimizePocketButton.onClick.AddListener(() => SendPocketMaintenance(sort: false));
@@ -112,7 +117,25 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
             foreach (ItemSlot s in _pocketSlots) if (s) s.PlaceId = $"pocket:{charId}";
     }
 
+    /// <summary>Initialise les propriétés runtime des slots vêtements autorés dans le prefab
+    /// (SlotIndex = position dans la liste = slot de la place wearables ; swap autorisé pour
+    /// l'échange direct vêtement porté ↔ vêtement en poche). Idempotent.</summary>
+    private void EnsureWearableSlots()
+    {
+        for (int i = 0; i < wearableSlots.Count; i++) {
+            if (wearableSlots[i] == null) continue;
+            wearableSlots[i].SlotIndex = i;
+            wearableSlots[i].CanSwap   = true;
+        }
+
+        string charId = PlayerController.Local != null ? PlayerController.Local.CharacterData?.Id : null;
+        if (!string.IsNullOrEmpty(charId))
+            foreach (ItemSlot s in wearableSlots) if (s) s.PlaceId = $"wearables:{charId}";
+    }
+
     private bool IsPocketSlot(ItemSlot slot) => slot != null && _pocketSlots.Contains(slot);
+
+    private bool IsWearableSlot(ItemSlot slot) => slot != null && wearableSlots.Contains(slot);
 
     /// <summary>Premier slot de poche libre (grille) — utilisé par « Ranger » de la carte de détail.</summary>
     public bool TryFindFreePocketSlot(out int slotIndex)
@@ -149,6 +172,8 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
     private void RefreshSelection(int entityId) {
         foreach (ItemSlot s in _pocketSlots)
             if (s != null) s.SetSelected(s.Item != null && s.Item.EntityId == entityId);
+        foreach (ItemSlot s in wearableSlots)
+            if (s != null) s.SetSelected(s.Item != null && s.Item.EntityId == entityId);
         if (backpackSlot != null)
             backpackSlot.SetSelected(backpackSlot.Item != null && backpackSlot.Item.EntityId == entityId);
     }
@@ -158,6 +183,8 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
         if (entityId <= 0) return null;
         foreach (ItemSlot s in _pocketSlots)
             if (s != null && s.Item != null && s.Item.EntityId == entityId) return s.Item;
+        foreach (ItemSlot s in wearableSlots)
+            if (s != null && s.Item != null && s.Item.EntityId == entityId) return s.Item;
         if (backpackSlot  != null && backpackSlot.Item  != null && backpackSlot.Item.EntityId  == entityId) return backpackSlot.Item;
         return null;
     }
@@ -166,6 +193,8 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
     {
         foreach (ItemSlot s in _pocketSlots)
             if (s != null && s.gameObject.activeSelf && s.Item != null) return s.Item;
+        foreach (ItemSlot s in wearableSlots)
+            if (s != null && s.Item != null) return s.Item;
         if (backpackSlot  != null && backpackSlot.Item  != null) return backpackSlot.Item;
         return null;
     }
@@ -198,12 +227,15 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
         PlayerHands.OnHandChanged   += OnPlayerHandChanged;
         ClientItemManager.MoveItemResult += OnMoveItemResultReceived;
         ClientItemManager.PocketSync     += OnPocketSyncReceived;
+        ClientItemManager.WearablesSync  += OnWearablesSyncReceived;
         ItemDetailCardUI.OnSelectionChanged += OnSelectionChanged;
 
         // Replay du dernier snapshot poche : la session est ouverte serveur-side au
         // connect ; les opens/closes de la HUD ne re-déclenchent pas de S2C_PocketSync.
         if (ClientItemManager.LastPocketSnapshot.HasValue)
             ApplyPocketSnapshot(ClientItemManager.LastPocketSnapshot.Value);
+        if (ClientItemManager.LastWearablesSnapshot.HasValue)
+            ApplyWearablesSnapshot(ClientItemManager.LastWearablesSnapshot.Value);
 
         // Ouvrir l'inventaire ré-affiche aussi la grille du colis s'il est tenu.
         ContainerPanelUI.Item?.RefreshHeldContainer();
@@ -216,6 +248,7 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
         // Release par slot — NE PAS pool.Dispose() car le pool est aussi consommé par
         // ContainerPanelUI, et un Dispose() global libérerait ses draggables aussi.
         ReleaseSlot(backpackSlot);
+        foreach (ItemSlot s in wearableSlots) ReleaseSlot(s);
 
         PlayerBankAccount.OnLocalMoneyChanged -= OnLocalMoneyChanged;
         PlayerController.OnCharacterDataChanged -= OnCharacterDataChanged;
@@ -230,6 +263,7 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
         PlayerHands.OnHandChanged   -= OnPlayerHandChanged;
         ClientItemManager.MoveItemResult -= OnMoveItemResultReceived;
         ClientItemManager.PocketSync     -= OnPocketSyncReceived;
+        ClientItemManager.WearablesSync  -= OnWearablesSyncReceived;
         ItemDetailCardUI.OnSelectionChanged -= OnSelectionChanged;
 
         // Ferme les deux conteneurs avec l'inventaire (meuble + colis), comme un
@@ -337,6 +371,16 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
         if (backpackSlot) backpackSlot.SetDropAcceptance(isWearable);
         foreach (ItemSlot s in _pocketSlots) if (s) s.SetDropAcceptance(allowedInPocket);
 
+        // Slots vêtements : seul le slot de la catégorie du ClothingConfig traîné accepte,
+        // ET uniquement si le vêtement est du genre du personnage (le serveur revalide —
+        // WearablesPlaceContext.ValidateAsTarget).
+        var clothing = dragged.ItemConfig as ClothingConfig;
+        Gender localGender = PlayerController.Local != null && PlayerController.Local.CharacterData != null
+            ? PlayerController.Local.CharacterData.Style.gender : Gender.MALE;
+        bool wearableByLocal = clothing != null && clothing.SupportsGender(localGender);
+        foreach (ItemSlot s in wearableSlots)
+            if (s) s.SetDropAcceptance(wearableByLocal && clothing.WearSlotIndex == s.SlotIndex);
+
         // L'origine reste toujours active : permet une annulation immédiate sans devoir
         // sortir le pointeur de la zone, et évite que le drop sur soi-même soit refusé.
         if (dragged.ItemSlot != null) dragged.ItemSlot.SetDropAcceptance(true);
@@ -345,6 +389,7 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
     private void ResetDropAcceptance(DraggableItem dragged = null) {
         if (backpackSlot)  backpackSlot.SetDropAcceptance(true);
         foreach (ItemSlot s in _pocketSlots) if (s) s.SetDropAcceptance(true);
+        foreach (ItemSlot s in wearableSlots) if (s) s.SetDropAcceptance(true);
     }
 
     /// <summary>
@@ -543,6 +588,32 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
 
     private void OnPocketSyncReceived(S2C_PocketSync msg) => ApplyPocketSnapshot(msg);
 
+    private void OnWearablesSyncReceived(S2C_WearablesSync msg) => ApplyWearablesSnapshot(msg);
+
+    /// <summary>Reconstruit les slots vêtements depuis le snapshot serveur (même logique
+    /// autoritaire que la poche : release puis re-rente des draggables).</summary>
+    private void ApplyWearablesSnapshot(S2C_WearablesSync msg)
+    {
+        EnsurePool();
+        EnsureWearableSlots();
+        foreach (ItemSlot s in wearableSlots) ReleasePocketSlot(s);
+
+        if (msg.Items == null) { RefreshDetailCard(); return; }
+        foreach (var entry in msg.Items) {
+            ItemSlot target = entry.SlotIndex >= 0 && entry.SlotIndex < wearableSlots.Count
+                            ? wearableSlots[entry.SlotIndex] : null;
+            var cfg = DatabaseManager.GetItemConfigById(entry.ConfigId);
+            if (target == null || cfg == null) continue;
+            DraggableItem d = _draggableItemPool.Get();
+            d.SetConfiguration(cfg);
+            d.SetEntityId(entry.EntityId);
+            d.SetQuantity(1);
+            target.SetItem(d);
+        }
+
+        RefreshDetailCard();
+    }
+
     /// <summary>
     /// Reconstruit complètement les slots poche à partir du snapshot serveur :
     /// libère les anciens draggables, en rente de nouveaux pour chaque item.
@@ -633,6 +704,7 @@ public class InventoryUI : MonoBehaviour, Sim.UI.IHudOverlay
         if (!string.IsNullOrEmpty(charId)) {
             if (backpackSlot)  backpackSlot.PlaceId  = $"backpack:{charId}";
             foreach (ItemSlot s in _pocketSlots) if (s) s.PlaceId = $"pocket:{charId}";
+            foreach (ItemSlot s in wearableSlots) if (s) s.PlaceId = $"wearables:{charId}";
         }
 
         var hands = PlayerController.Local.PlayerHands;

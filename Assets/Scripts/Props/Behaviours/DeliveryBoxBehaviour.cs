@@ -25,6 +25,33 @@ public class DeliveryBoxBehaviour : PropBehaviourBase {
     private uint       _deliveryCount;
     private Delivery[] _lastDeliveries = System.Array.Empty<Delivery>();
 
+    // Action « Récupérer » : ouvre la grille des COLIS ITEMS de la boîte (place
+    // container:deliverybox:{charId}) — les achats qui ne tenaient pas dans l'inventaire
+    // (RÈGLE PROJET) atterrissent ici. Grille conteneur standard, même flux que la fouille.
+    private Action _collectAction;
+
+    protected override void Awake() {
+        base.Awake();
+        _collectAction = Action.CreateRuntime(ActionTypeEnum.SEARCH, "Récupérer",
+            Resources.Load<Action>("Configurations/Actions/SEARCH")?.Icon);
+        _collectAction.OnExecute += OnCollectExecuted;
+    }
+
+    protected override void OnDestroy() {
+        base.OnDestroy();
+        if (_collectAction != null) _collectAction.OnExecute -= OnCollectExecuted;
+    }
+
+    private void OnCollectExecuted(Action _) {
+        if (!Mirror.NetworkClient.isConnected) return;
+        // BUSY avant la grille (la sortie d'Idle referme l'inventaire) ; annulable au mouvement.
+        PlayerController.Local?.BeginBusy(LootPanelUI.IsLootOpen, transform,
+            cancelOnMove: true, onCancelled: () => LootPanelUI.Instance?.Close());
+        LootPanelUI.Instance?.OpenSearchDelayed(ServerItemManager.DeliveryBoxSlots,
+            "Boîte de livraison", 0.1f);
+        Mirror.NetworkClient.Send(new C2S_OpenDeliveryBoxItems());
+    }
+
     // ── IPropBehaviour ────────────────────────────────────────────────────────
 
     public override void ApplyState(PropType type, byte[] payload) {
@@ -67,8 +94,14 @@ public class DeliveryBoxBehaviour : PropBehaviourBase {
     // Only the box owner (the apartment tenant) can interact with it.
     public override bool IsInteractable() => IsOwnedByLocal && base.IsInteractable();
 
-    public override Action[] GetActions(bool withPriority = false) =>
-        base.GetActions(withPriority);
+    public override Action[] GetActions(bool withPriority = false) {
+        Action[] actions = base.GetActions(withPriority);
+        if (_collectAction == null) return actions;
+        var result = new Action[actions.Length + 1];
+        actions.CopyTo(result, 0);
+        result[actions.Length] = _collectAction;
+        return result;
+    }
 
     // ── PropBehaviourBase ─────────────────────────────────────────────────────
 

@@ -189,6 +189,14 @@ namespace Sim {
         [SyncVar(hook = nameof(ParseCharacterData))]
         private string rawCharacterData;
 
+        // Vêtements PORTÉS, dérivés de la place d'inventaire "wearables:{charId}" (source de
+        // vérité = items, cf. ServerItemManager.RecomputeWornClothing). Format : 5 champs csv
+        // d'ItemConfig ids dans l'ordre des slots (chapeau,accessoire,haut,pantalon,chaussures),
+        // champ vide = rien ("" global = pas encore calculé → le style APS2 reste appliqué tel
+        // quel le temps de l'hydratation/migration serveur).
+        [SyncVar(hook = nameof(OnEquippedClothingChanged))]
+        private string equippedClothing = "";
+
         [SyncVar(hook = nameof(ParseCharacterHome))]
         private string rawCharacterHome;
 
@@ -258,6 +266,23 @@ namespace Sim {
         private void SetVisualHidden(bool hidden) {
             foreach (Renderer r in GetComponentsInChildren<Renderer>(false)) r.enabled = !hidden;
             foreach (Canvas c in GetComponentsInChildren<Canvas>(false)) c.enabled = !hidden;
+
+            // Le « show » global vient de rallumer AUSSI les parties du corps APS2 cachées sous
+            // les vêtements (CHEST, STOMACH…) — sans ça, la peau transperce le shirt après
+            // chaque téléportation.
+            if (!hidden && this.characterAppearance != null) {
+                this.characterAppearance.ReapplyClothesHideParts();
+            }
+
+            // Même problème pour le sac à dos porté : son visuel est l'élément APS2
+            // (BackpackConfig) — le prefab monde attaché au dos doit rester invisible,
+            // or le « show » global vient de rallumer ses renderers.
+            if (!hidden && this.playerHands != null) {
+                ItemBehaviour back = this.playerHands.BackItem;
+                if (back != null && back.Configuration is Sim.Scriptables.BackpackConfig) {
+                    back.SetRenderersVisible(false);
+                }
+            }
         }
 
         // Replicated full-body action animation (SIT, SLEEP, DIE, BUILD…). The player
@@ -391,12 +416,13 @@ namespace Sim {
         private CharacterInteract characterInteractState;
 
         private CharacterBusy busyState;
+        private CharacterFitting fittingState;
 
         private CharacterDie dieState;
 
         private CharacterKnockdown knockdownState;
 
-        private CharacterStyleSetup characterStyleSetup;
+        private CharacterAppearance characterAppearance;
 
         private RagdollController ragdoll;
 
@@ -428,7 +454,7 @@ namespace Sim {
             this.playerHealth = GetComponent<PlayerHealth>();
             this.playerBankAccount = GetComponent<PlayerBankAccount>();
             this.Collider = GetComponent<Collider>();
-            this.characterStyleSetup = GetComponent<CharacterStyleSetup>();
+            this.characterAppearance = GetComponent<CharacterAppearance>();
             this.ragdoll = GetComponent<RagdollController>();
             this.playerShooter = GetComponent<PlayerShooter>();
             this._navPathScratch = new NavMeshPath();
@@ -805,10 +831,26 @@ namespace Sim {
 
         public void ParseCharacterData(string old, string newValue) {
             this.characterData = JsonUtility.FromJson<CharacterData>(newValue);
-            this.characterStyleSetup.ApplyStyle(this.CharacterData.Style);
+            this.characterAppearance.ApplyStyle(this.CharacterData.Style);
             // Static event drives local-player HUD only — never broadcast a remote
             // player's data to it, or the local character panel gets overwritten.
             if (isLocalPlayer) OnCharacterDataChanged?.Invoke(this.characterData);
+        }
+
+        /// <summary>Hook SyncVar : le serveur a recalculé les vêtements portés depuis la place
+        /// d'inventaire wearables. Applique la garde-robe item sur le rig APS2 (remplace les
+        /// catégories vestimentaires du style). Idempotent côté CharacterAppearance.</summary>
+        private void OnEquippedClothingChanged(string _, string csv) {
+            this.characterAppearance?.SetWornClothing(csv);
+        }
+
+        /// <summary>Serveur : pousse la garde-robe recalculée (ServerItemManager). Format csv
+        /// de 5 ItemConfig ids (slots wearables), champs vides = rien. Applique aussi en local
+        /// pour l'host (le hook SyncVar ne repasse pas par la désérialisation en local).</summary>
+        [Server]
+        public void ServerSetEquippedClothing(string csv) {
+            this.equippedClothing = csv;
+            OnEquippedClothingChanged(null, csv);
         }
 
         public string RawCharacterHome {
@@ -937,6 +979,7 @@ namespace Sim {
             this.lookAtState = new CharacterLookAt(this);
             this.characterInteractState = new CharacterInteract(this);
             this.busyState = new CharacterBusy(this);
+            this.fittingState = new CharacterFitting(this);
             this.dieState = new CharacterDie(this);
             this.knockdownState = new CharacterKnockdown(this);
 
@@ -1238,6 +1281,10 @@ namespace Sim {
             // Écran ATM ouvert : le joueur reste planté devant le distributeur — la session
             // se quitte par Quitter/Échap (ou l'éloignement forcé type téléport, géré par AtmUI).
             if (Sim.UI.AtmUI.Instance != null && Sim.UI.AtmUI.Instance.IsOpen) return;
+
+            // Cabine d'essayage : état VERROUILLÉ — on n'en sort que par Acheter/Annuler
+            // (HUD) ou la mort, jamais en marchant.
+            if (Sim.UI.FittingRoomUI.Instance != null && Sim.UI.FittingRoomUI.Instance.IsOpen) return;
 
             // Dialogue NPC ouvert : bouger le quitte proprement (Hide libère la session NPC).
             if (Sim.UI.DialogueUI.Instance != null && Sim.UI.DialogueUI.Instance.gameObject.activeSelf) {
@@ -1545,6 +1592,13 @@ namespace Sim {
             this.stateMachine.SetState(this.busyState);
         }
 
+        /// <summary>Entre dans l'état CABINE D'ESSAYAGE (verrouillé — n'en sort que par la
+        /// fermeture du panneau FittingRoomUI ou la mort). À appeler AVANT d'ouvrir l'UI.</summary>
+        public void EnterFitting() {
+            if (this.stateMachine == null || this.fittingState == null) return;
+            this.stateMachine.SetState(this.fittingState);
+        }
+
         public void Sit(ISeatBehavior props, Transform seatTransform) {
             this.stateMachine.SetState(new CharacterSit(this, props, seatTransform));
         }
@@ -1763,6 +1817,12 @@ namespace Sim {
 
         public Transform GetHeadTargetForCamera() {
             return this.headTargetForCamera;
+        }
+
+        /// <summary>Recâble la cible caméra après un rebuild du rig APS2 (l'ancienne, enfant du
+        /// conteneur rig, est détruite avec lui). Appelé par CharacterAppearance.</summary>
+        public void SetHeadTargetForCamera(Transform target) {
+            this.headTargetForCamera = target;
         }
 
         /// <summary>Point d'ancrage de la caméra TPS : la tête en temps normal, les hanches du

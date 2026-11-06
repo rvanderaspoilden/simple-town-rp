@@ -1,7 +1,11 @@
+using System.Collections;
+using Newtonsoft.Json;
 using Sim.Entities;
+using Sim.Entities.Persistence;
 using Sim.Missions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Sim {
     public class HomePanel : MonoBehaviour {
@@ -21,7 +25,9 @@ namespace Sim {
 
         [Header("Style preview")]
         [SerializeField]
-        private CharacterStyleSetup characterStyleSetup;
+        private CharacterAppearance characterAppearance;
+
+        private Coroutine wornClothingFetch;
 
         private void Awake() {
             if (versionText != null) {
@@ -48,9 +54,53 @@ namespace Sim {
                 moneyText.text = character.Money.ToString("N0");
             }
 
-            if (characterStyleSetup != null) {
-                characterStyleSetup.ApplyStyle(character.Style);
+            if (characterAppearance != null) {
+                // Les vêtements portés vivent en ITEMS (place wearables) — le style ne porte
+                // que le corps après migration. On applique le style puis on fetch la place
+                // pour habiller le preview ; un perso jamais migré a encore ses vêtements
+                // dans le style (ApplyStyle suffit, la place n'existe pas).
+                characterAppearance.ClearWornClothing();
+                characterAppearance.ApplyStyle(character.Style);
+                if (wornClothingFetch != null) StopCoroutine(wornClothingFetch);
+                wornClothingFetch = StartCoroutine(FetchWornClothingCoroutine(character.Id));
             }
+        }
+
+        private IEnumerator FetchWornClothingCoroutine(string characterId) {
+            if (ApiManager.Instance == null || string.IsNullOrEmpty(characterId)) yield break;
+
+            PlaceJson place = null;
+            yield return ApiManager.Instance.LookupPlaceByKeyCoroutine($"wearables:{characterId}", p => place = p);
+            if (place == null || string.IsNullOrEmpty(place.Id)) yield break;
+
+            UnityWebRequest req = ApiManager.Instance.GetPlaceStateRequest(place.Id);
+            yield return req.SendWebRequest();
+            if (req.responseCode != 200) yield break;
+
+            PlaceStateJson state = null;
+            try { state = JsonConvert.DeserializeObject<PlaceStateJson>(req.downloadHandler.text); }
+            catch { yield break; }
+
+            var ids = new string[ClothingConfig.WearSlotCount];
+            if (state?.items != null) {
+                foreach (var it in state.items) {
+                    int slot = ReadSlotIndex(it.stateData);
+                    if (slot >= 0 && slot < ids.Length) ids[slot] = it.configId.ToString();
+                }
+            }
+
+            if (characterAppearance != null) {
+                characterAppearance.SetWornClothing(string.Join(",", ids));
+            }
+        }
+
+        private static int ReadSlotIndex(System.Collections.Generic.Dictionary<string, object> stateData) {
+            if (stateData == null || !stateData.TryGetValue("slotIndex", out var v) || v == null) return 0;
+            if (v is long l) return (int)l;
+            if (v is int i) return i;
+            if (v is double d) return (int)d;
+            int parsed;
+            return int.TryParse(v.ToString(), out parsed) ? parsed : 0;
         }
 
         public void Show() {

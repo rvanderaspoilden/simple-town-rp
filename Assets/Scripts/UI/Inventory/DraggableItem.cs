@@ -180,6 +180,7 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
             else if (_itemConfig.ID == CashItem.ConfigId) effects = FormatCashAmount(_entityId);
             else if (_itemConfig is WeaponConfig weaponCfg) effects = FormatWeaponAmmo(weaponCfg);
             else if (_itemConfig is AmmoConfig ammoCfg) effects = FormatAmmoBox(ammoCfg);
+            else if (_itemConfig is ClothingConfig clothingCfg) effects = FormatClothing(clothingCfg);
             else effects = FormatEffects(_itemConfig as ConsumableConfig);
             container = FormatContainer(Sim.Scriptables.ItemContainerConfig.Of(_itemConfig));
         }
@@ -262,6 +263,17 @@ public class DraggableItem : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     /// rechargement (le chargeur prélève les balles nécessaires).</summary>
     private static string FormatAmmoBox(AmmoConfig cfg) {
         return $"Munitions : {AmmoConfig.CategoryLabel(cfg.AmmoCategory)}\n<color=#8FE36B>Le rechargement prélève les balles nécessaires</color>";
+    }
+
+    /// <summary>Genre d'un vêtement pour la tooltip/carte de détail : « Vêtement homme/femme »,
+    /// en rouge avec avertissement quand il n'est pas portable par le personnage local.</summary>
+    private static string FormatClothing(ClothingConfig cfg) {
+        string label = cfg.Gender == Gender.FEMALE ? "Vêtement femme" : "Vêtement homme";
+        var local = Sim.PlayerController.Local;
+        bool mismatch = local != null && local.CharacterData != null
+                        && !cfg.SupportsGender(local.CharacterData.Style.gender);
+        if (!mismatch) return $"<color=#8FE36B>{label}</color>";
+        return $"<color=#E8836B>{label}\nNon portable par votre personnage</color>";
     }
 
     /// <summary>Met en forme les effets d'un consommable (faim/soif/fatigue) pour la tooltip.</summary>

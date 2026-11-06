@@ -1724,6 +1724,9 @@ MonoBehaviour:
   aimFov: 30
   aimZoomSpeed: 120
   aimSensitivityFactor: 0.6
+  deathCameraDistance: 8
+  deathPitch: 85
+  deathBlendSpeed: 1.5
   scopeBlendSpeed: 5
   scopeHideBodyThreshold: 0.6
 --- !u!1 &8776632124653166675
@@ -1816,10 +1819,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineThirdPersonFollow
   Damping: {x: 0.1, y: 0.25, z: 0.3}
-  ShoulderOffset: {x: 0.9, y: 0.25, z: 0}
+  ShoulderOffset: {x: 0.43, y: -0.19, z: 0}
   VerticalArmLength: 0.5
   CameraSide: 1
-  CameraDistance: 4
+  CameraDistance: 2.43
   AvoidObstacles:
     Enabled: 1
     CollisionFilter:

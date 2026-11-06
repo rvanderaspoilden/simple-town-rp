@@ -446,24 +446,24 @@ namespace Sim {
             this.CmdReload();
         }
 
-        /// <summary>Pousse l'état du chargeur aux deux réticules (crosshair TPS et overlay
-        /// lunette — un seul est visible), ainsi que le MODE du réticule : arme à distance en
-        /// main = réticule d'arme (crochets), sinon réticule par défaut. Sans arme en main,
-        /// le compteur disparaît.</summary>
+        /// <summary>Pousse l'état du chargeur aux deux affichages de munitions (encart « item
+        /// tenu » du HUD et overlay lunette — un seul est visible), ainsi que le MODE du
+        /// réticule : arme à distance en main = réticule d'arme (crochets), sinon réticule
+        /// par défaut. Sans arme en main, le compteur disparaît.</summary>
         private void UpdateAmmoHud(WeaponBehaviour weapon) {
             WeaponConfig cfg = weapon != null ? weapon.WeaponConfiguration : null;
             if (CrosshairUI.Instance != null) CrosshairUI.Instance.SetWeaponState(cfg != null, this.localAiming);
             if (cfg == null) {
-                if (CrosshairUI.Instance != null) CrosshairUI.Instance.ClearAmmo();
                 if (ScopeOverlayUI.Instance != null) ScopeOverlayUI.Instance.ClearAmmo();
+                if (HeldItemPanelUI.Instance != null) HeldItemPanelUI.Instance.ClearAmmo();
                 return;
             }
 
             bool reloading = Time.time < this.localReloadingUntil;
-            if (CrosshairUI.Instance != null)
-                CrosshairUI.Instance.SetAmmo(this.localLoadedAmmo, cfg.MagazineSize, this.localAmmoReserve, reloading);
             if (ScopeOverlayUI.Instance != null)
                 ScopeOverlayUI.Instance.SetAmmo(this.localLoadedAmmo, cfg.MagazineSize, this.localAmmoReserve, reloading);
+            if (HeldItemPanelUI.Instance != null)
+                HeldItemPanelUI.Instance.SetAmmo(this.localLoadedAmmo, cfg.MagazineSize, this.localAmmoReserve, reloading);
         }
 
         /// <summary>Serveur : recompte périodiquement la réserve de munitions portée (poche +

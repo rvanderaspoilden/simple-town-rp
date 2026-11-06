@@ -385,6 +385,21 @@ namespace Sim {
             return request;
         }
 
+        /// <summary>PUT /characters/:id/update-style — réécrit le style (genre + setup APS2).
+        /// Serveur uniquement : migration des vêtements du style vers la place wearables.</summary>
+        public UnityWebRequest UpdateCharacterStyleRequest(string characterId, Style style) {
+            byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(new CharacterUpdateStyleRequest { style = style }));
+
+            UnityWebRequest request = new UnityWebRequest($"{this.uri}/characters/{characterId}/update-style", "PUT") {
+                uploadHandler = new UploadHandlerRaw(encodedPayload),
+                downloadHandler = new DownloadHandlerBuffer()
+            };
+
+            request.SetRequestHeader("Content-type", "application/json");
+
+            return request;
+        }
+
         public UnityWebRequest UpdateCharacterOnlineStateRequest(string characterId, bool online) {
             byte[] encodedPayload = new UTF8Encoding().GetBytes(JsonUtility.ToJson(new CharacterUpdateOnlineStateRequest { online = online }));
 

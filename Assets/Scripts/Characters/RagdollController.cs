@@ -44,6 +44,14 @@ public class RagdollController : MonoBehaviour {
     public Vector3 HipsPosition => _hips != null ? _hips.position : transform.position;
 
     private void Awake() {
+        Reinitialize();
+    }
+
+    /// <summary>Re-découvre Animator, hanches, os ragdoll et re-stabilise les joints. À appeler
+    /// après un rebuild du rig à chaud (ex. switch de settings Advanced People System 2 : les os
+    /// et leurs Rigidbody sont recréés, le câblage de l'Awake initial est périmé).</summary>
+    public void Reinitialize() {
+        _active = false;
         _animator = GetComponentInChildren<Animator>();
         // Collider racine = celui porté par CE GameObject (capsule de gameplay sur layer Player/NPC).
         _rootCollider = GetComponent<Collider>();

@@ -107,12 +107,14 @@ public class ItemDetailCardUI : MonoBehaviour
         if (cfg == null) return string.Empty;
         if (cfg is WeaponConfig || cfg is MeleeWeaponConfig) return "ARME";
         if (cfg is AmmoConfig)   return "MUNITIONS";
+        if (cfg is ClothingConfig clothing) return clothing.Gender == Gender.FEMALE ? "VÊTEMENT FEMME" : "VÊTEMENT HOMME";
         var cc = ItemContainerConfig.Of(cfg);
         if (cc != null && cc.IsContainer) return cc.Wearable ? "SAC" : "CONTENEUR";
         switch (cfg.Type) {
             case ItemType.CONSUMABLE: return "CONSO";
             case ItemType.PACKAGE:    return "COLIS";
             case ItemType.WASTE:      return "DÉCHET";
+            case ItemType.CLOTHING:   return "VÊTEMENT";
             default:                  return "DIVERS";
         }
     }

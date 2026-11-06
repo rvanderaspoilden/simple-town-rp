@@ -1,0 +1,230 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a06f25aebe01c6c48a33b33d24e866cb, type: 3}
+  m_Name: ClothingShopCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::Sim.Scriptables.ClothingShopCatalogConfig
+  shopLabel: "Boutique de v\xEAtements"
+  entries:
+  - item: {fileID: 11400000, guid: 3f759a0a482adfc47a7658d1726e05cf, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 0edf7d948ced08b4baebd3052e6dec3a, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: b126254936b034543903adb8be188c3d, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 530b2dffe23e181458db5dcd91566465, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 9d6d28961444179408bda29dd143a9d9, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: e86799d52a2d116469900660ecb45898, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 99fbb0d0f99840e469ca2200574d3fe8, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: e55976dfbd52fbc43ae1c59fe16699f2, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: bb858fc7f34077340a5a95cd0c9026e8, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 93b986636c0f08e4a8ba44a863b82dfe, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: ecafb929a1eee7947a1a3e214c1fc4bc, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 164d26479e4818449a174988341d810a, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 72d448bad0409cc4599f8196db4177f8, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 37f142e5d4daf204e9a22e9f06dab479, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: c286196421082c143ae3145ce920a6a6, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 178f00ab6a141d344a4a1a07280fa4a4, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 8b2cf8ae544d7114bab4db5aa8a50fd5, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: f7e122736e1f87d47a43f34241e8618b, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 14d9798ead33aa64fafa6a4feb687221, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: bb20b741244cfc146a03f0b169efc73a, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 696053afe1278b5468dbdb59af8864c1, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: cadc4430bf2fb24459226b326389ecd5, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 6a17cd251d2b90848afc174ba91d6032, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 19abe5e261bf7324cad8f0cb182bf775, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 6b49d33c1aaa3894f931c52941a79c1c, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: b51205e3a43421c4baae189b3deed2c6, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: baf557f14741129439dabcee6625af2d, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: c213e846bc3ae4a498562c154ce750b7, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 2750624e63a9c4849a904f19de2e47b2, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 86e2b57bce679484f829ee8e027809c4, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 6b7522e5dbb2ca54dbe51e6a013f02d1, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 6728a81de66e61d41a478f4dd88953ba, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: a9129a0072743384282f72dcc9549925, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 7c46bab03a683bb4584e50e2f7a2a3c8, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 12c11011e3ced3c43bef36c3dc67cea4, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 31008e26853b2e641b98f838ec63366f, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 5aba3464c40c81b44b0e2d950d300239, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 38b7ec3094593654b9c182d2f346fe4c, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: fd11d15e1aa0d164d94da57ed9d4d753, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: aa8a2106e436f004aaee4e4d547a0d71, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 71a91c70e6a6c3848b29855f5f276604, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 4c3a6a739e577f841a3e248ef4fa3b9a, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: ebc74331f0909374cadf86cab2ac87c9, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: d6aa123333580f44cb10eb7ccd2fbd89, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: e880202d19ce33c4daf11468cf9f580c, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: e6f73151202b5a3469fcf6b23dcab4e7, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 2fa3c55b995560c4e86a25f78d7628a3, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 51d00a8cb51f961458cfe30952541d49, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 03fbeecac9396d44f9fbfd6cd7b85632, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 23a797b2594bb9b4589f65eba7082643, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 149a97503c75f3640adaa66f0987bc2a, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 22f1fad9f6e0a6b499a59a034542faaf, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 99970c3e5f5ffdd44966d3bbc5e637b1, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 85e8cc772b14c1045ab1ee927ef66bc1, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 79989b83fc6780441875418322be1cf7, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: b0799413a45c172498218893234b6143, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: c5cbf7059747885439cafce17e00d4d1, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 4d56a20ea6b00f749b04ea98d2e12e30, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 25d67009770d7aa4c856fe108e86ca32, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 08e02a9d2c1ec5d4c800f629e9c48c38, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 79762060cc467664197a21ec133d3da4, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 90cc909b0eb37064086a41a7434e7bff, type: 2}
+    price: 25
+  - item: {fileID: 11400000, guid: 2f0cfd25b59a5ac4cacc175bf4bb4f2d, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: ab41b53aafad66945805fa8a03ce3314, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: f10f6d3c97abfaf498ecafabeb4e8767, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 48b0ded7eec9bfd40b05e3d20cfce098, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 264f37c64518c3141b8119415016d4b9, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: c7cd50018e8a12a439ebf8b635111f77, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 8b24378336d588d4c94403b45c48eb6c, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: bce42f189812aa8409eb2af8d3f8e2b2, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 8b296269c601f684da8b1b06be0fd150, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 7b89ae90f09cbd74d91d8e89d1a93601, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: feae2e1a8c2328e4e86c6e9f54b1a954, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 08b52e55cadc598449218c1edb5fa4b8, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 5d00837c22457c643a29bc990a14ad6d, type: 2}
+    price: 20
+  - item: {fileID: 11400000, guid: 727d35178a9eed34484e76c97737c7f8, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: fec6579bd5156514e9416f7693dafbf9, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: d3784df51a79ee34ca05238904472b49, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 811b18c200272fd44a7c6720b1401d0c, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: e6d4a36f3d1032e43a758be06e218f47, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 4c062de968e13c749aab8eeac8949f8e, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: e097cd8c6f19d4742ae09bfc0a1fff1d, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 7c959933b16478545921804f768a752b, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 45a5599c4171c944a92ecc33f33046ed, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: bc5148231678a5149bb205faf83aedb0, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 6eeef4860e1d7be459eb183c997a294f, type: 2}
+    price: 30
+  - item: {fileID: 11400000, guid: 5d69ab0a835c16140a35a1a1750b2e1a, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 5ca5cb14ce60346499017d5493403904, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: fb776504fa372ee43a53513b3687b632, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 2ef43888502336e4fa54c9066fd880a0, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: b5f3414166d1fde4e88174c8e86479d4, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 9234ce8b6771c4e4ebc5f3fb177fcbbf, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 6d5c7e1e574fc34479fa70133592d7c5, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: ceb9db8275826fd4c89cc0e8d795250d, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 60577d75a0edac04f927e5c1153a673e, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: 58d19bec7d71f7448bde77dc6d92e26f, type: 2}
+    price: 35
+  - item: {fileID: 11400000, guid: ff5e15bb00e76554e8e9234276ecf6aa, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: d326863d2eb091341914118412de7d64, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: a17d67028a5052e4a97ce8af2cc11844, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 9f6038f114b8b0e4399e30798f037152, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 1b281eb1bc69bf54fb58cabfb175aaff, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 2efd2057c97d76c41b40bab42476c7f3, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: b51d5ead745bffe4fb21b0a74bd727f5, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: d741cefdf3f42444594f47ca0e326d66, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 4e86ad95d320a5a4eadadb2abfa305a2, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: 1037f84acd7a7984f86cfd45cebdfd57, type: 2}
+    price: 45
+  - item: {fileID: 11400000, guid: a5531d6a741605743b1e3bdccb796fbc, type: 2}
+    price: 45

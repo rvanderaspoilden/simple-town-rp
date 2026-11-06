@@ -35,18 +35,6 @@ namespace Sim.UI {
         [SerializeField]
         private GameObject targetDot;
 
-        [Tooltip("Ammo counter ('loaded/magazine' or reload notice) — driven by the local PlayerShooter while a weapon is held, hidden otherwise.")]
-        [SerializeField]
-        private TextMeshProUGUI ammoText;
-
-        [Tooltip("Ammo counter color while the magazine holds at least one round.")]
-        [SerializeField]
-        private Color ammoColor = new Color(1f, 1f, 1f, 0.9f);
-
-        [Tooltip("Ammo counter color when the magazine is empty (reload needed).")]
-        [SerializeField]
-        private Color ammoEmptyColor = new Color(1f, 0.35f, 0.3f, 0.95f);
-
         [Header("Weapon reticle (ranged weapon held)")]
         [Tooltip("Weapon reticle block (brackets + center dot) — shown INSTEAD of the default reticle while a ranged weapon is held (driven by PlayerShooter).")]
         [SerializeField]
@@ -103,8 +91,6 @@ namespace Sim.UI {
         private float bloom;
         private float shotFlash;
         private Color reticleTint;
-
-        private string lastAmmoText;
 
         [SerializeField]
         private Color defaultColor = new Color(1f, 1f, 1f, 0.6f);
@@ -222,31 +208,6 @@ namespace Sim.UI {
             foreach (Image image in this.weaponReticleImages) {
                 if (image != null) image.color = color;
             }
-        }
-
-        /// <summary>Compteur de munitions « chargées/chargeur | réserve » (ou « Recharge… »)
-        /// — poussé chaque frame par le PlayerShooter local quand une arme est tenue.
-        /// loaded/reserve &lt; 0 = valeur encore inconnue (réponse serveur en route) :
-        /// le chargeur s'affiche « – », la réserve est omise.</summary>
-        public void SetAmmo(int loaded, int magazineSize, int reserve, bool reloading) {
-            if (this.ammoText == null) return;
-            string text = reloading ? "Recharge…"
-                : (loaded < 0 ? "–" : loaded.ToString()) + "/" + magazineSize
-                  + (reserve >= 0 ? " | " + reserve : "");
-            if (text != this.lastAmmoText) {
-                this.lastAmmoText = text;
-                this.ammoText.text = text;
-                // Rouge : chargeur vide ; une réserve à 0 en plus = plus rien à tirer du tout.
-                this.ammoText.color = !reloading && loaded == 0 ? this.ammoEmptyColor : this.ammoColor;
-            }
-            if (!this.ammoText.gameObject.activeSelf) this.ammoText.gameObject.SetActive(true);
-        }
-
-        /// <summary>Cache le compteur (aucune arme en main).</summary>
-        public void ClearAmmo() {
-            if (this.ammoText == null || !this.ammoText.gameObject.activeSelf) return;
-            this.ammoText.gameObject.SetActive(false);
-            this.lastAmmoText = null;
         }
 
         private void SetRootVisible(bool visible) {

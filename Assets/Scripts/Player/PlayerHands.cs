@@ -24,6 +24,7 @@ public class PlayerHands : MonoBehaviour
     [SerializeField] private int backEntityId  = -1;
 
     private PlayerAnimator playerAnimator;
+    private CharacterAppearance characterAppearance;
 
     public delegate void HandChanged();
     public static event HandChanged OnHandChanged;
@@ -31,6 +32,16 @@ public class PlayerHands : MonoBehaviour
     private void Awake()
     {
         playerAnimator = GetComponent<PlayerAnimator>();
+        characterAppearance = GetComponent<CharacterAppearance>();
+    }
+
+    /// <summary>Recâble les ancres après un rebuild du rig APS2 (les anciennes, enfants des os
+    /// détruits, sont mortes). Appelé par CharacterAppearance.</summary>
+    public void SetAnchors(Transform left, Transform right, Transform back)
+    {
+        leftHandTransform  = left;
+        rightHandTransform = right;
+        backTransform      = back;
     }
 
     // ── State API (called by ClientItemManager) ───────────────────────────────
@@ -144,6 +155,15 @@ public class PlayerHands : MonoBehaviour
         if (playerAnimator != null)
         {
             playerAnimator.ApplyHeldItemVisibility();
+        }
+
+        // Visuel du sac porté : l'élément APS2 Item1 (skinné) remplace le prefab monde quand la
+        // config le fournit — le prefab est caché au moment de l'attach (ClientItemManager).
+        // Tourne sur toutes les copies : chaque client voit le sac des autres joueurs.
+        if (characterAppearance != null)
+        {
+            var backpack = backItem != null ? backItem.Configuration as Sim.Scriptables.BackpackConfig : null;
+            characterAppearance.SetWornBackpack(backpack != null ? backpack.ApsElementIndex : -1);
         }
 
         // UI event is scoped to the local player only (inventory panel listens once).
