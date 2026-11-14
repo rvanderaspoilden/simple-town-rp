@@ -107,7 +107,7 @@ public static class ClothingConfigGenerator {
                 }
 
                 Sprite icon = FindIcon(genderSlug, category.slug, i);
-                string label = FrenchLabel(category.type, presets[i].name);
+                string label = CivilLabel(genderSlug, category.slug, i) ?? FrenchLabel(category.type, presets[i].name);
                 string genderFrench = gender == Gender.FEMALE ? "femme" : "homme";
 
                 var so = new SerializedObject(config);
@@ -173,9 +173,82 @@ public static class ClothingConfigGenerator {
         }
     }
 
-    /// <summary>Label français depuis le nom de preset APS2 (« Shirt Type 3 », « Police Hat 1 »…).
-    /// Même label pour les deux genres — le genre est porté par la description, la tooltip et
-    /// l'icône (variante homme/femme).</summary>
+    /// <summary>Libellés PARLANTS des articles civils, relevés sur les icônes générées
+    /// (Sprites/Equipment/Generated). Clé « {genre}_{catégorie}_{index} » : les meshes civils
+    /// DIFFÈRENT entre homme et femme (contrairement aux tenues de métier), d'où une table par
+    /// genre. Les tenues de métier et tout index absent retombent sur <see cref="FrenchLabel"/>.</summary>
+    private static readonly Dictionary<string, string> CivilLabels = new Dictionary<string, string> {
+        // ── Chapeaux ──
+        { "female_hat_00", "Bob rayé" },            { "female_hat_01", "Bonnet gris" },
+        { "female_hat_02", "Bonnet à revers" },     { "female_hat_07", "Chapeau de paille" },
+        { "female_hat_08", "Casquette blanche et bleue" }, { "female_hat_09", "Casquette bleu marine" },
+        { "female_hat_10", "Casquette kaki" },      { "female_hat_11", "Chapka grise" },
+        { "male_hat_00", "Casquette rouge" },       { "male_hat_01", "Bonnet à liseré rouge" },
+        { "male_hat_02", "Bonnet gris" },           { "male_hat_07", "Chapeau de paille" },
+        { "male_hat_08", "Casquette blanche et bleue" },   { "male_hat_09", "Casquette bleu marine" },
+        { "male_hat_10", "Casquette kaki" },        { "male_hat_11", "Chapka verte" },
+        // ── Accessoires ──
+        { "female_accessory_00", "Lunettes rondes violettes" }, { "female_accessory_01", "Lunettes œil-de-chat" },
+        { "female_accessory_02", "Lunettes de soleil bleues" }, { "female_accessory_03", "Casque audio bleu" },
+        { "female_accessory_04", "Casque audio rouge" },        { "female_accessory_05", "Casque VR" },
+        { "female_accessory_06", "Bandeau" },                   { "female_accessory_07", "Oreillette gauche" },
+        { "female_accessory_08", "Oreillette droite" },         { "female_accessory_09", "Lunettes de sport" },
+        { "female_accessory_10", "Masque chirurgical" },        { "female_accessory_11", "Lunettes rondes bleues" },
+        { "female_accessory_12", "Lunettes orange" },
+        { "male_accessory_00", "Lunettes de soleil noires" },   { "male_accessory_01", "Lunettes rondes grises" },
+        { "male_accessory_02", "Lunettes de soleil carrées" },  { "male_accessory_03", "Casque audio bleu" },
+        { "male_accessory_04", "Casque audio rouge" },          { "male_accessory_05", "Casque VR" },
+        { "male_accessory_06", "Bandeau" },                     { "male_accessory_07", "Oreillette gauche" },
+        { "male_accessory_08", "Oreillette droite" },           { "male_accessory_09", "Lunettes de sport" },
+        { "male_accessory_10", "Masque chirurgical" },          { "male_accessory_11", "Lunettes rondes bleues" },
+        { "male_accessory_12", "Lunettes orange" },
+        // ── Hauts ──
+        { "female_shirt_00", "T-shirt blanc" },     { "female_shirt_01", "Haut rouge et blanc" },
+        { "female_shirt_02", "Pull rose" },         { "female_shirt_03", "Top bordeaux" },
+        { "female_shirt_04", "T-shirt noir" },      { "female_shirt_05", "Robe bleue" },
+        { "female_shirt_06", "Pull rose poudré" },  { "female_shirt_07", "Gilet gris" },
+        { "female_shirt_08", "Débardeur vert" },    { "female_shirt_09", "Gilet rouge" },
+        { "female_shirt_15", "Veste saumon" },
+        { "male_shirt_00", "T-shirt bleu" },        { "male_shirt_01", "Débardeur blanc" },
+        { "male_shirt_02", "Sweat à capuche jaune" }, { "male_shirt_03", "T-shirt raglan" },
+        { "male_shirt_04", "Veste de costume" },    { "male_shirt_05", "Pull marron" },
+        { "male_shirt_06", "Pull de Noël" },        { "male_shirt_07", "Chemise blanche" },
+        { "male_shirt_08", "Veste de sport" },      { "male_shirt_09", "T-shirt gris" },
+        { "male_shirt_15", "Veste saumon" },
+        // ── Pantalons ──
+        { "female_pants_00", "Short blanc" },       { "female_pants_01", "Pantalon rouge" },
+        { "female_pants_02", "Pantalon rose" },     { "female_pants_03", "Pantalon bordeaux" },
+        { "female_pants_04", "Short de sport noir" }, { "female_pants_05", "Pantalon bleu marine" },
+        { "female_pants_06", "Pantalon gris" },     { "female_pants_07", "Short bleu" },
+        { "female_pants_08", "Legging noir" },      { "female_pants_14", "Jean bleu" },
+        { "male_pants_00", "Pantalon gris foncé" }, { "male_pants_01", "Short cargo blanc" },
+        { "male_pants_02", "Pantalon jaune" },      { "male_pants_03", "Pantalon noir" },
+        { "male_pants_04", "Pantalon anthracite" }, { "male_pants_05", "Pantalon marron" },
+        { "male_pants_06", "Pantalon rouge" },      { "male_pants_07", "Jean délavé" },
+        { "male_pants_08", "Pantalon vert" },       { "male_pants_09", "Pantalon beige" },
+        { "male_pants_15", "Jean bleu" },
+        // ── Chaussures ──
+        { "female_shoes_00", "Baskets blanches" },  { "female_shoes_01", "Escarpins noirs" },
+        { "female_shoes_02", "Baskets montantes blanches" }, { "female_shoes_03", "Escarpins rouges" },
+        { "female_shoes_04", "Bottines noires" },   { "female_shoes_05", "Escarpins jaunes" },
+        { "female_shoes_06", "Ballerines noires" }, { "female_shoes_07", "Escarpins gris" },
+        { "female_shoes_08", "Baskets bleues" },    { "female_shoes_09", "Bottines blanches" },
+        { "female_shoes_15", "Chaussures blanches" },
+        { "male_shoes_00", "Baskets grises" },      { "male_shoes_01", "Sandales" },
+        { "male_shoes_02", "Bottes de pluie jaunes" }, { "male_shoes_03", "Baskets blanches" },
+        { "male_shoes_04", "Chaussures de ville noires" }, { "male_shoes_05", "Bottines marron" },
+        { "male_shoes_06", "Bottines rouges" },     { "male_shoes_07", "Baskets bleues" },
+        { "male_shoes_08", "Baskets vertes" },      { "male_shoes_09", "Richelieus noirs" },
+        { "male_shoes_15", "Chaussures blanches" },
+    };
+
+    private static string CivilLabel(string genderSlug, string categorySlug, int index) {
+        return CivilLabels.TryGetValue($"{genderSlug}_{categorySlug}_{index:00}", out string label) ? label : null;
+    }
+
+    /// <summary>Label français depuis le nom de preset APS2 (« Shirt Type 3 », « Police Hat 1 »…)
+    /// — repli des tenues de métier et de tout article sans libellé dédié dans
+    /// <see cref="CivilLabels"/>.</summary>
     private static string FrenchLabel(CharacterElementType type, string presetName) {
         Match match = Regex.Match(presetName, @"(\d+)\s*$");
         string n = match.Success ? match.Groups[1].Value : string.Empty;

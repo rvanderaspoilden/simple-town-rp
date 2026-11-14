@@ -823,21 +823,30 @@ public class SimpleTownNetwork : NetworkManager
     {
         if (string.IsNullOrEmpty(message.text)) return;
 
-        if (message.worldToast)
+        // Un handler de message qui lève fait DÉCONNECTER le client par Mirror : un échec
+        // d'affichage (HUD masqué, prefab manquant…) ne vaut jamais une déconnexion.
+        try
         {
-            // Feedback d'action banal (mains pleines, fonds insuffisants…) → toast flottant,
-            // avec le template adapté (neutre / erreur / succès).
-            switch (message.Kind)
+            if (message.worldToast)
             {
-                case ToastKind.Error:   WorldToastManager.ShowError(message.text);   break;
-                case ToastKind.Success: WorldToastManager.ShowSuccess(message.text); break;
-                default:                WorldToastManager.Show(message.text);        break;
+                // Feedback d'action banal (mains pleines, fonds insuffisants…) → toast flottant,
+                // avec le template adapté (neutre / erreur / succès).
+                switch (message.Kind)
+                {
+                    case ToastKind.Error:   WorldToastManager.ShowError(message.text);   break;
+                    case ToastKind.Success: WorldToastManager.ShowSuccess(message.text); break;
+                    default:                WorldToastManager.Show(message.text);        break;
+                }
+            }
+            else if (NotificationManager.Instance != null)
+            {
+                // Messages persistants / périodiques (salaire, etc.) → notification coin d'écran.
+                NotificationManager.Instance.AddNotification(message.text, message.appId);
             }
         }
-        else if (NotificationManager.Instance != null)
+        catch (System.Exception e)
         {
-            // Messages persistants / périodiques (salaire, etc.) → notification coin d'écran.
-            NotificationManager.Instance.AddNotification(message.text, message.appId);
+            Debug.LogError($"[SimpleTownNetwork] Toast display failed ('{message.text}'): {e}");
         }
     }
 

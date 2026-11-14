@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using AdvancedPeopleSystem;
 using Sim.Scriptables;
 using Sim.UI;
 using TMPro;
@@ -33,7 +34,8 @@ namespace SimEditor {
         private static readonly Color TabInactiveColor = new Color(0.16f, 0.17f, 0.21f, 1f);
         private static readonly Color CardSelectedColor = new Color(0.22f, 0.32f, 0.46f, 1f);
 
-        private static readonly string[] TabNames = { "Chapeaux", "Accessoires", "Hauts", "Pantalons", "Chaussures" };
+        // Tabs are derived from the catalog like FittingRoomUI (categories present, TabOrder).
+        private const CharacterElementType PreviewType = CharacterElementType.Shirt;
 
         [MenuItem("Tools/The BROZ/Build UI Layout Scene (Fitting Room)")]
         public static void Build() {
@@ -154,44 +156,47 @@ namespace SimEditor {
             TMP_Text tryLabel     = so.FindProperty("tryButtonLabel").objectReferenceValue as TMP_Text;
             TMP_Text total        = so.FindProperty("totalLabel").objectReferenceValue as TMP_Text;
             TMP_Text buyLabel     = so.FindProperty("buyButtonLabel").objectReferenceValue as TMP_Text;
+            Transform cartItems   = so.FindProperty("cartItemsContainer").objectReferenceValue as Transform;
+            FittingRoomCartItem cartItemTemplate = so.FindProperty("cartItemTemplate").objectReferenceValue as FittingRoomCartItem;
+            TMP_Text cartEmpty    = so.FindProperty("cartEmptyLabel").objectReferenceValue as TMP_Text;
             Object.DestroyImmediate(ui);
 
             // Catalog entries for the previewed tab, like FittingRoomUI.BuildEntries (no gender
-            // filter — this is a layout, duplicates don't matter).
+            // filter — this is a layout, duplicates don't matter). Tabs = categories present.
             ClothingShopCatalogConfig catalog = AssetDatabase.LoadAssetAtPath<ClothingShopCatalogConfig>(CatalogPath);
-            var entries = new List<(ClothingConfig cfg, int price)>();
-            Sprite[] slotIcons = new Sprite[TabNames.Length];
+            var entries = new List<(ItemConfig cfg, int price)>();
+            var typeIcons = new Dictionary<CharacterElementType, Sprite>();
             if (catalog != null) {
                 foreach (ItemPrice entry in catalog.Entries) {
-                    if (entry.item is not ClothingConfig clothing) continue;
-                    int slot = clothing.WearSlotIndex;
-                    if (slot >= 0 && slot < slotIcons.Length && slotIcons[slot] == null) slotIcons[slot] = clothing.Icon;
-                    if (slot == PreviewTab) entries.Add((clothing, entry.price));
+                    if (entry.item is not IApsWearable wearable) continue;
+                    if (!typeIcons.ContainsKey(wearable.ElementType)) typeIcons[wearable.ElementType] = entry.item.Icon;
+                    if (wearable.ElementType == PreviewType) entries.Add((entry.item, entry.price));
                 }
                 entries.Sort((a, b) => string.Compare(a.cfg.Label, b.cfg.Label, System.StringComparison.Ordinal));
             }
 
             // Tabs.
             if (tabTemplate != null && tabs != null) {
-                for (int i = 0; i < TabNames.Length; i++) {
+                foreach (CharacterElementType type in FittingRoomUI.TabOrder) {
+                    if (!typeIcons.ContainsKey(type)) continue;
                     Button tab = Object.Instantiate(tabTemplate, tabs);
                     tab.gameObject.SetActive(true);
                     TMP_Text label = tab.GetComponentInChildren<TMP_Text>(true);
-                    if (label != null) label.text = TabNames[i];
+                    if (label != null) label.text = FittingRoomUI.TabName(type);
                     Transform iconT = tab.transform.Find("Icon");
                     Image tabIcon = iconT != null ? iconT.GetComponent<Image>() : null;
                     if (tabIcon != null) {
-                        tabIcon.sprite = slotIcons[i];
-                        tabIcon.enabled = slotIcons[i] != null;
+                        tabIcon.sprite = typeIcons[type];
+                        tabIcon.enabled = typeIcons[type] != null;
                     }
                     Image bg = tab.GetComponent<Image>();
-                    if (bg != null) bg.color = i == PreviewTab ? TabActiveColor : TabInactiveColor;
+                    if (bg != null) bg.color = type == PreviewType ? TabActiveColor : TabInactiveColor;
                 }
             }
 
             // Cards: first one IN CART (checkmark), second one SELECTED (highlight + detail).
-            (ClothingConfig cfg, int price) inCart = default;
-            (ClothingConfig cfg, int price) selected = default;
+            (ItemConfig cfg, int price) inCart = default;
+            (ItemConfig cfg, int price) selected = default;
             if (cardTemplate != null && grid != null) {
                 for (int i = 0; i < entries.Count && i < MaxCards; i++) {
                     FittingRoomCard card = Object.Instantiate(cardTemplate, grid);
@@ -215,6 +220,11 @@ namespace SimEditor {
                     if (i == 1) {
                         if (background != null) background.color = CardSelectedColor;
                         selected = entries[i];
+                    }
+                    // Third card: "already worn" badge preview.
+                    if (i == 2) {
+                        GameObject worn = cardSo.FindProperty("wornBadge").objectReferenceValue as GameObject;
+                        if (worn != null) worn.SetActive(true);
                     }
                 }
             }
@@ -243,6 +253,14 @@ namespace SimEditor {
             int cartTotal = inCart.cfg != null ? inCart.price : 0;
             if (total != null) total.text = $"Total : {cartTotal} $";
             if (buyLabel != null) buyLabel.text = inCart.cfg != null ? "Acheter (1)" : "Acheter";
+
+            // Cart strip: one thumbnail for the in-cart article (icon + price + remove cross).
+            if (cartEmpty != null) cartEmpty.gameObject.SetActive(inCart.cfg == null);
+            if (inCart.cfg != null && cartItemTemplate != null && cartItems != null) {
+                FittingRoomCartItem item = Object.Instantiate(cartItemTemplate, cartItems);
+                item.gameObject.SetActive(true);
+                item.Bind(inCart.cfg, inCart.price, null);
+            }
 
             // The whole tree on the UI layer so the studio camera's culling mask renders it
             // (the builder authored the prefab panel on the Default layer).

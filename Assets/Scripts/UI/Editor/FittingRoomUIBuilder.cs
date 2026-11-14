@@ -23,6 +23,7 @@ namespace SimEditor {
     public static class FittingRoomUIBuilder {
         private const string PrefabPath = "Assets/Resources/Prefabs/Managers/HUD Manager.prefab";
         private const string PanelName  = "FittingRoomUI (Built)";
+        private const string WornIconPath = "Assets/Resources/Sprites/Common/icon_worn.png";
 
         private static readonly Color PanelColor  = new Color(0.07f, 0.07f, 0.09f, 0.94f);
         private static readonly Color CardColor   = new Color(0.14f, 0.15f, 0.18f, 1f);
@@ -109,7 +110,7 @@ namespace SimEditor {
 
             // Panneau de détail (droite).
             GameObject detail = CreateCard(panel.transform, "DetailPanel", new Vector2(1f, 0f), new Vector2(1f, 1f),
-                new Vector2(-380f, 220f), new Vector2(-20f, -110f));
+                new Vector2(-380f, 316f), new Vector2(-20f, -110f));
             Image detailIcon = CreateImage(detail.transform, "Icon");
             RectTransform diRt = (RectTransform)detailIcon.transform;
             diRt.anchorMin = diRt.anchorMax = new Vector2(0.5f, 1f);
@@ -144,6 +145,31 @@ namespace SimEditor {
 
             (Button tryButton, TMP_Text tryLabel) = CreateButton(detail.transform, "TryButton", "Essayer", AccentColor);
             Stretch((RectTransform)tryButton.transform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(12f, 12f), new Vector2(-12f, 56f));
+
+            // Bandeau « Panier » (entre le détail et le total) : vignettes icône + prix + croix,
+            // une par article du panier (template désactivé cloné par FittingRoomUI).
+            GameObject cartPanel = CreateCard(panel.transform, "CartPanel", new Vector2(1f, 0f), new Vector2(1f, 0f),
+                new Vector2(-380f, 204f), new Vector2(-20f, 308f));
+            TMP_Text cartTitle = CreateLabel(cartPanel.transform, "Title", "Panier", 14, FontStyles.Bold,
+                TextAlignmentOptions.MidlineLeft);
+            cartTitle.color = new Color(0.75f, 0.75f, 0.78f, 1f);
+            Stretch(cartTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(12f, -26f), new Vector2(-12f, -6f));
+
+            RectTransform cartItems = CreateRect(cartPanel.transform, "Items");
+            Stretch(cartItems, Vector2.zero, new Vector2(1f, 1f), new Vector2(12f, 8f), new Vector2(-12f, -30f));
+            HorizontalLayoutGroup cartLayout = cartItems.gameObject.AddComponent<HorizontalLayoutGroup>();
+            cartLayout.spacing = 8f;
+            cartLayout.childAlignment = TextAnchor.MiddleLeft;
+            cartLayout.childControlWidth = false;
+            cartLayout.childControlHeight = false;
+            cartLayout.childForceExpandWidth = false;
+            cartLayout.childForceExpandHeight = false;
+            FittingRoomCartItem cartItemTemplate = CreateCartItemTemplate(cartItems);
+
+            TMP_Text cartEmpty = CreateLabel(cartPanel.transform, "Empty", "Panier vide — essayez un article", 13,
+                FontStyles.Italic, TextAlignmentOptions.MidlineLeft);
+            cartEmpty.color = new Color(0.6f, 0.6f, 0.64f, 1f);
+            Stretch(cartEmpty.rectTransform, Vector2.zero, new Vector2(1f, 1f), new Vector2(12f, 8f), new Vector2(-12f, -30f));
 
             // Footer (bas-droite) : total + Acheter / Annuler.
             TMP_Text total = CreateLabel(panel.transform, "Total", "Total : 0 $", 20, FontStyles.Bold,
@@ -183,7 +209,53 @@ namespace SimEditor {
             so.FindProperty("buyButton").objectReferenceValue         = buy;
             so.FindProperty("buyButtonLabel").objectReferenceValue    = buyLabel;
             so.FindProperty("cancelButton").objectReferenceValue      = cancel;
+            so.FindProperty("cartItemsContainer").objectReferenceValue = cartItems;
+            so.FindProperty("cartItemTemplate").objectReferenceValue  = cartItemTemplate;
+            so.FindProperty("cartEmptyLabel").objectReferenceValue    = cartEmpty;
             so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // ── Vignette du panier ───────────────────────────────────────────────────
+
+        private static FittingRoomCartItem CreateCartItemTemplate(Transform parent) {
+            GameObject go = new GameObject("CartItemTemplate", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
+            go.transform.SetParent(parent, false);
+            go.GetComponent<Image>().color = CardColor;
+            RectTransform rt = (RectTransform)go.transform;
+            rt.sizeDelta = new Vector2(64f, 64f);
+            LayoutElement le = go.GetComponent<LayoutElement>();
+            le.preferredWidth = 64f;
+            le.preferredHeight = 64f;
+
+            Image icon = CreateImage(go.transform, "Icon");
+            icon.preserveAspect = true;
+            Stretch((RectTransform)icon.transform, Vector2.zero, Vector2.one, new Vector2(6f, 16f), new Vector2(-6f, -4f));
+
+            TMP_Text price = CreateLabel(go.transform, "Price", "0 $", 11, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(price.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(2f, 1f), new Vector2(-2f, 15f));
+
+            // Croix de retrait (coin haut-droit, déborde légèrement de la vignette).
+            GameObject remove = new GameObject("RemoveButton", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            remove.transform.SetParent(go.transform, false);
+            RectTransform removeRt = (RectTransform)remove.transform;
+            removeRt.anchorMin = removeRt.anchorMax = new Vector2(1f, 1f);
+            removeRt.pivot = new Vector2(1f, 1f);
+            removeRt.anchoredPosition = new Vector2(4f, 4f);
+            removeRt.sizeDelta = new Vector2(20f, 20f);
+            remove.GetComponent<Image>().color = new Color(0.75f, 0.25f, 0.25f, 1f);
+            Button removeButton = remove.AddComponent<Button>();
+            TMP_Text removeLabel = CreateLabel(remove.transform, "Label", "×", 16, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(removeLabel.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(0f, 1f));
+
+            var item = go.AddComponent<FittingRoomCartItem>();
+            SerializedObject so = new SerializedObject(item);
+            so.FindProperty("icon").objectReferenceValue         = icon;
+            so.FindProperty("priceLabel").objectReferenceValue   = price;
+            so.FindProperty("removeButton").objectReferenceValue = removeButton;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            go.SetActive(false);
+            return item;
         }
 
         // ── Grille scrollable + templates ─────────────────────────────────────────
@@ -261,15 +333,39 @@ namespace SimEditor {
             checkRt.anchoredPosition = new Vector2(-4f, -4f);
             checkRt.sizeDelta = new Vector2(24f, 24f);
             check.GetComponent<Image>().color = new Color(0.25f, 0.75f, 0.35f, 1f);
-            TMP_Text checkLabel = CreateLabel(check.transform, "Label", "✓", 16, FontStyles.Bold, TextAlignmentOptions.Center);
-            Stretch(checkLabel.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            // Glyphe « ✓ » absent de LiberationSans SDF (rendu « □ » au play-test) → sprite
+            // built-in uGUI (Checkmark.psd) en enfant Image, blanc, teinté par le fond vert.
+            Image checkIcon = CreateImage(check.transform, "Icon");
+            checkIcon.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Checkmark.psd");
+            checkIcon.color = Color.white;
+            checkIcon.preserveAspect = true;
+            Stretch((RectTransform)checkIcon.transform, Vector2.zero, Vector2.one, new Vector2(3f, 3f), new Vector2(-3f, -3f));
             check.SetActive(false);
+
+            // Badge « déjà porté » (coin haut-gauche) : pastille bleue + silhouette de buste
+            // (Sprites/Common/icon_worn.png) — distinct de la coche verte « au panier ».
+            GameObject worn = new GameObject("WornBadge", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            worn.transform.SetParent(go.transform, false);
+            RectTransform wornRt = (RectTransform)worn.transform;
+            wornRt.anchorMin = wornRt.anchorMax = new Vector2(0f, 1f);
+            wornRt.pivot = new Vector2(0f, 1f);
+            wornRt.anchoredPosition = new Vector2(4f, -4f);
+            wornRt.sizeDelta = new Vector2(24f, 24f);
+            worn.GetComponent<Image>().color = new Color(0.25f, 0.55f, 0.85f, 1f);
+            Image wornIcon = CreateImage(worn.transform, "Icon");
+            wornIcon.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(WornIconPath);
+            wornIcon.color = Color.white;
+            wornIcon.preserveAspect = true;
+            Stretch((RectTransform)wornIcon.transform, Vector2.zero, Vector2.one, new Vector2(3f, 3f), new Vector2(-3f, -3f));
+            if (wornIcon.sprite == null) Debug.LogWarning($"[FittingRoomUIBuilder] Worn badge icon missing at {WornIconPath}.");
+            worn.SetActive(false);
 
             var card = go.AddComponent<FittingRoomCard>();
             SerializedObject so = new SerializedObject(card);
             so.FindProperty("background").objectReferenceValue = background;
             so.FindProperty("icon").objectReferenceValue       = icon;
             so.FindProperty("checkmark").objectReferenceValue  = check;
+            so.FindProperty("wornBadge").objectReferenceValue  = worn;
             so.FindProperty("priceLabel").objectReferenceValue = price;
             so.FindProperty("button").objectReferenceValue     = button;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -295,6 +391,12 @@ namespace SimEditor {
             icon.preserveAspect = true;
 
             TMP_Text label = CreateLabel(go.transform, "Label", "Onglet", 13, FontStyles.Bold, TextAlignmentOptions.Center);
+            // Jusqu'à 6 onglets (catégories présentes dans le catalogue) : libellé sur UNE ligne,
+            // taille auto-réduite (« Accessoires », « Chaussures » débordaient à 13).
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 8f;
+            label.fontSizeMax = 13f;
             Stretch(label.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(2f, 6f), new Vector2(-2f, 28f));
             go.SetActive(false);
             return button;

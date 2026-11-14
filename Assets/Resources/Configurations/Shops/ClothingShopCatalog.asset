@@ -14,6 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Sim.Scriptables.ClothingShopCatalogConfig
   shopLabel: "Boutique de v\xEAtements"
   entries:
+  - item: {fileID: 11400000, guid: 7efac9aa2ffd62849b3a46293a890d77, type: 2}
+    price: 40
+  - item: {fileID: 11400000, guid: f162b98ad78eded4eb3a1f1eacf7c79a, type: 2}
+    price: 50
+  - item: {fileID: 11400000, guid: 3c234e36849cbd04faf4edd970394460, type: 2}
+    price: 60
+  - item: {fileID: 11400000, guid: cbc9247a3553ed1498d4acb9a3f0132c, type: 2}
+    price: 80
+  - item: {fileID: 11400000, guid: 04beb55ad35dc74458eebdcdb5e95f21, type: 2}
+    price: 90
   - item: {fileID: 11400000, guid: 3f759a0a482adfc47a7658d1726e05cf, type: 2}
     price: 25
   - item: {fileID: 11400000, guid: 0edf7d948ced08b4baebd3052e6dec3a, type: 2}

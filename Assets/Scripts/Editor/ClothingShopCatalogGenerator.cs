@@ -15,6 +15,7 @@ public static class ClothingShopCatalogGenerator {
     private const string ConfigFolder = "Assets/Resources/Configurations/Shops";
     private const string AssetPath = ConfigFolder + "/ClothingShopCatalog.asset";
     private const string ClothingFolder = "Assets/Resources/Configurations/Items/Clothing";
+    private const string BackpackFolder = "Assets/Resources/Configurations/Items/Backpacks";
 
     private static readonly string[] ProfessionMarkers = { "police", "pompier", "chantier", "médecin" };
 
@@ -29,10 +30,16 @@ public static class ClothingShopCatalogGenerator {
             AssetDatabase.CreateAsset(catalog, AssetPath);
         }
 
-        var entries = new List<(ClothingConfig cfg, int price)>();
+        var entries = new List<(ItemConfig cfg, int price)>();
         foreach (string guid in AssetDatabase.FindAssets("t:ScriptableObject", new[] { ClothingFolder })) {
             var cfg = AssetDatabase.LoadAssetAtPath<ClothingConfig>(AssetDatabase.GUIDToAssetPath(guid));
             if (cfg == null || IsProfessionOutfit(cfg.Label)) continue;
+            entries.Add((cfg, PriceFor(cfg)));
+        }
+        // Sacs à dos (IApsWearable, non genrés) : onglet « Sacs » de la cabine, prix à la capacité.
+        foreach (string guid in AssetDatabase.FindAssets("t:ScriptableObject", new[] { BackpackFolder })) {
+            var cfg = AssetDatabase.LoadAssetAtPath<BackpackConfig>(AssetDatabase.GUIDToAssetPath(guid));
+            if (cfg == null) continue;
             entries.Add((cfg, PriceFor(cfg)));
         }
         entries.Sort((a, b) => a.cfg.ID.CompareTo(b.cfg.ID));
@@ -60,6 +67,11 @@ public static class ClothingShopCatalogGenerator {
             if (lower.Contains(marker)) return true;
         }
         return false;
+    }
+
+    /// <summary>Prix d'un sac : 5 $ par emplacement (8 slots → 40 $, 18 slots → 90 $).</summary>
+    private static int PriceFor(BackpackConfig cfg) {
+        return Mathf.Max(1, cfg.Container.SlotCount) * 5;
     }
 
     private static int PriceFor(ClothingConfig cfg) {

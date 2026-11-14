@@ -46,21 +46,32 @@ public class NotificationManager : MonoBehaviour {
             return;
         }
 
-        if (this.notificationContainer.childCount >= 5) {
-            Destroy(this.notificationContainer.GetChild(0).gameObject);
+        // Décoratif : une erreur d'UI ne doit JAMAIS remonter jusqu'au handler réseau (Mirror
+        // DÉCONNECTE le client quand un handler de message lève — constaté en cabine d'essayage :
+        // notification banque reçue pendant que le HUD de jeu est masqué).
+        try {
+            if (this.notificationContainer.childCount >= 5) {
+                Destroy(this.notificationContainer.GetChild(0).gameObject);
+            }
+
+            NotificationUI notification = Instantiate(this.notificationPrefab, this.notificationContainer);
+            notification.Setup(message, app.DisplayName, app.Icon, onClick);
+
+            if (HUDManager.Instance != null) HUDManager.Instance.PlaySound(this.sound, 1f);
+
+            if (notification.transform.GetSiblingIndex() == 0) {
+                notification.SetAutoHide(5);
+            }
+
+            // Conteneur masqué (overlay plein écran) : le layout se recalcule seul à la
+            // réactivation — un rebuild immédiat sur un arbre inactif n'a pas de sens.
+            if (this.notificationContainer.gameObject.activeInHierarchy) {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(notification.RectTransform);
+                LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)this.notificationContainer);
+            }
+        } catch (Exception e) {
+            Debug.LogError($"[NotificationManager] AddNotification failed (dropped '{message}'): {e}");
         }
-
-        NotificationUI notification = Instantiate(this.notificationPrefab, this.notificationContainer);
-        notification.Setup(message, app.DisplayName, app.Icon, onClick);
-
-        HUDManager.Instance.PlaySound(this.sound, 1f);
-
-        if (notification.transform.GetSiblingIndex() == 0) {
-            notification.SetAutoHide(5);
-        }
-
-        LayoutRebuilder.ForceRebuildLayoutImmediate(notification.RectTransform);
-        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)this.notificationContainer);
     }
 
     public void RemoveNotification(NotificationUI notification) {

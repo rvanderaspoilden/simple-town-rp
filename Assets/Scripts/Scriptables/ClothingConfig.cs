@@ -11,7 +11,7 @@ using UnityEngine;
 /// NE PAS les changer, ils sont persistés en base).
 /// </summary>
 [CreateAssetMenu(menuName = "Configurations/Clothing Item", fileName = "New Clothing Item")]
-public class ClothingConfig : ItemConfig {
+public class ClothingConfig : ItemConfig, IApsWearable {
     [Header("APS2")]
     [Tooltip("Catégorie d'élément APS2 que cet item habille (Hat, Shirt, Pants…).")]
     [SerializeField]

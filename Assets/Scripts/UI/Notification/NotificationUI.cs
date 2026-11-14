@@ -32,16 +32,30 @@ public class NotificationUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 
     private Action _onClick;
 
+    private bool _setupDone;
+
     private void Awake() {
-        this._canvasGroup = GetComponent<CanvasGroup>();
+        this.EnsureRefs();
+        // Instanciée sous un conteneur INACTIF (HUD masqué par un overlay plein écran : cabine
+        // d'essayage, boutique…), Awake ne tourne qu'à la réactivation — APRÈS Setup. Ne pas
+        // écraser alors l'état posé par Setup (alpha/scale cibles des tweens).
+        if (this._setupDone) return;
+
         this._canvasGroup.alpha = 0;
-
-        this._rectTransform = GetComponent<RectTransform>();
-
         this.transform.localScale = Vector3.zero;
     }
 
+    /// <summary>Références composant résolues paresseusement : Setup/RectTransform peuvent être
+    /// appelés AVANT Awake quand la notification naît sous un parent inactif.</summary>
+    private void EnsureRefs() {
+        if (this._canvasGroup == null) this._canvasGroup = GetComponent<CanvasGroup>();
+        if (this._rectTransform == null) this._rectTransform = GetComponent<RectTransform>();
+    }
+
     public void Setup(string message, string title, Sprite iconSprite, Action onClick = null) {
+        this.EnsureRefs();
+        this._setupDone = true;
+
         this.titleTxt.text = title;
         this.messageTxt.text = message;
         this.icon.sprite = iconSprite;
@@ -69,7 +83,12 @@ public class NotificationUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         this.closeButton.interactable = !NotificationManager.Instance.IsMovingNotifications;
     }
 
-    public RectTransform RectTransform => _rectTransform;
+    public RectTransform RectTransform {
+        get {
+            this.EnsureRefs();
+            return this._rectTransform;
+        }
+    }
 
     public void SetAutoHide(int delay) {
         this._autoHideSet = true;

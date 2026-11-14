@@ -844,6 +844,20 @@ namespace Sim {
             this.characterAppearance?.SetWornClothing(csv);
         }
 
+        /// <summary>Garde-robe répliquée telle que reçue (csv de 5 ItemConfig ids par slot,
+        /// "" = pas encore calculée). Lecture seule — cabine d'essayage (badge « porté »).</summary>
+        public string EquippedClothingCsv => this.equippedClothing;
+
+        /// <summary>True si ce vêtement (ItemConfig id) est actuellement PORTÉ par ce personnage.</summary>
+        public bool IsWearingClothing(int configId) {
+            string csv = this.equippedClothing;
+            if (string.IsNullOrEmpty(csv)) return false;
+            foreach (string part in csv.Split(',')) {
+                if (int.TryParse(part, out int id) && id == configId) return true;
+            }
+            return false;
+        }
+
         /// <summary>Serveur : pousse la garde-robe recalculée (ServerItemManager). Format csv
         /// de 5 ItemConfig ids (slots wearables), champs vides = rien. Applique aussi en local
         /// pour l'host (le hook SyncVar ne repasse pas par la désérialisation en local).</summary>

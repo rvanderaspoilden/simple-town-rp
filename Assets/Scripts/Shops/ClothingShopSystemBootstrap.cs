@@ -19,8 +19,9 @@ namespace Sim {
         /// <summary>Portée serveur (m, planaire) : portée client (3 m) + tolérance réseau.</summary>
         private const float ServerRange = 5f;
 
-        /// <summary>Un article par catégorie au plus côté client → panier borné aux 5 slots.</summary>
-        private const int MaxCartSize = ClothingConfig.WearSlotCount;
+        /// <summary>Un article par catégorie essayable au plus côté client (5 catégories de
+        /// vêtements + sac) → panier borné.</summary>
+        private const int MaxCartSize = ClothingConfig.WearSlotCount + 1;
 
         // counterpartyId libre côté backend (@IsOptional) — pattern MerchantCounterparty.
         private const string ShopCounterparty = "CLOTHING_SHOP";
@@ -81,26 +82,34 @@ namespace Sim {
             Gender gender = player.CharacterData.Style.gender;
             uint netId = conn.identity.netId;
 
-            // Résolution + plan de placement : slot wearables libre → équipé direct ; slot
-            // OCCUPÉ → REMPLACEMENT (l'ancien part en poche, sinon boîte de livraison) ; doublon
-            // de catégorie dans le panier → acquisition classique. Pas de refus « pas de
-            // place » : RÈGLE PROJET — un achat qui ne tient pas dans l'inventaire part dans
-            // la boîte de livraison.
+            // Résolution + plan de placement. Tout item IApsWearable du catalogue est achetable :
+            //  - VÊTEMENT (ClothingConfig) : slot wearables libre → équipé direct ; slot OCCUPÉ →
+            //    REMPLACEMENT (l'ancien part en poche, sinon boîte de livraison) ; doublon de
+            //    catégorie dans le panier → acquisition classique ;
+            //  - autre wearable (sac à dos…) : item classique → acquisition classique (poche
+            //    d'abord), le joueur l'équipe depuis l'inventaire.
+            // Pas de refus « pas de place » : RÈGLE PROJET — un achat qui ne tient pas dans
+            // l'inventaire part dans la boîte de livraison.
             var wearPlan    = new List<(ClothingConfig cfg, int price)>();
             var replacePlan = new List<(ClothingConfig cfg, int price)>();
-            var pocketPlan  = new List<(ClothingConfig cfg, int price)>();
+            var pocketPlan  = new List<(ItemConfig cfg, int price)>();
             var plannedSlots = new HashSet<int>();
             int total = 0;
 
             foreach (int id in msg.ConfigIds) {
                 if (!catalog.TryGetPrice(id, out int price, out ItemConfig cfg)
-                    || !(cfg is ClothingConfig clothing) || cfg.Prefab == null
-                    || !clothing.SupportsGender(gender)) {
+                    || !(cfg is IApsWearable wearable) || cfg.Prefab == null
+                    || !wearable.SupportsGender(gender)) {
                     Reply(conn, false, ReasonUnavailable, 0);
                     return;
                 }
 
                 total += price;
+                if (!(cfg is ClothingConfig clothing)) {
+                    pocketPlan.Add((cfg, price));
+                    continue;
+                }
+
                 int slot = clothing.WearSlotIndex;
                 if (plannedSlots.Contains(slot)) {
                     pocketPlan.Add((clothing, price));
@@ -120,14 +129,14 @@ namespace Sim {
             // échec de création individuel est remboursé article par article dans la foulée.
             foreach ((ClothingConfig cfg, int price) in wearPlan)    Debit(bank, cfg, price);
             foreach ((ClothingConfig cfg, int price) in replacePlan) Debit(bank, cfg, price);
-            foreach ((ClothingConfig cfg, int price) in pocketPlan)  Debit(bank, cfg, price);
+            foreach ((ItemConfig cfg, int price) in pocketPlan)      Debit(bank, cfg, price);
 
             ApiManager.Instance.StartCoroutine(GrantCartCoroutine(conn, bank, wearPlan, replacePlan, pocketPlan, total));
         }
 
         private static IEnumerator GrantCartCoroutine(NetworkConnectionToClient conn, PlayerBankAccount bank,
             List<(ClothingConfig cfg, int price)> wearPlan, List<(ClothingConfig cfg, int price)> replacePlan,
-            List<(ClothingConfig cfg, int price)> pocketPlan, int total)
+            List<(ItemConfig cfg, int price)> pocketPlan, int total)
         {
             foreach ((ClothingConfig cfg, int price) in wearPlan) {
                 bool granted = false;
@@ -141,7 +150,7 @@ namespace Sim {
                 if (!granted) FallbackAcquire(conn, bank, cfg, price);
             }
 
-            foreach ((ClothingConfig cfg, int price) in pocketPlan) {
+            foreach ((ItemConfig cfg, int price) in pocketPlan) {
                 FallbackAcquire(conn, bank, cfg, price);
             }
 
@@ -151,19 +160,19 @@ namespace Sim {
         /// <summary>Acquisition classique (poche d'abord) ; inventaire plein → boîte de
         /// livraison (RÈGLE PROJET) ; remboursement seulement si le dépôt échoue aussi.</summary>
         private static void FallbackAcquire(NetworkConnectionToClient conn, PlayerBankAccount bank,
-            ClothingConfig cfg, int price) {
+            ItemConfig cfg, int price) {
             ServerItemManager.Instance.SpawnItemIntoInventory(conn, cfg.ID, cfg, persistent: true,
                 onFail: _ => ApiManager.Instance.StartCoroutine(
                     ServerItemManager.Instance.DepositPurchaseInDeliveryBox(conn, cfg,
                         deposited => { if (!deposited) Refund(bank, cfg, price); })));
         }
 
-        private static void Debit(PlayerBankAccount bank, ClothingConfig cfg, int price) {
+        private static void Debit(PlayerBankAccount bank, ItemConfig cfg, int price) {
             bank.PostLedger(-price, LedgerReason.ShopPurchase, LedgerCounterparty.System,
                 ShopCounterparty, configId: cfg.ID);
         }
 
-        private static void Refund(PlayerBankAccount bank, ClothingConfig cfg, int price) {
+        private static void Refund(PlayerBankAccount bank, ItemConfig cfg, int price) {
             if (bank == null) return;
             bank.PostLedger(price, LedgerReason.ShopPurchase, LedgerCounterparty.System,
                 ShopCounterparty, configId: cfg.ID);
