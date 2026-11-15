@@ -53871,7 +53871,8 @@ MonoBehaviour:
   cameraDistance: 3.2
   cameraHeight: 1.25
   lookAtHeight: 0.95
-  studioBackground: {r: 0.13, g: 0.12, b: 0.11, a: 1}
+  fittingProfile: {fileID: 11400000, guid: c9dea74176f50414782cabb77593cc88, type: 2}
+  fadeDuration: 0.5
   rotateSpeed: 6
 --- !u!1 &5418330134404789448
 GameObject:

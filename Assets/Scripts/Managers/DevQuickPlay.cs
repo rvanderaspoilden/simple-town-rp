@@ -1,6 +1,9 @@
 #if UNITY_EDITOR
 using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
+using kcp2k;
 using Mirror;
 using UnityEditor;
 using UnityEngine;
@@ -33,6 +36,12 @@ public static class DevQuickPlay
     private const string AccountPrefKey      = "SimpleTown.QuickPlaySpectus";
 
     private static bool UseSpectus => EditorPrefs.GetBool(AccountPrefKey, true);
+
+    // Port UDP réellement utilisé par l'hôte Quick Play. Partagé via EditorPrefs (registre HKCU,
+    // commun à toutes les instances d'éditeur de la machine) pour qu'un clone ParrelSync rejoigne
+    // le bon port si l'hôte a dû se replier (voir EnsureFreeHostPort).
+    private const string PortPrefKey = "SimpleTown.QuickPlay.Port";
+    private const int PortProbeRange = 10;
 
     // ── Menu toggle ─────────────────────────────────────────────────────────────
     [MenuItem(MenuPath, false, 100)]
@@ -92,13 +101,82 @@ public static class DevQuickPlay
 
         if (IsParrelSyncClone())
         {
+            ApplyHostPortToClone(nm);
             Debug.Log($"[DevQuickPlay] Clone ParrelSync détecté → StartClient (rejoint l'hôte). Compte={account}");
             nm.StartClient();
         }
         else
         {
+            EnsureFreeHostPort(nm);
             Debug.Log($"[DevQuickPlay] StartHost (lancement + auto-connexion). Compte={account}");
             nm.StartHost();
+        }
+    }
+
+    // ── Port UDP : repli automatique si le port configuré est occupé ─────────────
+    // Une socket KCP orpheline (play mode interrompu par une exception dans le teardown, éditeur
+    // tué…) peut rester bloquée sur 7777 dans le process éditeur jusqu'à son redémarrage. Plutôt
+    // que d'échouer avec « Une seule utilisation de chaque adresse de socket… », on sonde le port
+    // avec la même configuration que kcp2k et on glisse vers le premier port libre suivant.
+    private static void EnsureFreeHostPort(NetworkManager nm)
+    {
+        if (!(nm.transport is PortTransport portTransport)) return;
+        bool dualMode = !(nm.transport is KcpTransport kcp) || kcp.DualMode;
+
+        ushort basePort = portTransport.Port;
+        for (int offset = 0; offset < PortProbeRange; offset++)
+        {
+            ushort candidate = (ushort)(basePort + offset);
+            if (!IsUdpPortFree(candidate, dualMode)) continue;
+
+            if (candidate != basePort)
+            {
+                Debug.LogWarning($"[DevQuickPlay] Port UDP {basePort} occupé (socket orpheline d'une session Play précédente ?) → hôte sur {candidate}. Un clone ParrelSync en Quick Play suivra automatiquement.");
+                portTransport.Port = candidate;
+            }
+            EditorPrefs.SetInt(PortPrefKey, candidate);
+            return;
+        }
+
+        Debug.LogError($"[DevQuickPlay] Aucun port UDP libre entre {basePort} et {basePort + PortProbeRange - 1} — StartHost va échouer. Redémarrer l'éditeur libère les sockets orphelines.");
+    }
+
+    /// <summary>Clone ParrelSync : vise le port sur lequel l'hôte Quick Play a réellement démarré.</summary>
+    private static void ApplyHostPortToClone(NetworkManager nm)
+    {
+        if (!(nm.transport is PortTransport portTransport)) return;
+        int hostPort = EditorPrefs.GetInt(PortPrefKey, 0);
+        if (hostPort <= 0 || hostPort > ushort.MaxValue || hostPort == portTransport.Port) return;
+
+        Debug.Log($"[DevQuickPlay] L'hôte Quick Play écoute sur {hostPort} (repli) → le clone se connecte sur ce port.");
+        portTransport.Port = (ushort)hostPort;
+    }
+
+    /// <summary>Sonde de bind identique à kcp2k.KcpServer.CreateServerSocket (IPv6 dual-mode ou IPv4).</summary>
+    private static bool IsUdpPortFree(ushort port, bool dualMode)
+    {
+        Socket socket = null;
+        try
+        {
+            if (dualMode)
+            {
+                socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp) { DualMode = true };
+                socket.Bind(new IPEndPoint(IPAddress.IPv6Any, port));
+            }
+            else
+            {
+                socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                socket.Bind(new IPEndPoint(IPAddress.Any, port));
+            }
+            return true;
+        }
+        catch (SocketException)
+        {
+            return false;
+        }
+        finally
+        {
+            socket?.Close();
         }
     }
 

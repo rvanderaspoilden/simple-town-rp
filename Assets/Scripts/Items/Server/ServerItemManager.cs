@@ -3940,6 +3940,17 @@ public class ServerItemManager
             return;
         }
 
+        // Sac à dos : contenu accessible UNIQUEMENT porté sur le dos par CE joueur. En main,
+        // en poche ou au sol, c'est un item fermé (règle produit — le client ne propose pas
+        // l'ouverture, ce garde couvre les requêtes directes).
+        if (itemCfg is BackpackConfig) {
+            bool worn = _playerHands.TryGetValue(netId, out var wearerHands) && wearerHands.BackEntityId == msg.EntityId;
+            if (!worn) {
+                conn.Send(new S2C_ItemContainerOpenFailed { EntityId = msg.EntityId, ErrorMessage = "Portez le sac pour accéder à son contenu" });
+                return;
+            }
+        }
+
         // Le package doit être persisté (UUID DB) — sa place est "item_container:{uuid}".
         var bridge = GetBridge(msg.EntityId);
         if (bridge == null || string.IsNullOrEmpty(bridge.Uuid)) {

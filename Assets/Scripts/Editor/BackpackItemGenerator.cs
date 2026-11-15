@@ -21,7 +21,6 @@ public static class BackpackItemGenerator {
     private const string IconFolder = "Assets/Resources/Sprites/Equipment/Generated";
     private const string PrefabFolder = "Assets/Resources/Prefabs/Items/Backpacks";
     private const string PickActionPath = "Assets/Resources/Configurations/Actions/PICK.asset";
-    private const string OpenActionPath = "Assets/Resources/Configurations/Actions/OPEN.asset";
     private const string DropActionPath = "Assets/Resources/Configurations/Actions/DROP.asset";
 
     private struct BackpackDef {
@@ -50,10 +49,9 @@ public static class BackpackItemGenerator {
     public static void Generate() {
         var male = AssetDatabase.LoadAssetAtPath<CharacterSettings>(MaleSettingsPath);
         var pick = AssetDatabase.LoadAssetAtPath<Sim.Interactables.Action>(PickActionPath);
-        var open = AssetDatabase.LoadAssetAtPath<Sim.Interactables.Action>(OpenActionPath);
         var drop = AssetDatabase.LoadAssetAtPath<Sim.Interactables.Action>(DropActionPath);
-        if (male == null || pick == null || open == null || drop == null) {
-            Debug.LogError("[BackpackItemGenerator] Missing dependency (MaleSettings or PICK/OPEN/DROP actions).");
+        if (male == null || pick == null || drop == null) {
+            Debug.LogError("[BackpackItemGenerator] Missing dependency (MaleSettings or PICK/DROP actions).");
             return;
         }
 
@@ -77,7 +75,7 @@ public static class BackpackItemGenerator {
             BackpackItemBehaviour worldBehaviour = WearablePrefabBuilder.Build<BackpackItemBehaviour>(
                 $"{PrefabFolder}/{def.key}.prefab", def.key, preset.mesh[0], mats, foldedMesh, foldedMats);
 
-            WriteConfig(def, worldBehaviour, pick, open, drop, ref created, ref updated);
+            WriteConfig(def, worldBehaviour, pick, drop, ref created, ref updated);
         }
 
         AssetDatabase.SaveAssets();
@@ -85,7 +83,7 @@ public static class BackpackItemGenerator {
     }
 
     private static void WriteConfig(BackpackDef def, BackpackItemBehaviour worldBehaviour, Sim.Interactables.Action pick,
-        Sim.Interactables.Action open, Sim.Interactables.Action drop, ref int created, ref int updated)
+        Sim.Interactables.Action drop, ref int created, ref int updated)
     {
         string assetPath = $"{ConfigFolder}/{def.key}.asset";
 
@@ -139,10 +137,11 @@ public static class BackpackItemGenerator {
         so.FindProperty("gripPosition").vector3Value = WearablePrefabBuilder.HeldGripPosition;
         so.FindProperty("gripEuler").vector3Value = WearablePrefabBuilder.HeldGripEuler;
 
+        // Pas d'action OPEN : le contenu d'un sac n'est accessible que PORTÉ (grille affichée
+        // avec l'inventaire via PlayerHands.WornContainerItem) — au sol/en main c'est un item fermé.
         SerializedProperty unequipped = so.FindProperty("unEquippedActions");
-        unequipped.arraySize = 2;
+        unequipped.arraySize = 1;
         unequipped.GetArrayElementAtIndex(0).objectReferenceValue = pick;
-        unequipped.GetArrayElementAtIndex(1).objectReferenceValue = open;
 
         SerializedProperty equipped = so.FindProperty("equippedActions");
         equipped.arraySize = 1;

@@ -5,6 +5,8 @@ using Sim.Scriptables;
 using TMPro;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
 namespace Sim.UI {
@@ -22,10 +24,11 @@ namespace Sim.UI {
     ///
     /// À l'ouverture : état DÉDIÉ <c>CharacterFitting</c> (verrouillé — seules sorties :
     /// Acheter/Annuler/Échap ou la mort), vcam de session (priorité 40) face au joueur, et
-    /// VUE STUDIO : les renderers du rig du joueur passent sur le layer dédié « Fitting Preview »
-    /// et la caméra principale ne rend plus QUE ce layer sur fond uni — aucun obstacle de vue
-    /// possible, ni décor ni autre personnage (restauré à la fermeture). Le panneau est un overlay
-    /// HidesGameHud (frère de « Default View » : stats/hotbar/minimap masqués).
+    /// VUE STUDIO « mode portrait » : le rig du joueur passe sur le layer dédié « Fitting Preview »
+    /// rendu PAR-DESSUS tout par une caméra overlay (jamais occulté par un portant, un mur ou un
+    /// autre joueur), tandis que la caméra principale montre le décor flouté/assombri (volume DoF
+    /// fondu, restauré à la fermeture). Le panneau est un overlay HidesGameHud (frère de
+    /// « Default View » : stats/hotbar/minimap masqués).
     ///
     /// Cliquer une carte la SÉLECTIONNE (détail) ; « Essayer » la pose en preview sur le joueur
     /// (éléments APS2, un article par catégorie) et l'ajoute au panier ; « Acheter » envoie le
@@ -84,8 +87,12 @@ namespace Sim.UI {
         [SerializeField] private float cameraHeight = 1.25f;
         [Tooltip("Hauteur du point visé sur le personnage (m).")]
         [SerializeField] private float lookAtHeight = 0.95f;
-        [Tooltip("Fond uni de la vue studio (seul le layer « Fitting Preview » est rendu).")]
-        [SerializeField] private Color studioBackground = new Color(0.13f, 0.12f, 0.11f, 1f);
+        [Tooltip("Layers OBSTACLES pour le placement de la caméra d'essayage (0 = Default, Ground, Props, Wall, Door — même famille que la caméra TPS). Le joueur et les interactables sont ignorés.")]
+        [SerializeField] private LayerMask cameraObstacleMask;
+        [Tooltip("Volume appliqué au DÉCOR pendant l'essayage (DoF « tout flou », pénombre, vignette) — le personnage, rendu par la caméra overlay, n'y est pas soumis. Généré par Tools ▸ The BROZ ▸ APS2 ▸ Generate Fitting Volume Profile.")]
+        [SerializeField] private VolumeProfile fittingProfile;
+        [Tooltip("Durée du fondu du volume à l'ouverture/fermeture (s) — calée sur le blend du brain Cinemachine.")]
+        [SerializeField] private float fadeDuration = 0.5f;
         [Tooltip("Vitesse de rotation du personnage au drag souris (°/unité d'axe).")]
         [SerializeField] private float rotateSpeed = 6f;
 
@@ -118,14 +125,18 @@ namespace Sim.UI {
         private bool _pendingPurchase;
         private CharacterElementType _currentType = CharacterElementType.Shirt; // Hauts par défaut
 
-        // Override caméra « studio » (restauré à la fermeture).
+        // Override caméra « studio » (restauré à la fermeture) : la principale cesse de rendre le
+        // layer de preview, une caméra overlay de session le rend par-dessus tout, un volume de
+        // session floute le décor.
         private Camera _mainCamera;
         private int _prevCullingMask;
-        private CameraClearFlags _prevClearFlags;
-        private Color _prevBackground;
+        private Camera _previewCamera;
+        private VolumeWeightFader _fittingVolume;
+        // Au-dessus des volumes de scène (Global Volume 0, Interior Volume 1).
+        private const float FittingVolumePriority = 100f;
 
         /// <summary>Layer DÉDIÉ à la vue studio (TagManager, index 29) : personne d'autre ne vit
-        /// dessus, donc rien d'autre que le rig du joueur local ne peut apparaître — ni décor, ni
+        /// dessus, donc la caméra overlay ne peut dessiner que le rig du joueur local — ni décor, ni
         /// autre joueur/NPC, quel que soit le layer d'origine des meshes (les meshes APS2 sont
         /// instanciés sur Default). Repli sur « Player » si le layer manque.</summary>
         private const string PreviewLayerName = "Fitting Preview";
@@ -165,6 +176,7 @@ namespace Sim.UI {
         private void OnDestroy() {
             ClothingShopSystemBootstrap.OnPurchaseResult -= this.OnPurchaseResult;
             PlayerBankAccount.OnLocalMoneyChanged -= this.OnMoneyChanged;
+            RenderPipelineManager.beginCameraRendering -= this.SyncPreviewLens;
             if (Instance == this) Instance = null;
         }
 
@@ -542,19 +554,86 @@ namespace Sim.UI {
 
         // ── Vue studio (caméra) ─────────────────────────────────────────────────────
 
-        /// <summary>Vcam temporaire (priorité 40 &gt; TPS) posée dans <paramref name="awayDir"/>
-        /// (côté opposé au portant), tournée vers le joueur — le brain fait le blend.</summary>
+        /// <summary>Yaws (°) essayés autour de la direction opposée au portant, par ordre de préférence.</summary>
+        private static readonly float[] CameraYawCandidates = { 0f, 30f, -30f, 60f, -60f, 90f, -90f, 120f, -120f, 150f, -150f, 180f };
+        /// <summary>Rayon de la sphère sondée (encombrement caméra + near plane) (m).</summary>
+        private const float CameraProbeRadius = 0.25f;
+        /// <summary>Recul supplémentaire devant l'obstacle quand la caméra doit être rapprochée (m).</summary>
+        private const float CameraObstacleMargin = 0.15f;
+        /// <summary>Distance caméra↔point visé minimale (m) : en dessous on accepte de clipper plutôt
+        /// que de coller l'objectif au personnage.</summary>
+        private const float MinCameraDistance = 1.5f;
+        /// <summary>FOV vertical maximal (°) de la vcam rapprochée.</summary>
+        private const float MaxCameraFov = 75f;
+
+        private int _obstacleMask;
+
+        private int ObstacleMask {
+            get {
+                if (this._obstacleMask == 0) {
+                    this._obstacleMask = this.cameraObstacleMask.value != 0
+                        ? this.cameraObstacleMask.value
+                        : LayerMask.GetMask("Default", "Ground", "Props", "Wall", "Door");
+                }
+                return this._obstacleMask;
+            }
+        }
+
+        /// <summary>Vcam temporaire (priorité 40 &gt; TPS) posée du côté opposé au portant — ou dans la
+        /// direction DÉGAGÉE la plus proche (<see cref="ResolveCameraPosition"/>) —, tournée vers le
+        /// joueur ; le brain fait le blend. Caméra rapprochée (repli) : FOV élargi pour conserver le
+        /// cadrage corps entier validé à <see cref="cameraDistance"/>.</summary>
         private void SpawnViewCamera(Transform player, Vector3 awayDir) {
             this.DestroyViewCamera();
 
             Vector3 lookTarget = player.position + Vector3.up * this.lookAtHeight;
-            Vector3 position = player.position + awayDir * this.cameraDistance + Vector3.up * this.cameraHeight;
+            Vector3 position = this.ResolveCameraPosition(lookTarget, awayDir, out float shrink);
 
             this._viewCamera = new GameObject("Fitting Room Camera");
             this._viewCamera.transform.SetPositionAndRotation(position,
                 Quaternion.LookRotation(lookTarget - position));
             CinemachineCamera cam = this._viewCamera.AddComponent<CinemachineCamera>();
             cam.Priority = 40;
+            if (shrink < 0.999f) {
+                float halfTan = Mathf.Tan(cam.Lens.FieldOfView * 0.5f * Mathf.Deg2Rad);
+                cam.Lens.FieldOfView = Mathf.Min(MaxCameraFov, 2f * Mathf.Atan(halfTan / shrink) * Mathf.Rad2Deg);
+            }
+        }
+
+        /// <summary>Position caméra DÉGAGÉE. SphereCast du point visé vers chaque candidate (direction
+        /// opposée au portant d'abord, puis angles croissants de part et d'autre) : première direction
+        /// libre sur toute la distance, sinon la plus dégagée, objectif reculé juste devant l'obstacle
+        /// (<paramref name="shrink"/> = fraction de la distance nominale conservée, 1 si libre).
+        /// Sans ce test la caméra se retrouvait DANS les rayonnages de la boutique (play-test
+        /// 2026-11-15 : rayonnage à 0,5 m, chariot grillagé à 0,3 m de l'objectif).</summary>
+        private Vector3 ResolveCameraPosition(Vector3 lookTarget, Vector3 awayDir, out float shrink) {
+            Vector3 rise = Vector3.up * (this.cameraHeight - this.lookAtHeight);
+            int mask = this.ObstacleMask;
+            Vector3 bestDir = Vector3.zero;
+            float bestFree = -1f;
+            float fullLength = 1f;
+
+            foreach (float yaw in CameraYawCandidates) {
+                Vector3 toCamera = Quaternion.Euler(0f, yaw, 0f) * awayDir * this.cameraDistance + rise;
+                fullLength = toCamera.magnitude;
+                Vector3 dir = toCamera / fullLength;
+                float free = Physics.SphereCast(lookTarget, CameraProbeRadius, dir, out RaycastHit hit, fullLength, mask, QueryTriggerInteraction.Ignore)
+                    ? hit.distance
+                    : fullLength;
+                if (free >= fullLength) {
+                    shrink = 1f;
+                    return lookTarget + toCamera;
+                }
+                if (free > bestFree) {
+                    bestFree = free;
+                    bestDir = dir;
+                }
+            }
+
+            // Tout est encombré : direction la plus dégagée, objectif reculé devant l'obstacle.
+            float length = Mathf.Clamp(bestFree - CameraObstacleMargin, MinCameraDistance, fullLength);
+            shrink = length / fullLength;
+            return lookTarget + bestDir * length;
         }
 
         private void DestroyViewCamera() {
@@ -564,20 +643,20 @@ namespace Sim.UI {
             }
         }
 
-        /// <summary>VUE STUDIO : les renderers du rig du joueur local sont déplacés sur le layer
-        /// dédié « Fitting Preview » et la caméra principale ne rend plus QUE ce layer, sur un
-        /// fond uni — plus RIEN ne peut obstruer la vue (portants, murs, vitrines, autres
-        /// joueurs…). Ne PAS se fier au layer d'origine des meshes : APS2 instancie son rig sur
-        /// Default (seule la racine joueur est sur Player). Restauré par
-        /// <see cref="RestoreStudioRendering"/> à la fermeture.</summary>
+        /// <summary>VUE STUDIO « mode portrait » : les renderers du rig du joueur local passent sur
+        /// le layer dédié « Fitting Preview », que la caméra principale cesse de rendre ; une caméra
+        /// OVERLAY (camera stack URP, enfant de la principale) rend ce seul layer par-dessus tout,
+        /// depth effacé — le personnage est net et ne peut JAMAIS être occulté (portants, murs,
+        /// vitrines, autres joueurs…). Le décor reste visible derrière lui, flouté/assombri par
+        /// <see cref="fittingProfile"/> (volume global fondu). Ne PAS se fier au layer d'origine des
+        /// meshes : APS2 instancie son rig sur Default (seule la racine joueur est sur Player).
+        /// Restauré par <see cref="RestoreStudioRendering"/> à la fermeture.</summary>
         private void ApplyStudioRendering() {
             Camera cam = CameraManager.Instance != null ? CameraManager.Instance.Camera : Camera.main;
             if (cam == null) return;
 
             this._mainCamera = cam;
             this._prevCullingMask = cam.cullingMask;
-            this._prevClearFlags = cam.clearFlags;
-            this._prevBackground = cam.backgroundColor;
 
             this._previewLayer = LayerMask.NameToLayer(PreviewLayerName);
             if (this._previewLayer < 0) {
@@ -586,9 +665,61 @@ namespace Sim.UI {
             }
             this.ApplyPreviewLayer();
 
-            cam.cullingMask = 1 << this._previewLayer;
-            cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = this.studioBackground;
+            // Caméra principale : tout SAUF le rig, qui n'est rendu que par la caméra overlay.
+            cam.cullingMask = this._prevCullingMask & ~(1 << this._previewLayer);
+            this.SpawnPreviewCamera(cam);
+            this.SpawnFittingVolume();
+        }
+
+        /// <summary>Caméra overlay (stack URP) enfant de la principale : même objectif (resynchronisé
+        /// avant chaque rendu — le brain Cinemachine blende le FOV), ne rend que le layer de preview,
+        /// depth effacé → le rig passe devant tout. SANS post-processing : le flou/grading du volume
+        /// ne doit toucher que le décor. Ombres actives pour l'auto-ombrage du personnage (il ne
+        /// reçoit plus celles du décor, ni n'en projette dessus — acceptable, le décor est flou).</summary>
+        private void SpawnPreviewCamera(Camera mainCamera) {
+            var go = new GameObject("Fitting Preview Camera");
+            go.transform.SetParent(mainCamera.transform, false);
+            Camera preview = go.AddComponent<Camera>();
+            preview.CopyFrom(mainCamera);
+            preview.cullingMask = 1 << this._previewLayer;
+            preview.clearFlags = CameraClearFlags.Depth;
+            preview.depth = mainCamera.depth + 1f;
+
+            UniversalAdditionalCameraData data = preview.GetUniversalAdditionalCameraData();
+            data.renderType = CameraRenderType.Overlay;
+            // clearDepth (lecture seule) vaut true par défaut : le rig est dessiné devant tout.
+            data.renderPostProcessing = false;
+            data.renderShadows = true;
+            data.antialiasing = AntialiasingMode.None;
+            data.requiresDepthOption = CameraOverrideOption.Off;
+            data.requiresColorOption = CameraOverrideOption.Off;
+            data.volumeLayerMask = 0;
+
+            mainCamera.GetUniversalAdditionalCameraData().cameraStack.Add(preview);
+            this._previewCamera = preview;
+            RenderPipelineManager.beginCameraRendering += this.SyncPreviewLens;
+        }
+
+        /// <summary>Copie l'objectif de la principale sur l'overlay juste avant le rendu (après le
+        /// LateUpdate du brain) : sans ça le rig flotterait par rapport au décor pendant le blend.</summary>
+        private void SyncPreviewLens(ScriptableRenderContext _, Camera camera) {
+            if (camera != this._mainCamera || this._previewCamera == null) return;
+            this._previewCamera.usePhysicalProperties = camera.usePhysicalProperties;
+            this._previewCamera.fieldOfView = camera.fieldOfView;
+            this._previewCamera.lensShift = camera.lensShift;
+            this._previewCamera.nearClipPlane = camera.nearClipPlane;
+            this._previewCamera.farClipPlane = camera.farClipPlane;
+        }
+
+        /// <summary>Volume global « cabine » fondu de 0 à 1 : le décor glisse en flou/pénombre
+        /// pendant le blend caméra. Sans profil assigné, le décor reste simplement net.</summary>
+        private void SpawnFittingVolume() {
+            if (this.fittingProfile == null) {
+                Debug.LogWarning("[FittingRoomUI] fittingProfile non assigné (Tools ▸ The BROZ ▸ APS2 ▸ Generate Fitting Volume Profile) — décor non flouté.");
+                return;
+            }
+            this._fittingVolume = VolumeWeightFader.Spawn("Fitting Volume", this.fittingProfile, FittingVolumePriority);
+            this._fittingVolume.FadeTo(1f, this.fadeDuration);
         }
 
         /// <summary>Pose le layer de preview sur chaque renderer du rig APS2 du joueur local
@@ -616,10 +747,24 @@ namespace Sim.UI {
             this._previewLayerBackup.Clear();
             this._previewLayer = -1;
 
-            if (this._mainCamera == null) return;
-            this._mainCamera.cullingMask = this._prevCullingMask;
-            this._mainCamera.clearFlags = this._prevClearFlags;
-            this._mainCamera.backgroundColor = this._prevBackground;
+            RenderPipelineManager.beginCameraRendering -= this.SyncPreviewLens;
+
+            // Fondu sortant AUTONOME (le panneau se désactive juste après) ; détruit une fois à 0.
+            if (this._fittingVolume != null) {
+                this._fittingVolume.FadeTo(0f, this.fadeDuration, destroyAtZero: true);
+                this._fittingVolume = null;
+            }
+
+            if (this._mainCamera != null) {
+                this._mainCamera.cullingMask = this._prevCullingMask;
+                if (this._previewCamera != null) {
+                    this._mainCamera.GetUniversalAdditionalCameraData().cameraStack.Remove(this._previewCamera);
+                }
+            }
+            if (this._previewCamera != null) {
+                Destroy(this._previewCamera.gameObject);
+                this._previewCamera = null;
+            }
             this._mainCamera = null;
         }
 

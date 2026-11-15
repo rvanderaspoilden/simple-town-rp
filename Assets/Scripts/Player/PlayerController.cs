@@ -264,8 +264,14 @@ namespace Sim {
         /// <summary>Show/hide the character visuals without disabling GameObjects (keeps
         /// NetworkTransform, scripts and the NavMeshAgent running).</summary>
         private void SetVisualHidden(bool hidden) {
-            foreach (Renderer r in GetComponentsInChildren<Renderer>(false)) r.enabled = !hidden;
-            foreach (Canvas c in GetComponentsInChildren<Canvas>(false)) c.enabled = !hidden;
+            // includeInactive=true OBLIGATOIRE : les ancres de vêtements APS2 (pantalon,
+            // chaussures…) sont des GameObjects désactivés tant que la catégorie est nue, et
+            // SetElementByIndex les réactive SANS toucher renderer.enabled. Une ancre active au
+            // « hide » (tenue du style) puis déshabillée avant le « show » (SyncVar
+            // equippedClothing) restait donc renderer.enabled=false pour toujours : tout
+            // pantalon/chaussure essayé ou acheté ensuite était invisible.
+            foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) r.enabled = !hidden;
+            foreach (Canvas c in GetComponentsInChildren<Canvas>(true)) c.enabled = !hidden;
 
             // Le « show » global vient de rallumer AUSSI les parties du corps APS2 cachées sous
             // les vêtements (CHEST, STOMACH…) — sans ça, la peau transperce le shirt après

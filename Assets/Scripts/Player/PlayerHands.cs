@@ -96,14 +96,20 @@ public class PlayerHands : MonoBehaviour
     private static bool IsContainer(ItemBehaviour item) =>
         item != null && Sim.Scriptables.ItemContainerConfig.Of(item.Configuration)?.IsContainer == true;
 
+    /// <summary>Conteneur ouvrable EN MAIN (colis) : un sac à dos tenu en main n'est qu'un
+    /// item fermé — son contenu n'est accessible que PORTÉ sur le dos (<see cref="WornContainerItem"/>).
+    /// Le serveur applique la même règle (HandleOpenItemContainer).</summary>
+    private static bool IsHandOpenableContainer(ItemBehaviour item) =>
+        IsContainer(item) && !(item.Configuration is Sim.Scriptables.BackpackConfig);
+
     /// <summary>L'item-conteneur (« colis ») actuellement tenu, ou null. Sert à l'affichage
     /// automatique de la grille du conteneur dès qu'un colis est en main.</summary>
     public ItemBehaviour HeldContainerItem
     {
         get
         {
-            if (IsContainer(rightHandItem)) return rightHandItem;
-            if (IsContainer(leftHandItem))  return leftHandItem;
+            if (IsHandOpenableContainer(rightHandItem)) return rightHandItem;
+            if (IsHandOpenableContainer(leftHandItem))  return leftHandItem;
             return null;
         }
     }
